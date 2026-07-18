@@ -1,0 +1,12 @@
+[package]
+name = "hrw"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.103"
+eframe = "0.35.0"
+rumoca-compile = { version = "0.9.20", path = "../rumoca/crates/rumoca-compile" }
+rumoca-ir-ast = { version = "0.9.20", path = "../rumoca/crates/rumoca-ir-ast" }
+rumoca-phase-parse = { version = "0.9.20", path = "../rumoca/crates/rumoca-phase-parse" }
+serde_json = "1.0.150"

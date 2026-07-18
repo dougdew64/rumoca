@@ -1,0 +1,6 @@
+{
+  // Force rust-analyzer's "Debug" CodeLens to use CodeLLDB (charter Decision 6),
+  // rather than silently falling back to the cpptools/GDB engine. If CodeLLDB is
+  // not installed, VS Code will prompt to install it instead of using GDB.
+  "rust-analyzer.debug.engine": "vadimcn.vscode-lldb"
+}

@@ -1,0 +1,31 @@
+{
+  // Debug stack per charter Decision 6 / CLAUDE.md: rust-analyzer + CodeLLDB.
+  // Requires the CodeLLDB extension (vadimcn.vscode-lldb). CodeLLDB's Rust-aware
+  // formatters are what make inspecting Rumoca IR values while single-stepping a
+  // phase legible — the whole point of the observatory.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug HRW Observatory",
+      "cargo": {
+        "args": ["build", "--bin=hrw"],
+        "filter": { "name": "hrw", "kind": "bin" }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests (worker/parse)",
+      "cargo": {
+        "args": ["test", "--no-run", "--bin=hrw"],
+        "filter": { "name": "hrw", "kind": "bin" }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
