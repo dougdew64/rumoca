@@ -68,7 +68,7 @@ for the new tensor-IR backends that consume the `SolveProblem` directly.
 
 ## The Template Environment
 
-`create_environment()` (`codegen/mod.rs:265–319`) sets up a minijinja
+`create_environment()` (in `codegen/mod.rs`) sets up a minijinja
 `Environment` with:
 
 - **Strict undefined behavior**: referencing a missing key is an error
@@ -83,6 +83,8 @@ for the new tensor-IR backends that consume the `SolveProblem` directly.
 | `sanitize` | Replace `.` and special chars with `_` | `"body.v"` → `"body_v"` |
 | `product` | Multiply a list of integers | `{{ var.dims \| product }}` → `6` for `[2,3]` |
 | `last_segment` | Extract the last dot-separated component | `"A.B.C"` → `"C"` |
+| `xml_escape` | Escape `<`, `>`, `&`, `"`, `'` for XML attribute/text content | `"a<b"` → `"a&lt;b"` |
+| `xs_double` | Format `f64` as an XML Schema `xs:double` literal | `1.0` → `"1"`, `Inf` → `"INF"` |
 
 ### Custom Functions
 
@@ -217,6 +219,9 @@ and produce target-language source. Most users encounter this set.
 | `flat-modelica` | `flat_modelica.mo.jinja` | Flat model re-exported as Modelica |
 | `base-modelica` | `base_modelica.mo.jinja` | "Base Modelica" subset |
 | `modelica` | `modelica.mo.jinja` | Full Modelica round-trip |
+| `galec` | `model.alg.jinja`, `manifest.xml.jinja`, `__content.xml.jinja` | eFMI Algorithm Code export: eFMU container with GALEC `.alg` + manifest + schemas |
+| `galec-production` | `model.alg.jinja`, `model.h.jinja`, `model.c.jinja`, manifests | eFMI Production Code export: eFMU with generated C99 + Algorithm Code representation |
+| `embedded-c-galec` | `model.h.jinja`, `model.c.jinja` | GALEC-derived embedded C (startup/recalibrate/dostep block methods); not an eFMU container |
 
 ### Targets that consume the SolveProblem IR (new in v0.9.x)
 
@@ -238,6 +243,7 @@ the target's native operations. The target.toml manifest has `ir =
 | `cuda-nvrtc-solve-jit` | (JIT-only, via `rumoca-exec-mlir`) | CUDA NVRTC JIT pipeline |
 | `cranelift-solve-jit` | (JIT-only, via `rumoca-exec-cranelift`) | Cranelift native-code JIT |
 | `mlir` | `mlir.mlir.jinja` | MLIR dialect output for further compilation |
+| `rust-fixed-solve` | `model_fixed_solve.rs.jinja` | Fixed-size Rust kernel for no-alloc CPU hot paths |
 | `wgsl-solve` | `model_solve.wgsl.jinja`, `model_layout.json.jinja` | WebGPU compute shaders |
 
 The JIT targets (`cranelift-solve-jit`, `cuda-nvrtc-solve-jit`) don't
@@ -462,6 +468,31 @@ references, and expression rendering failures.
 
 ---
 
+## GALEC / eFMI Ecosystem
+
+The `galec`, `galec-production`, and `embedded-c-galec` targets produce
+eFMI-conformant artifacts using two supporting crates:
+
+- **`rumoca-ir-galec`** — the GALEC intermediate representation: a typed
+  AST for the eFMI Algorithm Code language, with parser, printer, and
+  round-trip fidelity tests. The DAE is projected into a GALEC block
+  before rendering.
+- **`rumoca-galec-codegen`** — code generation utilities for GALEC
+  targets: the typed C printer (`c_mangle` / `c_print`), the
+  `xml_escape` and `xs_double` canonical implementations, and the
+  manifest-authoring logic that produces schema-valid eFMU packaging XML.
+
+The `galec` target emits an eFMU container (directory + `.efmu` zip) with
+an Algorithm Code representation; `galec-production` extends this with a
+Production Code representation containing generated C99 and a
+LogicalData mapping manifest. `embedded-c-galec` produces standalone
+GALEC-derived C files without any eFMU packaging. All three share the
+same DAE capability gates (discrete-only models with clock partitions)
+and the same `xml_escape` / `xs_double` filters registered in the
+template environment.
+
+---
+
 ## Key Files
 
 | File | Purpose |
@@ -473,3 +504,5 @@ references, and expression rendering failures.
 | `rumoca-phase-codegen/src/templates/<target>/target.toml` | Per-target manifest: IR kind, file list, metadata |
 | `rumoca-phase-codegen/src/templates/<target>/*.jinja` | Per-target template files |
 | `rumoca-phase-codegen/src/errors.rs` | `CodegenError` |
+| `rumoca-ir-galec/` | GALEC IR: typed AST, parser, printer, round-trip tests |
+| `rumoca-galec-codegen/` | GALEC code generation: C printer, `xml_escape`, `xs_double`, manifest authoring |

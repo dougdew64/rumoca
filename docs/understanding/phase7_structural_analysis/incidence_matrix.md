@@ -1,7 +1,7 @@
 # Drill-Down: The Incidence Matrix
 
-*Parent document: [07_structural_analysis.md](07_structural_analysis.md)*  
-*Source: [crates/rumoca-phase-structural/src/incidence.rs](../../crates/rumoca-phase-structural/src/incidence.rs)*
+*Parent document: [structural_analysis.md](structural_analysis.md)*  
+*Source: [crates/rumoca-phase-structural/src/incidence.rs](../../../crates/rumoca-phase-structural/src/incidence.rs)*
 
 ---
 
@@ -36,14 +36,14 @@ than a dense 2D array, because physical models are typically sparse (each
 equation involves only a handful of the total unknowns).
 
 ```
-Rows    = equations from f_x  (the continuous DAE equations)
-Columns = unknowns            (state derivatives and algebraic/output variables)
+Rows    = equations from dae.continuous.equations  (the continuous DAE equations)
+Columns = unknowns  (state derivatives and algebraic/output variables)
 Entry (i, j) = 1  if equation i references unknown j
                0  otherwise
 ```
 
-Only the **continuous** equations (`f_x`) participate. The discrete update
-equations (`f_z`, `f_m`) are handled separately by the event settling logic
+Only the **continuous** equations (`dae.continuous.equations`) participate. The
+discrete update equations are handled separately by the event settling logic
 and do not need a structural analysis of their own.
 
 ### The Unknowns
@@ -54,12 +54,12 @@ or undifferentiated in the continuous equations:
 
 | Column kind | Variable partition | What it represents |
 |-------------|-------------------|--------------------|
-| `DerState(x)` | `dae.states` | The time derivative `der(x)` — what the integrator advances |
-| `Variable(y)` | `dae.algebraics` | An algebraic variable with no derivative |
-| `Variable(w)` | `dae.outputs` | An output variable treated as an algebraic |
+| `DerState(x)` | `dae.variables.states` | The time derivative `der(x)` — what the integrator advances |
+| `Variable(y)` | `dae.variables.algebraics` | An algebraic variable with no derivative |
+| `Variable(w)` | `dae.variables.outputs` | An output variable treated as an algebraic |
 
-The columns are ordered in three contiguous groups (see `build_unknown_map`,
-`incidence.rs:73–96`):
+The columns are ordered in three contiguous groups (see `build_unknown_map`
+in `incidence.rs`):
 
 ```
 [  der(x₀), der(x₁), …  |  y₀, y₁, …  |  w₀, w₁, …  ]
@@ -87,39 +87,40 @@ over the time step.
 
 ## How the Incidence Is Built (`build_incidence`)
 
-The entry point is `build_incidence(dae)` at `incidence.rs:43–70`:
+The entry point is `build_incidence(dae)` in `incidence.rs`:
 
 ```rust
 pub(crate) fn build_incidence(dae: &dae::Dae) -> Incidence {
-    let (_unknown_map, unknown_names) = build_unknown_map(dae);
+    let (_unknown_map, unknown_names, unknown_spans) = build_unknown_map(dae);
     let (der_resolver, variable_resolver) = build_unknown_resolvers(&unknown_names);
 
     let mut equation_refs = Vec::new();
-    let mut equations_rhs = Vec::new();
+    let mut equations = Vec::new();
 
-    for (i, eq) in dae.f_x.iter().enumerate() {
-        equation_refs.push(EquationRef::Continuous(i));
-        equations_rhs.push(&eq.rhs);
+    for (i, eq) in dae.continuous.equations.iter().enumerate() {
+        equation_refs.push(EquationRef(i));
+        equations.push(eq);
     }
 
-    let eq_unknowns: Vec<HashSet<usize>> = equations_rhs
+    let eq_unknowns: Vec<HashSet<usize>> = equations
         .iter()
-        .map(|rhs| collect_equation_unknowns(rhs, &der_resolver, &variable_resolver))
+        .map(|eq| collect_equation_unknowns(eq, &der_resolver, &variable_resolver))
         .collect();
 
-    Incidence { n_eq, n_var, eq_unknowns, unknown_names, equation_refs }
+    Incidence { n_eq, n_var, eq_unknowns, unknown_names, unknown_spans, equation_refs }
 }
 ```
 
 **Step 1**: `build_unknown_map` assigns a column index to every unknown (states
-first, then algebraics, then outputs).
+first, then algebraics, then outputs) and records each unknown's source span
+for diagnostics.
 
-**Step 2**: `build_unknown_resolvers` creates two lookup structures — one for
+**Step 2**: `build_unknown_resolvers` creates two lookup structures -- one for
 `DerState` columns and one for `Variable` columns. These are used during
 expression walking to translate a variable name to its column index.
 
-**Step 3**: For each equation in `f_x`, extract the set of unknown column
-indices that appear in its residual expression.
+**Step 3**: For each equation in `dae.continuous.equations`, extract the set of
+unknown column indices that appear in its residual expression.
 
 **Step 4**: Package everything into the `Incidence` struct.
 
@@ -156,7 +157,7 @@ The three maps handle these cases:
 | `base_unique` | The variable is scalar: `x` → its single index |
 | `base_all` | The expression references the whole array: `sum(u)` → `[0, 1]` |
 
-**Example** (`incidence.rs` test at line 507–528):
+**Example** (from `incidence.rs` test `test_build_solver_sparsity_triplets_maps_whole_array_refs_to_all_scalars`):
 
 ```rust
 // array state u[2] → columns 0 and 1
@@ -178,7 +179,8 @@ qualified connector paths:
 
 The resolver normalises these via `component_base_name()` (a function from
 `rumoca-ir-dae`) which strips trailing subscripts to find the base name.
-The test at `incidence.rs:488–504` verifies this:
+The test `test_build_solver_sparsity_triplets_resolves_indexed_component_names`
+in `incidence.rs` verifies this:
 
 ```rust
 // state "support.phi" in DAE
@@ -190,27 +192,37 @@ assert_eq!(triplets, vec![(0, 0)]);
 
 ## Expression Walking: `collect_equation_unknowns`
 
-For each equation, the code calls `collect_equation_unknowns` (lines 99–117),
-which in turn calls two collectors:
+For each equation, the code calls `collect_equation_unknowns` (in
+`incidence.rs`), which uses several collectors:
 
-1. `expr.collect_state_variables(&mut der_states)` — finds all names `v` where
-   `der(v)` appears in the expression; these are resolved through the
-   `der_resolver` to yield `DerState` column indices.
+1. A `DerOperandCollector` walks the equation's RHS expression to find all
+   operands of `der(...)` calls, preserving subscripts so that `der(p[1])`
+   resolves to the exact scalar `der` unknown rather than the un-subscripted
+   base. These are resolved through the `der_resolver` to yield `DerState`
+   column indices.
 
-2. `collect_expression_unknowns(expr, variable_resolver, &mut result)` — walks
+2. `collect_expression_unknowns(expr, variable_resolver, &mut result)` -- walks
    every other variable reference in the expression and resolves them through
    `variable_resolver`.
 
+3. If the equation has an explicit LHS target, `collect_equation_lhs_unknown`
+   resolves the LHS reference to its unknown column as well.
+
 ### The Crucial Subtlety: `der(x)` Arguments Are Not Variable References
 
-This is the most important design decision in the incidence builder. Look at the
-match arm in `collect_expression_unknowns` (lines 319–322):
+This is the most important design decision in the incidence builder. In
+`ExpressionUnknownCollector::visit_builtin_call` (in `incidence.rs`), the
+`Der` case simply returns without descending:
 
 ```rust
-dae::Expression::BuiltinCall {
-    function: dae::BuiltinFunction::Der,
-    ..
-} => {}   // ← do nothing
+fn visit_builtin_call(&mut self, function: &BuiltinFunction, args: &[Expression]) {
+    if *function == BuiltinFunction::Der {
+        return;   // do not descend into der() argument
+    }
+    for arg in args {
+        self.visit_expression(arg);
+    }
+}
 ```
 
 When the walker encounters `der(x)`, it **stops** — it does not descend into
@@ -223,13 +235,14 @@ and treated `x` as a variable reference, it would record a dependency on
 quantity (the current state value). The unknown is `der(x)`, the time rate of
 change.
 
-The `collect_state_variables` call in step 1 above is what picks up the
-`DerState` dependency. It collects the name `x` from `der(x)`, then looks it
+The `DerOperandCollector` in step 1 above is what picks up the `DerState`
+dependency. It collects the name and subscripts from `der(x)`, then looks them
 up in the `der_resolver` (which maps state names to `DerState` column indices).
-So the dependency on `der(x)` is recorded correctly — but via a separate path
+So the dependency on `der(x)` is recorded correctly -- but via a separate path
 that specifically handles the semantics of `der()`.
 
-The test at `incidence.rs:460–485` confirms this:
+The test `test_build_solver_sparsity_triplets_skips_derivative_argument_dependencies`
+in `incidence.rs` confirms this:
 
 ```rust
 // equation 0:  0 = der(x) - z
@@ -248,8 +261,8 @@ assert!(triplets.contains(&(1, 0)));  // eq1 → x? No! col 0 is der(x), not x.
 assert!(!triplets.contains(&(0, 0))); // eq0 does NOT depend on x as a plain variable
 ```
 
-Wait — re-reading: the `build_solver_sparsity_triplets` function (lines
-376–389) uses a *different* resolver that maps both states and algebraics to
+Wait -- re-reading: the `build_solver_sparsity_triplets` function (in
+`incidence.rs`) uses a *different* resolver that maps both states and algebraics to
 columns in the solver state vector (all variables, not just DerState). This is
 used for the Jacobian sparsity pattern, where `∂F/∂x` is also needed. The
 `build_incidence` function used for structural ordering only cares about
@@ -264,8 +277,8 @@ This is why there are two separate functions:
 
 ## The Full Expression Walker
 
-`collect_expression_unknowns` handles every expression variant
-(lines 281–368):
+`ExpressionUnknownCollector` (which implements `ExpressionVisitor`) handles
+every expression variant via its visitor methods:
 
 | Expression form | Action |
 |-----------------|--------|
@@ -294,8 +307,8 @@ what will be needed at a specific time.
 ## Building the Dependency Graph
 
 After matching, the incidence is used again to build the **directed dependency
-graph** that feeds Tarjan's SCC algorithm (`build_dependency_graph`,
-lines 394–414):
+graph** that feeds Tarjan's SCC algorithm (`build_dependency_graph` in
+`incidence.rs`):
 
 ```rust
 pub fn build_dependency_graph(
@@ -344,8 +357,9 @@ return Err(StructuralError::Singular {
     n_equations: inc.n_eq,
     n_unknowns: inc.n_var,
     n_matched: matching_size,
-    unmatched_equations: …,  // names of equations with no assigned unknown
-    unmatched_unknowns: …,   // names of unknowns that no equation covers
+    unmatched_equations: ...,        // names of equations with no assigned unknown
+    unmatched_unknowns: ...,         // names of unknowns that no equation covers
+    unmatched_unknown_spans: ...,    // source spans of unmatched unknowns for traceability
 });
 ```
 
@@ -357,15 +371,18 @@ return Err(StructuralError::Singular {
 pub struct Incidence {
     pub n_eq: usize,
     pub n_var: usize,
-    pub eq_unknowns: Vec<HashSet<usize>>,  // row i → set of column indices
-    pub unknown_names: Vec<UnknownId>,     // col j → DerState or Variable name
-    pub equation_refs: Vec<EquationRef>,   // row i → EquationRef::Continuous(i)
+    pub eq_unknowns: Vec<HashSet<usize>>,           // row i -> set of column indices
+    pub unknown_names: Vec<UnknownId>,               // col j -> DerState, Variable, or SolverY name
+    pub unknown_spans: Vec<Option<rumoca_core::Span>>, // col j -> source span (for diagnostics)
+    pub equation_refs: Vec<EquationRef>,              // row i -> EquationRef(i)
 }
 ```
 
 `eq_unknowns` is the primary data. `unknown_names` and `equation_refs` are
 index-to-name maps that allow error messages to say `"f_x[2] depends on
-der(body.v)"` rather than `"row 2 depends on column 5"`.
+der(body.v)"` rather than `"row 2 depends on column 5"`. `unknown_spans`
+carries the source location of each unknown so that structural-singularity
+errors can be traced back to the offending model variable.
 
 ---
 

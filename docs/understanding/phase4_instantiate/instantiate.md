@@ -29,7 +29,7 @@ Flattening then walks that tree and emits a globally-qualified flat model.
   │    (MLS §7.3)                       │
   │  • Process extends with caching     │
   │  • Inherit variability/causality/   │
-  │    flow via stacks                  │
+  │    flow via scope frames            │
   │  • Resolve inner/outer (MLS §5.4)   │
   └─────────────────────────────────────┘
         │
@@ -59,22 +59,56 @@ Here `mass = 2.0` in `System` overrides `Body`'s default value for `mass`.
 
 ---
 
-## InstantiateContext (`lib.rs:139–209`)
+## InstantiateContext (in `lib.rs`)
 
-The instantiator threads a mutable context through the recursion:
+The instantiator threads a mutable context through the recursion. Earlier
+versions of this struct used separate parallel stacks for each inherited
+prefix (variability, causality, flow, stream, expandable, overconstrained).
+These have been consolidated into a single `scope_frames: Vec<ScopeFrame>`
+stack, making push/pop logic simpler and ensuring all per-scope state moves
+together.
+
+### ScopeFrame
+
+Each frame captures the inherited prefixes and connector metadata for one
+level of the component nesting:
 
 ```rust
-struct InstantiateContext {
-    mod_env: ModificationEnvironment,       // active modifier bindings
-    known_int_params: FxHashMap<String, i64>, // evaluated integer parameters
-    next_instance_id: u32,                  // monotone counter for unique IDs
+struct ScopeFrame {
+    variability: Option<Variability>,
+    causality: Option<Causality>,
+    flow: bool,
+    stream: bool,
+    expandable: bool,
+    overconstrained: Option<(usize, String)>,
+    protected: bool,
+}
+```
+
+A `ScopeFrame` is created via `ScopeFrame::inherited_from_component()` which
+inspects the component's declared prefixes and only stores values that should
+propagate inward (e.g., `parameter` and `constant` variability propagate, but
+`discrete` does not).
+
+### InstantiateContext
+
+```rust
+pub struct InstantiateContext {
+    pub diags: Diagnostics,                          // diagnostics collector
+    context_path: Vec<(String, Vec<i64>)>,           // current instance path
+    next_instance_id: u32,                           // monotone counter for unique IDs
+    mod_env: ModificationEnvironment,                // active modifier bindings
     inner_scopes: Vec<IndexMap<String, InnerDeclaration>>, // inner/outer stack
-    variability_stack: Vec<Variability>,    // inherited variability
-    causality_stack: Vec<Causality>,        // inherited causality
-    flow_stack: Vec<bool>,                  // inherited flow prefix
-    stream_stack: Vec<bool>,                // inherited stream prefix
-    expandable_stack: Vec<bool>,            // inside expandable connector?
-    overconstrained_stack: Vec<Option<(usize, String)>>, // OC connector info
+    missing_inners: Vec<MissingInnerInfo>,           // unresolved outer references
+    scope_frames: Vec<ScopeFrame>,                   // unified inherited-prefix stack
+    template_cache: ClassTemplateCache,              // avoid recomputing identical instances
+    known_int_params: FxHashMap<String, i64>,        // evaluated integer parameters
+    allow_partial_instantiation: bool,               // partial class support
+    options: InstantiateOptions,                     // session/caller behavior config
+    active_instantiations: Vec<InstantiationFrame>,  // recursion detection
+    source_scope_index: SourceScopeIndex,            // declaration scopes by DefId
+    active_type_overrides: Vec<TypeOverrideMap>,     // redeclare type/package overrides
+    // plus additional fields
 }
 ```
 
@@ -117,13 +151,16 @@ parameter MyRecord r;  -- all fields of r become parameters
 input MyConnector c;   -- all fields of c become inputs
 ```
 
-This is implemented via stacks:
-- Before entering a record component with `parameter` variability, push
-  `parameter` onto `variability_stack`
-- All components instantiated while this is on the stack inherit `parameter`
-- Pop on exit
+This is implemented via the `scope_frames` stack:
+- Before entering a record component with `parameter` variability, push a
+  `ScopeFrame` with `variability: Some(Parameter)` onto `scope_frames`
+- All components instantiated while this frame is on the stack inherit
+  `parameter`
+- Pop the frame on exit
 
-The same mechanism handles `input`, `output`, `flow`, `stream`.
+The same mechanism handles `input`, `output`, `flow`, `stream`, `expandable`,
+and `protected` -- all captured in a single `ScopeFrame` rather than in
+separate stacks.
 
 ---
 
@@ -162,3 +199,33 @@ end Body;
 
 The next phase, [flattening](../phase5_flatten/flatten.md), walks this tree and
 produces the flat `Model` IR consumed by DAE construction.
+
+---
+
+## Key Files
+
+The instantiate crate has grown to 25+ source files (excluding tests).
+The most important ones:
+
+| File | Purpose |
+|------|---------|
+| `lib.rs` | Entry point; `InstantiateContext` and `ScopeFrame` structs; top-level orchestration |
+| `mod_env.rs` | Modification environment push/pop and modifier resolution (MLS 7.2) |
+| `inheritance.rs` | Extends clause processing and member merging (MLS 7.1) |
+| `array_expansion.rs` | Array component expansion (e.g., `Resistor r[100]`) |
+| `type_overrides.rs` | Redeclare type/package override resolution (MLS 7.3) |
+| `type_lookup.rs` | Component type specifier resolution and subtype checks |
+| `nested_scope.rs` | Nested class and redeclare-class modifier handling |
+| `dims.rs` | Array dimension evaluation during instantiation |
+| `connections.rs` | Connection extraction from equations (MLS 9) |
+| `templates.rs` | Class template caching for repeated identical instances |
+| `attributes.rs` | Component attribute and binding extraction |
+| `component_loop.rs` | Per-class component instantiation loop |
+| `source_scope.rs` | Source declaration scope tracking |
+| `instance_sections.rs` | Algorithm/equation conversion to instance representation |
+| `plug_compat.rs` | Plug-compatibility checks for redeclarations (MLS 6.4-6.6) |
+| `evaluate_annotation.rs` | `annotation(Evaluate=true)` detection (MLS 18.3) |
+| `errors.rs` | Phase-local error types (EI0xx codes) |
+| `package_constant_imports.rs` | Package constant alias resolution through type overrides |
+| `path_utils.rs` | Qualified class-name parsing utilities |
+| `traversal_adapter.rs` | AST traversal helpers for nested classes and modifications |

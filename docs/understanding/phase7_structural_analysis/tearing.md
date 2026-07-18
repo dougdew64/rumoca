@@ -327,8 +327,7 @@ Three sanity checks gate the return:
 
 ## Worked Example: 3×3 Loop with One Tear
 
-From
-[`test_tear_3x3_with_one_tear`](../../../crates/rumoca-phase-structural/src/tearing.rs#L194-L209):
+From `test_tear_3x3_with_one_tear` in `tearing.rs`:
 
 ```
 eq0 references {v0, v1}
@@ -397,7 +396,7 @@ Two failure modes return `None`:
 
 ### Linear chain with no loop
 
-[`test_tear_linear_chain`](../../../crates/rumoca-phase-structural/src/tearing.rs#L167-L179):
+`test_tear_linear_chain` in `tearing.rs`:
 `eq0 = {v0}`, `eq1 = {v0, v1}`, `eq2 = {v1, v2}`. Phase 1 immediately
 resolves all three causally — no tear variables are ever picked. The function
 returns `None` because `tear_vars.is_empty()`.

@@ -14,7 +14,7 @@ that transforms Modelica models into portable symbolic systems usable across
 modern scientific-computing ecosystems (CasADi, Julia/ModelingToolkit, JAX,
 SymPy, FMI, ONNX, and others).
 
-Version: 0.9.9 | License: Apache 2.0
+Version: 0.9.20 | License: Apache 2.0
 
 ---
 
@@ -90,15 +90,16 @@ for details.
 
 ---
 
-## The Five IR Crates
+## The Six IR Crates
 
 | Crate | Role |
 |-------|------|
 | `rumoca-core` | Shared primitives: `Token`, `OpBinary`, `Variability`, `Causality`, `BuiltinFunction`, `Span`, `Reference`, `Expression` building blocks |
 | `rumoca-ir-ast` | Class tree: `ClassDef`, `Component`, `Expression`, `Equation`, scope tree, type table |
 | `rumoca-ir-flat` | Flat model: `Variable` (qualified names), equations in residual form, algorithm sections |
-| `rumoca-ir-dae` | DAE system (MLS B.1): variable partitions (x, y, u, w, p, c, z, m), equation groups (f_x, f_z, f_m, f_c) |
+| `rumoca-ir-dae` | DAE system (MLS B.1): nested partition structs for variables, continuous/discrete/condition/event/clock partitions |
 | `rumoca-ir-solve` | Solve IR (v0.9.x): `SolveProblem`, `VarLayout`, `ComputeBlock` / `ComputeNode` (tensor IR for execution backends) |
+| `rumoca-ir-galec` | GALEC/eFMI IR: Algorithm Code description for embedded code generation (eFMI standard) |
 
 ---
 
@@ -287,12 +288,13 @@ Key capabilities:
 - `reinit()` support
 - Systematic initialization (IC solver consuming the BLT-sequenced IC
   plan from phase 7)
-- **Realtime stepping** via `SimStepper`
-- **FlatBuffer SIL simulation** assembled from `rumoca-codec-flatbuffers`,
-  `rumoca-input-*`, `rumoca-transport-*`, and `rumoca-sim/src/runner/`
-  (`rumoca sim-fb` CLI command)
+- **Interactive stepping** via `SimulationSession` (renamed from the
+  earlier `SimStepper`)
+- **Zero-state simulation** for models with no continuous states
+  (discrete-only event handling with root-finding bisection)
+- **Scheduled simulation** via `rumoca-sim/src/scheduled_sim/`
 - **NaN-tracing** runtime via `rumoca-eval-solve::nan_trace` for
-  diagnosing non-finite intermediate values
+  diagnosing non-finite intermediate values (auto-retry on failure)
 
 Full treatment: [simulation.md](phase9_simulation/simulation.md).
 
@@ -353,9 +355,9 @@ rumoca/
 │   ├── rumoca-phase-dae/        # Phase 6
 │   ├── rumoca-phase-structural/ # Phase 7 (matching, BLT, tearing, IC, dae_prepare)
 │   ├── rumoca-phase-solve/      # Phase 8 (DAE → SolveProblem lowering)
-│   ├── rumoca-phase-codegen/    # Phase 9 (templates)
-│   ├── rumoca-ir-{ast,flat,dae,solve}/   # IR crates
-│   ├── rumoca-eval-{ast,flat,dae,solve}/ # Expression evaluators
+│   ├── rumoca-phase-codegen/    # Phase 10 (templates)
+│   ├── rumoca-ir-{ast,flat,dae,solve,galec}/ # IR crates
+│   ├── rumoca-eval-{ast,flat,dae,solve}/     # Expression evaluators
 │   ├── rumoca-sim/              # Simulator facade
 │   ├── rumoca-solver/           # Backend-neutral solver primitives
 │   ├── rumoca-solver-diffsol/   # BDF / ESDIRK34 / TR-BDF2 backend
@@ -364,18 +366,25 @@ rumoca/
 │   ├── rumoca-exec-mlir/        # MLIR + CUDA execution backend
 │   ├── rumoca-exec-wasm/        # WebAssembly execution backend
 │   ├── rumoca-codec/            # Codec abstractions
-│   ├── rumoca-codec-flatbuffers/# FlatBuffer codec (used by SIL)
+│   ├── rumoca-codec-flatbuffers/# FlatBuffer codec
 │   ├── rumoca-signal-frame/     # Shared signal-frame structures
 │   ├── rumoca-input/            # Input-source abstractions
 │   ├── rumoca-input-{gamepad,keyboard}/  # Input drivers
-│   ├── rumoca-transport-{udp,websocket}/ # Transport layers
+│   ├── rumoca-transport-{udp,websocket,zenoh}/ # Transport layers
 │   ├── rumoca-worker/           # Background simulation worker
 │   ├── rumoca-bind-python/      # Python bindings (abi3 wheels)
 │   ├── rumoca-bind-wasm/        # WebAssembly bindings
 │   ├── rumoca-bind-wasm-diffsol/# Lazy WASM diffsol addon
+│   ├── rumoca-bind-wasm-galec/  # WASM GALEC addon
+│   ├── rumoca-ir-galec/         # GALEC/eFMI algorithm code IR
+│   ├── rumoca-galec-codegen/    # GALEC code generation
+│   ├── rumoca-opt/              # Optimization passes
 │   ├── rumoca-tool-lsp/         # Language server
+│   ├── rumoca-tool-galec-lsp/   # GALEC language server
 │   ├── rumoca-tool-fmt/         # Formatter
 │   ├── rumoca-tool-lint/        # Linter
+│   ├── rumoca-tool-docs/        # Documentation generator
+│   ├── rumoca-lsp-position/     # LSP position utilities
 │   ├── rumoca-contracts/        # MLS compliance test framework
 │   └── rumoca-test-msl/         # MSL parity test infrastructure
 ├── spec/                        # Formal specifications (SPEC_NNNN_*.md)
@@ -408,5 +417,5 @@ to them.
     - [`tearing.md`](phase7_structural_analysis/tearing.md) — Cellier's greedy heuristic; causal/tear-pick alternation; deterministic tie-breaking
     - [`ic_plan.md`](phase7_structural_analysis/ic_plan.md) — Algebraic-only subsystem; `IcBlock` variants; `improve_causal_assignment` post-pass; relaxed-IC fallback
 - [`phase8_solve_lowering/solve_lowering.md`](phase8_solve_lowering/solve_lowering.md) — `SolveProblem` tensor IR, `ComputeBlock`/`ComputeNode`, lowering pipeline, dummy-derivative elimination, forward-mode AD, downstream consumers
-- [`phase9_simulation/simulation.md`](phase9_simulation/simulation.md) — Two entry points (`simulate_with_diagnostics` / `simulate_solve_model`), BDF / ESDIRK34 / TR-BDF2 / RK45, `PreparedSimulation`, IC solving, event handling, `SimStepper`, FlatBuffer SIL
+- [`phase9_simulation/simulation.md`](phase9_simulation/simulation.md) — Two entry points (`simulate_with_diagnostics` / `simulate_solve_model`), BDF / ESDIRK34 / TR-BDF2 / RK45, `PreparedSimulation`, IC solving, event handling, `SimulationSession`, NaN-tracing, zero-state simulation
 - [`phase10_codegen_templates/codegen_templates.md`](phase10_codegen_templates/codegen_templates.md) — minijinja template engine, DAE-path and Solve-path template families, per-target `target.toml` manifests

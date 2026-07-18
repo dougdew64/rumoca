@@ -3,7 +3,7 @@
 *Parent document: [dae_construction.md](dae_construction.md)*
 *Source: [crates/rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs](../../../crates/rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs)*
 *Symbolic differentiator: [crates/rumoca-phase-structural/src/dae_prepare/symbolic.rs](../../../crates/rumoca-phase-structural/src/dae_prepare/symbolic.rs)*
-*Pipeline driver: [crates/rumoca-sim/src/solve_lowering/structural_lowering.rs](../../../crates/rumoca-sim/src/solve_lowering/structural_lowering.rs)*
+*Pipeline driver: [crates/rumoca-sim/src/solve_lowering/structural_lowering.rs](../../../crates/rumoca-sim/src/solve_lowering/structural_lowering.rs) (`prepare_dae_for_structural_analysis`)*
 
 ---
 
@@ -129,7 +129,7 @@ one place the classifier scanned.
 Two facts make the missing-derivative case possible.
 
 - **Classification happens once and is not revisited.** The state set
-  is recorded in `dae.states` at the end of phase 6 and stays fixed
+  is recorded in `dae.variables.states` at the end of phase 6 and stays fixed
   thereafter. Subsequent processing — prep passes that rewrite or
   remove equations in `f_x` — does **not** re-run classification.
   A variable that earned its "state" status from some `der(x)`
@@ -231,8 +231,8 @@ state has *no* derivative equation in `f_x` at all. Roughly:
 
 A companion set of state-demotion sweeps handles cases where index
 reduction can't fix the problem: variables that turn out not to need
-derivative-bearing equations get reclassified from `dae.states` to
-`dae.algebraics`. These sweeps and the pipeline that orchestrates them
+derivative-bearing equations get reclassified from `dae.variables.states` to
+`dae.variables.algebraics`. These sweeps and the pipeline that orchestrates them
 are described later in this document.
 
 ### A Concrete Motivating Case
@@ -358,15 +358,15 @@ careful inventory of what is and isn't covered.
 
 The pass operates **in place** on a `Dae` value, modifying:
 
-- **`dae.f_x`.** For each successfully index-reduced state, exactly one
+- **`dae.continuous.equations`.** For each successfully index-reduced state, exactly one
   equation in `f_x` has its `rhs` overwritten with the time-differentiated
   expression, and its `origin` is amended with
   `"index_reduction:d_dt_for_<state_name>"`. The number of equations in
   `f_x` does not change — the pass replaces equations rather than adding
   them.
 
-- **`dae.states` and `dae.algebraics`.** The companion demotion sweeps
-  move variables from `dae.states` to `dae.algebraics` when those variables
+- **`dae.variables.states` and `dae.variables.algebraics`.** The companion demotion sweeps
+  move variables from `dae.variables.states` to `dae.variables.algebraics` when those variables
   cannot serve as states even after index reduction.
 
 Because both partitions and equations change, the prep pass is correctly
@@ -380,15 +380,15 @@ separate "analysis" of an already-finished one.
 ### The outer driver
 
 ```rust
-pub fn index_reduce_missing_state_derivatives(dae: &mut Dae) -> usize {
-    let max_rounds = dae.states.len().clamp(1, 8);
+pub fn index_reduce_missing_state_derivatives(dae: &mut Dae) -> Result<usize, StructuralError> {
+    let max_rounds = dae.variables.states.len().clamp(1, 8);
     let mut total_changed = 0;
     for _round in 0..max_rounds {
-        let changed = index_reduce_missing_state_derivatives_once(dae);
+        let changed = index_reduce_missing_state_derivatives_once(dae)?;
         if changed == 0 { break; }
         total_changed += changed;
     }
-    total_changed
+    Ok(total_changed)
 }
 ```
 
@@ -407,42 +407,51 @@ applies the per-state procedure below.
 ### The per-state procedure
 
 ```rust
-pub fn index_reduce_missing_state_derivatives_once(dae: &mut Dae) -> usize {
-    let state_names: Vec<VarName> = dae.states.keys().cloned().collect();
-    if state_names.is_empty() { return 0; }
-    let der_map = build_relaxed_derivative_map(dae);
-    let mut changed = 0;
+pub fn index_reduce_missing_state_derivatives_once(
+    dae: &mut Dae,
+) -> Result<usize, StructuralError> {
+    let state_names: Vec<VarName> = dae.variables.states.keys().cloned().collect();
+    if state_names.is_empty() { return Ok(0); }
+    let state_name_set: HashSet<String> = /* ... */;
+    let defining_expr_index = collect_residual_defining_expr_index(dae);
+    let mut changed = 0usize;
     let mut used_eq = HashSet::new();
 
     for state_name in &state_names {
-        if state_has_standalone_der_equation(dae, state_name, &state_names) {
+        if state_has_standalone_der_equation(dae, state_name, &state_names)? {
             continue;       // already index-1 for this state
         }
 
-        let candidate_indices: Vec<usize> = dae.f_x.iter().enumerate()
+        let candidate_indices: Vec<usize> = dae.continuous.equations.iter().enumerate()
             .filter_map(|(idx, eq)| {
                 if used_eq.contains(&idx) { return None; }
-                if eq_contains_any_state_der(&eq.rhs, &state_names) { return None; }
-                expr_contains_var(&eq.rhs, state_name).then_some(idx)
+                if eq_contains_any_state_der_with_matcher(&eq.rhs, &matcher) { return None; }
+                // also skip unsliced algebraic definitions and indexed-component aliases
+                Some(idx)
             })
             .collect();
 
         for idx in candidate_indices {
-            let differentiated = symbolic_time_derivative(&dae.f_x[idx].rhs, dae, &der_map);
+            let seed_exprs = vec![dae.continuous.equations[idx].rhs.clone()];
+            let der_map = build_relaxed_derivative_map_for_exprs_with_index(
+                dae, &defining_expr_index, &seed_exprs)?;
+            let differentiated =
+                symbolic_time_derivative(&dae.continuous.equations[idx].rhs, dae, &der_map);
             let Some(new_rhs) = differentiated else { continue; };
             let der_states = derivative_states_in_eq(&new_rhs, &state_names);
-            if der_states.len() != 1 || der_states[0] != *state_name { continue; }
+            if !der_states.iter().any(|s| s == state_name) { continue; }
             if expr_contains_der_of_non_state(&new_rhs, &state_name_set) { continue; }
 
             // Accept: rewrite the equation in place
-            dae.f_x[idx].rhs = new_rhs;
-            dae.f_x[idx].origin = format!("...|index_reduction:d_dt_for_{}", state_name.as_str());
+            dae.continuous.equations[idx].rhs = new_rhs;
+            dae.continuous.equations[idx].origin =
+                format!("{}|index_reduction:d_dt_for_{}", old_origin, state_name.as_str());
             used_eq.insert(idx);
             changed += 1;
             break;
         }
     }
-    changed
+    Ok(changed)
 }
 ```
 
@@ -492,7 +501,7 @@ otherwise.
   `der` of states).
 
 **6. Commit the rewrite.** If all three checks pass, overwrite
-`dae.f_x[idx].rhs`, append the origin marker, mark the equation index as
+`dae.continuous.equations[idx].rhs`, append the origin marker, mark the equation index as
 consumed, and `break` to move on to the next state.
 
 The break-on-success-per-state ensures that each state consumes at most
@@ -504,7 +513,7 @@ by multiple states even within a single round.
 ## The Symbolic Differentiator
 
 The implementation is in
-[symbolic.rs](../../../crates/rumoca-phase-structural/src/dae_prepare/symbolic.rs#L143-L257)
+[symbolic.rs](../../../crates/rumoca-phase-structural/src/dae_prepare/symbolic.rs)
 and is a direct, recursive chain-rule walker:
 
 ```rust
@@ -530,7 +539,7 @@ fn differentiate_variable(&self, name, subscripts) -> Option<Expression> {
     if name.as_str() == "time" {
         return Some(Expression::Literal(Literal::Real(1.0)));   // d(time)/dt = 1
     }
-    if self.dae.parameters.contains_key(name) || self.dae.constants.contains_key(name) {
+    if self.dae.variables.parameters.contains_key(name) || self.dae.variables.constants.contains_key(name) {
         return Some(zero_literal());                            // d(p)/dt = 0
     }
     self.der_map.get(name.as_str()).cloned()                    // d(state)/dt = der_map[state]
@@ -602,9 +611,9 @@ silently:
 
 ```rust
 for name in state_names {
-    if !state_has_any_equation_reference(dae, &name) {
-        if let Some(var) = dae.states.shift_remove(&name) {
-            dae.algebraics.insert(name, var);
+    if !state_has_any_equation_reference(dae, &name) {  // checks dae.continuous.equations
+        if let Some(var) = dae.variables.states.shift_remove(&name) {
+            dae.variables.algebraics.insert(name, var);
         }
     }
 }
@@ -628,9 +637,10 @@ appears in row $r$.
 
 ```rust
 fn states_with_assignable_derivative_rows(dae: &Dae, state_names: &[VarName]) -> HashSet<usize> {
+    let bindings = structural_scalar_bindings(dae);
     let state_to_rows: Vec<Vec<usize>> = state_names.iter()
-        .map(|sn| dae.f_x.iter().enumerate()
-            .filter_map(|(r, eq)| expr_contains_der_of(&eq.rhs, sn).then_some(r))
+        .map(|state_name| dae.continuous.equations.iter().enumerate()
+            .filter_map(|(r, eq)| /* checks expr_contains_active_exact_der_of_state */)
             .collect())
         .collect();
 
@@ -640,9 +650,9 @@ fn states_with_assignable_derivative_rows(dae: &Dae, state_names: &[VarName]) ->
     let mut state_order: Vec<usize> = (0..state_names.len()).collect();
     state_order.sort_by_key(|idx| state_to_rows[*idx].len());
 
-    let mut row_to_state: Vec<Option<usize>> = vec![None; dae.f_x.len()];
+    let mut row_to_state: Vec<Option<usize>> = vec![None; dae.continuous.equations.len()];
     for state_idx in state_order {
-        let mut seen_rows = vec![false; dae.f_x.len()];
+        let mut seen_rows = vec![false; dae.continuous.equations.len()];
         try_match_state_to_row(state_idx, &state_to_rows, &mut row_to_state, &mut seen_rows);
     }
     row_to_state.into_iter().flatten().collect()
@@ -668,25 +678,44 @@ for `s` once `s'` is demoted).
 
 ## Where It Fits in the Prep Pipeline
 
-The pass is one stage of a larger DAE-preparation sequence. From
-[prepare.rs](../../../crates/rumoca-sim/src/solve_lowering/structural_lowering.rs):
+The pass is one stage of a larger DAE-preparation sequence. The pipeline
+is orchestrated by `prepare_dae_for_structural_analysis` in
+[structural_lowering.rs](../../../crates/rumoca-sim/src/solve_lowering/structural_lowering.rs).
+The actual stage order (as of current source) is:
 
-| Stage | Function | Purpose |
+| Order | Function | Purpose |
 |-------|----------|---------|
-| phase1a | `expand_compound_derivatives` | Expand things like `der(a + b)` into `der(a) + der(b)` |
-| phase1b | `eliminate_derivative_aliases` | Remove `der(x) = der(y)` style aliases |
-| **phase1c** | **`index_reduce_missing_state_derivatives`** | **Index reduction (this drill-down)** |
-| phase1d | `demote_coupled_derivative_states` | Demote states with mutually-coupled derivatives |
-| phase1e | `demote_alias_states_without_der` | Demote states orphaned by earlier alias elimination |
-| phase1f | `promote_der_algebraics_to_states` | Promote algebraics that turn out to need `der()` |
-| (later) | `normalize_ode_equation_signs` | Ensure `der(x)` has positive coefficient in its row |
-| (later) | `substitute_standalone_state_derivatives_in_non_ode_rows` | Clean up duplicate `der()` outside ODE rows |
+| 1 | `scalarize_equations` | (optional) Scalarize vector equations |
+| 2 | `demote_exact_alias_component_states` | Demote duplicate states connected through exact alias equalities |
+| 3 | `demote_direct_assigned_states` | Demote states whose value is directly assigned by a non-derivative equation |
+| 4 | `reduce_constrained_dummy_derivatives` | Structural dummy-derivative reduction for constrained states |
+| **5** | **`index_reduce_missing_state_derivatives`** | **Index reduction (this drill-down)** |
+| 6 | `demote_states_without_assignable_derivative_rows` | Bipartite-matching demotion of unmatchable states |
+| 7 | `eliminate_derivative_aliases` | Remove `der(x) = der(y)` style aliases |
+| 8 | `demote_states_without_retained_derivative_rows` | Post-alias-elimination derivative-row demotion |
+| 9 | `expand_compound_derivatives` | Expand `der(algebraic)` and `der(compound)` via chain rule |
+| 10 | `substitute_standalone_state_derivatives_in_non_ode_rows` | Rewrite `y = der(x)` to `y = <x's ODE rhs>` |
 
-The prep pass is run by the function
-`prepare_dae_for_template_codegen_only` in `prepare.rs`. That function is
-called by both the simulator (before `sort_dae`) and the template
-codegen entry point — every downstream consumer sees an index-1 DAE
-because they all enter through this gate.
+Note that the three new early stages (exact-alias demotion,
+direct-assignment demotion, constrained-dummy reduction) now run
+**before** index reduction. Compound derivative expansion and derivative
+alias elimination now run **after** index reduction and demotion,
+reversing the order documented in earlier versions.
+
+A separate codegen-oriented prep entry point, `prepare_dae_for_codegen`,
+lives in `rumoca-phase-dae/src/dae_lowering.rs`. It covers the subset of
+prep stages needed for ahead-of-time code generation.
+
+### New submodule files in `dae_prepare/`
+
+Four submodule files have been added to support the new early stages:
+
+| File | Purpose |
+|------|---------|
+| `connection_alias.rs` | Connection-component fixed defining expression resolution |
+| `direct_demotion.rs` | Direct-assignment state demotion logic |
+| `dummy_state_metadata.rs` | Constrained dummy-state identification (`constrained_dummy_state_defining_exprs`, `constrained_dummy_state_names`) |
+| `row_shape.rs` | DAE variable sizing and residual scalar-width helpers (`dae_variable_size`, `required_dae_variable_size`, `residual_scalar_width`) |
 
 Each stage logs its work via `run_logged_phase` when `RUMOCA_SIM_TRACE`
 is set, making it possible to see exactly which stages did or did not
@@ -697,7 +726,7 @@ change the DAE for a given model.
 ## Worked Example: The Regression Test
 
 From
-[scalarization_regressions.rs](../../../crates/rumoca-sim/src/diffsol/tests/scalarization_regressions.rs#L71-L140):
+[scalarization_regressions.rs](../../../crates/rumoca-sim/src/diffsol/tests/scalarization_regressions.rs):
 
 **Input DAE:**
 
@@ -747,8 +776,8 @@ on the chain-rule path taken) to an expression of the form
 `der(x) - 1`, which mentions exactly `der(x)` and no other state's
 derivative. All three acceptance criteria pass.
 
-- **Commit:** `dae.f_x[0].rhs = der(x) - 1` (or equivalent),
-  `dae.f_x[0].origin = "constraint_x|index_reduction:d_dt_for_x"`.
+- **Commit:** `dae.continuous.equations[0].rhs = der(x) - 1` (or equivalent),
+  `dae.continuous.equations[0].origin = "constraint_x|index_reduction:d_dt_for_x"`.
   Mark eq0 as used, increment `changed`.
 
 For state `v`:
@@ -775,7 +804,7 @@ f_x:
 (eq0), `der(v)` matches eq2, and `z` matches eq1. The test asserts
 `reorder_equations_for_solver` returns `Ok(...)` after index reduction.
 
-The Appendix B form is preserved throughout: `dae.states` and `dae.algebraics`
+The Appendix B form is preserved throughout: `dae.variables.states` and `dae.variables.algebraics`
 are unchanged, `f_x` still has three equations, but the *content* of `f_x[0]`
 has been transformed.
 
@@ -836,18 +865,20 @@ belong to, alongside structural analysis (matching, BLT, tearing, IC plan).
 
 The orchestrating *driver* — the function that runs the DAE-prep stages
 in order — still lives in `rumoca-sim`, at
-[solve_lowering/structural_lowering.rs](../../../crates/rumoca-sim/src/solve_lowering/structural_lowering.rs).
-That driver is now a thin shim that imports each prep helper from
+[solve_lowering/structural_lowering.rs](../../../crates/rumoca-sim/src/solve_lowering/structural_lowering.rs)
+as `prepare_dae_for_structural_analysis`.
+That driver imports each prep helper from
 `rumoca_phase_structural::dae_prepare` and calls them in sequence. The
 heavy lifting — the symbolic differentiation, the matching-based demotion,
 the alias elimination — happens entirely within `rumoca-phase-structural`.
 
 A separate codegen-oriented prep entry point, `prepare_dae_for_codegen`,
-lives in `rumoca-phase-dae`. It covers the subset of prep stages needed
-for ahead-of-time code generation (the simulator-specific stages are
-skipped). Both entry points share the same `rumoca-phase-structural`
-helpers, so every downstream consumer — simulation, template codegen,
-solve-IR lowering — sees an index-1 DAE built by the same code paths.
+lives in `rumoca-phase-dae/src/dae_lowering.rs`. It covers the subset of
+prep stages needed for ahead-of-time code generation (the
+simulator-specific stages are skipped). Both entry points share the same
+`rumoca-phase-structural` helpers, so every downstream consumer —
+simulation, template codegen, solve-IR lowering — sees an index-1 DAE
+built by the same code paths.
 
 ---
 
@@ -865,19 +896,19 @@ solve-IR lowering — sees an index-1 DAE built by the same code paths.
 - The symbolic differentiator implements the chain rule for elementary
   arithmetic, with `time → 1`, `parameter → 0`, `state → der_map[state]`,
   and `None` (graceful failure) for anything else.
-- Three companion demotion sweeps move variables between `dae.states` and
-  `dae.algebraics` when even index reduction cannot give them a usable
+- Three companion demotion sweeps move variables between `dae.variables.states` and
+  `dae.variables.algebraics` when even index reduction cannot give them a usable
   derivative row. The third sweep is a bipartite matching identical in
   spirit to phase 7's matching step.
 - The whole prep pass runs after `to_dae()` produces the raw `Dae` but
   before phase 7 (structural analysis) consumes it. Its output is a valid,
   index-1 Appendix B DAE that phase 7 can analyse.
-- As of v0.9.x, the implementation lives in `rumoca-phase-structural`
-  (the phase-crate layer where it conceptually belongs) — it mutates the
+- The implementation lives in `rumoca-phase-structural`
+  (the phase-crate layer where it conceptually belongs) -- it mutates the
   Appendix B form rather than producing an analysis artifact alongside it.
-  Earlier versions kept the code in `rumoca-sim` for historical reasons;
-  the refactor moved it to its proper home. The orchestrating driver still
-  lives in `rumoca-sim` for the simulator path and in `rumoca-phase-dae`
-  (`prepare_dae_for_codegen`) for the codegen path, but both call the same
-  `rumoca-phase-structural::dae_prepare` helpers, so every downstream
-  consumer sees an index-1 DAE built by the same code paths.
+  The orchestrating driver `prepare_dae_for_structural_analysis` lives in
+  `rumoca-sim` for the simulator path, and `prepare_dae_for_codegen`
+  (in `rumoca-phase-dae/src/dae_lowering.rs`) serves the codegen path;
+  both call the same `rumoca-phase-structural::dae_prepare` helpers, so
+  every downstream consumer sees an index-1 DAE built by the same code
+  paths.

@@ -107,15 +107,21 @@ DAE:
 
 ### VarLayout: One Slot per Scalar
 
-`VarLayout` assigns every scalar in the system a specific slot in either the
-**state vector `y`** or the **parameter vector `p`**. Vector and array
-variables are scalarised, so `body.position[3]` becomes three separate slots.
-This layout is the contract between the IR and every downstream consumer:
-once the layout is fixed, residual code, AD code, and integrator buffers all
-agree on the same indexing.
+`VarLayout` assigns every scalar in the system a `ScalarSlot`. Each
+`ScalarSlot` is one of four variants:
 
-The layout is built by `build_var_layout` (`layout.rs`), which walks the DAE
-and emits a deterministic ordering (Modelica state vars first, then
+- **`Time`** — the current simulation time (a single implicit scalar).
+- **`Y { index, byte_offset }`** — a slot in the state/algebraic vector `y`.
+- **`P { index, byte_offset }`** — a slot in the parameter vector `p`.
+- **`Constant(f64)`** — a compile-time constant folded into the layout.
+
+Vector and array variables are scalarised, so `body.position[3]` becomes
+three separate slots. This layout is the contract between the IR and every
+downstream consumer: once the layout is fixed, residual code, AD code, and
+integrator buffers all agree on the same indexing.
+
+The layout is built by `build_var_layout` (in `layout.rs`), which walks the
+DAE and emits a deterministic ordering (Modelica state vars first, then
 algebraics, then outputs, then parameters).
 
 ---
@@ -132,10 +138,16 @@ pub struct ComputeBlock {
 
 pub enum ComputeNode {
     ScalarPrograms(ScalarProgramBlock),  // sequence of scalar ops
-    MatMul    { m, n, k, /* slot inputs */, span },
-    LinSolve  { n, /* coeff, rhs, output slots */, span },
-    Map       { domain, body, output_map, span },        // element-wise over domain
-    AffineStencil { domain, coeffs, output_map, span },  // stencil with affine indexing
+    MatMul {
+        lhs_ops, lhs_start, rhs_ops, rhs_start,
+        m, k, n,
+        lhs_sparsity: SparsityPattern,   // Dense | Diagonal | Explicit
+        rhs_sparsity: SparsityPattern,
+        metadata, span,
+    },
+    LinSolve  { setup_ops, matrix_start, rhs_start, n, next_reg, metadata, span },
+    Map       { domain, output_map, base_ops, load_strides, const_strides, metadata, span },
+    AffineStencil { domain, output_map, base_ops, load_strides, const_strides, metadata, span },
 }
 ```
 
@@ -144,7 +156,10 @@ fallback code (for CPU backends with no tensor primitives) and to native
 tensor ops (CUDA cuBLAS, WebGPU compute pipelines, MLIR `linalg`, CasADi
 matrices). The serde representation is tagged-enum so a downstream consumer
 can pattern-match on `ComputeNode::MatMul` and choose `gemm` instead of a
-nested scalar loop.
+nested scalar loop. `MatMul` carries per-operand `SparsityPattern`
+annotations (`Dense` by default, plus `Diagonal` and `Explicit` variants)
+so backends can emit specialised kernels — for example a diagonal multiply
+instead of a full GEMM — when the lowering phase proves a sparser structure.
 
 `ScalarProgramBlock` itself is a sequence of three-address SSA ops over the
 state, parameter, and scratch registers — basically a tiny tree-walk IR for
@@ -163,16 +178,22 @@ module). The most significant:
 | `layout` | Build `VarLayout` — assign every scalar to a `y` or `p` slot |
 | `dummy_derivative` | Eliminate `di = der(x)` alias equations (see below) |
 | `lower` | Main DAE-to-`ComputeBlock` lowering for residual / derivative_rhs / implicit_rhs |
+| `implicit_rhs` | Build implicit RHS rows for the mass-matrix formulation |
 | `ad` | Build forward-mode automatic differentiation (Jacobian-vector product) symbolically over the lowered residual |
 | `capacity` | Pre-size buffers and reserve solver slots |
 | `continuous_row_targets` | Pair each continuous equation with its target row in the residual |
 | `initial_values` | Lower the IC plan into the `initialization` partition |
 | `discrete_pre_modes` | Compute `pre(z)` / `pre(m)` modes for discrete partitions |
 | `dynamic_events`, `event_actions` | Lower zero-crossings, reinit, reset actions |
+| `observation_refresh` | Build discrete observation refresh flags |
+| `path_utils` | Path handling helpers for lowered variable names |
+| `projection_suffix` | Projection suffix helpers for algebraic projection |
 | `residual_compute_block` | Build the `ContinuousSolveSystem.residual` ComputeBlock |
 | `runtime_assignments` | Lower runtime-defined assignments (parameter writes, observability) |
 | `stencil` | Detect and lower affine stencils (e.g. PDE finite differences) |
+| `subscript_indices` | Subscript index helpers for array scalarisation |
 | `solve_model` | Optional whole-program transformation: package as a SolveModel for serialisation/codegen |
+| `timing` | Lowering stage timing and profiling instrumentation |
 | `appendix_b_validation` | Post-lowering structural validation against MLS Appendix B |
 
 ### Dummy-Derivative Elimination (`dummy_derivative.rs`)

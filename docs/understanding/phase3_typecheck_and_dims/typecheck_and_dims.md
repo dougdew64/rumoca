@@ -6,8 +6,9 @@ The type-checking phase assigns a **TypeId** to every expression and component,
 evaluates array dimensions, identifies structural parameters, and validates
 variability and causality constraints.
 
-- Implementation: `crates/rumoca-phase-typecheck/src/lib.rs` (~1,982 lines)
-- Key sub-file: `src/typechecker/late_methods.rs` (~1,829 lines)
+- Implementation: `crates/rumoca-phase-typecheck/src/`
+- Key modules: `typechecker/late_methods.rs`, `typechecker/builtin_function_checks.rs`,
+  `typechecker/equation_compat.rs`, plus additional sub-modules
 
 Input: `ResolvedTree`  
 Output: `TypedTree` — same tree with `TypeId`s populated and `TypeTable` complete
@@ -59,15 +60,15 @@ TypeIds are allocated and stored in the `TypeTable` embedded in the `ClassTree`.
 
 ### TypeId Allocation
 
-The `build_type_context()` method (lines 660–733) registers types:
+The `build_type_context()` method in `lib.rs` registers types:
 
 1. Register all built-in types first (stable TypeIds for `Real`, `Integer`, etc.)
 2. Walk all user-defined classes:
-   - Records → `register_class_type()` (line 801)
-   - Enumerations → `register_enumeration_type()` (line 782)
-   - Type aliases (e.g., `type Velocity = Real`) → `TypeAlias` placeholder, resolved in a second pass (line 711)
+   - Records → `register_class_type()`
+   - Enumerations → `register_enumeration_type()`
+   - Type aliases (e.g., `type Velocity = Real`) → `TypeAlias` placeholder, resolved in a second pass
 
-**Type alias resolution strategy (line 745–850)**:
+**Type alias resolution strategy**:
 - Direct qualified-name lookup
 - DefId-anchored resolution (via `name_map`)
 - Dotted-suffix fallback index for imported types like `SI.Reluctance` that
@@ -80,30 +81,40 @@ The `build_type_context()` method (lines 660–733) registers types:
 This is one of the more complex parts of type checking because dimensions can
 depend on parameters that are themselves computed from other parameters.
 
-### Multi-Pass Loop (`evaluate_all_dimensions_multi_pass`, lines 1738–1775)
+### Multi-Pass Loop (`evaluate_all_dimensions_multi_pass` in `lib.rs`)
 
 The phase runs up to **10 passes** until no new dimensions are resolved:
 
-Each pass performs four sequential steps in order:
+Each pass performs six sequential steps in order:
 
-1. **Explicit dimension evaluation** (line 1751):
+1. **Record alias propagation**:
+   - Propagates values through record-parameter aliases (e.g.,
+     `chain(cellData = cellData2)`) so that field references like
+     `chain.cellData.nRC` resolve through modifier bindings
+
+2. **Explicit dimension evaluation**:
    - Evaluates non-colon subscripts like `Real x[3]` or `Real x[n+1]`
    - Uses `eval_dimension_with_fallback()` — tries evaluating the expression,
      skips if it depends on a not-yet-resolved parameter
    - Scope-aware: looks up parameters in the component's declaring scope
 
-2. **Colon inference** (line 1754):
+3. **Colon inference**:
    - Infers dimensions for variables declared as `Real x[:]`
    - Checks the variable's binding expression or start value
    - Uses `infer_dimensions_from_binding_with_scope()` from `rumoca-eval-ast`
 
-3. **Integer re-evaluation** (line 1758):
+4. **Extends modifier re-evaluation**:
+   - Re-evaluates inherited extends modifier parameters that may depend on
+     dimensions inferred earlier in this pass
+
+5. **Integer re-evaluation**:
    - Re-evaluates dimensions that depend on Integer parameters
    - Handles patterns like `parameter Integer n = size(a, 1)`
 
-4. **Boolean/Real re-evaluation** (line 1762):
+6. **Boolean/Real/Enum re-evaluation**:
    - Enables if-expression evaluation:
      `Real x[if flag then 3 else 5]`
+   - Also handles enum parameters that may now be computable
 
 ### Why Multiple Passes?
 
@@ -144,7 +155,7 @@ A parameter is **structural** if it appears in:
 Structural parameters must be fully evaluable at **translation time**; they
 cannot be changed after the model is compiled. The flag is `Component.is_structural: bool`.
 
-### Identification (`mark_structural_parameters`, lines 1254–1281)
+### Identification (`mark_structural_parameters` in `late_methods.rs`)
 
 1. Collect all `ComponentReference`s that appear in dimension expressions
 2. Collect references from for-loop ranges and if-conditions
@@ -155,8 +166,8 @@ cannot be changed after the model is compiled. The flag is `Component.is_structu
 
 ## Type Inference for Expressions
 
-`infer_expression_type()` (lines 1426–1449 in `late_methods.rs`) walks the
-expression tree recursively:
+`infer_expression_type()` in `late_methods.rs` walks the expression tree
+recursively:
 
 | Expression kind | Type inference rule |
 |-----------------|-------------------|
@@ -172,11 +183,11 @@ expression tree recursively:
 | `If { branches, else_branch }` | All branches must have the same type |
 
 **Record constructors**: `MyRecord(x=1, y=2)` is treated as a function call
-whose return type is `MyRecord`'s TypeId (line 1451).
+whose return type is `MyRecord`'s TypeId.
 
-**Component reference resolution** (lines 1554–1591): Uses longest-prefix
-matching through the dot-separated parts, resolving each segment to the correct
-field of the previous type.
+**Component reference resolution**: Uses longest-prefix matching through the
+dot-separated parts, resolving each segment to the correct field of the
+previous type.
 
 ---
 
@@ -189,7 +200,7 @@ constant  <  parameter  <  discrete  <  continuous
 (most fixed)                            (most free)
 ```
 
-### Rules Enforced (lines 1283–1308)
+### Rules Enforced
 
 1. **Binding expression** must have variability ≤ the component's declared
    variability. You cannot bind a `parameter` to a `continuous` expression.
@@ -221,11 +232,17 @@ component's declared variability.
 
 | Code | Meaning |
 |------|---------|
+| `ET000` | Missing source context (internal metadata error) |
 | `ET001` | Type name not found |
-| `ET002` | Type mismatch (e.g., assigning Real to Integer) |
+| `ET002` | Type mismatch (e.g., assigning Real to Integer; also equation shape mismatch) |
 | `ET003` | Variability violation (binding too free for component) |
 | `ET004` | Array dimension could not be evaluated |
 | `ET005` | Input variable has explicit binding (warning) |
+| `ET006` | Invalid integer coercion (out-of-range value) |
+| `ET007` | Integer fold overflow |
+| `ET008` | Built-in function argument count mismatch |
+| `ET009` | Subscript/array bounds error (MLS 10.5.1) or built-in argument type error |
+| `ET010` | Invalid unit/displayUnit modifier syntax (MLS 19) |
 
 ---
 
@@ -233,7 +250,17 @@ component's declared variability.
 
 | File | Purpose |
 |------|---------|
-| `rumoca-phase-typecheck/src/lib.rs` | Entry point; `TypeChecker` struct; phase orchestration |
-| `rumoca-phase-typecheck/src/typechecker/late_methods.rs` | All major algorithms: type inference, dimension eval, variability check |
+| `rumoca-phase-typecheck/src/lib.rs` | Entry point; `TypeChecker` struct; phase orchestration; multi-pass dimension evaluator |
+| `rumoca-phase-typecheck/src/typechecker/late_methods.rs` | Core algorithms: type inference, dimension eval, variability check, unit validation |
+| `rumoca-phase-typecheck/src/typechecker/builtin_function_checks.rs` | Argument count and type validation for built-in functions |
+| `rumoca-phase-typecheck/src/typechecker/equation_compat.rs` | Equation type/shape compatibility and subscript bounds checks (MLS 6.7, 10.5) |
+| `rumoca-phase-typecheck/src/typechecker/equation_shape.rs` | Equation shape (dimensionality) compatibility |
+| `rumoca-phase-typecheck/src/typechecker/record_aliases.rs` | Record-parameter alias collection for modifier resolution (MLS 7.2.3) |
+| `rumoca-phase-typecheck/src/typechecker/api.rs` | Structural-parameter reference collection from equations |
+| `rumoca-phase-typecheck/src/constant_collection.rs` | Constant collection for compile-time dimension evaluation (MLS 10.1, 12.4) |
+| `rumoca-phase-typecheck/src/enum_context.rs` | Enumeration type size collection (MLS 10.5) |
+| `rumoca-phase-typecheck/src/instanced.rs` | Post-instantiation type checking using instance overlay |
+| `rumoca-phase-typecheck/src/modifier_targets.rs` | Valid modifier target computation per component type |
+| `rumoca-phase-typecheck/src/unit_syntax.rs` | MLS Chapter 19 unit-expression syntax validation |
 | `rumoca-ir-ast/src/lib.rs` | `TypeTable`, `TypeId` definitions (embedded in ClassTree) |
 | `rumoca-eval-ast/` | Compile-time expression evaluator used for dimension inference |

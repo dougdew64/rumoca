@@ -35,10 +35,11 @@ to perform consistent initialization.
 
 ## The Algebraic Subsystem
 
-The DAE arrives at this phase with the equations in `f_x` reordered so that
-**ODE rows come first** (equations with `der(x_i)` for some state $x_i$),
-followed by **algebraic rows** (equations with no derivatives). With $n_x$
-states, the algebraic equations occupy indices $n_x \dots n_{eq} - 1$.
+The DAE arrives at this phase with the equations in
+`dae.continuous.equations` reordered so that **ODE rows come first** (equations
+with `der(x_i)` for some state $x_i$), followed by **algebraic rows**
+(equations with no derivatives). With $n_x$ states, the algebraic equations
+occupy indices $n_x \dots n_{eq} - 1$.
 
 The IC plan only operates on the algebraic subsystem. The state derivatives
 are not unknowns at $t = 0$; they will be determined by the integrator
@@ -46,8 +47,8 @@ implicitly from the residual equations once the initial values are
 consistent. So the IC plan needs to:
 
 - Build a fresh incidence over only the algebraic equations
-  (`f_x[n_x..n_eq]`), with only the algebraic and output variables as
-  unknowns.
+  (`dae.continuous.equations[n_x..]`), with only the algebraic and output
+  variables as unknowns.
 - Apply matching, BLT, and tearing to that smaller subsystem.
 - Convert each BLT block into an `IcBlock` recipe.
 
@@ -149,8 +150,8 @@ subsystem only).
 
 ### Step 1: variable index maps
 
-`build_var_index_maps` walks `dae.states`, `dae.algebraics`, and
-`dae.outputs`, in that order, and assigns each scalar a contiguous index in
+`build_var_index_maps` walks `dae.variables.states`, `dae.variables.algebraics`,
+and `dae.variables.outputs`, in that order, and assigns each scalar a contiguous index in
 the **solver y-vector**. Array variables are scalarised: `u[2]` becomes two
 entries `u[1]` and `u[2]` at consecutive indices. The result is a forward
 map `name → idx` and a reverse list `idx → name`.
@@ -163,9 +164,9 @@ runtime can write directly into the right slot.
 `build_algebraic_incidence` constructs a separate `Incidence` for the
 algebraic subsystem:
 
-- **Equations** = `dae.f_x[n_x..]`, indexed locally as `0..n_alg_eq`. The
-  function tracks `alg_eq_offset = n_x` so it can later translate local
-  indices back to global `f_x` indices.
+- **Equations** = `dae.continuous.equations[n_x..]`, indexed locally as
+  `0..n_alg_eq`. The function tracks `alg_eq_offset = n_x` so it can later
+  translate local indices back to global equation indices.
 - **Unknowns** = scalar entries from `dae.algebraics` followed by
   `dae.outputs`. State variables are *not* unknowns for IC: their values
   come from `start` / `fixed` attributes.
@@ -199,7 +200,7 @@ For each `BltBlock::Scalar { equation, unknown }`:
 
 ```rust
 let var_vn = VarName::new(&var_name);
-match try_solve_for_unknown(&dae.f_x[eq_idx].rhs, &var_vn) {
+match try_solve_for_unknown(&dae.continuous.equations[eq_idx].rhs, &var_vn) {
     Some(solution) if !expr_contains_var(&solution, &var_vn) => {
         ic_blocks.push(IcBlock::ScalarDirect { var_idx, var_name, solution_expr: solution });
     }
@@ -254,7 +255,7 @@ admits useful tearing, `None` otherwise.
 ### TornBlock construction
 
 When tearing succeeds, the result's local indices need to be translated to
-global y-vector indices (for variables) and global `f_x` indices (for
+global y-vector indices (for variables) and global equation indices (for
 equations). `var_info[local]` and `eq_indices[local]` provide those
 mappings.
 
@@ -402,8 +403,8 @@ The output of `build_ic_plan` is consumed by `rumoca-sim/src/with_diffsol/proble
 (see [the simulation document](../phase9_simulation/simulation.md#initial-condition-ic-solving)).
 At simulation startup, the runtime:
 
-1. Seeds the y-vector with `start` values from `dae.states`, `dae.algebraics`,
-   and `dae.outputs`.
+1. Seeds the y-vector with `start` values from `dae.variables.states`,
+   `dae.variables.algebraics`, and `dae.variables.outputs`.
 2. Walks the `IcBlock` list in order, executing each block:
    - `ScalarDirect` → evaluate `solution_expr`, write to `y[var_idx]`.
    - `ScalarNewton` → run scalar Newton on `f_x[eq_idx]` for `y[var_idx]`.
@@ -419,9 +420,7 @@ over with consistent $(t, y, \dot y)$.
 
 ## Tests
 
-Test coverage in
-[ic_plan.rs](../../../crates/rumoca-phase-structural/src/ic_plan.rs#L1315-L1606)
-exercises every variant:
+Test coverage in `ic_plan.rs` exercises every variant:
 
 - **Empty plan** (`test_build_ic_plan_no_algebraics`) — no algebraic
   equations; returns an empty plan.
@@ -447,9 +446,10 @@ exercises every variant:
 - The IC plan is a compile-time recipe for solving the algebraic subsystem
   at $t = 0$, producing consistent initial values for algebraic and output
   variables before the integrator starts.
-- Construction reuses matching, BLT, and tearing — the same machinery as
-  the main pipeline — but applied to the algebraic-only subsystem
-  (`f_x[n_x..]` against algebraic and output unknowns only).
+- Construction reuses matching, BLT, and tearing -- the same machinery as
+  the main pipeline -- but applied to the algebraic-only subsystem
+  (`dae.continuous.equations[n_x..]` against algebraic and output unknowns
+  only).
 - BLT blocks are translated into `IcBlock`s along a fallback ladder:
   symbolic direct → scalar Newton → torn loop → coupled LM. Symbolic
   solutions are tried at the top level *and* per causal step inside a

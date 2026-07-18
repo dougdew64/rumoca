@@ -9,7 +9,8 @@ continuous dynamics, discrete events, and consistent initialization.
 As of v0.9.x the simulation stack is split across several focused crates:
 
 - `crates/rumoca-sim/` — facade and orchestration: dispatches to the
-  configured backend, manages the runner loop, exposes `SimStepper`
+  configured backend, manages the scheduled-sim loop, exposes
+  `SimulationSession`
 - `crates/rumoca-solver/` — backend-neutral primitives: `SimResult`,
   `SimOptions`, `SimSolverMode`, `DiffsolMethod`, runtime schedules,
   timeout budgets
@@ -66,7 +67,13 @@ As of v0.9.x the simulation stack is split across several focused crates:
   boundary; the addon deserialises and simulates without carrying the
   compiler.
 
-Both entry points dispatch to the same backends based on
+- `simulate_with_diagnostics_auto_nan_trace(dae_model, opts)` — wraps
+  `simulate_with_diagnostics` with automatic NaN-tracing diagnostics:
+  if the first attempt produces NaN values, it re-runs with the
+  `nan_trace` runtime enabled to pinpoint the first equation that
+  diverged.
+
+All entry points dispatch to the same backends based on
 `opts.solver_mode: SimSolverMode`.
 
 ---
@@ -314,6 +321,12 @@ pub struct SimResult {
     pub data: Vec<Vec<f64>>,                      // data[var_idx][time_idx]
     pub n_states: usize,                          // count of continuous states
     pub variable_meta: Vec<SimVariableMeta>,      // metadata per variable
+    pub termination: Option<SimTermination>,      // early termination info
+}
+
+pub struct SimTermination {
+    pub time: f64,
+    pub message: String,
 }
 
 pub struct SimVariableMeta {
@@ -383,20 +396,33 @@ run(start, stop, step)
 
 ---
 
-## Realtime Stepper API (`SimStepper`)
+## Session API (`SimulationSession`)
 
 For interactive or software-in-the-loop (SIL) use cases, `rumoca-sim` exposes
-`SimStepper` — a step-by-step interface where external code drives time and
-injects inputs between steps.
+`SimulationSession` (in `simulation_session.rs`) — a step-by-step interface
+where external code drives time and injects inputs between steps.
 
 ```rust
-pub struct SimStepper { ... }
+pub struct SimulationSession { ... }
 
-impl SimStepper {
-    pub fn set_input(&mut self, name: &str, value: f64) -> Result<(), SimError>;
-    pub fn set_inputs(&mut self, inputs: &[(&str, f64)]) -> Result<(), SimError>;
-    pub fn step(&mut self, dt: f64) -> Result<(), SimError>;
-    // state inspection via StepperState / state_json()
+pub struct SessionState {
+    pub time: f64,
+    pub values: IndexMap<String, f64>,
+}
+
+impl SimulationSession {
+    pub fn new(dae_model: &Dae, opts: SimOptions) -> Result<Self, ...>;
+    pub fn set_input(&mut self, name: &str, value: f64) -> Result<(), ...>;
+    pub fn set_inputs(&mut self, inputs: &[(&str, f64)]) -> Result<(), ...>;
+    pub fn step(&mut self, dt: f64) -> Result<(), ...>;
+    pub fn advance_to(&mut self, target_time: f64) -> Result<(), ...>;
+    pub fn ensure_end_time(&mut self, target_time: f64);
+    pub fn reset(&mut self, t_start: f64) -> Result<(), ...>;
+    pub fn time(&self) -> f64;
+    pub fn get(&self, name: &str) -> Result<Option<f64>, ...>;
+    pub fn state(&self) -> Result<SessionState, ...>;
+    pub fn input_names(&self) -> &[String];
+    pub fn variable_names(&self) -> &[String];
 }
 ```
 
@@ -408,20 +434,23 @@ Key behaviour:
   cause extrapolation divergence.
 - Repeated `set_input()` calls with the same value do **not** trigger a history
   reset (dirty flag only set on actual change).
-- `dt ≤ 0` is guarded; floating-point time accumulation is handled explicitly.
+- `dt <= 0` is guarded; floating-point time accumulation is handled explicitly.
+- `advance_to()` drives the solver forward to a target time in one call.
+- `ensure_end_time()` extends the finite solver horizon without stepping.
+- `reset()` re-initialises the session at a new start time.
 
-`SimStepper` is re-exported from `rumoca-sim/src/lib.rs` alongside `StepperOptions`
-and `StepperState`.
+`SimulationSession` is re-exported from `rumoca-sim/src/lib.rs` alongside
+`SessionState`. A `SimulationSessionApi` trait (in `simulation_session_api.rs`)
+abstracts the session interface for the scheduled-sim subsystem.
 
 ---
 
-## FlatBuffer SIL Simulation (split across multiple crates in v0.9.x)
+## Scheduled Simulation (SIL)
 
-The CLI command `rumoca sim-fb` runs hardware-in-the-loop /
-software-in-the-loop simulation where an external autopilot process
-communicates via FlatBuffers. In v0.9.x what was previously the single
-`rumoca-sim-fb` crate has been broken into focused crates aligned with
-the responsibilities involved:
+For hardware-in-the-loop / software-in-the-loop simulation where an
+external autopilot process communicates via FlatBuffers, the
+`scheduled_sim/` module in `rumoca-sim` (feature-gated on
+`scheduled-sim`) provides the orchestration loop. The supporting crates:
 
 - `rumoca-codec-flatbuffers` — FlatBuffer pack/unpack via `.bfbs` schema
   reflection (no codegen required)
@@ -429,21 +458,18 @@ the responsibilities involved:
   codecs and transports
 - `rumoca-input-keyboard`, `rumoca-input-gamepad`, `rumoca-input` —
   pluggable input sources for RC channels and keyboard control
-- `rumoca-transport-udp`, `rumoca-transport-websocket` — transports
-  for the autopilot connection and the browser visualisation
+- `rumoca-transport-udp`, `rumoca-transport-websocket`,
+  `rumoca-transport-zenoh` — transports for the autopilot connection
+  and the browser visualisation
 - `rumoca-worker` — background simulation worker used by the playground
-  and the runner
 
-The simulation loop itself lives in `rumoca-sim`'s `runner/` module
-(feature-gated on `runner`). Architecture is unchanged:
+Architecture:
 
-- Rust lockstep physics loop: drain motor commands → `SimStepper.step()` →
-  send sensor readings
+- Rust lockstep physics loop: drain motor commands →
+  `SimulationSession.step()` → send sensor readings
 - Autopilot process management: auto-start, restart on reset, clean shutdown
 - 3D browser visualization via WebSocket state broadcast
 - Realtime toggle accessible from browser
-
-Usage: `rumoca sim-fb --config sil_config.toml MyModel.mo`
 
 ---
 
@@ -471,22 +497,51 @@ negation) were previously at risk.
 
 ---
 
+## NaN Tracing (`rumoca-eval-solve::nan_trace`)
+
+When a simulation produces NaN or Inf values, tracking the root cause across
+hundreds of residual rows is difficult. The `nan_trace` module in
+`rumoca-eval-solve` provides a runtime tracing mode that monitors every
+compute-block evaluation and records the first row and operation that
+produced a non-finite value. The `simulate_with_diagnostics_auto_nan_trace`
+entry point uses this automatically: it re-runs a failed simulation with
+tracing enabled and includes the diagnostic in the error report.
+
+---
+
+## Zero-State Simulation (`NoStateSession`)
+
+Models with no continuous states (pure parameter/discrete systems) can be
+simulated without an ODE integrator. The RK45 backend
+(`rumoca-solver-rk45`) provides a `NoStateSession` that handles these
+models directly — it evaluates discrete updates and events without
+configuring a solver, avoiding overhead and numerical issues from a
+zero-dimensional ODE.
+
+---
+
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `rumoca-sim/src/lib.rs` | Facade: `simulate_with_diagnostics`, `simulate_solve_model`, dispatch |
+| `rumoca-sim/src/lib.rs` | Facade: `simulate_with_diagnostics`, `simulate_solve_model`, `simulate_with_diagnostics_auto_nan_trace`, dispatch |
 | `rumoca-sim/src/diffsol.rs` | diffsol-backed `PreparedSimulation`, `build_simulation` |
-| `rumoca-sim/src/sim_stepper.rs` | `SimStepper`, `StepperState`, realtime stepping API |
+| `rumoca-sim/src/simulation_session.rs` | `SimulationSession`, `SessionState`, step-by-step session API |
+| `rumoca-sim/src/simulation_session_api.rs` | `SimulationSessionApi` trait for the scheduled-sim subsystem |
 | `rumoca-sim/src/solve_lowering/` | DAE→SolveModel lowering for the simulation path; probes & diagnostics |
-| `rumoca-sim/src/runner/` | Interactive runner loop, SIL orchestration |
-| `rumoca-solver/src/lib.rs` | `SimResult`, `SimOptions`, `SimSolverMode`, `DiffsolMethod`, `TimeoutBudget` |
+| `rumoca-sim/src/scheduled_sim/` | Scheduled simulation orchestration, SIL device loop |
+| `rumoca-sim/src/bulk.rs` | Bulk/batch simulation harness |
+| `rumoca-sim/src/build_timing.rs` | Build-phase timing instrumentation |
+| `rumoca-sim/src/prepared_vectors.rs` | Prepared vector management for parameter sweeps |
+| `rumoca-sim/src/scenario_config/` | Scenario configuration loading and templating |
+| `rumoca-solver/src/solver.rs` | `SimResult`, `SimTermination`, `SimOptions`, `SimSolverMode`, `DiffsolMethod` |
 | `rumoca-solver/src/runtime/mass_matrix.rs` | `PreparedMassMatrix`, `solve_mass_matrix` (Identity/Diagonal/Dense) |
 | `rumoca-solver-diffsol/src/lib.rs` | Diffsol backend: BDF / ESDIRK34 / TR-BDF2 |
 | `rumoca-solver-diffsol/src/init_projection.rs` | IC solver / consistent initialisation |
-| `rumoca-solver-rk45/src/lib.rs` | Explicit RK45 backend |
+| `rumoca-solver-rk45/src/lib.rs` | Explicit RK45 backend; `NoStateSession` for zero-state models |
 | `rumoca-eval-dae/src/lib.rs` | Compiled residual / Jacobian / root-condition evaluation (DAE path) |
-| `rumoca-eval-solve/src/lib.rs` | Equivalent for SolveModel path; `nan_trace` |
+| `rumoca-eval-solve/src/lib.rs` | Equivalent for SolveModel path |
+| `rumoca-eval-solve/src/nan_trace.rs` | NaN tracing runtime for divergence diagnostics |
 | `rumoca-codec-flatbuffers/` | FlatBuffer codec for SIL |
 | `rumoca-transport-{udp,websocket}/` | Transport layers for SIL |
 | `rumoca-input-{gamepad,keyboard}/` | Input sources for interactive simulation |

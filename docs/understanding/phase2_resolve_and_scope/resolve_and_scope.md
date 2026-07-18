@@ -26,6 +26,8 @@ Output: `ResolvedTree` — same tree with all `def_id`, `scope_id` fields popula
   │  • Build the scope tree             │
   │  • Resolve imports and extends      │
   │  • Detect inheritance cycles        │
+  │  • Run semantic checks (MLS rules)  │
+  │  • Validate unresolved symbols      │
   └─────────────────────────────────────┘
         │
         ▼
@@ -53,9 +55,10 @@ is always the global scope.
 
 ---
 
-## Three-Phase Resolution Architecture
+## Resolution Architecture
 
-Resolution runs in three sequential sub-phases:
+Core resolution runs in three sequential sub-phases, followed by semantic
+checks and validation:
 
 ### Sub-phase 1: Registration (`registration.rs`)
 
@@ -115,6 +118,21 @@ DFS over the inheritance graph built in 2a:
 Direct cycles (A extends A) are caught earlier in 2a via a
 `resolving_extends: HashSet<DefId>` guard.
 
+### Post-resolution: Semantic Checks and Validation
+
+After core resolution completes, two additional passes run:
+
+1. **Semantic checks** (`semantic_checks::check_all_semantics`): Enforces MLS
+   structural rules that can be validated from the AST alone (class restrictions,
+   equation/statement context rules, expression validation). These produce
+   diagnostics with codes `ER005` and above.
+
+2. **Unresolved symbol validation** (`validation::validate_resolution`): Walks
+   the resolved tree to find any remaining `None` def_id fields and emits
+   diagnostics for truly unresolved references, respecting the configured
+   policy for whether unresolved component references and function calls are
+   errors or warnings.
+
 ---
 
 ## The Scope Tree
@@ -155,7 +173,7 @@ lookup("Real", scope_id):
        Unqualified: is "Real" a child of the imported package?
   3. If scope.kind == Encapsulated:  stop (unless Modelica.*)
   4. If scope.parent.is_some():      recurse with parent scope
-  5. Not found → error ER001 (undefined name)
+  5. Not found → error ER002 (undefined reference)
 ```
 
 For a qualified name `"A.B.C"`:
@@ -234,13 +252,31 @@ Still `None` at this point (set by downstream phases):
 
 ## Error Catalogue
 
+The resolve phase uses error codes from `ER001` through `ER129` (128 unique
+codes at time of writing). The first four are core resolution errors defined in
+`crates/rumoca-phase-resolve/src/errors.rs`; codes `ER005` onward are semantic
+checks defined across the `semantic_checks/` modules.
+
+Representative codes:
+
 | Code | Meaning |
 |------|---------|
-| `ER001` | Undefined name |
-| `ER002` | Import target not found |
-| `ER003` | Ambiguous name (multiple imports match) |
-| `ER004` | Inheritance cycle detected |
-| `ER005` | Redeclare target not found in base |
+| `ER001` | Duplicate definition in scope |
+| `ER002` | Undefined reference (name not found) |
+| `ER003` | Base class not found (extends target) |
+| `ER004` | Circular inheritance detected |
+| `ER005` | Partial class instantiation |
+| `ER006` | Parameter variability violation |
+| `ER007` | Cyclic parameter binding |
+| `ER008` | `reinit()` used outside `when` |
+| ... | |
+| `ER098` | Missing source context (internal) |
+
+The numbering is sequential by feature area: ER001--ER004 cover core name
+resolution, ER005--ER046 cover structural and context-sensitive checks (class
+restrictions, equation/statement rules, expression validation), and higher codes
+cover specialized domains (operator records, state machines, clock expressions,
+stream connectors, annotations, etc.).
 
 ---
 
@@ -249,9 +285,35 @@ Still `None` at this point (set by downstream phases):
 | File | Purpose |
 |------|---------|
 | `rumoca-phase-resolve/src/lib.rs` | Top-level `resolve()` entry point; phase orchestration |
+| `rumoca-phase-resolve/src/errors.rs` | `ResolveError` enum (ER001--ER004) |
 | `rumoca-phase-resolve/src/registration.rs` | DefId/ScopeId allocation |
 | `rumoca-phase-resolve/src/extends.rs` | Extends and import resolution (sub-phase 2a) |
 | `rumoca-phase-resolve/src/contents.rs` | Body expression resolution (sub-phase 2b) |
 | `rumoca-phase-resolve/src/lookup.rs` | Scope chain lookup, inherited member lookup |
 | `rumoca-phase-resolve/src/cycles.rs` | DFS cycle detection |
+| `rumoca-phase-resolve/src/path_utils.rs` | Qualified name path utilities |
+| `rumoca-phase-resolve/src/validation.rs` | Post-resolution unresolved symbol detection |
+| `rumoca-phase-resolve/src/traversal_adapter.rs` | AST traversal helpers for resolution |
 | `rumoca-ir-ast/src/scope.rs` | `ScopeTree`, `Scope`, `ScopeKind` type definitions |
+
+### Semantic Checks (`rumoca-phase-resolve/src/semantic_checks/`)
+
+After core resolution, the phase runs a battery of semantic checks that enforce
+MLS structural rules without requiring type information. These are organized
+into focused modules:
+
+| Module | Checks |
+|--------|--------|
+| `mod.rs` | Orchestration (`check_all_semantics`), structural class checks, context-sensitive equation/statement checks |
+| `annotations.rs` | Annotation structure validation |
+| `builtin_calls.rs` | Argument rules for `zeros`, `ones`, `fill`, `cat`, etc. |
+| `clocks.rs` | Clock expression restrictions (MLS §16) |
+| `expr.rs` | Expression-level checks (e.g., `der()` on discrete, `end` outside subscripts) |
+| `functions.rs` | Function-specific restrictions (purity, I/O prefixes, equation sections) |
+| `lookup.rs` | Protected member access, class-used-as-value detection |
+| `operators.rs` | Operator overloading restrictions (MLS §14) |
+| `restrictions.rs` | Class restriction cross-checks (connector balance, block I/O, etc.) |
+| `restrictions_decl.rs` | Declaration-level restriction checks |
+| `state_machines.rs` | State machine transition validation |
+| `streams.rs` | `inStream`/`actualStream` builtin restrictions |
+| `type_roots.rs` | Replaceable type root identification for partial resolution |

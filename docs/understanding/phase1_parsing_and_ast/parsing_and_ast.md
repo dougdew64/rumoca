@@ -118,20 +118,20 @@ Multiple output assignment: `(a, b) := func(x)`.
 
 ## AST Type Definitions
 
-All types live in `crates/rumoca-ir-ast/src/lib.rs`.
+All types live in `crates/rumoca-ir-ast/src/nodes.rs` (re-exported via `lib.rs`).
 
-### StoredDefinition (line ~480)
+### StoredDefinition
 
 ```rust
 pub struct StoredDefinition {
-    pub classes: IndexMap<String, ClassDef>,
+    pub classes: AstIndexMap<String, ClassDef>,
     pub within: Option<Name>,   // from the `within` clause at top of file
 }
 ```
 
 The `within` clause declares the package context (e.g., `within Modelica.Math;`).
 
-### ClassDef (line ~651)
+### ClassDef
 
 ```rust
 pub struct ClassDef {
@@ -141,37 +141,60 @@ pub struct ClassDef {
     pub class_type: ClassType,
     pub encapsulated: bool,
     pub partial: bool,
-    pub extends: Vec<Extend>,            // inheritance (MLS §7.1)
-    pub imports: Vec<Import>,            // imports (MLS §13.2)
-    pub classes: IndexMap<String, ClassDef>, // nested class definitions
-    pub components: IndexMap<String, Component>,
+    pub expandable: bool,                 // expandable connectors (MLS §9.1.3)
+    pub operator_record: bool,            // operator record classes (MLS §14)
+    pub pure: bool,                       // function purity (MLS §12.3)
+    pub causality: Causality,             // from type alias (e.g., `connector RealInput = input Real`)
+    pub description: Vec<Token>,
+    pub extends: Vec<Extend>,             // inheritance (MLS §7.1)
+    pub imports: Vec<Import>,             // imports (MLS §13.2)
+    pub classes: AstIndexMap<String, ClassDef>, // nested class definitions
+    pub components: AstIndexMap<String, Component>,
     pub equations: Vec<Equation>,
     pub initial_equations: Vec<Equation>,
     pub algorithms: Vec<Vec<Statement>>,
     pub initial_algorithms: Vec<Vec<Statement>>,
     pub enum_literals: Vec<EnumLiteral>,  // for enumeration types
+    pub annotation: Vec<Expression>,      // class-level annotations
     pub is_replaceable: bool,
+    pub is_redeclare: bool,
     pub constrainedby: Option<Name>,
     pub array_subscripts: Vec<Subscript>, // for type aliases: `type Vec3 = Real[3]`
     pub external: Option<ExternalFunction>, // MLS §12.9 C/Fortran interface
+    // plus additional fields for: is_final, is_inner, is_outer, is_protected,
+    // location, class_type_token, purity_declared, end_name_token, and
+    // keyword tokens for equation/algorithm sections
 }
 ```
 
-### Component (line ~487)
+### Component
 
 ```rust
 pub struct Component {
+    pub def_id: Option<DefId>,        // set by resolve phase
+    pub type_def_id: Option<DefId>,   // DefId of the type class, set by resolve
+    pub name: String,
     pub type_name: Name,
-    pub variability: Variability,   // constant | parameter | discrete | (continuous)
-    pub causality: Causality,       // input | output | (none)
-    pub connection: Connection,     // flow | stream | (none)
-    pub shape: Vec<usize>,          // literal array dimensions: Real x[3]
-    pub shape_expr: Vec<Subscript>, // parametric dimensions: Real x[n]
-    pub modifications: IndexMap<String, Expression>,
+    pub variability: Variability,     // constant | parameter | discrete | (continuous)
+    pub causality: Causality,         // input | output | (none)
+    pub connection: Connection,       // flow | stream | (none)
+    pub description: Vec<Token>,
+    pub shape: Vec<usize>,            // literal array dimensions: Real x[3]
+    pub shape_expr: Vec<Subscript>,   // parametric dimensions: Real x[n]
+    pub modifications: AstIndexMap<String, Expression>,
     pub binding: Option<Expression>,  // explicit: Real x = expr;
     pub start: Expression,
-    pub condition: Option<Expression>,
-    // plus: final, inner, outer, each, is_replaceable, ...
+    pub condition: Option<Expression>, // conditional component (MLS §4.4.5)
+    pub inner: bool,                  // inner prefix (MLS §5.4)
+    pub outer: bool,                  // outer prefix (MLS §5.4)
+    pub annotation: Vec<Expression>,
+    pub is_replaceable: bool,
+    pub is_redeclare: bool,
+    pub constrainedby: Option<Name>,
+    // plus additional fields for: is_final, is_protected, is_structural,
+    // each_modifications, final_attributes, source_modifications, location,
+    // name_token, shape_is_modification, start_is_modification, start_has_each,
+    // has_explicit_binding
 }
 ```
 
@@ -179,26 +202,33 @@ Key distinction: `shape` holds dimensions that are **already-known integers** at
 parse time; `shape_expr` holds dimensions given as expressions (e.g., `Real x[n]`
 where `n` is a parameter). The typecheck phase evaluates `shape_expr`.
 
-### Expression (line ~1039)
+### Expression
 
-18 variants:
+17 variants, all carrying a `Span` field for source location tracking:
 
 | Variant | Example |
 |---------|---------|
+| `Empty` | (sentinel for optional positions) |
 | `Terminal { terminal_type, token }` | `3.14`, `true`, `"hello"` |
-| `ComponentReference { parts, subscripts }` | `body.v[1]` |
-| `BinaryOp { operator, lhs, rhs }` | `x + 1` |
-| `UnaryOp { operator, operand }` | `-x` |
-| `FunctionCall { name, arguments }` | `sin(x)`, `der(x)` |
+| `ComponentReference(ComponentReference)` | `body.v[1]` |
+| `Binary { op, lhs, rhs }` | `x + 1` |
+| `Unary { op, rhs }` | `-x` |
+| `Range { start, step, end }` | `1:10`, `0:0.1:1` |
+| `FunctionCall { comp, args }` | `sin(x)`, `der(x)` |
+| `ClassModification { target, modifications }` | `i(x = 2)` (in extends/declarations) |
+| `NamedArgument { name, value }` | `func(param = value)` |
+| `Modification { target, value }` | `x = 2` (in extends/declarations) |
 | `If { branches, else_branch }` | `if c then a else b` |
-| `Array { elements }` | `{1, 2, 3}` |
+| `Array { elements, is_matrix }` | `{1, 2, 3}`, `[a; b]` |
+| `Tuple { elements }` | `(a, b)` (multi-output calls) |
+| `Parenthesized { inner }` | `(x + 1)` |
+| `ArrayComprehension { expr, indices, filter }` | `{i^2 for i in 1:n}` |
 | `ArrayIndex { base, subscripts }` | `a[i]`, `(f())[2]` |
 | `FieldAccess { base, field }` | `r.x`, `(f()).field` |
-| `ArrayComprehension { expr, indices, filter }` | `{i^2 for i in 1:n}` |
 
 `Arc<Expression>` is used for sub-expressions in hot paths to reduce clone cost.
 
-### Equation (line ~972)
+### Equation
 
 ```rust
 pub enum Equation {
@@ -207,8 +237,8 @@ pub enum Equation {
     Connect { lhs: ComponentReference, rhs: ComponentReference },
     For { indices: Vec<ForIndex>, equations: Vec<Equation> },
     When(Vec<EquationBlock>),      // one block per when/elsewhen branch
-    If(Vec<EquationBlock>),
-    FunctionCall { name: Name, arguments: Vec<Expression> },
+    If { cond_blocks: Vec<EquationBlock>, else_block: Option<Vec<Equation>> },
+    FunctionCall { comp: ComponentReference, args: Vec<Expression> },
     Assert { condition: Expression, message: Expression, level: Option<Expression> },
 }
 ```
@@ -219,19 +249,19 @@ pub enum Equation {
 `ForIndex` is `{ ident: Token, range: Expression }`. Multiple indices give
 multi-dimensional iteration: `for i in 1:m, j in 1:n loop ...`.
 
-### Subscript (line ~1594)
+### Subscript
 
 ```rust
 pub enum Subscript {
-    Expression(Expression),  // concrete: a[3], a[i]
-    Range,                   // wildcard: a[:]
     Empty,
+    Expression(Expression),   // concrete: a[3], a[i]
+    Range { token: Token },   // wildcard: a[:]
 }
 ```
 
 Used both for array indexing and for dimension declarations.
 
-### Import (line ~814)
+### Import
 
 Four import forms (MLS §13.2):
 
@@ -242,35 +272,40 @@ Four import forms (MLS §13.2):
 | Unqualified (wildcard) | `import A.B.*;` | `Unqualified` — all children imported |
 | Selective | `import A.B.{C, D};` | treated as multiple `Qualified` imports |
 
-### Extend (line ~765)
+### Extend
 
 ```rust
 pub struct Extend {
     pub base_name: Name,               // unresolved at parse time
     pub base_def_id: Option<DefId>,    // set by resolve phase
+    pub location: Location,
     pub modifications: Vec<ExtendModification>,
     pub break_names: Vec<String>,      // selective extension (MLS §7.4)
+    pub is_protected: bool,            // protected extends (MLS §7.1.2)
+    pub annotation: Vec<Expression>,
 }
 ```
 
-### ComponentReference (line ~912)
+### ComponentReference
 
 ```rust
 pub struct ComponentReference {
-    pub parts: Vec<ComponentRefPart>,  // one per dotted segment: a.b.c → [a, b, c]
-    pub def_id: Option<DefId>,         // set by resolve for the FIRST part only
     pub local: bool,                   // leading dot for local lookup
+    pub parts: Vec<ComponentRefPart>,  // one per dotted segment: a.b.c → [a, b, c]
+    pub span: Span,                    // source location
+    pub def_id: Option<DefId>,         // set by resolve for the FIRST part only
 }
 ```
 
-Each `ComponentRefPart` has `ident: Token` and `subscripts: Vec<Subscript>`,
-allowing `a[1].b[2]` to be represented naturally.
+Each `ComponentRefPart` has `ident: Token` and `subs: Option<Vec<Subscript>>`,
+allowing `a[1].b[2]` to be represented naturally. In the `Expression` enum,
+component references appear as the tuple variant `ComponentReference(ComponentReference)`.
 
 ---
 
 ## Error Recovery
 
-Recovery is a two-phase strategy (`crates/rumoca-phase-parse/src/lib.rs:297–387`):
+Recovery is a two-phase strategy (see `crates/rumoca-phase-parse/src/lib.rs`):
 
 1. **Full parse**: Run the complete Parol parser. Collect errors.
 2. **Recovery fallback**: If errors occurred, switch to a lightweight recovery

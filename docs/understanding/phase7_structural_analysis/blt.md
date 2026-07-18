@@ -175,8 +175,7 @@ walks the resulting `Vec<BltBlock>` from index 0 upward.
 
 ## Worked Example: Mixed Scalar + Loop
 
-Adapted from
-[`test_blt_mixed`](../../../crates/rumoca-phase-structural/src/blt.rs#L137-L169):
+Adapted from `test_blt_mixed` in `blt.rs`:
 
 Three equations, three unknowns, with this incidence:
 
@@ -259,9 +258,7 @@ needs no reversal.
 
 ## Tests
 
-Three tests in
-[blt.rs](../../../crates/rumoca-phase-structural/src/blt.rs#L73-L169) exercise the
-three structural shapes:
+Three tests in `blt.rs` exercise the three structural shapes:
 
 - **Linear chain** (`test_blt_linear_chain`): `eq0 → eq1 → eq2`, no cycles.
   Expect three `Scalar` blocks.

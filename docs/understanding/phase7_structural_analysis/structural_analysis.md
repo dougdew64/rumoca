@@ -7,7 +7,22 @@ for the continuous equations. This makes it possible to evaluate the system
 sequentially rather than solving everything simultaneously.
 
 - Implementation: `crates/rumoca-phase-structural/`
-- Entry point: `pub fn sort_dae(dae: &Dae) -> Result<SortedDae, StructuralError>`
+- Primary entry point: `pub fn sort_dae(dae: &Dae) -> Result<SortedDae, StructuralError>`
+- Diagnostic entry point: `pub fn analyze_structure(dae: &Dae) -> StructuralDiagnostics`
+- Report entry point: `pub fn build_structural_report(dae: &Dae) -> Result<StructuralReport, StructuralError>`
+
+`sort_dae` transforms the DAE into BLT-sorted block form for sequential
+simulation (errors on singular systems). `analyze_structure` performs
+diagnostic-only analysis for CasADi workflows where BLT ordering is not
+required. `build_structural_report` produces a named structural report with
+matching, BLT blocks, and tearing details, backing the `rumoca sim --structure`
+debug dump.
+
+Two additional public APIs allow building BLT blocks from arbitrary incidence
+matrices rather than a full DAE:
+
+- `pub fn build_blt_from_incidence(incidence: &Incidence) -> Result<Vec<BltBlock>, StructuralError>` -- wraps maximum matching, dependency graph construction, Tarjan SCC, and BLT block assembly. Used by the IC solver to decompose arbitrary subsystems (e.g. algebraic-only).
+- `pub fn maximum_regular_subsystem(incidence: &Incidence) -> Result<RegularSubsystem, StructuralError>` -- selects the largest structurally regular square subsystem supported by the incidence matrix's maximum matching. Useful when initialization projection contains redundant rows and unconstrained variables.
 
 The key results are:
 1. A **maximum matching** pairing each equation to one unknown
@@ -44,7 +59,7 @@ The key results are:
 ## The Incidence Matrix
 
 The incidence matrix captures which unknowns appear in which continuous
-equations. It is built only over the continuous block `f_x` (discrete update
+equations. It is built only over `dae.continuous.equations` (discrete update
 equations are handled separately by event settling) and is stored sparsely as
 `Vec<HashSet<usize>>` — one set per equation, listing the column indices of
 the unknowns it references.
@@ -222,9 +237,10 @@ solve.
 The construction in
 [ic_plan.rs](../../../crates/rumoca-phase-structural/src/ic_plan.rs) reuses the
 matching, BLT, and tearing machinery, but applied to the **algebraic-only
-subsystem** (equations `f_x[n_x..]` against algebraic and output variables
-only — states are treated as known constants at $t = 0$). Each BLT block is
-translated into an `IcBlock` variant along a fallback ladder:
+subsystem** (the algebraic equations from `dae.continuous.equations` against
+algebraic and output variables only -- states are treated as known constants
+at $t = 0$). Each BLT block is translated into an `IcBlock` variant along a
+fallback ladder:
 
 - **`ScalarDirect`** when the equation can be symbolically rearranged for
   the unknown (cheapest — pure expression evaluation).
@@ -263,15 +279,36 @@ the plan plugs into the simulator at startup — is in the drill-down:
 
 ```rust
 pub struct SortedDae<'a> {
-    pub dae: &'a dae::Dae,                        // reference to original DAE
-    pub blocks: Vec<BltBlock>,                    // BLT blocks in evaluation order
-    pub matching: Vec<(EquationRef, UnknownId)>,  // full equation-variable pairing
-    pub diagnostics: Vec<Diagnostic>,             // warnings (algebraic loops, etc.)
+    /// Reference to the original DAE.
+    pub dae: &'a dae::Dae,
+    /// BLT blocks in evaluation order.
+    pub blocks: Vec<BltBlock>,
+    /// Full matching: each pair `(equation, unknown)` from the maximum matching.
+    pub matching: Vec<(EquationRef, UnknownId)>,
+    /// Diagnostic warnings (e.g. algebraic loop notifications).
+    pub diagnostics: Vec<Diagnostic>,
 }
 ```
 
 Diagnostics include information about detected algebraic loops so the user can
 be informed which variables are coupled and may benefit from tearing.
+
+## StructuralReport Output
+
+`build_structural_report` produces a `StructuralReport` containing named
+matching pairs, BLT blocks (as `BlockReport` variants: `Scalar` or `Coupled`),
+and tearing details for each coupled block. This report is displayed by
+`rumoca sim --structure` and captures the full structural decomposition in a
+human-readable form.
+
+```rust
+pub struct StructuralReport {
+    pub n_equations: usize,
+    pub n_unknowns: usize,
+    pub matching: Vec<(String, String)>,  // (equation label, unknown name)
+    pub blocks: Vec<BlockReport>,         // Scalar or Coupled with tearing
+}
+```
 
 ---
 
@@ -292,7 +329,7 @@ end RC;
 ```
 states:     u_C
 algebraics: u
-f_x:
+continuous.equations:
   eq1: 0 = sin(time) - u              (algebraic: u = sin(t))
   eq2: 0 = (u - u_C)/R - C*der(u_C)  (ODE: der(u_C))
 ```
@@ -316,13 +353,28 @@ eq2:      1     1
 
 ## Key Files
 
+### Core pipeline
+
 | File | Purpose |
 |------|---------|
-| `rumoca-phase-structural/src/lib.rs` | Entry point `sort_dae()`; orchestration |
-| `rumoca-phase-structural/src/incidence.rs` | Incidence matrix construction |
-| `rumoca-phase-structural/src/matching.rs` | Augmenting-path maximum matching |
+| `rumoca-phase-structural/src/lib.rs` | Entry points `sort_dae()`, `analyze_structure()`, `build_structural_report()`, `build_blt_from_incidence()`, `maximum_regular_subsystem()`; orchestration |
+| `rumoca-phase-structural/src/types.rs` | `SortedDae`, `BltBlock`, `EquationRef`, `UnknownId`, `StructuralError` type definitions |
+| `rumoca-phase-structural/src/incidence.rs` | Incidence matrix construction and dependency graph building |
+| `rumoca-phase-structural/src/matching.rs` | Augmenting-path maximum matching (Kuhn's algorithm) |
 | `rumoca-phase-structural/src/tarjan.rs` | Tarjan SCC algorithm |
-| `rumoca-phase-structural/src/blt.rs` | BLT block assembly |
-| `rumoca-phase-structural/src/tearing.rs` | Greedy Cellier tearing |
+| `rumoca-phase-structural/src/blt.rs` | BLT block assembly from Tarjan output |
+| `rumoca-phase-structural/src/tearing.rs` | Greedy Cellier tearing of algebraic loops |
 | `rumoca-phase-structural/src/ic_plan.rs` | Initial condition plan construction |
-| `rumoca-phase-structural/src/types.rs` | `SortedDae`, `BltBlock`, `IcBlock` type definitions |
+
+### Supporting modules
+
+| File / directory | Purpose |
+|------|---------|
+| `rumoca-phase-structural/src/eliminate/` | Algebraic elimination and substitution framework (boundary resolution, BLT scalar-block elimination, solve-for-unknown, substitution application) |
+| `rumoca-phase-structural/src/scalarize/` | Array-to-scalar equation expansion (scalarization of vector/matrix equations) |
+| `rumoca-phase-structural/src/dae_prepare/` | DAE preparation: alias demotion, dummy-state reduction, structural preprocessing |
+| `rumoca-phase-structural/src/projection_maps.rs` | Projection map utilities for scalarized component-array and function-output references |
+| `rumoca-phase-structural/src/report.rs` | `StructuralReport`, `BlockReport`, `TearingReport` for the `--structure` debug dump |
+| `rumoca-phase-structural/src/runtime_defined.rs` | Enumerates unknowns defined at event/clock runtime rather than by the continuous solver |
+| `rumoca-phase-structural/src/variable_scope.rs` | Variable scope and shape resolution utilities |
+| `rumoca-phase-structural/src/diagnostics.rs` | Diagnostic collection for structural warnings (singularity, algebraic loops) |

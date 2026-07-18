@@ -151,9 +151,7 @@ cascade on the way back up performs the toggling.
 
 ## The Code, Step by Step
 
-Here is the recursive helper from
-[matching.rs:27–54](../../../crates/rumoca-phase-structural/src/matching.rs#L27-L54),
-annotated:
+Here is the recursive helper from `matching.rs`, annotated:
 
 ```rust
 fn augment(
@@ -311,8 +309,7 @@ The fix is to copy the candidates into a `Vec` and sort by integer index
 before iterating. Sort order is the unknown's column index, which is stable
 because `build_unknown_map` assigns indices deterministically.
 
-The test
-[`test_maximum_matching_is_deterministic_under_ties`](../../../crates/rumoca-phase-structural/src/matching.rs#L84-L90)
+The test `test_maximum_matching_is_deterministic_under_ties` in `matching.rs`
 pins this behaviour:
 
 ```rust
@@ -409,9 +406,8 @@ The caller produces a `StructuralError::Singular { unmatched_equations,
 unmatched_unknowns, … }` with both lists by name, so the modeler can identify
 the offending pair.
 
-The test
-[`test_maximum_matching_imperfect`](../../../crates/rumoca-phase-structural/src/matching.rs#L72-L82)
-exercises this case:
+The test `test_maximum_matching_imperfect` in `matching.rs` exercises this
+case:
 
 ```rust
 // eq0 and eq1 both reference {v0}; only one of them can win.

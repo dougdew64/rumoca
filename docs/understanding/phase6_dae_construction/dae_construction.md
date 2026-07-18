@@ -77,7 +77,7 @@ is how Modelica implements memory across discontinuities.
 
 ## Variable Classification
 
-### Step 1: Detect State Variables (`classification.rs:22–44`)
+### Step 1: Detect State Variables (`analysis/classification.rs`)
 
 A variable becomes a **state** if its name appears as the argument to `der()`.
 
@@ -92,7 +92,7 @@ for each expression in { all equations, initial equations, all bindings }:
         state_vars.insert(name)
 ```
 
-### Step 2: Classify Each Variable (`classification.rs:69–115`)
+### Step 2: Classify Each Variable (`analysis/classification.rs`)
 
 Rules are applied in priority order:
 
@@ -107,33 +107,64 @@ Rules are applied in priority order:
 | 7 | name ∈ state_vars | `VariableKind::State` |
 | 8 | (fallback) | `VariableKind::Algebraic` |
 
-After classification each variable is placed in the corresponding `IndexMap` in
-the `Dae` struct: `states`, `algebraics`, `inputs`, `outputs`, `parameters`,
-`constants`, `discrete_reals` (discrete Real), or `discrete_valued`
-(Boolean/Integer/enum).
+There is also a `VariableKind::Derivative` variant used for derivative
+variables (the `der(x)` companions of states).
+
+After classification each variable is placed in the corresponding `IndexMap`
+in the `DaeVariables` sub-struct: `states`, `algebraics`, `inputs`, `outputs`,
+`parameters`, `constants`, `discrete_reals` (discrete Real), or
+`discrete_valued` (Boolean/Integer/enum).
 
 ---
 
 ## Equation Group Assignment
 
-### Conversion Pipeline (`lib.rs:145–275`)
+### Conversion Pipeline (`rumoca-phase-dae/src/lib.rs`)
 
-1. **Binding conversion** (line 210–220): Variable binding expressions are
-   turned into explicit equations `0 = binding - var` so they participate in
-   structural analysis.
+The `to_dae_with_options` function orchestrates many subphases via
+`run_todae_phase`. The major steps, in order:
 
-2. **Equation classification** (line 226–228): Each equation from `flat.equations`
-   is routed to `f_x`, `f_z`, or `f_m` based on the kind of variable(s) it
-   assigns.
+1. **Flat IR validation**: Reject unresolved function calls; validate shape contract.
 
-3. **When-clause conversion** (line 241–247): `when` clauses are expanded (see
-   below) and their equations inserted into `f_z` / `f_m`.
+2. **Variable classification**: Build classification indexes (state detection,
+   prefix children, connected inputs), then classify all variables.
 
-4. **Algorithm lowering** (line 250–259): Algorithm sections are converted to
-   explicit equation lists (see below) and classified into the appropriate group.
+3. **Binding conversion**: Variable binding expressions are turned into
+   explicit equations `0 = binding - var` so they participate in structural
+   analysis.
 
-5. **Condition extraction** (line 260–262): Relational expressions used as
-   guards are extracted into `f_c` / `relation`.
+4. **Equation classification**: Each equation from `flat.equations` is routed
+   to `f_x`, `f_z`, or `f_m` based on the kind of variable(s) it assigns.
+
+5. **Initial equations**: Initial equations are converted and added to
+   `dae.initialization.equations`.
+
+6. **When-clause conversion**: `when` clauses are expanded (see below)
+   and their equations routed into `f_z` / `f_m`.
+
+7. **Algorithm lowering**: Algorithm sections are converted to explicit
+   equation lists (see below) and classified into the appropriate group.
+
+8. **Discrete canonicalization**: Discrete assignment equations are
+   canonicalized.
+
+9. **Enum literal lowering**: Enum literals are lowered to ordinal values.
+
+10. **Parameter variable promotion**: Time-invariant algebraics are promoted
+    to derived parameters before condition lowering.
+
+11. **Assertion actions**: Assert/terminate equations are lowered to event
+    actions.
+
+12. **Condition extraction**: Relational expressions used as guards are
+    extracted into `f_c` / `relation`.
+
+13. **Pre-operator lowering**: `pre()` calls are lowered to dedicated
+    parameter symbols.
+
+14. **Finalization**: Parameter sorting, phantom vector scalarization,
+    start-value folding, algebraic dependency sorting, and runtime
+    precomputation (clock schedules, timing inference).
 
 ### Routing Rules
 
@@ -168,10 +199,10 @@ When a variable is only assigned inside `when`-clauses, it is classified as
 discrete automatically.
 
 **Multiple when-clauses assigning the same variable** trigger an error
-(duplicate assignment detection, line 60–78 of `when_conversion.rs`).
+(duplicate assignment detection in `when_conversion.rs`).
 
-Array when-targets: `when_target_scalar_count()` (line 16–25) infers the
-scalar count for array assignments, consistent with MLS §8.4.
+Array when-targets: `when_target_scalar_count()` in `when_conversion.rs`
+infers the scalar count for array assignments, consistent with MLS §8.4.
 
 ---
 
@@ -202,8 +233,8 @@ Extraction process:
 3. For each remaining relational operator (`<`, `>`, `<=`, `>=`, `==`, `!=`):
    form a zero-crossing expression: `lhs - rhs` (changes sign at the event)
 4. Deduplicate
-5. Store in `Dae.relation` (the expression list)
-6. Build corresponding `f_c` equations: `c[i] := (relation[i] > 0)`
+5. Store in `dae.conditions.relations` (the expression list)
+6. Build corresponding `f_c` equations in `dae.conditions.equations`: `c[i] := (relation[i] > 0)`
 
 ---
 
@@ -217,85 +248,220 @@ Equation scalar counts are re-derived to handle:
 - Inferred count of 0 without array marker → skip
 - Otherwise: `max(explicit_count, inferred_count, 1)`
 
-All surviving initial equations go into `Dae.initial_equations`.
+All surviving initial equations go into `dae.initialization.equations`.
 
 ---
 
-## The Dae Struct (`rumoca-ir-dae/src/lib.rs:118–266`)
+## The Dae Struct (`rumoca-ir-dae/src/lib.rs`)
+
+The `Dae` struct uses nested partition sub-structs rather than flat fields.
+Access patterns use paths like `dae.variables.states`, `dae.continuous.equations`,
+`dae.discrete.real_updates`, etc.
 
 ```rust
+pub const DAE_SCHEMA_VERSION: u16 = 7;
+
 pub struct Dae {
-    // Variable partitions
-    pub states: IndexMap<VarName, Variable>,
-    pub algebraics: IndexMap<VarName, Variable>,
-    pub inputs: IndexMap<VarName, Variable>,
-    pub outputs: IndexMap<VarName, Variable>,
-    pub parameters: IndexMap<VarName, Variable>,
-    pub constants: IndexMap<VarName, Variable>,
-    pub discrete_reals: IndexMap<VarName, Variable>,
-    pub discrete_valued: IndexMap<VarName, Variable>,
-    pub derivative_aliases: IndexMap<VarName, Variable>, // from explicit ODE eqs
-
-    // Equation groups (MLS B.1)
-    pub f_x: Vec<Equation>,
-    pub f_z: Vec<Equation>,
-    pub f_m: Vec<Equation>,
-    pub f_c: Vec<Equation>,
-    pub relation: Vec<Expression>,              // zero-crossing expressions
-    pub synthetic_root_conditions: Vec<Expression>,
-    pub initial_equations: Vec<Equation>,
-
-    // Event/clock metadata
-    pub scheduled_time_events: Vec<f64>,
-    pub clock_constructor_exprs: Vec<Expression>,
-    pub clock_schedules: Vec<ClockSchedule>,
-    pub triggered_clock_conditions: Vec<Expression>,
-    pub clock_intervals: IndexMap<String, f64>,
-
-    // Metadata
-    pub is_partial: bool,
-    pub class_type: ClassType,
-    pub functions: IndexMap<VarName, Function>,
-    pub enum_literal_ordinals: IndexMap<String, i64>,
-    pub interface_flow_count: usize,
-    pub overconstrained_interface_count: i64,
-    pub oc_break_edge_scalar_count: usize,
+    pub schema_version: u16,           // must equal DAE_SCHEMA_VERSION
+    pub variables: DaeVariables,
+    pub continuous: DaeContinuousPartition,
+    pub initialization: DaeInitializationPartition,
+    pub discrete: DaeDiscretePartition,
+    pub conditions: DaeConditionPartition,
+    pub events: DaeEventPartition,
+    pub clocks: DaeClockPartition,
+    pub symbols: DaeSymbolTable,
+    pub metadata: DaeMetadata,
 }
 ```
 
-### Variable struct (`lib.rs:310–362`)
+### Variable partition (`DaeVariables`)
+
+```rust
+pub struct DaeVariables {
+    pub states: IndexMap<VarName, Variable>,          // x
+    pub algebraics: IndexMap<VarName, Variable>,      // y
+    pub inputs: IndexMap<VarName, Variable>,           // u
+    pub outputs: IndexMap<VarName, Variable>,          // w
+    pub parameters: IndexMap<VarName, Variable>,       // p
+    pub constants: IndexMap<VarName, Variable>,
+    pub discrete_reals: IndexMap<VarName, Variable>,   // z
+    pub discrete_valued: IndexMap<VarName, Variable>,  // m
+}
+```
+
+### Continuous partition (`DaeContinuousPartition`)
+
+```rust
+pub struct DaeContinuousPartition {
+    pub equations: Vec<Equation>,                         // f_x (MLS B.1a)
+    pub structured_equations: Vec<StructuredEquationFamily>,
+}
+```
+
+### Initialization partition (`DaeInitializationPartition`)
+
+```rust
+pub struct DaeInitializationPartition {
+    pub equations: Vec<Equation>,                         // initial equations
+    pub structured_equations: Vec<StructuredEquationFamily>,
+}
+```
+
+### Discrete partition (`DaeDiscretePartition`)
+
+```rust
+pub struct DaeDiscretePartition {
+    pub real_updates: Vec<Equation>,     // f_z (MLS B.1b)
+    pub valued_updates: Vec<Equation>,   // f_m (MLS B.1c)
+}
+```
+
+### Condition partition (`DaeConditionPartition`)
+
+```rust
+pub struct DaeConditionPartition {
+    pub equations: Vec<Equation>,        // f_c (MLS B.1d)
+    pub relations: Vec<Expression>,      // zero-crossing expressions
+}
+```
+
+### Event partition (`DaeEventPartition`)
+
+```rust
+pub struct DaeEventPartition {
+    pub synthetic_root_conditions: Vec<Expression>,
+    pub scheduled_time_events: Vec<f64>,
+    pub scheduled_root_conditions: Vec<DaeScheduledRootCondition>,
+    pub event_actions: Vec<DaeEventAction>,  // Assert/Terminate kinds
+}
+```
+
+`DaeEventAction` carries a `condition`, a `kind` (`Assert { message }` or
+`Terminate { message }`), a source `span`, and an `origin` string.
+
+### Clock partition (`DaeClockPartition`)
+
+```rust
+pub struct DaeClockPartition {
+    pub constructor_exprs: Vec<Expression>,
+    pub schedules: Vec<ClockSchedule>,
+    pub triggered_conditions: Vec<Expression>,
+    pub intervals: IndexMap<String, f64>,
+    pub timings: IndexMap<String, ClockSchedule>,  // phase-bearing companion to intervals
+}
+```
+
+### Symbol table (`DaeSymbolTable`)
+
+```rust
+pub struct DaeSymbolTable {
+    pub functions: IndexMap<VarName, Function>,
+    pub enum_literal_ordinals: IndexMap<String, i64>,
+}
+```
+
+### Metadata (`DaeMetadata`)
+
+```rust
+pub struct DaeMetadata {
+    pub is_partial: bool,
+    pub class_type: ClassType,
+    pub variable_starts: IndexMap<String, Expression>,
+    pub discrete_input_names: Vec<String>,
+    pub interface_flow_count: usize,
+    pub overconstrained_interface_count: i64,
+    pub oc_break_edge_scalar_count: usize,
+    pub model_description: Option<String>,
+    pub symbol_ancestry: SymbolAncestryMap,
+}
+```
+
+### Scalar counts helper (`RuntimePartitionScalarCounts`)
+
+```rust
+pub struct RuntimePartitionScalarCounts {
+    pub p: usize,  // parameters + constants
+    pub t: usize,  // always 1
+    pub x: usize,  // states
+    pub y: usize,  // algebraics + outputs
+    pub z: usize,  // discrete Reals
+    pub m: usize,  // discrete-valued
+}
+```
+
+### Variable struct (`rumoca-ir-dae/src/lib.rs`)
 
 ```rust
 pub struct Variable {
     pub name: VarName,
+    pub component_ref: Option<ComponentReference>,  // structured source reference
+    pub source_span: Span,
     pub dims: Vec<i64>,
     pub start: Option<Expression>,
-    pub fixed: Option<Expression>,
+    pub start_span: Option<Span>,
+    pub fixed: Option<bool>,         // note: bool, not Expression
     pub min: Option<Expression>,
+    pub min_span: Option<Span>,
     pub max: Option<Expression>,
+    pub max_span: Option<Span>,
     pub nominal: Option<Expression>,
+    pub nominal_span: Option<Span>,
     pub unit: Option<String>,
     pub state_select: StateSelect,
-    pub is_tunable: bool,     // FMI 3.0: tunable at runtime
-    // ...
+    pub description: Option<String>,
+    pub causality: VariableCausality, // Input | Output | Local | Parameter | ...
+    pub is_tunable: bool,            // FMI 3.0: tunable at runtime
+    pub origin: VariableOrigin,      // Source | Generated
 }
 ```
 
-### Equation struct (`lib.rs:364–380`)
+`VariableCausality` is an enum with variants `Input`, `Output`, `Local`,
+`Parameter`, `CalculatedParameter`, `Independent`. `VariableOrigin`
+distinguishes compiler-generated slots (`Generated`) from source Modelica
+components (`Source`, the default).
+
+### Equation struct (`rumoca-ir-dae/src/lib.rs`)
 
 ```rust
 pub struct Equation {
-    pub lhs: Option<VarName>,   // Some for explicit form (z := rhs), None for residual
-    pub rhs: Expression,        // either the residual or the RHS
+    pub lhs: Option<Reference>,  // Some for explicit form (z := rhs), None for residual
+    pub rhs: Expression,         // either the residual or the RHS
     pub span: Span,
     pub origin: String,
-    pub scalar_count: usize,    // MLS §8.4 scalar equation count
+    pub scalar_count: usize,     // MLS §8.4 scalar equation count
 }
 ```
 
-The `lhs` field distinguishes:
-- **Residual form**: `lhs = None`, equation is `0 = rhs` — used in `f_x`
-- **Assignment form**: `lhs = Some(name)`, equation is `name := rhs` — used in `f_z`, `f_m`
+The `lhs` field (type `Option<Reference>`, not `Option<VarName>`) distinguishes:
+- **Residual form**: `lhs = None`, equation is `0 = rhs` -- used in `f_x`
+- **Assignment form**: `lhs = Some(ref)`, equation is `ref := rhs` -- used in `f_z`, `f_m`
+
+The `Reference` type preserves the structured component reference that produced
+the lhs, so semantic phases can use it without reparsing variable names.
+
+### Other notable types (`rumoca-ir-dae/src/lib.rs`)
+
+- **`WhenClause`** -- Carries a trigger `condition`, a list of `equations`
+  active when triggered, per-equation `equation_inactive_rhs` values
+  (`Pre` or `Current`), runtime `actions`, `span`, and `origin`.
+
+- **`Algorithm`** -- Wraps an algorithm section's `statements`, derived
+  `outputs` (from `extract_algorithm_outputs`), `span`, and `origin`.
+
+- **`WhenEquationInactiveRhs`** -- Enum (`Pre` | `Current`) indicating what
+  value a when-assigned variable holds between event instants.
+
+- **`ClockSchedule`** -- Solver-agnostic periodic clock descriptor with
+  `period_seconds`, `phase_seconds`, and `source_span`.
+
+- **`RuntimePartitionScalarCounts`** -- Computed scalar sizes for the
+  canonical runtime variable partitions (`p`, `t`, `x`, `y`, `z`, `m`).
+
+- **`StructuredEquationFamily`** -- Tracks which scalar equations in
+  `f_x` / `initial_equations` originated from a single structured source
+  equation (used by `DaeContinuousPartition` and
+  `DaeInitializationPartition`).
 
 ---
 
@@ -320,7 +486,7 @@ The pass mutates the Appendix B form directly:
   `0 = h(x, y)` becomes `0 = ḣ(x, ẋ, y, ẏ)` *in place* in `f_x`.
 - **State partition shifts.** A companion sweep demotes states that — even
   after differentiation — cannot be assigned a derivative-bearing row;
-  these variables move from `dae.states` to `dae.algebraics`.
+  these variables move from `dae.variables.states` to `dae.variables.algebraics`.
 - **Origin tagging.** Differentiated equations carry a marker like
   `"index_reduction:d_dt_for_x"` in their `origin` field so downstream
   diagnostics can identify them.
@@ -330,10 +496,11 @@ an analysis artifact alongside it, as phase 7 does), it is conceptually a
 continuation of DAE construction. As of v0.9.x, the implementation lives in
 `crates/rumoca-phase-structural/src/dae_prepare/` (it was historically in
 `rumoca-sim`; the v0.9.x refactor moved it into the phase-crate layer
-where it conceptually belongs). The orchestrating driver — the function
-that runs the prep stages in order — lives in `rumoca-sim` for the
-simulation path and in `rumoca-phase-dae::prepare_dae_for_codegen` for the
-codegen path; both call the same `rumoca-phase-structural::dae_prepare`
+where it conceptually belongs). The orchestrating driver --
+`prepare_dae_for_structural_analysis` in `rumoca-sim/src/solve_lowering/structural_lowering.rs` --
+runs the prep stages in order for the simulation path. A separate
+`prepare_dae_for_codegen` in `rumoca-phase-dae/src/dae_lowering.rs` serves
+the codegen path. Both call the same `rumoca-phase-structural::dae_prepare`
 helpers, so every downstream consumer (simulator, template codegen,
 solve-IR lowering) receives an index-1 DAE built by the same code paths.
 
@@ -390,14 +557,59 @@ initial_equations:
 
 ## Key Files
 
+### DAE IR definition
+
 | File | Purpose |
 |------|---------|
-| `rumoca-phase-dae/src/lib.rs` | Entry point `to_dae()`; conversion pipeline |
-| `rumoca-phase-dae/src/classification.rs` | Variable classification algorithm |
+| `rumoca-ir-dae/src/lib.rs` | `Dae`, `Variable`, `Equation`, partition structs, `WhenClause`, `Algorithm`, `VariableKind` |
+| `rumoca-ir-dae/src/types.rs` | `StructuredEquationFamily`, `StructuredEquationSlot` |
+| `rumoca-ir-dae/src/expr_query.rs` | Expression query helpers (`expr_contains_var`, `expr_contains_der_of`, ...) |
+| `rumoca-ir-dae/src/visitor.rs` | DAE expression/statement visitor traits and collectors |
+| `rumoca-ir-dae/src/event_threshold.rs` | Event constant-threshold detection utilities |
+
+### DAE construction (`rumoca-phase-dae`)
+
+| File | Purpose |
+|------|---------|
+| `rumoca-phase-dae/src/lib.rs` | Entry point `to_dae()`; conversion pipeline orchestration |
+| `rumoca-phase-dae/src/analysis/classification.rs` | Variable classification algorithm |
+| `rumoca-phase-dae/src/analysis/definition_analysis.rs` | Algorithm-defined and record-equation-defined variable collection |
+| `rumoca-phase-dae/src/analysis/discrete_partition.rs` | Discrete partition analysis |
+| `rumoca-phase-dae/src/analysis/variable_analysis.rs` | Variable analysis helpers |
+| `rumoca-phase-dae/src/binding_conversion.rs` | Variable binding-to-equation conversion |
+| `rumoca-phase-dae/src/equation_conversion.rs` | Equation classification and routing |
 | `rumoca-phase-dae/src/when_conversion.rs` | When-clause expansion |
-| `rumoca-phase-dae/src/algorithm_lowering.rs` | Algorithm → equation conversion; discrete routing |
+| `rumoca-phase-dae/src/algorithm_lowering.rs` | Algorithm section lowering (with submodules for discrete rewrite, for-lowering, slice-lowering, etc.) |
 | `rumoca-phase-dae/src/condition_lowering.rs` | Zero-crossing extraction |
 | `rumoca-phase-dae/src/initial.rs` | Initial equation handling |
-| `rumoca-ir-dae/src/lib.rs` | `Dae`, `Variable`, `Equation` type definitions |
-| `spec/SPEC_0003_HYBRID_DAE.md` | Formal specification of the hybrid DAE form |
-| `spec/SPEC_0007_LEAN_DAE.md` | Rationale for the DAE IR schema design |
+| `rumoca-phase-dae/src/assertion_actions.rs` | Assert/terminate equation lowering to event actions |
+| `rumoca-phase-dae/src/pre_lowering.rs` | `pre()` operator lowering |
+| `rumoca-phase-dae/src/dae_lowering.rs` | Codegen preparation (`prepare_dae_for_codegen`), record-param decomposition, scalarization |
+| `rumoca-phase-dae/src/runtime_precompute/` | Clock schedule computation and timing inference |
+| `rumoca-phase-dae/src/promote_parameter_variable.rs` | Parameter-variable algebraic promotion |
+| `rumoca-phase-dae/src/fold_start_values.rs` | Start-value constant folding and algebraic dependency sorting |
+| `rumoca-phase-dae/src/convert.rs` | Conversion helpers |
+
+### DAE preparation (`rumoca-phase-structural`)
+
+| File | Purpose |
+|------|---------|
+| `rumoca-phase-structural/src/dae_prepare/mod.rs` | DAE-prep helpers: alias elimination, derivative expansion, demotion sweeps |
+| `rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs` | Index reduction, sign normalization, derivative-row demotion |
+| `rumoca-phase-structural/src/dae_prepare/symbolic.rs` | Symbolic time differentiator (chain rule) |
+| `rumoca-phase-structural/src/dae_prepare/connection_alias.rs` | Connection-component fixed defining expression resolution |
+| `rumoca-phase-structural/src/dae_prepare/direct_demotion.rs` | Direct-assignment state demotion |
+| `rumoca-phase-structural/src/dae_prepare/dummy_state_metadata.rs` | Constrained dummy-state identification |
+| `rumoca-phase-structural/src/dae_prepare/row_shape.rs` | DAE variable sizing and residual scalar-width helpers |
+
+### Pipeline driver
+
+| File | Purpose |
+|------|---------|
+| `rumoca-sim/src/solve_lowering/structural_lowering.rs` | `prepare_dae_for_structural_analysis` -- runs all prep stages in order |
+
+### Specifications
+
+| File | Purpose |
+|------|---------|
+| `spec/SPEC_0007_IR_PIPELINE.md` | Rationale for the DAE IR schema design |

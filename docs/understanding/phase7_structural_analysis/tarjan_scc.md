@@ -324,9 +324,7 @@ effectively linear in the model size.
 
 ## Tests
 
-Three tests in
-[tarjan.rs](../../../crates/rumoca-phase-structural/src/tarjan.rs#L77-L106) pin the
-expected behaviour:
+Three tests in `tarjan.rs` pin the expected behaviour:
 
 ```rust
 // No cycles: every SCC is a singleton.

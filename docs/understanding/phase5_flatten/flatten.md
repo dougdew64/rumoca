@@ -109,23 +109,31 @@ smaller size: `connect(a[1:2], b[1:3])` uses size 2.
 
 ---
 
-## For-Loop Equations (SPEC_0019 — Array Preservation)
+## Structured Equation Families (SPEC_0019 — Array Preservation)
 
-Rumoca preserves for-loop structure rather than always scalarizing:
+Rumoca preserves for-loop structure rather than always scalarizing. The flat
+IR records a `StructuredEquationFamily` for each source for-equation (see
+`crates/rumoca-ir-flat/src/lib.rs`):
 
 ```rust
-pub struct ForEquation {
-    pub index_names: Vec<String>,            // iteration variable names
+pub struct StructuredEquationFamily {
+    pub domain: StructuredIndexDomain,       // compact index domain
     pub first_equation_index: usize,         // index into flat equations vec
-    pub iterations: Vec<ForEquationIteration>, // one entry per iteration
+    pub equation_counts: Vec<usize>,         // scalar count per domain point
     pub span: Span,
     pub origin: EquationOrigin,
+    pub regular: Option<RegularForFamily>,    // affine stencil metadata
+    pub template: Option<ComprehensionTemplate>, // canonical comprehension body
+    pub interiors_materialized: bool,         // whether all cells carry full bodies
 }
 ```
 
-The actual equations are stored in the main equations vector, but the
-`ForEquation` metadata lets downstream consumers (code generators, simulators)
-reconstruct the loop structure if needed.
+The actual equations are still stored in the main equations vector, but the
+`StructuredEquationFamily` metadata lets downstream consumers (code generators,
+simulators) reconstruct the loop structure. When a family is regular (all
+array accesses are affine in the binders), the `regular` field carries stride
+metadata that the Solve-IR lowering uses to build compact kernels without
+materializing one row per index tuple.
 
 ---
 
@@ -137,7 +145,7 @@ individual assignment equations:
 ```rust
 pub struct Algorithm {
     pub statements: Vec<Statement>,  // the algorithm body
-    pub outputs: Vec<VarName>,       // LHS variables (for balance counting)
+    pub outputs: Vec<Reference>,     // LHS variables (for balance counting)
     pub span: Span,
     pub origin: String,
 }
@@ -151,54 +159,74 @@ the degree-of-freedom balance check (MLS §4.4.2).
 
 ## The Flat Model IR (`rumoca-ir-flat`)
 
-### Model struct (`lib.rs:263–355`)
+### Model struct (`crates/rumoca-ir-flat/src/lib.rs`)
 
 ```rust
 pub struct Model {
-    pub variables: IndexMap<VarName, Variable>,
-    pub equations: Vec<Equation>,               // all in residual form (0 = expr)
-    pub for_equations: Vec<ForEquation>,        // loop metadata
+    pub variables: VarNameIndexMap<Variable>,
+    pub variable_type_names: VarNameIndexMap<String>,   // resolved type name per variable
+    pub variable_final_flags: VarNameIndexMap<bool>,     // MLS 7.2.6 final qualifier
+    pub equations: Vec<Equation>,                        // all in residual form (0 = expr)
+    pub structured_equations: Vec<StructuredEquationFamily>, // source loop metadata
     pub assert_equations: Vec<AssertEquation>,
     pub initial_equations: Vec<Equation>,
-    pub initial_for_equations: Vec<ForEquation>,
+    pub initial_structured_equations: Vec<StructuredEquationFamily>,
+    pub initial_assert_equations: Vec<AssertEquation>,
     pub algorithms: Vec<Algorithm>,
     pub initial_algorithms: Vec<Algorithm>,
     pub when_clauses: Vec<WhenClause>,
-    pub functions: IndexMap<VarName, Function>,
+    pub functions: VarNameIndexMap<Function>,
     pub is_partial: bool,
     pub class_type: ClassType,
-    pub top_level_connectors: HashSet<String>,
-    pub top_level_input_components: HashSet<String>,
+    pub model_description: Option<String>,
+    pub top_level_connectors: IndexSet<String>,
+    pub top_level_input_components: IndexSet<String>,
     pub enum_literal_ordinals: IndexMap<String, i64>,
+    pub symbol_ancestry: SymbolAncestryMap,
     // connection graph metadata (for overconstrained connectors)
-    pub definite_roots: HashSet<String>,
+    pub definite_roots: IndexSet<String>,
     pub branches: Vec<(String, String)>,
     pub optional_edges: Vec<(String, String)>,
     pub potential_roots: Vec<(String, i64)>,
+    pub oc_break_edge_scalar_count: usize,
 }
 ```
 
-### Variable struct (`lib.rs:444–535`)
+`VarNameIndexMap<V>` is a type alias for `IndexMap<VarName, V, FxBuildHasher>`,
+using a fast deterministic hasher. `IndexSet` (from the `indexmap` crate)
+replaces the earlier `HashSet` usage to guarantee deterministic iteration order
+across compilations.
+
+### Variable struct (`crates/rumoca-ir-flat/src/lib.rs`)
 
 ```rust
 pub struct Variable {
-    pub name: VarName,              // globally qualified: "body.position.x"
+    pub name: VarName,                  // globally qualified: "body.position.x"
+    pub component_ref: Option<ComponentReference>, // structured source reference
+    pub source_span: Span,
     pub type_id: TypeId,
-    pub variability: Variability,   // constant | parameter | discrete | continuous
-    pub causality: Causality,       // input | output | (none)
+    pub variability: Variability,       // constant | parameter | discrete | continuous
+    pub causality: Causality,           // input | output | (none)
     pub flow: bool,
     pub stream: bool,
-    pub dims: Vec<i64>,             // resolved array dimensions
-    pub connected: bool,            // appears in a connect() statement
+    pub dims: Vec<i64>,                 // resolved array dimensions
+    pub connected: bool,                // appears in a connect() statement
     pub binding: Option<Expression>,
-    pub evaluate: bool,             // structural parameter?
-    pub is_discrete_type: bool,     // Boolean/Integer → discrete by default
-    pub is_primitive: bool,         // primitive vs record type
-    // plus: start, fixed, min, max, nominal, unit, state_select, ...
+    pub binding_from_modification: bool,
+    pub evaluate: bool,                 // structural parameter (Evaluate=true or final)
+    pub is_discrete_type: bool,         // Boolean/Integer -> discrete by default
+    pub is_primitive: bool,             // primitive vs record type
+    pub from_expandable_connector: bool,
+    pub is_overconstrained: bool,       // belongs to an overconstrained connector
+    pub is_protected: bool,             // declared in protected section
+    pub oc_record_path: Option<String>, // enclosing overconstrained record path
+    pub oc_eq_constraint_size: Option<usize>,
+    // plus: start, fixed, min, max, nominal, unit, display_unit,
+    //       quantity, description, state_select
 }
 ```
 
-### Equation struct (`lib.rs:1224–1310`)
+### Equation struct (`crates/rumoca-ir-flat/src/lib.rs`)
 
 All equations are in **residual form**: the equation `x = y + 1` becomes
 `0 = y + 1 - x`.
@@ -223,31 +251,35 @@ pub enum EquationOrigin {
 }
 ```
 
-### Flat Expression IR (`lib.rs:150–226`)
+### Flat Expression IR (`crates/rumoca-core/src/ir_primitives.rs`)
 
-Compared to the AST `Expression`, the flat `Expression`:
-- Uses `VarName` (globally qualified strings) instead of `ComponentReference`
+The `Expression` type is defined in `rumoca-core` and shared by the Flat and
+DAE IRs. Compared to the AST `Expression`:
+- Uses `Reference` (a structured semantic reference with cached display name,
+  optional `ComponentReference`, and optional resolved function info) instead
+  of raw `ComponentReference`
 - Distinguishes `BuiltinCall` (e.g., `der`, `sin`) from `FunctionCall`
   (user-defined)
-- Has no `ComponentReference` variant — name resolution is complete
-- Has no parentheses — tree structure encodes precedence
+- Has no `ComponentReference` variant -- name resolution is complete
+- Has no parentheses -- tree structure encodes precedence
+- Every variant carries an optional `span` field for diagnostics
 
 ```rust
 pub enum Expression {
-    Binary { op: OpBinary, lhs: Box<Expression>, rhs: Box<Expression> },
-    Unary { op: OpUnary, rhs: Box<Expression> },
-    VarRef { name: VarName, subscripts: Vec<Subscript> },
-    BuiltinCall { function: BuiltinFunction, args: Vec<Expression> },
-    FunctionCall { name: VarName, args: Vec<Expression>, is_constructor: bool },
-    Literal(Literal),
-    If { branches: Vec<(Expression, Expression)>, else_branch: Box<Expression> },
-    Array { elements: Vec<Expression>, is_matrix: bool },
-    Tuple { elements: Vec<Expression> },
-    Range { start, step, end },
-    ArrayComprehension { expr, indices, filter },
-    Index { base: Box<Expression>, subscripts: Vec<Subscript> },
-    FieldAccess { base: Box<Expression>, field: String },
-    Empty,
+    Binary { op: OpBinary, lhs: Box<Expression>, rhs: Box<Expression>, span: Span },
+    Unary { op: OpUnary, rhs: Box<Expression>, span: Span },
+    VarRef { name: Reference, subscripts: Vec<Subscript>, span: Span },
+    BuiltinCall { function: BuiltinFunction, args: Vec<Expression>, span: Span },
+    FunctionCall { name: Reference, args: Vec<Expression>, is_constructor: bool, span: Span },
+    Literal { value: Literal, span: Span },
+    If { branches: Vec<(Expression, Expression)>, else_branch: Box<Expression>, span: Span },
+    Array { elements: Vec<Expression>, is_matrix: bool, span: Span },
+    Tuple { elements: Vec<Expression>, span: Span },
+    Range { start, step, end, span: Span },
+    ArrayComprehension { expr, indices, filter, span: Span },
+    Index { base: Box<Expression>, subscripts: Vec<Subscript>, span: Span },
+    FieldAccess { base: Box<Expression>, field: String, span: Span },
+    Empty { span: Span },
 }
 ```
 
