@@ -1,0 +1,450 @@
+# Drill-Down: Maximum Bipartite Matching
+
+*Parent document: [structural_analysis.md](structural_analysis.md)*
+*Source: [crates/rumoca-phase-structural/src/matching.rs](../../../crates/rumoca-phase-structural/src/matching.rs)*
+
+---
+
+## What Problem Does This Step Solve?
+
+After the [incidence matrix](incidence_matrix.md) has been built, we have a
+record of which unknowns appear in which equations. We now need to **assign one
+unknown to each equation** so that every equation has a single variable it is
+"responsible for" computing.
+
+This pairing is what allows downstream phases to reason about evaluation order:
+once an equation owns a variable, that variable's value can be thought of as
+the *output* of that equation, and any other equation that mentions the same
+variable becomes *dependent* on the owning equation.
+
+Concretely, the matching feeds two later steps:
+
+1. **Tarjan's SCC algorithm** uses the assignment to build a directed
+   dependency graph between equations.
+2. **BLT ordering and tearing** use the SCC partition to produce an evaluation
+   sequence.
+
+Without an assignment, there is no way to say "equation A depends on equation
+B" — both equations might mention the same variable, and there would be no
+canonical way to decide which equation produces it and which consumes it.
+
+---
+
+## The Underlying Mathematical Object: A Bipartite Graph
+
+The incidence matrix is most usefully viewed as a **bipartite graph**:
+
+- One set of vertices = equations (rows of the incidence matrix).
+- The other set of vertices = unknowns (columns).
+- An edge connects equation $e$ to unknown $v$ iff $v$ appears in $e$.
+
+```
+   equations           unknowns
+     eq0  ────────────  v0
+            ╲
+             ╲────────  v1
+     eq1  ──╱
+           ╳───────────  v2
+     eq2  ╱  ╲
+                ────────  v3
+```
+
+A **matching** is a subset of these edges with the constraint that no two
+chosen edges share a vertex. Intuitively: each equation is paired with at most
+one unknown, and each unknown is claimed by at most one equation.
+
+A **maximum matching** is a matching that contains as many edges as possible.
+
+A **perfect matching** is one in which every equation is paired (and, if there
+are equally many unknowns and equations, every unknown is claimed too). For a
+well-posed continuous DAE, the matching must be perfect — otherwise the system
+is *structurally singular*.
+
+---
+
+## Why Greedy Doesn't Work
+
+The first instinct is greedy: walk equations in order, and for each equation
+pick any unknown that is still free. This often produces a matching, but not
+always a *maximum* one. Here is a small example that defeats greedy assignment:
+
+```
+eq0  references  {v0, v1}
+eq1  references  {v0}
+```
+
+A greedy walk in order:
+1. eq0 sees v0 free, claims v0.
+2. eq1 sees v0 taken (its only option) — fails.
+
+Result: matching of size 1. But a perfect matching of size 2 exists: assign
+eq0 → v1 and eq1 → v0.
+
+The fix is that when a later equation gets stuck, it must be allowed to
+**displace** an earlier equation's assignment, provided the earlier equation
+can find a replacement. That displacement chain is called an **augmenting
+path**.
+
+---
+
+## Augmenting Paths
+
+An **augmenting path** in the current partial matching is an alternating
+sequence
+
+$$ e_0 - v_0 - e_1 - v_1 - e_2 - v_2 - \dots - v_k $$
+
+where:
+
+- $e_0$ is an unmatched equation (the one we are currently trying to pair).
+- Edges of the form $e_i - v_i$ are *unmatched* edges (incidence-matrix entries
+  not currently chosen).
+- Edges of the form $v_i - e_{i+1}$ are *matched* edges (currently chosen).
+- $v_k$ is an unmatched unknown (free).
+
+If we toggle every edge along this path — turn the unmatched edges *into*
+matched edges, and the matched edges into unmatched ones — three things happen:
+
+1. The constraint "no shared vertex" is preserved (each equation/unknown
+   participates in exactly one edge on the path before and after).
+2. Every equation $e_i$ on the path is still matched (just to a different
+   unknown).
+3. The previously-unmatched equation $e_0$ becomes matched, and the previously-
+   unmatched unknown $v_k$ becomes claimed.
+
+So the matching grows by exactly **one**.
+
+A foundational theorem of matching theory (König / Berge) states:
+
+> A matching is maximum if and only if no augmenting path exists.
+
+This gives a direct algorithm:
+
+```
+start with the empty matching
+while some augmenting path exists:
+    find one and toggle it
+```
+
+Each iteration grows the matching by 1, and there are at most `min(n_eq, n_var)`
+iterations, so the loop terminates quickly.
+
+---
+
+## Kuhn's Algorithm
+
+Kuhn's algorithm is the classical implementation of the above idea, and it is
+exactly what `matching.rs` does. It iterates over equations in index order,
+and for each unmatched equation, performs a depth-first search to find an
+augmenting path starting at that equation. If one is found, the matching is
+toggled along the path; if not, that equation simply remains unmatched (and
+will end up in the unmatched-equations diagnostic if the matching turns out to
+be imperfect).
+
+The clever part of Kuhn's algorithm is that it does **not** explicitly build or
+walk the augmenting path. Instead, the path is encoded implicitly in the call
+stack of a recursive function: each level of recursion represents one "step"
+along the path, and when the recursion reaches a free unknown, the assignment
+cascade on the way back up performs the toggling.
+
+---
+
+## The Code, Step by Step
+
+Here is the recursive helper from
+[matching.rs:27–54](../../../crates/rumoca-phase-structural/src/matching.rs#L27-L54),
+annotated:
+
+```rust
+fn augment(
+    eq: usize,                            // the equation we are trying to pair
+    match_eq:  &mut [Option<usize>],      // match_eq[i]  = Some(j) if eq i is matched to var j
+    match_var: &mut [Option<usize>],      // match_var[j] = Some(i) if var j is matched to eq i
+    eq_vars:   &[HashSet<usize>],         // eq_vars[i] = unknowns referenced by eq i (the incidence)
+    visited:   &mut [bool],               // visited[v] = true if we've already tried var v on this DFS
+) -> bool {
+    let mut vars: Vec<usize> = eq_vars[eq].iter().copied().collect();
+    vars.sort_unstable();
+    for var in vars {
+        if !visited[var] {
+            visited[var] = true;
+            let can_augment = match match_var[var] {
+                None => true,
+                Some(matched_eq) =>
+                    augment(matched_eq, match_eq, match_var, eq_vars, visited),
+            };
+            if can_augment {
+                match_eq[eq]   = Some(var);
+                match_var[var] = Some(eq);
+                return true;
+            }
+        }
+    }
+    false
+}
+```
+
+### What each piece does
+
+**The two arrays `match_eq` and `match_var`** are the matching itself, stored
+as a pair of inverse mappings. They are kept in sync — every assignment writes
+to both. Storing both directions lets us answer two questions in O(1):
+
+- "Which unknown is equation `e` matched to?" — `match_eq[e]`
+- "Which equation owns unknown `v`?" — `match_var[v]`
+
+We need both, because the augmenting search has to look up the current owner
+of a candidate unknown to decide whether to displace it.
+
+**The `visited` array** is the standard DFS guard. Within one top-level call,
+each unknown is examined at most once. Without this guard the recursion could
+visit the same unknown along two different chains and loop forever (or simply
+do redundant work). It is reset to all-`false` at the top of each new outer
+iteration in `maximum_matching`, because each new starting equation deserves a
+fresh search.
+
+**The body of the loop**, for each candidate unknown `var`:
+
+1. **`if !visited[var]`** — skip unknowns we've already tried in this DFS.
+2. **`visited[var] = true`** — mark before recursing, so the recursive call
+   doesn't try the same unknown again from below.
+3. **The `match match_var[var]`** checks the current owner of `var`:
+   - **`None`** → `var` is free. We've found the end of an augmenting path:
+     just return `true` and let the caller perform the assignment.
+   - **`Some(matched_eq)`** → `var` already belongs to `matched_eq`. Recurse:
+     ask whether `matched_eq` can find a *different* unknown to claim instead.
+     If yes, the recursive call will have already updated `match_eq[matched_eq]`
+     and `match_var[var]` is about to be overwritten by us. If no, we cannot
+     use `var` and must try the next candidate.
+4. **`if can_augment`** → either the unknown was free, or its owner found
+   another option. In both cases, the augmenting path continues through `eq`
+   to `var`. We claim `var` for `eq` (overwriting whatever was there) and
+   return `true`.
+
+The unwinding of the recursion is what performs the "toggle every edge along
+the path" operation. Each recursive return assigns one new (eq, var) pair,
+overwriting the previous owner of that var. The cumulative effect is exactly
+the toggle — every edge on the path flips its matched/unmatched status.
+
+### How the implicit augmenting path corresponds to the recursion
+
+Imagine `augment(eq0)` is called. It picks unknown `v0`, finds it owned by
+`eq1`, and recursively calls `augment(eq1)`. That call picks `v1`, finds it
+owned by `eq2`, and recurses again into `augment(eq2)`. That call picks `v2`,
+which is free, and returns `true`.
+
+The augmenting path implied by this recursion is
+
+```
+eq0 --(unmatched edge)--> v0 --(matched edge)--> eq1
+    --(unmatched edge)--> v1 --(matched edge)--> eq2
+    --(unmatched edge)--> v2  (free)
+```
+
+As the recursion unwinds:
+
+- `augment(eq2)` returns `true` after setting `match_eq[eq2] = Some(v2)` and
+  `match_var[v2] = Some(eq2)`.
+- `augment(eq1)` then sets `match_eq[eq1] = Some(v1)` and `match_var[v1] = Some(eq1)`.
+- `augment(eq0)` finally sets `match_eq[eq0] = Some(v0)` and `match_var[v0] = Some(eq0)`.
+
+Every edge along the path has been toggled, and the matching has grown by 1.
+
+---
+
+## The Outer Driver
+
+```rust
+pub(crate) fn maximum_matching(
+    n_eq: usize,
+    n_var: usize,
+    eq_vars: &[HashSet<usize>],
+) -> (Vec<Option<usize>>, Vec<Option<usize>>) {
+    let mut match_eq:  Vec<Option<usize>> = vec![None; n_eq];
+    let mut match_var: Vec<Option<usize>> = vec![None; n_var];
+
+    for eq in 0..n_eq {
+        let mut visited = vec![false; n_var];
+        augment(eq, &mut match_eq, &mut match_var, eq_vars, &mut visited);
+    }
+
+    (match_eq, match_var)
+}
+```
+
+This is Kuhn's outer loop. For each equation in order, it allocates a fresh
+`visited` array and calls `augment`. If `augment` returns `false`, that
+equation simply stays unmatched and contributes to a structural-singularity
+diagnostic later. The loop never reverses — once an equation is matched (even
+indirectly via displacement), it stays matched, although the *which-variable*
+of its assignment may change as later equations augment through it.
+
+The complexity is $O(V \cdot E)$ where $V$ is the number of equations and $E$
+is the total number of incidence entries. For the sparse models that Modelica
+produces, this is effectively linear.
+
+---
+
+## Why the Sort Matters: Determinism
+
+The two lines
+
+```rust
+let mut vars: Vec<usize> = eq_vars[eq].iter().copied().collect();
+vars.sort_unstable();
+```
+
+deserve careful attention. The incidence is stored as `Vec<HashSet<usize>>`,
+and `HashSet`'s iteration order is **not deterministic** across runs — Rust's
+default hasher uses a random seed per process. If the algorithm iterated the
+hash set directly, the order in which candidate unknowns are tried would
+differ between runs.
+
+That non-determinism would not affect *whether* a maximum matching exists, but
+it would change *which* maximum matching is found when multiple maxima are
+valid. Since the matching feeds Tarjan, BLT, and tearing, any change in the
+matching cascades into a different evaluation order and different generated
+code. Reproducible builds and stable golden-output tests both require a
+deterministic matching.
+
+The fix is to copy the candidates into a `Vec` and sort by integer index
+before iterating. Sort order is the unknown's column index, which is stable
+because `build_unknown_map` assigns indices deterministically.
+
+The test
+[`test_maximum_matching_is_deterministic_under_ties`](../../../crates/rumoca-phase-structural/src/matching.rs#L84-L90)
+pins this behaviour:
+
+```rust
+// Both equations reference {v0, v1}.
+// Deterministic order: eq0 visits v0 first, claims it; eq1 augments
+// through eq0 (which then takes v1), so eq1 → v0, eq0 → v1.
+let eq_vars = vec![HashSet::from([0, 1]), HashSet::from([0, 1])];
+let (match_eq, match_var) = maximum_matching(2, 2, &eq_vars);
+assert_eq!(match_eq,  vec![Some(1), Some(0)]);
+assert_eq!(match_var, vec![Some(1), Some(0)]);
+```
+
+Without the sort, this assertion would fail intermittently.
+
+---
+
+## Worked Example: Walking an Augmenting Path
+
+Take the incidence
+
+```
+eq0 references {v0, v1}
+eq1 references {v0, v2}
+eq2 references {v1}
+```
+
+State the empty matching: `match_eq = [None, None, None]`, `match_var = [None, None, None]`.
+
+**Iteration 1, `augment(eq0)`** with `visited = [F, F, F]`:
+
+- Sorted candidates: `[0, 1]`. Try `v0`: unvisited → mark visited.
+  `match_var[0] = None` → free → return `true`. Assign `match_eq[0] = Some(0)`,
+  `match_var[0] = Some(0)`.
+
+Matching after: `match_eq = [Some(0), None, None]`, `match_var = [Some(0), None, None]`.
+
+**Iteration 2, `augment(eq1)`** with `visited = [F, F, F]`:
+
+- Sorted candidates: `[0, 2]`. Try `v0`: mark visited.
+  `match_var[0] = Some(0)` → owned by `eq0`. Recurse into `augment(eq0)`.
+  - Sorted candidates of `eq0`: `[0, 1]`. Try `v0`: already visited, skip.
+    Try `v1`: mark visited. `match_var[1] = None` → free → return `true`.
+    Assign `match_eq[0] = Some(1)`, `match_var[1] = Some(0)`.
+  - `augment(eq0)` returns `true`.
+  Back in the outer call: `can_augment = true`. Assign `match_eq[1] = Some(0)`,
+  `match_var[0] = Some(1)`. Return `true`.
+
+Matching after: `match_eq = [Some(1), Some(0), None]`, `match_var = [Some(1), Some(0), None]`.
+
+The augmenting path that just executed was $eq_1 - v_0 - eq_0 - v_1$: it
+displaced `eq0` from `v0` (forcing it to take `v1`) and made room for `eq1`
+to take `v0`.
+
+**Iteration 3, `augment(eq2)`** with `visited = [F, F, F]`:
+
+- Sorted candidates: `[1]`. Try `v1`: mark visited.
+  `match_var[1] = Some(0)` → owned by `eq0`. Recurse into `augment(eq0)`.
+  - Sorted candidates of `eq0`: `[0, 1]`. Try `v0`: mark visited.
+    `match_var[0] = Some(1)` → owned by `eq1`. Recurse into `augment(eq1)`.
+    - Sorted candidates of `eq1`: `[0, 2]`. Try `v0`: already visited, skip.
+      Try `v2`: mark visited. `match_var[2] = None` → free → return `true`.
+      Assign `match_eq[1] = Some(2)`, `match_var[2] = Some(1)`.
+    - `augment(eq1)` returns `true`.
+    Back in `augment(eq0)`: assign `match_eq[0] = Some(0)`, `match_var[0] = Some(0)`.
+    Return `true`.
+  - Try `v1`: already visited (we marked it before recursing into `eq0`), skip.
+  Wait — actually re-trace: in `augment(eq0)` we marked `v0` visited *and then*
+  recursed; the inner call returned `true` so we never reach `v1`. `augment(eq0)`
+  returns `true`.
+  Back in `augment(eq2)`: assign `match_eq[2] = Some(1)`, `match_var[1] = Some(2)`.
+  Return `true`.
+
+Final matching: `match_eq = [Some(0), Some(2), Some(1)]`,
+`match_var = [Some(0), Some(2), Some(1)]`. Perfect — three equations matched
+to three unknowns.
+
+The augmenting path on this iteration was $eq_2 - v_1 - eq_0 - v_0 - eq_1 - v_2$:
+two displacements, one new pairing, matching grew by one.
+
+---
+
+## Determining Structural Singularity
+
+After `maximum_matching` returns, the caller in `lib.rs` counts how many
+equations were matched. If that count is less than `min(n_eq, n_var)`, the
+system is structurally singular:
+
+- More equations than the matching covers ⇒ overdetermined: at least one
+  equation has no unknown to "own".
+- Unmatched unknowns ⇒ underdetermined: at least one unknown is never the
+  output of any equation.
+
+The caller produces a `StructuralError::Singular { unmatched_equations,
+unmatched_unknowns, … }` with both lists by name, so the modeler can identify
+the offending pair.
+
+The test
+[`test_maximum_matching_imperfect`](../../../crates/rumoca-phase-structural/src/matching.rs#L72-L82)
+exercises this case:
+
+```rust
+// eq0 and eq1 both reference {v0}; only one of them can win.
+// eq2 freely takes v1 or v2.
+let eq_vars = vec![
+    HashSet::from([0]),
+    HashSet::from([0]),
+    HashSet::from([1, 2]),
+];
+let (match_eq, _match_var) = maximum_matching(3, 3, &eq_vars);
+let size = match_eq.iter().filter(|m| m.is_some()).count();
+assert_eq!(size, 2);   // eq0 or eq1 plus eq2; the other stays unmatched.
+```
+
+No augmenting path can rescue the loser of the eq0/eq1 contest because there
+is nowhere for it to go — `v0` is its only neighbour.
+
+---
+
+## Summary
+
+- The matching step pairs each continuous equation with exactly one of the
+  unknowns it references, so that downstream phases can speak of "the equation
+  responsible for variable v".
+- The bipartite graph comes directly from the incidence matrix; the goal is
+  a maximum (ideally perfect) matching.
+- Greedy assignment is insufficient because later equations may need to
+  displace earlier ones; Kuhn's augmenting-path algorithm handles displacement.
+- The recursive `augment` function is a depth-first search whose call stack
+  encodes the augmenting path; the assignment performed during stack unwinding
+  is exactly the path-toggling that grows the matching.
+- Sorting the per-equation candidate list before iterating is essential for
+  determinism, because `HashSet` iteration order is process-randomised.
+- An imperfect matching signals structural singularity, which is reported with
+  the names of the unmatched equations and unknowns so the modeler can fix the
+  source.
