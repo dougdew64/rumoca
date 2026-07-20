@@ -130,6 +130,8 @@ pub enum FromWorker {
         index_reduction: Stage,
         /// Arc 5: the initial-condition solve plan (`build_ic_plan`) + relaxation hint.
         initialization: Stage,
+        /// Arc 6: the DAE's hybrid / event structure (conditions, discrete updates, events).
+        events: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -253,6 +255,7 @@ impl WorkerState {
                     structural: Stage::default(),
                     index_reduction: Stage::default(),
                     initialization: Stage::default(),
+                    events: Stage::default(),
                     def_index: BTreeMap::new(),
                 };
             }
@@ -316,10 +319,10 @@ impl WorkerState {
 
         // --- Flatten stage: from the reachable-closure pipeline (increment 1).
         // Instantiate/Typecheck were computed above from the resolved tree. ---
-        let (flatten, structural, index_reduction, initialization) = match &model {
+        let (flatten, structural, index_reduction, initialization, events) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e))
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e))
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -330,6 +333,7 @@ impl WorkerState {
                     structural_stage(result),
                     index_reduction_stage(result),
                     initialization_stage(result),
+                    events_stage(result),
                 )
             }
         };
@@ -345,6 +349,7 @@ impl WorkerState {
             structural,
             index_reduction,
             initialization,
+            events,
             def_index,
         }
     }
@@ -539,6 +544,63 @@ fn ic_plan_to_json(
             "dropped_equations": h.dropped_eq_global,
             "pinned_unknowns": h.dropped_unknown_names,
         })),
+    })
+}
+
+/// Arc 6: the DAE's hybrid / event structure — where the equation set changes at
+/// discrete events. Read directly from the public `rumoca-ir-dae` partitions:
+/// `conditions` (the `f_c` equations + the `relation` expressions that trigger
+/// events), `discrete` (the `f_z`/`f_m` update equations lowered from `when`
+/// clauses), and `events` (zero-crossing root conditions + scheduled time events).
+fn events_stage(result: Option<&PhaseResult>) -> Stage {
+    match result {
+        Some(PhaseResult::Success(cr)) => {
+            let json = events_to_json(&cr.dae);
+            let total = json["summary"]
+                .as_object()
+                .map(|s| s.values().filter_map(serde_json::Value::as_u64).sum::<u64>())
+                .unwrap_or(0);
+            if total == 0 {
+                Stage::ok_with_note(json, "no events — this model is a smooth (continuous) system")
+            } else {
+                Stage::ok(json)
+            }
+        }
+        Some(PhaseResult::Failed { phase, .. }) => {
+            Stage::info(format!("not reached ({phase} failed earlier)"))
+        }
+        Some(PhaseResult::NeedsInner { .. }) => {
+            Stage::info("not reached (model needs inner declarations)")
+        }
+        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    }
+}
+
+fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
+    let conditions = &dae.conditions;
+    let discrete = &dae.discrete;
+    let events = &dae.events;
+    serde_json::json!({
+        "summary": {
+            "condition_equations": conditions.equations.len(),
+            "relations": conditions.relations.len(),
+            "discrete_real_updates": discrete.real_updates.len(),
+            "discrete_valued_updates": discrete.valued_updates.len(),
+            "zero_crossing_conditions": events.synthetic_root_conditions.len(),
+            "scheduled_time_events": events.scheduled_time_events.len(),
+        },
+        "conditions": {
+            "equations_f_c": serde_json::to_value(&conditions.equations).unwrap_or_default(),
+            "relations": serde_json::to_value(&conditions.relations).unwrap_or_default(),
+        },
+        "discrete_updates": {
+            "real_updates_f_z": serde_json::to_value(&discrete.real_updates).unwrap_or_default(),
+            "valued_updates_f_m": serde_json::to_value(&discrete.valued_updates).unwrap_or_default(),
+        },
+        "events": {
+            "zero_crossing_conditions": serde_json::to_value(&events.synthetic_root_conditions).unwrap_or_default(),
+            "scheduled_time_events": serde_json::to_value(&events.scheduled_time_events).unwrap_or_default(),
+        },
     })
 }
 
@@ -961,6 +1023,31 @@ mod tests {
         assert!(initialization.note_is_error, "over-determined init should be flagged red");
     }
 
+
+    /// Arc 6: BouncingBall is a hybrid model — the Events stage reports its
+    /// condition (`h <= 0`) + discrete update (the `reinit`). A smooth model
+    /// (SingleInertia) reports none.
+    #[test]
+    fn bouncing_ball_has_events_smooth_model_has_none() {
+        let total_events = |v: &serde_json::Value| -> u64 {
+            v["summary"].as_object().into_iter().flatten()
+                .filter_map(|(_, x)| x.as_u64()).sum()
+        };
+        let FromWorker::Compiled { events, .. } = compile_specimen_shared("BouncingBall") else {
+            panic!("expected Compiled");
+        };
+        let v = events.value.expect("events IR");
+        assert!(total_events(&v) >= 1, "BouncingBall should have hybrid structure");
+        assert!(
+            v["discrete_updates"]["real_updates_f_z"].as_array().is_some_and(|a| !a.is_empty()),
+            "expected the reinit as a discrete real update"
+        );
+
+        let FromWorker::Compiled { events: smooth, .. } = compile_specimen_shared("SingleInertia") else {
+            panic!("expected Compiled");
+        };
+        assert_eq!(total_events(&smooth.value.expect("events IR")), 0, "SingleInertia is smooth");
+    }
 
     /// Arc 4: the parked hand-built PlanarMechanics library (the four-bar-linkage
     /// prerequisite, deferred until Rumoca's Rust-path reduction handles nonlinear

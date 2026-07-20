@@ -430,3 +430,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   rendering the hybrid partitions → author + narrate BouncingBall. "Step-mode plotting" (running + plotting
   discontinuities) is a stretch bridging to Arc 7 (simulation core), not required for the compile-level
   event structure.
+- **2026-07-20 — Arc 6 step 2: Events (hybrid structure) stage wired.** New `StageKind::Events` tab (after
+  Initialization), fed by `worker::events_stage` → `events_to_json`, reading the DAE's public hybrid
+  partitions directly (`dae.conditions.{equations,relations}`, `dae.discrete.{real_updates,valued_updates}`,
+  `dae.events.{synthetic_root_conditions,scheduled_time_events}`) — expressions serialize, no new dep. A
+  smooth model → an info note "no events". Full new-stage checklist (worker field/compile; app StageKind/
+  field/init/reset/store/current_stage/stage_name/tab/last_successful_stage/previous_stage_value(None)/
+  write_stages; field_help → phase6_dae_construction/dae_construction.md; gen_trace STAGES+by_name, traces
+  regenerated → all specimens gain events.json). Specimen `BouncingBall.mo` + narrative: the archetypal
+  hybrid (`when h<=0 then reinit(v,-e*pre(v))`) → 1 condition/relation (`h<=0`) + 1 discrete update (the
+  reinit); first specimen with a non-empty Events tab. Guarded by
+  `worker::tests::bouncing_ball_has_events_smooth_model_has_none`. "Step-mode plotting" (run + plot) is
+  deferred to Arc 7 (simulation core).

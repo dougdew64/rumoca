@@ -1,0 +1,29 @@
+{
+  "n_equations": 2,
+  "n_unknowns": 2,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "unknown": "der(h)"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "unknown": "der(v)"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (top-level model equation)",
+      "unknown": "der(h)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (top-level model equation)",
+      "unknown": "der(v)"
+    }
+  ]
+}

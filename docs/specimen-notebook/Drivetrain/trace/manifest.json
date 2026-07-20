@@ -36,6 +36,10 @@
     "initialization": {
       "has_ir": false,
       "note": "IC planning failed: structurally singular system: 80 matched out of 88 equations and 88 unknowns; unmatched equations: equation from rotor, equation from shaft, equation from load, flow sum equation: load.flange_b.f + mount.flange_a.f = 0, connection equation: emf.flange.phi = rotor.flange_a.phi, connection equation: gear.flange_b.phi = shaft.flange_a.phi, connection equation: r2t.flangeT.s = load.flange_a.s, connection equation: mount.flange_b.s = wall.flange.s; unmatched unknowns: src.v, src.i, R.p.i, R.LossPower, emf.internalSupport.flange.tau, gnd.p.i, r2t.fixedR.flange.tau, r2t.fixedT.flange.f"
+    },
+    "events": {
+      "has_ir": true,
+      "note": null
     }
   }
 }

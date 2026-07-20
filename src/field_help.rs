@@ -54,6 +54,10 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "Initialization · IC planning",
             "docs/compiler-phases/phase7_structural_analysis/ic_plan.md",
         ),
+        "Events" => (
+            "DAE construction · events & hybrid structure",
+            "docs/compiler-phases/phase6_dae_construction/dae_construction.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/compiler-phases/high_level_overview.md",

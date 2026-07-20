@@ -36,6 +36,10 @@
     "initialization": {
       "has_ir": true,
       "note": "no algebraic initialization subsystem (equations ≤ states)"
+    },
+    "events": {
+      "has_ir": true,
+      "note": "no events — this model is a smooth (continuous) system"
     }
   }
 }

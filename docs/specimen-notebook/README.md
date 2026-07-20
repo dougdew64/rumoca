@@ -63,3 +63,6 @@ Roughly in order of increasing structural interest:
 - [`OverInitRc`](OverInitRc/narrative.md) — the Arc-5 **initialization blow-up**:
   a clean RC with conflicting `initial equation`s → the Initialization tab flags an
   **over-determined** init (idea #6). Structurally fine; wrong at t=0.
+- [`BouncingBall`](BouncingBall/narrative.md) — the Arc-6 **hybrid** specimen: a
+  `when h <= 0 then reinit(v, …)` bounce → the Events tab shows the condition
+  (`h <= 0`) + the discrete reinit. The first specimen with a non-empty Events tab.

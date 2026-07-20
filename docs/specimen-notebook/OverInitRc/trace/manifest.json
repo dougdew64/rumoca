@@ -36,6 +36,10 @@
     "initialization": {
       "has_ir": true,
       "note": "OVER-DETERMINED initialization: 2 explicit initial condition(s) (2 initial equation(s) + 0 fixed start(s)) for 1 state(s) — 1 too many; conflicting / redundant ICs"
+    },
+    "events": {
+      "has_ir": true,
+      "note": null
     }
   }
 }

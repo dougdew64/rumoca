@@ -1,0 +1,394 @@
+{
+  "summary": {
+    "condition_equations": 1,
+    "relations": 1,
+    "discrete_real_updates": 1,
+    "discrete_valued_updates": 0,
+    "zero_crossing_conditions": 0,
+    "scheduled_time_events": 0
+  },
+  "conditions": {
+    "equations_f_c": [
+      {
+        "lhs": {
+          "name": "c[1]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 16151201885511687010,
+              "start": 430,
+              "end": 436
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 16151201885511687010,
+                  "start": 430,
+                  "end": 436
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 1,
+                      "span": {
+                        "source": 16151201885511687010,
+                        "start": 430,
+                        "end": 436
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Le",
+            "lhs": {
+              "VarRef": {
+                "name": {
+                  "name": "h",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 321,
+                      "end": 327
+                    },
+                    "parts": [
+                      {
+                        "ident": "h",
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 321,
+                          "end": 327
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39463
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 16151201885511687010,
+                  "start": 430,
+                  "end": 431
+                }
+              }
+            },
+            "rhs": {
+              "Literal": {
+                "value": {
+                  "Integer": 0
+                },
+                "span": {
+                  "source": 16151201885511687010,
+                  "start": 435,
+                  "end": 436
+                }
+              }
+            },
+            "span": {
+              "source": 16151201885511687010,
+              "start": 430,
+              "end": 436
+            }
+          }
+        },
+        "span": {
+          "source": 16151201885511687010,
+          "start": 430,
+          "end": 436
+        },
+        "origin": "condition equation from guarded reinit(v)",
+        "scalar_count": 1
+      }
+    ],
+    "relations": [
+      {
+        "Binary": {
+          "op": "Le",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "h",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 16151201885511687010,
+                    "start": 321,
+                    "end": 327
+                  },
+                  "parts": [
+                    {
+                      "ident": "h",
+                      "span": {
+                        "source": 16151201885511687010,
+                        "start": 321,
+                        "end": 327
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39463
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 16151201885511687010,
+                "start": 430,
+                "end": 431
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 16151201885511687010,
+                "start": 435,
+                "end": 436
+              }
+            }
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 430,
+            "end": 436
+          }
+        }
+      }
+    ]
+  },
+  "discrete_updates": {
+    "real_updates_f_z": [
+      {
+        "lhs": {
+          "name": "v",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 16151201885511687010,
+              "start": 353,
+              "end": 359
+            },
+            "parts": [
+              {
+                "ident": "v",
+                "span": {
+                  "source": 16151201885511687010,
+                  "start": 353,
+                  "end": 359
+                },
+                "subs": []
+              }
+            ],
+            "def_id": 39464
+          }
+        },
+        "rhs": {
+          "If": {
+            "branches": [
+              [
+                {
+                  "Binary": {
+                    "op": "And",
+                    "lhs": {
+                      "VarRef": {
+                        "name": {
+                          "name": "c",
+                          "generated": true
+                        },
+                        "subscripts": [
+                          {
+                            "Index": {
+                              "value": 1,
+                              "span": {
+                                "source": 16151201885511687010,
+                                "start": 430,
+                                "end": 436
+                              }
+                            }
+                          }
+                        ],
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 430,
+                          "end": 436
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Unary": {
+                        "op": "Not",
+                        "rhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "__pre__.c",
+                              "generated": true
+                            },
+                            "subscripts": [
+                              {
+                                "Index": {
+                                  "value": 1,
+                                  "span": {
+                                    "source": 16151201885511687010,
+                                    "start": 430,
+                                    "end": 436
+                                  }
+                                }
+                              }
+                            ],
+                            "span": {
+                              "source": 16151201885511687010,
+                              "start": 430,
+                              "end": 436
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 430,
+                          "end": 436
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 430,
+                      "end": 436
+                    }
+                  }
+                },
+                {
+                  "Unary": {
+                    "op": "Minus",
+                    "rhs": {
+                      "Binary": {
+                        "op": "Mul",
+                        "lhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "e",
+                              "component_ref": {
+                                "local": false,
+                                "span": {
+                                  "source": 16151201885511687010,
+                                  "start": 276,
+                                  "end": 282
+                                },
+                                "parts": [
+                                  {
+                                    "ident": "e",
+                                    "span": {
+                                      "source": 16151201885511687010,
+                                      "start": 276,
+                                      "end": 282
+                                    },
+                                    "subs": []
+                                  }
+                                ],
+                                "def_id": 39462
+                              }
+                            },
+                            "subscripts": [],
+                            "span": {
+                              "source": 16151201885511687010,
+                              "start": 457,
+                              "end": 458
+                            }
+                          }
+                        },
+                        "rhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "__pre__.v",
+                              "generated": true
+                            },
+                            "subscripts": [],
+                            "span": {
+                              "source": 16151201885511687010,
+                              "start": 461,
+                              "end": 464
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 457,
+                          "end": 466
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 456,
+                      "end": 466
+                    }
+                  }
+                }
+              ]
+            ],
+            "else_branch": {
+              "VarRef": {
+                "name": {
+                  "name": "v",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 353,
+                      "end": 359
+                    },
+                    "parts": [
+                      {
+                        "ident": "v",
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 353,
+                          "end": 359
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39464
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 16151201885511687010,
+                  "start": 430,
+                  "end": 431
+                }
+              }
+            },
+            "span": {
+              "source": 16151201885511687010,
+              "start": 430,
+              "end": 431
+            }
+          }
+        },
+        "span": {
+          "source": 16151201885511687010,
+          "start": 430,
+          "end": 431
+        },
+        "origin": "guarded reinit(v)",
+        "scalar_count": 1
+      }
+    ],
+    "valued_updates_f_m": []
+  },
+  "events": {
+    "zero_crossing_conditions": [],
+    "scheduled_time_events": []
+  }
+}
