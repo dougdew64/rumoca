@@ -6,7 +6,7 @@ foregrounding what **this** specimen is designed to make interesting.*
 
 > **Provenance.** Written against `trace/` from
 > `cargo run --example gen_trace -- TwoLoops`, Rumoca `rev 8cdc74198` (v0.9.20),
-> specimen fnv1a `8533e9ef74b20654` (see [`trace/manifest.json`](trace/manifest.json)).
+> specimen hash + per-stage status in [`trace/manifest.json`](trace/manifest.json).
 > Regenerate on a specimen edit or pin bump, then re-read against the diff.
 
 ---

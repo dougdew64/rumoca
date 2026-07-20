@@ -303,3 +303,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   simulation/convergence-narrative idea (`docs/ideas.md` #1). Tests:
   `worker::tests::{mixed_loop_has_scalar_and_coupled_blocks, two_loops_has_two_coupled_blocks,
   nonlinear_loop_has_a_coupled_block}`.
+- **2026-07-20 — Specimen purpose hints in the file + UI (docs/ideas.md #2).** Convention: a
+  `// purpose: <one-line>` comment in each specimen states the compiler phenomenon it exercises,
+  kept distinct from the Modelica description string (which stays a faithful model description).
+  The app scans it at rescan (`app::read_purpose`, no compile — so hints show even for a specimen
+  that fails to compile) and renders it as weak, truncated subtext (+ hover for the full line) under
+  each filename in the LHS list, turning the list into an index of what each specimen teaches. All
+  seven specimens carry one; convention recorded in CLAUDE.md's specimen rules. Adding the comment
+  shifted source spans, so all traces were regenerated (only `structural.json` was unaffected — the
+  analysis is span-free); the four narratives that quoted an FNV hash now reference `manifest.json`
+  instead (robust to any future source tweak).

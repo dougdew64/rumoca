@@ -1,4 +1,5 @@
 model MixedLoop "Algebraic feedback loop bracketed by scalar solves — a mixed BLT structure"
+  // purpose: Loop bracketed by scalar solves → scalar+coupled+scalar; BLT ordering made visible.
   // Arc 3 specimen (charter §4.2.3): the same idealized proportional loop as
   // ProportionalLoop, but with a scalar computation *before* it (scale the
   // reference) and *after* it (scale the output). Neither bracketing equation is

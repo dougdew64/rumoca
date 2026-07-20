@@ -58,10 +58,10 @@
       "location": {
         "start_line": 1,
         "start_column": 7,
-        "end_line": 27,
+        "end_line": 28,
         "end_column": 14,
         "start": 6,
-        "end": 1791,
+        "end": 1891,
         "file_name": "MixedLoop.mo"
       },
       "extends": [],
@@ -76,15 +76,15 @@
           "name_token": {
             "text": "reference",
             "location": {
-              "start_line": 10,
+              "start_line": 11,
               "start_column": 18,
-              "end_line": 10,
+              "end_line": 11,
               "end_column": 27,
-              "start": 751,
-              "end": 760,
+              "start": 851,
+              "end": 860,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 13,
+            "token_number": 14,
             "token_type": 64
           },
           "type_name": {
@@ -92,15 +92,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 10,
+                  "start_line": 11,
                   "start_column": 13,
-                  "end_line": 10,
+                  "end_line": 11,
                   "end_column": 17,
-                  "start": 746,
-                  "end": 750,
+                  "start": 846,
+                  "end": 850,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 12,
+                "token_number": 13,
                 "token_type": 64
               }
             ]
@@ -109,15 +109,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 10,
+                "start_line": 11,
                 "start_column": 3,
-                "end_line": 10,
+                "end_line": 11,
                 "end_column": 12,
-                "start": 736,
-                "end": 745,
+                "start": 836,
+                "end": 845,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 11,
+              "token_number": 12,
               "token_type": 48
             }
           },
@@ -127,15 +127,15 @@
             {
               "text": "raw setpoint",
               "location": {
-                "start_line": 10,
+                "start_line": 11,
                 "start_column": 34,
-                "end_line": 10,
+                "end_line": 11,
                 "end_column": 48,
-                "start": 767,
-                "end": 781,
+                "start": 867,
+                "end": 881,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 16,
+              "token_number": 17,
               "token_type": 66
             }
           ],
@@ -158,8 +158,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 746,
-                "end": 760
+                "start": 846,
+                "end": 860
               }
             }
           },
@@ -172,21 +172,21 @@
               "token": {
                 "text": "1.0",
                 "location": {
-                  "start_line": 10,
+                  "start_line": 11,
                   "start_column": 30,
-                  "end_line": 10,
+                  "end_line": 11,
                   "end_column": 33,
-                  "start": 763,
-                  "end": 766,
+                  "start": 863,
+                  "end": 866,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 15,
+                "token_number": 16,
                 "token_type": 68
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 763,
-                "end": 766
+                "start": 863,
+                "end": 866
               }
             }
           },
@@ -200,12 +200,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 10,
+            "start_line": 11,
             "start_column": 13,
-            "end_line": 10,
+            "end_line": 11,
             "end_column": 27,
-            "start": 746,
-            "end": 760,
+            "start": 846,
+            "end": 860,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -228,15 +228,15 @@
           "name_token": {
             "text": "sensorGain",
             "location": {
-              "start_line": 11,
+              "start_line": 12,
               "start_column": 18,
-              "end_line": 11,
+              "end_line": 12,
               "end_column": 28,
-              "start": 800,
-              "end": 810,
+              "start": 900,
+              "end": 910,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 20,
+            "token_number": 21,
             "token_type": 64
           },
           "type_name": {
@@ -244,15 +244,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 11,
+                  "start_line": 12,
                   "start_column": 13,
-                  "end_line": 11,
+                  "end_line": 12,
                   "end_column": 17,
-                  "start": 795,
-                  "end": 799,
+                  "start": 895,
+                  "end": 899,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 19,
+                "token_number": 20,
                 "token_type": 64
               }
             ]
@@ -261,15 +261,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 11,
+                "start_line": 12,
                 "start_column": 3,
-                "end_line": 11,
+                "end_line": 12,
                 "end_column": 12,
-                "start": 785,
-                "end": 794,
+                "start": 885,
+                "end": 894,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 18,
+              "token_number": 19,
               "token_type": 48
             }
           },
@@ -279,15 +279,15 @@
             {
               "text": "pre-scaling on the reference",
               "location": {
-                "start_line": 11,
+                "start_line": 12,
                 "start_column": 35,
-                "end_line": 11,
+                "end_line": 12,
                 "end_column": 65,
-                "start": 817,
-                "end": 847,
+                "start": 917,
+                "end": 947,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 23,
+              "token_number": 24,
               "token_type": 66
             }
           ],
@@ -310,8 +310,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 795,
-                "end": 810
+                "start": 895,
+                "end": 910
               }
             }
           },
@@ -324,21 +324,21 @@
               "token": {
                 "text": "0.5",
                 "location": {
-                  "start_line": 11,
+                  "start_line": 12,
                   "start_column": 31,
-                  "end_line": 11,
+                  "end_line": 12,
                   "end_column": 34,
-                  "start": 813,
-                  "end": 816,
+                  "start": 913,
+                  "end": 916,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 22,
+                "token_number": 23,
                 "token_type": 68
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 813,
-                "end": 816
+                "start": 913,
+                "end": 916
               }
             }
           },
@@ -352,12 +352,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 11,
+            "start_line": 12,
             "start_column": 13,
-            "end_line": 11,
+            "end_line": 12,
             "end_column": 28,
-            "start": 795,
-            "end": 810,
+            "start": 895,
+            "end": 910,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -380,15 +380,15 @@
           "name_token": {
             "text": "controllerGain",
             "location": {
-              "start_line": 12,
+              "start_line": 13,
               "start_column": 18,
-              "end_line": 12,
+              "end_line": 13,
               "end_column": 32,
-              "start": 866,
-              "end": 880,
+              "start": 966,
+              "end": 980,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 27,
+            "token_number": 28,
             "token_type": 64
           },
           "type_name": {
@@ -396,15 +396,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 12,
+                  "start_line": 13,
                   "start_column": 13,
-                  "end_line": 12,
+                  "end_line": 13,
                   "end_column": 17,
-                  "start": 861,
-                  "end": 865,
+                  "start": 961,
+                  "end": 965,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 26,
+                "token_number": 27,
                 "token_type": 64
               }
             ]
@@ -413,15 +413,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 12,
+                "start_line": 13,
                 "start_column": 3,
-                "end_line": 12,
+                "end_line": 13,
                 "end_column": 12,
-                "start": 851,
-                "end": 860,
+                "start": 951,
+                "end": 960,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 25,
+              "token_number": 26,
               "token_type": 48
             }
           },
@@ -431,15 +431,15 @@
             {
               "text": "proportional gain Kp",
               "location": {
-                "start_line": 12,
+                "start_line": 13,
                 "start_column": 40,
-                "end_line": 12,
+                "end_line": 13,
                 "end_column": 62,
-                "start": 888,
-                "end": 910,
+                "start": 988,
+                "end": 1010,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 30,
+              "token_number": 31,
               "token_type": 66
             }
           ],
@@ -462,8 +462,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 861,
-                "end": 880
+                "start": 961,
+                "end": 980
               }
             }
           },
@@ -476,21 +476,21 @@
               "token": {
                 "text": "10.0",
                 "location": {
-                  "start_line": 12,
+                  "start_line": 13,
                   "start_column": 35,
-                  "end_line": 12,
+                  "end_line": 13,
                   "end_column": 39,
-                  "start": 883,
-                  "end": 887,
+                  "start": 983,
+                  "end": 987,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 29,
+                "token_number": 30,
                 "token_type": 68
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 883,
-                "end": 887
+                "start": 983,
+                "end": 987
               }
             }
           },
@@ -504,12 +504,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 12,
+            "start_line": 13,
             "start_column": 13,
-            "end_line": 12,
+            "end_line": 13,
             "end_column": 32,
-            "start": 861,
-            "end": 880,
+            "start": 961,
+            "end": 980,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -532,15 +532,15 @@
           "name_token": {
             "text": "plantGain",
             "location": {
-              "start_line": 13,
+              "start_line": 14,
               "start_column": 18,
-              "end_line": 13,
+              "end_line": 14,
               "end_column": 27,
-              "start": 929,
-              "end": 938,
+              "start": 1029,
+              "end": 1038,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 34,
+            "token_number": 35,
             "token_type": 64
           },
           "type_name": {
@@ -548,15 +548,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 13,
+                  "start_line": 14,
                   "start_column": 13,
-                  "end_line": 13,
+                  "end_line": 14,
                   "end_column": 17,
-                  "start": 924,
-                  "end": 928,
+                  "start": 1024,
+                  "end": 1028,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 33,
+                "token_number": 34,
                 "token_type": 64
               }
             ]
@@ -565,15 +565,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 13,
+                "start_line": 14,
                 "start_column": 3,
-                "end_line": 13,
+                "end_line": 14,
                 "end_column": 12,
-                "start": 914,
-                "end": 923,
+                "start": 1014,
+                "end": 1023,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 32,
+              "token_number": 33,
               "token_type": 48
             }
           },
@@ -583,15 +583,15 @@
             {
               "text": "ideal static plant gain",
               "location": {
-                "start_line": 13,
+                "start_line": 14,
                 "start_column": 34,
-                "end_line": 13,
+                "end_line": 14,
                 "end_column": 59,
-                "start": 945,
-                "end": 970,
+                "start": 1045,
+                "end": 1070,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 37,
+              "token_number": 38,
               "token_type": 66
             }
           ],
@@ -614,8 +614,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 924,
-                "end": 938
+                "start": 1024,
+                "end": 1038
               }
             }
           },
@@ -628,21 +628,21 @@
               "token": {
                 "text": "2.0",
                 "location": {
-                  "start_line": 13,
+                  "start_line": 14,
                   "start_column": 30,
-                  "end_line": 13,
+                  "end_line": 14,
                   "end_column": 33,
-                  "start": 941,
-                  "end": 944,
+                  "start": 1041,
+                  "end": 1044,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 36,
+                "token_number": 37,
                 "token_type": 68
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 941,
-                "end": 944
+                "start": 1041,
+                "end": 1044
               }
             }
           },
@@ -656,12 +656,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 13,
+            "start_line": 14,
             "start_column": 13,
-            "end_line": 13,
+            "end_line": 14,
             "end_column": 27,
-            "start": 924,
-            "end": 938,
+            "start": 1024,
+            "end": 1038,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -684,15 +684,15 @@
           "name_token": {
             "text": "outputGain",
             "location": {
-              "start_line": 14,
+              "start_line": 15,
               "start_column": 18,
-              "end_line": 14,
+              "end_line": 15,
               "end_column": 28,
-              "start": 989,
-              "end": 999,
+              "start": 1089,
+              "end": 1099,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 41,
+            "token_number": 42,
             "token_type": 64
           },
           "type_name": {
@@ -700,15 +700,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 14,
+                  "start_line": 15,
                   "start_column": 13,
-                  "end_line": 14,
+                  "end_line": 15,
                   "end_column": 17,
-                  "start": 984,
-                  "end": 988,
+                  "start": 1084,
+                  "end": 1088,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 40,
+                "token_number": 41,
                 "token_type": 64
               }
             ]
@@ -717,15 +717,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 14,
+                "start_line": 15,
                 "start_column": 3,
-                "end_line": 14,
+                "end_line": 15,
                 "end_column": 12,
-                "start": 974,
-                "end": 983,
+                "start": 1074,
+                "end": 1083,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 39,
+              "token_number": 40,
               "token_type": 48
             }
           },
@@ -735,15 +735,15 @@
             {
               "text": "post-scaling on the measurement",
               "location": {
-                "start_line": 14,
+                "start_line": 15,
                 "start_column": 35,
-                "end_line": 14,
+                "end_line": 15,
                 "end_column": 68,
-                "start": 1006,
-                "end": 1039,
+                "start": 1106,
+                "end": 1139,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 44,
+              "token_number": 45,
               "token_type": 66
             }
           ],
@@ -766,8 +766,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 984,
-                "end": 999
+                "start": 1084,
+                "end": 1099
               }
             }
           },
@@ -780,21 +780,21 @@
               "token": {
                 "text": "3.0",
                 "location": {
-                  "start_line": 14,
+                  "start_line": 15,
                   "start_column": 31,
-                  "end_line": 14,
+                  "end_line": 15,
                   "end_column": 34,
-                  "start": 1002,
-                  "end": 1005,
+                  "start": 1102,
+                  "end": 1105,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 43,
+                "token_number": 44,
                 "token_type": 68
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 1002,
-                "end": 1005
+                "start": 1102,
+                "end": 1105
               }
             }
           },
@@ -808,12 +808,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 14,
+            "start_line": 15,
             "start_column": 13,
-            "end_line": 14,
+            "end_line": 15,
             "end_column": 28,
-            "start": 984,
-            "end": 999,
+            "start": 1084,
+            "end": 1099,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -836,15 +836,15 @@
           "name_token": {
             "text": "setpoint",
             "location": {
-              "start_line": 15,
+              "start_line": 16,
               "start_column": 8,
-              "end_line": 15,
+              "end_line": 16,
               "end_column": 16,
-              "start": 1048,
-              "end": 1056,
+              "start": 1148,
+              "end": 1156,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 47,
+            "token_number": 48,
             "token_type": 64
           },
           "type_name": {
@@ -852,15 +852,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 15,
+                  "start_line": 16,
                   "start_column": 3,
-                  "end_line": 15,
+                  "end_line": 16,
                   "end_column": 7,
-                  "start": 1043,
-                  "end": 1047,
+                  "start": 1143,
+                  "end": 1147,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 46,
+                "token_number": 47,
                 "token_type": 64
               }
             ]
@@ -872,15 +872,15 @@
             {
               "text": "scaled reference — computed before the loop",
               "location": {
-                "start_line": 15,
+                "start_line": 16,
                 "start_column": 17,
-                "end_line": 15,
+                "end_line": 16,
                 "end_column": 62,
-                "start": 1057,
-                "end": 1104,
+                "start": 1157,
+                "end": 1204,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 48,
+              "token_number": 49,
               "token_type": 66
             }
           ],
@@ -903,8 +903,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 1043,
-                "end": 1056
+                "start": 1143,
+                "end": 1156
               }
             }
           },
@@ -922,12 +922,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 15,
+            "start_line": 16,
             "start_column": 3,
-            "end_line": 15,
+            "end_line": 16,
             "end_column": 16,
-            "start": 1043,
-            "end": 1056,
+            "start": 1143,
+            "end": 1156,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -950,15 +950,15 @@
           "name_token": {
             "text": "error",
             "location": {
-              "start_line": 16,
+              "start_line": 17,
               "start_column": 8,
-              "end_line": 16,
+              "end_line": 17,
               "end_column": 13,
-              "start": 1113,
-              "end": 1118,
+              "start": 1213,
+              "end": 1218,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 51,
+            "token_number": 52,
             "token_type": 64
           },
           "type_name": {
@@ -966,15 +966,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 16,
+                  "start_line": 17,
                   "start_column": 3,
-                  "end_line": 16,
+                  "end_line": 17,
                   "end_column": 7,
-                  "start": 1108,
-                  "end": 1112,
+                  "start": 1208,
+                  "end": 1212,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 50,
+                "token_number": 51,
                 "token_type": 64
               }
             ]
@@ -986,15 +986,15 @@
             {
               "text": "reference − measurement",
               "location": {
-                "start_line": 16,
+                "start_line": 17,
                 "start_column": 14,
-                "end_line": 16,
+                "end_line": 17,
                 "end_column": 39,
-                "start": 1119,
-                "end": 1146,
+                "start": 1219,
+                "end": 1246,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 52,
+              "token_number": 53,
               "token_type": 66
             }
           ],
@@ -1017,8 +1017,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 1108,
-                "end": 1118
+                "start": 1208,
+                "end": 1218
               }
             }
           },
@@ -1036,12 +1036,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 16,
+            "start_line": 17,
             "start_column": 3,
-            "end_line": 16,
+            "end_line": 17,
             "end_column": 13,
-            "start": 1108,
-            "end": 1118,
+            "start": 1208,
+            "end": 1218,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -1064,15 +1064,15 @@
           "name_token": {
             "text": "command",
             "location": {
-              "start_line": 17,
+              "start_line": 18,
               "start_column": 8,
-              "end_line": 17,
+              "end_line": 18,
               "end_column": 15,
-              "start": 1155,
-              "end": 1162,
+              "start": 1255,
+              "end": 1262,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 55,
+            "token_number": 56,
             "token_type": 64
           },
           "type_name": {
@@ -1080,15 +1080,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 17,
+                  "start_line": 18,
                   "start_column": 3,
-                  "end_line": 17,
+                  "end_line": 18,
                   "end_column": 7,
-                  "start": 1150,
-                  "end": 1154,
+                  "start": 1250,
+                  "end": 1254,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 54,
+                "token_number": 55,
                 "token_type": 64
               }
             ]
@@ -1100,15 +1100,15 @@
             {
               "text": "controller output = Kp · error",
               "location": {
-                "start_line": 17,
+                "start_line": 18,
                 "start_column": 16,
-                "end_line": 17,
+                "end_line": 18,
                 "end_column": 48,
-                "start": 1163,
-                "end": 1196,
+                "start": 1263,
+                "end": 1296,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 56,
+              "token_number": 57,
               "token_type": 66
             }
           ],
@@ -1131,8 +1131,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 1150,
-                "end": 1162
+                "start": 1250,
+                "end": 1262
               }
             }
           },
@@ -1150,12 +1150,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 17,
+            "start_line": 18,
             "start_column": 3,
-            "end_line": 17,
+            "end_line": 18,
             "end_column": 15,
-            "start": 1150,
-            "end": 1162,
+            "start": 1250,
+            "end": 1262,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -1178,15 +1178,15 @@
           "name_token": {
             "text": "measurement",
             "location": {
-              "start_line": 18,
+              "start_line": 19,
               "start_column": 8,
-              "end_line": 18,
+              "end_line": 19,
               "end_column": 19,
-              "start": 1205,
-              "end": 1216,
+              "start": 1305,
+              "end": 1316,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 59,
+            "token_number": 60,
             "token_type": 64
           },
           "type_name": {
@@ -1194,15 +1194,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 18,
+                  "start_line": 19,
                   "start_column": 3,
-                  "end_line": 18,
+                  "end_line": 19,
                   "end_column": 7,
-                  "start": 1200,
-                  "end": 1204,
+                  "start": 1300,
+                  "end": 1304,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 58,
+                "token_number": 59,
                 "token_type": 64
               }
             ]
@@ -1214,15 +1214,15 @@
             {
               "text": "plant output, fed back",
               "location": {
-                "start_line": 18,
+                "start_line": 19,
                 "start_column": 20,
-                "end_line": 18,
+                "end_line": 19,
                 "end_column": 44,
-                "start": 1217,
-                "end": 1241,
+                "start": 1317,
+                "end": 1341,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 60,
+              "token_number": 61,
               "token_type": 66
             }
           ],
@@ -1245,8 +1245,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 1200,
-                "end": 1216
+                "start": 1300,
+                "end": 1316
               }
             }
           },
@@ -1264,12 +1264,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 18,
+            "start_line": 19,
             "start_column": 3,
-            "end_line": 18,
+            "end_line": 19,
             "end_column": 19,
-            "start": 1200,
-            "end": 1216,
+            "start": 1300,
+            "end": 1316,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -1292,15 +1292,15 @@
           "name_token": {
             "text": "result",
             "location": {
-              "start_line": 19,
+              "start_line": 20,
               "start_column": 8,
-              "end_line": 19,
+              "end_line": 20,
               "end_column": 14,
-              "start": 1250,
-              "end": 1256,
+              "start": 1350,
+              "end": 1356,
               "file_name": "MixedLoop.mo"
             },
-            "token_number": 63,
+            "token_number": 64,
             "token_type": 64
           },
           "type_name": {
@@ -1308,15 +1308,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 19,
+                  "start_line": 20,
                   "start_column": 3,
-                  "end_line": 19,
+                  "end_line": 20,
                   "end_column": 7,
-                  "start": 1245,
-                  "end": 1249,
+                  "start": 1345,
+                  "end": 1349,
                   "file_name": "MixedLoop.mo"
                 },
-                "token_number": 62,
+                "token_number": 63,
                 "token_type": 64
               }
             ]
@@ -1328,15 +1328,15 @@
             {
               "text": "scaled measurement — computed after the loop",
               "location": {
-                "start_line": 19,
+                "start_line": 20,
                 "start_column": 15,
-                "end_line": 19,
+                "end_line": 20,
                 "end_column": 61,
-                "start": 1257,
-                "end": 1305,
+                "start": 1357,
+                "end": 1405,
                 "file_name": "MixedLoop.mo"
               },
-              "token_number": 64,
+              "token_number": 65,
               "token_type": 66
             }
           ],
@@ -1359,8 +1359,8 @@
               },
               "span": {
                 "source": 4670090622201315808,
-                "start": 1245,
-                "end": 1256
+                "start": 1345,
+                "end": 1356
               }
             }
           },
@@ -1378,12 +1378,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 19,
+            "start_line": 20,
             "start_column": 3,
-            "end_line": 19,
+            "end_line": 20,
             "end_column": 14,
-            "start": 1245,
-            "end": 1256,
+            "start": 1345,
+            "end": 1356,
             "file_name": "MixedLoop.mo"
           },
           "condition": null,
@@ -1410,15 +1410,15 @@
                     "ident": {
                       "text": "setpoint",
                       "location": {
-                        "start_line": 21,
+                        "start_line": 22,
                         "start_column": 3,
-                        "end_line": 21,
+                        "end_line": 22,
                         "end_column": 11,
-                        "start": 1318,
-                        "end": 1326,
+                        "start": 1418,
+                        "end": 1426,
                         "file_name": "MixedLoop.mo"
                       },
-                      "token_number": 67,
+                      "token_number": 68,
                       "token_type": 64
                     },
                     "subs": null
@@ -1426,8 +1426,8 @@
                 ],
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1318,
-                  "end": 1326
+                  "start": 1418,
+                  "end": 1426
                 }
               }
             },
@@ -1442,15 +1442,15 @@
                         "ident": {
                           "text": "sensorGain",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 14,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 24,
-                            "start": 1329,
-                            "end": 1339,
+                            "start": 1429,
+                            "end": 1439,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 69,
+                          "token_number": 70,
                           "token_type": 64
                         },
                         "subs": null
@@ -1458,8 +1458,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1329,
-                      "end": 1339
+                      "start": 1429,
+                      "end": 1439
                     }
                   }
                 },
@@ -1471,15 +1471,15 @@
                         "ident": {
                           "text": "reference",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 27,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 36,
-                            "start": 1342,
-                            "end": 1351,
+                            "start": 1442,
+                            "end": 1451,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 71,
+                          "token_number": 72,
                           "token_type": 64
                         },
                         "subs": null
@@ -1487,15 +1487,15 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1342,
-                      "end": 1351
+                      "start": 1442,
+                      "end": 1451
                     }
                   }
                 },
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1329,
-                  "end": 1351
+                  "start": 1429,
+                  "end": 1451
                 }
               }
             }
@@ -1511,15 +1511,15 @@
                     "ident": {
                       "text": "error",
                       "location": {
-                        "start_line": 22,
+                        "start_line": 23,
                         "start_column": 3,
-                        "end_line": 22,
+                        "end_line": 23,
                         "end_column": 8,
-                        "start": 1414,
-                        "end": 1419,
+                        "start": 1514,
+                        "end": 1519,
                         "file_name": "MixedLoop.mo"
                       },
-                      "token_number": 74,
+                      "token_number": 75,
                       "token_type": 64
                     },
                     "subs": null
@@ -1527,8 +1527,8 @@
                 ],
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1414,
-                  "end": 1419
+                  "start": 1514,
+                  "end": 1519
                 }
               }
             },
@@ -1543,15 +1543,15 @@
                         "ident": {
                           "text": "setpoint",
                           "location": {
-                            "start_line": 22,
+                            "start_line": 23,
                             "start_column": 11,
-                            "end_line": 22,
+                            "end_line": 23,
                             "end_column": 19,
-                            "start": 1422,
-                            "end": 1430,
+                            "start": 1522,
+                            "end": 1530,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 76,
+                          "token_number": 77,
                           "token_type": 64
                         },
                         "subs": null
@@ -1559,8 +1559,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1422,
-                      "end": 1430
+                      "start": 1522,
+                      "end": 1530
                     }
                   }
                 },
@@ -1572,15 +1572,15 @@
                         "ident": {
                           "text": "measurement",
                           "location": {
-                            "start_line": 22,
+                            "start_line": 23,
                             "start_column": 22,
-                            "end_line": 22,
+                            "end_line": 23,
                             "end_column": 33,
-                            "start": 1433,
-                            "end": 1444,
+                            "start": 1533,
+                            "end": 1544,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 78,
+                          "token_number": 79,
                           "token_type": 64
                         },
                         "subs": null
@@ -1588,15 +1588,15 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1433,
-                      "end": 1444
+                      "start": 1533,
+                      "end": 1544
                     }
                   }
                 },
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1422,
-                  "end": 1444
+                  "start": 1522,
+                  "end": 1544
                 }
               }
             }
@@ -1612,15 +1612,15 @@
                     "ident": {
                       "text": "command",
                       "location": {
-                        "start_line": 23,
+                        "start_line": 24,
                         "start_column": 3,
-                        "end_line": 23,
+                        "end_line": 24,
                         "end_column": 10,
-                        "start": 1463,
-                        "end": 1470,
+                        "start": 1563,
+                        "end": 1570,
                         "file_name": "MixedLoop.mo"
                       },
-                      "token_number": 81,
+                      "token_number": 82,
                       "token_type": 64
                     },
                     "subs": null
@@ -1628,8 +1628,8 @@
                 ],
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1463,
-                  "end": 1470
+                  "start": 1563,
+                  "end": 1570
                 }
               }
             },
@@ -1644,15 +1644,15 @@
                         "ident": {
                           "text": "controllerGain",
                           "location": {
-                            "start_line": 23,
+                            "start_line": 24,
                             "start_column": 13,
-                            "end_line": 23,
+                            "end_line": 24,
                             "end_column": 27,
-                            "start": 1473,
-                            "end": 1487,
+                            "start": 1573,
+                            "end": 1587,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 83,
+                          "token_number": 84,
                           "token_type": 64
                         },
                         "subs": null
@@ -1660,8 +1660,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1473,
-                      "end": 1487
+                      "start": 1573,
+                      "end": 1587
                     }
                   }
                 },
@@ -1673,15 +1673,15 @@
                         "ident": {
                           "text": "error",
                           "location": {
-                            "start_line": 23,
+                            "start_line": 24,
                             "start_column": 30,
-                            "end_line": 23,
+                            "end_line": 24,
                             "end_column": 35,
-                            "start": 1490,
-                            "end": 1495,
+                            "start": 1590,
+                            "end": 1595,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 85,
+                          "token_number": 86,
                           "token_type": 64
                         },
                         "subs": null
@@ -1689,15 +1689,15 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1490,
-                      "end": 1495
+                      "start": 1590,
+                      "end": 1595
                     }
                   }
                 },
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1473,
-                  "end": 1495
+                  "start": 1573,
+                  "end": 1595
                 }
               }
             }
@@ -1713,15 +1713,15 @@
                     "ident": {
                       "text": "measurement",
                       "location": {
-                        "start_line": 24,
+                        "start_line": 25,
                         "start_column": 3,
-                        "end_line": 24,
+                        "end_line": 25,
                         "end_column": 14,
-                        "start": 1540,
-                        "end": 1551,
+                        "start": 1640,
+                        "end": 1651,
                         "file_name": "MixedLoop.mo"
                       },
-                      "token_number": 88,
+                      "token_number": 89,
                       "token_type": 64
                     },
                     "subs": null
@@ -1729,8 +1729,8 @@
                 ],
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1540,
-                  "end": 1551
+                  "start": 1640,
+                  "end": 1651
                 }
               }
             },
@@ -1745,15 +1745,15 @@
                         "ident": {
                           "text": "plantGain",
                           "location": {
-                            "start_line": 24,
+                            "start_line": 25,
                             "start_column": 17,
-                            "end_line": 24,
+                            "end_line": 25,
                             "end_column": 26,
-                            "start": 1554,
-                            "end": 1563,
+                            "start": 1654,
+                            "end": 1663,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 90,
+                          "token_number": 91,
                           "token_type": 64
                         },
                         "subs": null
@@ -1761,8 +1761,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1554,
-                      "end": 1563
+                      "start": 1654,
+                      "end": 1663
                     }
                   }
                 },
@@ -1774,15 +1774,15 @@
                         "ident": {
                           "text": "command",
                           "location": {
-                            "start_line": 24,
+                            "start_line": 25,
                             "start_column": 29,
-                            "end_line": 24,
+                            "end_line": 25,
                             "end_column": 36,
-                            "start": 1566,
-                            "end": 1573,
+                            "start": 1666,
+                            "end": 1673,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 92,
+                          "token_number": 93,
                           "token_type": 64
                         },
                         "subs": null
@@ -1790,15 +1790,15 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1566,
-                      "end": 1573
+                      "start": 1666,
+                      "end": 1673
                     }
                   }
                 },
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1554,
-                  "end": 1573
+                  "start": 1654,
+                  "end": 1673
                 }
               }
             }
@@ -1814,15 +1814,15 @@
                     "ident": {
                       "text": "result",
                       "location": {
-                        "start_line": 25,
+                        "start_line": 26,
                         "start_column": 3,
-                        "end_line": 25,
+                        "end_line": 26,
                         "end_column": 9,
-                        "start": 1589,
-                        "end": 1595,
+                        "start": 1689,
+                        "end": 1695,
                         "file_name": "MixedLoop.mo"
                       },
-                      "token_number": 95,
+                      "token_number": 96,
                       "token_type": 64
                     },
                     "subs": null
@@ -1830,8 +1830,8 @@
                 ],
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1589,
-                  "end": 1595
+                  "start": 1689,
+                  "end": 1695
                 }
               }
             },
@@ -1846,15 +1846,15 @@
                         "ident": {
                           "text": "outputGain",
                           "location": {
-                            "start_line": 25,
+                            "start_line": 26,
                             "start_column": 12,
-                            "end_line": 25,
+                            "end_line": 26,
                             "end_column": 22,
-                            "start": 1598,
-                            "end": 1608,
+                            "start": 1698,
+                            "end": 1708,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 97,
+                          "token_number": 98,
                           "token_type": 64
                         },
                         "subs": null
@@ -1862,8 +1862,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1598,
-                      "end": 1608
+                      "start": 1698,
+                      "end": 1708
                     }
                   }
                 },
@@ -1875,15 +1875,15 @@
                         "ident": {
                           "text": "measurement",
                           "location": {
-                            "start_line": 25,
+                            "start_line": 26,
                             "start_column": 25,
-                            "end_line": 25,
+                            "end_line": 26,
                             "end_column": 36,
-                            "start": 1611,
-                            "end": 1622,
+                            "start": 1711,
+                            "end": 1722,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 99,
+                          "token_number": 100,
                           "token_type": 64
                         },
                         "subs": null
@@ -1891,15 +1891,15 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1611,
-                      "end": 1622
+                      "start": 1711,
+                      "end": 1722
                     }
                   }
                 },
                 "span": {
                   "source": 4670090622201315808,
-                  "start": 1598,
-                  "end": 1622
+                  "start": 1698,
+                  "end": 1722
                 }
               }
             }
@@ -1912,15 +1912,15 @@
       "equation_keyword": {
         "text": "equation",
         "location": {
-          "start_line": 20,
+          "start_line": 21,
           "start_column": 1,
-          "end_line": 20,
+          "end_line": 21,
           "end_column": 9,
-          "start": 1307,
-          "end": 1315,
+          "start": 1407,
+          "end": 1415,
           "file_name": "MixedLoop.mo"
         },
-        "token_number": 66,
+        "token_number": 67,
         "token_type": 24
       },
       "initial_equation_keyword": null,
@@ -1929,15 +1929,15 @@
       "end_name_token": {
         "text": "MixedLoop",
         "location": {
-          "start_line": 27,
+          "start_line": 28,
           "start_column": 5,
-          "end_line": 27,
+          "end_line": 28,
           "end_column": 14,
-          "start": 1782,
-          "end": 1791,
+          "start": 1882,
+          "end": 1891,
           "file_name": "MixedLoop.mo"
         },
-        "token_number": 125,
+        "token_number": 126,
         "token_type": 64
       },
       "enum_literals": [],
@@ -1951,15 +1951,15 @@
                   "ident": {
                     "text": "experiment",
                     "location": {
-                      "start_line": 26,
+                      "start_line": 27,
                       "start_column": 14,
-                      "end_line": 26,
+                      "end_line": 27,
                       "end_column": 24,
-                      "start": 1700,
-                      "end": 1710,
+                      "start": 1800,
+                      "end": 1810,
                       "file_name": "MixedLoop.mo"
                     },
-                    "token_number": 104,
+                    "token_number": 105,
                     "token_type": 64
                   },
                   "subs": null
@@ -1967,8 +1967,8 @@
               ],
               "span": {
                 "source": 4670090622201315808,
-                "start": 1700,
-                "end": 1710
+                "start": 1800,
+                "end": 1810
               }
             },
             "modifications": [
@@ -1981,15 +1981,15 @@
                         "ident": {
                           "text": "StartTime",
                           "location": {
-                            "start_line": 26,
+                            "start_line": 27,
                             "start_column": 25,
-                            "end_line": 26,
+                            "end_line": 27,
                             "end_column": 34,
-                            "start": 1711,
-                            "end": 1720,
+                            "start": 1811,
+                            "end": 1820,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 106,
+                          "token_number": 107,
                           "token_type": 64
                         },
                         "subs": null
@@ -1997,8 +1997,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1711,
-                      "end": 1720
+                      "start": 1811,
+                      "end": 1820
                     }
                   },
                   "value": {
@@ -2007,28 +2007,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 26,
+                          "start_line": 27,
                           "start_column": 37,
-                          "end_line": 26,
+                          "end_line": 27,
                           "end_column": 38,
-                          "start": 1723,
-                          "end": 1724,
+                          "start": 1823,
+                          "end": 1824,
                           "file_name": "MixedLoop.mo"
                         },
-                        "token_number": 108,
+                        "token_number": 109,
                         "token_type": 67
                       },
                       "span": {
                         "source": 4670090622201315808,
-                        "start": 1723,
-                        "end": 1724
+                        "start": 1823,
+                        "end": 1824
                       }
                     }
                   },
                   "span": {
                     "source": 4670090622201315808,
-                    "start": 1711,
-                    "end": 1724
+                    "start": 1811,
+                    "end": 1824
                   }
                 }
               },
@@ -2041,15 +2041,15 @@
                         "ident": {
                           "text": "StopTime",
                           "location": {
-                            "start_line": 26,
+                            "start_line": 27,
                             "start_column": 40,
-                            "end_line": 26,
+                            "end_line": 27,
                             "end_column": 48,
-                            "start": 1726,
-                            "end": 1734,
+                            "start": 1826,
+                            "end": 1834,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 110,
+                          "token_number": 111,
                           "token_type": 64
                         },
                         "subs": null
@@ -2057,8 +2057,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1726,
-                      "end": 1734
+                      "start": 1826,
+                      "end": 1834
                     }
                   },
                   "value": {
@@ -2067,28 +2067,28 @@
                       "token": {
                         "text": "1",
                         "location": {
-                          "start_line": 26,
+                          "start_line": 27,
                           "start_column": 51,
-                          "end_line": 26,
+                          "end_line": 27,
                           "end_column": 52,
-                          "start": 1737,
-                          "end": 1738,
+                          "start": 1837,
+                          "end": 1838,
                           "file_name": "MixedLoop.mo"
                         },
-                        "token_number": 112,
+                        "token_number": 113,
                         "token_type": 67
                       },
                       "span": {
                         "source": 4670090622201315808,
-                        "start": 1737,
-                        "end": 1738
+                        "start": 1837,
+                        "end": 1838
                       }
                     }
                   },
                   "span": {
                     "source": 4670090622201315808,
-                    "start": 1726,
-                    "end": 1738
+                    "start": 1826,
+                    "end": 1838
                   }
                 }
               },
@@ -2101,15 +2101,15 @@
                         "ident": {
                           "text": "Interval",
                           "location": {
-                            "start_line": 26,
+                            "start_line": 27,
                             "start_column": 54,
-                            "end_line": 26,
+                            "end_line": 27,
                             "end_column": 62,
-                            "start": 1740,
-                            "end": 1748,
+                            "start": 1840,
+                            "end": 1848,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 114,
+                          "token_number": 115,
                           "token_type": 64
                         },
                         "subs": null
@@ -2117,8 +2117,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1740,
-                      "end": 1748
+                      "start": 1840,
+                      "end": 1848
                     }
                   },
                   "value": {
@@ -2127,28 +2127,28 @@
                       "token": {
                         "text": "0.001",
                         "location": {
-                          "start_line": 26,
+                          "start_line": 27,
                           "start_column": 65,
-                          "end_line": 26,
+                          "end_line": 27,
                           "end_column": 70,
-                          "start": 1751,
-                          "end": 1756,
+                          "start": 1851,
+                          "end": 1856,
                           "file_name": "MixedLoop.mo"
                         },
-                        "token_number": 116,
+                        "token_number": 117,
                         "token_type": 68
                       },
                       "span": {
                         "source": 4670090622201315808,
-                        "start": 1751,
-                        "end": 1756
+                        "start": 1851,
+                        "end": 1856
                       }
                     }
                   },
                   "span": {
                     "source": 4670090622201315808,
-                    "start": 1740,
-                    "end": 1756
+                    "start": 1840,
+                    "end": 1856
                   }
                 }
               },
@@ -2161,15 +2161,15 @@
                         "ident": {
                           "text": "Tolerance",
                           "location": {
-                            "start_line": 26,
+                            "start_line": 27,
                             "start_column": 72,
-                            "end_line": 26,
+                            "end_line": 27,
                             "end_column": 81,
-                            "start": 1758,
-                            "end": 1767,
+                            "start": 1858,
+                            "end": 1867,
                             "file_name": "MixedLoop.mo"
                           },
-                          "token_number": 118,
+                          "token_number": 119,
                           "token_type": 64
                         },
                         "subs": null
@@ -2177,8 +2177,8 @@
                     ],
                     "span": {
                       "source": 4670090622201315808,
-                      "start": 1758,
-                      "end": 1767
+                      "start": 1858,
+                      "end": 1867
                     }
                   },
                   "value": {
@@ -2187,28 +2187,28 @@
                       "token": {
                         "text": "1e-6",
                         "location": {
-                          "start_line": 26,
+                          "start_line": 27,
                           "start_column": 84,
-                          "end_line": 26,
+                          "end_line": 27,
                           "end_column": 88,
-                          "start": 1770,
-                          "end": 1774,
+                          "start": 1870,
+                          "end": 1874,
                           "file_name": "MixedLoop.mo"
                         },
-                        "token_number": 120,
+                        "token_number": 121,
                         "token_type": 71
                       },
                       "span": {
                         "source": 4670090622201315808,
-                        "start": 1770,
-                        "end": 1774
+                        "start": 1870,
+                        "end": 1874
                       }
                     }
                   },
                   "span": {
                     "source": 4670090622201315808,
-                    "start": 1758,
-                    "end": 1774
+                    "start": 1858,
+                    "end": 1874
                   }
                 }
               }
@@ -2233,8 +2233,8 @@
             ],
             "span": {
               "source": 4670090622201315808,
-              "start": 1700,
-              "end": 1774
+              "start": 1800,
+              "end": 1874
             }
           }
         }

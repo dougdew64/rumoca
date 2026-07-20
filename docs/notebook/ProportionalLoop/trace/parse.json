@@ -58,10 +58,10 @@
       "location": {
         "start_line": 1,
         "start_column": 7,
-        "end_line": 25,
+        "end_line": 26,
         "end_column": 21,
         "start": 6,
-        "end": 1568,
+        "end": 1653,
         "file_name": "ProportionalLoop.mo"
       },
       "extends": [],
@@ -76,15 +76,15 @@
           "name_token": {
             "text": "reference",
             "location": {
-              "start_line": 14,
+              "start_line": 15,
               "start_column": 18,
-              "end_line": 14,
+              "end_line": 15,
               "end_column": 27,
-              "start": 1008,
-              "end": 1017,
+              "start": 1093,
+              "end": 1102,
               "file_name": "ProportionalLoop.mo"
             },
-            "token_number": 17,
+            "token_number": 18,
             "token_type": 64
           },
           "type_name": {
@@ -92,15 +92,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 14,
+                  "start_line": 15,
                   "start_column": 13,
-                  "end_line": 14,
+                  "end_line": 15,
                   "end_column": 17,
-                  "start": 1003,
-                  "end": 1007,
+                  "start": 1088,
+                  "end": 1092,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 16,
+                "token_number": 17,
                 "token_type": 64
               }
             ]
@@ -109,15 +109,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 14,
+                "start_line": 15,
                 "start_column": 3,
-                "end_line": 14,
+                "end_line": 15,
                 "end_column": 12,
-                "start": 993,
-                "end": 1002,
+                "start": 1078,
+                "end": 1087,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 15,
+              "token_number": 16,
               "token_type": 48
             }
           },
@@ -127,15 +127,15 @@
             {
               "text": "setpoint",
               "location": {
-                "start_line": 14,
+                "start_line": 15,
                 "start_column": 34,
-                "end_line": 14,
+                "end_line": 15,
                 "end_column": 44,
-                "start": 1024,
-                "end": 1034,
+                "start": 1109,
+                "end": 1119,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 20,
+              "token_number": 21,
               "token_type": 66
             }
           ],
@@ -158,8 +158,8 @@
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1003,
-                "end": 1017
+                "start": 1088,
+                "end": 1102
               }
             }
           },
@@ -172,21 +172,21 @@
               "token": {
                 "text": "1.0",
                 "location": {
-                  "start_line": 14,
+                  "start_line": 15,
                   "start_column": 30,
-                  "end_line": 14,
+                  "end_line": 15,
                   "end_column": 33,
-                  "start": 1020,
-                  "end": 1023,
+                  "start": 1105,
+                  "end": 1108,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 19,
+                "token_number": 20,
                 "token_type": 68
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1020,
-                "end": 1023
+                "start": 1105,
+                "end": 1108
               }
             }
           },
@@ -200,12 +200,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 14,
+            "start_line": 15,
             "start_column": 13,
-            "end_line": 14,
+            "end_line": 15,
             "end_column": 27,
-            "start": 1003,
-            "end": 1017,
+            "start": 1088,
+            "end": 1102,
             "file_name": "ProportionalLoop.mo"
           },
           "condition": null,
@@ -228,15 +228,15 @@
           "name_token": {
             "text": "controllerGain",
             "location": {
-              "start_line": 15,
+              "start_line": 16,
               "start_column": 18,
-              "end_line": 15,
+              "end_line": 16,
               "end_column": 32,
-              "start": 1053,
-              "end": 1067,
+              "start": 1138,
+              "end": 1152,
               "file_name": "ProportionalLoop.mo"
             },
-            "token_number": 24,
+            "token_number": 25,
             "token_type": 64
           },
           "type_name": {
@@ -244,15 +244,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 15,
+                  "start_line": 16,
                   "start_column": 13,
-                  "end_line": 15,
+                  "end_line": 16,
                   "end_column": 17,
-                  "start": 1048,
-                  "end": 1052,
+                  "start": 1133,
+                  "end": 1137,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 23,
+                "token_number": 24,
                 "token_type": 64
               }
             ]
@@ -261,15 +261,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 15,
+                "start_line": 16,
                 "start_column": 3,
-                "end_line": 15,
+                "end_line": 16,
                 "end_column": 12,
-                "start": 1038,
-                "end": 1047,
+                "start": 1123,
+                "end": 1132,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 22,
+              "token_number": 23,
               "token_type": 48
             }
           },
@@ -279,15 +279,15 @@
             {
               "text": "proportional gain Kp",
               "location": {
-                "start_line": 15,
+                "start_line": 16,
                 "start_column": 40,
-                "end_line": 15,
+                "end_line": 16,
                 "end_column": 62,
-                "start": 1075,
-                "end": 1097,
+                "start": 1160,
+                "end": 1182,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 27,
+              "token_number": 28,
               "token_type": 66
             }
           ],
@@ -310,8 +310,8 @@
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1048,
-                "end": 1067
+                "start": 1133,
+                "end": 1152
               }
             }
           },
@@ -324,21 +324,21 @@
               "token": {
                 "text": "10.0",
                 "location": {
-                  "start_line": 15,
+                  "start_line": 16,
                   "start_column": 35,
-                  "end_line": 15,
+                  "end_line": 16,
                   "end_column": 39,
-                  "start": 1070,
-                  "end": 1074,
+                  "start": 1155,
+                  "end": 1159,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 26,
+                "token_number": 27,
                 "token_type": 68
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1070,
-                "end": 1074
+                "start": 1155,
+                "end": 1159
               }
             }
           },
@@ -352,12 +352,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 15,
+            "start_line": 16,
             "start_column": 13,
-            "end_line": 15,
+            "end_line": 16,
             "end_column": 32,
-            "start": 1048,
-            "end": 1067,
+            "start": 1133,
+            "end": 1152,
             "file_name": "ProportionalLoop.mo"
           },
           "condition": null,
@@ -380,15 +380,15 @@
           "name_token": {
             "text": "plantGain",
             "location": {
-              "start_line": 16,
+              "start_line": 17,
               "start_column": 18,
-              "end_line": 16,
+              "end_line": 17,
               "end_column": 27,
-              "start": 1116,
-              "end": 1125,
+              "start": 1201,
+              "end": 1210,
               "file_name": "ProportionalLoop.mo"
             },
-            "token_number": 31,
+            "token_number": 32,
             "token_type": 64
           },
           "type_name": {
@@ -396,15 +396,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 16,
+                  "start_line": 17,
                   "start_column": 13,
-                  "end_line": 16,
+                  "end_line": 17,
                   "end_column": 17,
-                  "start": 1111,
-                  "end": 1115,
+                  "start": 1196,
+                  "end": 1200,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 30,
+                "token_number": 31,
                 "token_type": 64
               }
             ]
@@ -413,15 +413,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 16,
+                "start_line": 17,
                 "start_column": 3,
-                "end_line": 16,
+                "end_line": 17,
                 "end_column": 12,
-                "start": 1101,
-                "end": 1110,
+                "start": 1186,
+                "end": 1195,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 29,
+              "token_number": 30,
               "token_type": 48
             }
           },
@@ -431,15 +431,15 @@
             {
               "text": "ideal (static) plant gain — no integrator",
               "location": {
-                "start_line": 16,
+                "start_line": 17,
                 "start_column": 34,
-                "end_line": 16,
+                "end_line": 17,
                 "end_column": 77,
-                "start": 1132,
-                "end": 1177,
+                "start": 1217,
+                "end": 1262,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 34,
+              "token_number": 35,
               "token_type": 66
             }
           ],
@@ -462,8 +462,8 @@
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1111,
-                "end": 1125
+                "start": 1196,
+                "end": 1210
               }
             }
           },
@@ -476,21 +476,21 @@
               "token": {
                 "text": "2.0",
                 "location": {
-                  "start_line": 16,
+                  "start_line": 17,
                   "start_column": 30,
-                  "end_line": 16,
+                  "end_line": 17,
                   "end_column": 33,
-                  "start": 1128,
-                  "end": 1131,
+                  "start": 1213,
+                  "end": 1216,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 33,
+                "token_number": 34,
                 "token_type": 68
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1128,
-                "end": 1131
+                "start": 1213,
+                "end": 1216
               }
             }
           },
@@ -504,12 +504,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 16,
+            "start_line": 17,
             "start_column": 13,
-            "end_line": 16,
+            "end_line": 17,
             "end_column": 27,
-            "start": 1111,
-            "end": 1125,
+            "start": 1196,
+            "end": 1210,
             "file_name": "ProportionalLoop.mo"
           },
           "condition": null,
@@ -532,15 +532,15 @@
           "name_token": {
             "text": "error",
             "location": {
-              "start_line": 17,
+              "start_line": 18,
               "start_column": 8,
-              "end_line": 17,
+              "end_line": 18,
               "end_column": 13,
-              "start": 1186,
-              "end": 1191,
+              "start": 1271,
+              "end": 1276,
               "file_name": "ProportionalLoop.mo"
             },
-            "token_number": 37,
+            "token_number": 38,
             "token_type": 64
           },
           "type_name": {
@@ -548,15 +548,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 17,
+                  "start_line": 18,
                   "start_column": 3,
-                  "end_line": 17,
+                  "end_line": 18,
                   "end_column": 7,
-                  "start": 1181,
-                  "end": 1185,
+                  "start": 1266,
+                  "end": 1270,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 36,
+                "token_number": 37,
                 "token_type": 64
               }
             ]
@@ -568,15 +568,15 @@
             {
               "text": "reference − measurement",
               "location": {
-                "start_line": 17,
+                "start_line": 18,
                 "start_column": 14,
-                "end_line": 17,
+                "end_line": 18,
                 "end_column": 39,
-                "start": 1192,
-                "end": 1219,
+                "start": 1277,
+                "end": 1304,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 38,
+              "token_number": 39,
               "token_type": 66
             }
           ],
@@ -599,8 +599,8 @@
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1181,
-                "end": 1191
+                "start": 1266,
+                "end": 1276
               }
             }
           },
@@ -618,12 +618,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 17,
+            "start_line": 18,
             "start_column": 3,
-            "end_line": 17,
+            "end_line": 18,
             "end_column": 13,
-            "start": 1181,
-            "end": 1191,
+            "start": 1266,
+            "end": 1276,
             "file_name": "ProportionalLoop.mo"
           },
           "condition": null,
@@ -646,15 +646,15 @@
           "name_token": {
             "text": "command",
             "location": {
-              "start_line": 18,
+              "start_line": 19,
               "start_column": 8,
-              "end_line": 18,
+              "end_line": 19,
               "end_column": 15,
-              "start": 1228,
-              "end": 1235,
+              "start": 1313,
+              "end": 1320,
               "file_name": "ProportionalLoop.mo"
             },
-            "token_number": 41,
+            "token_number": 42,
             "token_type": 64
           },
           "type_name": {
@@ -662,15 +662,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 18,
+                  "start_line": 19,
                   "start_column": 3,
-                  "end_line": 18,
+                  "end_line": 19,
                   "end_column": 7,
-                  "start": 1223,
-                  "end": 1227,
+                  "start": 1308,
+                  "end": 1312,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 40,
+                "token_number": 41,
                 "token_type": 64
               }
             ]
@@ -682,15 +682,15 @@
             {
               "text": "controller output = Kp · error",
               "location": {
-                "start_line": 18,
+                "start_line": 19,
                 "start_column": 16,
-                "end_line": 18,
+                "end_line": 19,
                 "end_column": 48,
-                "start": 1236,
-                "end": 1269,
+                "start": 1321,
+                "end": 1354,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 42,
+              "token_number": 43,
               "token_type": 66
             }
           ],
@@ -713,8 +713,8 @@
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1223,
-                "end": 1235
+                "start": 1308,
+                "end": 1320
               }
             }
           },
@@ -732,12 +732,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 18,
+            "start_line": 19,
             "start_column": 3,
-            "end_line": 18,
+            "end_line": 19,
             "end_column": 15,
-            "start": 1223,
-            "end": 1235,
+            "start": 1308,
+            "end": 1320,
             "file_name": "ProportionalLoop.mo"
           },
           "condition": null,
@@ -760,15 +760,15 @@
           "name_token": {
             "text": "measurement",
             "location": {
-              "start_line": 19,
+              "start_line": 20,
               "start_column": 8,
-              "end_line": 19,
+              "end_line": 20,
               "end_column": 19,
-              "start": 1278,
-              "end": 1289,
+              "start": 1363,
+              "end": 1374,
               "file_name": "ProportionalLoop.mo"
             },
-            "token_number": 45,
+            "token_number": 46,
             "token_type": 64
           },
           "type_name": {
@@ -776,15 +776,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 19,
+                  "start_line": 20,
                   "start_column": 3,
-                  "end_line": 19,
+                  "end_line": 20,
                   "end_column": 7,
-                  "start": 1273,
-                  "end": 1277,
+                  "start": 1358,
+                  "end": 1362,
                   "file_name": "ProportionalLoop.mo"
                 },
-                "token_number": 44,
+                "token_number": 45,
                 "token_type": 64
               }
             ]
@@ -796,15 +796,15 @@
             {
               "text": "plant output, fed back to the summing junction",
               "location": {
-                "start_line": 19,
+                "start_line": 20,
                 "start_column": 20,
-                "end_line": 19,
+                "end_line": 20,
                 "end_column": 68,
-                "start": 1290,
-                "end": 1338,
+                "start": 1375,
+                "end": 1423,
                 "file_name": "ProportionalLoop.mo"
               },
-              "token_number": 46,
+              "token_number": 47,
               "token_type": 66
             }
           ],
@@ -827,8 +827,8 @@
               },
               "span": {
                 "source": 13641098263518165366,
-                "start": 1273,
-                "end": 1289
+                "start": 1358,
+                "end": 1374
               }
             }
           },
@@ -846,12 +846,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 19,
+            "start_line": 20,
             "start_column": 3,
-            "end_line": 19,
+            "end_line": 20,
             "end_column": 19,
-            "start": 1273,
-            "end": 1289,
+            "start": 1358,
+            "end": 1374,
             "file_name": "ProportionalLoop.mo"
           },
           "condition": null,
@@ -878,15 +878,15 @@
                     "ident": {
                       "text": "error",
                       "location": {
-                        "start_line": 21,
+                        "start_line": 22,
                         "start_column": 3,
-                        "end_line": 21,
+                        "end_line": 22,
                         "end_column": 8,
-                        "start": 1351,
-                        "end": 1356,
+                        "start": 1436,
+                        "end": 1441,
                         "file_name": "ProportionalLoop.mo"
                       },
-                      "token_number": 49,
+                      "token_number": 50,
                       "token_type": 64
                     },
                     "subs": null
@@ -894,8 +894,8 @@
                 ],
                 "span": {
                   "source": 13641098263518165366,
-                  "start": 1351,
-                  "end": 1356
+                  "start": 1436,
+                  "end": 1441
                 }
               }
             },
@@ -910,15 +910,15 @@
                         "ident": {
                           "text": "reference",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 11,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 20,
-                            "start": 1359,
-                            "end": 1368,
+                            "start": 1444,
+                            "end": 1453,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 51,
+                          "token_number": 52,
                           "token_type": 64
                         },
                         "subs": null
@@ -926,8 +926,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1359,
-                      "end": 1368
+                      "start": 1444,
+                      "end": 1453
                     }
                   }
                 },
@@ -939,15 +939,15 @@
                         "ident": {
                           "text": "measurement",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 23,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 34,
-                            "start": 1371,
-                            "end": 1382,
+                            "start": 1456,
+                            "end": 1467,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 53,
+                          "token_number": 54,
                           "token_type": 64
                         },
                         "subs": null
@@ -955,15 +955,15 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1371,
-                      "end": 1382
+                      "start": 1456,
+                      "end": 1467
                     }
                   }
                 },
                 "span": {
                   "source": 13641098263518165366,
-                  "start": 1359,
-                  "end": 1382
+                  "start": 1444,
+                  "end": 1467
                 }
               }
             }
@@ -979,15 +979,15 @@
                     "ident": {
                       "text": "command",
                       "location": {
-                        "start_line": 22,
+                        "start_line": 23,
                         "start_column": 3,
-                        "end_line": 22,
+                        "end_line": 23,
                         "end_column": 10,
-                        "start": 1386,
-                        "end": 1393,
+                        "start": 1471,
+                        "end": 1478,
                         "file_name": "ProportionalLoop.mo"
                       },
-                      "token_number": 55,
+                      "token_number": 56,
                       "token_type": 64
                     },
                     "subs": null
@@ -995,8 +995,8 @@
                 ],
                 "span": {
                   "source": 13641098263518165366,
-                  "start": 1386,
-                  "end": 1393
+                  "start": 1471,
+                  "end": 1478
                 }
               }
             },
@@ -1011,15 +1011,15 @@
                         "ident": {
                           "text": "controllerGain",
                           "location": {
-                            "start_line": 22,
+                            "start_line": 23,
                             "start_column": 13,
-                            "end_line": 22,
+                            "end_line": 23,
                             "end_column": 27,
-                            "start": 1396,
-                            "end": 1410,
+                            "start": 1481,
+                            "end": 1495,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 57,
+                          "token_number": 58,
                           "token_type": 64
                         },
                         "subs": null
@@ -1027,8 +1027,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1396,
-                      "end": 1410
+                      "start": 1481,
+                      "end": 1495
                     }
                   }
                 },
@@ -1040,15 +1040,15 @@
                         "ident": {
                           "text": "error",
                           "location": {
-                            "start_line": 22,
+                            "start_line": 23,
                             "start_column": 30,
-                            "end_line": 22,
+                            "end_line": 23,
                             "end_column": 35,
-                            "start": 1413,
-                            "end": 1418,
+                            "start": 1498,
+                            "end": 1503,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 59,
+                          "token_number": 60,
                           "token_type": 64
                         },
                         "subs": null
@@ -1056,15 +1056,15 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1413,
-                      "end": 1418
+                      "start": 1498,
+                      "end": 1503
                     }
                   }
                 },
                 "span": {
                   "source": 13641098263518165366,
-                  "start": 1396,
-                  "end": 1418
+                  "start": 1481,
+                  "end": 1503
                 }
               }
             }
@@ -1080,15 +1080,15 @@
                     "ident": {
                       "text": "measurement",
                       "location": {
-                        "start_line": 23,
+                        "start_line": 24,
                         "start_column": 3,
-                        "end_line": 23,
+                        "end_line": 24,
                         "end_column": 14,
-                        "start": 1422,
-                        "end": 1433,
+                        "start": 1507,
+                        "end": 1518,
                         "file_name": "ProportionalLoop.mo"
                       },
-                      "token_number": 61,
+                      "token_number": 62,
                       "token_type": 64
                     },
                     "subs": null
@@ -1096,8 +1096,8 @@
                 ],
                 "span": {
                   "source": 13641098263518165366,
-                  "start": 1422,
-                  "end": 1433
+                  "start": 1507,
+                  "end": 1518
                 }
               }
             },
@@ -1112,15 +1112,15 @@
                         "ident": {
                           "text": "plantGain",
                           "location": {
-                            "start_line": 23,
+                            "start_line": 24,
                             "start_column": 17,
-                            "end_line": 23,
+                            "end_line": 24,
                             "end_column": 26,
-                            "start": 1436,
-                            "end": 1445,
+                            "start": 1521,
+                            "end": 1530,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 63,
+                          "token_number": 64,
                           "token_type": 64
                         },
                         "subs": null
@@ -1128,8 +1128,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1436,
-                      "end": 1445
+                      "start": 1521,
+                      "end": 1530
                     }
                   }
                 },
@@ -1141,15 +1141,15 @@
                         "ident": {
                           "text": "command",
                           "location": {
-                            "start_line": 23,
+                            "start_line": 24,
                             "start_column": 29,
-                            "end_line": 23,
+                            "end_line": 24,
                             "end_column": 36,
-                            "start": 1448,
-                            "end": 1455,
+                            "start": 1533,
+                            "end": 1540,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 65,
+                          "token_number": 66,
                           "token_type": 64
                         },
                         "subs": null
@@ -1157,15 +1157,15 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1448,
-                      "end": 1455
+                      "start": 1533,
+                      "end": 1540
                     }
                   }
                 },
                 "span": {
                   "source": 13641098263518165366,
-                  "start": 1436,
-                  "end": 1455
+                  "start": 1521,
+                  "end": 1540
                 }
               }
             }
@@ -1178,15 +1178,15 @@
       "equation_keyword": {
         "text": "equation",
         "location": {
-          "start_line": 20,
+          "start_line": 21,
           "start_column": 1,
-          "end_line": 20,
+          "end_line": 21,
           "end_column": 9,
-          "start": 1340,
-          "end": 1348,
+          "start": 1425,
+          "end": 1433,
           "file_name": "ProportionalLoop.mo"
         },
-        "token_number": 48,
+        "token_number": 49,
         "token_type": 24
       },
       "initial_equation_keyword": null,
@@ -1195,15 +1195,15 @@
       "end_name_token": {
         "text": "ProportionalLoop",
         "location": {
-          "start_line": 25,
+          "start_line": 26,
           "start_column": 5,
-          "end_line": 25,
+          "end_line": 26,
           "end_column": 21,
-          "start": 1552,
-          "end": 1568,
+          "start": 1637,
+          "end": 1653,
           "file_name": "ProportionalLoop.mo"
         },
-        "token_number": 90,
+        "token_number": 91,
         "token_type": 64
       },
       "enum_literals": [],
@@ -1217,15 +1217,15 @@
                   "ident": {
                     "text": "experiment",
                     "location": {
-                      "start_line": 24,
+                      "start_line": 25,
                       "start_column": 14,
-                      "end_line": 24,
+                      "end_line": 25,
                       "end_column": 24,
-                      "start": 1470,
-                      "end": 1480,
+                      "start": 1555,
+                      "end": 1565,
                       "file_name": "ProportionalLoop.mo"
                     },
-                    "token_number": 69,
+                    "token_number": 70,
                     "token_type": 64
                   },
                   "subs": null
@@ -1233,8 +1233,8 @@
               ],
               "span": {
                 "source": 13641098263518165366,
-                "start": 1470,
-                "end": 1480
+                "start": 1555,
+                "end": 1565
               }
             },
             "modifications": [
@@ -1247,15 +1247,15 @@
                         "ident": {
                           "text": "StartTime",
                           "location": {
-                            "start_line": 24,
+                            "start_line": 25,
                             "start_column": 25,
-                            "end_line": 24,
+                            "end_line": 25,
                             "end_column": 34,
-                            "start": 1481,
-                            "end": 1490,
+                            "start": 1566,
+                            "end": 1575,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 71,
+                          "token_number": 72,
                           "token_type": 64
                         },
                         "subs": null
@@ -1263,8 +1263,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1481,
-                      "end": 1490
+                      "start": 1566,
+                      "end": 1575
                     }
                   },
                   "value": {
@@ -1273,28 +1273,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 24,
+                          "start_line": 25,
                           "start_column": 37,
-                          "end_line": 24,
+                          "end_line": 25,
                           "end_column": 38,
-                          "start": 1493,
-                          "end": 1494,
+                          "start": 1578,
+                          "end": 1579,
                           "file_name": "ProportionalLoop.mo"
                         },
-                        "token_number": 73,
+                        "token_number": 74,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13641098263518165366,
-                        "start": 1493,
-                        "end": 1494
+                        "start": 1578,
+                        "end": 1579
                       }
                     }
                   },
                   "span": {
                     "source": 13641098263518165366,
-                    "start": 1481,
-                    "end": 1494
+                    "start": 1566,
+                    "end": 1579
                   }
                 }
               },
@@ -1307,15 +1307,15 @@
                         "ident": {
                           "text": "StopTime",
                           "location": {
-                            "start_line": 24,
+                            "start_line": 25,
                             "start_column": 40,
-                            "end_line": 24,
+                            "end_line": 25,
                             "end_column": 48,
-                            "start": 1496,
-                            "end": 1504,
+                            "start": 1581,
+                            "end": 1589,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 75,
+                          "token_number": 76,
                           "token_type": 64
                         },
                         "subs": null
@@ -1323,8 +1323,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1496,
-                      "end": 1504
+                      "start": 1581,
+                      "end": 1589
                     }
                   },
                   "value": {
@@ -1333,28 +1333,28 @@
                       "token": {
                         "text": "1",
                         "location": {
-                          "start_line": 24,
+                          "start_line": 25,
                           "start_column": 51,
-                          "end_line": 24,
+                          "end_line": 25,
                           "end_column": 52,
-                          "start": 1507,
-                          "end": 1508,
+                          "start": 1592,
+                          "end": 1593,
                           "file_name": "ProportionalLoop.mo"
                         },
-                        "token_number": 77,
+                        "token_number": 78,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13641098263518165366,
-                        "start": 1507,
-                        "end": 1508
+                        "start": 1592,
+                        "end": 1593
                       }
                     }
                   },
                   "span": {
                     "source": 13641098263518165366,
-                    "start": 1496,
-                    "end": 1508
+                    "start": 1581,
+                    "end": 1593
                   }
                 }
               },
@@ -1367,15 +1367,15 @@
                         "ident": {
                           "text": "Interval",
                           "location": {
-                            "start_line": 24,
+                            "start_line": 25,
                             "start_column": 54,
-                            "end_line": 24,
+                            "end_line": 25,
                             "end_column": 62,
-                            "start": 1510,
-                            "end": 1518,
+                            "start": 1595,
+                            "end": 1603,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 79,
+                          "token_number": 80,
                           "token_type": 64
                         },
                         "subs": null
@@ -1383,8 +1383,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1510,
-                      "end": 1518
+                      "start": 1595,
+                      "end": 1603
                     }
                   },
                   "value": {
@@ -1393,28 +1393,28 @@
                       "token": {
                         "text": "0.001",
                         "location": {
-                          "start_line": 24,
+                          "start_line": 25,
                           "start_column": 65,
-                          "end_line": 24,
+                          "end_line": 25,
                           "end_column": 70,
-                          "start": 1521,
-                          "end": 1526,
+                          "start": 1606,
+                          "end": 1611,
                           "file_name": "ProportionalLoop.mo"
                         },
-                        "token_number": 81,
+                        "token_number": 82,
                         "token_type": 68
                       },
                       "span": {
                         "source": 13641098263518165366,
-                        "start": 1521,
-                        "end": 1526
+                        "start": 1606,
+                        "end": 1611
                       }
                     }
                   },
                   "span": {
                     "source": 13641098263518165366,
-                    "start": 1510,
-                    "end": 1526
+                    "start": 1595,
+                    "end": 1611
                   }
                 }
               },
@@ -1427,15 +1427,15 @@
                         "ident": {
                           "text": "Tolerance",
                           "location": {
-                            "start_line": 24,
+                            "start_line": 25,
                             "start_column": 72,
-                            "end_line": 24,
+                            "end_line": 25,
                             "end_column": 81,
-                            "start": 1528,
-                            "end": 1537,
+                            "start": 1613,
+                            "end": 1622,
                             "file_name": "ProportionalLoop.mo"
                           },
-                          "token_number": 83,
+                          "token_number": 84,
                           "token_type": 64
                         },
                         "subs": null
@@ -1443,8 +1443,8 @@
                     ],
                     "span": {
                       "source": 13641098263518165366,
-                      "start": 1528,
-                      "end": 1537
+                      "start": 1613,
+                      "end": 1622
                     }
                   },
                   "value": {
@@ -1453,28 +1453,28 @@
                       "token": {
                         "text": "1e-6",
                         "location": {
-                          "start_line": 24,
+                          "start_line": 25,
                           "start_column": 84,
-                          "end_line": 24,
+                          "end_line": 25,
                           "end_column": 88,
-                          "start": 1540,
-                          "end": 1544,
+                          "start": 1625,
+                          "end": 1629,
                           "file_name": "ProportionalLoop.mo"
                         },
-                        "token_number": 85,
+                        "token_number": 86,
                         "token_type": 71
                       },
                       "span": {
                         "source": 13641098263518165366,
-                        "start": 1540,
-                        "end": 1544
+                        "start": 1625,
+                        "end": 1629
                       }
                     }
                   },
                   "span": {
                     "source": 13641098263518165366,
-                    "start": 1528,
-                    "end": 1544
+                    "start": 1613,
+                    "end": 1629
                   }
                 }
               }
@@ -1499,8 +1499,8 @@
             ],
             "span": {
               "source": 13641098263518165366,
-              "start": 1470,
-              "end": 1544
+              "start": 1555,
+              "end": 1629
             }
           }
         }

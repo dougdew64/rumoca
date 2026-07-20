@@ -1,4 +1,5 @@
 model TwoLoops "Two algebraic feedback loops in series — two separate coupled blocks"
+  // purpose: Two algebraic loops in series → two coupled blocks, sequenced by data dependency.
   // Arc 3 specimen (charter §4.2.3): two idealized proportional loops, where the
   // first loop's command drives the second loop's setpoint. Each loop is its own
   // strongly-connected component, and the second depends on the first but not vice

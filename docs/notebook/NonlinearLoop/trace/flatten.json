@@ -6,16 +6,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 813,
-          "end": 827
+          "start": 929,
+          "end": 943
         },
         "parts": [
           {
             "ident": "reference",
             "span": {
               "source": 12973387870978279536,
-              "start": 813,
-              "end": 827
+              "start": 929,
+              "end": 943
             },
             "subs": []
           }
@@ -24,23 +24,23 @@
       },
       "source_span": {
         "source": 12973387870978279536,
-        "start": 813,
-        "end": 827
+        "start": 929,
+        "end": 943
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 11,
+            "start_line": 12,
             "start_column": 3,
-            "end_line": 11,
+            "end_line": 12,
             "end_column": 12,
-            "start": 803,
-            "end": 812,
+            "start": 919,
+            "end": 928,
             "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
           },
-          "token_number": 12,
+          "token_number": 13,
           "token_type": 48
         }
       },
@@ -56,8 +56,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 830,
-            "end": 833
+            "start": 946,
+            "end": 949
           }
         }
       },
@@ -77,8 +77,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 830,
-            "end": 833
+            "start": 946,
+            "end": 949
           }
         }
       },
@@ -98,16 +98,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 858,
-          "end": 877
+          "start": 974,
+          "end": 993
         },
         "parts": [
           {
             "ident": "controllerGain",
             "span": {
               "source": 12973387870978279536,
-              "start": 858,
-              "end": 877
+              "start": 974,
+              "end": 993
             },
             "subs": []
           }
@@ -116,23 +116,23 @@
       },
       "source_span": {
         "source": 12973387870978279536,
-        "start": 858,
-        "end": 877
+        "start": 974,
+        "end": 993
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 12,
+            "start_line": 13,
             "start_column": 3,
-            "end_line": 12,
+            "end_line": 13,
             "end_column": 12,
-            "start": 848,
-            "end": 857,
+            "start": 964,
+            "end": 973,
             "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
           },
-          "token_number": 19,
+          "token_number": 20,
           "token_type": 48
         }
       },
@@ -148,8 +148,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 880,
-            "end": 884
+            "start": 996,
+            "end": 1000
           }
         }
       },
@@ -169,8 +169,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 880,
-            "end": 884
+            "start": 996,
+            "end": 1000
           }
         }
       },
@@ -190,16 +190,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 921,
-          "end": 935
+          "start": 1037,
+          "end": 1051
         },
         "parts": [
           {
             "ident": "plantGain",
             "span": {
               "source": 12973387870978279536,
-              "start": 921,
-              "end": 935
+              "start": 1037,
+              "end": 1051
             },
             "subs": []
           }
@@ -208,23 +208,23 @@
       },
       "source_span": {
         "source": 12973387870978279536,
-        "start": 921,
-        "end": 935
+        "start": 1037,
+        "end": 1051
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 13,
+            "start_line": 14,
             "start_column": 3,
-            "end_line": 13,
+            "end_line": 14,
             "end_column": 12,
-            "start": 911,
-            "end": 920,
+            "start": 1027,
+            "end": 1036,
             "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
           },
-          "token_number": 26,
+          "token_number": 27,
           "token_type": 48
         }
       },
@@ -240,8 +240,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 938,
-            "end": 941
+            "start": 1054,
+            "end": 1057
           }
         }
       },
@@ -261,8 +261,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 938,
-            "end": 941
+            "start": 1054,
+            "end": 1057
           }
         }
       },
@@ -282,16 +282,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 987,
-          "end": 997
+          "start": 1103,
+          "end": 1113
         },
         "parts": [
           {
             "ident": "error",
             "span": {
               "source": 12973387870978279536,
-              "start": 987,
-              "end": 997
+              "start": 1103,
+              "end": 1113
             },
             "subs": []
           }
@@ -300,8 +300,8 @@
       },
       "source_span": {
         "source": 12973387870978279536,
-        "start": 987,
-        "end": 997
+        "start": 1103,
+        "end": 1113
       },
       "type_id": 0,
       "variability": "Empty",
@@ -317,8 +317,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 987,
-            "end": 997
+            "start": 1103,
+            "end": 1113
           }
         }
       },
@@ -348,16 +348,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 1029,
-          "end": 1041
+          "start": 1145,
+          "end": 1157
         },
         "parts": [
           {
             "ident": "command",
             "span": {
               "source": 12973387870978279536,
-              "start": 1029,
-              "end": 1041
+              "start": 1145,
+              "end": 1157
             },
             "subs": []
           }
@@ -366,8 +366,8 @@
       },
       "source_span": {
         "source": 12973387870978279536,
-        "start": 1029,
-        "end": 1041
+        "start": 1145,
+        "end": 1157
       },
       "type_id": 0,
       "variability": "Empty",
@@ -383,8 +383,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1029,
-            "end": 1041
+            "start": 1145,
+            "end": 1157
           }
         }
       },
@@ -414,16 +414,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 1079,
-          "end": 1095
+          "start": 1195,
+          "end": 1211
         },
         "parts": [
           {
             "ident": "measurement",
             "span": {
               "source": 12973387870978279536,
-              "start": 1079,
-              "end": 1095
+              "start": 1195,
+              "end": 1211
             },
             "subs": []
           }
@@ -432,8 +432,8 @@
       },
       "source_span": {
         "source": 12973387870978279536,
-        "start": 1079,
-        "end": 1095
+        "start": 1195,
+        "end": 1211
       },
       "type_id": 0,
       "variability": "Empty",
@@ -449,8 +449,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1079,
-            "end": 1095
+            "start": 1195,
+            "end": 1211
           }
         }
       },
@@ -497,16 +497,16 @@
                   "local": false,
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1133,
-                    "end": 1138
+                    "start": 1249,
+                    "end": 1254
                   },
                   "parts": [
                     {
                       "ident": "error",
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1133,
-                        "end": 1138
+                        "start": 1249,
+                        "end": 1254
                       },
                       "subs": []
                     }
@@ -517,8 +517,8 @@
               "subscripts": [],
               "span": {
                 "source": 12973387870978279536,
-                "start": 1133,
-                "end": 1138
+                "start": 1249,
+                "end": 1254
               }
             }
           },
@@ -533,16 +533,16 @@
                       "local": false,
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1141,
-                        "end": 1150
+                        "start": 1257,
+                        "end": 1266
                       },
                       "parts": [
                         {
                           "ident": "reference",
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1141,
-                            "end": 1150
+                            "start": 1257,
+                            "end": 1266
                           },
                           "subs": []
                         }
@@ -553,8 +553,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1141,
-                    "end": 1150
+                    "start": 1257,
+                    "end": 1266
                   }
                 }
               },
@@ -566,16 +566,16 @@
                       "local": false,
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1153,
-                        "end": 1164
+                        "start": 1269,
+                        "end": 1280
                       },
                       "parts": [
                         {
                           "ident": "measurement",
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1153,
-                            "end": 1164
+                            "start": 1269,
+                            "end": 1280
                           },
                           "subs": []
                         }
@@ -586,29 +586,29 @@
                   "subscripts": [],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1153,
-                    "end": 1164
+                    "start": 1269,
+                    "end": 1280
                   }
                 }
               },
               "span": {
                 "source": 12973387870978279536,
-                "start": 1141,
-                "end": 1164
+                "start": 1257,
+                "end": 1280
               }
             }
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1133,
-            "end": 1138
+            "start": 1249,
+            "end": 1254
           }
         }
       },
       "span": {
         "source": 12973387870978279536,
-        "start": 1133,
-        "end": 1138
+        "start": 1249,
+        "end": 1254
       },
       "origin": {
         "ComponentEquation": {
@@ -629,16 +629,16 @@
                   "local": false,
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1168,
-                    "end": 1175
+                    "start": 1284,
+                    "end": 1291
                   },
                   "parts": [
                     {
                       "ident": "command",
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1168,
-                        "end": 1175
+                        "start": 1284,
+                        "end": 1291
                       },
                       "subs": []
                     }
@@ -649,8 +649,8 @@
               "subscripts": [],
               "span": {
                 "source": 12973387870978279536,
-                "start": 1168,
-                "end": 1175
+                "start": 1284,
+                "end": 1291
               }
             }
           },
@@ -665,16 +665,16 @@
                       "local": false,
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1178,
-                        "end": 1192
+                        "start": 1294,
+                        "end": 1308
                       },
                       "parts": [
                         {
                           "ident": "controllerGain",
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1178,
-                            "end": 1192
+                            "start": 1294,
+                            "end": 1308
                           },
                           "subs": []
                         }
@@ -685,8 +685,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1178,
-                    "end": 1192
+                    "start": 1294,
+                    "end": 1308
                   }
                 }
               },
@@ -698,16 +698,16 @@
                       "local": false,
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1195,
-                        "end": 1200
+                        "start": 1311,
+                        "end": 1316
                       },
                       "parts": [
                         {
                           "ident": "error",
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1195,
-                            "end": 1200
+                            "start": 1311,
+                            "end": 1316
                           },
                           "subs": []
                         }
@@ -718,29 +718,29 @@
                   "subscripts": [],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1195,
-                    "end": 1200
+                    "start": 1311,
+                    "end": 1316
                   }
                 }
               },
               "span": {
                 "source": 12973387870978279536,
-                "start": 1178,
-                "end": 1200
+                "start": 1294,
+                "end": 1316
               }
             }
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1168,
-            "end": 1175
+            "start": 1284,
+            "end": 1291
           }
         }
       },
       "span": {
         "source": 12973387870978279536,
-        "start": 1168,
-        "end": 1175
+        "start": 1284,
+        "end": 1291
       },
       "origin": {
         "ComponentEquation": {
@@ -761,16 +761,16 @@
                   "local": false,
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1204,
-                    "end": 1215
+                    "start": 1320,
+                    "end": 1331
                   },
                   "parts": [
                     {
                       "ident": "measurement",
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1204,
-                        "end": 1215
+                        "start": 1320,
+                        "end": 1331
                       },
                       "subs": []
                     }
@@ -781,8 +781,8 @@
               "subscripts": [],
               "span": {
                 "source": 12973387870978279536,
-                "start": 1204,
-                "end": 1215
+                "start": 1320,
+                "end": 1331
               }
             }
           },
@@ -800,16 +800,16 @@
                           "local": false,
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1218,
-                            "end": 1227
+                            "start": 1334,
+                            "end": 1343
                           },
                           "parts": [
                             {
                               "ident": "plantGain",
                               "span": {
                                 "source": 12973387870978279536,
-                                "start": 1218,
-                                "end": 1227
+                                "start": 1334,
+                                "end": 1343
                               },
                               "subs": []
                             }
@@ -820,8 +820,8 @@
                       "subscripts": [],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1218,
-                        "end": 1227
+                        "start": 1334,
+                        "end": 1343
                       }
                     }
                   },
@@ -833,16 +833,16 @@
                           "local": false,
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1230,
-                            "end": 1237
+                            "start": 1346,
+                            "end": 1353
                           },
                           "parts": [
                             {
                               "ident": "command",
                               "span": {
                                 "source": 12973387870978279536,
-                                "start": 1230,
-                                "end": 1237
+                                "start": 1346,
+                                "end": 1353
                               },
                               "subs": []
                             }
@@ -853,15 +853,15 @@
                       "subscripts": [],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1230,
-                        "end": 1237
+                        "start": 1346,
+                        "end": 1353
                       }
                     }
                   },
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1218,
-                    "end": 1237
+                    "start": 1334,
+                    "end": 1353
                   }
                 }
               },
@@ -873,16 +873,16 @@
                       "local": false,
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1240,
-                        "end": 1247
+                        "start": 1356,
+                        "end": 1363
                       },
                       "parts": [
                         {
                           "ident": "command",
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1240,
-                            "end": 1247
+                            "start": 1356,
+                            "end": 1363
                           },
                           "subs": []
                         }
@@ -893,29 +893,29 @@
                   "subscripts": [],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1240,
-                    "end": 1247
+                    "start": 1356,
+                    "end": 1363
                   }
                 }
               },
               "span": {
                 "source": 12973387870978279536,
-                "start": 1218,
-                "end": 1247
+                "start": 1334,
+                "end": 1363
               }
             }
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1204,
-            "end": 1215
+            "start": 1320,
+            "end": 1331
           }
         }
       },
       "span": {
         "source": 12973387870978279536,
-        "start": 1204,
-        "end": 1215
+        "start": 1320,
+        "end": 1331
       },
       "origin": {
         "ComponentEquation": {

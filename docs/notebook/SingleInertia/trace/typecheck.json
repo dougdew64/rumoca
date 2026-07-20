@@ -6,16 +6,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 93,
-          "end": 99
+          "start": 181,
+          "end": 187
         },
         "parts": [
           {
             "ident": "J",
             "span": {
               "source": 13456874562834740018,
-              "start": 93,
-              "end": 99
+              "start": 181,
+              "end": 187
             },
             "subs": []
           }
@@ -31,157 +31,12 @@
         ]
       },
       "source_location": {
-        "start_line": 2,
-        "start_column": 13,
-        "end_line": 2,
-        "end_column": 19,
-        "start": 93,
-        "end": 99,
-        "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
-      },
-      "dims": [],
-      "dims_expr": [],
-      "type_id": 0,
-      "type_name": "Real",
-      "type_def_id": 1,
-      "declaration_source_scope": {
-        "parts": [
-          [
-            "SingleInertia",
-            []
-          ]
-        ]
-      },
-      "class_overrides": {},
-      "has_forwarding_class_redeclare": false,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 2,
-            "start_column": 3,
-            "end_line": 2,
-            "end_column": 12,
-            "start": 83,
-            "end": 92,
-            "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
-          },
-          "token_number": 3,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "start": {
-        "Terminal": {
-          "terminal_type": "UnsignedReal",
-          "token": {
-            "text": "1.0",
-            "location": {
-              "start_line": 2,
-              "start_column": 22,
-              "end_line": 2,
-              "end_column": 25,
-              "start": 102,
-              "end": 105,
-              "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
-            },
-            "token_number": 7,
-            "token_type": 68
-          },
-          "span": {
-            "source": 13456874562834740018,
-            "start": 102,
-            "end": 105
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": null,
-      "unit": null,
-      "display_unit": null,
-      "description": "moment of inertia",
-      "state_select": "Default",
-      "binding": {
-        "Terminal": {
-          "terminal_type": "UnsignedReal",
-          "token": {
-            "text": "1.0",
-            "location": {
-              "start_line": 2,
-              "start_column": 22,
-              "end_line": 2,
-              "end_column": 25,
-              "start": 102,
-              "end": 105,
-              "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
-            },
-            "token_number": 7,
-            "token_type": 68
-          },
-          "span": {
-            "source": 13456874562834740018,
-            "start": 102,
-            "end": 105
-          }
-        }
-      },
-      "binding_source": null,
-      "binding_source_scope": null,
-      "attribute_source_scopes": {},
-      "binding_from_modification": false,
-      "is_primitive": true,
-      "is_discrete_type": false,
-      "from_expandable_connector": false,
-      "evaluate": false,
-      "is_final": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "is_connector_type": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "2": {
-      "instance_id": 2,
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 13456874562834740018,
-          "start": 139,
-          "end": 147
-        },
-        "parts": [
-          {
-            "ident": "tau",
-            "span": {
-              "source": 13456874562834740018,
-              "start": 139,
-              "end": 147
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 90
-      },
-      "qualified_name": {
-        "parts": [
-          [
-            "tau",
-            []
-          ]
-        ]
-      },
-      "source_location": {
         "start_line": 3,
         "start_column": 13,
         "end_line": 3,
-        "end_column": 21,
-        "start": 139,
-        "end": 147,
+        "end_column": 19,
+        "start": 181,
+        "end": 187,
         "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
       },
       "dims": [],
@@ -207,11 +62,11 @@
             "start_column": 3,
             "end_line": 3,
             "end_column": 12,
-            "start": 129,
-            "end": 138,
+            "start": 171,
+            "end": 180,
             "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
           },
-          "token_number": 10,
+          "token_number": 4,
           "token_type": 48
         }
       },
@@ -225,20 +80,165 @@
             "text": "1.0",
             "location": {
               "start_line": 3,
-              "start_column": 24,
+              "start_column": 22,
               "end_line": 3,
-              "end_column": 27,
-              "start": 150,
-              "end": 153,
+              "end_column": 25,
+              "start": 190,
+              "end": 193,
               "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
             },
-            "token_number": 14,
+            "token_number": 8,
             "token_type": 68
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 150,
-            "end": 153
+            "start": 190,
+            "end": 193
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "moment of inertia",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 25,
+              "start": 190,
+              "end": 193,
+              "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 13456874562834740018,
+            "start": 190,
+            "end": 193
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 13456874562834740018,
+          "start": 227,
+          "end": 235
+        },
+        "parts": [
+          {
+            "ident": "tau",
+            "span": {
+              "source": 13456874562834740018,
+              "start": 227,
+              "end": 235
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "tau",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 4,
+        "start_column": 13,
+        "end_line": 4,
+        "end_column": 21,
+        "start": 227,
+        "end": 235,
+        "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "SingleInertia",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 4,
+            "start_column": 3,
+            "end_line": 4,
+            "end_column": 12,
+            "start": 217,
+            "end": 226,
+            "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
+          },
+          "token_number": 11,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 4,
+              "start_column": 24,
+              "end_line": 4,
+              "end_column": 27,
+              "start": 238,
+              "end": 241,
+              "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 13456874562834740018,
+            "start": 238,
+            "end": 241
           }
         }
       },
@@ -257,21 +257,21 @@
           "token": {
             "text": "1.0",
             "location": {
-              "start_line": 3,
+              "start_line": 4,
               "start_column": 24,
-              "end_line": 3,
+              "end_line": 4,
               "end_column": 27,
-              "start": 150,
-              "end": 153,
+              "start": 238,
+              "end": 241,
               "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
             },
-            "token_number": 14,
+            "token_number": 15,
             "token_type": 68
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 150,
-            "end": 153
+            "start": 238,
+            "end": 241
           }
         }
       },
@@ -296,16 +296,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 174,
-          "end": 182
+          "start": 262,
+          "end": 270
         },
         "parts": [
           {
             "ident": "phi",
             "span": {
               "source": 13456874562834740018,
-              "start": 174,
-              "end": 182
+              "start": 262,
+              "end": 270
             },
             "subs": []
           }
@@ -321,12 +321,12 @@
         ]
       },
       "source_location": {
-        "start_line": 4,
+        "start_line": 5,
         "start_column": 3,
-        "end_line": 4,
+        "end_line": 5,
         "end_column": 11,
-        "start": 174,
-        "end": 182,
+        "start": 262,
+        "end": 270,
         "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
       },
       "dims": [],
@@ -354,21 +354,21 @@
           "token": {
             "text": "0.0",
             "location": {
-              "start_line": 4,
+              "start_line": 5,
               "start_column": 20,
-              "end_line": 4,
+              "end_line": 5,
               "end_column": 23,
-              "start": 191,
-              "end": 194,
+              "start": 279,
+              "end": 282,
               "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
             },
-            "token_number": 22,
+            "token_number": 23,
             "token_type": 68
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 191,
-            "end": 194
+            "start": 279,
+            "end": 282
           }
         }
       },
@@ -403,16 +403,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 207,
-          "end": 213
+          "start": 295,
+          "end": 301
         },
         "parts": [
           {
             "ident": "w",
             "span": {
               "source": 13456874562834740018,
-              "start": 207,
-              "end": 213
+              "start": 295,
+              "end": 301
             },
             "subs": []
           }
@@ -428,12 +428,12 @@
         ]
       },
       "source_location": {
-        "start_line": 5,
+        "start_line": 6,
         "start_column": 3,
-        "end_line": 5,
+        "end_line": 6,
         "end_column": 9,
-        "start": 207,
-        "end": 213,
+        "start": 295,
+        "end": 301,
         "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
       },
       "dims": [],
@@ -461,21 +461,21 @@
           "token": {
             "text": "0.0",
             "location": {
-              "start_line": 5,
+              "start_line": 6,
               "start_column": 18,
-              "end_line": 5,
+              "end_line": 6,
               "end_column": 21,
-              "start": 222,
-              "end": 225,
+              "start": 310,
+              "end": 313,
               "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
             },
-            "token_number": 31,
+            "token_number": 32,
             "token_type": 68
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 222,
-            "end": 225
+            "start": 310,
+            "end": 313
           }
         }
       },
@@ -534,15 +534,15 @@
                         "ident": {
                           "text": "der",
                           "location": {
-                            "start_line": 7,
+                            "start_line": 8,
                             "start_column": 3,
-                            "end_line": 7,
+                            "end_line": 8,
                             "end_column": 6,
-                            "start": 258,
-                            "end": 261,
+                            "start": 346,
+                            "end": 349,
                             "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                           },
-                          "token_number": 36,
+                          "token_number": 37,
                           "token_type": 15
                         },
                         "subs": null
@@ -550,8 +550,8 @@
                     ],
                     "span": {
                       "source": 13456874562834740018,
-                      "start": 258,
-                      "end": 261
+                      "start": 346,
+                      "end": 349
                     }
                   },
                   "args": [
@@ -563,15 +563,15 @@
                             "ident": {
                               "text": "phi",
                               "location": {
-                                "start_line": 7,
+                                "start_line": 8,
                                 "start_column": 7,
-                                "end_line": 7,
+                                "end_line": 8,
                                 "end_column": 10,
-                                "start": 262,
-                                "end": 265,
+                                "start": 350,
+                                "end": 353,
                                 "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                               },
-                              "token_number": 38,
+                              "token_number": 39,
                               "token_type": 64
                             },
                             "subs": null
@@ -579,16 +579,16 @@
                         ],
                         "span": {
                           "source": 13456874562834740018,
-                          "start": 262,
-                          "end": 265
+                          "start": 350,
+                          "end": 353
                         }
                       }
                     }
                   ],
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 258,
-                    "end": 265
+                    "start": 346,
+                    "end": 353
                   }
                 }
               },
@@ -600,15 +600,15 @@
                       "ident": {
                         "text": "w",
                         "location": {
-                          "start_line": 7,
+                          "start_line": 8,
                           "start_column": 14,
-                          "end_line": 7,
+                          "end_line": 8,
                           "end_column": 15,
-                          "start": 269,
-                          "end": 270,
+                          "start": 357,
+                          "end": 358,
                           "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                         },
-                        "token_number": 41,
+                        "token_number": 42,
                         "token_type": 64
                       },
                       "subs": null
@@ -616,8 +616,8 @@
                   ],
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 269,
-                    "end": 270
+                    "start": 357,
+                    "end": 358
                   }
                 }
               }
@@ -637,8 +637,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 13456874562834740018,
-            "start": 258,
-            "end": 261
+            "start": 346,
+            "end": 349
           }
         },
         {
@@ -655,15 +655,15 @@
                           "ident": {
                             "text": "J",
                             "location": {
-                              "start_line": 8,
+                              "start_line": 9,
                               "start_column": 3,
-                              "end_line": 8,
+                              "end_line": 9,
                               "end_column": 4,
-                              "start": 274,
-                              "end": 275,
+                              "start": 362,
+                              "end": 363,
                               "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                             },
-                            "token_number": 43,
+                            "token_number": 44,
                             "token_type": 64
                           },
                           "subs": null
@@ -671,8 +671,8 @@
                       ],
                       "span": {
                         "source": 13456874562834740018,
-                        "start": 274,
-                        "end": 275
+                        "start": 362,
+                        "end": 363
                       }
                     }
                   },
@@ -685,15 +685,15 @@
                             "ident": {
                               "text": "der",
                               "location": {
-                                "start_line": 8,
+                                "start_line": 9,
                                 "start_column": 7,
-                                "end_line": 8,
+                                "end_line": 9,
                                 "end_column": 10,
-                                "start": 278,
-                                "end": 281,
+                                "start": 366,
+                                "end": 369,
                                 "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                               },
-                              "token_number": 45,
+                              "token_number": 46,
                               "token_type": 15
                             },
                             "subs": null
@@ -701,8 +701,8 @@
                         ],
                         "span": {
                           "source": 13456874562834740018,
-                          "start": 278,
-                          "end": 281
+                          "start": 366,
+                          "end": 369
                         }
                       },
                       "args": [
@@ -714,15 +714,15 @@
                                 "ident": {
                                   "text": "w",
                                   "location": {
-                                    "start_line": 8,
+                                    "start_line": 9,
                                     "start_column": 11,
-                                    "end_line": 8,
+                                    "end_line": 9,
                                     "end_column": 12,
-                                    "start": 282,
-                                    "end": 283,
+                                    "start": 370,
+                                    "end": 371,
                                     "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                                   },
-                                  "token_number": 47,
+                                  "token_number": 48,
                                   "token_type": 64
                                 },
                                 "subs": null
@@ -730,23 +730,23 @@
                             ],
                             "span": {
                               "source": 13456874562834740018,
-                              "start": 282,
-                              "end": 283
+                              "start": 370,
+                              "end": 371
                             }
                           }
                         }
                       ],
                       "span": {
                         "source": 13456874562834740018,
-                        "start": 278,
-                        "end": 283
+                        "start": 366,
+                        "end": 371
                       }
                     }
                   },
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 274,
-                    "end": 283
+                    "start": 362,
+                    "end": 371
                   }
                 }
               },
@@ -758,15 +758,15 @@
                       "ident": {
                         "text": "tau",
                         "location": {
-                          "start_line": 8,
+                          "start_line": 9,
                           "start_column": 16,
-                          "end_line": 8,
+                          "end_line": 9,
                           "end_column": 19,
-                          "start": 287,
-                          "end": 290,
+                          "start": 375,
+                          "end": 378,
                           "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
                         },
-                        "token_number": 50,
+                        "token_number": 51,
                         "token_type": 64
                       },
                       "subs": null
@@ -774,8 +774,8 @@
                   ],
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 287,
-                    "end": 290
+                    "start": 375,
+                    "end": 378
                   }
                 }
               }
@@ -795,8 +795,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 13456874562834740018,
-            "start": 274,
-            "end": 275
+            "start": 362,
+            "end": 363
           }
         }
       ],

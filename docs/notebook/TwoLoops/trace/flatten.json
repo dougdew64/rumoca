@@ -6,16 +6,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 653,
-          "end": 667
+          "start": 751,
+          "end": 765
         },
         "parts": [
           {
             "ident": "reference",
             "span": {
               "source": 15524718192234813095,
-              "start": 653,
-              "end": 667
+              "start": 751,
+              "end": 765
             },
             "subs": []
           }
@@ -24,23 +24,23 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 653,
-        "end": 667
+        "start": 751,
+        "end": 765
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 9,
+            "start_line": 10,
             "start_column": 3,
-            "end_line": 9,
+            "end_line": 10,
             "end_column": 12,
-            "start": 643,
-            "end": 652,
+            "start": 741,
+            "end": 750,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 10,
+          "token_number": 11,
           "token_type": 48
         }
       },
@@ -56,8 +56,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 670,
-            "end": 673
+            "start": 768,
+            "end": 771
           }
         }
       },
@@ -77,8 +77,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 670,
-            "end": 673
+            "start": 768,
+            "end": 771
           }
         }
       },
@@ -98,16 +98,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 709,
-          "end": 719
+          "start": 807,
+          "end": 817
         },
         "parts": [
           {
             "ident": "gainA",
             "span": {
               "source": 15524718192234813095,
-              "start": 709,
-              "end": 719
+              "start": 807,
+              "end": 817
             },
             "subs": []
           }
@@ -116,23 +116,23 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 709,
-        "end": 719
+        "start": 807,
+        "end": 817
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 10,
+            "start_line": 11,
             "start_column": 3,
-            "end_line": 10,
+            "end_line": 11,
             "end_column": 12,
-            "start": 699,
-            "end": 708,
+            "start": 797,
+            "end": 806,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 17,
+          "token_number": 18,
           "token_type": 48
         }
       },
@@ -148,8 +148,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 722,
-            "end": 726
+            "start": 820,
+            "end": 824
           }
         }
       },
@@ -169,8 +169,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 722,
-            "end": 726
+            "start": 820,
+            "end": 824
           }
         }
       },
@@ -190,16 +190,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 767,
-          "end": 778
+          "start": 865,
+          "end": 876
         },
         "parts": [
           {
             "ident": "plantA",
             "span": {
               "source": 15524718192234813095,
-              "start": 767,
-              "end": 778
+              "start": 865,
+              "end": 876
             },
             "subs": []
           }
@@ -208,23 +208,23 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 767,
-        "end": 778
+        "start": 865,
+        "end": 876
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 11,
+            "start_line": 12,
             "start_column": 3,
-            "end_line": 11,
+            "end_line": 12,
             "end_column": 12,
-            "start": 757,
-            "end": 766,
+            "start": 855,
+            "end": 864,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 24,
+          "token_number": 25,
           "token_type": 48
         }
       },
@@ -240,8 +240,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 781,
-            "end": 784
+            "start": 879,
+            "end": 882
           }
         }
       },
@@ -261,8 +261,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 781,
-            "end": 784
+            "start": 879,
+            "end": 882
           }
         }
       },
@@ -282,16 +282,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 825,
-          "end": 835
+          "start": 923,
+          "end": 933
         },
         "parts": [
           {
             "ident": "gainB",
             "span": {
               "source": 15524718192234813095,
-              "start": 825,
-              "end": 835
+              "start": 923,
+              "end": 933
             },
             "subs": []
           }
@@ -300,23 +300,23 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 825,
-        "end": 835
+        "start": 923,
+        "end": 933
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 12,
+            "start_line": 13,
             "start_column": 3,
-            "end_line": 12,
+            "end_line": 13,
             "end_column": 12,
-            "start": 815,
-            "end": 824,
+            "start": 913,
+            "end": 922,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 31,
+          "token_number": 32,
           "token_type": 48
         }
       },
@@ -332,8 +332,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 838,
-            "end": 841
+            "start": 936,
+            "end": 939
           }
         }
       },
@@ -353,8 +353,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 838,
-            "end": 841
+            "start": 936,
+            "end": 939
           }
         }
       },
@@ -374,16 +374,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 882,
-          "end": 893
+          "start": 980,
+          "end": 991
         },
         "parts": [
           {
             "ident": "plantB",
             "span": {
               "source": 15524718192234813095,
-              "start": 882,
-              "end": 893
+              "start": 980,
+              "end": 991
             },
             "subs": []
           }
@@ -392,23 +392,23 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 882,
-        "end": 893
+        "start": 980,
+        "end": 991
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 13,
+            "start_line": 14,
             "start_column": 3,
-            "end_line": 13,
+            "end_line": 14,
             "end_column": 12,
-            "start": 872,
-            "end": 881,
+            "start": 970,
+            "end": 979,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 38,
+          "token_number": 39,
           "token_type": 48
         }
       },
@@ -424,8 +424,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 896,
-            "end": 899
+            "start": 994,
+            "end": 997
           }
         }
       },
@@ -445,8 +445,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 896,
-            "end": 899
+            "start": 994,
+            "end": 997
           }
         }
       },
@@ -466,16 +466,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 930,
-          "end": 941
+          "start": 1028,
+          "end": 1039
         },
         "parts": [
           {
             "ident": "errorA",
             "span": {
               "source": 15524718192234813095,
-              "start": 930,
-              "end": 941
+              "start": 1028,
+              "end": 1039
             },
             "subs": []
           }
@@ -484,8 +484,8 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 930,
-        "end": 941
+        "start": 1028,
+        "end": 1039
       },
       "type_id": 0,
       "variability": "Empty",
@@ -501,8 +501,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 930,
-            "end": 941
+            "start": 1028,
+            "end": 1039
           }
         }
       },
@@ -532,16 +532,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 960,
-          "end": 973
+          "start": 1058,
+          "end": 1071
         },
         "parts": [
           {
             "ident": "commandA",
             "span": {
               "source": 15524718192234813095,
-              "start": 960,
-              "end": 973
+              "start": 1058,
+              "end": 1071
             },
             "subs": []
           }
@@ -550,8 +550,8 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 960,
-        "end": 973
+        "start": 1058,
+        "end": 1071
       },
       "type_id": 0,
       "variability": "Empty",
@@ -567,8 +567,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 960,
-            "end": 973
+            "start": 1058,
+            "end": 1071
           }
         }
       },
@@ -598,16 +598,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 1029,
-          "end": 1040
+          "start": 1127,
+          "end": 1138
         },
         "parts": [
           {
             "ident": "errorB",
             "span": {
               "source": 15524718192234813095,
-              "start": 1029,
-              "end": 1040
+              "start": 1127,
+              "end": 1138
             },
             "subs": []
           }
@@ -616,8 +616,8 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 1029,
-        "end": 1040
+        "start": 1127,
+        "end": 1138
       },
       "type_id": 0,
       "variability": "Empty",
@@ -633,8 +633,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1029,
-            "end": 1040
+            "start": 1127,
+            "end": 1138
           }
         }
       },
@@ -664,16 +664,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 1059,
-          "end": 1072
+          "start": 1157,
+          "end": 1170
         },
         "parts": [
           {
             "ident": "commandB",
             "span": {
               "source": 15524718192234813095,
-              "start": 1059,
-              "end": 1072
+              "start": 1157,
+              "end": 1170
             },
             "subs": []
           }
@@ -682,8 +682,8 @@
       },
       "source_span": {
         "source": 15524718192234813095,
-        "start": 1059,
-        "end": 1072
+        "start": 1157,
+        "end": 1170
       },
       "type_id": 0,
       "variability": "Empty",
@@ -699,8 +699,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1059,
-            "end": 1072
+            "start": 1157,
+            "end": 1170
           }
         }
       },
@@ -750,16 +750,16 @@
                   "local": false,
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1112,
-                    "end": 1118
+                    "start": 1210,
+                    "end": 1216
                   },
                   "parts": [
                     {
                       "ident": "errorA",
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1112,
-                        "end": 1118
+                        "start": 1210,
+                        "end": 1216
                       },
                       "subs": []
                     }
@@ -770,8 +770,8 @@
               "subscripts": [],
               "span": {
                 "source": 15524718192234813095,
-                "start": 1112,
-                "end": 1118
+                "start": 1210,
+                "end": 1216
               }
             }
           },
@@ -786,16 +786,16 @@
                       "local": false,
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1121,
-                        "end": 1130
+                        "start": 1219,
+                        "end": 1228
                       },
                       "parts": [
                         {
                           "ident": "reference",
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1121,
-                            "end": 1130
+                            "start": 1219,
+                            "end": 1228
                           },
                           "subs": []
                         }
@@ -806,8 +806,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1121,
-                    "end": 1130
+                    "start": 1219,
+                    "end": 1228
                   }
                 }
               },
@@ -822,16 +822,16 @@
                           "local": false,
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1133,
-                            "end": 1139
+                            "start": 1231,
+                            "end": 1237
                           },
                           "parts": [
                             {
                               "ident": "plantA",
                               "span": {
                                 "source": 15524718192234813095,
-                                "start": 1133,
-                                "end": 1139
+                                "start": 1231,
+                                "end": 1237
                               },
                               "subs": []
                             }
@@ -842,8 +842,8 @@
                       "subscripts": [],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1133,
-                        "end": 1139
+                        "start": 1231,
+                        "end": 1237
                       }
                     }
                   },
@@ -855,16 +855,16 @@
                           "local": false,
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1142,
-                            "end": 1150
+                            "start": 1240,
+                            "end": 1248
                           },
                           "parts": [
                             {
                               "ident": "commandA",
                               "span": {
                                 "source": 15524718192234813095,
-                                "start": 1142,
-                                "end": 1150
+                                "start": 1240,
+                                "end": 1248
                               },
                               "subs": []
                             }
@@ -875,36 +875,36 @@
                       "subscripts": [],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1142,
-                        "end": 1150
+                        "start": 1240,
+                        "end": 1248
                       }
                     }
                   },
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1133,
-                    "end": 1150
+                    "start": 1231,
+                    "end": 1248
                   }
                 }
               },
               "span": {
                 "source": 15524718192234813095,
-                "start": 1121,
-                "end": 1150
+                "start": 1219,
+                "end": 1248
               }
             }
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1112,
-            "end": 1118
+            "start": 1210,
+            "end": 1216
           }
         }
       },
       "span": {
         "source": 15524718192234813095,
-        "start": 1112,
-        "end": 1118
+        "start": 1210,
+        "end": 1216
       },
       "origin": {
         "ComponentEquation": {
@@ -925,16 +925,16 @@
                   "local": false,
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1186,
-                    "end": 1194
+                    "start": 1284,
+                    "end": 1292
                   },
                   "parts": [
                     {
                       "ident": "commandA",
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1186,
-                        "end": 1194
+                        "start": 1284,
+                        "end": 1292
                       },
                       "subs": []
                     }
@@ -945,8 +945,8 @@
               "subscripts": [],
               "span": {
                 "source": 15524718192234813095,
-                "start": 1186,
-                "end": 1194
+                "start": 1284,
+                "end": 1292
               }
             }
           },
@@ -961,16 +961,16 @@
                       "local": false,
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1197,
-                        "end": 1202
+                        "start": 1295,
+                        "end": 1300
                       },
                       "parts": [
                         {
                           "ident": "gainA",
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1197,
-                            "end": 1202
+                            "start": 1295,
+                            "end": 1300
                           },
                           "subs": []
                         }
@@ -981,8 +981,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1197,
-                    "end": 1202
+                    "start": 1295,
+                    "end": 1300
                   }
                 }
               },
@@ -994,16 +994,16 @@
                       "local": false,
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1205,
-                        "end": 1211
+                        "start": 1303,
+                        "end": 1309
                       },
                       "parts": [
                         {
                           "ident": "errorA",
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1205,
-                            "end": 1211
+                            "start": 1303,
+                            "end": 1309
                           },
                           "subs": []
                         }
@@ -1014,29 +1014,29 @@
                   "subscripts": [],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1205,
-                    "end": 1211
+                    "start": 1303,
+                    "end": 1309
                   }
                 }
               },
               "span": {
                 "source": 15524718192234813095,
-                "start": 1197,
-                "end": 1211
+                "start": 1295,
+                "end": 1309
               }
             }
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1186,
-            "end": 1194
+            "start": 1284,
+            "end": 1292
           }
         }
       },
       "span": {
         "source": 15524718192234813095,
-        "start": 1186,
-        "end": 1194
+        "start": 1284,
+        "end": 1292
       },
       "origin": {
         "ComponentEquation": {
@@ -1057,16 +1057,16 @@
                   "local": false,
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1237,
-                    "end": 1243
+                    "start": 1335,
+                    "end": 1341
                   },
                   "parts": [
                     {
                       "ident": "errorB",
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1237,
-                        "end": 1243
+                        "start": 1335,
+                        "end": 1341
                       },
                       "subs": []
                     }
@@ -1077,8 +1077,8 @@
               "subscripts": [],
               "span": {
                 "source": 15524718192234813095,
-                "start": 1237,
-                "end": 1243
+                "start": 1335,
+                "end": 1341
               }
             }
           },
@@ -1093,16 +1093,16 @@
                       "local": false,
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1246,
-                        "end": 1254
+                        "start": 1344,
+                        "end": 1352
                       },
                       "parts": [
                         {
                           "ident": "commandA",
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1246,
-                            "end": 1254
+                            "start": 1344,
+                            "end": 1352
                           },
                           "subs": []
                         }
@@ -1113,8 +1113,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1246,
-                    "end": 1254
+                    "start": 1344,
+                    "end": 1352
                   }
                 }
               },
@@ -1129,16 +1129,16 @@
                           "local": false,
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1257,
-                            "end": 1263
+                            "start": 1355,
+                            "end": 1361
                           },
                           "parts": [
                             {
                               "ident": "plantB",
                               "span": {
                                 "source": 15524718192234813095,
-                                "start": 1257,
-                                "end": 1263
+                                "start": 1355,
+                                "end": 1361
                               },
                               "subs": []
                             }
@@ -1149,8 +1149,8 @@
                       "subscripts": [],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1257,
-                        "end": 1263
+                        "start": 1355,
+                        "end": 1361
                       }
                     }
                   },
@@ -1162,16 +1162,16 @@
                           "local": false,
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1266,
-                            "end": 1274
+                            "start": 1364,
+                            "end": 1372
                           },
                           "parts": [
                             {
                               "ident": "commandB",
                               "span": {
                                 "source": 15524718192234813095,
-                                "start": 1266,
-                                "end": 1274
+                                "start": 1364,
+                                "end": 1372
                               },
                               "subs": []
                             }
@@ -1182,36 +1182,36 @@
                       "subscripts": [],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1266,
-                        "end": 1274
+                        "start": 1364,
+                        "end": 1372
                       }
                     }
                   },
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1257,
-                    "end": 1274
+                    "start": 1355,
+                    "end": 1372
                   }
                 }
               },
               "span": {
                 "source": 15524718192234813095,
-                "start": 1246,
-                "end": 1274
+                "start": 1344,
+                "end": 1372
               }
             }
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1237,
-            "end": 1243
+            "start": 1335,
+            "end": 1341
           }
         }
       },
       "span": {
         "source": 15524718192234813095,
-        "start": 1237,
-        "end": 1243
+        "start": 1335,
+        "end": 1341
       },
       "origin": {
         "ComponentEquation": {
@@ -1232,16 +1232,16 @@
                   "local": false,
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1331,
-                    "end": 1339
+                    "start": 1429,
+                    "end": 1437
                   },
                   "parts": [
                     {
                       "ident": "commandB",
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1331,
-                        "end": 1339
+                        "start": 1429,
+                        "end": 1437
                       },
                       "subs": []
                     }
@@ -1252,8 +1252,8 @@
               "subscripts": [],
               "span": {
                 "source": 15524718192234813095,
-                "start": 1331,
-                "end": 1339
+                "start": 1429,
+                "end": 1437
               }
             }
           },
@@ -1268,16 +1268,16 @@
                       "local": false,
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1342,
-                        "end": 1347
+                        "start": 1440,
+                        "end": 1445
                       },
                       "parts": [
                         {
                           "ident": "gainB",
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1342,
-                            "end": 1347
+                            "start": 1440,
+                            "end": 1445
                           },
                           "subs": []
                         }
@@ -1288,8 +1288,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1342,
-                    "end": 1347
+                    "start": 1440,
+                    "end": 1445
                   }
                 }
               },
@@ -1301,16 +1301,16 @@
                       "local": false,
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1350,
-                        "end": 1356
+                        "start": 1448,
+                        "end": 1454
                       },
                       "parts": [
                         {
                           "ident": "errorB",
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1350,
-                            "end": 1356
+                            "start": 1448,
+                            "end": 1454
                           },
                           "subs": []
                         }
@@ -1321,29 +1321,29 @@
                   "subscripts": [],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1350,
-                    "end": 1356
+                    "start": 1448,
+                    "end": 1454
                   }
                 }
               },
               "span": {
                 "source": 15524718192234813095,
-                "start": 1342,
-                "end": 1356
+                "start": 1440,
+                "end": 1454
               }
             }
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1331,
-            "end": 1339
+            "start": 1429,
+            "end": 1437
           }
         }
       },
       "span": {
         "source": 15524718192234813095,
-        "start": 1331,
-        "end": 1339
+        "start": 1429,
+        "end": 1437
       },
       "origin": {
         "ComponentEquation": {

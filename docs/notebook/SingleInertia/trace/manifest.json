@@ -1,7 +1,7 @@
 {
   "model": "SingleInertia",
   "specimen": "specimens/SingleInertia.mo",
-  "specimen_fnv1a": "20e74ec80b195d78",
+  "specimen_fnv1a": "bd63cd719f7b1ef5",
   "rumoca_rev": "8cdc74198",
   "rumoca_version": "0.9.20",
   "stages": {

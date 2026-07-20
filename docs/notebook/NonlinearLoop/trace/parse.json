@@ -58,10 +58,10 @@
       "location": {
         "start_line": 1,
         "start_column": 7,
-        "end_line": 22,
+        "end_line": 23,
         "end_column": 18,
         "start": 6,
-        "end": 1393,
+        "end": 1509,
         "file_name": "NonlinearLoop.mo"
       },
       "extends": [],
@@ -76,15 +76,15 @@
           "name_token": {
             "text": "reference",
             "location": {
-              "start_line": 11,
+              "start_line": 12,
               "start_column": 18,
-              "end_line": 11,
+              "end_line": 12,
               "end_column": 27,
-              "start": 818,
-              "end": 827,
+              "start": 934,
+              "end": 943,
               "file_name": "NonlinearLoop.mo"
             },
-            "token_number": 14,
+            "token_number": 15,
             "token_type": 64
           },
           "type_name": {
@@ -92,15 +92,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 11,
+                  "start_line": 12,
                   "start_column": 13,
-                  "end_line": 11,
+                  "end_line": 12,
                   "end_column": 17,
-                  "start": 813,
-                  "end": 817,
+                  "start": 929,
+                  "end": 933,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 13,
+                "token_number": 14,
                 "token_type": 64
               }
             ]
@@ -109,15 +109,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 11,
+                "start_line": 12,
                 "start_column": 3,
-                "end_line": 11,
+                "end_line": 12,
                 "end_column": 12,
-                "start": 803,
-                "end": 812,
+                "start": 919,
+                "end": 928,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 12,
+              "token_number": 13,
               "token_type": 48
             }
           },
@@ -127,15 +127,15 @@
             {
               "text": "setpoint",
               "location": {
-                "start_line": 11,
+                "start_line": 12,
                 "start_column": 34,
-                "end_line": 11,
+                "end_line": 12,
                 "end_column": 44,
-                "start": 834,
-                "end": 844,
+                "start": 950,
+                "end": 960,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 17,
+              "token_number": 18,
               "token_type": 66
             }
           ],
@@ -158,8 +158,8 @@
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 813,
-                "end": 827
+                "start": 929,
+                "end": 943
               }
             }
           },
@@ -172,21 +172,21 @@
               "token": {
                 "text": "1.0",
                 "location": {
-                  "start_line": 11,
+                  "start_line": 12,
                   "start_column": 30,
-                  "end_line": 11,
+                  "end_line": 12,
                   "end_column": 33,
-                  "start": 830,
-                  "end": 833,
+                  "start": 946,
+                  "end": 949,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 16,
+                "token_number": 17,
                 "token_type": 68
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 830,
-                "end": 833
+                "start": 946,
+                "end": 949
               }
             }
           },
@@ -200,12 +200,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 11,
+            "start_line": 12,
             "start_column": 13,
-            "end_line": 11,
+            "end_line": 12,
             "end_column": 27,
-            "start": 813,
-            "end": 827,
+            "start": 929,
+            "end": 943,
             "file_name": "NonlinearLoop.mo"
           },
           "condition": null,
@@ -228,15 +228,15 @@
           "name_token": {
             "text": "controllerGain",
             "location": {
-              "start_line": 12,
+              "start_line": 13,
               "start_column": 18,
-              "end_line": 12,
+              "end_line": 13,
               "end_column": 32,
-              "start": 863,
-              "end": 877,
+              "start": 979,
+              "end": 993,
               "file_name": "NonlinearLoop.mo"
             },
-            "token_number": 21,
+            "token_number": 22,
             "token_type": 64
           },
           "type_name": {
@@ -244,15 +244,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 12,
+                  "start_line": 13,
                   "start_column": 13,
-                  "end_line": 12,
+                  "end_line": 13,
                   "end_column": 17,
-                  "start": 858,
-                  "end": 862,
+                  "start": 974,
+                  "end": 978,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 20,
+                "token_number": 21,
                 "token_type": 64
               }
             ]
@@ -261,15 +261,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 12,
+                "start_line": 13,
                 "start_column": 3,
-                "end_line": 12,
+                "end_line": 13,
                 "end_column": 12,
-                "start": 848,
-                "end": 857,
+                "start": 964,
+                "end": 973,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 19,
+              "token_number": 20,
               "token_type": 48
             }
           },
@@ -279,15 +279,15 @@
             {
               "text": "proportional gain Kp",
               "location": {
-                "start_line": 12,
+                "start_line": 13,
                 "start_column": 40,
-                "end_line": 12,
+                "end_line": 13,
                 "end_column": 62,
-                "start": 885,
-                "end": 907,
+                "start": 1001,
+                "end": 1023,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 24,
+              "token_number": 25,
               "token_type": 66
             }
           ],
@@ -310,8 +310,8 @@
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 858,
-                "end": 877
+                "start": 974,
+                "end": 993
               }
             }
           },
@@ -324,21 +324,21 @@
               "token": {
                 "text": "10.0",
                 "location": {
-                  "start_line": 12,
+                  "start_line": 13,
                   "start_column": 35,
-                  "end_line": 12,
+                  "end_line": 13,
                   "end_column": 39,
-                  "start": 880,
-                  "end": 884,
+                  "start": 996,
+                  "end": 1000,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 23,
+                "token_number": 24,
                 "token_type": 68
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 880,
-                "end": 884
+                "start": 996,
+                "end": 1000
               }
             }
           },
@@ -352,12 +352,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 12,
+            "start_line": 13,
             "start_column": 13,
-            "end_line": 12,
+            "end_line": 13,
             "end_column": 32,
-            "start": 858,
-            "end": 877,
+            "start": 974,
+            "end": 993,
             "file_name": "NonlinearLoop.mo"
           },
           "condition": null,
@@ -380,15 +380,15 @@
           "name_token": {
             "text": "plantGain",
             "location": {
-              "start_line": 13,
+              "start_line": 14,
               "start_column": 18,
-              "end_line": 13,
+              "end_line": 14,
               "end_column": 27,
-              "start": 926,
-              "end": 935,
+              "start": 1042,
+              "end": 1051,
               "file_name": "NonlinearLoop.mo"
             },
-            "token_number": 28,
+            "token_number": 29,
             "token_type": 64
           },
           "type_name": {
@@ -396,15 +396,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 13,
+                  "start_line": 14,
                   "start_column": 13,
-                  "end_line": 13,
+                  "end_line": 14,
                   "end_column": 17,
-                  "start": 921,
-                  "end": 925,
+                  "start": 1037,
+                  "end": 1041,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 27,
+                "token_number": 28,
                 "token_type": 64
               }
             ]
@@ -413,15 +413,15 @@
             "Parameter": {
               "text": "parameter",
               "location": {
-                "start_line": 13,
+                "start_line": 14,
                 "start_column": 3,
-                "end_line": 13,
+                "end_line": 14,
                 "end_column": 12,
-                "start": 911,
-                "end": 920,
+                "start": 1027,
+                "end": 1036,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 26,
+              "token_number": 27,
               "token_type": 48
             }
           },
@@ -431,15 +431,15 @@
             {
               "text": "nonlinear (quadratic) plant coefficient",
               "location": {
-                "start_line": 13,
+                "start_line": 14,
                 "start_column": 34,
-                "end_line": 13,
+                "end_line": 14,
                 "end_column": 75,
-                "start": 942,
-                "end": 983,
+                "start": 1058,
+                "end": 1099,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 31,
+              "token_number": 32,
               "token_type": 66
             }
           ],
@@ -462,8 +462,8 @@
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 921,
-                "end": 935
+                "start": 1037,
+                "end": 1051
               }
             }
           },
@@ -476,21 +476,21 @@
               "token": {
                 "text": "2.0",
                 "location": {
-                  "start_line": 13,
+                  "start_line": 14,
                   "start_column": 30,
-                  "end_line": 13,
+                  "end_line": 14,
                   "end_column": 33,
-                  "start": 938,
-                  "end": 941,
+                  "start": 1054,
+                  "end": 1057,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 30,
+                "token_number": 31,
                 "token_type": 68
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 938,
-                "end": 941
+                "start": 1054,
+                "end": 1057
               }
             }
           },
@@ -504,12 +504,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 13,
+            "start_line": 14,
             "start_column": 13,
-            "end_line": 13,
+            "end_line": 14,
             "end_column": 27,
-            "start": 921,
-            "end": 935,
+            "start": 1037,
+            "end": 1051,
             "file_name": "NonlinearLoop.mo"
           },
           "condition": null,
@@ -532,15 +532,15 @@
           "name_token": {
             "text": "error",
             "location": {
-              "start_line": 14,
+              "start_line": 15,
               "start_column": 8,
-              "end_line": 14,
+              "end_line": 15,
               "end_column": 13,
-              "start": 992,
-              "end": 997,
+              "start": 1108,
+              "end": 1113,
               "file_name": "NonlinearLoop.mo"
             },
-            "token_number": 34,
+            "token_number": 35,
             "token_type": 64
           },
           "type_name": {
@@ -548,15 +548,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 14,
+                  "start_line": 15,
                   "start_column": 3,
-                  "end_line": 14,
+                  "end_line": 15,
                   "end_column": 7,
-                  "start": 987,
-                  "end": 991,
+                  "start": 1103,
+                  "end": 1107,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 33,
+                "token_number": 34,
                 "token_type": 64
               }
             ]
@@ -568,15 +568,15 @@
             {
               "text": "reference − measurement",
               "location": {
-                "start_line": 14,
+                "start_line": 15,
                 "start_column": 14,
-                "end_line": 14,
+                "end_line": 15,
                 "end_column": 39,
-                "start": 998,
-                "end": 1025,
+                "start": 1114,
+                "end": 1141,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 35,
+              "token_number": 36,
               "token_type": 66
             }
           ],
@@ -599,8 +599,8 @@
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 987,
-                "end": 997
+                "start": 1103,
+                "end": 1113
               }
             }
           },
@@ -618,12 +618,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 14,
+            "start_line": 15,
             "start_column": 3,
-            "end_line": 14,
+            "end_line": 15,
             "end_column": 13,
-            "start": 987,
-            "end": 997,
+            "start": 1103,
+            "end": 1113,
             "file_name": "NonlinearLoop.mo"
           },
           "condition": null,
@@ -646,15 +646,15 @@
           "name_token": {
             "text": "command",
             "location": {
-              "start_line": 15,
+              "start_line": 16,
               "start_column": 8,
-              "end_line": 15,
+              "end_line": 16,
               "end_column": 15,
-              "start": 1034,
-              "end": 1041,
+              "start": 1150,
+              "end": 1157,
               "file_name": "NonlinearLoop.mo"
             },
-            "token_number": 38,
+            "token_number": 39,
             "token_type": 64
           },
           "type_name": {
@@ -662,15 +662,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 15,
+                  "start_line": 16,
                   "start_column": 3,
-                  "end_line": 15,
+                  "end_line": 16,
                   "end_column": 7,
-                  "start": 1029,
-                  "end": 1033,
+                  "start": 1145,
+                  "end": 1149,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 37,
+                "token_number": 38,
                 "token_type": 64
               }
             ]
@@ -682,15 +682,15 @@
             {
               "text": "controller output = Kp · error",
               "location": {
-                "start_line": 15,
+                "start_line": 16,
                 "start_column": 16,
-                "end_line": 15,
+                "end_line": 16,
                 "end_column": 48,
-                "start": 1042,
-                "end": 1075,
+                "start": 1158,
+                "end": 1191,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 39,
+              "token_number": 40,
               "token_type": 66
             }
           ],
@@ -713,8 +713,8 @@
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 1029,
-                "end": 1041
+                "start": 1145,
+                "end": 1157
               }
             }
           },
@@ -732,12 +732,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 15,
+            "start_line": 16,
             "start_column": 3,
-            "end_line": 15,
+            "end_line": 16,
             "end_column": 15,
-            "start": 1029,
-            "end": 1041,
+            "start": 1145,
+            "end": 1157,
             "file_name": "NonlinearLoop.mo"
           },
           "condition": null,
@@ -760,15 +760,15 @@
           "name_token": {
             "text": "measurement",
             "location": {
-              "start_line": 16,
+              "start_line": 17,
               "start_column": 8,
-              "end_line": 16,
+              "end_line": 17,
               "end_column": 19,
-              "start": 1084,
-              "end": 1095,
+              "start": 1200,
+              "end": 1211,
               "file_name": "NonlinearLoop.mo"
             },
-            "token_number": 42,
+            "token_number": 43,
             "token_type": 64
           },
           "type_name": {
@@ -776,15 +776,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 16,
+                  "start_line": 17,
                   "start_column": 3,
-                  "end_line": 16,
+                  "end_line": 17,
                   "end_column": 7,
-                  "start": 1079,
-                  "end": 1083,
+                  "start": 1195,
+                  "end": 1199,
                   "file_name": "NonlinearLoop.mo"
                 },
-                "token_number": 41,
+                "token_number": 42,
                 "token_type": 64
               }
             ]
@@ -796,15 +796,15 @@
             {
               "text": "plant output, fed back",
               "location": {
-                "start_line": 16,
+                "start_line": 17,
                 "start_column": 20,
-                "end_line": 16,
+                "end_line": 17,
                 "end_column": 44,
-                "start": 1096,
-                "end": 1120,
+                "start": 1212,
+                "end": 1236,
                 "file_name": "NonlinearLoop.mo"
               },
-              "token_number": 43,
+              "token_number": 44,
               "token_type": 66
             }
           ],
@@ -827,8 +827,8 @@
               },
               "span": {
                 "source": 12983083683126769203,
-                "start": 1079,
-                "end": 1095
+                "start": 1195,
+                "end": 1211
               }
             }
           },
@@ -846,12 +846,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 16,
+            "start_line": 17,
             "start_column": 3,
-            "end_line": 16,
+            "end_line": 17,
             "end_column": 19,
-            "start": 1079,
-            "end": 1095,
+            "start": 1195,
+            "end": 1211,
             "file_name": "NonlinearLoop.mo"
           },
           "condition": null,
@@ -878,15 +878,15 @@
                     "ident": {
                       "text": "error",
                       "location": {
-                        "start_line": 18,
+                        "start_line": 19,
                         "start_column": 3,
-                        "end_line": 18,
+                        "end_line": 19,
                         "end_column": 8,
-                        "start": 1133,
-                        "end": 1138,
+                        "start": 1249,
+                        "end": 1254,
                         "file_name": "NonlinearLoop.mo"
                       },
-                      "token_number": 46,
+                      "token_number": 47,
                       "token_type": 64
                     },
                     "subs": null
@@ -894,8 +894,8 @@
                 ],
                 "span": {
                   "source": 12983083683126769203,
-                  "start": 1133,
-                  "end": 1138
+                  "start": 1249,
+                  "end": 1254
                 }
               }
             },
@@ -910,15 +910,15 @@
                         "ident": {
                           "text": "reference",
                           "location": {
-                            "start_line": 18,
+                            "start_line": 19,
                             "start_column": 11,
-                            "end_line": 18,
+                            "end_line": 19,
                             "end_column": 20,
-                            "start": 1141,
-                            "end": 1150,
+                            "start": 1257,
+                            "end": 1266,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 48,
+                          "token_number": 49,
                           "token_type": 64
                         },
                         "subs": null
@@ -926,8 +926,8 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1141,
-                      "end": 1150
+                      "start": 1257,
+                      "end": 1266
                     }
                   }
                 },
@@ -939,15 +939,15 @@
                         "ident": {
                           "text": "measurement",
                           "location": {
-                            "start_line": 18,
+                            "start_line": 19,
                             "start_column": 23,
-                            "end_line": 18,
+                            "end_line": 19,
                             "end_column": 34,
-                            "start": 1153,
-                            "end": 1164,
+                            "start": 1269,
+                            "end": 1280,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 50,
+                          "token_number": 51,
                           "token_type": 64
                         },
                         "subs": null
@@ -955,15 +955,15 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1153,
-                      "end": 1164
+                      "start": 1269,
+                      "end": 1280
                     }
                   }
                 },
                 "span": {
                   "source": 12983083683126769203,
-                  "start": 1141,
-                  "end": 1164
+                  "start": 1257,
+                  "end": 1280
                 }
               }
             }
@@ -979,15 +979,15 @@
                     "ident": {
                       "text": "command",
                       "location": {
-                        "start_line": 19,
+                        "start_line": 20,
                         "start_column": 3,
-                        "end_line": 19,
+                        "end_line": 20,
                         "end_column": 10,
-                        "start": 1168,
-                        "end": 1175,
+                        "start": 1284,
+                        "end": 1291,
                         "file_name": "NonlinearLoop.mo"
                       },
-                      "token_number": 52,
+                      "token_number": 53,
                       "token_type": 64
                     },
                     "subs": null
@@ -995,8 +995,8 @@
                 ],
                 "span": {
                   "source": 12983083683126769203,
-                  "start": 1168,
-                  "end": 1175
+                  "start": 1284,
+                  "end": 1291
                 }
               }
             },
@@ -1011,15 +1011,15 @@
                         "ident": {
                           "text": "controllerGain",
                           "location": {
-                            "start_line": 19,
+                            "start_line": 20,
                             "start_column": 13,
-                            "end_line": 19,
+                            "end_line": 20,
                             "end_column": 27,
-                            "start": 1178,
-                            "end": 1192,
+                            "start": 1294,
+                            "end": 1308,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 54,
+                          "token_number": 55,
                           "token_type": 64
                         },
                         "subs": null
@@ -1027,8 +1027,8 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1178,
-                      "end": 1192
+                      "start": 1294,
+                      "end": 1308
                     }
                   }
                 },
@@ -1040,15 +1040,15 @@
                         "ident": {
                           "text": "error",
                           "location": {
-                            "start_line": 19,
+                            "start_line": 20,
                             "start_column": 30,
-                            "end_line": 19,
+                            "end_line": 20,
                             "end_column": 35,
-                            "start": 1195,
-                            "end": 1200,
+                            "start": 1311,
+                            "end": 1316,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 56,
+                          "token_number": 57,
                           "token_type": 64
                         },
                         "subs": null
@@ -1056,15 +1056,15 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1195,
-                      "end": 1200
+                      "start": 1311,
+                      "end": 1316
                     }
                   }
                 },
                 "span": {
                   "source": 12983083683126769203,
-                  "start": 1178,
-                  "end": 1200
+                  "start": 1294,
+                  "end": 1316
                 }
               }
             }
@@ -1080,15 +1080,15 @@
                     "ident": {
                       "text": "measurement",
                       "location": {
-                        "start_line": 20,
+                        "start_line": 21,
                         "start_column": 3,
-                        "end_line": 20,
+                        "end_line": 21,
                         "end_column": 14,
-                        "start": 1204,
-                        "end": 1215,
+                        "start": 1320,
+                        "end": 1331,
                         "file_name": "NonlinearLoop.mo"
                       },
-                      "token_number": 58,
+                      "token_number": 59,
                       "token_type": 64
                     },
                     "subs": null
@@ -1096,8 +1096,8 @@
                 ],
                 "span": {
                   "source": 12983083683126769203,
-                  "start": 1204,
-                  "end": 1215
+                  "start": 1320,
+                  "end": 1331
                 }
               }
             },
@@ -1115,15 +1115,15 @@
                             "ident": {
                               "text": "plantGain",
                               "location": {
-                                "start_line": 20,
+                                "start_line": 21,
                                 "start_column": 17,
-                                "end_line": 20,
+                                "end_line": 21,
                                 "end_column": 26,
-                                "start": 1218,
-                                "end": 1227,
+                                "start": 1334,
+                                "end": 1343,
                                 "file_name": "NonlinearLoop.mo"
                               },
-                              "token_number": 60,
+                              "token_number": 61,
                               "token_type": 64
                             },
                             "subs": null
@@ -1131,8 +1131,8 @@
                         ],
                         "span": {
                           "source": 12983083683126769203,
-                          "start": 1218,
-                          "end": 1227
+                          "start": 1334,
+                          "end": 1343
                         }
                       }
                     },
@@ -1144,15 +1144,15 @@
                             "ident": {
                               "text": "command",
                               "location": {
-                                "start_line": 20,
+                                "start_line": 21,
                                 "start_column": 29,
-                                "end_line": 20,
+                                "end_line": 21,
                                 "end_column": 36,
-                                "start": 1230,
-                                "end": 1237,
+                                "start": 1346,
+                                "end": 1353,
                                 "file_name": "NonlinearLoop.mo"
                               },
-                              "token_number": 62,
+                              "token_number": 63,
                               "token_type": 64
                             },
                             "subs": null
@@ -1160,15 +1160,15 @@
                         ],
                         "span": {
                           "source": 12983083683126769203,
-                          "start": 1230,
-                          "end": 1237
+                          "start": 1346,
+                          "end": 1353
                         }
                       }
                     },
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1218,
-                      "end": 1237
+                      "start": 1334,
+                      "end": 1353
                     }
                   }
                 },
@@ -1180,15 +1180,15 @@
                         "ident": {
                           "text": "command",
                           "location": {
-                            "start_line": 20,
+                            "start_line": 21,
                             "start_column": 39,
-                            "end_line": 20,
+                            "end_line": 21,
                             "end_column": 46,
-                            "start": 1240,
-                            "end": 1247,
+                            "start": 1356,
+                            "end": 1363,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 64,
+                          "token_number": 65,
                           "token_type": 64
                         },
                         "subs": null
@@ -1196,15 +1196,15 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1240,
-                      "end": 1247
+                      "start": 1356,
+                      "end": 1363
                     }
                   }
                 },
                 "span": {
                   "source": 12983083683126769203,
-                  "start": 1218,
-                  "end": 1247
+                  "start": 1334,
+                  "end": 1363
                 }
               }
             }
@@ -1217,15 +1217,15 @@
       "equation_keyword": {
         "text": "equation",
         "location": {
-          "start_line": 17,
+          "start_line": 18,
           "start_column": 1,
-          "end_line": 17,
+          "end_line": 18,
           "end_column": 9,
-          "start": 1122,
-          "end": 1130,
+          "start": 1238,
+          "end": 1246,
           "file_name": "NonlinearLoop.mo"
         },
-        "token_number": 45,
+        "token_number": 46,
         "token_type": 24
       },
       "initial_equation_keyword": null,
@@ -1234,15 +1234,15 @@
       "end_name_token": {
         "text": "NonlinearLoop",
         "location": {
-          "start_line": 22,
+          "start_line": 23,
           "start_column": 5,
-          "end_line": 22,
+          "end_line": 23,
           "end_column": 18,
-          "start": 1380,
-          "end": 1393,
+          "start": 1496,
+          "end": 1509,
           "file_name": "NonlinearLoop.mo"
         },
-        "token_number": 90,
+        "token_number": 91,
         "token_type": 64
       },
       "enum_literals": [],
@@ -1256,15 +1256,15 @@
                   "ident": {
                     "text": "experiment",
                     "location": {
-                      "start_line": 21,
+                      "start_line": 22,
                       "start_column": 14,
-                      "end_line": 21,
+                      "end_line": 22,
                       "end_column": 24,
-                      "start": 1298,
-                      "end": 1308,
+                      "start": 1414,
+                      "end": 1424,
                       "file_name": "NonlinearLoop.mo"
                     },
-                    "token_number": 69,
+                    "token_number": 70,
                     "token_type": 64
                   },
                   "subs": null
@@ -1272,8 +1272,8 @@
               ],
               "span": {
                 "source": 12983083683126769203,
-                "start": 1298,
-                "end": 1308
+                "start": 1414,
+                "end": 1424
               }
             },
             "modifications": [
@@ -1286,15 +1286,15 @@
                         "ident": {
                           "text": "StartTime",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 25,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 34,
-                            "start": 1309,
-                            "end": 1318,
+                            "start": 1425,
+                            "end": 1434,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 71,
+                          "token_number": 72,
                           "token_type": 64
                         },
                         "subs": null
@@ -1302,8 +1302,8 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1309,
-                      "end": 1318
+                      "start": 1425,
+                      "end": 1434
                     }
                   },
                   "value": {
@@ -1312,28 +1312,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 21,
+                          "start_line": 22,
                           "start_column": 37,
-                          "end_line": 21,
+                          "end_line": 22,
                           "end_column": 38,
-                          "start": 1321,
-                          "end": 1322,
+                          "start": 1437,
+                          "end": 1438,
                           "file_name": "NonlinearLoop.mo"
                         },
-                        "token_number": 73,
+                        "token_number": 74,
                         "token_type": 67
                       },
                       "span": {
                         "source": 12983083683126769203,
-                        "start": 1321,
-                        "end": 1322
+                        "start": 1437,
+                        "end": 1438
                       }
                     }
                   },
                   "span": {
                     "source": 12983083683126769203,
-                    "start": 1309,
-                    "end": 1322
+                    "start": 1425,
+                    "end": 1438
                   }
                 }
               },
@@ -1346,15 +1346,15 @@
                         "ident": {
                           "text": "StopTime",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 40,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 48,
-                            "start": 1324,
-                            "end": 1332,
+                            "start": 1440,
+                            "end": 1448,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 75,
+                          "token_number": 76,
                           "token_type": 64
                         },
                         "subs": null
@@ -1362,8 +1362,8 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1324,
-                      "end": 1332
+                      "start": 1440,
+                      "end": 1448
                     }
                   },
                   "value": {
@@ -1372,28 +1372,28 @@
                       "token": {
                         "text": "1",
                         "location": {
-                          "start_line": 21,
+                          "start_line": 22,
                           "start_column": 51,
-                          "end_line": 21,
+                          "end_line": 22,
                           "end_column": 52,
-                          "start": 1335,
-                          "end": 1336,
+                          "start": 1451,
+                          "end": 1452,
                           "file_name": "NonlinearLoop.mo"
                         },
-                        "token_number": 77,
+                        "token_number": 78,
                         "token_type": 67
                       },
                       "span": {
                         "source": 12983083683126769203,
-                        "start": 1335,
-                        "end": 1336
+                        "start": 1451,
+                        "end": 1452
                       }
                     }
                   },
                   "span": {
                     "source": 12983083683126769203,
-                    "start": 1324,
-                    "end": 1336
+                    "start": 1440,
+                    "end": 1452
                   }
                 }
               },
@@ -1406,15 +1406,15 @@
                         "ident": {
                           "text": "Interval",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 54,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 62,
-                            "start": 1338,
-                            "end": 1346,
+                            "start": 1454,
+                            "end": 1462,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 79,
+                          "token_number": 80,
                           "token_type": 64
                         },
                         "subs": null
@@ -1422,8 +1422,8 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1338,
-                      "end": 1346
+                      "start": 1454,
+                      "end": 1462
                     }
                   },
                   "value": {
@@ -1432,28 +1432,28 @@
                       "token": {
                         "text": "0.001",
                         "location": {
-                          "start_line": 21,
+                          "start_line": 22,
                           "start_column": 65,
-                          "end_line": 21,
+                          "end_line": 22,
                           "end_column": 70,
-                          "start": 1349,
-                          "end": 1354,
+                          "start": 1465,
+                          "end": 1470,
                           "file_name": "NonlinearLoop.mo"
                         },
-                        "token_number": 81,
+                        "token_number": 82,
                         "token_type": 68
                       },
                       "span": {
                         "source": 12983083683126769203,
-                        "start": 1349,
-                        "end": 1354
+                        "start": 1465,
+                        "end": 1470
                       }
                     }
                   },
                   "span": {
                     "source": 12983083683126769203,
-                    "start": 1338,
-                    "end": 1354
+                    "start": 1454,
+                    "end": 1470
                   }
                 }
               },
@@ -1466,15 +1466,15 @@
                         "ident": {
                           "text": "Tolerance",
                           "location": {
-                            "start_line": 21,
+                            "start_line": 22,
                             "start_column": 72,
-                            "end_line": 21,
+                            "end_line": 22,
                             "end_column": 81,
-                            "start": 1356,
-                            "end": 1365,
+                            "start": 1472,
+                            "end": 1481,
                             "file_name": "NonlinearLoop.mo"
                           },
-                          "token_number": 83,
+                          "token_number": 84,
                           "token_type": 64
                         },
                         "subs": null
@@ -1482,8 +1482,8 @@
                     ],
                     "span": {
                       "source": 12983083683126769203,
-                      "start": 1356,
-                      "end": 1365
+                      "start": 1472,
+                      "end": 1481
                     }
                   },
                   "value": {
@@ -1492,28 +1492,28 @@
                       "token": {
                         "text": "1e-6",
                         "location": {
-                          "start_line": 21,
+                          "start_line": 22,
                           "start_column": 84,
-                          "end_line": 21,
+                          "end_line": 22,
                           "end_column": 88,
-                          "start": 1368,
-                          "end": 1372,
+                          "start": 1484,
+                          "end": 1488,
                           "file_name": "NonlinearLoop.mo"
                         },
-                        "token_number": 85,
+                        "token_number": 86,
                         "token_type": 71
                       },
                       "span": {
                         "source": 12983083683126769203,
-                        "start": 1368,
-                        "end": 1372
+                        "start": 1484,
+                        "end": 1488
                       }
                     }
                   },
                   "span": {
                     "source": 12983083683126769203,
-                    "start": 1356,
-                    "end": 1372
+                    "start": 1472,
+                    "end": 1488
                   }
                 }
               }
@@ -1538,8 +1538,8 @@
             ],
             "span": {
               "source": 12983083683126769203,
-              "start": 1298,
-              "end": 1372
+              "start": 1414,
+              "end": 1488
             }
           }
         }

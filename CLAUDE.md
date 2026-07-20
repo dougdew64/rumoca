@@ -96,6 +96,11 @@ can be set inside a Rumoca phase while it processes a specimen.
 - Comparison protocol: identical solver tolerances, identical initial conditions, explicit
   `experiment` annotations, agreement metric = relative error on state trajectories and
   event-time differences.
+- **Every specimen carries a `// purpose:` comment** (one line, phenomenon-focused — the compiler
+  feature it exercises, e.g. "high-index, structurally singular DAE"). The app scans it (`read_purpose`)
+  and shows it under the filename in the specimen list; keep it distinct from the Modelica description
+  string (which stays a faithful *model* description). Add one to each new specimen, and give it a
+  `docs/notebook/<Model>/` trace + narrative (see the notebook README).
 
 ## Arc close-out ritual
 

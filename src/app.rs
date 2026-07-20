@@ -5,7 +5,7 @@
 //! resolution, and the generic serde-value tree inspector showing each stage's
 //! IR for the selected model. Stages present so far: Parse, Resolve.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use eframe::egui;
 
@@ -74,6 +74,9 @@ pub struct App {
     // Specimen directory + file list.
     specimen_dir: String,
     files: Vec<PathBuf>,
+    // Per-specimen one-line purpose hint (the `// purpose:` comment), scanned at
+    // rescan so the specimen list reads as an index of what each one teaches.
+    specimen_purposes: HashMap<PathBuf, String>,
     scan_error: Option<String>,
 
     // Current selection + results.
@@ -143,6 +146,7 @@ impl App {
             libraries_busy: false,
             specimen_dir: DEFAULT_SPECIMEN_DIR.to_owned(),
             files: Vec::new(),
+            specimen_purposes: HashMap::new(),
             scan_error: None,
             selected: None,
             compiling: false,
@@ -204,6 +208,13 @@ impl App {
             }
             Err(e) => self.scan_error = Some(format!("{}: {e}", self.specimen_dir)),
         }
+        // Scan each specimen's `// purpose:` hint (cheap; no compile), so the list
+        // can show what each one demonstrates.
+        self.specimen_purposes = self
+            .files
+            .iter()
+            .filter_map(|p| read_purpose(p).map(|hint| (p.clone(), hint)))
+            .collect();
     }
 
     fn open(&mut self, path: PathBuf) {
@@ -634,7 +645,22 @@ impl eframe::App for App {
                     for path in &self.files {
                         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
                         let selected = self.selected.as_deref() == Some(path.as_path());
-                        if ui.selectable_label(selected, name).clicked() {
+                        let purpose = self.specimen_purposes.get(path);
+                        let mut resp = ui.selectable_label(selected, name);
+                        if let Some(hint) = purpose {
+                            resp = resp.on_hover_text(hint);
+                            // Weak, truncated subtext turns the list into an index
+                            // of what each specimen demonstrates; hover for the full line.
+                            ui.horizontal(|ui| {
+                                ui.add_space(14.0);
+                                ui.add(
+                                    egui::Label::new(egui::RichText::new(hint).weak().small())
+                                        .truncate(),
+                                )
+                                .on_hover_text(hint);
+                            });
+                        }
+                        if resp.clicked() {
                             to_open = Some(path.clone());
                         }
                     }
@@ -906,6 +932,21 @@ impl eframe::App for App {
             self.emit_focus(Focus::Model);
         }
     }
+}
+
+/// Read a specimen's one-line purpose hint — the first `// purpose:` comment in
+/// the file (the phenomenon it's authored to exercise). Scanned without compiling
+/// so every file in the list gets a hint, even one that fails to compile. `None`
+/// if the convention is absent.
+fn read_purpose(path: &Path) -> Option<String> {
+    let text = std::fs::read_to_string(path).ok()?;
+    text.lines().find_map(|line| {
+        line.trim_start()
+            .strip_prefix("// purpose:")
+            .map(str::trim)
+            .filter(|hint| !hint.is_empty())
+            .map(str::to_owned)
+    })
 }
 
 /// The field name to look up generic help for = the last object-key segment in

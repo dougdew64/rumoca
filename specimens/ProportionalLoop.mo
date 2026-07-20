@@ -1,4 +1,5 @@
 model ProportionalLoop "Idealized proportional servo inner loop — a purely algebraic feedback loop"
+  // purpose: Idealized algebraic feedback loop → one coupled BLT block (tearing).
   // Arc 3 specimen (charter §4.2.3): an ideal proportional feedback loop closed
   // around *instantaneous* relations. A real servo inner loop integrates (the
   // inertia is a state), which breaks the loop into an ODE. Here the dynamics

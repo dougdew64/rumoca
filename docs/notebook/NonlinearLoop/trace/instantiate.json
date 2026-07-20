@@ -6,16 +6,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 813,
-          "end": 827
+          "start": 929,
+          "end": 943
         },
         "parts": [
           {
             "ident": "reference",
             "span": {
               "source": 12973387870978279536,
-              "start": 813,
-              "end": 827
+              "start": 929,
+              "end": 943
             },
             "subs": []
           }
@@ -31,157 +31,12 @@
         ]
       },
       "source_location": {
-        "start_line": 11,
-        "start_column": 13,
-        "end_line": 11,
-        "end_column": 27,
-        "start": 813,
-        "end": 827,
-        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
-      },
-      "dims": [],
-      "dims_expr": [],
-      "type_id": 0,
-      "type_name": "Real",
-      "type_def_id": 1,
-      "declaration_source_scope": {
-        "parts": [
-          [
-            "NonlinearLoop",
-            []
-          ]
-        ]
-      },
-      "class_overrides": {},
-      "has_forwarding_class_redeclare": false,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 11,
-            "start_column": 3,
-            "end_line": 11,
-            "end_column": 12,
-            "start": 803,
-            "end": 812,
-            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
-          },
-          "token_number": 12,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "start": {
-        "Terminal": {
-          "terminal_type": "UnsignedReal",
-          "token": {
-            "text": "1.0",
-            "location": {
-              "start_line": 11,
-              "start_column": 30,
-              "end_line": 11,
-              "end_column": 33,
-              "start": 830,
-              "end": 833,
-              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
-            },
-            "token_number": 16,
-            "token_type": 68
-          },
-          "span": {
-            "source": 12973387870978279536,
-            "start": 830,
-            "end": 833
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": null,
-      "unit": null,
-      "display_unit": null,
-      "description": "setpoint",
-      "state_select": "Default",
-      "binding": {
-        "Terminal": {
-          "terminal_type": "UnsignedReal",
-          "token": {
-            "text": "1.0",
-            "location": {
-              "start_line": 11,
-              "start_column": 30,
-              "end_line": 11,
-              "end_column": 33,
-              "start": 830,
-              "end": 833,
-              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
-            },
-            "token_number": 16,
-            "token_type": 68
-          },
-          "span": {
-            "source": 12973387870978279536,
-            "start": 830,
-            "end": 833
-          }
-        }
-      },
-      "binding_source": null,
-      "binding_source_scope": null,
-      "attribute_source_scopes": {},
-      "binding_from_modification": false,
-      "is_primitive": true,
-      "is_discrete_type": false,
-      "from_expandable_connector": false,
-      "evaluate": false,
-      "is_final": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "is_connector_type": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "2": {
-      "instance_id": 2,
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 12973387870978279536,
-          "start": 858,
-          "end": 877
-        },
-        "parts": [
-          {
-            "ident": "controllerGain",
-            "span": {
-              "source": 12973387870978279536,
-              "start": 858,
-              "end": 877
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 90
-      },
-      "qualified_name": {
-        "parts": [
-          [
-            "controllerGain",
-            []
-          ]
-        ]
-      },
-      "source_location": {
         "start_line": 12,
         "start_column": 13,
         "end_line": 12,
-        "end_column": 32,
-        "start": 858,
-        "end": 877,
+        "end_column": 27,
+        "start": 929,
+        "end": 943,
         "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
       },
       "dims": [],
@@ -207,11 +62,11 @@
             "start_column": 3,
             "end_line": 12,
             "end_column": 12,
-            "start": 848,
-            "end": 857,
+            "start": 919,
+            "end": 928,
             "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
           },
-          "token_number": 19,
+          "token_number": 13,
           "token_type": 48
         }
       },
@@ -222,23 +77,23 @@
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "10.0",
+            "text": "1.0",
             "location": {
               "start_line": 12,
-              "start_column": 35,
+              "start_column": 30,
               "end_line": 12,
-              "end_column": 39,
-              "start": 880,
-              "end": 884,
+              "end_column": 33,
+              "start": 946,
+              "end": 949,
               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
             },
-            "token_number": 23,
+            "token_number": 17,
             "token_type": 68
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 880,
-            "end": 884
+            "start": 946,
+            "end": 949
           }
         }
       },
@@ -249,29 +104,29 @@
       "quantity": null,
       "unit": null,
       "display_unit": null,
-      "description": "proportional gain Kp",
+      "description": "setpoint",
       "state_select": "Default",
       "binding": {
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "10.0",
+            "text": "1.0",
             "location": {
               "start_line": 12,
-              "start_column": 35,
+              "start_column": 30,
               "end_line": 12,
-              "end_column": 39,
-              "start": 880,
-              "end": 884,
+              "end_column": 33,
+              "start": 946,
+              "end": 949,
               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
             },
-            "token_number": 23,
+            "token_number": 17,
             "token_type": 68
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 880,
-            "end": 884
+            "start": 946,
+            "end": 949
           }
         }
       },
@@ -290,32 +145,32 @@
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "3": {
-      "instance_id": 3,
+    "2": {
+      "instance_id": 2,
       "component_ref": {
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 921,
-          "end": 935
+          "start": 974,
+          "end": 993
         },
         "parts": [
           {
-            "ident": "plantGain",
+            "ident": "controllerGain",
             "span": {
               "source": 12973387870978279536,
-              "start": 921,
-              "end": 935
+              "start": 974,
+              "end": 993
             },
             "subs": []
           }
         ],
-        "def_id": 91
+        "def_id": 90
       },
       "qualified_name": {
         "parts": [
           [
-            "plantGain",
+            "controllerGain",
             []
           ]
         ]
@@ -324,9 +179,9 @@
         "start_line": 13,
         "start_column": 13,
         "end_line": 13,
-        "end_column": 27,
-        "start": 921,
-        "end": 935,
+        "end_column": 32,
+        "start": 974,
+        "end": 993,
         "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
       },
       "dims": [],
@@ -352,11 +207,156 @@
             "start_column": 3,
             "end_line": 13,
             "end_column": 12,
-            "start": 911,
-            "end": 920,
+            "start": 964,
+            "end": 973,
             "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
           },
-          "token_number": 26,
+          "token_number": 20,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 35,
+              "end_line": 13,
+              "end_column": 39,
+              "start": 996,
+              "end": 1000,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 24,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 996,
+            "end": 1000
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "proportional gain Kp",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 35,
+              "end_line": 13,
+              "end_column": 39,
+              "start": 996,
+              "end": 1000,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 24,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 996,
+            "end": 1000
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 1037,
+          "end": 1051
+        },
+        "parts": [
+          {
+            "ident": "plantGain",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1037,
+              "end": 1051
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "plantGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 14,
+        "start_column": 13,
+        "end_line": 14,
+        "end_column": 27,
+        "start": 1037,
+        "end": 1051,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 14,
+            "start_column": 3,
+            "end_line": 14,
+            "end_column": 12,
+            "start": 1027,
+            "end": 1036,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 27,
           "token_type": 48
         }
       },
@@ -369,21 +369,21 @@
           "token": {
             "text": "2.0",
             "location": {
-              "start_line": 13,
+              "start_line": 14,
               "start_column": 30,
-              "end_line": 13,
+              "end_line": 14,
               "end_column": 33,
-              "start": 938,
-              "end": 941,
+              "start": 1054,
+              "end": 1057,
               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
             },
-            "token_number": 30,
+            "token_number": 31,
             "token_type": 68
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 938,
-            "end": 941
+            "start": 1054,
+            "end": 1057
           }
         }
       },
@@ -402,21 +402,21 @@
           "token": {
             "text": "2.0",
             "location": {
-              "start_line": 13,
+              "start_line": 14,
               "start_column": 30,
-              "end_line": 13,
+              "end_line": 14,
               "end_column": 33,
-              "start": 938,
-              "end": 941,
+              "start": 1054,
+              "end": 1057,
               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
             },
-            "token_number": 30,
+            "token_number": 31,
             "token_type": 68
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 938,
-            "end": 941
+            "start": 1054,
+            "end": 1057
           }
         }
       },
@@ -441,16 +441,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 987,
-          "end": 997
+          "start": 1103,
+          "end": 1113
         },
         "parts": [
           {
             "ident": "error",
             "span": {
               "source": 12973387870978279536,
-              "start": 987,
-              "end": 997
+              "start": 1103,
+              "end": 1113
             },
             "subs": []
           }
@@ -466,12 +466,12 @@
         ]
       },
       "source_location": {
-        "start_line": 14,
+        "start_line": 15,
         "start_column": 3,
-        "end_line": 14,
+        "end_line": 15,
         "end_column": 13,
-        "start": 987,
-        "end": 997,
+        "start": 1103,
+        "end": 1113,
         "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
       },
       "dims": [],
@@ -512,8 +512,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 987,
-            "end": 997
+            "start": 1103,
+            "end": 1113
           }
         }
       },
@@ -548,16 +548,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 1029,
-          "end": 1041
+          "start": 1145,
+          "end": 1157
         },
         "parts": [
           {
             "ident": "command",
             "span": {
               "source": 12973387870978279536,
-              "start": 1029,
-              "end": 1041
+              "start": 1145,
+              "end": 1157
             },
             "subs": []
           }
@@ -573,12 +573,12 @@
         ]
       },
       "source_location": {
-        "start_line": 15,
+        "start_line": 16,
         "start_column": 3,
-        "end_line": 15,
+        "end_line": 16,
         "end_column": 15,
-        "start": 1029,
-        "end": 1041,
+        "start": 1145,
+        "end": 1157,
         "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
       },
       "dims": [],
@@ -619,8 +619,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1029,
-            "end": 1041
+            "start": 1145,
+            "end": 1157
           }
         }
       },
@@ -655,16 +655,16 @@
         "local": false,
         "span": {
           "source": 12973387870978279536,
-          "start": 1079,
-          "end": 1095
+          "start": 1195,
+          "end": 1211
         },
         "parts": [
           {
             "ident": "measurement",
             "span": {
               "source": 12973387870978279536,
-              "start": 1079,
-              "end": 1095
+              "start": 1195,
+              "end": 1211
             },
             "subs": []
           }
@@ -680,12 +680,12 @@
         ]
       },
       "source_location": {
-        "start_line": 16,
+        "start_line": 17,
         "start_column": 3,
-        "end_line": 16,
+        "end_line": 17,
         "end_column": 19,
-        "start": 1079,
-        "end": 1095,
+        "start": 1195,
+        "end": 1211,
         "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
       },
       "dims": [],
@@ -726,8 +726,8 @@
           },
           "span": {
             "source": 12973387870978279536,
-            "start": 1079,
-            "end": 1095
+            "start": 1195,
+            "end": 1211
           }
         }
       },
@@ -785,15 +785,15 @@
                       "ident": {
                         "text": "error",
                         "location": {
-                          "start_line": 18,
+                          "start_line": 19,
                           "start_column": 3,
-                          "end_line": 18,
+                          "end_line": 19,
                           "end_column": 8,
-                          "start": 1133,
-                          "end": 1138,
+                          "start": 1249,
+                          "end": 1254,
                           "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                         },
-                        "token_number": 46,
+                        "token_number": 47,
                         "token_type": 64
                       },
                       "subs": null
@@ -801,8 +801,8 @@
                   ],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1133,
-                    "end": 1138
+                    "start": 1249,
+                    "end": 1254
                   }
                 }
               },
@@ -817,15 +817,15 @@
                           "ident": {
                             "text": "reference",
                             "location": {
-                              "start_line": 18,
+                              "start_line": 19,
                               "start_column": 11,
-                              "end_line": 18,
+                              "end_line": 19,
                               "end_column": 20,
-                              "start": 1141,
-                              "end": 1150,
+                              "start": 1257,
+                              "end": 1266,
                               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                             },
-                            "token_number": 48,
+                            "token_number": 49,
                             "token_type": 64
                           },
                           "subs": null
@@ -833,8 +833,8 @@
                       ],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1141,
-                        "end": 1150
+                        "start": 1257,
+                        "end": 1266
                       }
                     }
                   },
@@ -846,15 +846,15 @@
                           "ident": {
                             "text": "measurement",
                             "location": {
-                              "start_line": 18,
+                              "start_line": 19,
                               "start_column": 23,
-                              "end_line": 18,
+                              "end_line": 19,
                               "end_column": 34,
-                              "start": 1153,
-                              "end": 1164,
+                              "start": 1269,
+                              "end": 1280,
                               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                             },
-                            "token_number": 50,
+                            "token_number": 51,
                             "token_type": 64
                           },
                           "subs": null
@@ -862,15 +862,15 @@
                       ],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1153,
-                        "end": 1164
+                        "start": 1269,
+                        "end": 1280
                       }
                     }
                   },
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1141,
-                    "end": 1164
+                    "start": 1257,
+                    "end": 1280
                   }
                 }
               }
@@ -890,8 +890,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 12973387870978279536,
-            "start": 1133,
-            "end": 1138
+            "start": 1249,
+            "end": 1254
           }
         },
         {
@@ -905,15 +905,15 @@
                       "ident": {
                         "text": "command",
                         "location": {
-                          "start_line": 19,
+                          "start_line": 20,
                           "start_column": 3,
-                          "end_line": 19,
+                          "end_line": 20,
                           "end_column": 10,
-                          "start": 1168,
-                          "end": 1175,
+                          "start": 1284,
+                          "end": 1291,
                           "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                         },
-                        "token_number": 52,
+                        "token_number": 53,
                         "token_type": 64
                       },
                       "subs": null
@@ -921,8 +921,8 @@
                   ],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1168,
-                    "end": 1175
+                    "start": 1284,
+                    "end": 1291
                   }
                 }
               },
@@ -937,15 +937,15 @@
                           "ident": {
                             "text": "controllerGain",
                             "location": {
-                              "start_line": 19,
+                              "start_line": 20,
                               "start_column": 13,
-                              "end_line": 19,
+                              "end_line": 20,
                               "end_column": 27,
-                              "start": 1178,
-                              "end": 1192,
+                              "start": 1294,
+                              "end": 1308,
                               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                             },
-                            "token_number": 54,
+                            "token_number": 55,
                             "token_type": 64
                           },
                           "subs": null
@@ -953,8 +953,8 @@
                       ],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1178,
-                        "end": 1192
+                        "start": 1294,
+                        "end": 1308
                       }
                     }
                   },
@@ -966,15 +966,15 @@
                           "ident": {
                             "text": "error",
                             "location": {
-                              "start_line": 19,
+                              "start_line": 20,
                               "start_column": 30,
-                              "end_line": 19,
+                              "end_line": 20,
                               "end_column": 35,
-                              "start": 1195,
-                              "end": 1200,
+                              "start": 1311,
+                              "end": 1316,
                               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                             },
-                            "token_number": 56,
+                            "token_number": 57,
                             "token_type": 64
                           },
                           "subs": null
@@ -982,15 +982,15 @@
                       ],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1195,
-                        "end": 1200
+                        "start": 1311,
+                        "end": 1316
                       }
                     }
                   },
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1178,
-                    "end": 1200
+                    "start": 1294,
+                    "end": 1316
                   }
                 }
               }
@@ -1010,8 +1010,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 12973387870978279536,
-            "start": 1168,
-            "end": 1175
+            "start": 1284,
+            "end": 1291
           }
         },
         {
@@ -1025,15 +1025,15 @@
                       "ident": {
                         "text": "measurement",
                         "location": {
-                          "start_line": 20,
+                          "start_line": 21,
                           "start_column": 3,
-                          "end_line": 20,
+                          "end_line": 21,
                           "end_column": 14,
-                          "start": 1204,
-                          "end": 1215,
+                          "start": 1320,
+                          "end": 1331,
                           "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                         },
-                        "token_number": 58,
+                        "token_number": 59,
                         "token_type": 64
                       },
                       "subs": null
@@ -1041,8 +1041,8 @@
                   ],
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1204,
-                    "end": 1215
+                    "start": 1320,
+                    "end": 1331
                   }
                 }
               },
@@ -1060,15 +1060,15 @@
                               "ident": {
                                 "text": "plantGain",
                                 "location": {
-                                  "start_line": 20,
+                                  "start_line": 21,
                                   "start_column": 17,
-                                  "end_line": 20,
+                                  "end_line": 21,
                                   "end_column": 26,
-                                  "start": 1218,
-                                  "end": 1227,
+                                  "start": 1334,
+                                  "end": 1343,
                                   "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                                 },
-                                "token_number": 60,
+                                "token_number": 61,
                                 "token_type": 64
                               },
                               "subs": null
@@ -1076,8 +1076,8 @@
                           ],
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1218,
-                            "end": 1227
+                            "start": 1334,
+                            "end": 1343
                           }
                         }
                       },
@@ -1089,15 +1089,15 @@
                               "ident": {
                                 "text": "command",
                                 "location": {
-                                  "start_line": 20,
+                                  "start_line": 21,
                                   "start_column": 29,
-                                  "end_line": 20,
+                                  "end_line": 21,
                                   "end_column": 36,
-                                  "start": 1230,
-                                  "end": 1237,
+                                  "start": 1346,
+                                  "end": 1353,
                                   "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                                 },
-                                "token_number": 62,
+                                "token_number": 63,
                                 "token_type": 64
                               },
                               "subs": null
@@ -1105,15 +1105,15 @@
                           ],
                           "span": {
                             "source": 12973387870978279536,
-                            "start": 1230,
-                            "end": 1237
+                            "start": 1346,
+                            "end": 1353
                           }
                         }
                       },
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1218,
-                        "end": 1237
+                        "start": 1334,
+                        "end": 1353
                       }
                     }
                   },
@@ -1125,15 +1125,15 @@
                           "ident": {
                             "text": "command",
                             "location": {
-                              "start_line": 20,
+                              "start_line": 21,
                               "start_column": 39,
-                              "end_line": 20,
+                              "end_line": 21,
                               "end_column": 46,
-                              "start": 1240,
-                              "end": 1247,
+                              "start": 1356,
+                              "end": 1363,
                               "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
                             },
-                            "token_number": 64,
+                            "token_number": 65,
                             "token_type": 64
                           },
                           "subs": null
@@ -1141,15 +1141,15 @@
                       ],
                       "span": {
                         "source": 12973387870978279536,
-                        "start": 1240,
-                        "end": 1247
+                        "start": 1356,
+                        "end": 1363
                       }
                     }
                   },
                   "span": {
                     "source": 12973387870978279536,
-                    "start": 1218,
-                    "end": 1247
+                    "start": 1334,
+                    "end": 1363
                   }
                 }
               }
@@ -1169,8 +1169,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 12973387870978279536,
-            "start": 1204,
-            "end": 1215
+            "start": 1320,
+            "end": 1331
           }
         }
       ],

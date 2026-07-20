@@ -31,6 +31,12 @@ is powerful for *compilation*; it should extend to **simulation** — and is lik
 
 ## 2. Specimen *purpose hints* — in the file and in the app UI
 
+**✅ Implemented 2026-07-20.** Convention: a `// purpose: <one-line>` comment in
+each specimen (phenomenon-focused, distinct from the Modelica description string).
+The app scans it at rescan (`read_purpose`, no compile) and shows it as weak
+subtext + hover under each filename in the LHS list. All seven specimens carry one.
+Original capture below.
+
 Captured 2026-07-20 (Doug). The app's left-hand specimen list shows only filenames
 — no hint of *why* each specimen exists (e.g. "demonstrates Pantelides' algorithm",
 "a genuine algebraic loop"). Surface a one-line purpose both in the specimen file

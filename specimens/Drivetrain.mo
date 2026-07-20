@@ -1,4 +1,5 @@
 model Drivetrain "Motor–gearbox–link drivetrain: electrical → rotational → translational"
+  // purpose: Ideal gears → high-index, structurally singular DAE (needs index reduction — Arc 4).
   // Arc 2 specimen (charter §4.2.2): an open power-transmission chain that
   // crosses three physical domains, so instantiate/flatten do nontrivial work —
   // connector expansion and flow-sum generation over electrical pins (i),

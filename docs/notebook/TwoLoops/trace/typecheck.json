@@ -6,16 +6,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 653,
-          "end": 667
+          "start": 751,
+          "end": 765
         },
         "parts": [
           {
             "ident": "reference",
             "span": {
               "source": 15524718192234813095,
-              "start": 653,
-              "end": 667
+              "start": 751,
+              "end": 765
             },
             "subs": []
           }
@@ -31,157 +31,12 @@
         ]
       },
       "source_location": {
-        "start_line": 9,
-        "start_column": 13,
-        "end_line": 9,
-        "end_column": 27,
-        "start": 653,
-        "end": 667,
-        "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
-      },
-      "dims": [],
-      "dims_expr": [],
-      "type_id": 0,
-      "type_name": "Real",
-      "type_def_id": 1,
-      "declaration_source_scope": {
-        "parts": [
-          [
-            "TwoLoops",
-            []
-          ]
-        ]
-      },
-      "class_overrides": {},
-      "has_forwarding_class_redeclare": false,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 9,
-            "start_column": 3,
-            "end_line": 9,
-            "end_column": 12,
-            "start": 643,
-            "end": 652,
-            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
-          },
-          "token_number": 10,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "start": {
-        "Terminal": {
-          "terminal_type": "UnsignedReal",
-          "token": {
-            "text": "1.0",
-            "location": {
-              "start_line": 9,
-              "start_column": 30,
-              "end_line": 9,
-              "end_column": 33,
-              "start": 670,
-              "end": 673,
-              "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
-            },
-            "token_number": 14,
-            "token_type": 68
-          },
-          "span": {
-            "source": 15524718192234813095,
-            "start": 670,
-            "end": 673
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": null,
-      "unit": null,
-      "display_unit": null,
-      "description": "setpoint for loop A",
-      "state_select": "Default",
-      "binding": {
-        "Terminal": {
-          "terminal_type": "UnsignedReal",
-          "token": {
-            "text": "1.0",
-            "location": {
-              "start_line": 9,
-              "start_column": 30,
-              "end_line": 9,
-              "end_column": 33,
-              "start": 670,
-              "end": 673,
-              "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
-            },
-            "token_number": 14,
-            "token_type": 68
-          },
-          "span": {
-            "source": 15524718192234813095,
-            "start": 670,
-            "end": 673
-          }
-        }
-      },
-      "binding_source": null,
-      "binding_source_scope": null,
-      "attribute_source_scopes": {},
-      "binding_from_modification": false,
-      "is_primitive": true,
-      "is_discrete_type": false,
-      "from_expandable_connector": false,
-      "evaluate": false,
-      "is_final": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "is_connector_type": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "2": {
-      "instance_id": 2,
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 15524718192234813095,
-          "start": 709,
-          "end": 719
-        },
-        "parts": [
-          {
-            "ident": "gainA",
-            "span": {
-              "source": 15524718192234813095,
-              "start": 709,
-              "end": 719
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 90
-      },
-      "qualified_name": {
-        "parts": [
-          [
-            "gainA",
-            []
-          ]
-        ]
-      },
-      "source_location": {
         "start_line": 10,
         "start_column": 13,
         "end_line": 10,
-        "end_column": 23,
-        "start": 709,
-        "end": 719,
+        "end_column": 27,
+        "start": 751,
+        "end": 765,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -207,11 +62,11 @@
             "start_column": 3,
             "end_line": 10,
             "end_column": 12,
-            "start": 699,
-            "end": 708,
+            "start": 741,
+            "end": 750,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 17,
+          "token_number": 11,
           "token_type": 48
         }
       },
@@ -222,23 +77,23 @@
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "10.0",
+            "text": "1.0",
             "location": {
               "start_line": 10,
-              "start_column": 26,
+              "start_column": 30,
               "end_line": 10,
-              "end_column": 30,
-              "start": 722,
-              "end": 726,
+              "end_column": 33,
+              "start": 768,
+              "end": 771,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 21,
+            "token_number": 15,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 722,
-            "end": 726
+            "start": 768,
+            "end": 771
           }
         }
       },
@@ -249,29 +104,29 @@
       "quantity": null,
       "unit": null,
       "display_unit": null,
-      "description": "loop-A proportional gain",
+      "description": "setpoint for loop A",
       "state_select": "Default",
       "binding": {
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "10.0",
+            "text": "1.0",
             "location": {
               "start_line": 10,
-              "start_column": 26,
+              "start_column": 30,
               "end_line": 10,
-              "end_column": 30,
-              "start": 722,
-              "end": 726,
+              "end_column": 33,
+              "start": 768,
+              "end": 771,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 21,
+            "token_number": 15,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 722,
-            "end": 726
+            "start": 768,
+            "end": 771
           }
         }
       },
@@ -290,32 +145,32 @@
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "3": {
-      "instance_id": 3,
+    "2": {
+      "instance_id": 2,
       "component_ref": {
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 767,
-          "end": 778
+          "start": 807,
+          "end": 817
         },
         "parts": [
           {
-            "ident": "plantA",
+            "ident": "gainA",
             "span": {
               "source": 15524718192234813095,
-              "start": 767,
-              "end": 778
+              "start": 807,
+              "end": 817
             },
             "subs": []
           }
         ],
-        "def_id": 91
+        "def_id": 90
       },
       "qualified_name": {
         "parts": [
           [
-            "plantA",
+            "gainA",
             []
           ]
         ]
@@ -324,9 +179,9 @@
         "start_line": 11,
         "start_column": 13,
         "end_line": 11,
-        "end_column": 24,
-        "start": 767,
-        "end": 778,
+        "end_column": 23,
+        "start": 807,
+        "end": 817,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -352,11 +207,11 @@
             "start_column": 3,
             "end_line": 11,
             "end_column": 12,
-            "start": 757,
-            "end": 766,
+            "start": 797,
+            "end": 806,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 24,
+          "token_number": 18,
           "token_type": 48
         }
       },
@@ -367,23 +222,23 @@
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "2.0",
+            "text": "10.0",
             "location": {
               "start_line": 11,
-              "start_column": 27,
+              "start_column": 26,
               "end_line": 11,
               "end_column": 30,
-              "start": 781,
-              "end": 784,
+              "start": 820,
+              "end": 824,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 28,
+            "token_number": 22,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 781,
-            "end": 784
+            "start": 820,
+            "end": 824
           }
         }
       },
@@ -394,29 +249,29 @@
       "quantity": null,
       "unit": null,
       "display_unit": null,
-      "description": "loop-A static plant gain",
+      "description": "loop-A proportional gain",
       "state_select": "Default",
       "binding": {
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "2.0",
+            "text": "10.0",
             "location": {
               "start_line": 11,
-              "start_column": 27,
+              "start_column": 26,
               "end_line": 11,
               "end_column": 30,
-              "start": 781,
-              "end": 784,
+              "start": 820,
+              "end": 824,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 28,
+            "token_number": 22,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 781,
-            "end": 784
+            "start": 820,
+            "end": 824
           }
         }
       },
@@ -435,32 +290,32 @@
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "4": {
-      "instance_id": 4,
+    "3": {
+      "instance_id": 3,
       "component_ref": {
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 825,
-          "end": 835
+          "start": 865,
+          "end": 876
         },
         "parts": [
           {
-            "ident": "gainB",
+            "ident": "plantA",
             "span": {
               "source": 15524718192234813095,
-              "start": 825,
-              "end": 835
+              "start": 865,
+              "end": 876
             },
             "subs": []
           }
         ],
-        "def_id": 92
+        "def_id": 91
       },
       "qualified_name": {
         "parts": [
           [
-            "gainB",
+            "plantA",
             []
           ]
         ]
@@ -469,9 +324,9 @@
         "start_line": 12,
         "start_column": 13,
         "end_line": 12,
-        "end_column": 23,
-        "start": 825,
-        "end": 835,
+        "end_column": 24,
+        "start": 865,
+        "end": 876,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -497,11 +352,11 @@
             "start_column": 3,
             "end_line": 12,
             "end_column": 12,
-            "start": 815,
-            "end": 824,
+            "start": 855,
+            "end": 864,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 31,
+          "token_number": 25,
           "token_type": 48
         }
       },
@@ -512,23 +367,23 @@
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "5.0",
+            "text": "2.0",
             "location": {
               "start_line": 12,
-              "start_column": 26,
+              "start_column": 27,
               "end_line": 12,
-              "end_column": 29,
-              "start": 838,
-              "end": 841,
+              "end_column": 30,
+              "start": 879,
+              "end": 882,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 35,
+            "token_number": 29,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 838,
-            "end": 841
+            "start": 879,
+            "end": 882
           }
         }
       },
@@ -539,29 +394,29 @@
       "quantity": null,
       "unit": null,
       "display_unit": null,
-      "description": "loop-B proportional gain",
+      "description": "loop-A static plant gain",
       "state_select": "Default",
       "binding": {
         "Terminal": {
           "terminal_type": "UnsignedReal",
           "token": {
-            "text": "5.0",
+            "text": "2.0",
             "location": {
               "start_line": 12,
-              "start_column": 26,
+              "start_column": 27,
               "end_line": 12,
-              "end_column": 29,
-              "start": 838,
-              "end": 841,
+              "end_column": 30,
+              "start": 879,
+              "end": 882,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 35,
+            "token_number": 29,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 838,
-            "end": 841
+            "start": 879,
+            "end": 882
           }
         }
       },
@@ -580,32 +435,32 @@
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "5": {
-      "instance_id": 5,
+    "4": {
+      "instance_id": 4,
       "component_ref": {
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 882,
-          "end": 893
+          "start": 923,
+          "end": 933
         },
         "parts": [
           {
-            "ident": "plantB",
+            "ident": "gainB",
             "span": {
               "source": 15524718192234813095,
-              "start": 882,
-              "end": 893
+              "start": 923,
+              "end": 933
             },
             "subs": []
           }
         ],
-        "def_id": 93
+        "def_id": 92
       },
       "qualified_name": {
         "parts": [
           [
-            "plantB",
+            "gainB",
             []
           ]
         ]
@@ -614,9 +469,9 @@
         "start_line": 13,
         "start_column": 13,
         "end_line": 13,
-        "end_column": 24,
-        "start": 882,
-        "end": 893,
+        "end_column": 23,
+        "start": 923,
+        "end": 933,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -642,11 +497,156 @@
             "start_column": 3,
             "end_line": 13,
             "end_column": 12,
-            "start": 872,
-            "end": 881,
+            "start": 913,
+            "end": 922,
             "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
           },
-          "token_number": 38,
+          "token_number": 32,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "5.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 26,
+              "end_line": 13,
+              "end_column": 29,
+              "start": 936,
+              "end": 939,
+              "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+            },
+            "token_number": 36,
+            "token_type": 68
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 936,
+            "end": 939
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-B proportional gain",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "5.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 26,
+              "end_line": 13,
+              "end_column": 29,
+              "start": 936,
+              "end": 939,
+              "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+            },
+            "token_number": 36,
+            "token_type": 68
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 936,
+            "end": 939
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "5": {
+      "instance_id": 5,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 980,
+          "end": 991
+        },
+        "parts": [
+          {
+            "ident": "plantB",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 980,
+              "end": 991
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 93
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "plantB",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 14,
+        "start_column": 13,
+        "end_line": 14,
+        "end_column": 24,
+        "start": 980,
+        "end": 991,
+        "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "TwoLoops",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 14,
+            "start_column": 3,
+            "end_line": 14,
+            "end_column": 12,
+            "start": 970,
+            "end": 979,
+            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+          },
+          "token_number": 39,
           "token_type": 48
         }
       },
@@ -659,21 +659,21 @@
           "token": {
             "text": "3.0",
             "location": {
-              "start_line": 13,
+              "start_line": 14,
               "start_column": 27,
-              "end_line": 13,
+              "end_line": 14,
               "end_column": 30,
-              "start": 896,
-              "end": 899,
+              "start": 994,
+              "end": 997,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 42,
+            "token_number": 43,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 896,
-            "end": 899
+            "start": 994,
+            "end": 997
           }
         }
       },
@@ -692,21 +692,21 @@
           "token": {
             "text": "3.0",
             "location": {
-              "start_line": 13,
+              "start_line": 14,
               "start_column": 27,
-              "end_line": 13,
+              "end_line": 14,
               "end_column": 30,
-              "start": 896,
-              "end": 899,
+              "start": 994,
+              "end": 997,
               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
             },
-            "token_number": 42,
+            "token_number": 43,
             "token_type": 68
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 896,
-            "end": 899
+            "start": 994,
+            "end": 997
           }
         }
       },
@@ -731,16 +731,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 930,
-          "end": 941
+          "start": 1028,
+          "end": 1039
         },
         "parts": [
           {
             "ident": "errorA",
             "span": {
               "source": 15524718192234813095,
-              "start": 930,
-              "end": 941
+              "start": 1028,
+              "end": 1039
             },
             "subs": []
           }
@@ -756,12 +756,12 @@
         ]
       },
       "source_location": {
-        "start_line": 14,
+        "start_line": 15,
         "start_column": 3,
-        "end_line": 14,
+        "end_line": 15,
         "end_column": 14,
-        "start": 930,
-        "end": 941,
+        "start": 1028,
+        "end": 1039,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -802,8 +802,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 930,
-            "end": 941
+            "start": 1028,
+            "end": 1039
           }
         }
       },
@@ -838,16 +838,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 960,
-          "end": 973
+          "start": 1058,
+          "end": 1071
         },
         "parts": [
           {
             "ident": "commandA",
             "span": {
               "source": 15524718192234813095,
-              "start": 960,
-              "end": 973
+              "start": 1058,
+              "end": 1071
             },
             "subs": []
           }
@@ -863,12 +863,12 @@
         ]
       },
       "source_location": {
-        "start_line": 15,
+        "start_line": 16,
         "start_column": 3,
-        "end_line": 15,
+        "end_line": 16,
         "end_column": 16,
-        "start": 960,
-        "end": 973,
+        "start": 1058,
+        "end": 1071,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -909,8 +909,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 960,
-            "end": 973
+            "start": 1058,
+            "end": 1071
           }
         }
       },
@@ -945,16 +945,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 1029,
-          "end": 1040
+          "start": 1127,
+          "end": 1138
         },
         "parts": [
           {
             "ident": "errorB",
             "span": {
               "source": 15524718192234813095,
-              "start": 1029,
-              "end": 1040
+              "start": 1127,
+              "end": 1138
             },
             "subs": []
           }
@@ -970,12 +970,12 @@
         ]
       },
       "source_location": {
-        "start_line": 16,
+        "start_line": 17,
         "start_column": 3,
-        "end_line": 16,
+        "end_line": 17,
         "end_column": 14,
-        "start": 1029,
-        "end": 1040,
+        "start": 1127,
+        "end": 1138,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -1016,8 +1016,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1029,
-            "end": 1040
+            "start": 1127,
+            "end": 1138
           }
         }
       },
@@ -1052,16 +1052,16 @@
         "local": false,
         "span": {
           "source": 15524718192234813095,
-          "start": 1059,
-          "end": 1072
+          "start": 1157,
+          "end": 1170
         },
         "parts": [
           {
             "ident": "commandB",
             "span": {
               "source": 15524718192234813095,
-              "start": 1059,
-              "end": 1072
+              "start": 1157,
+              "end": 1170
             },
             "subs": []
           }
@@ -1077,12 +1077,12 @@
         ]
       },
       "source_location": {
-        "start_line": 17,
+        "start_line": 18,
         "start_column": 3,
-        "end_line": 17,
+        "end_line": 18,
         "end_column": 16,
-        "start": 1059,
-        "end": 1072,
+        "start": 1157,
+        "end": 1170,
         "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
       },
       "dims": [],
@@ -1123,8 +1123,8 @@
           },
           "span": {
             "source": 15524718192234813095,
-            "start": 1059,
-            "end": 1072
+            "start": 1157,
+            "end": 1170
           }
         }
       },
@@ -1182,15 +1182,15 @@
                       "ident": {
                         "text": "errorA",
                         "location": {
-                          "start_line": 19,
+                          "start_line": 20,
                           "start_column": 3,
-                          "end_line": 19,
+                          "end_line": 20,
                           "end_column": 9,
-                          "start": 1112,
-                          "end": 1118,
+                          "start": 1210,
+                          "end": 1216,
                           "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                         },
-                        "token_number": 62,
+                        "token_number": 63,
                         "token_type": 64
                       },
                       "subs": null
@@ -1198,8 +1198,8 @@
                   ],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1112,
-                    "end": 1118
+                    "start": 1210,
+                    "end": 1216
                   }
                 }
               },
@@ -1214,15 +1214,15 @@
                           "ident": {
                             "text": "reference",
                             "location": {
-                              "start_line": 19,
+                              "start_line": 20,
                               "start_column": 12,
-                              "end_line": 19,
+                              "end_line": 20,
                               "end_column": 21,
-                              "start": 1121,
-                              "end": 1130,
+                              "start": 1219,
+                              "end": 1228,
                               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                             },
-                            "token_number": 64,
+                            "token_number": 65,
                             "token_type": 64
                           },
                           "subs": null
@@ -1230,8 +1230,8 @@
                       ],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1121,
-                        "end": 1130
+                        "start": 1219,
+                        "end": 1228
                       }
                     }
                   },
@@ -1246,15 +1246,15 @@
                               "ident": {
                                 "text": "plantA",
                                 "location": {
-                                  "start_line": 19,
+                                  "start_line": 20,
                                   "start_column": 24,
-                                  "end_line": 19,
+                                  "end_line": 20,
                                   "end_column": 30,
-                                  "start": 1133,
-                                  "end": 1139,
+                                  "start": 1231,
+                                  "end": 1237,
                                   "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                                 },
-                                "token_number": 66,
+                                "token_number": 67,
                                 "token_type": 64
                               },
                               "subs": null
@@ -1262,8 +1262,8 @@
                           ],
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1133,
-                            "end": 1139
+                            "start": 1231,
+                            "end": 1237
                           }
                         }
                       },
@@ -1275,15 +1275,15 @@
                               "ident": {
                                 "text": "commandA",
                                 "location": {
-                                  "start_line": 19,
+                                  "start_line": 20,
                                   "start_column": 33,
-                                  "end_line": 19,
+                                  "end_line": 20,
                                   "end_column": 41,
-                                  "start": 1142,
-                                  "end": 1150,
+                                  "start": 1240,
+                                  "end": 1248,
                                   "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                                 },
-                                "token_number": 68,
+                                "token_number": 69,
                                 "token_type": 64
                               },
                               "subs": null
@@ -1291,22 +1291,22 @@
                           ],
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1142,
-                            "end": 1150
+                            "start": 1240,
+                            "end": 1248
                           }
                         }
                       },
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1133,
-                        "end": 1150
+                        "start": 1231,
+                        "end": 1248
                       }
                     }
                   },
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1121,
-                    "end": 1150
+                    "start": 1219,
+                    "end": 1248
                   }
                 }
               }
@@ -1326,8 +1326,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 15524718192234813095,
-            "start": 1112,
-            "end": 1118
+            "start": 1210,
+            "end": 1216
           }
         },
         {
@@ -1341,15 +1341,15 @@
                       "ident": {
                         "text": "commandA",
                         "location": {
-                          "start_line": 20,
+                          "start_line": 21,
                           "start_column": 3,
-                          "end_line": 20,
+                          "end_line": 21,
                           "end_column": 11,
-                          "start": 1186,
-                          "end": 1194,
+                          "start": 1284,
+                          "end": 1292,
                           "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                         },
-                        "token_number": 71,
+                        "token_number": 72,
                         "token_type": 64
                       },
                       "subs": null
@@ -1357,8 +1357,8 @@
                   ],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1186,
-                    "end": 1194
+                    "start": 1284,
+                    "end": 1292
                   }
                 }
               },
@@ -1373,15 +1373,15 @@
                           "ident": {
                             "text": "gainA",
                             "location": {
-                              "start_line": 20,
+                              "start_line": 21,
                               "start_column": 14,
-                              "end_line": 20,
+                              "end_line": 21,
                               "end_column": 19,
-                              "start": 1197,
-                              "end": 1202,
+                              "start": 1295,
+                              "end": 1300,
                               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                             },
-                            "token_number": 73,
+                            "token_number": 74,
                             "token_type": 64
                           },
                           "subs": null
@@ -1389,8 +1389,8 @@
                       ],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1197,
-                        "end": 1202
+                        "start": 1295,
+                        "end": 1300
                       }
                     }
                   },
@@ -1402,15 +1402,15 @@
                           "ident": {
                             "text": "errorA",
                             "location": {
-                              "start_line": 20,
+                              "start_line": 21,
                               "start_column": 22,
-                              "end_line": 20,
+                              "end_line": 21,
                               "end_column": 28,
-                              "start": 1205,
-                              "end": 1211,
+                              "start": 1303,
+                              "end": 1309,
                               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                             },
-                            "token_number": 75,
+                            "token_number": 76,
                             "token_type": 64
                           },
                           "subs": null
@@ -1418,15 +1418,15 @@
                       ],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1205,
-                        "end": 1211
+                        "start": 1303,
+                        "end": 1309
                       }
                     }
                   },
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1197,
-                    "end": 1211
+                    "start": 1295,
+                    "end": 1309
                   }
                 }
               }
@@ -1446,8 +1446,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 15524718192234813095,
-            "start": 1186,
-            "end": 1194
+            "start": 1284,
+            "end": 1292
           }
         },
         {
@@ -1461,15 +1461,15 @@
                       "ident": {
                         "text": "errorB",
                         "location": {
-                          "start_line": 21,
+                          "start_line": 22,
                           "start_column": 3,
-                          "end_line": 21,
+                          "end_line": 22,
                           "end_column": 9,
-                          "start": 1237,
-                          "end": 1243,
+                          "start": 1335,
+                          "end": 1341,
                           "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                         },
-                        "token_number": 78,
+                        "token_number": 79,
                         "token_type": 64
                       },
                       "subs": null
@@ -1477,8 +1477,8 @@
                   ],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1237,
-                    "end": 1243
+                    "start": 1335,
+                    "end": 1341
                   }
                 }
               },
@@ -1493,15 +1493,15 @@
                           "ident": {
                             "text": "commandA",
                             "location": {
-                              "start_line": 21,
+                              "start_line": 22,
                               "start_column": 12,
-                              "end_line": 21,
+                              "end_line": 22,
                               "end_column": 20,
-                              "start": 1246,
-                              "end": 1254,
+                              "start": 1344,
+                              "end": 1352,
                               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                             },
-                            "token_number": 80,
+                            "token_number": 81,
                             "token_type": 64
                           },
                           "subs": null
@@ -1509,8 +1509,8 @@
                       ],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1246,
-                        "end": 1254
+                        "start": 1344,
+                        "end": 1352
                       }
                     }
                   },
@@ -1525,15 +1525,15 @@
                               "ident": {
                                 "text": "plantB",
                                 "location": {
-                                  "start_line": 21,
+                                  "start_line": 22,
                                   "start_column": 23,
-                                  "end_line": 21,
+                                  "end_line": 22,
                                   "end_column": 29,
-                                  "start": 1257,
-                                  "end": 1263,
+                                  "start": 1355,
+                                  "end": 1361,
                                   "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                                 },
-                                "token_number": 82,
+                                "token_number": 83,
                                 "token_type": 64
                               },
                               "subs": null
@@ -1541,8 +1541,8 @@
                           ],
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1257,
-                            "end": 1263
+                            "start": 1355,
+                            "end": 1361
                           }
                         }
                       },
@@ -1554,15 +1554,15 @@
                               "ident": {
                                 "text": "commandB",
                                 "location": {
-                                  "start_line": 21,
+                                  "start_line": 22,
                                   "start_column": 32,
-                                  "end_line": 21,
+                                  "end_line": 22,
                                   "end_column": 40,
-                                  "start": 1266,
-                                  "end": 1274,
+                                  "start": 1364,
+                                  "end": 1372,
                                   "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                                 },
-                                "token_number": 84,
+                                "token_number": 85,
                                 "token_type": 64
                               },
                               "subs": null
@@ -1570,22 +1570,22 @@
                           ],
                           "span": {
                             "source": 15524718192234813095,
-                            "start": 1266,
-                            "end": 1274
+                            "start": 1364,
+                            "end": 1372
                           }
                         }
                       },
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1257,
-                        "end": 1274
+                        "start": 1355,
+                        "end": 1372
                       }
                     }
                   },
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1246,
-                    "end": 1274
+                    "start": 1344,
+                    "end": 1372
                   }
                 }
               }
@@ -1605,8 +1605,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 15524718192234813095,
-            "start": 1237,
-            "end": 1243
+            "start": 1335,
+            "end": 1341
           }
         },
         {
@@ -1620,15 +1620,15 @@
                       "ident": {
                         "text": "commandB",
                         "location": {
-                          "start_line": 22,
+                          "start_line": 23,
                           "start_column": 3,
-                          "end_line": 22,
+                          "end_line": 23,
                           "end_column": 11,
-                          "start": 1331,
-                          "end": 1339,
+                          "start": 1429,
+                          "end": 1437,
                           "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                         },
-                        "token_number": 87,
+                        "token_number": 88,
                         "token_type": 64
                       },
                       "subs": null
@@ -1636,8 +1636,8 @@
                   ],
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1331,
-                    "end": 1339
+                    "start": 1429,
+                    "end": 1437
                   }
                 }
               },
@@ -1652,15 +1652,15 @@
                           "ident": {
                             "text": "gainB",
                             "location": {
-                              "start_line": 22,
+                              "start_line": 23,
                               "start_column": 14,
-                              "end_line": 22,
+                              "end_line": 23,
                               "end_column": 19,
-                              "start": 1342,
-                              "end": 1347,
+                              "start": 1440,
+                              "end": 1445,
                               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                             },
-                            "token_number": 89,
+                            "token_number": 90,
                             "token_type": 64
                           },
                           "subs": null
@@ -1668,8 +1668,8 @@
                       ],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1342,
-                        "end": 1347
+                        "start": 1440,
+                        "end": 1445
                       }
                     }
                   },
@@ -1681,15 +1681,15 @@
                           "ident": {
                             "text": "errorB",
                             "location": {
-                              "start_line": 22,
+                              "start_line": 23,
                               "start_column": 22,
-                              "end_line": 22,
+                              "end_line": 23,
                               "end_column": 28,
-                              "start": 1350,
-                              "end": 1356,
+                              "start": 1448,
+                              "end": 1454,
                               "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
                             },
-                            "token_number": 91,
+                            "token_number": 92,
                             "token_type": 64
                           },
                           "subs": null
@@ -1697,15 +1697,15 @@
                       ],
                       "span": {
                         "source": 15524718192234813095,
-                        "start": 1350,
-                        "end": 1356
+                        "start": 1448,
+                        "end": 1454
                       }
                     }
                   },
                   "span": {
                     "source": 15524718192234813095,
-                    "start": 1342,
-                    "end": 1356
+                    "start": 1440,
+                    "end": 1454
                   }
                 }
               }
@@ -1725,8 +1725,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 15524718192234813095,
-            "start": 1331,
-            "end": 1339
+            "start": 1429,
+            "end": 1437
           }
         }
       ],

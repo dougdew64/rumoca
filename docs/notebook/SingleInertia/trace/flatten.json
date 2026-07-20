@@ -6,16 +6,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 93,
-          "end": 99
+          "start": 181,
+          "end": 187
         },
         "parts": [
           {
             "ident": "J",
             "span": {
               "source": 13456874562834740018,
-              "start": 93,
-              "end": 99
+              "start": 181,
+              "end": 187
             },
             "subs": []
           }
@@ -24,23 +24,23 @@
       },
       "source_span": {
         "source": 13456874562834740018,
-        "start": 93,
-        "end": 99
+        "start": 181,
+        "end": 187
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 2,
+            "start_line": 3,
             "start_column": 3,
-            "end_line": 2,
+            "end_line": 3,
             "end_column": 12,
-            "start": 83,
-            "end": 92,
+            "start": 171,
+            "end": 180,
             "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
           },
-          "token_number": 3,
+          "token_number": 4,
           "token_type": 48
         }
       },
@@ -56,8 +56,8 @@
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 102,
-            "end": 105
+            "start": 190,
+            "end": 193
           }
         }
       },
@@ -77,8 +77,8 @@
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 102,
-            "end": 105
+            "start": 190,
+            "end": 193
           }
         }
       },
@@ -98,16 +98,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 139,
-          "end": 147
+          "start": 227,
+          "end": 235
         },
         "parts": [
           {
             "ident": "tau",
             "span": {
               "source": 13456874562834740018,
-              "start": 139,
-              "end": 147
+              "start": 227,
+              "end": 235
             },
             "subs": []
           }
@@ -116,23 +116,23 @@
       },
       "source_span": {
         "source": 13456874562834740018,
-        "start": 139,
-        "end": 147
+        "start": 227,
+        "end": 235
       },
       "type_id": 0,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 3,
+            "start_line": 4,
             "start_column": 3,
-            "end_line": 3,
+            "end_line": 4,
             "end_column": 12,
-            "start": 129,
-            "end": 138,
+            "start": 217,
+            "end": 226,
             "file_name": "/home/dougdew/dev/hrw/specimens/SingleInertia.mo"
           },
-          "token_number": 10,
+          "token_number": 11,
           "token_type": 48
         }
       },
@@ -148,8 +148,8 @@
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 150,
-            "end": 153
+            "start": 238,
+            "end": 241
           }
         }
       },
@@ -169,8 +169,8 @@
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 150,
-            "end": 153
+            "start": 238,
+            "end": 241
           }
         }
       },
@@ -190,16 +190,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 174,
-          "end": 182
+          "start": 262,
+          "end": 270
         },
         "parts": [
           {
             "ident": "phi",
             "span": {
               "source": 13456874562834740018,
-              "start": 174,
-              "end": 182
+              "start": 262,
+              "end": 270
             },
             "subs": []
           }
@@ -208,8 +208,8 @@
       },
       "source_span": {
         "source": 13456874562834740018,
-        "start": 174,
-        "end": 182
+        "start": 262,
+        "end": 270
       },
       "type_id": 0,
       "variability": "Empty",
@@ -225,8 +225,8 @@
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 191,
-            "end": 194
+            "start": 279,
+            "end": 282
           }
         }
       },
@@ -256,16 +256,16 @@
         "local": false,
         "span": {
           "source": 13456874562834740018,
-          "start": 207,
-          "end": 213
+          "start": 295,
+          "end": 301
         },
         "parts": [
           {
             "ident": "w",
             "span": {
               "source": 13456874562834740018,
-              "start": 207,
-              "end": 213
+              "start": 295,
+              "end": 301
             },
             "subs": []
           }
@@ -274,8 +274,8 @@
       },
       "source_span": {
         "source": 13456874562834740018,
-        "start": 207,
-        "end": 213
+        "start": 295,
+        "end": 301
       },
       "type_id": 0,
       "variability": "Empty",
@@ -291,8 +291,8 @@
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 222,
-            "end": 225
+            "start": 310,
+            "end": 313
           }
         }
       },
@@ -341,16 +341,16 @@
                         "local": false,
                         "span": {
                           "source": 13456874562834740018,
-                          "start": 262,
-                          "end": 265
+                          "start": 350,
+                          "end": 353
                         },
                         "parts": [
                           {
                             "ident": "phi",
                             "span": {
                               "source": 13456874562834740018,
-                              "start": 262,
-                              "end": 265
+                              "start": 350,
+                              "end": 353
                             },
                             "subs": []
                           }
@@ -361,16 +361,16 @@
                     "subscripts": [],
                     "span": {
                       "source": 13456874562834740018,
-                      "start": 262,
-                      "end": 265
+                      "start": 350,
+                      "end": 353
                     }
                   }
                 }
               ],
               "span": {
                 "source": 13456874562834740018,
-                "start": 258,
-                "end": 261
+                "start": 346,
+                "end": 349
               }
             }
           },
@@ -382,16 +382,16 @@
                   "local": false,
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 269,
-                    "end": 270
+                    "start": 357,
+                    "end": 358
                   },
                   "parts": [
                     {
                       "ident": "w",
                       "span": {
                         "source": 13456874562834740018,
-                        "start": 269,
-                        "end": 270
+                        "start": 357,
+                        "end": 358
                       },
                       "subs": []
                     }
@@ -402,22 +402,22 @@
               "subscripts": [],
               "span": {
                 "source": 13456874562834740018,
-                "start": 269,
-                "end": 270
+                "start": 357,
+                "end": 358
               }
             }
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 258,
-            "end": 265
+            "start": 346,
+            "end": 353
           }
         }
       },
       "span": {
         "source": 13456874562834740018,
-        "start": 258,
-        "end": 261
+        "start": 346,
+        "end": 349
       },
       "origin": {
         "ComponentEquation": {
@@ -441,16 +441,16 @@
                       "local": false,
                       "span": {
                         "source": 13456874562834740018,
-                        "start": 274,
-                        "end": 275
+                        "start": 362,
+                        "end": 363
                       },
                       "parts": [
                         {
                           "ident": "J",
                           "span": {
                             "source": 13456874562834740018,
-                            "start": 274,
-                            "end": 275
+                            "start": 362,
+                            "end": 363
                           },
                           "subs": []
                         }
@@ -461,8 +461,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 274,
-                    "end": 275
+                    "start": 362,
+                    "end": 363
                   }
                 }
               },
@@ -478,16 +478,16 @@
                             "local": false,
                             "span": {
                               "source": 13456874562834740018,
-                              "start": 282,
-                              "end": 283
+                              "start": 370,
+                              "end": 371
                             },
                             "parts": [
                               {
                                 "ident": "w",
                                 "span": {
                                   "source": 13456874562834740018,
-                                  "start": 282,
-                                  "end": 283
+                                  "start": 370,
+                                  "end": 371
                                 },
                                 "subs": []
                               }
@@ -498,23 +498,23 @@
                         "subscripts": [],
                         "span": {
                           "source": 13456874562834740018,
-                          "start": 282,
-                          "end": 283
+                          "start": 370,
+                          "end": 371
                         }
                       }
                     }
                   ],
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 278,
-                    "end": 281
+                    "start": 366,
+                    "end": 369
                   }
                 }
               },
               "span": {
                 "source": 13456874562834740018,
-                "start": 274,
-                "end": 283
+                "start": 362,
+                "end": 371
               }
             }
           },
@@ -526,16 +526,16 @@
                   "local": false,
                   "span": {
                     "source": 13456874562834740018,
-                    "start": 287,
-                    "end": 290
+                    "start": 375,
+                    "end": 378
                   },
                   "parts": [
                     {
                       "ident": "tau",
                       "span": {
                         "source": 13456874562834740018,
-                        "start": 287,
-                        "end": 290
+                        "start": 375,
+                        "end": 378
                       },
                       "subs": []
                     }
@@ -546,22 +546,22 @@
               "subscripts": [],
               "span": {
                 "source": 13456874562834740018,
-                "start": 287,
-                "end": 290
+                "start": 375,
+                "end": 378
               }
             }
           },
           "span": {
             "source": 13456874562834740018,
-            "start": 274,
-            "end": 283
+            "start": 362,
+            "end": 371
           }
         }
       },
       "span": {
         "source": 13456874562834740018,
-        "start": 274,
-        "end": 275
+        "start": 362,
+        "end": 363
       },
       "origin": {
         "ComponentEquation": {

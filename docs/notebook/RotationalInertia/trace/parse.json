@@ -58,10 +58,10 @@
       "location": {
         "start_line": 1,
         "start_column": 7,
-        "end_line": 8,
+        "end_line": 9,
         "end_column": 22,
         "start": 6,
-        "end": 360,
+        "end": 482,
         "file_name": "RotationalInertia.mo"
       },
       "extends": [],
@@ -76,15 +76,15 @@
           "name_token": {
             "text": "inertia",
             "location": {
-              "start_line": 2,
+              "start_line": 3,
               "start_column": 52,
-              "end_line": 2,
+              "end_line": 3,
               "end_column": 59,
-              "start": 134,
-              "end": 141,
+              "start": 256,
+              "end": 263,
               "file_name": "RotationalInertia.mo"
             },
-            "token_number": 12,
+            "token_number": 13,
             "token_type": 64
           },
           "type_name": {
@@ -92,71 +92,71 @@
               {
                 "text": "Modelica",
                 "location": {
-                  "start_line": 2,
+                  "start_line": 3,
                   "start_column": 3,
-                  "end_line": 2,
+                  "end_line": 3,
                   "end_column": 11,
-                  "start": 85,
-                  "end": 93,
+                  "start": 207,
+                  "end": 215,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 3,
+                "token_number": 4,
                 "token_type": 64
               },
               {
                 "text": "Mechanics",
                 "location": {
-                  "start_line": 2,
+                  "start_line": 3,
                   "start_column": 12,
-                  "end_line": 2,
+                  "end_line": 3,
                   "end_column": 21,
-                  "start": 94,
-                  "end": 103,
+                  "start": 216,
+                  "end": 225,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 5,
+                "token_number": 6,
                 "token_type": 64
               },
               {
                 "text": "Rotational",
                 "location": {
-                  "start_line": 2,
+                  "start_line": 3,
                   "start_column": 22,
-                  "end_line": 2,
+                  "end_line": 3,
                   "end_column": 32,
-                  "start": 104,
-                  "end": 114,
+                  "start": 226,
+                  "end": 236,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 7,
+                "token_number": 8,
                 "token_type": 64
               },
               {
                 "text": "Components",
                 "location": {
-                  "start_line": 2,
+                  "start_line": 3,
                   "start_column": 33,
-                  "end_line": 2,
+                  "end_line": 3,
                   "end_column": 43,
-                  "start": 115,
-                  "end": 125,
+                  "start": 237,
+                  "end": 247,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 9,
+                "token_number": 10,
                 "token_type": 64
               },
               {
                 "text": "Inertia",
                 "location": {
-                  "start_line": 2,
+                  "start_line": 3,
                   "start_column": 44,
-                  "end_line": 2,
+                  "end_line": 3,
                   "end_column": 51,
-                  "start": 126,
-                  "end": 133,
+                  "start": 248,
+                  "end": 255,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 11,
+                "token_number": 12,
                 "token_type": 64
               }
             ]
@@ -169,8 +169,8 @@
             "Empty": {
               "span": {
                 "source": 856732454369215050,
-                "start": 85,
-                "end": 141
+                "start": 207,
+                "end": 263
               }
             }
           },
@@ -192,15 +192,15 @@
                       "ident": {
                         "text": "J",
                         "location": {
-                          "start_line": 2,
+                          "start_line": 3,
                           "start_column": 60,
-                          "end_line": 2,
+                          "end_line": 3,
                           "end_column": 61,
-                          "start": 142,
-                          "end": 143,
+                          "start": 264,
+                          "end": 265,
                           "file_name": "RotationalInertia.mo"
                         },
-                        "token_number": 14,
+                        "token_number": 15,
                         "token_type": 64
                       },
                       "subs": null
@@ -208,8 +208,8 @@
                   ],
                   "span": {
                     "source": 856732454369215050,
-                    "start": 142,
-                    "end": 143
+                    "start": 264,
+                    "end": 265
                   }
                 },
                 "value": {
@@ -218,28 +218,28 @@
                     "token": {
                       "text": "1.0",
                       "location": {
-                        "start_line": 2,
+                        "start_line": 3,
                         "start_column": 64,
-                        "end_line": 2,
+                        "end_line": 3,
                         "end_column": 67,
-                        "start": 146,
-                        "end": 149,
+                        "start": 268,
+                        "end": 271,
                         "file_name": "RotationalInertia.mo"
                       },
-                      "token_number": 16,
+                      "token_number": 17,
                       "token_type": 68
                     },
                     "span": {
                       "source": 856732454369215050,
-                      "start": 146,
-                      "end": 149
+                      "start": 268,
+                      "end": 271
                     }
                   }
                 },
                 "span": {
                   "source": 856732454369215050,
-                  "start": 142,
-                  "end": 149
+                  "start": 264,
+                  "end": 271
                 }
               }
             }
@@ -260,32 +260,32 @@
                 "token": {
                   "text": "1.0",
                   "location": {
-                    "start_line": 2,
+                    "start_line": 3,
                     "start_column": 64,
-                    "end_line": 2,
+                    "end_line": 3,
                     "end_column": 67,
-                    "start": 146,
-                    "end": 149,
+                    "start": 268,
+                    "end": 271,
                     "file_name": "RotationalInertia.mo"
                   },
-                  "token_number": 16,
+                  "token_number": 17,
                   "token_type": 68
                 },
                 "span": {
                   "source": 856732454369215050,
-                  "start": 146,
-                  "end": 149
+                  "start": 268,
+                  "end": 271
                 }
               }
             }
           },
           "location": {
-            "start_line": 2,
+            "start_line": 3,
             "start_column": 3,
-            "end_line": 2,
+            "end_line": 3,
             "end_column": 59,
-            "start": 85,
-            "end": 141,
+            "start": 207,
+            "end": 263,
             "file_name": "RotationalInertia.mo"
           },
           "condition": null,
@@ -308,15 +308,15 @@
           "name_token": {
             "text": "torque",
             "location": {
-              "start_line": 3,
+              "start_line": 4,
               "start_column": 48,
-              "end_line": 3,
+              "end_line": 4,
               "end_column": 54,
-              "start": 199,
-              "end": 205,
+              "start": 321,
+              "end": 327,
               "file_name": "RotationalInertia.mo"
             },
-            "token_number": 28,
+            "token_number": 29,
             "token_type": 64
           },
           "type_name": {
@@ -324,71 +324,71 @@
               {
                 "text": "Modelica",
                 "location": {
-                  "start_line": 3,
+                  "start_line": 4,
                   "start_column": 3,
-                  "end_line": 3,
+                  "end_line": 4,
                   "end_column": 11,
-                  "start": 154,
-                  "end": 162,
+                  "start": 276,
+                  "end": 284,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 19,
+                "token_number": 20,
                 "token_type": 64
               },
               {
                 "text": "Mechanics",
                 "location": {
-                  "start_line": 3,
+                  "start_line": 4,
                   "start_column": 12,
-                  "end_line": 3,
+                  "end_line": 4,
                   "end_column": 21,
-                  "start": 163,
-                  "end": 172,
+                  "start": 285,
+                  "end": 294,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 21,
+                "token_number": 22,
                 "token_type": 64
               },
               {
                 "text": "Rotational",
                 "location": {
-                  "start_line": 3,
+                  "start_line": 4,
                   "start_column": 22,
-                  "end_line": 3,
+                  "end_line": 4,
                   "end_column": 32,
-                  "start": 173,
-                  "end": 183,
+                  "start": 295,
+                  "end": 305,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 23,
+                "token_number": 24,
                 "token_type": 64
               },
               {
                 "text": "Sources",
                 "location": {
-                  "start_line": 3,
+                  "start_line": 4,
                   "start_column": 33,
-                  "end_line": 3,
+                  "end_line": 4,
                   "end_column": 40,
-                  "start": 184,
-                  "end": 191,
+                  "start": 306,
+                  "end": 313,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 25,
+                "token_number": 26,
                 "token_type": 64
               },
               {
                 "text": "Torque",
                 "location": {
-                  "start_line": 3,
+                  "start_line": 4,
                   "start_column": 41,
-                  "end_line": 3,
+                  "end_line": 4,
                   "end_column": 47,
-                  "start": 192,
-                  "end": 198,
+                  "start": 314,
+                  "end": 320,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 27,
+                "token_number": 28,
                 "token_type": 64
               }
             ]
@@ -401,8 +401,8 @@
             "Empty": {
               "span": {
                 "source": 856732454369215050,
-                "start": 154,
-                "end": 205
+                "start": 276,
+                "end": 327
               }
             }
           },
@@ -420,12 +420,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 3,
+            "start_line": 4,
             "start_column": 3,
-            "end_line": 3,
+            "end_line": 4,
             "end_column": 54,
-            "start": 154,
-            "end": 205,
+            "start": 276,
+            "end": 327,
             "file_name": "RotationalInertia.mo"
           },
           "condition": null,
@@ -448,15 +448,15 @@
           "name_token": {
             "text": "tau",
             "location": {
-              "start_line": 4,
+              "start_line": 5,
               "start_column": 36,
-              "end_line": 4,
+              "end_line": 5,
               "end_column": 39,
-              "start": 242,
-              "end": 245,
+              "start": 364,
+              "end": 367,
               "file_name": "RotationalInertia.mo"
             },
-            "token_number": 37,
+            "token_number": 38,
             "token_type": 64
           },
           "type_name": {
@@ -464,57 +464,57 @@
               {
                 "text": "Modelica",
                 "location": {
-                  "start_line": 4,
+                  "start_line": 5,
                   "start_column": 3,
-                  "end_line": 4,
+                  "end_line": 5,
                   "end_column": 11,
-                  "start": 209,
-                  "end": 217,
+                  "start": 331,
+                  "end": 339,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 30,
+                "token_number": 31,
                 "token_type": 64
               },
               {
                 "text": "Blocks",
                 "location": {
-                  "start_line": 4,
+                  "start_line": 5,
                   "start_column": 12,
-                  "end_line": 4,
+                  "end_line": 5,
                   "end_column": 18,
-                  "start": 218,
-                  "end": 224,
+                  "start": 340,
+                  "end": 346,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 32,
+                "token_number": 33,
                 "token_type": 64
               },
               {
                 "text": "Sources",
                 "location": {
-                  "start_line": 4,
+                  "start_line": 5,
                   "start_column": 19,
-                  "end_line": 4,
+                  "end_line": 5,
                   "end_column": 26,
-                  "start": 225,
-                  "end": 232,
+                  "start": 347,
+                  "end": 354,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 34,
+                "token_number": 35,
                 "token_type": 64
               },
               {
                 "text": "Constant",
                 "location": {
-                  "start_line": 4,
+                  "start_line": 5,
                   "start_column": 27,
-                  "end_line": 4,
+                  "end_line": 5,
                   "end_column": 35,
-                  "start": 233,
-                  "end": 241,
+                  "start": 355,
+                  "end": 363,
                   "file_name": "RotationalInertia.mo"
                 },
-                "token_number": 36,
+                "token_number": 37,
                 "token_type": 64
               }
             ]
@@ -527,8 +527,8 @@
             "Empty": {
               "span": {
                 "source": 856732454369215050,
-                "start": 209,
-                "end": 245
+                "start": 331,
+                "end": 367
               }
             }
           },
@@ -550,15 +550,15 @@
                       "ident": {
                         "text": "k",
                         "location": {
-                          "start_line": 4,
+                          "start_line": 5,
                           "start_column": 40,
-                          "end_line": 4,
+                          "end_line": 5,
                           "end_column": 41,
-                          "start": 246,
-                          "end": 247,
+                          "start": 368,
+                          "end": 369,
                           "file_name": "RotationalInertia.mo"
                         },
-                        "token_number": 39,
+                        "token_number": 40,
                         "token_type": 64
                       },
                       "subs": null
@@ -566,8 +566,8 @@
                   ],
                   "span": {
                     "source": 856732454369215050,
-                    "start": 246,
-                    "end": 247
+                    "start": 368,
+                    "end": 369
                   }
                 },
                 "value": {
@@ -576,28 +576,28 @@
                     "token": {
                       "text": "1.0",
                       "location": {
-                        "start_line": 4,
+                        "start_line": 5,
                         "start_column": 44,
-                        "end_line": 4,
+                        "end_line": 5,
                         "end_column": 47,
-                        "start": 250,
-                        "end": 253,
+                        "start": 372,
+                        "end": 375,
                         "file_name": "RotationalInertia.mo"
                       },
-                      "token_number": 41,
+                      "token_number": 42,
                       "token_type": 68
                     },
                     "span": {
                       "source": 856732454369215050,
-                      "start": 250,
-                      "end": 253
+                      "start": 372,
+                      "end": 375
                     }
                   }
                 },
                 "span": {
                   "source": 856732454369215050,
-                  "start": 246,
-                  "end": 253
+                  "start": 368,
+                  "end": 375
                 }
               }
             }
@@ -618,32 +618,32 @@
                 "token": {
                   "text": "1.0",
                   "location": {
-                    "start_line": 4,
+                    "start_line": 5,
                     "start_column": 44,
-                    "end_line": 4,
+                    "end_line": 5,
                     "end_column": 47,
-                    "start": 250,
-                    "end": 253,
+                    "start": 372,
+                    "end": 375,
                     "file_name": "RotationalInertia.mo"
                   },
-                  "token_number": 41,
+                  "token_number": 42,
                   "token_type": 68
                 },
                 "span": {
                   "source": 856732454369215050,
-                  "start": 250,
-                  "end": 253
+                  "start": 372,
+                  "end": 375
                 }
               }
             }
           },
           "location": {
-            "start_line": 4,
+            "start_line": 5,
             "start_column": 3,
-            "end_line": 4,
+            "end_line": 5,
             "end_column": 39,
-            "start": 209,
-            "end": 245,
+            "start": 331,
+            "end": 367,
             "file_name": "RotationalInertia.mo"
           },
           "condition": null,
@@ -669,15 +669,15 @@
                   "ident": {
                     "text": "tau",
                     "location": {
-                      "start_line": 6,
+                      "start_line": 7,
                       "start_column": 11,
-                      "end_line": 6,
+                      "end_line": 7,
                       "end_column": 14,
-                      "start": 275,
-                      "end": 278,
+                      "start": 397,
+                      "end": 400,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 47,
+                    "token_number": 48,
                     "token_type": 64
                   },
                   "subs": null
@@ -686,15 +686,15 @@
                   "ident": {
                     "text": "y",
                     "location": {
-                      "start_line": 6,
+                      "start_line": 7,
                       "start_column": 15,
-                      "end_line": 6,
+                      "end_line": 7,
                       "end_column": 16,
-                      "start": 279,
-                      "end": 280,
+                      "start": 401,
+                      "end": 402,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 49,
+                    "token_number": 50,
                     "token_type": 64
                   },
                   "subs": null
@@ -702,8 +702,8 @@
               ],
               "span": {
                 "source": 856732454369215050,
-                "start": 275,
-                "end": 280
+                "start": 397,
+                "end": 402
               }
             },
             "rhs": {
@@ -713,15 +713,15 @@
                   "ident": {
                     "text": "torque",
                     "location": {
-                      "start_line": 6,
+                      "start_line": 7,
                       "start_column": 18,
-                      "end_line": 6,
+                      "end_line": 7,
                       "end_column": 24,
-                      "start": 282,
-                      "end": 288,
+                      "start": 404,
+                      "end": 410,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 51,
+                    "token_number": 52,
                     "token_type": 64
                   },
                   "subs": null
@@ -730,15 +730,15 @@
                   "ident": {
                     "text": "tau",
                     "location": {
-                      "start_line": 6,
+                      "start_line": 7,
                       "start_column": 25,
-                      "end_line": 6,
+                      "end_line": 7,
                       "end_column": 28,
-                      "start": 289,
-                      "end": 292,
+                      "start": 411,
+                      "end": 414,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 53,
+                    "token_number": 54,
                     "token_type": 64
                   },
                   "subs": null
@@ -746,8 +746,8 @@
               ],
               "span": {
                 "source": 856732454369215050,
-                "start": 282,
-                "end": 292
+                "start": 404,
+                "end": 414
               }
             }
           }
@@ -761,15 +761,15 @@
                   "ident": {
                     "text": "torque",
                     "location": {
-                      "start_line": 7,
+                      "start_line": 8,
                       "start_column": 11,
-                      "end_line": 7,
+                      "end_line": 8,
                       "end_column": 17,
-                      "start": 305,
-                      "end": 311,
+                      "start": 427,
+                      "end": 433,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 58,
+                    "token_number": 59,
                     "token_type": 64
                   },
                   "subs": null
@@ -778,15 +778,15 @@
                   "ident": {
                     "text": "flange",
                     "location": {
-                      "start_line": 7,
+                      "start_line": 8,
                       "start_column": 18,
-                      "end_line": 7,
+                      "end_line": 8,
                       "end_column": 24,
-                      "start": 312,
-                      "end": 318,
+                      "start": 434,
+                      "end": 440,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 60,
+                    "token_number": 61,
                     "token_type": 64
                   },
                   "subs": null
@@ -794,8 +794,8 @@
               ],
               "span": {
                 "source": 856732454369215050,
-                "start": 305,
-                "end": 318
+                "start": 427,
+                "end": 440
               }
             },
             "rhs": {
@@ -805,15 +805,15 @@
                   "ident": {
                     "text": "inertia",
                     "location": {
-                      "start_line": 7,
+                      "start_line": 8,
                       "start_column": 26,
-                      "end_line": 7,
+                      "end_line": 8,
                       "end_column": 33,
-                      "start": 320,
-                      "end": 327,
+                      "start": 442,
+                      "end": 449,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 62,
+                    "token_number": 63,
                     "token_type": 64
                   },
                   "subs": null
@@ -822,15 +822,15 @@
                   "ident": {
                     "text": "flange_a",
                     "location": {
-                      "start_line": 7,
+                      "start_line": 8,
                       "start_column": 34,
-                      "end_line": 7,
+                      "end_line": 8,
                       "end_column": 42,
-                      "start": 328,
-                      "end": 336,
+                      "start": 450,
+                      "end": 458,
                       "file_name": "RotationalInertia.mo"
                     },
-                    "token_number": 64,
+                    "token_number": 65,
                     "token_type": 64
                   },
                   "subs": null
@@ -838,8 +838,8 @@
               ],
               "span": {
                 "source": 856732454369215050,
-                "start": 320,
-                "end": 336
+                "start": 442,
+                "end": 458
               }
             }
           }
@@ -851,15 +851,15 @@
       "equation_keyword": {
         "text": "equation",
         "location": {
-          "start_line": 5,
+          "start_line": 6,
           "start_column": 1,
-          "end_line": 5,
+          "end_line": 6,
           "end_column": 9,
-          "start": 256,
-          "end": 264,
+          "start": 378,
+          "end": 386,
           "file_name": "RotationalInertia.mo"
         },
-        "token_number": 44,
+        "token_number": 45,
         "token_type": 24
       },
       "initial_equation_keyword": null,
@@ -868,15 +868,15 @@
       "end_name_token": {
         "text": "RotationalInertia",
         "location": {
-          "start_line": 8,
+          "start_line": 9,
           "start_column": 5,
-          "end_line": 8,
+          "end_line": 9,
           "end_column": 22,
-          "start": 343,
-          "end": 360,
+          "start": 465,
+          "end": 482,
           "file_name": "RotationalInertia.mo"
         },
-        "token_number": 68,
+        "token_number": 69,
         "token_type": 64
       },
       "enum_literals": [],

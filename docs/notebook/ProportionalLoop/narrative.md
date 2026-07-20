@@ -6,7 +6,7 @@ and foregrounding what **this** specimen is designed to make interesting.*
 
 > **Provenance.** Written against `trace/` produced by
 > `cargo run --example gen_trace -- ProportionalLoop`, Rumoca `rev 8cdc74198`
-> (v0.9.20), specimen fnv1a `49e812e05fc33087` (see [`trace/manifest.json`](trace/manifest.json)).
+> (v0.9.20), specimen hash + per-stage status in [`trace/manifest.json`](trace/manifest.json).
 > If the specimen or the Rumoca pin changes, regenerate the trace and re-read
 > this narrative against the diff — claims below cite specific trace locations, so
 > a stale claim is a checkable one.

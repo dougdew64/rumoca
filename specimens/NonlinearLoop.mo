@@ -1,4 +1,5 @@
 model NonlinearLoop "Idealized proportional loop closed around a NONLINEAR plant"
+  // purpose: Nonlinear plant → same structure as ProportionalLoop, but Newton to solve (structure ≠ numerics).
   // Arc 3 specimen (charter §4.2.3): structurally identical to ProportionalLoop —
   // the same three-equation algebraic loop, one coupled 3×3 block — but the plant
   // relation is nonlinear (`measurement = plantGain · command²`). Structural
