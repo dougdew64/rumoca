@@ -355,3 +355,20 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   by_name (traces regenerated — Drivetrain now carries `index_reduction.json`); Drivetrain narrative +
   notebook README updated (the Arc-4 forward reference is now fulfilled). Guarded by
   `worker::tests::drivetrain_index_reduction_stage_recovers_singular`.
+- **2026-07-20 — Arc 4 step 3: FINDING — Rumoca's Rust-path index reduction handles LINEAR high-index but
+  not NONLINEAR holonomic constraints; four-bar linkage DEFERRED, Arc 4 reframed around Drivetrain.**
+  Drafted the hand-built planar mechanics library (`lib/PlanarMechanics.mo`: Frame connector, Fixed,
+  Revolute, FixedTranslation, Body — portable subset, no MSL MultiBody) and a pendulum to validate it.
+  It flattens fine, but its structural report is singular AND does not index-reduce. Isolated the cause:
+  the *barest* textbook Cartesian pendulum (5 eqs, point mass, `x²+y²=L²`, no library) is ALSO not reduced
+  — so it is **not** a library-formulation bug but the **nonlinear holonomic constraint**. Rumoca's funnel
+  (dummy-state demotion + `eliminate_trivial`) reduces *linear* constraints (Drivetrain's ideal gears →
+  singular→solvable ✅) but not `x²+y²=L²` (leaves the tension `F` + constraint unmatched). The charter's
+  four-bar linkage (§4.2.4) has nonlinear loop-closure, so it hits the same wall. **Doug's decision:
+  reframe Arc 4 around `Drivetrain`** (linear high-index, already demonstrated in steps 1–2); document the
+  nonlinear limitation as a finding (possible upstream contribution); **park** the planar library
+  (kept + parse-guarded by `worker::tests::planar_mechanics_library_parses`) and defer the four-bar.
+  Kept the funnel completion (`eliminate_trivial` + `apply_elimination_substitutions_to_dae`) from this
+  investigation — it makes the reduction faithful to rumoca-sim's real sequence (Drivetrain still reduces).
+  Honest caveat: proven the *public* reduction API doesn't handle it; the full private sim path
+  (`remove_duplicate_continuous_equations` is `pub(super)`) or the CasADi target may differ — unconfirmed.

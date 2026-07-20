@@ -801,6 +801,18 @@ mod tests {
         );
     }
 
+    /// Arc 4: the parked hand-built PlanarMechanics library (the four-bar-linkage
+    /// prerequisite, deferred until Rumoca's Rust-path reduction handles nonlinear
+    /// holonomic constraints — see DECISIONS.md) still parses as a source root, so
+    /// it doesn't bit-rot while deferred.
+    #[test]
+    fn planar_mechanics_library_parses() {
+        let roots = vec![PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/lib/PlanarMechanics.mo"))];
+        let mut state = WorkerState::new();
+        let loaded = state.load_libraries(roots).expect("planar mechanics library should parse");
+        assert!(loaded >= 1, "expected the planar mechanics library to load");
+    }
+
     /// Arc 4: for the high-index Drivetrain, the raw `structural` stage is singular
     /// (no IR), but the `index_reduction` stage recovers a solvable report — the
     /// before/after the two tabs show side by side.
@@ -850,6 +862,16 @@ fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) {
     if dp::demote_states_without_retained_derivative_rows(dae).is_err() { return; }
     dp::expand_compound_derivatives(dae);
     dp::substitute_standalone_state_derivatives_in_non_ode_rows(dae);
+    // Then Rumoca's elimination pass, matching its real sim funnel: `eliminate_trivial`
+    // *computes* the trivial substitutions (aliases, single-unknown rows) and
+    // `apply_..._to_dae` applies them. (It does not resolve nonlinear holonomic
+    // constraints — e.g. a Cartesian pendulum's x²+y²=L² stays singular; that class
+    // is deferred, see DECISIONS.md — but it makes the reduction faithful for the
+    // cases Rumoca does handle, like Drivetrain's linear gear constraints.)
+    use rumoca_phase_structural::eliminate;
+    if let Ok(elim) = eliminate::eliminate_trivial(dae) {
+        let _ = eliminate::apply_elimination_substitutions_to_dae(dae, &elim.substitutions);
+    }
 }
 
 /// Serialize a single class from a class tree by its qualified name.

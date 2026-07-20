@@ -7,31 +7,28 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 4: Index reduction (Pantelides / dummy derivatives)** (charter §4.2.4). Specimen: a four-bar /
-parallelogram linkage — the loop-closure constraint that makes planar multibody the **index-3** domain
-Pantelides was invented for (boundary fact: an open chain in joint coordinates is a plain ODE; the
-pathology enters only with closed chains / absolute coordinates). This arc studies how a **structurally
-singular, high-index DAE** (the verdict Arc 3 left `Drivetrain` in — 93/97 matched) is reduced to an
-index-1, solvable system by **symbolically differentiating constraints and demoting states to
-algebraics (dummy derivatives)**.
+**Arc 4: Index reduction (Pantelides / dummy derivatives)** (charter §4.2.4). This arc studies how a
+**structurally singular, high-index DAE** is reduced to an index-1, solvable system by differentiating
+constraints and demoting states to algebraics (dummy derivatives). **Specimen (reframed 2026-07-20):
+`Drivetrain`** — its high index comes from *ideal gears*, i.e. **linear** constraints, which Rumoca's
+Rust-path reduction DOES handle. The observatory shows the full story: the **Structural** tab reports the
+raw DAE *singular* (93/97 matched — 4 undetermined constraint forces), the **Index reduction** tab shows
+it *reduced and solvable* (97 eq, 1 coupled block). **Done via steps 1–2.**
 
-**Rumoca capability CONFIRMED — not blocked-on-upstream** (scouted 2026-07-20): `rumoca-phase-structural::dae_prepare`
-is a **public** module with the index-reduction machinery — `expand_compound_derivatives`,
-`promote_der_algebraics_to_states`, `eliminate_derivative_aliases`, `symbolic_time_derivative_for_expr`,
-constrained dummy-state reduction (`constrained_dummy_state_*`), and direct state demotion
-(`demote_direct_assigned_states`). It is **dummy-derivative style** (Mattsson & Söderlind) rather than
-named "Pantelides," but it IS the index-reduction phase. `sort_dae` is the higher-level "DAE → BLT-sorted
-blocks (errors on singular)". Exact orchestration + how to capture *before/after* the reduction is
-increment-1 scouting.
+**Rumoca reduction: capability + a boundary** (scouted 2026-07-20). `rumoca-phase-structural::dae_prepare`
+is a **public** module with the dummy-derivative machinery; HRW replicates rumoca-sim's funnel in
+`worker::index_reduce_for_structural_analysis` (the funnel is `pub(super)`, not callable). It reduces
+**linear** high-index (gears → Drivetrain works). It does **NOT** reduce **nonlinear holonomic
+constraints** — a Cartesian pendulum's `x²+y²=L²` stays singular even via the barest 5-equation specimen
+(not a library bug; verified). So the charter's **four-bar linkage is DEFERRED** (its loop-closure is
+nonlinear) — un-park when Rumoca gains that (a possible upstream contribution). The hand-built planar
+mechanics library (`lib/PlanarMechanics.mo`) is **parked** (complete, parse-guarded), likewise the
+`Friction`/`Contact`/motor primitives for later arcs.
 
-Increment plan: (1) scout the `dae_prepare` orchestration and capture **before/after** the reduction,
-building + verifying the observatory feature first on **`Drivetrain`** (already high-index — no new library
-needed); (2) wire an **Index-reduction** stage/view into the observatory (full new-stage checklist);
-(3) build the hand-built **planar (2D) mechanics library** (portable subset — revolute joint, rigid link,
-fixed anchor; **NO MSL MultiBody**, charter §4.1/§4.3); (4) author the **four-bar linkage** specimen and
-show index-3 → reduced. Arc 1–3 done (Parse … Structural + the BLT spy-plot + the 7-specimen notebook with
-traces & narratives). **New pipeline stages must be wired into the stage-diff highlight + stage-file
-publishing AND the notebook trace/narrative** (see Claude's `hrw-stage-diff-highlight-extend` memory).
+Arc 1–3 done (Parse … Structural + the BLT spy-plot + the 7-specimen notebook with traces & narratives);
+Arc 4's index-reduction observatory feature is done on Drivetrain. **New pipeline stages must be wired
+into the stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
+`hrw-stage-diff-highlight-extend` memory).
 
 **Close-out gates under review:** Doug is separately weighing whether the differential test (System
 Modeler round-trip) and the debugger single-step should remain arc close-out gates at all — Arc 3 closed

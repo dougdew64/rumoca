@@ -96,3 +96,15 @@ at all (his words: "we should probably eliminate those two items as gates"). Pen
 treat them as satisfiable-by-acceptance, not hard blockers. If eliminated, update the ritual in
 CLAUDE.md (and note it here as done). This is Doug's call — a charter/ritual change, not an
 implementation task.
+
+## 5. Four-bar linkage specimen + un-park the planar mechanics library (Arc 4 deferred)
+
+Captured 2026-07-20 (Doug + finding). The charter's Arc-4 specimen is a four-bar / parallelogram
+linkage (nonlinear loop-closure → index-3). It is **deferred**: Rumoca's Rust-path index reduction at
+pin 8cdc7419 does not reduce nonlinear holonomic constraints (`x²+y²=L²`) — verified on the barest
+Cartesian pendulum, not a library bug (see DECISIONS.md). The hand-built planar mechanics library
+(`lib/PlanarMechanics.mo`) is drafted, complete, and parked. **Un-park when** either (a) Rumoca gains
+nonlinear-constraint reduction (worth confirming against its own test suite / a possible upstream
+contribution), or (b) we confirm the full private sim path / CasADi target handles it and expose a way
+to drive it from HRW. Then: author `FourBarLinkage.mo` from the library, wire its trace + narrative,
+and show index-3 → reduced. Arc 4's core (index reduction observed) is already met via Drivetrain.
