@@ -194,3 +194,27 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   emits them as `HRW_RUMOCA_VERSION`/`HRW_RUMOCA_REV`; the About dialog shows them via `env!(...)`. So
   it always matches what was compiled in and can never drift — a pin bump refreshes it automatically
   on the next build (no manual step; the checklist just says "verify About shows the new rev").
+
+## Arc 2 — increment 2 (instantiate + instanced-typecheck stages)
+
+- **2026-07-19 — Instantiate/Typecheck tabs show real IR via direct phase calls; two new deps.** The
+  high-level reachable pipeline exposes only `flat`/`dae`, not the intermediate `InstancedTree` or
+  typed tree. So the worker calls the phase crates directly: `rumoca_phase_instantiate::instantiate_model(&resolved, model)`
+  → the `InstanceOverlay` (Instantiate tab), then `rumoca_phase_typecheck::typecheck_instanced(&tree,
+  &mut overlay, model)` enriches the *same* overlay in place (Typecheck tab). Added `rumoca-phase-instantiate`
+  and `rumoca-phase-typecheck` as direct git deps (same pin) — **accepted dependencies** (charter
+  "ask before adding"): required because the pipeline doesn't surface the intermediates and
+  rumoca-compile doesn't re-export the phase functions.
+- **2026-07-19 — HRW's pipeline order is Resolve → Instantiate → instanced-Typecheck → Flatten,
+  diverging from Rumoca's nominal phase numbering (typecheck=3 before instantiate=4).** HRW cannot use
+  the nominal phase-3 whole-tree typecheck (fails on the full MSL — the Arc-1 deferral). It uses
+  `typecheck_instanced`, which types the instantiated overlay and therefore runs *after* instantiate.
+  The tab is labeled "Typecheck (instanced)" with a tooltip; `docs/understanding` phase numbers are
+  left intact (they describe Rumoca's nominal phases, and are Doug's authoritative reference).
+- **2026-07-19 — Per-stage "changed vs previous" green highlight + stage-file diff publishing.** Each
+  compile writes every stage's full IR to `.hrw-bridge/stages/<name>.json` (`bridge::write_stages`),
+  which the focus references so Claude diffs any pair on request. In-app, each stage's tree paints a
+  leaf value green when it differs from the previous stage's value at the same path (`CHANGED_COLOR`,
+  driven by `App::previous_stage_value` + `prev` threaded through `tree_ui`). **Standing expectation:
+  every pipeline stage added in later arcs must be wired into BOTH mechanisms** (see the file-by-file
+  checklist in Claude's memory `hrw-stage-diff-highlight-extend`).

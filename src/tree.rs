@@ -20,22 +20,30 @@ use serde_json::Value;
 use crate::bridge::Seg;
 use crate::worker::{is_def_id_key, DefInfo};
 
+/// Value color for a leaf whose value differs from the *previous* stage's value
+/// at the same path — the "this stage changed it" highlight (e.g. def_id going
+/// null→id at Resolve, type_id sentinel→id at Typecheck). Reads on light & dark.
+const CHANGED_COLOR: egui::Color32 = egui::Color32::from_rgb(0x3F, 0xB9, 0x50);
+
 /// Render a serde value as a collapsible tree under the given root label. A
 /// right-click "Ask Claude about this" on any row sets `ask` to that node's
 /// key-path from the root. `def_index` resolves `def_id`/`type_def_id` leaves to
 /// the definition they name, shown inline; "Go to definition" on a class DefId
-/// sets `nav_to` to that class's qualified name.
+/// sets `nav_to` to that class's qualified name. `prev` is the previous stage's
+/// IR aligned to the same root; leaf values that differ from it (at the same
+/// path, and only where the path exists in both) are painted green.
 pub fn tree_ui(
     ui: &mut egui::Ui,
     root_label: &str,
     value: &Value,
+    prev: Option<&Value>,
     ask: &mut Option<Vec<Seg>>,
     nav_to: &mut Option<String>,
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
 ) {
     let mut path: Vec<Seg> = Vec::new();
-    node_ui(ui, 0, root_label, value, &mut path, ask, nav_to, debug, def_index);
+    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index);
 }
 
 /// Render one node. `salt` disambiguates sibling widget ids so repeated field
@@ -47,6 +55,7 @@ fn node_ui(
     salt: usize,
     key: &str,
     value: &Value,
+    prev: Option<&Value>,
     path: &mut Vec<Seg>,
     ask: &mut Option<Vec<Seg>>,
     nav_to: &mut Option<String>,
@@ -61,7 +70,7 @@ fn node_ui(
                 .show(ui, |ui| {
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, path, ask, nav_to, debug, def_index);
+                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index);
                         path.pop();
                     }
                 });
@@ -81,7 +90,7 @@ fn node_ui(
                 .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, path, ask, nav_to, debug, def_index);
+                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index);
                         path.pop();
                     }
                 });
@@ -91,8 +100,11 @@ fn node_ui(
             row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
         }
         scalar => {
+            // Changed by this stage = the same path existed in the previous
+            // stage with a different value (new-to-this-stage paths don't count).
+            let changed = prev.is_some_and(|p| p != scalar);
             // `leaf_ui` already interacts once; do NOT interact again here.
-            let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index);
+            let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed);
             // Leaves don't expand, so left-click is a fast path to capture.
             if resp.clicked() {
                 *ask = Some(path.to_vec());
@@ -164,13 +176,14 @@ fn leaf_ui(
     key: &str,
     scalar: &Value,
     def_index: &BTreeMap<u64, DefInfo>,
+    changed: bool,
 ) -> (egui::Response, String) {
     // Reserve a paint slot up front so the hover highlight draws *behind* the
     // text rather than over it (shapes added later paint on top).
     let bg = ui.painter().add(egui::Shape::Noop);
 
     let visuals = ui.visuals();
-    let (value, color) = match scalar {
+    let (value, base_color) = match scalar {
         Value::Null => ("null".to_owned(), visuals.weak_text_color()),
         Value::Bool(b) => (b.to_string(), visuals.text_color()),
         Value::Number(n) => (n.to_string(), visuals.text_color()),
@@ -178,6 +191,8 @@ fn leaf_ui(
         // Objects/arrays never reach here.
         other => (other.to_string(), visuals.text_color()),
     };
+    // A value changed from the previous stage is highlighted green.
+    let color = if changed { CHANGED_COLOR } else { base_color };
     let key_color = ui.visuals().text_color();
     let weak_color = ui.visuals().weak_text_color();
 

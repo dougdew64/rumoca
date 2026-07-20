@@ -2004,7 +2004,9 @@ dependencies = [
  "eframe",
  "rumoca-compile",
  "rumoca-ir-ast",
+ "rumoca-phase-instantiate",
  "rumoca-phase-parse",
+ "rumoca-phase-typecheck",
  "serde_json",
 ]
 

@@ -31,6 +31,11 @@ use crate::worker::DefInfo;
 /// across Claude Code sessions and the app needs no knowledge of the session.
 pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge");
 
+/// Sub-directory holding one JSON file per pipeline stage's *full* IR, rewritten
+/// once per compile. The focus references it so Claude can diff any two stages
+/// (e.g. instantiate vs typecheck) without the focus carrying all five IRs.
+pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
+
 /// Largest node subtree inlined into the focus file; larger nodes are described
 /// by shape only (Claude can re-derive the rest from the specimen + staged IR).
 const MAX_NODE_BYTES: usize = 16 * 1024;
@@ -128,6 +133,23 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     Ok(path)
 }
 
+/// Write each stage's full IR to `.hrw-bridge/stages/<name>.json` (once per
+/// compile). A stage with no IR has its file removed, so the directory always
+/// reflects the current specimen. Diffing two stages = reading two of these.
+pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
+    fs::create_dir_all(STAGES_DIR)?;
+    for (name, value) in stages {
+        let path = Path::new(STAGES_DIR).join(format!("{name}.json"));
+        match value {
+            Some(v) => fs::write(&path, serde_json::to_string_pretty(v).unwrap_or_default())?,
+            None => {
+                let _ = fs::remove_file(&path);
+            }
+        }
+    }
+    Ok(())
+}
+
 fn build(ask: &Ask) -> Value {
     let kind = match ask.focus {
         Focus::Node { .. } => "node",
@@ -144,6 +166,14 @@ fn build(ask: &Ask) -> Value {
         "stage": ask.stage,
         "libraries": ask.libraries,
         "def_resolutions": def_resolutions(ask.def_index),
+        "stages": {
+            "dir": STAGES_DIR,
+            "note": "each <name>.json is that stage's FULL IR for the current specimen \
+                     (absent if the stage produced none). To diff two stages, read the two \
+                     files and compare — e.g. instantiate.json vs typecheck.json shows what the \
+                     instanced typecheck added (type_ids resolved, dimensions evaluated).",
+            "files": ["parse.json", "resolve.json", "instantiate.json", "typecheck.json", "flatten.json"],
+        },
     });
     if let Focus::Node { key_path, stage_value } = &ask.focus {
         doc["node"] = build_node(key_path, stage_value, ask.specimen);

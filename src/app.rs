@@ -234,6 +234,16 @@ impl App {
                     self.typecheck = typecheck;
                     self.flatten = flatten;
                     self.def_index = def_index;
+                    // Land on the furthest stage that completed cleanly.
+                    self.stage = self.last_successful_stage();
+                    // Publish every stage's full IR so Claude can diff any pair.
+                    let _ = bridge::write_stages(&[
+                        ("parse", self.parse.value.as_ref()),
+                        ("resolve", self.resolve.value.as_ref()),
+                        ("instantiate", self.instantiate.value.as_ref()),
+                        ("typecheck", self.typecheck.value.as_ref()),
+                        ("flatten", self.flatten.value.as_ref()),
+                    ]);
                 }
                 FromWorker::DefTree { name, result } => {
                     self.nav_loading = None;
@@ -266,6 +276,43 @@ impl App {
             StageKind::Instantiate => "Instantiate",
             StageKind::Typecheck => "Typecheck",
             StageKind::Flatten => "Flatten",
+        }
+    }
+
+    /// The previous stage's IR, aligned to the *current* stage's tree root, for
+    /// the "changed by this stage" green highlight. `None` for Parse (no
+    /// previous). Where structures differ (e.g. Resolve's class tree vs the
+    /// Instantiate overlay) few paths align, so little highlights — as intended.
+    fn previous_stage_value(&self) -> Option<&serde_json::Value> {
+        match self.stage {
+            StageKind::Parse => None,
+            // Parse's root is the StoredDefinition; the class is under classes.<model>.
+            StageKind::Resolve => self
+                .parse
+                .value
+                .as_ref()?
+                .get("classes")?
+                .get(self.model.as_deref()?),
+            StageKind::Instantiate => self.resolve.value.as_ref(),
+            StageKind::Typecheck => self.instantiate.value.as_ref(),
+            StageKind::Flatten => self.typecheck.value.as_ref(),
+        }
+    }
+
+    /// The furthest-along stage that produced clean IR (value present, no error
+    /// note) — where the tabs should land after a compile. Falls back to Parse.
+    fn last_successful_stage(&self) -> StageKind {
+        let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
+        if ok(&self.flatten) {
+            StageKind::Flatten
+        } else if ok(&self.typecheck) {
+            StageKind::Typecheck
+        } else if ok(&self.instantiate) {
+            StageKind::Instantiate
+        } else if ok(&self.resolve) {
+            StageKind::Resolve
+        } else {
+            StageKind::Parse
         }
     }
 
@@ -416,6 +463,16 @@ impl eframe::App for App {
                 ui.label(
                     "Shortcut: right after capturing, just type “explain” in the chat — Claude \
                      explains what you captured, no need to phrase a question.",
+                );
+                ui.add_space(6.0);
+                ui.strong("Diff stages");
+                ui.label(
+                    "Every capture publishes all five stages' full IR, so Claude can compare any \
+                     two on request. Capture anything, then ask in the chat — e.g. “what did \
+                     Typecheck change vs Instantiate?” (the resolved type_ids) or “diff Parse and \
+                     Resolve here” (def_ids filled in) — and Claude reads the two stages and reports \
+                     the differences. (A node captured on Parse/Resolve also carries its own \
+                     before/after inline, so “explain” alone shows what Resolve changed.)",
                 );
                 ui.add_space(6.0);
                 ui.strong("Navigate");
@@ -608,6 +665,12 @@ impl eframe::App for App {
         egui::CentralPanel::default().show(ui, |ui| {
             if self.nav.is_empty() {
                 // ---- Specimen stage view ----
+                // No specimen yet → no stages to show, so don't render the tab
+                // row (a highlighted tab before any compile is misleading).
+                if self.selected.is_none() {
+                    ui.weak("Select a specimen to compile.");
+                    return;
+                }
                 ui.horizontal(|ui| {
                     // One row: stage selectors + capture-stage, then a divider,
                     // then the model label + capture-model. Whole-stage/model
@@ -616,7 +679,13 @@ impl eframe::App for App {
                     ui.selectable_value(&mut self.stage, StageKind::Parse, "Parse");
                     ui.selectable_value(&mut self.stage, StageKind::Resolve, "Resolve");
                     ui.selectable_value(&mut self.stage, StageKind::Instantiate, "Instantiate");
-                    ui.selectable_value(&mut self.stage, StageKind::Typecheck, "Typecheck");
+                    ui.selectable_value(&mut self.stage, StageKind::Typecheck, "Typecheck (instanced)")
+                        .on_hover_text(
+                            "The model-scoped instanced typecheck: it types the instantiated \
+                             overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
+                             Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
+                             pre-instantiation whole-tree typecheck; it fails on the full MSL.",
+                        );
                     ui.selectable_value(&mut self.stage, StageKind::Flatten, "Flatten");
                     if self.selected.is_some()
                         && ui
@@ -652,11 +721,6 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
-                if self.selected.is_none() {
-                    ui.weak("Select a specimen to compile.");
-                    return;
-                }
-
                 let stage = self.current_stage();
                 if let Some(note) = &stage.note {
                     let color = if stage.note_is_error {
@@ -673,8 +737,9 @@ impl eframe::App for App {
                 match &stage.value {
                     Some(value) => {
                         let label = self.model.as_deref().unwrap_or("model");
+                        let prev = self.previous_stage_value();
                         egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                            tree::tree_ui(ui, label, value, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index);
+                            tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index);
                         });
                     }
                     None if stage.note.is_none() => {
@@ -710,7 +775,7 @@ impl eframe::App for App {
 
                 let entry = self.nav.last().unwrap();
                 egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index);
+                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index);
                 });
             }
         });

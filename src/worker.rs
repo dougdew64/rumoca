@@ -263,6 +263,10 @@ impl WorkerState {
         // Resolutions for the DefIds referenced in the resolved model, built
         // wherever we successfully extract a resolved class below.
         let mut def_index = BTreeMap::new();
+        // Increment 2: instantiate + instanced-typecheck stages, computed from
+        // the resolved tree while we still hold it (default = empty if resolve fails).
+        let mut instantiate = Stage::default();
+        let mut typecheck = Stage::default();
         let resolve = match &model {
             None => Stage::err("parse produced no model to resolve"),
             Some(simple_name) => {
@@ -273,6 +277,9 @@ impl WorkerState {
                         if let Some(v) = &stage.value {
                             def_index = build_def_index(&rt.0, v);
                         }
+                        let (i, t) = instantiate_and_typecheck(&rt.0, &qualified);
+                        instantiate = i;
+                        typecheck = t;
                         stage
                     }
                     Err(e) => {
@@ -293,18 +300,14 @@ impl WorkerState {
             }
         };
 
-        // --- Arc 2 pipeline stages: instantiate → typecheck (instanced) →
-        // flatten, driven by the reachable-closure pipeline. Increment 1 shows
-        // the flat IR + per-phase status; intermediate trees arrive next. ---
-        let (instantiate, typecheck, flatten) = match &model {
-            None => {
-                let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e))
-            }
+        // --- Flatten stage: from the reachable-closure pipeline (increment 1).
+        // Instantiate/Typecheck were computed above from the resolved tree. ---
+        let flatten = match &model {
+            None => Stage::err("parse produced no model to compile"),
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
-                phase_stages(report.requested_result.as_ref())
+                flatten_stage(report.requested_result.as_ref())
             }
         };
 
@@ -321,51 +324,58 @@ impl WorkerState {
     }
 }
 
-/// Map the reachable-closure pipeline's `PhaseResult` to (instantiate, typecheck,
-/// flatten) stage outcomes. Increment 1: Flatten shows the flat IR; Instantiate
-/// and Typecheck carry status only (their instanced/typed trees arrive next).
-/// Phase order is Instantiate → Typecheck → Flatten → ToDae, so a failure at one
-/// phase means earlier phases succeeded and later ones were not reached.
-fn phase_stages(result: Option<&PhaseResult>) -> (Stage, Stage, Stage) {
-    match result {
-        Some(PhaseResult::Success(cr)) => {
-            let flatten = match serde_json::to_value(&cr.flat) {
-                Ok(v) => Stage::ok(v),
-                Err(e) => Stage::err(format!("serialize flat model: {e}")),
+/// Instantiate the model directly from the resolved tree and serialize the
+/// resulting `InstanceOverlay` for the Instantiate tab; then run the instanced
+/// typecheck, which enriches the *same* overlay in place (evaluated dimensions,
+/// resolved component types), and serialize it again for the Typecheck tab.
+/// The cross-stage diff between the two shows exactly what typecheck contributed.
+fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) -> (Stage, Stage) {
+    match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
+        Ok(mut overlay) => {
+            let instantiate = Stage::ok(serde_json::to_value(&overlay).unwrap_or_default());
+            let typecheck = match rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name) {
+                Ok(()) => Stage::ok(serde_json::to_value(&overlay).unwrap_or_default()),
+                // Best-effort: still show the (partially) enriched overlay + the note.
+                Err(_diags) => Stage::recovered(
+                    serde_json::to_value(&overlay).unwrap_or_default(),
+                    "instanced typecheck reported diagnostics",
+                ),
             };
-            (
-                Stage::info("instantiate succeeded — instanced tree arrives in increment 2"),
-                Stage::info("typecheck (instanced) succeeded — typed tree arrives in increment 2"),
-                flatten,
-            )
+            (instantiate, typecheck)
         }
+        Err(e) => (
+            Stage::err(format!("instantiate failed: {e}")),
+            Stage::info("not reached (instantiate failed)"),
+        ),
+    }
+}
+
+/// Extract just the Flatten stage from the reachable-closure pipeline's
+/// `PhaseResult` (the flat IR on success, or per-phase status/error).
+fn flatten_stage(result: Option<&PhaseResult>) -> Stage {
+    match result {
+        Some(PhaseResult::Success(cr)) => match serde_json::to_value(&cr.flat) {
+            Ok(v) => Stage::ok(v),
+            Err(e) => Stage::err(format!("serialize flat model: {e}")),
+        },
         Some(PhaseResult::Failed { phase, error, diagnostics, .. }) => {
             let msg = if diagnostics.is_empty() {
                 error.clone()
             } else {
                 format!("{error}  ({} diagnostic(s))", diagnostics.len())
             };
-            let ok = || Stage::info("succeeded");
-            let na = || Stage::info("not reached (an earlier phase failed)");
             match phase {
-                FailedPhase::Instantiate => (Stage::err(msg), na(), na()),
-                FailedPhase::Typecheck => (ok(), Stage::err(msg), na()),
-                FailedPhase::Flatten => (ok(), ok(), Stage::err(msg)),
-                FailedPhase::ToDae => (
-                    ok(),
-                    ok(),
-                    Stage::info("flatten succeeded; DAE construction failed (later arc)"),
-                ),
+                FailedPhase::Flatten => Stage::err(msg),
+                FailedPhase::ToDae => {
+                    Stage::info("flatten succeeded; DAE construction failed (later arc)")
+                }
+                other => Stage::info(format!("not reached ({other} failed earlier)")),
             }
         }
         Some(PhaseResult::NeedsInner { missing_inners, .. }) => {
-            let msg = format!("needs inner declaration(s) for: {}", missing_inners.join(", "));
-            (Stage::info("succeeded"), Stage::info("succeeded"), Stage::info(msg))
+            Stage::info(format!("needs inner declaration(s) for: {}", missing_inners.join(", ")))
         }
-        None => {
-            let e = "the reachable-closure pipeline produced no result for this model";
-            (Stage::err(e), Stage::err(e), Stage::err(e))
-        }
+        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
     }
 }
 
