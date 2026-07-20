@@ -38,6 +38,10 @@ distinct from `docs/understanding` (Doug's *generic* phase theory).
 round-tripping workflow and will return to it *without* blocking arc progress — its absence is
 intentional, not an oversight.
 
+**Backlog:** unscheduled future-implementation ideas are captured in [`docs/ideas.md`](docs/ideas.md)
+(e.g. simulation/convergence-failure narratives, specimen purpose hints in the UI, directory renames).
+Candidates, not commitments — consult when planning new work; promote items into an arc/decision when picked up.
+
 ## Reference documentation
 
 - Rumoca source: **git dependency on official Rumoca** (`github.com/CogniPilot/rumoca`) pinned to

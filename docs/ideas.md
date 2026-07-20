@@ -1,0 +1,72 @@
+# Ideas — backlog for future implementation
+
+Captured ideas not yet scheduled. **These are candidates, not commitments** — no
+arc depends on them, and settled decisions live in [`DECISIONS.md`](../DECISIONS.md),
+current work in [`CLAUDE.md`](../CLAUDE.md). Promote an item here into an arc /
+decision when it's picked up.
+
+---
+
+## 1. Narratives for *simulation*, especially convergence-failure troubleshooting
+
+Captured 2026-07-20 (Doug). The Claude-authored [notebook narrative](notebook/README.md)
+is powerful for *compilation*; it should extend to **simulation** — and is likely
+*most* valuable when a simulation **fails to converge**.
+
+- **Why it matters:** convergence failures (Newton divergence on a torn block,
+  event-iteration chattering, step-size collapse, singular/ill-conditioned
+  Jacobian) are exactly where a grounded, cited narrative earns its keep — the raw
+  solver output is opaque, and the failure usually traces back to a *specific*
+  structural feature (a particular BLT block, a bad tear choice, a high-index
+  residual). A narrative can connect "the solver stalled here" to "this is the
+  coupled block from the structural phase, torn on X."
+- **Sketch:** a **simulation trace** analogous to the compilation trace — solver
+  logs, per-step residual/error history, the failing block/tear, event log,
+  Jacobian conditioning — captured durably, with a `narrative.md` that diagnoses
+  the failure against it. Ties directly to the matching/BLT/tearing work: the
+  structural report is the map a convergence post-mortem reads.
+- **When:** aligns with the simulation arcs (charter §4.2, arcs 6–7). Revisit then;
+  the trace+narrative machinery ([`examples/gen_trace.rs`](../examples/gen_trace.rs))
+  is the pattern to extend.
+
+## 2. Specimen *purpose hints* — in the file and in the app UI
+
+Captured 2026-07-20 (Doug). The app's left-hand specimen list shows only filenames
+— no hint of *why* each specimen exists (e.g. "demonstrates Pantelides' algorithm",
+"a genuine algebraic loop"). Surface a one-line purpose both in the specimen file
+and in the UI.
+
+- **Source of truth:** every specimen already has a model description string
+  (`model X "…"`), and the notebook's "Why this specimen exists" section states the
+  phenomenon precisely — keep the hint consistent with both. Consider a lightweight
+  convention (the description string, or a dedicated structured comment/annotation)
+  so it's machine-readable.
+- **UI:** show the hint in the LHS list (secondary text under the filename, or a
+  hover tooltip). The compile already yields the model; the description is available
+  from `parse.json` (or a cheap pre-compile scan of the `"…"` after the model name).
+- **Payoff:** turns the specimen list into a navigable index of *what each teaches*
+  — small change, directly serves "identify context conveniently."
+
+## 3. Directory naming / organization
+
+Captured 2026-07-20 (Doug). Two naming problems:
+
+- **`specimens/` ↔ `docs/notebook/` coupling is invisible.** They are tightly
+  related (one notebook entry per specimen) but the names don't say so.
+  - *Options:* (a) lightest — rename `docs/notebook/` to something that signals the
+    tie (e.g. `docs/specimen-lab/`) and lean on cross-links; (b) a shared parent;
+    (c) per-specimen folders holding both the `.mo` and its notebook — the strongest
+    signal but the biggest restructure (fights the app's flat `specimens/` scan and
+    the many test paths that hard-code `specimens/<X>.mo`).
+  - *Lean:* (a) — signal the relationship by name + cross-reference; defer the deep
+    restructure unless it clearly pays off.
+- **`docs/understanding/` is poorly named** — "understanding of *what*?" It is
+  Doug's canonical explanation of the **Rumoca compiler phases**.
+  - *Candidate names:* `docs/phases/`, `docs/rumoca-phases/`, `docs/compiler-phases/`.
+    *Lean:* `docs/rumoca-phases/` (says exactly what it is, and distinguishes it from
+    the specimen-specific notebook).
+  - *Impact (so a future rename is scoped, not surprising):* `src/field_help.rs`
+    (`chapter_for_stage` paths), the notebook narratives' `../../understanding/…`
+    links, the app "Read: chapter" button, `.vscode/settings.json` editor
+    associations glob, and references in `CLAUDE.md` / `docs/updating-rumoca.md`.
+    Mechanical but wide — do it as one deliberate sweep.
