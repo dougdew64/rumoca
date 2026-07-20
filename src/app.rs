@@ -12,7 +12,9 @@ use eframe::egui;
 use std::collections::{BTreeMap, HashMap};
 
 use crate::bridge::{self, Ask, Focus, Seg};
+use crate::canvas::Canvas;
 use crate::field_help;
+use crate::spyplot;
 use crate::tree;
 use crate::worker::{DefInfo, FromWorker, Stage, ToWorker, Worker};
 
@@ -42,6 +44,15 @@ enum StageKind {
     Typecheck,
     Flatten,
     Structural,
+}
+
+/// How to render the Structural stage: the custom BLT spy-plot (the visual
+/// emitter) or the generic serde tree over the same report. Only this stage has
+/// a custom view; every other stage is always the tree.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum StructuralView {
+    SpyPlot,
+    Tree,
 }
 
 /// One level of "go to definition" navigation: a class extracted from the
@@ -96,6 +107,10 @@ pub struct App {
     // Generic (build-time) field help + the field the user last left-clicked.
     field_help: HashMap<String, String>,
     selected_field: Option<String>,
+
+    // Arc 3: the Structural stage's custom BLT spy-plot and its pan/zoom camera.
+    structural_view: StructuralView,
+    spy_canvas: Canvas,
 }
 
 impl App {
@@ -150,6 +165,8 @@ impl App {
             show_about: false,
             field_help: field_help::load(),
             selected_field: None,
+            structural_view: StructuralView::SpyPlot,
+            spy_canvas: Canvas::default(),
         };
         app.rescan();
         app.load_libraries(); // load MSL at startup so resolve works immediately
@@ -239,6 +256,8 @@ impl App {
                     self.flatten = flatten;
                     self.structural = structural;
                     self.def_index = def_index;
+                    // Re-fit the spy-plot camera to the new report's matrix.
+                    self.spy_canvas.request_fit();
                     // Land on the furthest stage that completed cleanly.
                     self.stage = self.last_successful_stage();
                     // Publish every stage's full IR so Claude can diff any pair.
@@ -488,6 +507,15 @@ impl eframe::App for App {
                      before/after inline, so “explain” alone shows what Resolve changed.)",
                 );
                 ui.add_space(6.0);
+                ui.strong("Structural (spy-plot)");
+                ui.label(
+                    "On the Structural stage, the BLT block structure is drawn as a spy-plot: \
+                     diagonal blocks in evaluation order — scalar solves are single cells, coupled \
+                     algebraic loops are boxes. Drag to pan, scroll to zoom, hover a block to see its \
+                     equations/unknowns/tearing, and click it to capture it for “explain”. Toggle to \
+                     Tree for the raw report.",
+                );
+                ui.add_space(6.0);
                 ui.strong("Navigate");
                 ui.label(
                     "Some fields hold a DefId that resolves to a class — the tree shows it inline \
@@ -669,6 +697,7 @@ impl eframe::App for App {
         // on after the panel closure releases its borrow of `self`.
         let mut node_ask: Option<Vec<Seg>> = None;
         let mut debug_ask: Option<Vec<Seg>> = None;
+        let mut canvas_capture: Option<Vec<Seg>> = None;
         let mut nav_to: Option<String> = None;
         let mut want_stage_ask = false;
         let mut want_model_ask = false;
@@ -704,7 +733,8 @@ impl eframe::App for App {
                         .on_hover_text(
                             "Structural analysis of the DAE (Rumoca phase 7): maximum matching \
                              (equation↔unknown), BLT blocks (evaluation order; size>1 = algebraic \
-                             loop), and tearing. Custom incidence + BLT spy-plot views land next.",
+                             loop), and tearing. Shown as a BLT spy-plot (drag to pan, scroll to \
+                             zoom, click a block to capture) or the raw report tree.",
                         );
                     if self.selected.is_some()
                         && ui
@@ -740,31 +770,63 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
-                let stage = self.current_stage();
-                if let Some(note) = &stage.note {
-                    let color = if stage.note_is_error {
-                        ui.visuals().error_fg_color
-                    } else {
-                        ui.visuals().weak_text_color()
-                    };
-                    egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
-                        ui.colored_label(color, egui::RichText::new(note).monospace());
+                // Stage note (in its own scope so its borrow of `self` ends
+                // before the value section, which may borrow `self` mutably for
+                // the spy-plot canvas).
+                {
+                    let stage = self.current_stage();
+                    if let Some(note) = &stage.note {
+                        let color = if stage.note_is_error {
+                            ui.visuals().error_fg_color
+                        } else {
+                            ui.visuals().weak_text_color()
+                        };
+                        egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
+                            ui.colored_label(color, egui::RichText::new(note).monospace());
+                        });
+                        ui.separator();
+                    }
+                }
+
+                // The Structural stage offers a custom BLT spy-plot alongside the
+                // generic tree; every other stage is tree-only.
+                let structural_ready =
+                    self.stage == StageKind::Structural && self.structural.value.is_some();
+                if structural_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
+                        ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
                     ui.separator();
                 }
 
-                match &stage.value {
-                    Some(value) => {
-                        let label = self.model.as_deref().unwrap_or("model");
-                        let prev = self.previous_stage_value();
-                        egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                            tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index);
-                        });
+                if structural_ready && self.structural_view == StructuralView::SpyPlot {
+                    // Build the plot (owns its strings, so the borrow of
+                    // `self.structural` is released before we touch `spy_canvas`).
+                    match self.structural.value.as_ref().and_then(spyplot::Plot::from_report) {
+                        Some(plot) => {
+                            ui.weak(plot.caption());
+                            plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture);
+                        }
+                        None => {
+                            ui.weak("(the structural report has no BLT blocks to plot)");
+                        }
                     }
-                    None if stage.note.is_none() => {
-                        ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
+                } else {
+                    let stage = self.current_stage();
+                    match &stage.value {
+                        Some(value) => {
+                            let label = self.model.as_deref().unwrap_or("model");
+                            let prev = self.previous_stage_value();
+                            egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
+                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index);
+                            });
+                        }
+                        None if stage.note.is_none() => {
+                            ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
+                        }
+                        None => {}
                     }
-                    None => {}
                 }
             } else {
                 // ---- Navigation view (a class reached via "Go to definition") ----
@@ -807,6 +869,10 @@ impl eframe::App for App {
         }
         if let Some(name) = nav_to {
             self.navigate_to(name);
+        }
+        // A spy-plot block click is an "explain" capture, same as a tree click.
+        if canvas_capture.is_some() {
+            node_ask = canvas_capture;
         }
         // Populate the generic field-help panel from whichever node was clicked.
         if let Some(kp) = debug_ask.as_ref().or(node_ask.as_ref()) {

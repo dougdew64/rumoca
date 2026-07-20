@@ -6,7 +6,9 @@
 
 mod app;
 mod bridge;
+mod canvas;
 mod field_help;
+mod spyplot;
 mod tree;
 mod worker;
 

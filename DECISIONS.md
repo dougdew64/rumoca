@@ -242,3 +242,18 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   (Pantelides, Arc 4). Not a specimen defect; the arc's coupled-block study comes from the
   feedback-loop specimen (increment 4). RotationalInertia (a plain ODE) analyzes cleanly (12 scalar
   blocks, 0 coupled).
+- **2026-07-20 — Increment 2: the first custom view is a BLT block spy-plot, NOT a raw incidence
+  matrix.** Scouting the structural API found the raw incidence (`eq_unknowns` — each equation's set
+  of referenced unknowns, the off-diagonal sparsity) is built by `incidence::build_incidence`, which
+  is `pub(crate)`; `matching` and `equation_label` are private too. `build_solver_sparsity_triplets`
+  is public but is RHS-only Jacobian sparsity in solver-column order with no names — it won't line up
+  with the matching. So the only public, named, matching-consistent data is `StructuralReport.matching`
+  + `.blocks`. Doug chose (over "reimplement incidence in HRW" and "make build_incidence pub upstream")
+  to **build the BLT block spy-plot from the report now** — the arc's real payoff, honest and robust.
+  `src/spyplot.rs` draws the diagonal blocks (scalar cells + coupled boxes with tearing) in BLT order;
+  inter-block (lower-triangular) couplings are *not* drawn because they need the unexposed incidence,
+  and reproducing it in HRW risks a subtly-wrong matrix the charter's phase-boundary rule forbids.
+  Built on `src/canvas.rs`, a reusable pan/zoom canvas scaffold (world↔screen transform, drag-pan,
+  scroll-zoom-about-pointer, fit-to-content) for every future custom-`Painter` view. Spy-plot blocks
+  are clickable → capture `blocks[i]` into the bridge, so the visual emitter feeds the question
+  channel. A `Spy-plot | Tree` toggle keeps the generic report tree available.
