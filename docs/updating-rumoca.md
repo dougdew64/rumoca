@@ -31,7 +31,7 @@ and the per-specimen traces) need explicit regeneration.
   surfacing. Removed fields hint at API breakage step 2 should also have caught.
 
 ## 5. Regenerate specimen traces + review narratives
-- For each specimen with a notebook entry (`docs/notebook/<Model>/`):
+- For each specimen with a notebook entry (`docs/specimen-notebook/<Model>/`):
   `cargo run --example gen_trace -- <SpecimenName>` — rewrites the six stage IR files under
   `trace/` and the `trace/manifest.json` (which stamps the new Rumoca rev).
 - **Review the trace diff**, then re-read that specimen's `narrative.md` against it. The narrative
@@ -39,7 +39,7 @@ and the per-specimen traces) need explicit regeneration.
   have gone stale (a changed residual, a different tearing, a new/removed block). Update the prose to
   match — the trace is ground truth, the narrative is the story told about it.
 
-## 6. Refresh `docs/understanding/` — only if phases changed, and only by Doug
+## 6. Refresh `docs/compiler-phases/` — only if phases changed, and only by Doug
 - These are Doug's authored explanations, matching a specific Rumoca commit. Claude does **not**
   rewrite them automatically. If a phase's behavior changed materially, Doug updates the chapter
   (or asks Claude to draft a diff for ratification). Their being pinned-behind is acceptable;

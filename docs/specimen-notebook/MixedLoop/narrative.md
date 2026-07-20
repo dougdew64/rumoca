@@ -39,7 +39,7 @@ forced the block *order* to matter. Here it does.
 ## The pipeline, stage by stage
 
 Parse / Resolve / Instantiate / Typecheck are generic and near pass-throughs for a
-self-contained scalar model (see [`docs/understanding`](../../understanding/) and
+self-contained scalar model (see [`docs/compiler-phases`](../../compiler-phases/) and
 the [`SingleInertia`](../SingleInertia/narrative.md) walk). The action is at the
 end.
 
@@ -57,7 +57,7 @@ from the trace):
 | `f_x[4]` | `result − outputGain·measurement` | `result = outputGain·measurement` |
 
 `setpoint` depends only on a parameter; `result` depends only on `measurement`.
-Neither is in the loop. [Phase 5](../../understanding/phase5_flatten/flatten.md).
+Neither is in the loop. [Phase 5](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### Structural → [`trace/structural.json`](trace/structural.json)
 Matching + Tarjan sort the five equations into **three blocks in BLT order**:
@@ -95,8 +95,8 @@ iterate.
   BLT arrangement short of high index.
 
 ## References
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md).
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md).
 On BLT (block-lower-triangular) ordering via SCCs: R. E. Tarjan, "Depth-first
 search and linear graph algorithms," *SIAM J. Comput.* 1(2):146–160, 1972
 ([doi:10.1137/0201010](https://epubs.siam.org/doi/10.1137/0201010)); F. E. Cellier

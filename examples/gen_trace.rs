@@ -1,5 +1,5 @@
 //! Generate a specimen's durable **compilation trace log** — the IR of every
-//! pipeline stage (parse … structural) written under `docs/notebook/<Model>/trace/`,
+//! pipeline stage (parse … structural) written under `docs/specimen-notebook/<Model>/trace/`,
 //! plus a `manifest.json` recording the Rumoca rev and a specimen content hash.
 //!
 //! The trace is the *ground truth* the specimen's `narrative.md` is written
@@ -54,7 +54,7 @@ fn main() {
         ("structural", &structural),
     ];
 
-    let trace_dir = PathBuf::from(format!("{root}/docs/notebook/{model}/trace"));
+    let trace_dir = PathBuf::from(format!("{root}/docs/specimen-notebook/{model}/trace"));
     std::fs::create_dir_all(&trace_dir).expect("create trace dir");
 
     let mut manifest_stages = serde_json::Map::new();

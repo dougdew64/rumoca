@@ -39,20 +39,20 @@ into a straight line.
 
 ## The pipeline, stage by stage
 
-The early stages are generic (see [`docs/understanding`](../../understanding/));
+The early stages are generic (see [`docs/compiler-phases`](../../compiler-phases/));
 the interesting content is at Flatten → Structural.
 
 - **Parse → [`trace/parse.json`](trace/parse.json)** — the AST as written: two
   parameters, two `Real` variables with `start` attributes, two equations. All
-  `def_id`s null. [Phase 1](../../understanding/phase1_parsing_and_ast/parsing_and_ast.md).
+  `def_id`s null. [Phase 1](../../compiler-phases/phase1_parsing_and_ast/parsing_and_ast.md).
 - **Resolve → [`trace/resolve.json`](trace/resolve.json)** — identities assigned;
   each `Real` resolves to the builtin, each component gets a `def_id`.
-  [Phase 2](../../understanding/phase2_resolve_and_scope/resolve_and_scope.md).
+  [Phase 2](../../compiler-phases/phase2_resolve_and_scope/resolve_and_scope.md).
 - **Instantiate / Typecheck → [`trace/instantiate.json`](trace/instantiate.json),
   [`trace/typecheck.json`](trace/typecheck.json)** — near pass-throughs: the model
   is already flat and scalar, so there is no hierarchy to unfold and dimensions are
-  trivially scalar. [Phase 4](../../understanding/phase4_instantiate/instantiate.md) ·
-  [Phase 3](../../understanding/phase3_typecheck_and_dims/typecheck_and_dims.md).
+  trivially scalar. [Phase 4](../../compiler-phases/phase4_instantiate/instantiate.md) ·
+  [Phase 3](../../compiler-phases/phase3_typecheck_and_dims/typecheck_and_dims.md).
 
 ### Flatten → [`trace/flatten.json`](trace/flatten.json)
 Four variables — `J`, `tau` (**parameters**, known) and `phi`, `w` (**states**) —
@@ -67,7 +67,7 @@ call):
 The unknowns the structural phase must solve for are the **highest derivatives**
 `der(phi)` and `der(w)` — *that* is what a state contributes to the DAE: not the
 state value itself (the integrator supplies that), but its derivative, to be
-determined each step. [Phase 5](../../understanding/phase5_flatten/flatten.md).
+determined each step. [Phase 5](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### Structural → [`trace/structural.json`](trace/structural.json)
 Matching pairs each equation with the derivative it determines, and Tarjan finds
@@ -102,8 +102,8 @@ other specimen is measured against.
   add rigid constraints. Same phase, opposite verdict.
 
 ## References
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md).
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md).
 For DAE index and why an *explicit ODE* is index-1: F. E. Cellier & E. Kofman,
 *Continuous System Simulation*, Springer, 2006, ISBN 978-0-387-26102-7
 ([doi:10.1007/0-387-30260-3](https://link.springer.com/book/10.1007/0-387-30260-3)).

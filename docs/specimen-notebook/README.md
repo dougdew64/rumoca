@@ -1,10 +1,10 @@
 # HRW Lab Notebook
 
-One directory per specimen — `docs/notebook/<Model>/` — recording how Rumoca
+One directory per specimen — `docs/specimen-notebook/<Model>/` — recording how Rumoca
 compiles it, anchored to the specimen's actual IR. This is **HRW's own
-specimen-driven record**, kept deliberately distinct from `docs/understanding`
+specimen-driven record**, kept deliberately distinct from `docs/compiler-phases`
 (Doug's canonical, *general* explanation of each compiler phase). The notebook is
-*specimen-specific*; `docs/understanding` is *phase-generic*, and the narratives
+*specimen-specific*; `docs/compiler-phases` is *phase-generic*, and the narratives
 link back to it.
 
 Each entry has two parts:
@@ -16,14 +16,14 @@ Each entry has two parts:
 - **`narrative.md`** — the **compilation narrative**: the grounded story of *this*
   specimen's trip through the pipeline, foregrounding the phenomenon the specimen
   was authored to trigger, citing specific trace locations, and linking outward to
-  the relevant `docs/understanding` chapters and external math references. Claude
+  the relevant `docs/compiler-phases` chapters and external math references. Claude
   writes and maintains it against the trace; every "interesting" claim points at a
   trace entry or Rumoca source, so a trace diff flags any prose that has gone stale.
 
 ## Adding / regenerating an entry
 
 ```text
-cargo run --example gen_trace -- <Model>     # (re)writes docs/notebook/<Model>/trace/
+cargo run --example gen_trace -- <Model>     # (re)writes docs/specimen-notebook/<Model>/trace/
 ```
 
 Then write `narrative.md` (start from [`_TEMPLATE.md`](_TEMPLATE.md)), grounded in

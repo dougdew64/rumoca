@@ -22,7 +22,7 @@ sibling specimens (link them).>
 
 ## The pipeline, stage by stage
 
-<Early stages briefly (they are generic — link `docs/understanding`); expand the
+<Early stages briefly (they are generic — link `docs/compiler-phases`); expand the
 boundary where this specimen gets interesting. Cite the trace file at each step.>
 
 - **Parse → [`trace/parse.json`](trace/parse.json)** — …
@@ -47,5 +47,5 @@ from `trace/manifest.json`.>
 
 ## References
 
-<`docs/understanding` chapters for the phases in focus, plus durable external
+<`docs/compiler-phases` chapters for the phases in focus, plus durable external
 citations (textbook + section, DOIs, the Modelica spec) — verify links when added.>

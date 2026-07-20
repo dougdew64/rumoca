@@ -40,7 +40,7 @@ and to *tear* it. It is not numerically hard (one linear solve, `measurement =
 ## The pipeline, stage by stage
 
 Each stage below names the trace file to open and what is worth seeing in it. The
-early stages are generic (covered by [`docs/understanding`](../../understanding/));
+early stages are generic (covered by [`docs/compiler-phases`](../../compiler-phases/));
 the action is at **Flatten → Structural**, so that boundary gets the deep read.
 
 ### 1 · Parse → [`trace/parse.json`](trace/parse.json)
@@ -48,7 +48,7 @@ The raw AST of the source: three `component_clause` declarations for the
 parameters, three for the unknowns, and three equations in the `equations` list —
 written exactly as typed, with all `def_id` fields still `null` (parsing assigns
 no identities). Nothing specimen-specific yet; this is just faithful syntax.
-See [Phase 1 · Parsing & AST](../../understanding/phase1_parsing_and_ast/parsing_and_ast.md).
+See [Phase 1 · Parsing & AST](../../compiler-phases/phase1_parsing_and_ast/parsing_and_ast.md).
 
 ### 2 · Resolve → [`trace/resolve.json`](trace/resolve.json)
 Names become identities. Every declared component now carries a `def_id`
@@ -57,7 +57,7 @@ Names become identities. Every declared component now carries a `def_id`
 the builtin `def_id` 1. This is the *assign identities* half of scope resolution —
 the exact assignment you can watch in the debugger at
 `registration.rs` (see [docs/debug-set-sites.md](../../debug-set-sites.md)).
-See [Phase 2 · Resolve & Scope](../../understanding/phase2_resolve_and_scope/resolve_and_scope.md).
+See [Phase 2 · Resolve & Scope](../../compiler-phases/phase2_resolve_and_scope/resolve_and_scope.md).
 
 ### 3 · Instantiate → [`trace/instantiate.json`](trace/instantiate.json)
 The resolved class is expanded into a concrete instance (the `InstanceOverlay`).
@@ -65,7 +65,7 @@ Because `ProportionalLoop` is flat already — no submodels, no connectors — t
 stage is nearly a pass-through: no hierarchy to unfold, no `connect` to expand.
 That *quietness* is itself the lesson — contrast it with `Drivetrain`, where
 Instantiate does heavy lifting across electrical/rotational/translational
-connectors. See [Phase 4 · Instantiate](../../understanding/phase4_instantiate/instantiate.md).
+connectors. See [Phase 4 · Instantiate](../../compiler-phases/phase4_instantiate/instantiate.md).
 
 ### 4 · Typecheck (instanced) → [`trace/typecheck.json`](trace/typecheck.json)
 The instanced overlay is enriched in place: component `type_id`s are resolved and
@@ -73,7 +73,7 @@ dimensions evaluated (all scalar `Real` here). Diff this against
 `instantiate.json` to see exactly what typecheck added — in the app that is the
 green "changed vs previous stage" highlight. For a scalar model the delta is
 small; the machinery matters more on array/dimensioned specimens.
-See [Phase 3 · Typecheck & Dimensions](../../understanding/phase3_typecheck_and_dims/typecheck_and_dims.md).
+See [Phase 3 · Typecheck & Dimensions](../../compiler-phases/phase3_typecheck_and_dims/typecheck_and_dims.md).
 
 ### 5 · Flatten → [`trace/flatten.json`](trace/flatten.json)
 The model becomes a flat **DAE** in residual form `f(x) = 0`. Two facts in this
@@ -93,7 +93,7 @@ file are the crux of the whole specimen:
 
 **Zero states, three algebraic unknowns.** That is the structural signature of an
 idealized (integrator-free) loop, and it is what guarantees the next stage finds a
-loop instead of an ODE. See [Phase 5 · Flatten](../../understanding/phase5_flatten/flatten.md).
+loop instead of an ODE. See [Phase 5 · Flatten](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### 6 · Structural → [`trace/structural.json`](trace/structural.json)
 This is the arc's phase, and it does not rewrite the DAE — it **analyzes** it,
@@ -191,8 +191,8 @@ Pantelides below.
 ## References
 
 **Rumoca phase docs (in this repo):**
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md)
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md)
 (matching, BLT, tearing drill-downs).
 
 **External:**

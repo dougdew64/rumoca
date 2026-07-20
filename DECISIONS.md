@@ -94,8 +94,8 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   (expanded to whole lines). Fully generic — no Rumoca types — so the one-generic-tree rule (§4.4)
   holds. `Location` is preferred (self-contained file_name); `span` falls back to the specimen file.
 - **2026-07-19 — Learnings accumulate in a per-specimen HRW lab notebook, Doug-authored.**
-  `docs/notebook/<Specimen>.md` (template + README committed) records specimen↔Rumoca-feature findings
-  — HRW's own record, kept distinct from the rumoca clone's `docs/understanding` (Doug's canonical
+  `docs/specimen-notebook/<Specimen>.md` (template + README committed) records specimen↔Rumoca-feature findings
+  — HRW's own record, kept distinct from the rumoca clone's `docs/compiler-phases` (Doug's canonical
   phase docs, *never* silently written by Claude). **Doug authors**; Claude drafts on request and
   challenges. Rationale: the goal is Doug learning Rumoca, and writing the synthesis is the learning —
   auto-populating would defeat the purpose. The bridge produces the conversations; keepers get
@@ -146,11 +146,11 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
 
 ## Arc 1 — repo/dependency reorganization
 
-- **2026-07-19 — `docs/understanding` moved into HRW; Rumoca switched to a pinned git dependency.**
+- **2026-07-19 — `docs/compiler-phases` moved into HRW; Rumoca switched to a pinned git dependency.**
   Doug's phase-explanation docs (11 phases + drill-downs) were the only fork-only content in his
   local Rumoca clone (`dougs-docs` branch = official `upstream/main` + 2 docs-only commits; `crates/`
-  byte-identical to upstream). Verified, then: (1) moved `docs/understanding/` into this repo next to
-  `docs/notebook/` (source links de-linked to crate-relative inline-code refs, since HRW has no
+  byte-identical to upstream). Verified, then: (1) moved `docs/compiler-phases/` into this repo next to
+  `docs/specimen-notebook/` (source links de-linked to crate-relative inline-code refs, since HRW has no
   `crates/`); (2) switched `Cargo.toml` from path deps on `../rumoca` to **git deps on official
   `github.com/CogniPilot/rumoca` pinned to `rev = 8cdc7419`** — the exact commit HRW was built
   against. Rationale: a path dep tracks whatever the clone is checked out to (unpinned); a `rev` +
@@ -166,7 +166,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   deferred.** The Arc-1 help-system + reorg work is committed/pushed (commit `23f8ccc`). Two close-out
   ritual items are intentionally left open so arc progress isn't blocked while Doug thinks through the
   workflow: (1) **the differential test** — round-tripping `RotationalInertia.mo` through System
-  Modeler vs Rumoca (ritual #1); (2) **the per-specimen lab notebook** (`docs/notebook/`, still just
+  Modeler vs Rumoca (ritual #1); (2) **the per-specimen lab notebook** (`docs/specimen-notebook/`, still just
   template + README). Doug's decision (2026-07-19): advance to Arc 2 now and **revisit round-tripping
   + notebooking after he has given the matter consideration** — their absence is deliberate, not an
   oversight. CLAUDE.md's Current Arc section updated to Arc 2 and carries this deferral note.
@@ -179,7 +179,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   "About this field" panel shows, instantly on left-click, the field's own Rumoca `///` doc — 194
   fields extracted from the pinned `rumoca-ir-ast` into `src/field_help.json`, embedded via
   `include_str!` (`src/field_help.rs`). Keyed by field name (v1; type-path disambiguation deferred).
-  A "Read: Phase N" button opens the matching `docs/understanding` chapter in VS Code's Markdown
+  A "Read: Phase N" button opens the matching `docs/compiler-phases` chapter in VS Code's Markdown
   **preview** (scoped `workbench.editorAssociations` in `.vscode/settings.json`). This resurrects the
   originally-superseded lookup layer, correctly scoped to the generic tier; the bridge + chat `explain`
   remain the specific tier.
@@ -188,7 +188,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   via `cargo metadata` (robust to the cargo-cache hash/rev — no hard-coded path) and rewrites
   `src/field_help.json`. Verified byte-identical to the original ad-hoc extraction. The broader
   "what to do after a Rumoca pin bump" process lives in `docs/updating-rumoca.md`: compiler + tests
-  drive code fixes, one command refreshes field help, `docs/understanding` is Doug-only.
+  drive code fixes, one command refreshes field help, `docs/compiler-phases` is Doug-only.
 - **2026-07-19 — Rumoca version in Help/About is derived, not hand-maintained.** A `build.rs` reads
   `rumoca-compile`'s version + git commit from `Cargo.lock` (`cargo:rerun-if-changed=Cargo.lock`) and
   emits them as `HRW_RUMOCA_VERSION`/`HRW_RUMOCA_REV`; the About dialog shows them via `env!(...)`. So
@@ -209,7 +209,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   diverging from Rumoca's nominal phase numbering (typecheck=3 before instantiate=4).** HRW cannot use
   the nominal phase-3 whole-tree typecheck (fails on the full MSL — the Arc-1 deferral). It uses
   `typecheck_instanced`, which types the instantiated overlay and therefore runs *after* instantiate.
-  The tab is labeled "Typecheck (instanced)" with a tooltip; `docs/understanding` phase numbers are
+  The tab is labeled "Typecheck (instanced)" with a tooltip; `docs/compiler-phases` phase numbers are
   left intact (they describe Rumoca's nominal phases, and are Doug's authoritative reference).
 - **2026-07-19 — Per-stage "changed vs previous" green highlight + stage-file diff publishing.** Each
   compile writes every stage's full IR to `.hrw-bridge/stages/<name>.json` (`bridge::write_stages`),
@@ -270,14 +270,14 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `coupled_block_count == 0`, so the scalar-vs-coupled distinction can't silently regress). The
   System Modeler differential round-trip stays deferred per the arc's standing note.
 - **2026-07-20 — Per-specimen lab notebook activated: trace + narrative.** Doug un-deferred the
-  `docs/notebook/` notebook, arriving (during design discussion) at a concrete shape: **specimen +
-  durable compilation trace + Claude-written narrative**. Each `docs/notebook/<Model>/` holds `trace/`
+  `docs/specimen-notebook/` notebook, arriving (during design discussion) at a concrete shape: **specimen +
+  durable compilation trace + Claude-written narrative**. Each `docs/specimen-notebook/<Model>/` holds `trace/`
   (the six stage IR files — parse…structural — + `manifest.json` stamping the Rumoca rev + an FNV-1a
   specimen hash) and `narrative.md` (the grounded story of that specimen's compilation, foregrounding
-  the designed phenomenon, citing specific trace locations, linking to `docs/understanding` + external
+  the designed phenomenon, citing specific trace locations, linking to `docs/compiler-phases` + external
   math references). **Why trace-anchored:** the trace is ground truth, so every "interesting" claim in
   the narrative is checkable and a trace diff flags staleness — the guard against confident-but-wrong
-  AI prose. **Why not just docs/understanding:** those are Doug's *generic* phase theory; the notebook
+  AI prose. **Why not just docs/compiler-phases:** those are Doug's *generic* phase theory; the notebook
   is Claude's *specimen-specific* synthesis (links back to them). `ProportionalLoop` is the pilot.
   - **Trace generator (`examples/gen_trace.rs`):** required a **bin→lib split** — added `src/lib.rs`
     exposing the modules + `worker::compile_specimen` (headless, reuses the exact worker path so traces
@@ -288,8 +288,8 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
     foregrounds the arc's boundary (flatten→structural) but the trace carries **all six** stages —
     restricting it would be arbitrary since the app computes them all anyway (Doug's point).
   - **UI:** a **"Read: specimen narrative"** button in the right panel (beside the generic-chapter
-    button), shown only when `docs/notebook/<model>/narrative.md` exists — closes the dual-emitter loop
-    (visual channel → durable narrative). `editorAssociations` now opens `docs/notebook/**/*.md` in
+    button), shown only when `docs/specimen-notebook/<model>/narrative.md` exists — closes the dual-emitter loop
+    (visual channel → durable narrative). `editorAssociations` now opens `docs/specimen-notebook/**/*.md` in
     Markdown preview too. Regeneration on pin bump is `docs/updating-rumoca.md` step 5.
 - **2026-07-20 — Three spy-plot-diversity specimens: `MixedLoop`, `TwoLoops`, `NonlinearLoop`.** Added
   to fill gaps in what the BLT spy-plot had shown (previously only all-scalar or one all-consuming

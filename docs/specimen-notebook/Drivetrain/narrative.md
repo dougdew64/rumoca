@@ -52,7 +52,7 @@ flattens. The verdict only lands at the structural phase.
   **124 variables, 94 equations**, with the full connector expansion across all
   three domains (electrical potentials/currents, rotational angles/torques,
   translational positions/forces, and the ideal-gear constraint equations). It
-  flattens without error — the model is well-formed. [Phase 5](../../understanding/phase5_flatten/flatten.md).
+  flattens without error — the model is well-formed. [Phase 5](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### Structural → *no report* (see [`trace/manifest.json`](trace/manifest.json))
 Here the compiler stops with a **structural singularity**. The manifest records the
@@ -99,8 +99,8 @@ earlier stage is present.
   Drivetrain is what happens when you chain such inertias through *ideal* gears.
 
 ## References
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md).
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md).
 - C. C. Pantelides, "The consistent initialization of differential-algebraic
   systems," *SIAM J. Sci. Stat. Comput.* 9(2):213–231, 1988
   ([doi:10.1137/0909014](https://epubs.siam.org/doi/10.1137/0909014)) — the

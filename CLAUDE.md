@@ -22,16 +22,16 @@ plan: (1) structural report in a **Structural** generic-tree tab, (2) incidence 
 field-help / stage-diff systems are done. New pipeline stages must be wired into the stage-diff
 highlight + stage-file publishing (see Claude's `hrw-stage-diff-highlight-extend` memory).
 
-**Per-specimen lab notebook (`docs/notebook/`) — now active.** Each entry pairs a durable
+**Per-specimen lab notebook (`docs/specimen-notebook/`) — now active.** Each entry pairs a durable
 **compilation trace** (`trace/` = the six stage IR files + a `manifest.json` stamping the Rumoca
 rev + specimen hash, produced by `cargo run --example gen_trace -- <Model>`) with a Claude-written
 **`narrative.md`** — the grounded story of *that specimen's* trip through the pipeline, foregrounding
 the phenomenon the specimen was designed to trigger, citing specific trace locations, and linking to
-`docs/understanding` chapters + external math references. The app's right panel has a **"Read:
+`docs/compiler-phases` chapters + external math references. The app's right panel has a **"Read:
 specimen narrative"** button beside the generic-chapter button (visual channel → durable narrative).
 `ProportionalLoop` is the pilot entry; regenerate traces + review narratives on a pin bump (see
 `docs/updating-rumoca.md` step 5). The notebook is *specimen-specific* (Claude's synthesis); it is
-distinct from `docs/understanding` (Doug's *generic* phase theory).
+distinct from `docs/compiler-phases` (Doug's *generic* phase theory).
 
 **Deferred — revisit after Doug's consideration:** the Arc-1/2 close-out differential tests
 (round-tripping specimens through System Modeler vs Rumoca). Doug is deliberately thinking through the
@@ -51,13 +51,13 @@ Candidates, not commitments — consult when planning new work; promote items in
   builds against; a local `~/dev/rumoca` clone, if present, is only a personal reference and may
   differ from the pin. **Bumping this pin follows `docs/updating-rumoca.md`** (compiler + tests
   drive the code fixes; `cargo run --example gen_field_help` refreshes the generic field-help
-  table; `docs/understanding` is refreshed only by Doug).
-- Doug's phase explanations: **`docs/understanding/`** (in THIS repo) — top-level summary, one
+  table; `docs/compiler-phases` is refreshed only by Doug).
+- Doug's phase explanations: **`docs/compiler-phases/`** (in THIS repo) — top-level summary, one
   subdirectory per compiler phase containing a phase description, some with drill-down documents
   (e.g. Pantelides, tearing, BLT). These are Doug's own explanations, matching the pinned Rumoca
   commit; treat them as authoritative context. **Before working on code that touches a compiler
   phase, read that phase's description**; consult drill-downs when the work goes deep. (Distinct
-  from `docs/notebook/` — the specimen-driven lab notebook.)
+  from `docs/specimen-notebook/` — the specimen-driven lab notebook.)
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
   Specification sections. Respect phase boundaries — IR crates are pure data.
 
@@ -100,7 +100,7 @@ can be set inside a Rumoca phase while it processes a specimen.
   feature it exercises, e.g. "high-index, structurally singular DAE"). The app scans it (`read_purpose`)
   and shows it under the filename in the specimen list; keep it distinct from the Modelica description
   string (which stays a faithful *model* description). Add one to each new specimen, and give it a
-  `docs/notebook/<Model>/` trace + narrative (see the notebook README).
+  `docs/specimen-notebook/<Model>/` trace + narrative (see the notebook README).
 
 ## Arc close-out ritual
 

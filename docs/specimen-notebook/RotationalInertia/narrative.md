@@ -43,15 +43,15 @@ makes this the notebook's clearest window on `connect`.
   the MSL as source roots: each component's *type* resolves to its library class
   (`inertia` → `…Rotational.Components.Inertia`, `torque` → `…Sources.Torque`,
   `tau` → `…Blocks.Sources.Constant`). These are the `type_def_id`s the app shows
-  inline and lets you "Go to". [Phase 2](../../understanding/phase2_resolve_and_scope/resolve_and_scope.md).
+  inline and lets you "Go to". [Phase 2](../../compiler-phases/phase2_resolve_and_scope/resolve_and_scope.md).
 - **Instantiate → [`trace/instantiate.json`](trace/instantiate.json)** — here the
   stage *earns its keep* (unlike in the self-contained specimens): each MSL class is
   expanded into an instance, pulling in its flanges, internal variables, and
-  equations. [Phase 4](../../understanding/phase4_instantiate/instantiate.md).
+  equations. [Phase 4](../../compiler-phases/phase4_instantiate/instantiate.md).
 - **Typecheck → [`trace/typecheck.json`](trace/typecheck.json)** — resolves
   component `type_id`s and evaluates dimensions on the instanced overlay; diff vs
   `instantiate.json` is the app's green highlight.
-  [Phase 3](../../understanding/phase3_typecheck_and_dims/typecheck_and_dims.md).
+  [Phase 3](../../compiler-phases/phase3_typecheck_and_dims/typecheck_and_dims.md).
 
 ### Flatten → [`trace/flatten.json`](trace/flatten.json)
 15 variables and **12** residual equations. The single hub-and-torque physics is
@@ -72,7 +72,7 @@ they are):
 Plus the signal `connect(tau.y, torque.tau)` becoming `f_x[9]: tau.y = torque.tau`,
 and the `Constant`'s own `f_x[7]: tau.y = tau.k`. That is the entire content of
 "connectors": potentials equate, flows balance, opens are zero.
-[Phase 5](../../understanding/phase5_flatten/flatten.md).
+[Phase 5](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### Structural → [`trace/structural.json`](trace/structural.json)
 Despite the richer flat model, the *structure* is as simple as `SingleInertia`:
@@ -106,8 +106,8 @@ an index-1 ODE, same class as `SingleInertia`, just with more bookkeeping.
   specimen's gear-free single inertia stays cleanly index-1.
 
 ## References
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md).
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md).
 Connector semantics (potential equality / flow sum): **Modelica Language
 Specification** §9, [specification.modelica.org](https://specification.modelica.org/).
 Structural analysis / BLT of the resulting DAE: F. E. Cellier & E. Kofman,

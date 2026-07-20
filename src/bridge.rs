@@ -6,7 +6,7 @@
 //! the Modelica source that node came from. It carries no answers and embeds no
 //! model. The reasoning happens in a Claude Code session that reads the file,
 //! with the specimen source, the staged IR, the Rumoca phase code, and Doug's
-//! `docs/understanding` all already in that session's context.
+//! `docs/compiler-phases` all already in that session's context.
 //!
 //! Design rationale (thin emitter, thick reasoner) is in DECISIONS.md.
 //!
@@ -47,7 +47,7 @@ HRW bridge focus file, written by the app when you capture a node/stage/model \
 (the 🔎 Capture actions) — capturing does NOT ask anything by itself. Ask your \
 question in the Claude Code chat; Claude reads this file to see what you \
 captured, then reasons over the specimen source, the staged IR, the Rumoca \
-phase code, and docs/understanding.";
+phase code, and docs/compiler-phases.";
 
 /// One step of a path into the serde tree: an object key or an array index.
 #[derive(Clone, Debug)]

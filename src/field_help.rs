@@ -18,37 +18,37 @@ pub fn load() -> HashMap<String, String> {
     serde_json::from_str(FIELD_HELP_JSON).unwrap_or_default()
 }
 
-/// The `docs/understanding` chapter (label, repo-relative path) for the phase
+/// The `docs/compiler-phases` chapter (label, repo-relative path) for the phase
 /// whose IR is being viewed — the concept-level "read more" link.
 pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
     match stage {
         "Parse" => (
             "Phase 1 · Parsing & AST",
-            "docs/understanding/phase1_parsing_and_ast/parsing_and_ast.md",
+            "docs/compiler-phases/phase1_parsing_and_ast/parsing_and_ast.md",
         ),
         "Resolve" => (
             "Phase 2 · Resolve & Scope",
-            "docs/understanding/phase2_resolve_and_scope/resolve_and_scope.md",
+            "docs/compiler-phases/phase2_resolve_and_scope/resolve_and_scope.md",
         ),
         "Typecheck" => (
             "Phase 3 · Typecheck & Dimensions",
-            "docs/understanding/phase3_typecheck_and_dims/typecheck_and_dims.md",
+            "docs/compiler-phases/phase3_typecheck_and_dims/typecheck_and_dims.md",
         ),
         "Instantiate" => (
             "Phase 4 · Instantiate",
-            "docs/understanding/phase4_instantiate/instantiate.md",
+            "docs/compiler-phases/phase4_instantiate/instantiate.md",
         ),
         "Flatten" => (
             "Phase 5 · Flatten",
-            "docs/understanding/phase5_flatten/flatten.md",
+            "docs/compiler-phases/phase5_flatten/flatten.md",
         ),
         "Structural" => (
             "Phase 7 · Structural Analysis",
-            "docs/understanding/phase7_structural_analysis/structural_analysis.md",
+            "docs/compiler-phases/phase7_structural_analysis/structural_analysis.md",
         ),
         _ => (
             "Understanding · Overview",
-            "docs/understanding/high_level_overview.md",
+            "docs/compiler-phases/high_level_overview.md",
         ),
     }
 }

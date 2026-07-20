@@ -389,7 +389,7 @@ rumoca/
 │   └── rumoca-test-msl/         # MSL parity test infrastructure
 ├── spec/                        # Formal specifications (SPEC_NNNN_*.md)
 ├── docs/                        # Documentation
-│   └── understanding/           # ← These documents live here
+│   └── compiler-phases/         # ← These documents live here
 └── examples/                    # Example Modelica models
 ```
 

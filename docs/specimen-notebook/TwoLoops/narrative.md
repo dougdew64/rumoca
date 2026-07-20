@@ -37,7 +37,7 @@ components — two coupled blocks — and schedules them in order. Where
 ## The pipeline, stage by stage
 
 Front stages are generic pass-throughs for a self-contained scalar model (see
-[`docs/understanding`](../../understanding/)); the structure is the story.
+[`docs/compiler-phases`](../../compiler-phases/)); the structure is the story.
 
 ### Flatten → [`trace/flatten.json`](trace/flatten.json)
 Nine variables — five parameters and four unknowns (`errorA`, `commandA`,
@@ -52,7 +52,7 @@ Nine variables — five parameters and four unknowns (`errorA`, `commandA`,
 
 `{errorA, commandA}` reference only each other (and the reference parameter);
 `{errorB, commandB}` reference each other **and** `commandA`.
-[Phase 5](../../understanding/phase5_flatten/flatten.md).
+[Phase 5](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### Structural → [`trace/structural.json`](trace/structural.json)
 Tarjan finds two cycles — `errorA ↔ commandA` and `errorB ↔ commandB` — and,
@@ -85,8 +85,8 @@ because box 2 needs box 1's answer.
   fine — it is *unmatched* equations that signal trouble.
 
 ## References
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md).
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md).
 SCC decomposition → BLT ordering: R. E. Tarjan, "Depth-first search and linear
 graph algorithms," *SIAM J. Comput.* 1(2):146–160, 1972
 ([doi:10.1137/0201010](https://epubs.siam.org/doi/10.1137/0201010)); tearing of the

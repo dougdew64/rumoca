@@ -9,7 +9,7 @@ decision when it's picked up.
 
 ## 1. Narratives for *simulation*, especially convergence-failure troubleshooting
 
-Captured 2026-07-20 (Doug). The Claude-authored [notebook narrative](notebook/README.md)
+Captured 2026-07-20 (Doug). The Claude-authored [notebook narrative](specimen-notebook/README.md)
 is powerful for *compilation*; it should extend to **simulation** — and is likely
 *most* valuable when a simulation **fails to converge**.
 
@@ -55,24 +55,33 @@ and in the UI.
 
 ## 3. Directory naming / organization
 
+**✅ Implemented 2026-07-20.** Renamed `docs/understanding/` → `docs/compiler-phases/`
+(says what it is — per-phase Rumoca explanations) and `docs/notebook/` →
+`docs/specimen-notebook/` (shares the `specimen` stem with `specimens/`, signaling the
+one-entry-per-specimen tie by name). `specimens/` left in place (its path is hard-coded
+across the app and tests). `examples/` also kept — it's a **Cargo convention** (Cargo
+discovers `examples/*.rs` as targets for `cargo run --example`), not a free-choice name,
+so renaming would break the `gen_trace` / `gen_field_help` invocations. Original capture
+below (its wording now uses the new names, since the rename swept this file too).
+
 Captured 2026-07-20 (Doug). Two naming problems:
 
-- **`specimens/` ↔ `docs/notebook/` coupling is invisible.** They are tightly
+- **`specimens/` ↔ `docs/specimen-notebook/` coupling is invisible.** They are tightly
   related (one notebook entry per specimen) but the names don't say so.
-  - *Options:* (a) lightest — rename `docs/notebook/` to something that signals the
+  - *Options:* (a) lightest — rename `docs/specimen-notebook/` to something that signals the
     tie (e.g. `docs/specimen-lab/`) and lean on cross-links; (b) a shared parent;
     (c) per-specimen folders holding both the `.mo` and its notebook — the strongest
     signal but the biggest restructure (fights the app's flat `specimens/` scan and
     the many test paths that hard-code `specimens/<X>.mo`).
   - *Lean:* (a) — signal the relationship by name + cross-reference; defer the deep
     restructure unless it clearly pays off.
-- **`docs/understanding/` is poorly named** — "understanding of *what*?" It is
+- **`docs/compiler-phases/` is poorly named** — "understanding of *what*?" It is
   Doug's canonical explanation of the **Rumoca compiler phases**.
   - *Candidate names:* `docs/phases/`, `docs/rumoca-phases/`, `docs/compiler-phases/`.
     *Lean:* `docs/rumoca-phases/` (says exactly what it is, and distinguishes it from
     the specimen-specific notebook).
   - *Impact (so a future rename is scoped, not surprising):* `src/field_help.rs`
-    (`chapter_for_stage` paths), the notebook narratives' `../../understanding/…`
+    (`chapter_for_stage` paths), the notebook narratives' `../../compiler-phases/…`
     links, the app "Read: chapter" button, `.vscode/settings.json` editor
     associations glob, and references in `CLAUDE.md` / `docs/updating-rumoca.md`.
     Mechanical but wide — do it as one deliberate sweep.

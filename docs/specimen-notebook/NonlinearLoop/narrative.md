@@ -35,7 +35,7 @@ to the simulation/convergence work ([`docs/ideas.md`](../../ideas.md) #1).
 
 ## The pipeline, stage by stage
 
-Front stages are generic (see [`docs/understanding`](../../understanding/)); the
+Front stages are generic (see [`docs/compiler-phases`](../../compiler-phases/)); the
 comparison with `ProportionalLoop` is the point.
 
 ### Flatten → [`trace/flatten.json`](trace/flatten.json)
@@ -50,7 +50,7 @@ only difference from `ProportionalLoop` is in `f_x[2]` (from the trace):
 
 `f_x[2]` references `command` (twice, but *structurally* once) and `measurement` —
 the same incidence as the linear plant's `measurement = plantGain·command`.
-[Phase 5](../../understanding/phase5_flatten/flatten.md).
+[Phase 5](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### Structural → [`trace/structural.json`](trace/structural.json)
 Identical to [`ProportionalLoop`](../ProportionalLoop/narrative.md): one coupled
@@ -91,8 +91,8 @@ numerically a different animal — and the seam where a *convergence* narrative
   which kind of hard you have is the whole diagnostic value of the phase.
 
 ## References
-[Flatten](../../understanding/phase5_flatten/flatten.md) ·
-[Structural analysis](../../understanding/phase7_structural_analysis/structural_analysis.md)
+[Flatten](../../compiler-phases/phase5_flatten/flatten.md) ·
+[Structural analysis](../../compiler-phases/phase7_structural_analysis/structural_analysis.md)
 · [`docs/ideas.md`](../../ideas.md) (simulation / convergence narratives).
 On why structural analysis is incidence-only (independent of the equations'
 nonlinearity), and on solving the resulting torn systems: F. E. Cellier & E.
