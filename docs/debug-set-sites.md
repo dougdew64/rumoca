@@ -32,6 +32,40 @@ basename, so it works regardless of the absolute path.
 - **Fresh process required:** resolution runs lazily on first specimen select, so launch the debug
   config *before* clicking the specimen.
 
+## Conditional arming (integer-identity) — break only for the captured item
+
+Big systems process the same phase code hundreds of times (every component's `type_def_id`, every
+coupled block's tearing). An *unconditional* breakpoint there makes you Continue past dozens of
+irrelevant hits to reach the one you captured. So when arming, Claude generates a **conditional**
+breakpoint keyed on the captured item's identity — the debugger doesn't pause until *your* item is
+being processed.
+
+**The one rule: a condition can only reference what's in lexical scope at the armed line.** So the
+site is chosen for its discriminator, and the discriminator must be something the LLDB expression
+evaluator handles cleanly — i.e. an **integer / enum-as-int**, not a Rust `String` (name matching
+needs CodeLLDB's `/py` evaluator; deliberately out of scope here). Pick the discriminator from the
+focus and generate `--condition '<int expr>'`:
+
+| Captured item | Best in-scope discriminator | Site · condition |
+|---|---|---|
+| A **coupled block** (tearing) | block **size** `n` (a plain `usize` local) | `tearing.rs` · `tear_algebraic_loop` · `--condition 'n == <size>'` |
+| A coupled block, when several share that size | its **global equation index** (`EquationRef(pub usize)`) | one frame up in `lib.rs` · `tear_loop`, on the `tear_algebraic_loop(…)` call, condition on the block's equation index, then *step into* the tearing |
+| A component's `type_def_id` | the enclosing component/class name or its `def_id` | `contents.rs` — condition on the id integer when available |
+
+**Worked example — the `ProportionalLoop` coupled block (size 3).** Its focus subtree gives
+`size: 3` and equations `f_x[2] / f_x[1] / f_x[0]` (the `f_x[N]` label *is* the global equation
+index, via `EquationRef`'s `Display`). Armed condition: `--condition 'n == 3'` at
+`tearing.rs` (`tear_algebraic_loop`). For this specimen that's already unique (its only loop);
+in a system with other size-3 loops, escalate the site to `tear_loop` and condition on an equation
+index (e.g. the residual `f_x[0]` → index `0`).
+
+**Reliability note.** Conditions on a *plain scalar local* (`n`, an `usize`) are the dependable
+form and what Claude arms by default. Conditions that must reach into a Rust slice/newtype
+(`equations[0].0`) depend on the CodeLLDB expression evaluator's field/index access — arm them when
+size alone isn't unique, but **confirm the breakpoint actually stops on the intended item** in the
+IDE (LLDB-command breakpoints don't paint a gutter dot; verify by inspecting the locals on first
+stop), and Claude will lock in whatever expression form your CodeLLDB accepts.
+
 ## The teaching split this reveals
 
 `def_id`/`scope_id` are assigned in **registration** (identities and scopes are minted). `type_def_id`
