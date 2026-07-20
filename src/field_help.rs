@@ -30,6 +30,18 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "Phase 2 · Resolve & Scope",
             "docs/understanding/phase2_resolve_and_scope/resolve_and_scope.md",
         ),
+        "Typecheck" => (
+            "Phase 3 · Typecheck & Dimensions",
+            "docs/understanding/phase3_typecheck_and_dims/typecheck_and_dims.md",
+        ),
+        "Instantiate" => (
+            "Phase 4 · Instantiate",
+            "docs/understanding/phase4_instantiate/instantiate.md",
+        ),
+        "Flatten" => (
+            "Phase 5 · Flatten",
+            "docs/understanding/phase5_flatten/flatten.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/understanding/high_level_overview.md",

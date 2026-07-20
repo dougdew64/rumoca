@@ -38,6 +38,9 @@ const DEFAULT_LIBRARIES: &str = concat!(
 enum StageKind {
     Parse,
     Resolve,
+    Instantiate,
+    Typecheck,
+    Flatten,
 }
 
 /// One level of "go to definition" navigation: a class extracted from the
@@ -67,6 +70,9 @@ pub struct App {
     model: Option<String>,
     parse: Stage,
     resolve: Stage,
+    instantiate: Stage,
+    typecheck: Stage,
+    flatten: Stage,
     stage: StageKind,
     // Resolved identity of every DefId referenced in the current model's IR.
     def_index: BTreeMap<u64, DefInfo>,
@@ -126,6 +132,9 @@ impl App {
             model: None,
             parse: Stage::default(),
             resolve: Stage::default(),
+            instantiate: Stage::default(),
+            typecheck: Stage::default(),
+            flatten: Stage::default(),
             stage: StageKind::Resolve,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
@@ -182,6 +191,9 @@ impl App {
         self.model = None;
         self.parse = Stage::default();
         self.resolve = Stage::default();
+        self.instantiate = Stage::default();
+        self.typecheck = Stage::default();
+        self.flatten = Stage::default();
         self.def_index = BTreeMap::new();
         self.nav.clear();
         self.nav_loading = None;
@@ -208,7 +220,9 @@ impl App {
                         Err(e) => format!("library load failed — {e}"),
                     };
                 }
-                FromWorker::Compiled { path, model, parse, resolve, def_index } => {
+                FromWorker::Compiled {
+                    path, model, parse, resolve, instantiate, typecheck, flatten, def_index,
+                } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
                     }
@@ -216,6 +230,9 @@ impl App {
                     self.model = model;
                     self.parse = parse;
                     self.resolve = resolve;
+                    self.instantiate = instantiate;
+                    self.typecheck = typecheck;
+                    self.flatten = flatten;
                     self.def_index = def_index;
                 }
                 FromWorker::DefTree { name, result } => {
@@ -236,6 +253,9 @@ impl App {
         match self.stage {
             StageKind::Parse => &self.parse,
             StageKind::Resolve => &self.resolve,
+            StageKind::Instantiate => &self.instantiate,
+            StageKind::Typecheck => &self.typecheck,
+            StageKind::Flatten => &self.flatten,
         }
     }
 
@@ -243,6 +263,9 @@ impl App {
         match self.stage {
             StageKind::Parse => "Parse",
             StageKind::Resolve => "Resolve",
+            StageKind::Instantiate => "Instantiate",
+            StageKind::Typecheck => "Typecheck",
+            StageKind::Flatten => "Flatten",
         }
     }
 
@@ -592,14 +615,12 @@ impl eframe::App for App {
                     // right-click menu on any tree row.
                     ui.selectable_value(&mut self.stage, StageKind::Parse, "Parse");
                     ui.selectable_value(&mut self.stage, StageKind::Resolve, "Resolve");
-                    ui.add_enabled(false, egui::Button::new("Typecheck"))
-                        .on_disabled_hover_text(
-                            "Model-scoped typecheck needs instantiation (Arc 2); \
-                             whole-tree typecheck fails on the full MSL.",
-                        );
+                    ui.selectable_value(&mut self.stage, StageKind::Instantiate, "Instantiate");
+                    ui.selectable_value(&mut self.stage, StageKind::Typecheck, "Typecheck");
+                    ui.selectable_value(&mut self.stage, StageKind::Flatten, "Flatten");
                     if self.selected.is_some()
                         && ui
-                            .button("🔎 Capture this stage for a question")
+                            .button("🔎 Capture")
                             .on_hover_text("Capture the whole current stage's IR, then ask Claude about it here in the chat.")
                             .clicked()
                     {
@@ -611,7 +632,7 @@ impl eframe::App for App {
                     }
                     if self.selected.is_some()
                         && ui
-                            .button("🔎 Capture this model for a question")
+                            .button("🔎 Capture")
                             .on_hover_text("Capture the specimen as a whole, then ask Claude about it here in the chat.")
                             .clicked()
                     {
@@ -638,10 +659,10 @@ impl eframe::App for App {
 
                 let stage = self.current_stage();
                 if let Some(note) = &stage.note {
-                    let color = if stage.value.is_some() {
-                        ui.visuals().warn_fg_color
-                    } else {
+                    let color = if stage.note_is_error {
                         ui.visuals().error_fg_color
+                    } else {
+                        ui.visuals().weak_text_color()
                     };
                     egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
                         ui.colored_label(color, egui::RichText::new(note).monospace());

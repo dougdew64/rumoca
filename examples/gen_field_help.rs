@@ -15,43 +15,50 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// IR crates whose fields the observatory renders — extend as later stages
+/// (DAE, etc.) get their own tabs.
+const IR_CRATES: &[&str] = &["rumoca-ir-ast", "rumoca-ir-flat"];
+
 fn main() {
-    // 1. Locate rumoca-ir-ast's source directory for the *currently resolved*
-    //    dependency (works for a git dep in the cargo cache or a path dep).
+    // Locate each IR crate's source via `cargo metadata` (robust to the cargo
+    // cache hash/rev), then extract every `///` field doc into one table.
     let out = Command::new("cargo")
         .args(["metadata", "--format-version", "1"])
         .output()
         .expect("run `cargo metadata`");
     assert!(out.status.success(), "cargo metadata failed");
     let meta: serde_json::Value = serde_json::from_slice(&out.stdout).expect("parse cargo metadata");
-    let manifest = meta["packages"]
-        .as_array()
-        .expect("packages array")
-        .iter()
-        .find(|p| p["name"] == "rumoca-ir-ast")
-        .expect("rumoca-ir-ast in the dependency graph")["manifest_path"]
-        .as_str()
-        .expect("manifest_path")
-        .to_owned();
-    let src_dir = PathBuf::from(&manifest)
-        .parent()
-        .expect("crate dir")
-        .join("src");
-    eprintln!("extracting `///` field docs from {}", src_dir.display());
 
-    // 2. Extract field docs from every .rs file under src/.
-    let mut files = Vec::new();
-    collect_rs(&src_dir, &mut files);
     let mut docs: BTreeMap<String, String> = BTreeMap::new();
-    for f in &files {
-        extract(&std::fs::read_to_string(f).expect("read source"), &mut docs);
+    for crate_name in IR_CRATES {
+        let src_dir = src_dir_of(&meta, crate_name);
+        eprintln!("extracting `///` field docs from {} ({})", crate_name, src_dir.display());
+        let mut files = Vec::new();
+        collect_rs(&src_dir, &mut files);
+        for f in &files {
+            extract(&std::fs::read_to_string(f).expect("read source"), &mut docs);
+        }
     }
 
-    // 3. Write src/field_help.json (pretty, sorted for stable diffs).
+    // Write src/field_help.json (pretty, sorted for stable diffs).
     let out_path = concat!(env!("CARGO_MANIFEST_DIR"), "/src/field_help.json");
     let json = serde_json::to_string_pretty(&docs).expect("serialize");
     std::fs::write(out_path, json + "\n").expect("write field_help.json");
     eprintln!("wrote {} fields → {out_path}", docs.len());
+}
+
+/// The `src/` dir of a resolved dependency package, from `cargo metadata`.
+fn src_dir_of(meta: &serde_json::Value, crate_name: &str) -> PathBuf {
+    let manifest = meta["packages"]
+        .as_array()
+        .expect("packages array")
+        .iter()
+        .find(|p| p["name"] == crate_name)
+        .unwrap_or_else(|| panic!("{crate_name} in the dependency graph"))["manifest_path"]
+        .as_str()
+        .expect("manifest_path")
+        .to_owned();
+    PathBuf::from(&manifest).parent().expect("crate dir").join("src")
 }
 
 /// Recursively gather `*.rs` files under `dir`.

@@ -20,7 +20,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
 use eframe::egui;
-use rumoca_compile::compile::SourceRootKind;
+use rumoca_compile::compile::{FailedPhase, PhaseResult, SourceRootKind};
 use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_source_set_key};
 use rumoca_compile::{Session, SessionConfig};
 
@@ -41,14 +41,25 @@ pub enum ToWorker {
 pub struct Stage {
     pub value: Option<serde_json::Value>,
     pub note: Option<String>,
+    /// True when `note` is an error (rendered red); false = an informational
+    /// status like "succeeded" or "not reached" (rendered neutral).
+    pub note_is_error: bool,
 }
 
 impl Stage {
     fn ok(value: serde_json::Value) -> Self {
-        Stage { value: Some(value), note: None }
+        Stage { value: Some(value), note: None, note_is_error: false }
     }
     fn err(note: impl Into<String>) -> Self {
-        Stage { value: None, note: Some(note.into()) }
+        Stage { value: None, note: Some(note.into()), note_is_error: true }
+    }
+    /// A non-error status note for a stage with no IR of its own to show.
+    fn info(note: impl Into<String>) -> Self {
+        Stage { value: None, note: Some(note.into()), note_is_error: false }
+    }
+    /// A best-effort IR plus an error note (e.g. resolve recovered a partial tree).
+    fn recovered(value: serde_json::Value, note: impl Into<String>) -> Self {
+        Stage { value: Some(value), note: Some(note.into()), note_is_error: true }
     }
 }
 
@@ -96,13 +107,18 @@ impl DefInfo {
 pub enum FromWorker {
     /// Outcome of loading libraries: total documents loaded, or an error.
     Libraries(Result<usize, String>),
-    /// Outcome of compiling a specimen through the arc-1 stages.
+    /// Outcome of compiling a specimen through the pipeline stages.
     Compiled {
         path: PathBuf,
         /// Simple name of the model whose IR the stages show.
         model: Option<String>,
         parse: Stage,
         resolve: Stage,
+        /// Arc 2 (increment 1): instantiate/typecheck carry status only; flatten
+        /// carries the flat IR. Instanced/typed intermediate trees land later.
+        instantiate: Stage,
+        typecheck: Stage,
+        flatten: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -220,6 +236,9 @@ impl WorkerState {
                     model: None,
                     parse: Stage::err(format!("read error: {e}")),
                     resolve: Stage::default(),
+                    instantiate: Stage::default(),
+                    typecheck: Stage::default(),
+                    flatten: Stage::default(),
                     def_index: BTreeMap::new(),
                 };
             }
@@ -263,7 +282,7 @@ impl WorkerState {
                             Some(rt) => match extract_class(&rt.0, &qualified) {
                                 Stage { value: Some(v), .. } => {
                                     def_index = build_def_index(&rt.0, &v);
-                                    Stage { value: Some(v), note: Some(note) }
+                                    Stage::recovered(v, note)
                                 }
                                 _ => Stage::err(note),
                             },
@@ -274,7 +293,79 @@ impl WorkerState {
             }
         };
 
-        FromWorker::Compiled { path: path.to_owned(), model, parse, resolve, def_index }
+        // --- Arc 2 pipeline stages: instantiate → typecheck (instanced) →
+        // flatten, driven by the reachable-closure pipeline. Increment 1 shows
+        // the flat IR + per-phase status; intermediate trees arrive next. ---
+        let (instantiate, typecheck, flatten) = match &model {
+            None => {
+                let e = "parse produced no model to compile";
+                (Stage::err(e), Stage::err(e), Stage::err(e))
+            }
+            Some(simple_name) => {
+                let qualified = self.session.qualify_model_name(&uri, simple_name);
+                let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
+                phase_stages(report.requested_result.as_ref())
+            }
+        };
+
+        FromWorker::Compiled {
+            path: path.to_owned(),
+            model,
+            parse,
+            resolve,
+            instantiate,
+            typecheck,
+            flatten,
+            def_index,
+        }
+    }
+}
+
+/// Map the reachable-closure pipeline's `PhaseResult` to (instantiate, typecheck,
+/// flatten) stage outcomes. Increment 1: Flatten shows the flat IR; Instantiate
+/// and Typecheck carry status only (their instanced/typed trees arrive next).
+/// Phase order is Instantiate → Typecheck → Flatten → ToDae, so a failure at one
+/// phase means earlier phases succeeded and later ones were not reached.
+fn phase_stages(result: Option<&PhaseResult>) -> (Stage, Stage, Stage) {
+    match result {
+        Some(PhaseResult::Success(cr)) => {
+            let flatten = match serde_json::to_value(&cr.flat) {
+                Ok(v) => Stage::ok(v),
+                Err(e) => Stage::err(format!("serialize flat model: {e}")),
+            };
+            (
+                Stage::info("instantiate succeeded — instanced tree arrives in increment 2"),
+                Stage::info("typecheck (instanced) succeeded — typed tree arrives in increment 2"),
+                flatten,
+            )
+        }
+        Some(PhaseResult::Failed { phase, error, diagnostics, .. }) => {
+            let msg = if diagnostics.is_empty() {
+                error.clone()
+            } else {
+                format!("{error}  ({} diagnostic(s))", diagnostics.len())
+            };
+            let ok = || Stage::info("succeeded");
+            let na = || Stage::info("not reached (an earlier phase failed)");
+            match phase {
+                FailedPhase::Instantiate => (Stage::err(msg), na(), na()),
+                FailedPhase::Typecheck => (ok(), Stage::err(msg), na()),
+                FailedPhase::Flatten => (ok(), ok(), Stage::err(msg)),
+                FailedPhase::ToDae => (
+                    ok(),
+                    ok(),
+                    Stage::info("flatten succeeded; DAE construction failed (later arc)"),
+                ),
+            }
+        }
+        Some(PhaseResult::NeedsInner { missing_inners, .. }) => {
+            let msg = format!("needs inner declaration(s) for: {}", missing_inners.join(", "));
+            (Stage::info("succeeded"), Stage::info("succeeded"), Stage::info(msg))
+        }
+        None => {
+            let e = "the reachable-closure pipeline produced no result for this model";
+            (Stage::err(e), Stage::err(e), Stage::err(e))
+        }
     }
 }
 

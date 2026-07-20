@@ -129,7 +129,7 @@ fn row_menu(
         // Don't wrap menu labels — widen the menu to fit long "Go to <name>"
         // items (fully-qualified Modelica type names get long).
         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-        if ui.button("🔎 Capture this for a question").clicked() {
+        if ui.button("🔎 Capture").clicked() {
             *ask = Some(path.to_vec());
             ui.close();
         }
