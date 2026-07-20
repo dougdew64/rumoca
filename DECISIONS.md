@@ -67,3 +67,95 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   typecheck stage to Arc 2**, where `typecheck_instanced` (post-instantiation) gives a proper
   model-scoped typed tree — keeping the curriculum build order. (Removed the `rumoca-phase-typecheck`
   direct dep until the stage lands.)
+
+## Arc 1 — Claude bridge (question-driven help)
+
+- **2026-07-19 — Help = question-answering, not a static lookup table.** The planned help feature
+  (memory `arc1-dogfood-then-help`) was a field/concept lookup layer keyed by field-path. Superseded:
+  the most valuable question in an IR observatory is *provenance/causation* ("where did this come
+  from, which phase made it, why does it look like this"), which a static table answers poorly and a
+  reasoning agent with the specimen + IR + Rumoca source + phase docs in context answers well. So help
+  is reframed as **asking Claude about a concrete result** from inside the app. (Doug's reframing;
+  Claude moved the mechanism off build-time hard-coding — see next.)
+- **2026-07-19 — Runtime bridge, not build-time pre-instrumentation.** Doug's first sketch hard-coded
+  the specimen path at build time so Claude could pre-instrument, dropping the file chooser. Rejected:
+  hard-coding creates no channel from the running app to Claude, and pre-instrumentation is *guessing*
+  what will be asked, whereas a runtime handoff carries the **exact** node clicked. Chosen: the app is
+  a **thin emitter** — on "Ask Claude about this" it writes one JSON *focus file*
+  (`<manifest>/.hrw-bridge/focus.json`, gitignored, repo-relative so it's stable across Claude Code
+  sessions); Doug then asks in the Claude Code chat and Claude reads the file. No rebuild, any
+  specimen, keeps the charter §4.4 chooser. No new dependencies (serde_json only). The fuller "answer
+  rendered inside the app" mode (needs `egui_commonmark`) and an autonomous `Monitor`-watched mode are
+  deferred, ratify-first.
+- **2026-07-19 — Span-ascent for provenance.** Rumoca IR carries source provenance pervasively
+  (`rumoca_core::Location` = byte offsets + `file_name`; `Span` = byte offsets + opaque `SourceId`),
+  but a clicked leaf usually has none of its own. `bridge.rs` walks the serde tree *up* from the
+  clicked node to the tightest enclosing `location`/`span`, then slices that byte range from source
+  (expanded to whole lines). Fully generic — no Rumoca types — so the one-generic-tree rule (§4.4)
+  holds. `Location` is preferred (self-contained file_name); `span` falls back to the specimen file.
+- **2026-07-19 — Learnings accumulate in a per-specimen HRW lab notebook, Doug-authored.**
+  `docs/notebook/<Specimen>.md` (template + README committed) records specimen↔Rumoca-feature findings
+  — HRW's own record, kept distinct from the rumoca clone's `docs/understanding` (Doug's canonical
+  phase docs, *never* silently written by Claude). **Doug authors**; Claude drafts on request and
+  challenges. Rationale: the goal is Doug learning Rumoca, and writing the synthesis is the learning —
+  auto-populating would defeat the purpose. The bridge produces the conversations; keepers get
+  promoted into the notebook by hand.
+- **2026-07-19 — Bridge improvement 1: resolve the DefIds.** The opaque integers Resolve produces
+  (`def_id`, `type_def_id`, `base_def_id`) are now resolved to their definitions. The worker owns the
+  resolved tree, so it does the lookup (deterministic → app side, per the thin-emitter/thick-reasoner
+  line): after extracting the model, it scans the IR for DefId-valued keys, resolves each via
+  `ClassTree.def_map` + `get_class_by_qualified_name`, and ships a `DefId → DefInfo {name, kind,
+  class_type, file_name, line}` map (`worker::DefInfo`) alongside the stage results. Two surfaces
+  consume it: the tree annotates DefId leaves inline (`type_def_id: 27579 → model Modelica.…Inertia`),
+  and the bridge focus carries the whole map as `def_resolutions` so Claude follows real pointers. No
+  new dependency — `def_map` iteration reads `DefId`'s public `.0` field, so `rumoca-core` stays out
+  of the direct deps. Component *own* def_ids may or may not resolve (depends on `def_map` membership);
+  the high-value `type_def_id` class links are verified end-to-end (`resolves_def_ids_against_msl`).
+- **2026-07-19 — Bridge improvement 2: cross-stage Parse↔Resolve diff.** A node focus now carries the
+  *same* node before (Parse) and after (Resolve) name resolution, plus a scalar-delta `changes` list,
+  so "what did Resolve do here?" is answered from data. Node correspondence is by **class-relative
+  path**: `class_subtree` auto-detects each stage's user class (descend `classes.<model>` when the
+  root wraps it — the parsed `StoredDefinition` — else the root already is the class — the resolve
+  extract), so the same node lines up whether captured from either tab, without changing either tab.
+  The app passes both `parse_value`/`resolve_value` in `Ask`; `bridge::build_cross_stage` + `diff`
+  compute it. **Known limitation (dogfooding finding):** the raw diff mixes ~2 semantic changes
+  (`def_id`, `type_def_id` null→id) with ~14 bookkeeping ones (parse records `file_name` as a basename
+  and one `SourceId`; the session re-registers the document under its full URI, so `location.file_name`
+  and `span.source` churn everywhere). Per thin-emitter/thick-reasoner, Claude categorizes these in its
+  answers rather than the app filtering — a code-level filter/categorization is a candidate refinement.
+- **2026-07-19 — Bridge improvement 3: DefId navigation ("go to definition").** A `def_id`/`type_def_id`
+  that resolves to a class is now a doorway, not a dead-end label. Right-click → "↪ Go to <name>" sends
+  `ToWorker::OpenDef(qualified_name)`; the worker extracts that class from the resolved tree
+  (`get_class_by_qualified_name`) and returns its IR + its own `def_index` (so navigation recurses).
+  The UI keeps a browser-style nav stack (← Back / ⌂ Specimen / breadcrumb) and renders the navigated
+  class in the **same** generic tree (charter §4.4) — no new view widget. Capturing inside a navigated
+  class writes a node focus scoped to it (model = class name, no cross-stage since library classes have
+  no Parse stage here); no bridge changes were needed. Serves the "reach more context conveniently"
+  goal (convenient context-identification × context-sensitive explanation).
+- **2026-07-19 — 🐞 "Show this being set (debugger)" — one-click debug capture.** The debugger walk
+  (watch a field get assigned in a Rumoca phase) was a headline feature but clumsy to invoke. The app
+  can't drive VS Code's debugger, so per thin-emitter/thick-reasoner it does the *capture* and Claude
+  does the *arming*: a context-menu item tags the focus with `request: "debug-where-set"` (the focus
+  now carries a `request` field). Claude reads that, maps the field → the exact Rumoca assignment site
+  (`docs/debug-set-sites.md`, keyed by function so line drift doesn't break it — re-located in the
+  clone at arm-time), and rewrites the `preRunCommands` of the `.vscode/launch.json` "Debug HRW — break
+  where Claude armed" config. User flow: right-click → 🐞 → "arm it" → launch that config → select the
+  specimen. The one irreducible step (launching the debug config) is VS Code's; everything up to it is
+  automated. Tier-2 upgrade (a `Monitor` watcher that arms the instant 🐞 is clicked, no cue) is
+  offered but not built.
+
+## Arc 1 — repo/dependency reorganization
+
+- **2026-07-19 — `docs/understanding` moved into HRW; Rumoca switched to a pinned git dependency.**
+  Doug's phase-explanation docs (11 phases + drill-downs) were the only fork-only content in his
+  local Rumoca clone (`dougs-docs` branch = official `upstream/main` + 2 docs-only commits; `crates/`
+  byte-identical to upstream). Verified, then: (1) moved `docs/understanding/` into this repo next to
+  `docs/notebook/` (source links de-linked to crate-relative inline-code refs, since HRW has no
+  `crates/`); (2) switched `Cargo.toml` from path deps on `../rumoca` to **git deps on official
+  `github.com/CogniPilot/rumoca` pinned to `rev = 8cdc7419`** — the exact commit HRW was built
+  against. Rationale: a path dep tracks whatever the clone is checked out to (unpinned); a `rev` +
+  committed `Cargo.lock` is immutable and reproducible — the real fix for "always build against the
+  correct Rumoca version." Build + all tests pass against the fetched official crates. Consequence:
+  Rumoca source now lives in `~/.cargo/git/checkouts/` (read-only, hash-named); the 🐞 debugger still
+  works (basename breakpoints + default dev debug info); no editable clone unless kept aside for a
+  future arc that instruments Rumoca. HRW no longer depends on Doug's fork or local clone.

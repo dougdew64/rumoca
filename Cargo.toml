@@ -6,7 +6,10 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.103"
 eframe = "0.35.0"
-rumoca-compile = { version = "0.9.20", path = "../rumoca/crates/rumoca-compile" }
-rumoca-ir-ast = { version = "0.9.20", path = "../rumoca/crates/rumoca-ir-ast" }
-rumoca-phase-parse = { version = "0.9.20", path = "../rumoca/crates/rumoca-phase-parse" }
+# Official Rumoca, pinned by commit for reproducibility (a path dep tracks
+# whatever the local clone is checked out to; a `rev` is immutable + locked).
+# 8cdc7419 == the code HRW was developed against (was ../rumoca @ upstream/main).
+rumoca-compile = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-ir-ast = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-phase-parse = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
 serde_json = "1.0.150"

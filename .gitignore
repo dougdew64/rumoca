@@ -1,3 +1,5 @@
 /target
 # Provisioned Modelica libraries (reference MSL 4.1.0), staged locally, not committed.
 /vendor
+# Claude bridge scratch: the transient focus file the app writes on "Ask Claude about this".
+/.hrw-bridge

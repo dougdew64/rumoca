@@ -14,6 +14,7 @@
 //! never the whole resolved aggregate — resolving with the full MSL loaded
 //! produces a ~430MB tree, of which the user's model is a tiny slice.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -29,6 +30,9 @@ pub enum ToWorker {
     SetLibraries(Vec<PathBuf>),
     /// Run parse → resolve on a specimen file.
     Compile(PathBuf),
+    /// Extract an arbitrary class from the resolved tree by qualified name, so
+    /// the UI can navigate into a definition a `def_id`/`type_def_id` points at.
+    OpenDef(String),
 }
 
 /// One pipeline stage's outcome for the selected model: the serialized IR node
@@ -48,6 +52,46 @@ impl Stage {
     }
 }
 
+/// Resolved identity of a `DefId` referenced in a stage's IR — what an opaque
+/// integer like `type_def_id: 27579` actually points at. A deterministic lookup
+/// against the resolved tree (which the worker owns), *not* reasoning: the UI
+/// shows it inline and the bridge hands it to Claude so answers follow real
+/// pointers instead of narrating faith in a number.
+#[derive(Clone)]
+pub struct DefInfo {
+    /// Qualified name, e.g. "Modelica.Mechanics.Rotational.Components.Inertia".
+    pub name: String,
+    /// "class" (a class definition) or "definition" (component/other non-class).
+    pub kind: &'static str,
+    /// Class keyword ("model", "block", …) when this DefId names a class.
+    pub class_type: Option<String>,
+    /// Source location of the class definition (when a class).
+    pub file_name: Option<String>,
+    pub line: Option<u32>,
+}
+
+impl DefInfo {
+    /// Compact inline label for the tree, e.g. "model Modelica.…Inertia".
+    pub fn label(&self) -> String {
+        match &self.class_type {
+            Some(ct) => format!("{ct} {}", self.name),
+            None => self.name.clone(),
+        }
+    }
+
+    /// JSON form for the bridge focus file (DefInfo doesn't derive Serialize to
+    /// avoid taking a direct `serde` dependency).
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "name": self.name,
+            "kind": self.kind,
+            "class_type": self.class_type,
+            "file_name": self.file_name,
+            "line": self.line,
+        })
+    }
+}
+
 /// A result from the worker back to the UI thread.
 pub enum FromWorker {
     /// Outcome of loading libraries: total documents loaded, or an error.
@@ -59,6 +103,14 @@ pub enum FromWorker {
         model: Option<String>,
         parse: Stage,
         resolve: Stage,
+        /// Resolved identity of every DefId referenced in the model's IR.
+        def_index: BTreeMap<u64, DefInfo>,
+    },
+    /// A class opened by navigation: its qualified name and (on success) its
+    /// resolved IR plus the DefIds it references, so navigation can continue.
+    DefTree {
+        name: String,
+        result: Result<(serde_json::Value, BTreeMap<u64, DefInfo>), String>,
     },
 }
 
@@ -114,7 +166,25 @@ impl WorkerState {
         match msg {
             ToWorker::SetLibraries(roots) => FromWorker::Libraries(self.load_libraries(roots)),
             ToWorker::Compile(path) => self.compile(&path),
+            ToWorker::OpenDef(name) => self.open_def(&name),
         }
+    }
+
+    /// Extract a class from the resolved tree by qualified name for navigation.
+    fn open_def(&mut self, name: &str) -> FromWorker {
+        let rt = match self.session.resolved() {
+            Ok(rt) => rt,
+            Err(e) => return FromWorker::DefTree { name: name.to_owned(), result: Err(format!("{e:#}")) },
+        };
+        let result = match rt.0.get_class_by_qualified_name(name) {
+            Some(class) => {
+                let value = serde_json::to_value(class).unwrap_or_default();
+                let def_index = build_def_index(&rt.0, &value);
+                Ok((value, def_index))
+            }
+            None => Err(format!("`{name}` not found in resolved tree")),
+        };
+        FromWorker::DefTree { name: name.to_owned(), result }
     }
 
     /// Rebuild the session and load each library root as a durable source set.
@@ -150,6 +220,7 @@ impl WorkerState {
                     model: None,
                     parse: Stage::err(format!("read error: {e}")),
                     resolve: Stage::default(),
+                    def_index: BTreeMap::new(),
                 };
             }
         };
@@ -170,21 +241,30 @@ impl WorkerState {
         // The session resolves the whole aggregate (user model + libraries); we
         // pull out just the user model's resolved class for display.
         self.session.update_document(&uri, &source);
+        // Resolutions for the DefIds referenced in the resolved model, built
+        // wherever we successfully extract a resolved class below.
+        let mut def_index = BTreeMap::new();
         let resolve = match &model {
             None => Stage::err("parse produced no model to resolve"),
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
                 match self.session.resolved() {
-                    Ok(rt) => extract_class(&rt.0, &qualified),
+                    Ok(rt) => {
+                        let stage = extract_class(&rt.0, &qualified);
+                        if let Some(v) = &stage.value {
+                            def_index = build_def_index(&rt.0, v);
+                        }
+                        stage
+                    }
                     Err(e) => {
                         // Show the error, and a best-effort tree if one exists.
                         let note = format!("{e:#}");
                         match self.session.resolved_cached() {
                             Some(rt) => match extract_class(&rt.0, &qualified) {
-                                Stage { value: Some(v), .. } => Stage {
-                                    value: Some(v),
-                                    note: Some(note),
-                                },
+                                Stage { value: Some(v), .. } => {
+                                    def_index = build_def_index(&rt.0, &v);
+                                    Stage { value: Some(v), note: Some(note) }
+                                }
                                 _ => Stage::err(note),
                             },
                             None => Stage::err(note),
@@ -194,7 +274,133 @@ impl WorkerState {
             }
         };
 
-        FromWorker::Compiled { path: path.to_owned(), model, parse, resolve }
+        FromWorker::Compiled { path: path.to_owned(), model, parse, resolve, def_index }
+    }
+}
+
+/// Field names in the IR whose values are `DefId`s (resolved definition ids).
+const DEF_ID_KEYS: [&str; 3] = ["def_id", "type_def_id", "base_def_id"];
+
+/// True when `key` names a `DefId`-valued field.
+pub fn is_def_id_key(key: &str) -> bool {
+    DEF_ID_KEYS.contains(&key)
+}
+
+/// Collect every DefId appearing under a DefId-named key anywhere in the IR.
+fn collect_def_ids(v: &serde_json::Value, out: &mut BTreeSet<u64>) {
+    match v {
+        serde_json::Value::Object(map) => {
+            for (k, val) in map {
+                if is_def_id_key(k) {
+                    if let Some(n) = val.as_u64() {
+                        out.insert(n);
+                    }
+                }
+                collect_def_ids(val, out);
+            }
+        }
+        serde_json::Value::Array(arr) => arr.iter().for_each(|val| collect_def_ids(val, out)),
+        _ => {}
+    }
+}
+
+/// Resolve every DefId referenced in `value` against the resolved tree, into a
+/// `DefId → DefInfo` map. Iterates `def_map` (whose `DefId` key exposes a public
+/// `.0` field) so we never name the `DefId` type — keeping `rumoca-core` out of
+/// our direct dependencies.
+fn build_def_index(
+    tree: &rumoca_ir_ast::ClassTree,
+    value: &serde_json::Value,
+) -> BTreeMap<u64, DefInfo> {
+    let name_by_id: std::collections::HashMap<u32, &str> =
+        tree.def_map.iter().map(|(k, v)| (k.0, v.as_str())).collect();
+
+    let mut ids = BTreeSet::new();
+    collect_def_ids(value, &mut ids);
+
+    let mut index = BTreeMap::new();
+    for id in ids {
+        let Some(name) = name_by_id.get(&(id as u32)) else { continue };
+        let name = (*name).to_owned();
+        // A class DefId resolves to a ClassDef (with a location); anything else
+        // in def_map (e.g. a component) resolves to a name only.
+        let info = match tree.get_class_by_qualified_name(&name) {
+            Some(class) => DefInfo {
+                name,
+                kind: "class",
+                class_type: Some(class.class_type.as_str().to_owned()),
+                file_name: Some(class.location.file_name.clone()),
+                line: Some(class.location.start_line),
+            },
+            None => DefInfo { name, kind: "definition", class_type: None, file_name: None, line: None },
+        };
+        index.insert(id, info);
+    }
+    index
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// End-to-end: after resolving `RotationalInertia` against the MSL, the
+    /// component *types* (`type_def_id`) must resolve to their MSL classes.
+    #[test]
+    fn resolves_def_ids_against_msl() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
+        let FromWorker::Compiled { def_index, resolve, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        assert!(resolve.value.is_some(), "resolve failed: {:?}", resolve.note);
+        assert!(!def_index.is_empty(), "no DefIds resolved");
+
+        let names: Vec<&str> = def_index.values().map(|d| d.name.as_str()).collect();
+        // The three declared component types resolved to their MSL classes.
+        for expected in [
+            "Mechanics.Rotational.Components.Inertia",
+            "Mechanics.Rotational.Sources.Torque",
+            "Blocks.Sources.Constant",
+        ] {
+            assert!(
+                def_index.values().any(|d| d.kind == "class" && d.name.ends_with(expected)),
+                "{expected} not resolved as a class; got {names:?}"
+            );
+        }
+    }
+
+    /// Navigation: after compiling the specimen, opening a class the model
+    /// points at (the MSL `Inertia`) returns its IR and its own DefId index.
+    #[test]
+    fn open_def_extracts_a_navigated_class() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
+        state.compile(path); // register the specimen document
+
+        let name = "Modelica.Mechanics.Rotational.Components.Inertia";
+        let FromWorker::DefTree { result, .. } = state.open_def(name) else {
+            panic!("expected DefTree");
+        };
+        let (value, def_index) = result.expect("Inertia class extracted");
+        // It's a class body with a name matching Inertia.
+        assert_eq!(value["name"]["text"], serde_json::json!("Inertia"));
+        // Its own references resolved, so navigation can continue from here.
+        assert!(!def_index.is_empty(), "navigated class has no resolved DefIds");
     }
 }
 

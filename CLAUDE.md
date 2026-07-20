@@ -14,13 +14,18 @@ curriculum order (see charter §4.2). If a task seems to require later-arc machi
 
 ## Reference documentation
 
-- Rumoca source: path dependency on the local clone at `/home/dougdew/dev/rumoca` (added as an
-  additional working directory — read it freely).
-- Doug's phase explanations: `/home/dougdew/dev/rumoca/docs/understanding` — top-level summary, one subdirectory
-  per compiler phase containing a phase description, some with drill-down documents (e.g.
-  Pantelides). These are Doug's own explanations, maintained against the clone's current
-  checkout; treat them as authoritative context. **Before working on code that touches a
-  compiler phase, read that phase's description**; consult drill-downs when the work goes deep.
+- Rumoca source: **git dependency on official Rumoca** (`github.com/CogniPilot/rumoca`) pinned to
+  commit `8cdc7419` in `Cargo.toml`. The compiled source lives in Cargo's cache —
+  `~/.cargo/git/checkouts/rumoca-*/8cdc7419/crates/...` — read it there (locate files with
+  `find ~/.cargo/git/checkouts -path '*rumoca*/<file>'`). This is the authoritative source HRW
+  builds against; a local `~/dev/rumoca` clone, if present, is only a personal reference and may
+  differ from the pin.
+- Doug's phase explanations: **`docs/understanding/`** (in THIS repo) — top-level summary, one
+  subdirectory per compiler phase containing a phase description, some with drill-down documents
+  (e.g. Pantelides, tearing, BLT). These are Doug's own explanations, matching the pinned Rumoca
+  commit; treat them as authoritative context. **Before working on code that touches a compiler
+  phase, read that phase's description**; consult drill-downs when the work goes deep. (Distinct
+  from `docs/notebook/` — the specimen-driven lab notebook.)
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
   Specification sections. Respect phase boundaries — IR crates are pure data.
 

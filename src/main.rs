@@ -5,6 +5,7 @@
 //! serde-value tree inspector showing the parsed AST.
 
 mod app;
+mod bridge;
 mod tree;
 mod worker;
 
@@ -28,7 +29,7 @@ fn run_app() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("HRW Observatory")
-            .with_inner_size([1100.0, 720.0]),
+            .with_maximized(true),
         ..Default::default()
     };
 
