@@ -22,6 +22,11 @@ and the per-specimen traces) need explicit regeneration.
   - `worker::tests::resolves_def_ids_against_msl` — component types resolve to their MSL classes.
   - `bridge::tests::*` — span-ascent, cross-stage diff.
 - Test failures flag **semantic** changes (behavior moved even though it still compiles).
+- **Watch `worker::tests::drivetrain_index_reduces_from_singular_to_solvable`.** HRW's index-reduction
+  funnel (`worker::index_reduce_for_structural_analysis`) mirrors the *order* of rumoca-sim's internal
+  `prepare_dae_for_structural_analysis` (`solve_lowering/structural_lowering.rs`). The compiler catches
+  renamed/removed `dae_prepare` fns; a **reordering** it won't — but this test will (before = singular,
+  after = solvable). If it fails, re-diff the funnel against that rumoca-sim source and update the order.
 
 ## 4. Regenerate the generic field-help table
 - `cargo run --example gen_field_help` — re-extracts `///` field docs from the new

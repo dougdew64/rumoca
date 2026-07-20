@@ -714,6 +714,74 @@ mod tests {
         let v = structural_report_for("NonlinearLoop");
         assert_eq!(v["coupled_block_count"], serde_json::json!(1));
     }
+
+    /// Arc 4: the `dae_prepare` funnel (mirroring rumoca-sim's internal
+    /// `prepare_dae_for_structural_analysis` — the shared prep the simulator and
+    /// `--inspect structure` both run) reduces Drivetrain's **singular, high-index**
+    /// DAE to a non-singular, structurally analyzable one. This confirms Rumoca can
+    /// index-reduce (not blocked-on-upstream) and pins the exact public API the
+    /// Arc-4 observatory stage will call. NOTE: HRW mirrors Rumoca's funnel *order*;
+    /// re-verify it against `rumoca-sim/src/solve_lowering/structural_lowering.rs`
+    /// on a pin bump.
+    #[test]
+    fn drivetrain_index_reduces_from_singular_to_solvable() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
+        let source = std::fs::read_to_string(path).unwrap();
+        let uri = path.to_string_lossy().to_string();
+        state.session.update_document(&uri, &source);
+        let qualified = state.session.qualify_model_name(&uri, "Drivetrain");
+        let report = state.session.compile_model_strict_reachable_with_recovery(&qualified);
+        let cr = match report.requested_result.as_ref() {
+            Some(PhaseResult::Success(cr)) => cr,
+            _ => panic!("expected a Success result for Drivetrain"),
+        };
+        // Before: the raw DAE is structurally singular (high index).
+        let before = rumoca_phase_structural::build_structural_report(&cr.dae);
+        assert!(before.is_err(), "expected Drivetrain to start singular, got {before:?}");
+
+        // Apply the index-reduction funnel, then re-analyze.
+        let mut reduced = cr.dae.clone();
+        index_reduce_for_structural_analysis(&mut reduced);
+        let after = rumoca_phase_structural::build_structural_report(&reduced);
+        assert!(
+            after.is_ok(),
+            "index reduction should make Drivetrain structurally analyzable, got {after:?}"
+        );
+    }
+}
+
+/// Apply Rumoca's index-reduction / dummy-derivative funnel to a DAE in place —
+/// the public `dae_prepare` building blocks, in the same order as rumoca-sim's
+/// internal `prepare_dae_for_structural_analysis`. Turns a structurally singular
+/// high-index DAE (e.g. Drivetrain's ideal gears) into a matchable, index-1 one.
+///
+/// HRW mirrors Rumoca's funnel *order*; re-verify it against
+/// `rumoca-sim/src/solve_lowering/structural_lowering.rs` on a Rumoca pin bump
+/// (see `docs/updating-rumoca.md`). Steps that can fail return a `StructuralError`;
+/// on failure we stop and leave the DAE partially reduced (the caller re-runs the
+/// structural report, which will report whatever singularity remains).
+fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) {
+    use rumoca_phase_structural::dae_prepare as dp;
+    // Fallible steps stop the funnel on error, leaving the DAE partially reduced
+    // (the caller's structural report then names whatever singularity remains);
+    // the infallible steps run in their funnel positions.
+    if dp::demote_exact_alias_component_states(dae).is_err() { return; }
+    if dp::demote_direct_assigned_states(dae).is_err() { return; }
+    if dp::reduce_constrained_dummy_derivatives(dae).is_err() { return; }
+    if dp::index_reduce_missing_state_derivatives(dae).is_err() { return; }
+    dp::demote_states_without_assignable_derivative_rows(dae);
+    if dp::eliminate_derivative_aliases(dae).is_err() { return; }
+    if dp::demote_states_without_retained_derivative_rows(dae).is_err() { return; }
+    dp::expand_compound_derivatives(dae);
+    dp::substitute_standalone_state_derivatives_in_non_ode_rows(dae);
 }
 
 /// Serialize a single class from a class tree by its qualified name.

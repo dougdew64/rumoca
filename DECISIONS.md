@@ -325,3 +325,19 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   no new library needed) → wire the Index-reduction stage/view → build the portable-subset planar
   mechanics library (revolute joint, rigid link, fixed; no MSL MultiBody) → author the four-bar linkage
   specimen (index-3 → reduced).
+- **2026-07-20 — Arc 4 step 1: Rumoca DOES index-reduce; funnel identified + wired.** Scout finding:
+  `cr.dae` is the RAW (pre-reduction) DAE — that's why `build_structural_report` reports Drivetrain
+  singular (97/97, 93 matched; the 4 unmatched are constraint forces `emf.p.v`, `shaft.flange_a.tau`,
+  `load.flange_a.f`, `wall.flange.f`). `eliminate::eliminate_trivial` only does trivial-alias removal
+  (97→39 eqs) and leaves the singularity. The **full** index reduction is rumoca-sim's internal
+  `prepare_dae_for_structural_analysis` (`solve_lowering/structural_lowering.rs`, `pub(super)`), a 9-step
+  funnel over the **public** `rumoca_phase_structural::dae_prepare::*` fns (demote_exact_alias →
+  demote_direct_assigned → reduce_constrained_dummy → index_reduce_missing_state_derivatives →
+  demote_no_assignable → eliminate_derivative_aliases → demote_no_retained → expand_compound_derivatives
+  → substitute_standalone_state_derivatives). HRW **replicates that funnel** in
+  `worker::index_reduce_for_structural_analysis(&mut Dae)` (rather than depend on rumoca-sim, whose entry
+  is `pub(super)`) — legitimate since it's Rumoca's own public fns in Rumoca's own documented order, but
+  it **couples to that order**: guarded by `worker::tests::drivetrain_index_reduces_from_singular_to_solvable`
+  (before = singular Err, after funnel = Ok), which fails loudly if a pin bump reorders/renames the funnel.
+  Verified: Drivetrain singular (97/97, 93 matched) → after funnel Ok (97 eq, 1 coupled block). Added
+  `rumoca-ir-dae` as a direct dep (accepted) to name `rumoca_ir_dae::Dae` for the funnel signature.

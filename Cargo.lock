@@ -2004,6 +2004,7 @@ dependencies = [
  "eframe",
  "rumoca-compile",
  "rumoca-ir-ast",
+ "rumoca-ir-dae",
  "rumoca-phase-instantiate",
  "rumoca-phase-parse",
  "rumoca-phase-structural",
