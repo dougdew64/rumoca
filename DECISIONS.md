@@ -416,3 +416,17 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `der(C.v) = 0`) restored + narrative; the two Arc-5 blow-ups now cover both kinds: CapacitorLoop
   (structural) and OverInitRc (init-determinacy). Guarded by
   `worker::tests::over_init_rc_is_flagged_over_determined` (+ RcCircuit asserts it is NOT mis-flagged).
+- **2026-07-20 — Advanced to Arc 6 (charter §4.2.6): events & hybrid structure; specimen reframed to
+  `BouncingBall`.** Arc 5 closed (initialization observable: RcCircuit IC plan + relaxation; CapacitorLoop
+  structural blow-up + OverInitRc init-determinacy blow-up). **Arc-6 de-risk scout:** Rumoca's hybrid
+  structure is all in **public** `rumoca-ir-dae` fields on `cr.dae` — `dae.discrete.{real_updates(f_z),
+  valued_updates(f_m)}`, `dae.conditions.{equations(f_c), relations}`, `dae.events.{synthetic_root_conditions,
+  scheduled_time_events}`. Not blocked-on-upstream; no new dep. **Specimen reframe (as Doug directed, à la
+  Arc 4):** the charter's stick-slip-friction / joint-limit specimen needs the parked planar mechanics
+  library, and Doug's suggested MSL `IdealDiode` rectifier **fails Rumoca's typecheck** (too demanding, like
+  MSL MultiBody). So Arc 6 uses **`BouncingBall`** — the archetypal self-contained hybrid
+  (`when h <= 0 then reinit(v, -e*pre(v))`), which compiles cleanly and produces 1 condition/relation
+  (`h <= 0`) + 1 discrete update (the reinit). Increment plan (CLAUDE.md): wire an **Events** stage
+  rendering the hybrid partitions → author + narrate BouncingBall. "Step-mode plotting" (running + plotting
+  discontinuities) is a stretch bridging to Arc 7 (simulation core), not required for the compile-level
+  event structure.

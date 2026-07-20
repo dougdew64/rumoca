@@ -7,35 +7,38 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 5: Initialization & IC planning** (charter §4.2.5). This arc studies how Rumoca computes a
-**consistent initial state at t = 0** — the initial-condition solve plan over the `initial` + continuous
-equations and `start` attributes. Per the charter it is "the arc where the original [Rumoca] bug lived,
-and where an early compiler most needs contributions." **Specimen: the RC/RL blow-up case** — a
-resistor–capacitor (or –inductor) circuit whose initialization is non-trivial (implicitly-defined /
-over-determined ICs), the resurrected 2025 case. (The linkage-from-static-equilibrium specimen §4.2.5
-also lists is **deferred** — it needs the parked planar library + the nonlinear-constraint reduction
-Arc 4 found missing.)
+**Arc 6: Events & hybrid structure** (charter §4.2.6). This arc studies where a model stops being one
+smooth DAE and becomes **hybrid** — the equation structure changes at discrete events. Rumoca's machinery:
+`when` clauses lowered into **discrete updates** (`f_z` real, `f_m` valued), **conditions** (`f_c` + the
+`relation` expressions that trigger them), and the **event partition** (`synthetic_root_conditions` =
+zero-crossing functions, `scheduled_time_events`). **Specimen (reframed 2026-07-20): `BouncingBall`** —
+the archetypal hybrid model (a ball under gravity; `when h <= 0 then reinit(v, -e*pre(v))`). The charter's
+preferred stick-slip-friction / joint-limit specimen needs the **parked** planar mechanics library
+(friction/contact primitives), so — as with Arc 4's reframe around Drivetrain — this arc uses a
+self-contained hybrid specimen that compiles. (Doug's first pick, an MSL `IdealDiode` rectifier, **fails
+Rumoca's typecheck** — too demanding, like MSL MultiBody; hence the bouncing ball.)
 
-**Rumoca capability CONFIRMED — not blocked-on-upstream** (scouted 2026-07-20):
-`rumoca-phase-structural::ic_plan` is **public** — `build_ic_plan(dae, n_x) -> Vec<IcBlock>` produces the
-IC solve plan (`IcBlock` = `ScalarDirect` symbolic / `ScalarNewton` / `TornBlock` LM+causal / `CoupledLM`),
-and `build_ic_relaxation_hint(dae, n_x)` gives the drop-equation / pin-unknown hint for structurally
-singular initial subsystems. `n_x` = state count. The flat model already carries `initial_equations` /
-`initial_structured_equations` / `initial_assert_equations` (visible in the Flatten trace). `IcBlock`
-holds `rumoca_core::Expression`, so — like the structural report — build JSON rather than deriving Serialize.
+**Rumoca capability CONFIRMED — not blocked-on-upstream** (scouted 2026-07-20): the hybrid structure is
+all in **public** `rumoca-ir-dae` fields on `cr.dae` — `dae.discrete.{real_updates, valued_updates}`,
+`dae.conditions.{equations, relations}`, `dae.events.{synthetic_root_conditions, scheduled_time_events}`.
+BouncingBall produces: 1 condition/relation (`h <= 0`), 1 discrete real update (the `reinit`). The when-clause
+analysis is internal, but its *results* live in these partitions, readable directly (like the DAE event
+JSON — no new dep; expressions serialize).
 
-Increment plan: (1) scout `build_ic_plan` / `build_ic_relaxation_hint` on an RC/RL specimen + decide the
-observation (the IC plan + relaxation hint, JSON like the structural report); (2) wire an
-**Initialization** stage/view into the observatory (full new-stage checklist: worker → tab → diff-highlight
-→ stage files → field-help → trace → narrative); (3) author the RC/RL blow-up specimen and show the IC plan
-(+ the failure mode the 2025 bug produced — the most likely upstream-contribution source, charter §5).
+Increment plan: (1) scout the DAE event partitions on `BouncingBall` **[done]**; (2) wire an **Events**
+stage/view rendering the hybrid structure (conditions/relations, discrete updates, zero-crossing / scheduled
+events) — full new-stage checklist (worker → tab → diff-highlight → stage files → field-help → trace →
+narrative); (3) author + narrate `BouncingBall`. The charter's "step-mode plotting" (running the model,
+plotting discontinuities) is a genuinely new capability that bridges toward **Arc 7 (simulation core)** —
+treat as a stretch, not required for Arc 6's compile-level event structure.
 
-**Arc 4 closed (2026-07-20):** index reduction is observable on `Drivetrain` (Structural = singular →
-Index reduction = solvable). Finding: Rumoca's Rust-path reduction handles *linear* high-index (gears) but
-not *nonlinear* holonomic constraints; the four-bar linkage + planar library (`lib/PlanarMechanics.mo`)
-are parked/deferred (`docs/ideas.md` #5). Arc 1–4 done (Parse … Index reduction + BLT spy-plot + the
-7-specimen notebook). **New pipeline stages must be wired into the stage-diff highlight + stage-file
-publishing AND the notebook trace/narrative** (see Claude's `hrw-stage-diff-highlight-extend` memory).
+**Arc 5 closed (2026-07-20):** initialization is observable — `RcCircuit` shows the IC solve plan +
+ground-redundancy relaxation; two blow-ups (`CapacitorLoop` structural, `OverInitRc` init-determinacy via
+idea #6). **Arc 4 closed:** index reduction observable on `Drivetrain`; the nonlinear four-bar + planar
+library (`lib/PlanarMechanics.mo`) are parked/deferred (`docs/ideas.md` #5). Arc 1–5 done (Parse …
+Initialization + BLT spy-plot + the 9-specimen notebook). **New pipeline stages must be wired into the
+stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
+`hrw-stage-diff-highlight-extend` memory).
 
 **Close-out gates under review:** Doug is separately weighing whether the differential test (System
 Modeler round-trip) and the debugger single-step should remain arc close-out gates at all — Arcs 3 & 4

@@ -961,6 +961,7 @@ mod tests {
         assert!(initialization.note_is_error, "over-determined init should be flagged red");
     }
 
+
     /// Arc 4: the parked hand-built PlanarMechanics library (the four-bar-linkage
     /// prerequisite, deferred until Rumoca's Rust-path reduction handles nonlinear
     /// holonomic constraints — see DECISIONS.md) still parses as a source root, so
