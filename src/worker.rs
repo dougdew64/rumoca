@@ -664,22 +664,45 @@ fn build_def_index(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    fn msl_roots() -> Vec<PathBuf> {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ]
+    }
+
+    /// One MSL-loaded worker, built once and shared across the worker tests behind
+    /// a mutex. Each test needs the full MSL (~430MB resolved); loading it per-test
+    /// OOMs / thrashes when cargo runs them in parallel. So tests lock this shared,
+    /// already-loaded worker and run serially against it — MSL is parsed once, and
+    /// peak memory stays at a single session. The session accumulates each
+    /// specimen's document (distinct URIs), which is fine: `compile` qualifies the
+    /// requested model by its own URI.
+    fn shared_worker() -> &'static Mutex<WorkerState> {
+        static WORKER: OnceLock<Mutex<WorkerState>> = OnceLock::new();
+        WORKER.get_or_init(|| {
+            let mut state = WorkerState::new();
+            state.load_libraries(msl_roots()).expect("load MSL once for tests");
+            Mutex::new(state)
+        })
+    }
+
+    /// Compile `specimens/<name>.mo` against the shared MSL worker.
+    fn compile_specimen_shared(name: &str) -> FromWorker {
+        let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        w.compile(&path)
+    }
 
     /// End-to-end: after resolving `RotationalInertia` against the MSL, the
     /// component *types* (`type_def_id`) must resolve to their MSL classes.
     #[test]
     fn resolves_def_ids_against_msl() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
-        let FromWorker::Compiled { def_index, resolve, .. } = state.compile(path) else {
+        let FromWorker::Compiled { def_index, resolve, .. } = compile_specimen_shared("RotationalInertia") else {
             panic!("expected Compiled");
         };
         assert!(resolve.value.is_some(), "resolve failed: {:?}", resolve.note);
@@ -703,20 +726,15 @@ mod tests {
     /// points at (the MSL `Inertia`) returns its IR and its own DefId index.
     #[test]
     fn open_def_extracts_a_navigated_class() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
-        state.compile(path); // register the specimen document
-
         let name = "Modelica.Mechanics.Rotational.Components.Inertia";
-        let FromWorker::DefTree { result, .. } = state.open_def(name) else {
-            panic!("expected DefTree");
+        let result = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
+            w.compile(path); // register the specimen document
+            let FromWorker::DefTree { result, .. } = w.open_def(name) else {
+                panic!("expected DefTree");
+            };
+            result
         };
         let (value, def_index) = result.expect("Inertia class extracted");
         // It's a class body with a name matching Inertia.
@@ -730,16 +748,7 @@ mod tests {
     /// connector expansion / flow-sum generation across domains).
     #[test]
     fn drivetrain_compiles_through_flatten() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
-        let FromWorker::Compiled { model, flatten, .. } = state.compile(path) else {
+        let FromWorker::Compiled { model, flatten, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
         assert_eq!(model.as_deref(), Some("Drivetrain"));
@@ -753,16 +762,7 @@ mod tests {
     /// The structural stage builds a matching + BLT report for an index-1 model.
     #[test]
     fn structural_report_for_rotational_inertia() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
-        let FromWorker::Compiled { structural, .. } = state.compile(path) else {
+        let FromWorker::Compiled { structural, .. } = compile_specimen_shared("RotationalInertia") else {
             panic!("expected Compiled");
         };
         let v = structural.value.expect("structural report");
@@ -778,16 +778,7 @@ mod tests {
     /// whole reason for existing, so guard it.
     #[test]
     fn proportional_loop_has_a_coupled_block() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/ProportionalLoop.mo"));
-        let FromWorker::Compiled { structural, .. } = state.compile(path) else {
+        let FromWorker::Compiled { structural, .. } = compile_specimen_shared("ProportionalLoop") else {
             panic!("expected Compiled");
         };
         let v = structural.value.unwrap_or_else(|| panic!("no structural report: {:?}", structural.note));
@@ -803,16 +794,7 @@ mod tests {
     /// Compile a `specimens/<name>.mo` against the MSL and return its structural
     /// report JSON — shared by the block-structure guards below.
     fn structural_report_for(name: &str) -> serde_json::Value {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
-        let FromWorker::Compiled { structural, .. } = state.compile(&path) else {
+        let FromWorker::Compiled { structural, .. } = compile_specimen_shared(name) else {
             panic!("expected Compiled");
         };
         structural.value.unwrap_or_else(|| panic!("no structural report for {name}: {:?}", structural.note))
@@ -863,20 +845,15 @@ mod tests {
     /// on a pin bump.
     #[test]
     fn drivetrain_index_reduces_from_singular_to_solvable() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
-        let source = std::fs::read_to_string(path).unwrap();
-        let uri = path.to_string_lossy().to_string();
-        state.session.update_document(&uri, &source);
-        let qualified = state.session.qualify_model_name(&uri, "Drivetrain");
-        let report = state.session.compile_model_strict_reachable_with_recovery(&qualified);
+        let report = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
+            let source = std::fs::read_to_string(path).unwrap();
+            let uri = path.to_string_lossy().to_string();
+            w.session.update_document(&uri, &source);
+            let qualified = w.session.qualify_model_name(&uri, "Drivetrain");
+            w.session.compile_model_strict_reachable_with_recovery(&qualified)
+        };
         let cr = match report.requested_result.as_ref() {
             Some(PhaseResult::Success(cr)) => cr,
             _ => panic!("expected a Success result for Drivetrain"),
@@ -901,16 +878,7 @@ mod tests {
     /// reduction stay singular (an observable initialization blow-up).
     #[test]
     fn capacitor_loop_is_singular_and_irreducible() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/CapacitorLoop.mo"));
-        let FromWorker::Compiled { flatten, structural, index_reduction, .. } = state.compile(path) else {
+        let FromWorker::Compiled { flatten, structural, index_reduction, .. } = compile_specimen_shared("CapacitorLoop") else {
             panic!("expected Compiled");
         };
         assert!(flatten.value.is_some(), "CapacitorLoop should still flatten");
@@ -925,16 +893,7 @@ mod tests {
     /// circuit — a non-empty IC plan plus the ground-current relaxation hint.
     #[test]
     fn rc_circuit_has_an_ic_plan() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RcCircuit.mo"));
-        let FromWorker::Compiled { initialization, .. } = state.compile(path) else {
+        let FromWorker::Compiled { initialization, .. } = compile_specimen_shared("RcCircuit") else {
             panic!("expected Compiled");
         };
         let v = initialization.value.unwrap_or_else(|| panic!("no IC plan: {:?}", initialization.note));
@@ -959,16 +918,7 @@ mod tests {
     /// before/after the two tabs show side by side.
     #[test]
     fn drivetrain_index_reduction_stage_recovers_singular() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let roots = vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ];
-        let mut state = WorkerState::new();
-        state.load_libraries(roots).expect("load MSL");
-        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
-        let FromWorker::Compiled { structural, index_reduction, .. } = state.compile(path) else {
+        let FromWorker::Compiled { structural, index_reduction, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
         assert!(structural.value.is_none(), "raw Structural should be singular for Drivetrain");
