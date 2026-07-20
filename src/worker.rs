@@ -503,6 +503,31 @@ mod tests {
         // Its own references resolved, so navigation can continue from here.
         assert!(!def_index.is_empty(), "navigated class has no resolved DefIds");
     }
+
+    /// The Arc-2 drivetrain specimen compiles through the whole pipeline (it
+    /// crosses electrical → rotational → translational, so this exercises
+    /// connector expansion / flow-sum generation across domains).
+    #[test]
+    fn drivetrain_compiles_through_flatten() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
+        let FromWorker::Compiled { model, flatten, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        assert_eq!(model.as_deref(), Some("Drivetrain"));
+        assert!(
+            flatten.value.is_some(),
+            "Drivetrain did not flatten: {:?}",
+            flatten.note
+        );
+    }
 }
 
 /// Serialize a single class from a class tree by its qualified name.
