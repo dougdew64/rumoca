@@ -7,10 +7,23 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 1: Parse → Resolve → Typecheck.** Scope: eframe shell, file picker over the specimen
-directory, generic serde-value tree inspector showing the AST.
-**Do not implement panes, views, or features belonging to later arcs.** The build order is the
-curriculum order (see charter §4.2). If a task seems to require later-arc machinery, stop and ask.
+**Arc 2: Instantiate → Flatten** (charter §4.2.2). Specimen: a motor–gearbox–link drivetrain
+crossing electrical, rotational, and translational domains — connector expansion, flow-sum
+generation, modifiers ("where object orientation dies and equations are born"); diff the flattened
+output against a hand-flattened prediction. This arc also lands the model-scoped **typecheck**
+deferred from Arc 1 (`typecheck_instanced`, post-instantiation — see DECISIONS.md).
+
+Scope: add the instantiate → flatten (and typed) stages to the worker pipeline and point the ONE
+generic serde tree at them (charter §4.4). **Do not build the bipartite / BLT / spy-plot or graph
+views** — those belong to the Matching/BLT arc (§4.2.3) and later. If a task needs machinery from a
+later arc, stop and ask. Arc 1 (Parse, Resolve) and the bridge/help system are done.
+
+**Deferred — revisit after Doug's consideration (as of 2026-07-19):** the Arc-1 close-out ritual's
+differential test (round-trip `RotationalInertia.mo` through System Modeler vs Rumoca) and the
+per-specimen lab notebook (`docs/notebook/`). Doug is deliberately thinking through the
+round-tripping + notebooking workflow and will return to them *without* blocking arc progress —
+their absence is intentional, not an oversight, and this note advances the arc despite the open
+ritual item #1.
 
 ## Reference documentation
 

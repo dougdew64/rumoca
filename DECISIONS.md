@@ -159,3 +159,14 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   Rumoca source now lives in `~/.cargo/git/checkouts/` (read-only, hash-named); the 🐞 debugger still
   works (basename breakpoints + default dev debug info); no editable clone unless kept aside for a
   future arc that instruments Rumoca. HRW no longer depends on Doug's fork or local clone.
+
+## Arc 2 — advanced (with Arc-1 ritual items deferred)
+
+- **2026-07-19 — Advanced Current Arc to Arc 2 (Instantiate → Flatten) with two Arc-1 close-out items
+  deferred.** The Arc-1 help-system + reorg work is committed/pushed (commit `23f8ccc`). Two close-out
+  ritual items are intentionally left open so arc progress isn't blocked while Doug thinks through the
+  workflow: (1) **the differential test** — round-tripping `RotationalInertia.mo` through System
+  Modeler vs Rumoca (ritual #1); (2) **the per-specimen lab notebook** (`docs/notebook/`, still just
+  template + README). Doug's decision (2026-07-19): advance to Arc 2 now and **revisit round-tripping
+  + notebooking after he has given the matter consideration** — their absence is deliberate, not an
+  oversight. CLAUDE.md's Current Arc section updated to Arc 2 and carries this deferral note.
