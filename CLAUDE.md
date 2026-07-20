@@ -32,7 +32,9 @@ ritual item #1.
   `~/.cargo/git/checkouts/rumoca-*/8cdc7419/crates/...` — read it there (locate files with
   `find ~/.cargo/git/checkouts -path '*rumoca*/<file>'`). This is the authoritative source HRW
   builds against; a local `~/dev/rumoca` clone, if present, is only a personal reference and may
-  differ from the pin.
+  differ from the pin. **Bumping this pin follows `docs/updating-rumoca.md`** (compiler + tests
+  drive the code fixes; `cargo run --example gen_field_help` refreshes the generic field-help
+  table; `docs/understanding` is refreshed only by Doug).
 - Doug's phase explanations: **`docs/understanding/`** (in THIS repo) — top-level summary, one
   subdirectory per compiler phase containing a phase description, some with drill-down documents
   (e.g. Pantelides, tearing, BLT). These are Doug's own explanations, matching the pinned Rumoca

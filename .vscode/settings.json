@@ -2,5 +2,13 @@
   // Force rust-analyzer's "Debug" CodeLens to use CodeLLDB (charter Decision 6),
   // rather than silently falling back to the cpptools/GDB engine. If CodeLLDB is
   // not installed, VS Code will prompt to install it instead of using GDB.
-  "rust-analyzer.debug.engine": "vadimcn.vscode-lldb"
+  "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
+
+  // Open the docs/understanding chapters in the rendered Markdown *preview*
+  // (the "Read: …" button in the app runs `code <path>`). Scoped to that folder
+  // — the key contains a `/`, so it matches the full workspace-relative path —
+  // so other .md files (notebook, README) still open as editable source.
+  "workbench.editorAssociations": {
+    "**/docs/understanding/**/*.md": "vscode.markdown.preview.editor"
+  }
 }

@@ -170,3 +170,27 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   template + README). Doug's decision (2026-07-19): advance to Arc 2 now and **revisit round-tripping
   + notebooking after he has given the matter consideration** — their absence is deliberate, not an
   oversight. CLAUDE.md's Current Arc section updated to Arc 2 and carries this deferral note.
+
+## Arc 2 prep — generic field-help panel + Rumoca-update process
+
+- **2026-07-19 — Two-tier explanations: a generic (build-time) tier alongside the specific (bridge)
+  tier.** Doug's dogfooding insight: waiting for Claude to explain *what a field is* (generic) is
+  wasteful when only the *why did this one happen* (specific) needs runtime reasoning. So the RHS
+  "About this field" panel shows, instantly on left-click, the field's own Rumoca `///` doc — 194
+  fields extracted from the pinned `rumoca-ir-ast` into `src/field_help.json`, embedded via
+  `include_str!` (`src/field_help.rs`). Keyed by field name (v1; type-path disambiguation deferred).
+  A "Read: Phase N" button opens the matching `docs/understanding` chapter in VS Code's Markdown
+  **preview** (scoped `workbench.editorAssociations` in `.vscode/settings.json`). This resurrects the
+  originally-superseded lookup layer, correctly scoped to the generic tier; the bridge + chat `explain`
+  remain the specific tier.
+- **2026-07-19 — Field-help regeneration is a committed one-command tool, not an ad-hoc script.**
+  `cargo run --example gen_field_help` (`examples/gen_field_help.rs`) locates `rumoca-ir-ast`'s source
+  via `cargo metadata` (robust to the cargo-cache hash/rev — no hard-coded path) and rewrites
+  `src/field_help.json`. Verified byte-identical to the original ad-hoc extraction. The broader
+  "what to do after a Rumoca pin bump" process lives in `docs/updating-rumoca.md`: compiler + tests
+  drive code fixes, one command refreshes field help, `docs/understanding` is Doug-only.
+- **2026-07-19 — Rumoca version in Help/About is derived, not hand-maintained.** A `build.rs` reads
+  `rumoca-compile`'s version + git commit from `Cargo.lock` (`cargo:rerun-if-changed=Cargo.lock`) and
+  emits them as `HRW_RUMOCA_VERSION`/`HRW_RUMOCA_REV`; the About dialog shows them via `env!(...)`. So
+  it always matches what was compiled in and can never drift — a pin bump refreshes it automatically
+  on the next build (no manual step; the checklist just says "verify About shows the new rev").

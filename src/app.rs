@@ -9,9 +9,10 @@ use std::path::PathBuf;
 
 use eframe::egui;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::bridge::{self, Ask, Focus, Seg};
+use crate::field_help;
 use crate::tree;
 use crate::worker::{DefInfo, FromWorker, Stage, ToWorker, Worker};
 
@@ -83,6 +84,10 @@ pub struct App {
     show_settings: bool,
     show_help: bool,
     show_about: bool,
+
+    // Generic (build-time) field help + the field the user last left-clicked.
+    field_help: HashMap<String, String>,
+    selected_field: Option<String>,
 }
 
 impl App {
@@ -131,6 +136,8 @@ impl App {
             show_settings: false,
             show_help: false,
             show_about: false,
+            field_help: field_help::load(),
+            selected_field: None,
         };
         app.rescan();
         app.load_libraries(); // load MSL at startup so resolve works immediately
@@ -179,6 +186,7 @@ impl App {
         self.nav.clear();
         self.nav_loading = None;
         self.nav_error = None;
+        self.selected_field = None;
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
     }
@@ -410,7 +418,14 @@ impl eframe::App for App {
                 ui.strong("HRW Observatory");
                 ui.label("An egui instrument for studying the Rumoca Modelica compiler pipeline.");
                 ui.separator();
-                ui.label("Arc 1 · Parse → Resolve → Typecheck");
+                ui.label(format!("HRW v{}", env!("CARGO_PKG_VERSION")));
+                // Derived from Cargo.lock by build.rs — always matches what was
+                // compiled in; never hand-edit (see docs/updating-rumoca.md).
+                ui.label(format!(
+                    "Built against Rumoca {} · git {}",
+                    env!("HRW_RUMOCA_VERSION"),
+                    env!("HRW_RUMOCA_REV"),
+                ));
                 ui.label("Rumoca is linked as a library; compilation runs on a worker thread.");
             });
 
@@ -506,6 +521,55 @@ impl eframe::App for App {
                         self.open(path);
                     }
                 });
+            });
+
+        // Right panel: generic (build-time) field help for the last-clicked tree
+        // item — the FAST tier (no Claude). The specific tier ("why did THIS one
+        // happen") is the bridge + chat, via "explain".
+        egui::Panel::right("field_help")
+            .resizable(true)
+            .default_size(380.0)
+            .min_size(220.0)
+            .show(ui, |ui| {
+                ui.strong("About this field");
+                ui.separator();
+                match &self.selected_field {
+                    Some(name) => {
+                        ui.label(egui::RichText::new(name).monospace().strong());
+                        ui.add_space(4.0);
+                        match self.field_help.get(name) {
+                            Some(doc) => {
+                                ui.label(doc);
+                            }
+                            None => {
+                                ui.weak(format!(
+                                    "No generic help for “{name}”. Left-click captures it; type \
+                                     “explain” in the chat for a specific explanation.",
+                                ));
+                            }
+                        }
+                    }
+                    None => {
+                        ui.weak(
+                            "Left-click a tree item to see what it is (generic help). Then type \
+                             “explain” in the chat for the specific story.",
+                        );
+                    }
+                }
+                ui.add_space(8.0);
+                ui.separator();
+                // Concept-level link: the docs/understanding chapter for the phase
+                // whose IR is on screen (Resolve while navigating a definition).
+                let stage_ctx = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
+                let (label, rel) = field_help::chapter_for_stage(stage_ctx);
+                if ui
+                    .button(format!("Read: {label}"))
+                    .on_hover_text("Open this docs/understanding chapter in your editor")
+                    .clicked()
+                {
+                    let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+                    let _ = std::process::Command::new("code").arg(abs).spawn();
+                }
             });
 
         // Bridge "ask" + navigation requests collected during this frame, acted
@@ -639,6 +703,10 @@ impl eframe::App for App {
         if let Some(name) = nav_to {
             self.navigate_to(name);
         }
+        // Populate the generic field-help panel from whichever node was clicked.
+        if let Some(kp) = debug_ask.as_ref().or(node_ask.as_ref()) {
+            self.selected_field = field_name_from_path(kp);
+        }
         if let Some(key_path) = debug_ask {
             self.emit_node_focus(key_path, "debug-where-set");
         } else if let Some(key_path) = node_ask {
@@ -649,4 +717,13 @@ impl eframe::App for App {
             self.emit_focus(Focus::Model);
         }
     }
+}
+
+/// The field name to look up generic help for = the last object-key segment in
+/// the clicked path (an array-index tail falls back to its enclosing field).
+fn field_name_from_path(path: &[Seg]) -> Option<String> {
+    path.iter().rev().find_map(|seg| match seg {
+        Seg::Key(k) => Some(k.clone()),
+        Seg::Index(_) => None,
+    })
 }

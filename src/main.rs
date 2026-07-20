@@ -6,6 +6,7 @@
 
 mod app;
 mod bridge;
+mod field_help;
 mod tree;
 mod worker;
 
