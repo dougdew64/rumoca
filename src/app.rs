@@ -41,6 +41,7 @@ enum StageKind {
     Instantiate,
     Typecheck,
     Flatten,
+    Structural,
 }
 
 /// One level of "go to definition" navigation: a class extracted from the
@@ -73,6 +74,7 @@ pub struct App {
     instantiate: Stage,
     typecheck: Stage,
     flatten: Stage,
+    structural: Stage,
     stage: StageKind,
     // Resolved identity of every DefId referenced in the current model's IR.
     def_index: BTreeMap<u64, DefInfo>,
@@ -135,6 +137,7 @@ impl App {
             instantiate: Stage::default(),
             typecheck: Stage::default(),
             flatten: Stage::default(),
+            structural: Stage::default(),
             stage: StageKind::Resolve,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
@@ -194,6 +197,7 @@ impl App {
         self.instantiate = Stage::default();
         self.typecheck = Stage::default();
         self.flatten = Stage::default();
+        self.structural = Stage::default();
         self.def_index = BTreeMap::new();
         self.nav.clear();
         self.nav_loading = None;
@@ -221,7 +225,7 @@ impl App {
                     };
                 }
                 FromWorker::Compiled {
-                    path, model, parse, resolve, instantiate, typecheck, flatten, def_index,
+                    path, model, parse, resolve, instantiate, typecheck, flatten, structural, def_index,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -233,6 +237,7 @@ impl App {
                     self.instantiate = instantiate;
                     self.typecheck = typecheck;
                     self.flatten = flatten;
+                    self.structural = structural;
                     self.def_index = def_index;
                     // Land on the furthest stage that completed cleanly.
                     self.stage = self.last_successful_stage();
@@ -243,6 +248,7 @@ impl App {
                         ("instantiate", self.instantiate.value.as_ref()),
                         ("typecheck", self.typecheck.value.as_ref()),
                         ("flatten", self.flatten.value.as_ref()),
+                        ("structural", self.structural.value.as_ref()),
                     ]);
                 }
                 FromWorker::DefTree { name, result } => {
@@ -266,6 +272,7 @@ impl App {
             StageKind::Instantiate => &self.instantiate,
             StageKind::Typecheck => &self.typecheck,
             StageKind::Flatten => &self.flatten,
+            StageKind::Structural => &self.structural,
         }
     }
 
@@ -276,6 +283,7 @@ impl App {
             StageKind::Instantiate => "Instantiate",
             StageKind::Typecheck => "Typecheck",
             StageKind::Flatten => "Flatten",
+            StageKind::Structural => "Structural",
         }
     }
 
@@ -296,6 +304,9 @@ impl App {
             StageKind::Instantiate => self.resolve.value.as_ref(),
             StageKind::Typecheck => self.instantiate.value.as_ref(),
             StageKind::Flatten => self.typecheck.value.as_ref(),
+            // The structural report is a different shape from the flat model —
+            // no path-aligned previous, so nothing to highlight.
+            StageKind::Structural => None,
         }
     }
 
@@ -303,7 +314,9 @@ impl App {
     /// note) — where the tabs should land after a compile. Falls back to Parse.
     fn last_successful_stage(&self) -> StageKind {
         let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
-        if ok(&self.flatten) {
+        if ok(&self.structural) {
+            StageKind::Structural
+        } else if ok(&self.flatten) {
             StageKind::Flatten
         } else if ok(&self.typecheck) {
             StageKind::Typecheck
@@ -687,6 +700,12 @@ impl eframe::App for App {
                              pre-instantiation whole-tree typecheck; it fails on the full MSL.",
                         );
                     ui.selectable_value(&mut self.stage, StageKind::Flatten, "Flatten");
+                    ui.selectable_value(&mut self.stage, StageKind::Structural, "Structural")
+                        .on_hover_text(
+                            "Structural analysis of the DAE (Rumoca phase 7): maximum matching \
+                             (equation↔unknown), BLT blocks (evaluation order; size>1 = algebraic \
+                             loop), and tearing. Custom incidence + BLT spy-plot views land next.",
+                        );
                     if self.selected.is_some()
                         && ui
                             .button("🔎 Capture")

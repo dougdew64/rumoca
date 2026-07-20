@@ -7,23 +7,25 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 2: Instantiate → Flatten** (charter §4.2.2). Specimen: a motor–gearbox–link drivetrain
-crossing electrical, rotational, and translational domains — connector expansion, flow-sum
-generation, modifiers ("where object orientation dies and equations are born"); diff the flattened
-output against a hand-flattened prediction. This arc also lands the model-scoped **typecheck**
-deferred from Arc 1 (`typecheck_instanced`, post-instantiation — see DECISIONS.md).
+**Arc 3: Matching & BLT** (charter §4.2.3). Specimen: an ideal proportional feedback loop closed
+around instantaneous relations (a servo inner loop, idealized) — yielding a genuine *simultaneous
+algebraic block*. This arc studies **structural analysis** (Rumoca phase 7): the incidence matrix,
+maximum bipartite matching (equation↔unknown), Tarjan SCC → **BLT blocks**, and **tearing** of
+algebraic loops. Data comes from `build_structural_report(&dae)` over the pipeline's `CompilationResult.dae`
+(needs the `rumoca-phase-structural` dep, added).
 
-Scope: add the instantiate → flatten (and typed) stages to the worker pipeline and point the ONE
-generic serde tree at them (charter §4.4). **Do not build the bipartite / BLT / spy-plot or graph
-views** — those belong to the Matching/BLT arc (§4.2.3) and later. If a task needs machinery from a
-later arc, stop and ask. Arc 1 (Parse, Resolve) and the bridge/help system are done.
+Scope: **this is the arc where custom views beyond the one generic tree arrive** — a **bipartite
+incidence view** and a **BLT spy-plot**, built with a custom `egui::Painter` canvas (deliberately NOT
+`egui_graphs` — chosen for maximum flexibility during Doug's dogfooding; see DECISIONS.md). Increment
+plan: (1) structural report in a **Structural** generic-tree tab, (2) incidence canvas view,
+(3) BLT spy-plot, (4) the feedback-loop specimen. Arc 1–2 (Parse … Flatten) + the bridge / help /
+field-help / stage-diff systems are done. New pipeline stages must be wired into the stage-diff
+highlight + stage-file publishing (see Claude's `hrw-stage-diff-highlight-extend` memory).
 
-**Deferred — revisit after Doug's consideration (as of 2026-07-19):** the Arc-1 close-out ritual's
-differential test (round-trip `RotationalInertia.mo` through System Modeler vs Rumoca) and the
-per-specimen lab notebook (`docs/notebook/`). Doug is deliberately thinking through the
-round-tripping + notebooking workflow and will return to them *without* blocking arc progress —
-their absence is intentional, not an oversight, and this note advances the arc despite the open
-ritual item #1.
+**Deferred — revisit after Doug's consideration:** the Arc-1/2 close-out differential tests
+(round-tripping specimens through System Modeler vs Rumoca) and the per-specimen lab notebook
+(`docs/notebook/`). Doug is deliberately thinking through the round-tripping + notebooking workflow
+and will return to them *without* blocking arc progress — their absence is intentional, not an oversight.
 
 ## Reference documentation
 

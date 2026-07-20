@@ -2006,6 +2006,7 @@ dependencies = [
  "rumoca-ir-ast",
  "rumoca-phase-instantiate",
  "rumoca-phase-parse",
+ "rumoca-phase-structural",
  "rumoca-phase-typecheck",
  "serde_json",
 ]

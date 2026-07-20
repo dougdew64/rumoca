@@ -16,4 +16,6 @@ rumoca-phase-parse = { git = "https://github.com/CogniPilot/rumoca.git", rev = "
 # render the InstancedTree overlay (which the high-level pipeline doesn't expose).
 rumoca-phase-instantiate = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
 rumoca-phase-typecheck = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+# Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
+rumoca-phase-structural = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
 serde_json = "1.0.150"

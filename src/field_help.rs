@@ -42,6 +42,10 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "Phase 5 · Flatten",
             "docs/understanding/phase5_flatten/flatten.md",
         ),
+        "Structural" => (
+            "Phase 7 · Structural Analysis",
+            "docs/understanding/phase7_structural_analysis/structural_analysis.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/understanding/high_level_overview.md",

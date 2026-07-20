@@ -218,3 +218,27 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   driven by `App::previous_stage_value` + `prev` threaded through `tree_ui`). **Standing expectation:
   every pipeline stage added in later arcs must be wired into BOTH mechanisms** (see the file-by-file
   checklist in Claude's memory `hrw-stage-diff-highlight-extend`).
+
+## Arc 3 — Matching & BLT
+
+- **2026-07-20 — Advanced to Arc 3 (charter §4.2.3): structural analysis (matching / BLT / tearing).**
+  A **Structural** stage tab renders `build_structural_report(&CompilationResult.dae)` — max matching
+  (equation↔unknown), BLT blocks (scalar vs coupled, with tearing). Added `rumoca-phase-structural`
+  as a direct git dep (same pin) — **accepted** (Doug: "add any dependencies you need"); required
+  because the rich `StructuralReport` isn't re-exported by rumoca-compile. The report types aren't
+  `Serialize`, so `worker::{structural_to_json, block_to_json, tearing_to_json}` build the JSON. The
+  stage is wired into the diff-highlight (previous = None; the report has no path-aligned prior) and
+  stage-file publishing per the standing rule.
+- **2026-07-20 — Custom `egui::Painter` canvas for the Arc-3 views, NOT `egui_graphs`.** Decision
+  driven by Doug's criterion ("choose the egui route that most empowers you to implement the view
+  enhancements I'll request during dogfooding, don't be limited by egui"). A graph library is an
+  abstraction that caps what enhancements are expressible; a raw `Painter` canvas draws every pixel
+  (matrices, spy-plots, highlights, block outlines, hover, click-to-capture) with no ceiling and plugs
+  straight into the bridge (hit-test → capture). Incidence view + BLT spy-plot both built on one
+  reusable canvas scaffold (pan/zoom/pointer→cell).
+- **2026-07-20 — Finding: the Drivetrain is structurally singular (high-index).** `build_structural_report`
+  reports 93/97 matched (unmatched are connector flows/potentials at the ideal gears). The *ideal*
+  (rigid) gears impose position constraints → high index → not matchable without index reduction
+  (Pantelides, Arc 4). Not a specimen defect; the arc's coupled-block study comes from the
+  feedback-loop specimen (increment 4). RotationalInertia (a plain ODE) analyzes cleanly (12 scalar
+  blocks, 0 coupled).

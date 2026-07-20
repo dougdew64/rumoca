@@ -114,11 +114,11 @@ pub enum FromWorker {
         model: Option<String>,
         parse: Stage,
         resolve: Stage,
-        /// Arc 2 (increment 1): instantiate/typecheck carry status only; flatten
-        /// carries the flat IR. Instanced/typed intermediate trees land later.
         instantiate: Stage,
         typecheck: Stage,
         flatten: Stage,
+        /// Arc 3: structural analysis of the DAE — matching + BLT blocks + tearing.
+        structural: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -239,6 +239,7 @@ impl WorkerState {
                     instantiate: Stage::default(),
                     typecheck: Stage::default(),
                     flatten: Stage::default(),
+                    structural: Stage::default(),
                     def_index: BTreeMap::new(),
                 };
             }
@@ -302,12 +303,16 @@ impl WorkerState {
 
         // --- Flatten stage: from the reachable-closure pipeline (increment 1).
         // Instantiate/Typecheck were computed above from the resolved tree. ---
-        let flatten = match &model {
-            None => Stage::err("parse produced no model to compile"),
+        let (flatten, structural) = match &model {
+            None => {
+                let e = "parse produced no model to compile";
+                (Stage::err(e), Stage::err(e))
+            }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
-                flatten_stage(report.requested_result.as_ref())
+                let result = report.requested_result.as_ref();
+                (flatten_stage(result), structural_stage(result))
             }
         };
 
@@ -319,9 +324,76 @@ impl WorkerState {
             instantiate,
             typecheck,
             flatten,
+            structural,
             def_index,
         }
     }
+}
+
+/// Structural analysis of the model's DAE (Arc 3): maximum matching + BLT blocks
+/// + tearing, from `build_structural_report`. Only available on a full Success
+/// (the DAE must exist). The report types aren't `Serialize`, so build JSON.
+fn structural_stage(result: Option<&PhaseResult>) -> Stage {
+    match result {
+        Some(PhaseResult::Success(cr)) => {
+            match rumoca_phase_structural::build_structural_report(&cr.dae) {
+                Ok(rep) => Stage::ok(structural_to_json(&rep)),
+                Err(e) => Stage::err(format!("structural analysis failed: {e}")),
+            }
+        }
+        Some(PhaseResult::Failed { phase, .. }) => {
+            Stage::info(format!("not reached ({phase} failed earlier)"))
+        }
+        Some(PhaseResult::NeedsInner { .. }) => {
+            Stage::info("not reached (model needs inner declarations)")
+        }
+        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    }
+}
+
+fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_json::Value {
+    serde_json::json!({
+        "n_equations": rep.n_equations,
+        "n_unknowns": rep.n_unknowns,
+        "coupled_block_count": rep.coupled_block_count(),
+        "matching": rep
+            .matching
+            .iter()
+            .map(|(e, u)| serde_json::json!({ "equation": e, "unknown": u }))
+            .collect::<Vec<_>>(),
+        "blocks": rep.blocks.iter().map(block_to_json).collect::<Vec<_>>(),
+    })
+}
+
+fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value {
+    use rumoca_phase_structural::BlockReport;
+    match b {
+        BlockReport::Scalar { equation, unknown } => serde_json::json!({
+            "kind": "scalar",
+            "size": 1,
+            "equation": equation,
+            "unknown": unknown,
+        }),
+        BlockReport::Coupled { equations, unknowns, tearing } => serde_json::json!({
+            "kind": "coupled",
+            "size": unknowns.len(),
+            "equations": equations,
+            "unknowns": unknowns,
+            "tearing": tearing.as_ref().map(tearing_to_json),
+        }),
+    }
+}
+
+fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Value {
+    serde_json::json!({
+        "tear_vars": t.tear_vars,
+        "residual_equations": t.residual_equations,
+        "causal_sequence": t
+            .causal_sequence
+            .iter()
+            .map(|(e, v)| serde_json::json!({ "equation": e, "variable": v }))
+            .collect::<Vec<_>>(),
+    })
 }
 
 /// Instantiate the model directly from the resolved tree and serialize the
@@ -527,6 +599,26 @@ mod tests {
             "Drivetrain did not flatten: {:?}",
             flatten.note
         );
+    }
+
+    /// The structural stage builds a matching + BLT report for an index-1 model.
+    #[test]
+    fn structural_report_for_rotational_inertia() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
+        let FromWorker::Compiled { structural, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        let v = structural.value.expect("structural report");
+        assert!(v["matching"].as_array().is_some_and(|a| !a.is_empty()), "no matching");
+        assert!(v["blocks"].as_array().is_some_and(|a| !a.is_empty()), "no BLT blocks");
     }
 }
 
