@@ -1,0 +1,40 @@
+{
+  "n_states": 0,
+  "n_equations": 4,
+  "block_count": 2,
+  "blocks": [
+    {
+      "kind": "torn_block",
+      "tear_vars": [
+        "errorA"
+      ],
+      "residual_equations": [
+        0
+      ],
+      "causal_steps": [
+        {
+          "var": "commandA",
+          "equation": 1,
+          "newton": false
+        }
+      ]
+    },
+    {
+      "kind": "torn_block",
+      "tear_vars": [
+        "errorB"
+      ],
+      "residual_equations": [
+        2
+      ],
+      "causal_steps": [
+        {
+          "var": "commandB",
+          "equation": 3,
+          "newton": false
+        }
+      ]
+    }
+  ],
+  "relaxation_hint": null
+}

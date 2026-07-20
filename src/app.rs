@@ -45,6 +45,7 @@ enum StageKind {
     Flatten,
     Structural,
     IndexReduction,
+    Initialization,
 }
 
 /// How to render the Structural stage: the custom BLT spy-plot (the visual
@@ -91,6 +92,7 @@ pub struct App {
     flatten: Stage,
     structural: Stage,
     index_reduction: Stage,
+    initialization: Stage,
     stage: StageKind,
     // Resolved identity of every DefId referenced in the current model's IR.
     def_index: BTreeMap<u64, DefInfo>,
@@ -160,6 +162,7 @@ impl App {
             flatten: Stage::default(),
             structural: Stage::default(),
             index_reduction: Stage::default(),
+            initialization: Stage::default(),
             stage: StageKind::Resolve,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
@@ -230,6 +233,7 @@ impl App {
         self.flatten = Stage::default();
         self.structural = Stage::default();
         self.index_reduction = Stage::default();
+        self.initialization = Stage::default();
         self.def_index = BTreeMap::new();
         self.nav.clear();
         self.nav_loading = None;
@@ -258,7 +262,7 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, parse, resolve, instantiate, typecheck, flatten, structural,
-                    index_reduction, def_index,
+                    index_reduction, initialization, def_index,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -272,6 +276,7 @@ impl App {
                     self.flatten = flatten;
                     self.structural = structural;
                     self.index_reduction = index_reduction;
+                    self.initialization = initialization;
                     self.def_index = def_index;
                     // Re-fit the spy-plot camera to the new report's matrix.
                     self.spy_canvas.request_fit();
@@ -286,6 +291,7 @@ impl App {
                         ("flatten", self.flatten.value.as_ref()),
                         ("structural", self.structural.value.as_ref()),
                         ("index_reduction", self.index_reduction.value.as_ref()),
+                        ("initialization", self.initialization.value.as_ref()),
                     ]);
                 }
                 FromWorker::DefTree { name, result } => {
@@ -311,6 +317,7 @@ impl App {
             StageKind::Flatten => &self.flatten,
             StageKind::Structural => &self.structural,
             StageKind::IndexReduction => &self.index_reduction,
+            StageKind::Initialization => &self.initialization,
         }
     }
 
@@ -323,6 +330,7 @@ impl App {
             StageKind::Flatten => "Flatten",
             StageKind::Structural => "Structural",
             StageKind::IndexReduction => "Index reduction",
+            StageKind::Initialization => "Initialization",
         }
     }
 
@@ -350,6 +358,8 @@ impl App {
             // model they're identical (nothing highlights); for a reduced
             // high-index model the raw report is absent (it was singular).
             StageKind::IndexReduction => self.structural.value.as_ref(),
+            // The IC plan is its own shape (a solve sequence) — no path-aligned prior.
+            StageKind::Initialization => None,
         }
     }
 
@@ -357,7 +367,9 @@ impl App {
     /// note) — where the tabs should land after a compile. Falls back to Parse.
     fn last_successful_stage(&self) -> StageKind {
         let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
-        if ok(&self.index_reduction) {
+        if ok(&self.initialization) {
+            StageKind::Initialization
+        } else if ok(&self.index_reduction) {
             StageKind::IndexReduction
         } else if ok(&self.structural) {
             StageKind::Structural
@@ -802,6 +814,13 @@ impl eframe::App for App {
                              dummy derivatives): the funnel differentiates constraints and demotes states \
                              so a high-index singular system becomes matchable. For an already-index-1 \
                              model this equals Structural. Same BLT spy-plot / tree.",
+                        );
+                    ui.selectable_value(&mut self.stage, StageKind::Initialization, "Initialization")
+                        .on_hover_text(
+                            "The consistent-initial-condition solve plan (Arc 5, build_ic_plan): the \
+                             ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
+                             scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
+                             dropped / unknowns pinned) when the initial subsystem is singular.",
                         );
                     if self.selected.is_some()
                         && ui

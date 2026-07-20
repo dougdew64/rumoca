@@ -1,0 +1,29 @@
+{
+  "n_states": 0,
+  "n_equations": 3,
+  "block_count": 1,
+  "blocks": [
+    {
+      "kind": "torn_block",
+      "tear_vars": [
+        "command"
+      ],
+      "residual_equations": [
+        1
+      ],
+      "causal_steps": [
+        {
+          "var": "error",
+          "equation": 0,
+          "newton": false
+        },
+        {
+          "var": "measurement",
+          "equation": 2,
+          "newton": false
+        }
+      ]
+    }
+  ],
+  "relaxation_hint": null
+}

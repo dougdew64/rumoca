@@ -128,6 +128,8 @@ pub enum FromWorker {
         /// Arc 4: structural analysis of the DAE AFTER index reduction (the
         /// dummy-derivative funnel) — solvable even when `structural` is singular.
         index_reduction: Stage,
+        /// Arc 5: the initial-condition solve plan (`build_ic_plan`) + relaxation hint.
+        initialization: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -250,6 +252,7 @@ impl WorkerState {
                     flatten: Stage::default(),
                     structural: Stage::default(),
                     index_reduction: Stage::default(),
+                    initialization: Stage::default(),
                     def_index: BTreeMap::new(),
                 };
             }
@@ -313,16 +316,21 @@ impl WorkerState {
 
         // --- Flatten stage: from the reachable-closure pipeline (increment 1).
         // Instantiate/Typecheck were computed above from the resolved tree. ---
-        let (flatten, structural, index_reduction) = match &model {
+        let (flatten, structural, index_reduction, initialization) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e))
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e))
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
                 let result = report.requested_result.as_ref();
-                (flatten_stage(result), structural_stage(result), index_reduction_stage(result))
+                (
+                    flatten_stage(result),
+                    structural_stage(result),
+                    index_reduction_stage(result),
+                    initialization_stage(result),
+                )
             }
         };
 
@@ -336,6 +344,7 @@ impl WorkerState {
             flatten,
             structural,
             index_reduction,
+            initialization,
             def_index,
         }
     }
@@ -404,6 +413,91 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
         }
         None => Stage::err("the reachable-closure pipeline produced no result for this model"),
     }
+}
+
+/// Arc 5: the initial-condition solve plan — how Rumoca computes a consistent
+/// initial state at t=0. `build_ic_plan(dae, n_states)` yields the ordered blocks
+/// (direct symbolic solves, scalar Newton, torn/coupled loops);
+/// `build_ic_relaxation_hint` names the equations dropped / unknowns pinned when
+/// the initial algebraic subsystem is structurally singular. The IC types carry
+/// `rumoca_core::Expression`, so build JSON (like the structural report).
+fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
+    match result {
+        Some(PhaseResult::Success(cr)) => {
+            let n_x = cr.dae.variables.states.len();
+            let n_eq = cr.dae.continuous.equations.len();
+            match rumoca_phase_structural::build_ic_plan(&cr.dae, n_x) {
+                Ok(plan) => {
+                    let hint = rumoca_phase_structural::build_ic_relaxation_hint(&cr.dae, n_x);
+                    let json = ic_plan_to_json(&plan, hint.as_ref(), n_x, n_eq);
+                    if plan.is_empty() {
+                        Stage::ok_with_note(json, "no algebraic initialization subsystem (equations ≤ states)")
+                    } else {
+                        Stage::ok(json)
+                    }
+                }
+                Err(e) => Stage::err(format!("IC planning failed: {e}")),
+            }
+        }
+        Some(PhaseResult::Failed { phase, .. }) => {
+            Stage::info(format!("not reached ({phase} failed earlier)"))
+        }
+        Some(PhaseResult::NeedsInner { .. }) => {
+            Stage::info("not reached (model needs inner declarations)")
+        }
+        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    }
+}
+
+fn ic_plan_to_json(
+    plan: &[rumoca_phase_structural::IcBlock],
+    hint: Option<&rumoca_phase_structural::IcRelaxationHint>,
+    n_x: usize,
+    n_eq: usize,
+) -> serde_json::Value {
+    use rumoca_phase_structural::IcBlock;
+    let blocks: Vec<serde_json::Value> = plan
+        .iter()
+        .map(|b| match b {
+            IcBlock::ScalarDirect { var_name, solution_expr, .. } => serde_json::json!({
+                "kind": "scalar_direct",
+                "var": var_name,
+                "solution": serde_json::to_value(solution_expr).unwrap_or_default(),
+            }),
+            IcBlock::ScalarNewton { var_name, eq_idx, .. } => serde_json::json!({
+                "kind": "scalar_newton",
+                "var": var_name,
+                "equation": eq_idx,
+            }),
+            IcBlock::TornBlock { tear_var_names, causal_sequence, residual_eq_indices, .. } => {
+                serde_json::json!({
+                    "kind": "torn_block",
+                    "tear_vars": tear_var_names,
+                    "residual_equations": residual_eq_indices,
+                    "causal_steps": causal_sequence.iter().map(|s| serde_json::json!({
+                        "var": s.var_name,
+                        "equation": s.eq_idx,
+                        "newton": s.solution_expr.is_none(),
+                    })).collect::<Vec<_>>(),
+                })
+            }
+            IcBlock::CoupledLM { eq_indices, var_names, .. } => serde_json::json!({
+                "kind": "coupled_lm",
+                "vars": var_names,
+                "equations": eq_indices,
+            }),
+        })
+        .collect();
+    serde_json::json!({
+        "n_states": n_x,
+        "n_equations": n_eq,
+        "block_count": blocks.len(),
+        "blocks": blocks,
+        "relaxation_hint": hint.map(|h| serde_json::json!({
+            "dropped_equations": h.dropped_eq_global,
+            "pinned_unknowns": h.dropped_unknown_names,
+        })),
+    })
 }
 
 fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_json::Value {
@@ -799,6 +893,27 @@ mod tests {
             after.is_ok(),
             "index reduction should make Drivetrain structurally analyzable, got {after:?}"
         );
+    }
+
+    /// Arc 5: the Initialization stage plans a consistent initial state for the RC
+    /// circuit — a non-empty IC plan plus the ground-current relaxation hint.
+    #[test]
+    fn rc_circuit_has_an_ic_plan() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RcCircuit.mo"));
+        let FromWorker::Compiled { initialization, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        let v = initialization.value.unwrap_or_else(|| panic!("no IC plan: {:?}", initialization.note));
+        assert!(v["block_count"].as_u64().unwrap_or(0) >= 1, "expected a non-empty IC plan");
+        assert!(v["relaxation_hint"].is_object(), "expected a relaxation hint (ground-current redundancy)");
     }
 
     /// Arc 4: the parked hand-built PlanarMechanics library (the four-bar-linkage

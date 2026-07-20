@@ -382,3 +382,16 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   Not blocked-on-upstream. Specimen: the RC/RL blow-up case (the 2025 bug; likely upstream-contribution
   source). Increment plan in CLAUDE.md: scout build_ic_plan on RC/RL → wire an Initialization stage/view →
   author the RC/RL specimen.
+- **2026-07-20 — Arc 5 steps 1–2: Initialization / IC-planning stage wired.** Scout confirmed
+  `rumoca-phase-structural::build_ic_plan(dae, n_states)` + `build_ic_relaxation_hint` are public and
+  produce a rich plan for a simple RC circuit (21 blocks: 20 ScalarDirect + 1 ScalarNewton, plus a
+  relaxation hint dropping the redundant ground-KCL equation and pinning `gnd.p.i`). New
+  `StageKind::Initialization` tab (after Index reduction), fed by `worker::initialization_stage` →
+  `ic_plan_to_json` (IcBlock carries `rumoca_core::Expression`, so build JSON like structural; solutions
+  serialized via serde into the tree). Empty plan (n_eq ≤ n_states, a pure ODE) → an info note. Followed
+  the full new-stage checklist (worker field/compile; app StageKind/field/init/reset/store/current_stage/
+  stage_name/tab/last_successful_stage/previous_stage_value(None)/write_stages; field_help →
+  phase7/ic_plan.md; gen_trace STAGES+by_name, traces regenerated). Specimen `RcCircuit.mo` (MSL
+  electrical) + narrative added. The charter's RC/RL **blow-up (failure)** case is a deliberate later
+  iteration — this establishes the IC-plan mechanism first. Guarded by
+  `worker::tests::rc_circuit_has_an_ic_plan`.

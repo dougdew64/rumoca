@@ -32,6 +32,10 @@
     "index_reduction": {
       "has_ir": true,
       "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+    },
+    "initialization": {
+      "has_ir": false,
+      "note": "IC planning failed: structurally singular system: 8 matched out of 10 equations and 10 unknowns; unmatched equations: equation from inertia, unconnected flow: inertia.flange_b.tau = 0; unmatched unknowns: inertia.flange_b.phi, torque.flange.phi"
     }
   }
 }

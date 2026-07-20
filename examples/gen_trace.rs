@@ -18,8 +18,8 @@ use std::path::PathBuf;
 use hrw::worker::{compile_specimen, FromWorker, Stage};
 
 /// The pipeline stages, in order, as they appear in the app's tabs.
-const STAGES: [&str; 7] =
-    ["parse", "resolve", "instantiate", "typecheck", "flatten", "structural", "index_reduction"];
+const STAGES: [&str; 8] =
+    ["parse", "resolve", "instantiate", "typecheck", "flatten", "structural", "index_reduction", "initialization"];
 
 fn main() {
     let name = std::env::args().nth(1).unwrap_or_else(|| {
@@ -40,13 +40,14 @@ fn main() {
     ];
 
     let FromWorker::Compiled {
-        model, parse, resolve, instantiate, typecheck, flatten, structural, index_reduction, ..
+        model, parse, resolve, instantiate, typecheck, flatten, structural, index_reduction,
+        initialization, ..
     } = compile_specimen(&specimen, libraries).expect("compile specimen")
     else {
         panic!("expected a Compiled result");
     };
     let model = model.unwrap_or_else(|| name.clone());
-    let by_name: [(&str, &Stage); 7] = [
+    let by_name: [(&str, &Stage); 8] = [
         ("parse", &parse),
         ("resolve", &resolve),
         ("instantiate", &instantiate),
@@ -54,6 +55,7 @@ fn main() {
         ("flatten", &flatten),
         ("structural", &structural),
         ("index_reduction", &index_reduction),
+        ("initialization", &initialization),
     ];
 
     let trace_dir = PathBuf::from(format!("{root}/docs/specimen-notebook/{model}/trace"));

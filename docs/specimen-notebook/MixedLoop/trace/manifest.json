@@ -32,6 +32,10 @@
     "index_reduction": {
       "has_ir": true,
       "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": null
     }
   }
 }

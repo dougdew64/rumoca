@@ -50,6 +50,10 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "Index reduction (Pantelides / dummy derivatives)",
             "docs/compiler-phases/phase6_dae_construction/index_reduction.md",
         ),
+        "Initialization" => (
+            "Initialization · IC planning",
+            "docs/compiler-phases/phase7_structural_analysis/ic_plan.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/compiler-phases/high_level_overview.md",

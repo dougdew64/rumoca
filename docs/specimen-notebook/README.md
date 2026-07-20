@@ -54,3 +54,6 @@ Roughly in order of increasing structural interest:
 - [`Drivetrain`](Drivetrain/narrative.md) — cross-domain train with **ideal gears**
   → **high index** (structurally singular), then **index-reduced** to a solvable
   system (Arc 4): the Structural vs Index-reduction tabs show before → after.
+- [`RcCircuit`](RcCircuit/narrative.md) — an RC circuit; the **Initialization / IC
+  planning** specimen (Arc 5): the t=0 solve plan + the ground-redundancy
+  relaxation hint.
