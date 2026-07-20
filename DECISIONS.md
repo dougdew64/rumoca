@@ -372,3 +372,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   investigation — it makes the reduction faithful to rumoca-sim's real sequence (Drivetrain still reduces).
   Honest caveat: proven the *public* reduction API doesn't handle it; the full private sim path
   (`remove_duplicate_continuous_equations` is `pub(super)`) or the CasADi target may differ — unconfirmed.
+- **2026-07-20 — Arc 4 closed; advanced to Arc 5 (charter §4.2.5): initialization & IC planning.** Arc 4
+  done (reframed): index reduction is observable on Drivetrain (Structural singular → Index reduction
+  solvable); the nonlinear-constraint four-bar + planar library are parked/deferred (docs/ideas.md #5).
+  Close-out gates 1 (differential test) + 3 (debugger single-step) accepted as deferred/unconfirmed (still
+  under review, docs/ideas.md #4). **Arc-5 de-risk scout:** confirmed `rumoca-phase-structural::ic_plan` is
+  public — `build_ic_plan(dae, n_x) -> Vec<IcBlock>` (ScalarDirect / ScalarNewton / TornBlock / CoupledLM)
+  + `build_ic_relaxation_hint` for singular initial subsystems; the flat model carries `initial_equations`.
+  Not blocked-on-upstream. Specimen: the RC/RL blow-up case (the 2025 bug; likely upstream-contribution
+  source). Increment plan in CLAUDE.md: scout build_ic_plan on RC/RL → wire an Initialization stage/view →
+  author the RC/RL specimen.

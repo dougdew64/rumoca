@@ -7,32 +7,39 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 4: Index reduction (Pantelides / dummy derivatives)** (charter §4.2.4). This arc studies how a
-**structurally singular, high-index DAE** is reduced to an index-1, solvable system by differentiating
-constraints and demoting states to algebraics (dummy derivatives). **Specimen (reframed 2026-07-20):
-`Drivetrain`** — its high index comes from *ideal gears*, i.e. **linear** constraints, which Rumoca's
-Rust-path reduction DOES handle. The observatory shows the full story: the **Structural** tab reports the
-raw DAE *singular* (93/97 matched — 4 undetermined constraint forces), the **Index reduction** tab shows
-it *reduced and solvable* (97 eq, 1 coupled block). **Done via steps 1–2.**
+**Arc 5: Initialization & IC planning** (charter §4.2.5). This arc studies how Rumoca computes a
+**consistent initial state at t = 0** — the initial-condition solve plan over the `initial` + continuous
+equations and `start` attributes. Per the charter it is "the arc where the original [Rumoca] bug lived,
+and where an early compiler most needs contributions." **Specimen: the RC/RL blow-up case** — a
+resistor–capacitor (or –inductor) circuit whose initialization is non-trivial (implicitly-defined /
+over-determined ICs), the resurrected 2025 case. (The linkage-from-static-equilibrium specimen §4.2.5
+also lists is **deferred** — it needs the parked planar library + the nonlinear-constraint reduction
+Arc 4 found missing.)
 
-**Rumoca reduction: capability + a boundary** (scouted 2026-07-20). `rumoca-phase-structural::dae_prepare`
-is a **public** module with the dummy-derivative machinery; HRW replicates rumoca-sim's funnel in
-`worker::index_reduce_for_structural_analysis` (the funnel is `pub(super)`, not callable). It reduces
-**linear** high-index (gears → Drivetrain works). It does **NOT** reduce **nonlinear holonomic
-constraints** — a Cartesian pendulum's `x²+y²=L²` stays singular even via the barest 5-equation specimen
-(not a library bug; verified). So the charter's **four-bar linkage is DEFERRED** (its loop-closure is
-nonlinear) — un-park when Rumoca gains that (a possible upstream contribution). The hand-built planar
-mechanics library (`lib/PlanarMechanics.mo`) is **parked** (complete, parse-guarded), likewise the
-`Friction`/`Contact`/motor primitives for later arcs.
+**Rumoca capability CONFIRMED — not blocked-on-upstream** (scouted 2026-07-20):
+`rumoca-phase-structural::ic_plan` is **public** — `build_ic_plan(dae, n_x) -> Vec<IcBlock>` produces the
+IC solve plan (`IcBlock` = `ScalarDirect` symbolic / `ScalarNewton` / `TornBlock` LM+causal / `CoupledLM`),
+and `build_ic_relaxation_hint(dae, n_x)` gives the drop-equation / pin-unknown hint for structurally
+singular initial subsystems. `n_x` = state count. The flat model already carries `initial_equations` /
+`initial_structured_equations` / `initial_assert_equations` (visible in the Flatten trace). `IcBlock`
+holds `rumoca_core::Expression`, so — like the structural report — build JSON rather than deriving Serialize.
 
-Arc 1–3 done (Parse … Structural + the BLT spy-plot + the 7-specimen notebook with traces & narratives);
-Arc 4's index-reduction observatory feature is done on Drivetrain. **New pipeline stages must be wired
-into the stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
-`hrw-stage-diff-highlight-extend` memory).
+Increment plan: (1) scout `build_ic_plan` / `build_ic_relaxation_hint` on an RC/RL specimen + decide the
+observation (the IC plan + relaxation hint, JSON like the structural report); (2) wire an
+**Initialization** stage/view into the observatory (full new-stage checklist: worker → tab → diff-highlight
+→ stage files → field-help → trace → narrative); (3) author the RC/RL blow-up specimen and show the IC plan
+(+ the failure mode the 2025 bug produced — the most likely upstream-contribution source, charter §5).
+
+**Arc 4 closed (2026-07-20):** index reduction is observable on `Drivetrain` (Structural = singular →
+Index reduction = solvable). Finding: Rumoca's Rust-path reduction handles *linear* high-index (gears) but
+not *nonlinear* holonomic constraints; the four-bar linkage + planar library (`lib/PlanarMechanics.mo`)
+are parked/deferred (`docs/ideas.md` #5). Arc 1–4 done (Parse … Index reduction + BLT spy-plot + the
+7-specimen notebook). **New pipeline stages must be wired into the stage-diff highlight + stage-file
+publishing AND the notebook trace/narrative** (see Claude's `hrw-stage-diff-highlight-extend` memory).
 
 **Close-out gates under review:** Doug is separately weighing whether the differential test (System
-Modeler round-trip) and the debugger single-step should remain arc close-out gates at all — Arc 3 closed
-with both accepted (deferred / unconfirmed). Until he decides, treat them as satisfiable-by-acceptance,
+Modeler round-trip) and the debugger single-step should remain arc close-out gates at all — Arcs 3 & 4
+closed with both accepted (deferred / unconfirmed). Until he decides, treat them as satisfiable-by-acceptance,
 not hard blockers (see `docs/ideas.md` #4).
 
 **Per-specimen lab notebook (`docs/specimen-notebook/`) — now active.** Each entry pairs a durable
