@@ -57,3 +57,6 @@ Roughly in order of increasing structural interest:
 - [`RcCircuit`](RcCircuit/narrative.md) — an RC circuit; the **Initialization / IC
   planning** specimen (Arc 5): the t=0 solve plan + the ground-redundancy
   relaxation hint.
+- [`CapacitorLoop`](CapacitorLoop/narrative.md) — the Arc-5 **blow-up**: a capacitor
+  across an ideal source can't be consistently initialized; Structural + Index
+  reduction both stay singular (contrast Drivetrain: reducible).

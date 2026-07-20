@@ -895,6 +895,32 @@ mod tests {
         );
     }
 
+    /// Arc 5 (blow-up): a capacitor directly across an ideal source can't be
+    /// consistently initialized — its state voltage is pinned to the source. Unlike
+    /// Drivetrain, index reduction can NOT rescue it: both Structural and Index
+    /// reduction stay singular (an observable initialization blow-up).
+    #[test]
+    fn capacitor_loop_is_singular_and_irreducible() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/CapacitorLoop.mo"));
+        let FromWorker::Compiled { flatten, structural, index_reduction, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        assert!(flatten.value.is_some(), "CapacitorLoop should still flatten");
+        assert!(structural.value.is_none() && structural.note_is_error, "expected singular Structural");
+        assert!(
+            index_reduction.value.is_none() && index_reduction.note_is_error,
+            "index reduction should NOT rescue a capacitor-across-source loop"
+        );
+    }
+
     /// Arc 5: the Initialization stage plans a consistent initial state for the RC
     /// circuit — a non-empty IC plan plus the ground-current relaxation hint.
     #[test]

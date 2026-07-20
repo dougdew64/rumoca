@@ -395,3 +395,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   electrical) + narrative added. The charter's RC/RL **blow-up (failure)** case is a deliberate later
   iteration — this establishes the IC-plan mechanism first. Guarded by
   `worker::tests::rc_circuit_has_an_ic_plan`.
+- **2026-07-20 — Arc 5 (blow-up): `CapacitorLoop` — the "where it fails and why" specimen.** A capacitor
+  directly across an ideal voltage source: `C.v` is a state yet algebraically pinned to `src.V`, so no
+  consistent t=0 state exists (degenerate/ill-posed). The observatory flags it: **Structural = singular**
+  (13/14, `gnd.p.i` unmatched), **Index reduction = STILL singular** (7/8) — the decisive contrast with
+  Drivetrain (singular→reduced): index reduction rescues genuine high index, not ill-posedness. Guarded by
+  `worker::tests::capacitor_loop_is_singular_and_irreducible`. **Finding + honest gap:** the failure
+  surfaces at Structural/Index-reduction, and `build_ic_plan` still emits a (untrustworthy) plan. A *pure*
+  user-initialization over-determination (conflicting `initial equation`s — the tested-then-removed
+  `OverInitRc`) is NOT surfaced today because `build_ic_plan` ignores the user's initial equations →
+  future enhancement `docs/ideas.md #6` (make the Initialization stage report init-system determinacy).

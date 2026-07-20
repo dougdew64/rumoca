@@ -108,3 +108,18 @@ nonlinear-constraint reduction (worth confirming against its own test suite / a 
 contribution), or (b) we confirm the full private sim path / CasADi target handles it and expose a way
 to drive it from HRW. Then: author `FourBarLinkage.mo` from the library, wire its trace + narrative,
 and show index-3 → reduced. Arc 4's core (index reduction observed) is already met via Drivetrain.
+
+## 6. Initialization stage: detect over/under-determined *user* initialization
+
+Captured 2026-07-20 (finding, Arc 5). The Initialization stage today renders
+`build_ic_plan`, which plans the *algebraic subsystem* — it does NOT see the user's
+`initial equation`s or `start`/`fixed` attributes. So a **pure initialization
+blow-up** (e.g. conflicting initial equations like `C.v = 0` together with
+`der(C.v) = 0` — the `OverInitRc` case, tested during Arc 5) shows **all-green** in
+the observatory even though it's over-determined. Enhancement: have the
+Initialization stage assemble the full initialization system (continuous eqs at
+t=0 with `der` as unknowns + initial equations + fixed starts) and report its
+determinacy (equations vs free init unknowns), flagging over/under-determination.
+That would surface the class of blow-up `CapacitorLoop` cannot (its failure
+surfaces structurally instead). Scout whether Rumoca exposes an initialization-
+system assembly/consistency check first.
