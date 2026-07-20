@@ -619,6 +619,36 @@ mod tests {
         let v = structural.value.expect("structural report");
         assert!(v["matching"].as_array().is_some_and(|a| !a.is_empty()), "no matching");
         assert!(v["blocks"].as_array().is_some_and(|a| !a.is_empty()), "no BLT blocks");
+        // A plain index-1 ODE sorts into scalar blocks only — no algebraic loop.
+        assert_eq!(v["coupled_block_count"], serde_json::json!(0), "unexpected coupled block");
+    }
+
+    /// The Arc-3 proportional-loop specimen closes an algebraic feedback loop, so
+    /// structural analysis MUST report a coupled block (a simultaneous algebraic
+    /// SCC) — the case the BLT spy-plot draws as a box. This is the specimen's
+    /// whole reason for existing, so guard it.
+    #[test]
+    fn proportional_loop_has_a_coupled_block() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/ProportionalLoop.mo"));
+        let FromWorker::Compiled { structural, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        let v = structural.value.unwrap_or_else(|| panic!("no structural report: {:?}", structural.note));
+        let count = v["coupled_block_count"].as_u64().unwrap_or(0);
+        assert!(count >= 1, "expected a coupled algebraic block, got {count}; blocks = {}", v["blocks"]);
+        // The coupled block should carry a tearing report (iteration variable(s)).
+        let coupled = v["blocks"].as_array().into_iter().flatten()
+            .find(|b| b["kind"] == serde_json::json!("coupled"))
+            .expect("a coupled block");
+        assert!(coupled["size"].as_u64().unwrap_or(0) >= 2, "coupled block must be size >= 2");
     }
 }
 

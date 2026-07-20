@@ -257,3 +257,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   scroll-zoom-about-pointer, fit-to-content) for every future custom-`Painter` view. Spy-plot blocks
   are clickable → capture `blocks[i]` into the bridge, so the visual emitter feeds the question
   channel. A `Spy-plot | Tree` toggle keeps the generic report tree available.
+- **2026-07-20 — Increment 3: the coupled-block specimen `ProportionalLoop.mo`.** An *idealized*
+  proportional servo inner loop: `error = reference - measurement`, `command = Kp*error`,
+  `measurement = plantGain*command`. Every relation is algebraic — the servo's integrating dynamics
+  are deliberately removed — so the feedback closes on itself with no state to break it. Self-contained
+  (portable subset, no MSL; follows the `SingleInertia` style). Rumoca flattens it to 3 equations / 3
+  unknowns forming **one coupled BLT block of size 3** (`coupled_block_count == 1`); tearing picks
+  `command` as the single iteration variable (residual `f_x[0]`), then solves `error` and `measurement`
+  causally. This is the first specimen whose spy-plot shows an **orange coupled box** (the whole 3x3)
+  with a tearing report on hover — the object of study for the matching/BLT arc. Guarded by
+  `worker::tests::proportional_loop_has_a_coupled_block` (and RotationalInertia's test now also asserts
+  `coupled_block_count == 0`, so the scalar-vs-coupled distinction can't silently regress). The
+  System Modeler differential round-trip stays deferred per the arc's standing note.
