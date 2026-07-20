@@ -291,3 +291,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
     button), shown only when `docs/notebook/<model>/narrative.md` exists — closes the dual-emitter loop
     (visual channel → durable narrative). `editorAssociations` now opens `docs/notebook/**/*.md` in
     Markdown preview too. Regeneration on pin bump is `docs/updating-rumoca.md` step 5.
+- **2026-07-20 — Three spy-plot-diversity specimens: `MixedLoop`, `TwoLoops`, `NonlinearLoop`.** Added
+  to fill gaps in what the BLT spy-plot had shown (previously only all-scalar or one all-consuming
+  coupled box). Each self-contained (portable subset), with a trace + narrative and a worker test
+  guarding its block structure: **MixedLoop** → `[scalar, coupled(3), scalar]` (a loop bracketed by
+  scalar solves — makes BLT *ordering* visible; note `output` is a reserved Modelica keyword, so the
+  sink variable is `result`); **TwoLoops** → two `coupled(2)` blocks in series (two orange boxes,
+  sequenced by data dependency); **NonlinearLoop** → structurally *identical* to `ProportionalLoop`
+  (one `coupled(3)`, tear `command`) because incidence is blind to nonlinearity — the difference is
+  numerical (the torn residual is nonlinear → Newton), which makes it the bridge to the
+  simulation/convergence-narrative idea (`docs/ideas.md` #1). Tests:
+  `worker::tests::{mixed_loop_has_scalar_and_coupled_blocks, two_loops_has_two_coupled_blocks,
+  nonlinear_loop_has_a_coupled_block}`.

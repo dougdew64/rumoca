@@ -661,6 +661,59 @@ mod tests {
             .expect("a coupled block");
         assert!(coupled["size"].as_u64().unwrap_or(0) >= 2, "coupled block must be size >= 2");
     }
+
+    /// Compile a `specimens/<name>.mo` against the MSL and return its structural
+    /// report JSON — shared by the block-structure guards below.
+    fn structural_report_for(name: &str) -> serde_json::Value {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
+        let FromWorker::Compiled { structural, .. } = state.compile(&path) else {
+            panic!("expected Compiled");
+        };
+        structural.value.unwrap_or_else(|| panic!("no structural report for {name}: {:?}", structural.note))
+    }
+
+    fn block_kinds(v: &serde_json::Value) -> Vec<String> {
+        v["blocks"].as_array().into_iter().flatten()
+            .filter_map(|b| b["kind"].as_str().map(str::to_owned))
+            .collect()
+    }
+
+    /// MixedLoop brackets an algebraic loop with scalar solves, so its BLT must
+    /// contain BOTH scalar and coupled blocks — the mixed spy-plot case.
+    #[test]
+    fn mixed_loop_has_scalar_and_coupled_blocks() {
+        let v = structural_report_for("MixedLoop");
+        assert_eq!(v["coupled_block_count"], serde_json::json!(1));
+        let kinds = block_kinds(&v);
+        assert!(
+            kinds.iter().any(|k| k == "scalar") && kinds.iter().any(|k| k == "coupled"),
+            "expected mixed scalar + coupled blocks, got {kinds:?}"
+        );
+    }
+
+    /// TwoLoops chains two algebraic loops, so structural analysis must report
+    /// TWO coupled blocks (two orange boxes).
+    #[test]
+    fn two_loops_has_two_coupled_blocks() {
+        let v = structural_report_for("TwoLoops");
+        assert_eq!(v["coupled_block_count"], serde_json::json!(2));
+    }
+
+    /// NonlinearLoop is structurally identical to ProportionalLoop (structure is
+    /// blind to the nonlinearity) — still one coupled block.
+    #[test]
+    fn nonlinear_loop_has_a_coupled_block() {
+        let v = structural_report_for("NonlinearLoop");
+        assert_eq!(v["coupled_block_count"], serde_json::json!(1));
+    }
 }
 
 /// Serialize a single class from a class tree by its qualified name.

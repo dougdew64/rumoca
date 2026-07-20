@@ -1,0 +1,1194 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 813,
+          "end": 827
+        },
+        "parts": [
+          {
+            "ident": "reference",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 813,
+              "end": 827
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "reference",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 11,
+        "start_column": 13,
+        "end_line": 11,
+        "end_column": 27,
+        "start": 813,
+        "end": 827,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 11,
+            "start_column": 3,
+            "end_line": 11,
+            "end_column": 12,
+            "start": 803,
+            "end": 812,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 12,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 11,
+              "start_column": 30,
+              "end_line": 11,
+              "end_column": 33,
+              "start": 830,
+              "end": 833,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 16,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 830,
+            "end": 833
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "setpoint",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 11,
+              "start_column": 30,
+              "end_line": 11,
+              "end_column": 33,
+              "start": 830,
+              "end": 833,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 16,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 830,
+            "end": 833
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 858,
+          "end": 877
+        },
+        "parts": [
+          {
+            "ident": "controllerGain",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 858,
+              "end": 877
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "controllerGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 12,
+        "start_column": 13,
+        "end_line": 12,
+        "end_column": 32,
+        "start": 858,
+        "end": 877,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 12,
+            "start_column": 3,
+            "end_line": 12,
+            "end_column": 12,
+            "start": 848,
+            "end": 857,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 19,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 12,
+              "start_column": 35,
+              "end_line": 12,
+              "end_column": 39,
+              "start": 880,
+              "end": 884,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 23,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 880,
+            "end": 884
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "proportional gain Kp",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 12,
+              "start_column": 35,
+              "end_line": 12,
+              "end_column": 39,
+              "start": 880,
+              "end": 884,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 23,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 880,
+            "end": 884
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 921,
+          "end": 935
+        },
+        "parts": [
+          {
+            "ident": "plantGain",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 921,
+              "end": 935
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "plantGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 13,
+        "start_column": 13,
+        "end_line": 13,
+        "end_column": 27,
+        "start": 921,
+        "end": 935,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 13,
+            "start_column": 3,
+            "end_line": 13,
+            "end_column": 12,
+            "start": 911,
+            "end": 920,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 26,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "2.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 30,
+              "end_line": 13,
+              "end_column": 33,
+              "start": 938,
+              "end": 941,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 30,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 938,
+            "end": 941
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "nonlinear (quadratic) plant coefficient",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "2.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 30,
+              "end_line": 13,
+              "end_column": 33,
+              "start": 938,
+              "end": 941,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 30,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 938,
+            "end": 941
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 987,
+          "end": 997
+        },
+        "parts": [
+          {
+            "ident": "error",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 987,
+              "end": 997
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 92
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "error",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 14,
+        "start_column": 3,
+        "end_line": 14,
+        "end_column": 13,
+        "start": 987,
+        "end": 997,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 987,
+            "end": 997
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "reference − measurement",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "5": {
+      "instance_id": 5,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 1029,
+          "end": 1041
+        },
+        "parts": [
+          {
+            "ident": "command",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1029,
+              "end": 1041
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 93
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "command",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 15,
+        "start_column": 3,
+        "end_line": 15,
+        "end_column": 15,
+        "start": 1029,
+        "end": 1041,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1029,
+            "end": 1041
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "controller output = Kp · error",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "6": {
+      "instance_id": 6,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12973387870978279536,
+          "start": 1079,
+          "end": 1095
+        },
+        "parts": [
+          {
+            "ident": "measurement",
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1079,
+              "end": 1095
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 94
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "measurement",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 16,
+        "start_column": 3,
+        "end_line": 16,
+        "end_column": 19,
+        "start": 1079,
+        "end": 1095,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1079,
+            "end": 1095
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "plant output, fed back",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "NonlinearLoop",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "error",
+                        "location": {
+                          "start_line": 18,
+                          "start_column": 3,
+                          "end_line": 18,
+                          "end_column": 8,
+                          "start": 1133,
+                          "end": 1138,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                        },
+                        "token_number": 46,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1133,
+                    "end": 1138
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Sub",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "reference",
+                            "location": {
+                              "start_line": 18,
+                              "start_column": 11,
+                              "end_line": 18,
+                              "end_column": 20,
+                              "start": 1141,
+                              "end": 1150,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                            },
+                            "token_number": 48,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 12973387870978279536,
+                        "start": 1141,
+                        "end": 1150
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "measurement",
+                            "location": {
+                              "start_line": 18,
+                              "start_column": 23,
+                              "end_line": 18,
+                              "end_column": 34,
+                              "start": 1153,
+                              "end": 1164,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                            },
+                            "token_number": 50,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 12973387870978279536,
+                        "start": 1153,
+                        "end": 1164
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1141,
+                    "end": 1164
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "NonlinearLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1133,
+            "end": 1138
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "command",
+                        "location": {
+                          "start_line": 19,
+                          "start_column": 3,
+                          "end_line": 19,
+                          "end_column": 10,
+                          "start": 1168,
+                          "end": 1175,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                        },
+                        "token_number": 52,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1168,
+                    "end": 1175
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "controllerGain",
+                            "location": {
+                              "start_line": 19,
+                              "start_column": 13,
+                              "end_line": 19,
+                              "end_column": 27,
+                              "start": 1178,
+                              "end": 1192,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                            },
+                            "token_number": 54,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 12973387870978279536,
+                        "start": 1178,
+                        "end": 1192
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "error",
+                            "location": {
+                              "start_line": 19,
+                              "start_column": 30,
+                              "end_line": 19,
+                              "end_column": 35,
+                              "start": 1195,
+                              "end": 1200,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                            },
+                            "token_number": 56,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 12973387870978279536,
+                        "start": 1195,
+                        "end": 1200
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1178,
+                    "end": 1200
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "NonlinearLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1168,
+            "end": 1175
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "measurement",
+                        "location": {
+                          "start_line": 20,
+                          "start_column": 3,
+                          "end_line": 20,
+                          "end_column": 14,
+                          "start": 1204,
+                          "end": 1215,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                        },
+                        "token_number": 58,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1204,
+                    "end": 1215
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "plantGain",
+                                "location": {
+                                  "start_line": 20,
+                                  "start_column": 17,
+                                  "end_line": 20,
+                                  "end_column": 26,
+                                  "start": 1218,
+                                  "end": 1227,
+                                  "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                                },
+                                "token_number": 60,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 12973387870978279536,
+                            "start": 1218,
+                            "end": 1227
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "command",
+                                "location": {
+                                  "start_line": 20,
+                                  "start_column": 29,
+                                  "end_line": 20,
+                                  "end_column": 36,
+                                  "start": 1230,
+                                  "end": 1237,
+                                  "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                                },
+                                "token_number": 62,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 12973387870978279536,
+                            "start": 1230,
+                            "end": 1237
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 12973387870978279536,
+                        "start": 1218,
+                        "end": 1237
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "command",
+                            "location": {
+                              "start_line": 20,
+                              "start_column": 39,
+                              "end_line": 20,
+                              "end_column": 46,
+                              "start": 1240,
+                              "end": 1247,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                            },
+                            "token_number": 64,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 12973387870978279536,
+                        "start": 1240,
+                        "end": 1247
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1218,
+                    "end": 1247
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "NonlinearLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1204,
+            "end": 1215
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "Idealized proportional loop closed around a NONLINEAR plant",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 7
+}

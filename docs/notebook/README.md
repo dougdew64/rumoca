@@ -37,11 +37,19 @@ pointing straight at the durable story.
 
 ## Entries
 
+Roughly in order of increasing structural interest:
+
+- [`SingleInertia`](SingleInertia/narrative.md) — the minimal index-1 ODE
+  (self-contained); what a *state* looks like in the DAE. All scalar blocks.
+- [`RotationalInertia`](RotationalInertia/narrative.md) — same physics via **MSL
+  connectors**; the connector-expansion story (still index-1, all scalar blocks).
 - [`ProportionalLoop`](ProportionalLoop/narrative.md) — idealized algebraic
   feedback loop → one **coupled** block (tearing). The pilot entry.
-- [`SingleInertia`](SingleInertia/narrative.md) — the minimal index-1 ODE
-  (self-contained); what a *state* looks like in the DAE.
-- [`RotationalInertia`](RotationalInertia/narrative.md) — same physics via **MSL
-  connectors**; the connector-expansion story (still index-1).
+- [`NonlinearLoop`](NonlinearLoop/narrative.md) — the same loop with a **nonlinear**
+  plant: *structurally identical*, numerically Newton. Structure ≠ numerics.
+- [`MixedLoop`](MixedLoop/narrative.md) — a loop **bracketed by scalar solves** →
+  scalar + coupled + scalar; makes **BLT ordering** visible.
+- [`TwoLoops`](TwoLoops/narrative.md) — two algebraic loops in series → **two
+  coupled blocks**, sequenced by their data dependency.
 - [`Drivetrain`](Drivetrain/narrative.md) — cross-domain train with **ideal gears**
   → **high index** (structurally singular); the Arc-4 forward reference.
