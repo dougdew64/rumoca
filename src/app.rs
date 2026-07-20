@@ -788,19 +788,23 @@ impl eframe::App for App {
                     // One row: stage selectors + capture-stage, then a divider,
                     // then the model label + capture-model. Whole-stage/model
                     // buttons capture context; node-level captures come from the
-                    // right-click menu on any tree row.
-                    ui.selectable_value(&mut self.stage, StageKind::Parse, "Parse");
-                    ui.selectable_value(&mut self.stage, StageKind::Resolve, "Resolve");
-                    ui.selectable_value(&mut self.stage, StageKind::Instantiate, "Instantiate");
-                    ui.selectable_value(&mut self.stage, StageKind::Typecheck, "Typecheck (instanced)")
+                    // right-click menu on any tree row. A stage's tab label is
+                    // painted red when that stage errored, so failed stages are
+                    // visible without opening each (e.g. CapacitorLoop fails at
+                    // Structural + Index reduction while landing on Initialization).
+                    let err = ui.visuals().error_fg_color;
+                    ui.selectable_value(&mut self.stage, StageKind::Parse, tab_label("Parse", self.parse.note_is_error, err));
+                    ui.selectable_value(&mut self.stage, StageKind::Resolve, tab_label("Resolve", self.resolve.note_is_error, err));
+                    ui.selectable_value(&mut self.stage, StageKind::Instantiate, tab_label("Instantiate", self.instantiate.note_is_error, err));
+                    ui.selectable_value(&mut self.stage, StageKind::Typecheck, tab_label("Typecheck (instanced)", self.typecheck.note_is_error, err))
                         .on_hover_text(
                             "The model-scoped instanced typecheck: it types the instantiated \
                              overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
                              Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
                              pre-instantiation whole-tree typecheck; it fails on the full MSL.",
                         );
-                    ui.selectable_value(&mut self.stage, StageKind::Flatten, "Flatten");
-                    ui.selectable_value(&mut self.stage, StageKind::Structural, "Structural")
+                    ui.selectable_value(&mut self.stage, StageKind::Flatten, tab_label("Flatten", self.flatten.note_is_error, err));
+                    ui.selectable_value(&mut self.stage, StageKind::Structural, tab_label("Structural", self.structural.note_is_error, err))
                         .on_hover_text(
                             "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
                              (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
@@ -808,14 +812,14 @@ impl eframe::App for App {
                              Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
                              to pan, scroll to zoom, click a block to capture) or the raw report tree.",
                         );
-                    ui.selectable_value(&mut self.stage, StageKind::IndexReduction, "Index reduction")
+                    ui.selectable_value(&mut self.stage, StageKind::IndexReduction, tab_label("Index reduction", self.index_reduction.note_is_error, err))
                         .on_hover_text(
                             "Structural analysis of the DAE AFTER index reduction (Arc 4, Pantelides / \
                              dummy derivatives): the funnel differentiates constraints and demotes states \
                              so a high-index singular system becomes matchable. For an already-index-1 \
                              model this equals Structural. Same BLT spy-plot / tree.",
                         );
-                    ui.selectable_value(&mut self.stage, StageKind::Initialization, "Initialization")
+                    ui.selectable_value(&mut self.stage, StageKind::Initialization, tab_label("Initialization", self.initialization.note_is_error, err))
                         .on_hover_text(
                             "The consistent-initial-condition solve plan (Arc 5, build_ic_plan): the \
                              ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
@@ -993,6 +997,14 @@ fn read_purpose(path: &Path) -> Option<String> {
             .filter(|hint| !hint.is_empty())
             .map(str::to_owned)
     })
+}
+
+/// A stage-tab label, painted red when that stage errored (`note_is_error`), so
+/// failed stages are visible in the tab row without opening each one. A non-error
+/// status ("not reached", "already index-1") stays the normal color.
+fn tab_label(label: &str, failed: bool, err_color: egui::Color32) -> egui::RichText {
+    let text = egui::RichText::new(label);
+    if failed { text.color(err_color) } else { text }
 }
 
 /// The field name to look up generic help for = the last object-key segment in
