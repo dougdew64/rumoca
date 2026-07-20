@@ -341,3 +341,17 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   (before = singular Err, after funnel = Ok), which fails loudly if a pin bump reorders/renames the funnel.
   Verified: Drivetrain singular (97/97, 93 matched) → after funnel Ok (97 eq, 1 coupled block). Added
   `rumoca-ir-dae` as a direct dep (accepted) to name `rumoca_ir_dae::Dae` for the funnel signature.
+- **2026-07-20 — Arc 4 step 2: Index-reduction observation wired into the observatory.** New
+  `StageKind::IndexReduction` tab (after Structural), fed by `worker::index_reduction_stage` — runs the
+  funnel on a clone of `cr.dae`, then `build_structural_report` on the reduced DAE. **Structural stays
+  on the RAW DAE (the singular "before"); Index reduction shows the reduced "after"** — the two tabs are
+  the Arc-4 contrast side by side. For Drivetrain: Structural = singular (no IR), Index reduction = OK
+  (97 eq, 87 blocks incl. 1 coupled); for an index-1 model the two are identical (a `// note` says so).
+  Followed the full new-stage checklist: worker field + `FromWorker::Compiled`; app `StageKind`/field/
+  init/reset/`drain_worker`/`current_stage`/`stage_name`/tab/`last_successful_stage` (Index reduction is
+  now the furthest clean stage) / `previous_stage_value` (diffs vs raw Structural) / `write_stages`
+  (`index_reduction.json`); the **BLT spy-plot generalized** to both report stages (was Structural-only);
+  `field_help::chapter_for_stage` → `phase6_dae_construction/index_reduction.md`; `gen_trace` STAGES +
+  by_name (traces regenerated — Drivetrain now carries `index_reduction.json`); Drivetrain narrative +
+  notebook README updated (the Arc-4 forward reference is now fulfilled). Guarded by
+  `worker::tests::drivetrain_index_reduction_stage_recovers_singular`.

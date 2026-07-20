@@ -7,8 +7,9 @@ foregrounding what **this** specimen is designed to make interesting.*
 > **Provenance.** Written against `trace/` from
 > `cargo run --example gen_trace -- Drivetrain`, Rumoca `rev 8cdc74198` (v0.9.20);
 > see [`trace/manifest.json`](trace/manifest.json). Note: `structural.json` is
-> **intentionally absent** — structural analysis *fails* on this specimen, and the
-> failure is the point (below). Regenerate on edit / pin bump, then re-read.
+> **intentionally absent** — structural analysis *fails* (singular) on the raw DAE,
+> and that failure is the point; `index_reduction.json` then shows it *resolved*
+> (Arc 4). Regenerate on edit / pin bump, then re-read.
 
 ---
 
@@ -77,10 +78,29 @@ Read this carefully — it is a *diagnosis*, not a bug:
   position/velocity constraints the ideal gears impose.
 
 That differentiation is **index reduction** (Pantelides' algorithm; dummy
-derivatives), and it is the subject of **Arc 4** — not Arc 3. So the honest output
-of the matching/BLT phase on this specimen is "I cannot schedule this as-is," and
-capturing *that* is exactly why the trace's `structural.json` is absent while every
-earlier stage is present.
+derivatives) — the subject of **Arc 4**. So the honest output of the matching/BLT
+phase on this specimen is "I cannot schedule this as-is," which is why the trace's
+`structural.json` is absent while every earlier stage is present.
+
+### Index reduction → [`trace/index_reduction.json`](trace/index_reduction.json)  *(Arc 4)*
+This is where Arc 4 resolves what Arc 3 could only diagnose. HRW runs Rumoca's
+dummy-derivative funnel (`worker::index_reduce_for_structural_analysis`, mirroring
+rumoca-sim's `prepare_dae_for_structural_analysis`: demote states → differentiate
+constraints → eliminate derivative aliases → expand compound derivatives), then
+re-runs the structural report on the *reduced* DAE. The verdict flips:
+
+```
+Structural (raw)      : SINGULAR — 4 constraint forces unmatched (index > 1)
+Index reduction (▶)   : OK — 97 equations, 87 BLT blocks (86 scalar + 1 coupled)
+```
+
+The four undetermined constraint forces (`emf.p.v`, `shaft.flange_a.tau`,
+`load.flange_a.f`, `wall.flange.f`) become solvable once the rigid position
+constraints are differentiated and the redundant states are demoted to dummy
+derivatives. In the app the two tabs sit side by side — **Structural** shows the
+singular diagnosis, **Index reduction** shows the reduced system's BLT spy-plot —
+so you watch a high-index DAE become schedulable. (For an already index-1 model the
+two tabs are identical; the reduction is a no-op there.)
 
 ---
 

@@ -28,6 +28,10 @@
     "structural": {
       "has_ir": false,
       "note": "structural analysis failed: structurally singular system: 93 matched out of 97 equations and 97 unknowns; unmatched equations: f_x[90], f_x[92], f_x[94], f_x[96]; unmatched unknowns: emf.p.v, shaft.flange_a.tau, load.flange_a.f, wall.flange.f"
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "index-reduced from a structurally singular (high-index) system — now solvable"
     }
   }
 }

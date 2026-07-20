@@ -46,6 +46,10 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "Phase 7 · Structural Analysis",
             "docs/compiler-phases/phase7_structural_analysis/structural_analysis.md",
         ),
+        "Index reduction" => (
+            "Index reduction (Pantelides / dummy derivatives)",
+            "docs/compiler-phases/phase6_dae_construction/index_reduction.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/compiler-phases/high_level_overview.md",

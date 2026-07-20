@@ -52,4 +52,5 @@ Roughly in order of increasing structural interest:
 - [`TwoLoops`](TwoLoops/narrative.md) — two algebraic loops in series → **two
   coupled blocks**, sequenced by their data dependency.
 - [`Drivetrain`](Drivetrain/narrative.md) — cross-domain train with **ideal gears**
-  → **high index** (structurally singular); the Arc-4 forward reference.
+  → **high index** (structurally singular), then **index-reduced** to a solvable
+  system (Arc 4): the Structural vs Index-reduction tabs show before → after.

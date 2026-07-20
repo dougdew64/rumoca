@@ -44,6 +44,7 @@ enum StageKind {
     Typecheck,
     Flatten,
     Structural,
+    IndexReduction,
 }
 
 /// How to render the Structural stage: the custom BLT spy-plot (the visual
@@ -89,6 +90,7 @@ pub struct App {
     typecheck: Stage,
     flatten: Stage,
     structural: Stage,
+    index_reduction: Stage,
     stage: StageKind,
     // Resolved identity of every DefId referenced in the current model's IR.
     def_index: BTreeMap<u64, DefInfo>,
@@ -157,6 +159,7 @@ impl App {
             typecheck: Stage::default(),
             flatten: Stage::default(),
             structural: Stage::default(),
+            index_reduction: Stage::default(),
             stage: StageKind::Resolve,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
@@ -226,6 +229,7 @@ impl App {
         self.typecheck = Stage::default();
         self.flatten = Stage::default();
         self.structural = Stage::default();
+        self.index_reduction = Stage::default();
         self.def_index = BTreeMap::new();
         self.nav.clear();
         self.nav_loading = None;
@@ -253,7 +257,8 @@ impl App {
                     };
                 }
                 FromWorker::Compiled {
-                    path, model, parse, resolve, instantiate, typecheck, flatten, structural, def_index,
+                    path, model, parse, resolve, instantiate, typecheck, flatten, structural,
+                    index_reduction, def_index,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -266,6 +271,7 @@ impl App {
                     self.typecheck = typecheck;
                     self.flatten = flatten;
                     self.structural = structural;
+                    self.index_reduction = index_reduction;
                     self.def_index = def_index;
                     // Re-fit the spy-plot camera to the new report's matrix.
                     self.spy_canvas.request_fit();
@@ -279,6 +285,7 @@ impl App {
                         ("typecheck", self.typecheck.value.as_ref()),
                         ("flatten", self.flatten.value.as_ref()),
                         ("structural", self.structural.value.as_ref()),
+                        ("index_reduction", self.index_reduction.value.as_ref()),
                     ]);
                 }
                 FromWorker::DefTree { name, result } => {
@@ -303,6 +310,7 @@ impl App {
             StageKind::Typecheck => &self.typecheck,
             StageKind::Flatten => &self.flatten,
             StageKind::Structural => &self.structural,
+            StageKind::IndexReduction => &self.index_reduction,
         }
     }
 
@@ -314,6 +322,7 @@ impl App {
             StageKind::Typecheck => "Typecheck",
             StageKind::Flatten => "Flatten",
             StageKind::Structural => "Structural",
+            StageKind::IndexReduction => "Index reduction",
         }
     }
 
@@ -337,6 +346,10 @@ impl App {
             // The structural report is a different shape from the flat model —
             // no path-aligned previous, so nothing to highlight.
             StageKind::Structural => None,
+            // Diff the reduced report against the raw one: for an already-index-1
+            // model they're identical (nothing highlights); for a reduced
+            // high-index model the raw report is absent (it was singular).
+            StageKind::IndexReduction => self.structural.value.as_ref(),
         }
     }
 
@@ -344,7 +357,9 @@ impl App {
     /// note) — where the tabs should land after a compile. Falls back to Parse.
     fn last_successful_stage(&self) -> StageKind {
         let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
-        if ok(&self.structural) {
+        if ok(&self.index_reduction) {
+            StageKind::IndexReduction
+        } else if ok(&self.structural) {
             StageKind::Structural
         } else if ok(&self.flatten) {
             StageKind::Flatten
@@ -775,10 +790,18 @@ impl eframe::App for App {
                     ui.selectable_value(&mut self.stage, StageKind::Flatten, "Flatten");
                     ui.selectable_value(&mut self.stage, StageKind::Structural, "Structural")
                         .on_hover_text(
-                            "Structural analysis of the DAE (Rumoca phase 7): maximum matching \
-                             (equation↔unknown), BLT blocks (evaluation order; size>1 = algebraic \
-                             loop), and tearing. Shown as a BLT spy-plot (drag to pan, scroll to \
-                             zoom, click a block to capture) or the raw report tree.",
+                            "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
+                             (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
+                             A high-index system (rigid constraints) reports SINGULAR here — see the \
+                             Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
+                             to pan, scroll to zoom, click a block to capture) or the raw report tree.",
+                        );
+                    ui.selectable_value(&mut self.stage, StageKind::IndexReduction, "Index reduction")
+                        .on_hover_text(
+                            "Structural analysis of the DAE AFTER index reduction (Arc 4, Pantelides / \
+                             dummy derivatives): the funnel differentiates constraints and demotes states \
+                             so a high-index singular system becomes matchable. For an already-index-1 \
+                             model this equals Structural. Same BLT spy-plot / tree.",
                         );
                     if self.selected.is_some()
                         && ui
@@ -832,11 +855,13 @@ impl eframe::App for App {
                     }
                 }
 
-                // The Structural stage offers a custom BLT spy-plot alongside the
-                // generic tree; every other stage is tree-only.
-                let structural_ready =
-                    self.stage == StageKind::Structural && self.structural.value.is_some();
-                if structural_ready {
+                // The report stages (Structural + Index reduction) offer a custom
+                // BLT spy-plot alongside the generic tree; every other stage is
+                // tree-only.
+                let report_stage =
+                    matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
+                let report_ready = report_stage && self.current_stage().value.is_some();
+                if report_ready {
                     ui.horizontal(|ui| {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
@@ -844,10 +869,10 @@ impl eframe::App for App {
                     ui.separator();
                 }
 
-                if structural_ready && self.structural_view == StructuralView::SpyPlot {
-                    // Build the plot (owns its strings, so the borrow of
-                    // `self.structural` is released before we touch `spy_canvas`).
-                    match self.structural.value.as_ref().and_then(spyplot::Plot::from_report) {
+                if report_ready && self.structural_view == StructuralView::SpyPlot {
+                    // Build the plot (owns its strings, so the immutable borrow of
+                    // the current stage is released before we touch `spy_canvas`).
+                    match self.current_stage().value.as_ref().and_then(spyplot::Plot::from_report) {
                         Some(plot) => {
                             ui.weak(plot.caption());
                             plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture);

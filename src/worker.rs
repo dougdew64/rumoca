@@ -61,6 +61,11 @@ impl Stage {
     fn recovered(value: serde_json::Value, note: impl Into<String>) -> Self {
         Stage { value: Some(value), note: Some(note.into()), note_is_error: true }
     }
+    /// A successful IR plus an informational (non-error) note — e.g. the
+    /// index-reduction stage's "already index-1" / "reduced from singular".
+    fn ok_with_note(value: serde_json::Value, note: impl Into<String>) -> Self {
+        Stage { value: Some(value), note: Some(note.into()), note_is_error: false }
+    }
 }
 
 /// Resolved identity of a `DefId` referenced in a stage's IR — what an opaque
@@ -117,8 +122,12 @@ pub enum FromWorker {
         instantiate: Stage,
         typecheck: Stage,
         flatten: Stage,
-        /// Arc 3: structural analysis of the DAE — matching + BLT blocks + tearing.
+        /// Arc 3: structural analysis of the RAW DAE — matching + BLT + tearing
+        /// (errors "singular" on a high-index system).
         structural: Stage,
+        /// Arc 4: structural analysis of the DAE AFTER index reduction (the
+        /// dummy-derivative funnel) — solvable even when `structural` is singular.
+        index_reduction: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -240,6 +249,7 @@ impl WorkerState {
                     typecheck: Stage::default(),
                     flatten: Stage::default(),
                     structural: Stage::default(),
+                    index_reduction: Stage::default(),
                     def_index: BTreeMap::new(),
                 };
             }
@@ -303,16 +313,16 @@ impl WorkerState {
 
         // --- Flatten stage: from the reachable-closure pipeline (increment 1).
         // Instantiate/Typecheck were computed above from the resolved tree. ---
-        let (flatten, structural) = match &model {
+        let (flatten, structural, index_reduction) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e))
+                (Stage::err(e), Stage::err(e), Stage::err(e))
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
                 let result = report.requested_result.as_ref();
-                (flatten_stage(result), structural_stage(result))
+                (flatten_stage(result), structural_stage(result), index_reduction_stage(result))
             }
         };
 
@@ -325,6 +335,7 @@ impl WorkerState {
             typecheck,
             flatten,
             structural,
+            index_reduction,
             def_index,
         }
     }
@@ -350,6 +361,39 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
             match rumoca_phase_structural::build_structural_report(&cr.dae) {
                 Ok(rep) => Stage::ok(structural_to_json(&rep)),
                 Err(e) => Stage::err(format!("structural analysis failed: {e}")),
+            }
+        }
+        Some(PhaseResult::Failed { phase, .. }) => {
+            Stage::info(format!("not reached ({phase} failed earlier)"))
+        }
+        Some(PhaseResult::NeedsInner { .. }) => {
+            Stage::info("not reached (model needs inner declarations)")
+        }
+        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    }
+}
+
+/// Arc 4: structural analysis of the DAE **after** index reduction. Runs the
+/// dummy-derivative funnel (`index_reduce_for_structural_analysis`) on a copy of
+/// the raw DAE, then `build_structural_report` on the result — so a high-index
+/// system that `structural_stage` reports singular becomes solvable here. The
+/// note says whether reduction was actually needed.
+fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
+    match result {
+        Some(PhaseResult::Success(cr)) => {
+            let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
+            let mut reduced = cr.dae.clone();
+            index_reduce_for_structural_analysis(&mut reduced);
+            match rumoca_phase_structural::build_structural_report(&reduced) {
+                Ok(rep) => {
+                    let note = if raw_ok {
+                        "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+                    } else {
+                        "index-reduced from a structurally singular (high-index) system — now solvable"
+                    };
+                    Stage::ok_with_note(structural_to_json(&rep), note)
+                }
+                Err(e) => Stage::err(format!("still singular after index reduction: {e}")),
             }
         }
         Some(PhaseResult::Failed { phase, .. }) => {
@@ -755,6 +799,30 @@ mod tests {
             after.is_ok(),
             "index reduction should make Drivetrain structurally analyzable, got {after:?}"
         );
+    }
+
+    /// Arc 4: for the high-index Drivetrain, the raw `structural` stage is singular
+    /// (no IR), but the `index_reduction` stage recovers a solvable report — the
+    /// before/after the two tabs show side by side.
+    #[test]
+    fn drivetrain_index_reduction_stage_recovers_singular() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let roots = vec![
+            PathBuf::from(format!("{base}/Modelica 4.1.0")),
+            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{base}/Complex.mo")),
+        ];
+        let mut state = WorkerState::new();
+        state.load_libraries(roots).expect("load MSL");
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/Drivetrain.mo"));
+        let FromWorker::Compiled { structural, index_reduction, .. } = state.compile(path) else {
+            panic!("expected Compiled");
+        };
+        assert!(structural.value.is_none(), "raw Structural should be singular for Drivetrain");
+        let v = index_reduction.value.unwrap_or_else(|| {
+            panic!("index reduction should recover Drivetrain: {:?}", index_reduction.note)
+        });
+        assert!(v["coupled_block_count"].as_u64().is_some(), "reduced report missing block count");
     }
 }
 
