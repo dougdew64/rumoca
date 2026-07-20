@@ -85,3 +85,14 @@ Captured 2026-07-20 (Doug). Two naming problems:
     links, the app "Read: chapter" button, `.vscode/settings.json` editor
     associations glob, and references in `CLAUDE.md` / `docs/updating-rumoca.md`.
     Mechanical but wide — do it as one deliberate sweep.
+
+## 4. Reconsider the arc close-out gates (differential test + debugger single-step)
+
+Captured 2026-07-20 (Doug). The arc close-out ritual (CLAUDE.md) currently gates on (1) the specimen
+passing the **differential test** in both toolchains (System Modeler vs Rumoca) and (3) Doug having
+**single-stepped the phase** in the debugger. Arcs 1–3 all closed with these *accepted-as-deferred /
+unconfirmed* rather than met. Doug is giving separate thought to whether they should remain **gates**
+at all (his words: "we should probably eliminate those two items as gates"). Pending that decision,
+treat them as satisfiable-by-acceptance, not hard blockers. If eliminated, update the ritual in
+CLAUDE.md (and note it here as done). This is Doug's call — a charter/ritual change, not an
+implementation task.

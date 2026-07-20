@@ -313,3 +313,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   shifted source spans, so all traces were regenerated (only `structural.json` was unaffected — the
   analysis is span-free); the four narratives that quoted an FNV hash now reference `manifest.json`
   instead (robust to any future source tweak).
+- **2026-07-20 — Advanced to Arc 4 (charter §4.2.4): index reduction (Pantelides / dummy derivatives).**
+  Arc 3 (Matching & BLT) closed: observatory renders the structural phase (Structural stage + BLT
+  spy-plot), traces captured (the 7-specimen notebook). Gates 1 (differential test) + 3 (debugger
+  single-step) accepted as deferred/unconfirmed — Doug is separately weighing whether they stay gates
+  (docs/ideas.md #4). **De-risk scout before advancing:** confirmed Rumoca is NOT blocked-on-upstream —
+  `rumoca-phase-structural::dae_prepare` is a public module with dummy-derivative index reduction
+  (`expand_compound_derivatives`, `promote_der_algebraics_to_states`, `eliminate_derivative_aliases`,
+  `symbolic_time_derivative_for_expr`, constrained dummy-state reduction, direct state demotion). Arc-4
+  increment plan (CLAUDE.md): scout dae_prepare + capture before/after on Drivetrain (already high-index,
+  no new library needed) → wire the Index-reduction stage/view → build the portable-subset planar
+  mechanics library (revolute joint, rigid link, fixed; no MSL MultiBody) → author the four-bar linkage
+  specimen (index-3 → reduced).

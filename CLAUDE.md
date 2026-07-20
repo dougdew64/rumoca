@@ -7,20 +7,36 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 3: Matching & BLT** (charter §4.2.3). Specimen: an ideal proportional feedback loop closed
-around instantaneous relations (a servo inner loop, idealized) — yielding a genuine *simultaneous
-algebraic block*. This arc studies **structural analysis** (Rumoca phase 7): the incidence matrix,
-maximum bipartite matching (equation↔unknown), Tarjan SCC → **BLT blocks**, and **tearing** of
-algebraic loops. Data comes from `build_structural_report(&dae)` over the pipeline's `CompilationResult.dae`
-(needs the `rumoca-phase-structural` dep, added).
+**Arc 4: Index reduction (Pantelides / dummy derivatives)** (charter §4.2.4). Specimen: a four-bar /
+parallelogram linkage — the loop-closure constraint that makes planar multibody the **index-3** domain
+Pantelides was invented for (boundary fact: an open chain in joint coordinates is a plain ODE; the
+pathology enters only with closed chains / absolute coordinates). This arc studies how a **structurally
+singular, high-index DAE** (the verdict Arc 3 left `Drivetrain` in — 93/97 matched) is reduced to an
+index-1, solvable system by **symbolically differentiating constraints and demoting states to
+algebraics (dummy derivatives)**.
 
-Scope: **this is the arc where custom views beyond the one generic tree arrive** — a **bipartite
-incidence view** and a **BLT spy-plot**, built with a custom `egui::Painter` canvas (deliberately NOT
-`egui_graphs` — chosen for maximum flexibility during Doug's dogfooding; see DECISIONS.md). Increment
-plan: (1) structural report in a **Structural** generic-tree tab, (2) incidence canvas view,
-(3) BLT spy-plot, (4) the feedback-loop specimen. Arc 1–2 (Parse … Flatten) + the bridge / help /
-field-help / stage-diff systems are done. New pipeline stages must be wired into the stage-diff
-highlight + stage-file publishing (see Claude's `hrw-stage-diff-highlight-extend` memory).
+**Rumoca capability CONFIRMED — not blocked-on-upstream** (scouted 2026-07-20): `rumoca-phase-structural::dae_prepare`
+is a **public** module with the index-reduction machinery — `expand_compound_derivatives`,
+`promote_der_algebraics_to_states`, `eliminate_derivative_aliases`, `symbolic_time_derivative_for_expr`,
+constrained dummy-state reduction (`constrained_dummy_state_*`), and direct state demotion
+(`demote_direct_assigned_states`). It is **dummy-derivative style** (Mattsson & Söderlind) rather than
+named "Pantelides," but it IS the index-reduction phase. `sort_dae` is the higher-level "DAE → BLT-sorted
+blocks (errors on singular)". Exact orchestration + how to capture *before/after* the reduction is
+increment-1 scouting.
+
+Increment plan: (1) scout the `dae_prepare` orchestration and capture **before/after** the reduction,
+building + verifying the observatory feature first on **`Drivetrain`** (already high-index — no new library
+needed); (2) wire an **Index-reduction** stage/view into the observatory (full new-stage checklist);
+(3) build the hand-built **planar (2D) mechanics library** (portable subset — revolute joint, rigid link,
+fixed anchor; **NO MSL MultiBody**, charter §4.1/§4.3); (4) author the **four-bar linkage** specimen and
+show index-3 → reduced. Arc 1–3 done (Parse … Structural + the BLT spy-plot + the 7-specimen notebook with
+traces & narratives). **New pipeline stages must be wired into the stage-diff highlight + stage-file
+publishing AND the notebook trace/narrative** (see Claude's `hrw-stage-diff-highlight-extend` memory).
+
+**Close-out gates under review:** Doug is separately weighing whether the differential test (System
+Modeler round-trip) and the debugger single-step should remain arc close-out gates at all — Arc 3 closed
+with both accepted (deferred / unconfirmed). Until he decides, treat them as satisfiable-by-acceptance,
+not hard blockers (see `docs/ideas.md` #4).
 
 **Per-specimen lab notebook (`docs/specimen-notebook/`) — now active.** Each entry pairs a durable
 **compilation trace** (`trace/` = the six stage IR files + a `manifest.json` stamping the Rumoca
