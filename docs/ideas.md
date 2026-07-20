@@ -134,3 +134,33 @@ determinacy (equations vs free init unknowns), flagging over/under-determination
 That would surface the class of blow-up `CapacitorLoop` cannot (its failure
 surfaces structurally instead). Scout whether Rumoca exposes an initialization-
 system assembly/consistency check first.
+
+## 7. Full initialization-system structural analysis (the rigorous form of #6)
+
+Captured 2026-07-20 (Doug). Idea #6 (implemented) is a **count** heuristic — explicit
+initial conditions vs states — which reliably catches gross *over*-determination
+(`OverInitRc`) but is blind to a system that is count-balanced yet **structurally
+singular** at initialization: e.g. two initial conditions pinning the *same*
+variable while another state is left unpinned (net count zero, but ill-posed).
+
+Enhancement: do for the **initialization system** what Arc 3 does for the continuous
+system. Assemble the full init system — the continuous equations at t = 0 (with
+`der(x)` as unknowns) + the user `initial equation`s + the fixed-`start` conditions —
+build its incidence matrix, run maximum matching, and report **which initial
+equations are redundant and which init unknowns are unpinned** (the same
+unmatched-equations / unmatched-unknowns verdict the Structural tab gives, but for
+t = 0). That turns "surplus +1" into a precise, per-equation diagnosis, and would
+catch under-determination correctly too (a truly unpinned state — no condition and
+no usable `start`), which the count heuristic deliberately does not.
+
+Observatory shape: extend the **Initialization** stage's `determinacy` block (or a
+sibling view) with the init-system matching result; a spy-plot of the init incidence
+would reuse the Arc-3 canvas.
+
+**Scout first:** whether Rumoca already assembles the init system anywhere reusable.
+Pieces exist — `build_ic_relaxation_hint` already detects *singular initial algebraic
+subsystems* (it drives the relaxation hint), and `build_ic_plan` walks the algebraic
+init — but neither incorporates the user's `initial equation`s / fixed starts into one
+matched system. If Rumoca does not expose it, reproducing the assembly risks a
+subtly-wrong analysis (cf. the Arc-4 nonlinear-constraint reimplementation caution) —
+weigh an upstream contribution instead.
