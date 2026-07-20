@@ -1,0 +1,239 @@
+{
+  "n_equations": 23,
+  "n_unknowns": 23,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from src)",
+      "unknown": "src.n.i"
+    },
+    {
+      "equation": "f_x[1] (equation from src)",
+      "unknown": "src.i"
+    },
+    {
+      "equation": "f_x[2] (equation from src)",
+      "unknown": "src.p.v"
+    },
+    {
+      "equation": "f_x[3] (equation from src)",
+      "unknown": "src.v"
+    },
+    {
+      "equation": "f_x[4] (equation from R)",
+      "unknown": "R.n.i"
+    },
+    {
+      "equation": "f_x[5] (equation from R)",
+      "unknown": "R.p.i"
+    },
+    {
+      "equation": "f_x[6] (equation from R)",
+      "unknown": "R.v"
+    },
+    {
+      "equation": "f_x[7] (equation from R)",
+      "unknown": "R.T_heatPort"
+    },
+    {
+      "equation": "f_x[8] (equation from R)",
+      "unknown": "R.R_actual"
+    },
+    {
+      "equation": "f_x[9] (equation from R)",
+      "unknown": "R.i"
+    },
+    {
+      "equation": "f_x[10] (equation from R)",
+      "unknown": "R.LossPower"
+    },
+    {
+      "equation": "f_x[11] (equation from C)",
+      "unknown": "C.n.i"
+    },
+    {
+      "equation": "f_x[12] (equation from C)",
+      "unknown": "C.i"
+    },
+    {
+      "equation": "f_x[13] (equation from C)",
+      "unknown": "C.p.v"
+    },
+    {
+      "equation": "f_x[14] (equation from C)",
+      "unknown": "der(C.v)"
+    },
+    {
+      "equation": "f_x[15] (equation from gnd)",
+      "unknown": "gnd.p.v"
+    },
+    {
+      "equation": "f_x[16] (flow sum equation: src.p.i + R.p.i = 0)",
+      "unknown": "src.p.i"
+    },
+    {
+      "equation": "f_x[17] (flow sum equation: R.n.i + C.p.i = 0)",
+      "unknown": "C.p.i"
+    },
+    {
+      "equation": "f_x[18] (flow sum equation: C.n.i + src.n.i + gnd.p.i = 0)",
+      "unknown": "gnd.p.i"
+    },
+    {
+      "equation": "f_x[19] (connection equation: src.p.v = R.p.v)",
+      "unknown": "R.p.v"
+    },
+    {
+      "equation": "f_x[20] (connection equation: R.n.v = C.p.v)",
+      "unknown": "R.n.v"
+    },
+    {
+      "equation": "f_x[21] (connection equation: C.n.v = src.n.v)",
+      "unknown": "C.n.v"
+    },
+    {
+      "equation": "f_x[22] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (equation from src)",
+      "unknown": "src.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[15] (equation from gnd)",
+      "unknown": "gnd.p.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[22] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[2] (equation from src)",
+      "unknown": "src.p.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[19] (connection equation: src.p.v = R.p.v)",
+      "unknown": "R.p.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[21] (connection equation: C.n.v = src.n.v)",
+      "unknown": "C.n.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[13] (equation from C)",
+      "unknown": "C.p.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[20] (connection equation: R.n.v = C.p.v)",
+      "unknown": "R.n.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[6] (equation from R)",
+      "unknown": "R.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[7] (equation from R)",
+      "unknown": "R.T_heatPort"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[8] (equation from R)",
+      "unknown": "R.R_actual"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[9] (equation from R)",
+      "unknown": "R.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[5] (equation from R)",
+      "unknown": "R.p.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[16] (flow sum equation: src.p.i + R.p.i = 0)",
+      "unknown": "src.p.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (equation from src)",
+      "unknown": "src.n.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (equation from src)",
+      "unknown": "src.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[4] (equation from R)",
+      "unknown": "R.n.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[10] (equation from R)",
+      "unknown": "R.LossPower"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[17] (flow sum equation: R.n.i + C.p.i = 0)",
+      "unknown": "C.p.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[11] (equation from C)",
+      "unknown": "C.n.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[12] (equation from C)",
+      "unknown": "C.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[14] (equation from C)",
+      "unknown": "der(C.v)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[18] (flow sum equation: C.n.i + src.n.i + gnd.p.i = 0)",
+      "unknown": "gnd.p.i"
+    }
+  ]
+}

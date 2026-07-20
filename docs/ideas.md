@@ -111,6 +111,17 @@ and show index-3 → reduced. Arc 4's core (index reduction observed) is already
 
 ## 6. Initialization stage: detect over/under-determined *user* initialization
 
+**✅ Implemented 2026-07-20 (over-determination).** The Initialization stage now
+reports a `determinacy` block — explicit initial conditions (initial equations +
+fixed-start states) vs states — and flags **over-determined** init with a red note
+(specimen `OverInitRc`: `C.v = 0` + `der(C.v) = 0` → surplus +1). Under-determination
+is intentionally NOT flagged (states initialize from their `start` attributes, so a
+deficit is normal — verified: `RcCircuit` surplus −1 is well-posed). A full
+initialization-system structural analysis (Rumoca's `rumoca-phase-dae::balance` is
+the *continuous* balance, not init-specific) remains a possible deepening. Original
+capture below.
+
+
 Captured 2026-07-20 (finding, Arc 5). The Initialization stage today renders
 `build_ic_plan`, which plans the *algebraic subsystem* — it does NOT see the user's
 `initial equation`s or `start`/`fixed` attributes. So a **pure initialization

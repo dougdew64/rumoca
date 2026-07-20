@@ -405,3 +405,14 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   user-initialization over-determination (conflicting `initial equation`s — the tested-then-removed
   `OverInitRc`) is NOT surfaced today because `build_ic_plan` ignores the user's initial equations →
   future enhancement `docs/ideas.md #6` (make the Initialization stage report init-system determinacy).
+- **2026-07-20 — Idea #6 implemented: Initialization stage flags over-determined user init.** The
+  Initialization stage now computes a `determinacy` block from the DAE — explicit initial conditions
+  (`initialization.equations` + states with `fixed == Some(true)`) vs states — and flags **over-determined**
+  init (surplus > 0) with a red note. Rumoca's `rumoca-phase-dae::balance` is the *continuous* balance
+  (states+alg vs f_x), not init-specific, so it wouldn't catch this; computed the init count directly.
+  **Under-determination intentionally NOT flagged**: a state with no explicit condition initializes from
+  its `start` attribute (calibrated empirically — RcCircuit surplus −1 and SingleInertia −2 are well-posed;
+  only OverInitRc's +1 is a real over-specification). Specimen `OverInitRc.mo` (RcCircuit + `C.v = 0` and
+  `der(C.v) = 0`) restored + narrative; the two Arc-5 blow-ups now cover both kinds: CapacitorLoop
+  (structural) and OverInitRc (init-determinacy). Guarded by
+  `worker::tests::over_init_rc_is_flagged_over_determined` (+ RcCircuit asserts it is NOT mis-flagged).

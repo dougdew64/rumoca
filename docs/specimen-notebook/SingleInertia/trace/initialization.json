@@ -3,5 +3,13 @@
   "n_equations": 2,
   "block_count": 0,
   "blocks": [],
-  "relaxation_hint": null
+  "relaxation_hint": null,
+  "determinacy": {
+    "states": 2,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": -2,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
 }

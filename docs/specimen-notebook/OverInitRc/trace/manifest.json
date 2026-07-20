@@ -1,0 +1,41 @@
+{
+  "model": "OverInitRc",
+  "specimen": "specimens/OverInitRc.mo",
+  "specimen_fnv1a": "08e4ea0deefc0375",
+  "rumoca_rev": "8cdc74198",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "structural": {
+      "has_ir": true,
+      "note": null
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": "OVER-DETERMINED initialization: 2 explicit initial condition(s) (2 initial equation(s) + 0 fixed start(s)) for 1 state(s) — 1 too many; conflicting / redundant ICs"
+    }
+  }
+}

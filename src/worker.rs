@@ -426,11 +426,53 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
         Some(PhaseResult::Success(cr)) => {
             let n_x = cr.dae.variables.states.len();
             let n_eq = cr.dae.continuous.equations.len();
+            // Determinacy of the *user* initialization (idea #6): the explicit
+            // initial conditions (initial equations + fixed-start states) vs the
+            // states. A surplus means an OVER-determined init (conflicting /
+            // redundant conditions — a blow-up `build_ic_plan` alone doesn't catch,
+            // since it plans the algebraic subsystem, not the user's init).
+            // Under-determination isn't flagged: remaining states initialize from
+            // their `start` attributes (default init), so a negative count is normal.
+            let n_initial_eq = cr.dae.initialization.equations.len();
+            let n_fixed_start_states = cr
+                .dae
+                .variables
+                .states
+                .values()
+                .filter(|v| v.fixed == Some(true))
+                .count();
+            let explicit = n_initial_eq + n_fixed_start_states;
+            let surplus = explicit as i64 - n_x as i64;
+            let determinacy = serde_json::json!({
+                "states": n_x,
+                "initial_equations": n_initial_eq,
+                "fixed_start_states": n_fixed_start_states,
+                "explicit_initial_conditions": explicit,
+                "surplus_over_states": surplus,
+                "verdict": if surplus > 0 {
+                    "over-determined"
+                } else {
+                    "well-posed (remaining states initialize from their start attributes)"
+                },
+            });
             match rumoca_phase_structural::build_ic_plan(&cr.dae, n_x) {
                 Ok(plan) => {
                     let hint = rumoca_phase_structural::build_ic_relaxation_hint(&cr.dae, n_x);
-                    let json = ic_plan_to_json(&plan, hint.as_ref(), n_x, n_eq);
-                    if plan.is_empty() {
+                    let mut json = ic_plan_to_json(&plan, hint.as_ref(), n_x, n_eq);
+                    if let Some(obj) = json.as_object_mut() {
+                        obj.insert("determinacy".to_owned(), determinacy);
+                    }
+                    if surplus > 0 {
+                        // Over-determined: still show the plan, but flag it red.
+                        Stage::recovered(
+                            json,
+                            format!(
+                                "OVER-DETERMINED initialization: {explicit} explicit initial condition(s) \
+                                 ({n_initial_eq} initial equation(s) + {n_fixed_start_states} fixed start(s)) \
+                                 for {n_x} state(s) — {surplus} too many; conflicting / redundant ICs"
+                            ),
+                        )
+                    } else if plan.is_empty() {
                         Stage::ok_with_note(json, "no algebraic initialization subsystem (equations ≤ states)")
                     } else {
                         Stage::ok(json)
@@ -872,6 +914,7 @@ mod tests {
         );
     }
 
+
     /// Arc 5 (blow-up): a capacitor directly across an ideal source can't be
     /// consistently initialized — its state voltage is pinned to the source. Unlike
     /// Drivetrain, index reduction can NOT rescue it: both Structural and Index
@@ -899,6 +942,23 @@ mod tests {
         let v = initialization.value.unwrap_or_else(|| panic!("no IC plan: {:?}", initialization.note));
         assert!(v["block_count"].as_u64().unwrap_or(0) >= 1, "expected a non-empty IC plan");
         assert!(v["relaxation_hint"].is_object(), "expected a relaxation hint (ground-current redundancy)");
+        // Well-posed init must NOT be mis-flagged as over-determined (idea #6).
+        assert_ne!(v["determinacy"]["verdict"], serde_json::json!("over-determined"));
+    }
+
+    /// Idea #6: over-specified initialization is flagged. `OverInitRc` pins the
+    /// capacitor voltage twice (`C.v = 0` and `der(C.v) = 0`), so the
+    /// Initialization stage reports an over-determined init (surplus > 0) with a
+    /// red note — the pure init blow-up `build_ic_plan` alone doesn't catch.
+    #[test]
+    fn over_init_rc_is_flagged_over_determined() {
+        let FromWorker::Compiled { initialization, .. } = compile_specimen_shared("OverInitRc") else {
+            panic!("expected Compiled");
+        };
+        let v = initialization.value.expect("IC plan");
+        assert_eq!(v["determinacy"]["verdict"], serde_json::json!("over-determined"));
+        assert!(v["determinacy"]["surplus_over_states"].as_i64().unwrap_or(0) >= 1);
+        assert!(initialization.note_is_error, "over-determined init should be flagged red");
     }
 
     /// Arc 4: the parked hand-built PlanarMechanics library (the four-bar-linkage

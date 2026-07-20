@@ -578,5 +578,13 @@
     "pinned_unknowns": [
       "gnd.p.i"
     ]
+  },
+  "determinacy": {
+    "states": 1,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": -1,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
   }
 }

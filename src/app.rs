@@ -820,7 +820,9 @@ impl eframe::App for App {
                             "The consistent-initial-condition solve plan (Arc 5, build_ic_plan): the \
                              ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
                              scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
-                             dropped / unknowns pinned) when the initial subsystem is singular.",
+                             dropped / unknowns pinned) when the initial subsystem is singular, and a \
+                             determinacy check that flags an OVER-determined init (more explicit initial \
+                             conditions than states — conflicting/redundant ICs).",
                         );
                     if self.selected.is_some()
                         && ui

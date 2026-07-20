@@ -70,16 +70,16 @@ observatory shows exactly that.
   reduction can't help). Same phase, opposite outcome — the two together teach what
   index reduction can and cannot do.
 
-## An honest gap this specimen exposes
+## Two kinds of blow-up
 
 CapacitorLoop's failure surfaces at **Structural / Index reduction**, not in the
 **Initialization** tab — and the Initialization tab still shows a (untrustworthy)
 plan. A *different* initialization failure — a **user-over-determined** init, e.g.
-conflicting `initial equation`s on an otherwise clean index-1 DAE — is **not**
-surfaced at all today: `build_ic_plan` operates on the algebraic subsystem and does
-not see the user's initial equations. Making the Initialization stage detect and
-flag over/under-determined initialization is the natural next enhancement
-([`docs/ideas.md`](../../ideas.md) #6).
+conflicting `initial equation`s on an otherwise clean index-1 DAE — is a distinct
+class the [`OverInitRc`](../OverInitRc/narrative.md) specimen covers: the
+Initialization stage now flags it via its **determinacy** check
+([`docs/ideas.md`](../../ideas.md) #6, implemented). CapacitorLoop is the
+*structural* blow-up; OverInitRc is the *initialization-determinacy* blow-up.
 
 ## References
 [Structural analysis · IC planning](../../compiler-phases/phase7_structural_analysis/ic_plan.md).

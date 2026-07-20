@@ -60,3 +60,6 @@ Roughly in order of increasing structural interest:
 - [`CapacitorLoop`](CapacitorLoop/narrative.md) — the Arc-5 **blow-up**: a capacitor
   across an ideal source can't be consistently initialized; Structural + Index
   reduction both stay singular (contrast Drivetrain: reducible).
+- [`OverInitRc`](OverInitRc/narrative.md) — the Arc-5 **initialization blow-up**:
+  a clean RC with conflicting `initial equation`s → the Initialization tab flags an
+  **over-determined** init (idea #6). Structurally fine; wrong at t=0.

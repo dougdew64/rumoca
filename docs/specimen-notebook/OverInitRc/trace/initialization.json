@@ -1645,10 +1645,10 @@
   },
   "determinacy": {
     "states": 1,
-    "initial_equations": 0,
+    "initial_equations": 2,
     "fixed_start_states": 0,
-    "explicit_initial_conditions": 0,
-    "surplus_over_states": -1,
-    "verdict": "well-posed (remaining states initialize from their start attributes)"
+    "explicit_initial_conditions": 2,
+    "surplus_over_states": 1,
+    "verdict": "over-determined"
   }
 }
