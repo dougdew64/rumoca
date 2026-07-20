@@ -269,3 +269,25 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `worker::tests::proportional_loop_has_a_coupled_block` (and RotationalInertia's test now also asserts
   `coupled_block_count == 0`, so the scalar-vs-coupled distinction can't silently regress). The
   System Modeler differential round-trip stays deferred per the arc's standing note.
+- **2026-07-20 — Per-specimen lab notebook activated: trace + narrative.** Doug un-deferred the
+  `docs/notebook/` notebook, arriving (during design discussion) at a concrete shape: **specimen +
+  durable compilation trace + Claude-written narrative**. Each `docs/notebook/<Model>/` holds `trace/`
+  (the six stage IR files — parse…structural — + `manifest.json` stamping the Rumoca rev + an FNV-1a
+  specimen hash) and `narrative.md` (the grounded story of that specimen's compilation, foregrounding
+  the designed phenomenon, citing specific trace locations, linking to `docs/understanding` + external
+  math references). **Why trace-anchored:** the trace is ground truth, so every "interesting" claim in
+  the narrative is checkable and a trace diff flags staleness — the guard against confident-but-wrong
+  AI prose. **Why not just docs/understanding:** those are Doug's *generic* phase theory; the notebook
+  is Claude's *specimen-specific* synthesis (links back to them). `ProportionalLoop` is the pilot.
+  - **Trace generator (`examples/gen_trace.rs`):** required a **bin→lib split** — added `src/lib.rs`
+    exposing the modules + `worker::compile_specimen` (headless, reuses the exact worker path so traces
+    are byte-identical to the app's). `main.rs` now `use hrw::app`. Accepted: cleaner architecture,
+    unblocks headless tooling; no behavior change.
+  - **Trace vs bridge stages:** the bridge already writes all stages to `.hrw-bridge/stages/` but those
+    are transient + gitignored; the trace is the *durable, committed* snapshot. The narrative
+    foregrounds the arc's boundary (flatten→structural) but the trace carries **all six** stages —
+    restricting it would be arbitrary since the app computes them all anyway (Doug's point).
+  - **UI:** a **"Read: specimen narrative"** button in the right panel (beside the generic-chapter
+    button), shown only when `docs/notebook/<model>/narrative.md` exists — closes the dual-emitter loop
+    (visual channel → durable narrative). `editorAssociations` now opens `docs/notebook/**/*.md` in
+    Markdown preview too. Regeneration on pin bump is `docs/updating-rumoca.md` step 5.

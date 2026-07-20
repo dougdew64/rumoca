@@ -1,19 +1,47 @@
 # HRW Lab Notebook
 
-One file per specimen (`<Specimen>.md`), recording what we learn about how
-Rumoca processes it. This is **HRW's own record** — specimen-driven observations
-tied to concrete IR — kept deliberately distinct from the Rumoca clone's
-`docs/understanding`, which is Doug's canonical, general explanation of each
-compiler phase.
+One directory per specimen — `docs/notebook/<Model>/` — recording how Rumoca
+compiles it, anchored to the specimen's actual IR. This is **HRW's own
+specimen-driven record**, kept deliberately distinct from `docs/understanding`
+(Doug's canonical, *general* explanation of each compiler phase). The notebook is
+*specimen-specific*; `docs/understanding` is *phase-generic*, and the narratives
+link back to it.
 
-**Authorship: Doug writes these.** Writing the synthesis in your own words is the
-learning; that rep is the point, not overhead to optimize away. Claude drafts a
-section only when asked, and challenges/tightens what's written — but the
-understanding recorded here is yours.
+Each entry has two parts:
 
-**How it fills up:** the [Claude bridge](../../src/bridge.rs) makes the chat
-conversations happen (point at an IR node → "Ask Claude about this" → ask in the
-Claude Code chat). Those answers are ephemeral. When one is a keeper, *you*
-promote it into that specimen's notebook file below.
+- **`trace/`** — the durable **compilation trace**: the IR of every pipeline stage
+  (`parse … structural`) as JSON, plus a `manifest.json` stamping the Rumoca rev
+  and an FNV-1a hash of the specimen. This is *ground truth*, produced by the app's
+  own worker path so it is byte-identical to what the running observatory shows.
+- **`narrative.md`** — the **compilation narrative**: the grounded story of *this*
+  specimen's trip through the pipeline, foregrounding the phenomenon the specimen
+  was authored to trigger, citing specific trace locations, and linking outward to
+  the relevant `docs/understanding` chapters and external math references. Claude
+  writes and maintains it against the trace; every "interesting" claim points at a
+  trace entry or Rumoca source, so a trace diff flags any prose that has gone stale.
 
-Start a new specimen from [`_TEMPLATE.md`](_TEMPLATE.md).
+## Adding / regenerating an entry
+
+```text
+cargo run --example gen_trace -- <Model>     # (re)writes docs/notebook/<Model>/trace/
+```
+
+Then write `narrative.md` (start from [`_TEMPLATE.md`](_TEMPLATE.md)), grounded in
+the freshly generated trace. On a Rumoca pin bump, regenerate every entry's trace
+and re-read its narrative against the diff — see
+[`docs/updating-rumoca.md`](../updating-rumoca.md) step 5.
+
+In the app, the right-hand panel's **"Read: specimen narrative"** button opens the
+current specimen's `narrative.md` (shown only when one exists) — the visual channel
+pointing straight at the durable story.
+
+## Entries
+
+- [`ProportionalLoop`](ProportionalLoop/narrative.md) — idealized algebraic
+  feedback loop → one **coupled** block (tearing). The pilot entry.
+- [`SingleInertia`](SingleInertia/narrative.md) — the minimal index-1 ODE
+  (self-contained); what a *state* looks like in the DAE.
+- [`RotationalInertia`](RotationalInertia/narrative.md) — same physics via **MSL
+  connectors**; the connector-expansion story (still index-1).
+- [`Drivetrain`](Drivetrain/narrative.md) — cross-domain train with **ideal gears**
+  → **high index** (structurally singular); the Arc-4 forward reference.

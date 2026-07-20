@@ -22,10 +22,21 @@ plan: (1) structural report in a **Structural** generic-tree tab, (2) incidence 
 field-help / stage-diff systems are done. New pipeline stages must be wired into the stage-diff
 highlight + stage-file publishing (see Claude's `hrw-stage-diff-highlight-extend` memory).
 
+**Per-specimen lab notebook (`docs/notebook/`) — now active.** Each entry pairs a durable
+**compilation trace** (`trace/` = the six stage IR files + a `manifest.json` stamping the Rumoca
+rev + specimen hash, produced by `cargo run --example gen_trace -- <Model>`) with a Claude-written
+**`narrative.md`** — the grounded story of *that specimen's* trip through the pipeline, foregrounding
+the phenomenon the specimen was designed to trigger, citing specific trace locations, and linking to
+`docs/understanding` chapters + external math references. The app's right panel has a **"Read:
+specimen narrative"** button beside the generic-chapter button (visual channel → durable narrative).
+`ProportionalLoop` is the pilot entry; regenerate traces + review narratives on a pin bump (see
+`docs/updating-rumoca.md` step 5). The notebook is *specimen-specific* (Claude's synthesis); it is
+distinct from `docs/understanding` (Doug's *generic* phase theory).
+
 **Deferred — revisit after Doug's consideration:** the Arc-1/2 close-out differential tests
-(round-tripping specimens through System Modeler vs Rumoca) and the per-specimen lab notebook
-(`docs/notebook/`). Doug is deliberately thinking through the round-tripping + notebooking workflow
-and will return to them *without* blocking arc progress — their absence is intentional, not an oversight.
+(round-tripping specimens through System Modeler vs Rumoca). Doug is deliberately thinking through the
+round-tripping workflow and will return to it *without* blocking arc progress — its absence is
+intentional, not an oversight.
 
 ## Reference documentation
 

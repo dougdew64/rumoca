@@ -4,13 +4,7 @@
 //! Arc 1: eframe shell, file picker over the specimen directory, generic
 //! serde-value tree inspector showing the parsed AST.
 
-mod app;
-mod bridge;
-mod canvas;
-mod field_help;
-mod spyplot;
-mod tree;
-mod worker;
+use hrw::app;
 
 fn main() -> eframe::Result<()> {
     // WSLg advertises a Wayland display (`WAYLAND_DISPLAY=wayland-0`) but places

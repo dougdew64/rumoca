@@ -685,11 +685,29 @@ impl eframe::App for App {
                 let (label, rel) = field_help::chapter_for_stage(stage_ctx);
                 if ui
                     .button(format!("Read: {label}"))
-                    .on_hover_text("Open this docs/understanding chapter in your editor")
+                    .on_hover_text("Open this docs/understanding chapter (generic phase theory) in your editor")
                     .clicked()
                 {
                     let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
                     let _ = std::process::Command::new("code").arg(abs).spawn();
+                }
+                // Specimen-specific link: this specimen's compilation narrative
+                // (docs/notebook/<model>/narrative.md), shown only when one exists.
+                // The generic chapter above is phase theory; this is the story of
+                // *this* specimen's trip through the pipeline, grounded in its trace.
+                if self.nav.is_empty()
+                    && let Some(model) = &self.model
+                {
+                    let rel = format!("docs/notebook/{model}/narrative.md");
+                    let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+                    if std::path::Path::new(&abs).exists()
+                        && ui
+                            .button("Read: specimen narrative")
+                            .on_hover_text(rel)
+                            .clicked()
+                    {
+                        let _ = std::process::Command::new("code").arg(&abs).spawn();
+                    }
                 }
             });
 

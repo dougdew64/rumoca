@@ -4,11 +4,13 @@
   // not installed, VS Code will prompt to install it instead of using GDB.
   "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
 
-  // Open the docs/understanding chapters in the rendered Markdown *preview*
-  // (the "Read: …" button in the app runs `code <path>`). Scoped to that folder
-  // — the key contains a `/`, so it matches the full workspace-relative path —
-  // so other .md files (notebook, README) still open as editable source.
+  // Open the docs/understanding chapters AND the per-specimen notebook narratives
+  // in the rendered Markdown *preview* (the "Read: …" buttons in the app run
+  // `code <path>`). Scoped by folder — the keys contain a `/`, so they match the
+  // full workspace-relative path — so other .md files still open as editable
+  // source, and the narrative's links to trace/*.json open the raw JSON.
   "workbench.editorAssociations": {
-    "**/docs/understanding/**/*.md": "vscode.markdown.preview.editor"
+    "**/docs/understanding/**/*.md": "vscode.markdown.preview.editor",
+    "**/docs/notebook/**/*.md": "vscode.markdown.preview.editor"
   }
 }

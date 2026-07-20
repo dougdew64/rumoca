@@ -1,0 +1,129 @@
+{
+  "n_equations": 12,
+  "n_unknowns": 12,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from inertia)",
+      "unknown": "inertia.flange_a.phi"
+    },
+    {
+      "equation": "f_x[1] (equation from inertia)",
+      "unknown": "inertia.flange_b.phi"
+    },
+    {
+      "equation": "f_x[2] (equation from inertia)",
+      "unknown": "der(inertia.phi)"
+    },
+    {
+      "equation": "f_x[3] (equation from inertia)",
+      "unknown": "der(inertia.w)"
+    },
+    {
+      "equation": "f_x[4] (equation from inertia)",
+      "unknown": "inertia.a"
+    },
+    {
+      "equation": "f_x[5] (equation from torque)",
+      "unknown": "torque.phi_support"
+    },
+    {
+      "equation": "f_x[6] (equation from torque)",
+      "unknown": "torque.flange.tau"
+    },
+    {
+      "equation": "f_x[7] (equation from tau)",
+      "unknown": "tau.y"
+    },
+    {
+      "equation": "f_x[8] (flow sum equation: torque.flange.tau + inertia.flange_a.tau = 0)",
+      "unknown": "inertia.flange_a.tau"
+    },
+    {
+      "equation": "f_x[9] (connection equation: tau.y = torque.tau)",
+      "unknown": "torque.tau"
+    },
+    {
+      "equation": "f_x[10] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
+      "unknown": "torque.flange.phi"
+    },
+    {
+      "equation": "f_x[11] (unconnected flow: inertia.flange_b.tau = 0)",
+      "unknown": "inertia.flange_b.tau"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (equation from inertia)",
+      "unknown": "inertia.flange_a.phi"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (equation from inertia)",
+      "unknown": "inertia.flange_b.phi"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[2] (equation from inertia)",
+      "unknown": "der(inertia.phi)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (equation from inertia)",
+      "unknown": "der(inertia.w)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[7] (equation from tau)",
+      "unknown": "tau.y"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[9] (connection equation: tau.y = torque.tau)",
+      "unknown": "torque.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[6] (equation from torque)",
+      "unknown": "torque.flange.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[8] (flow sum equation: torque.flange.tau + inertia.flange_a.tau = 0)",
+      "unknown": "inertia.flange_a.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[11] (unconnected flow: inertia.flange_b.tau = 0)",
+      "unknown": "inertia.flange_b.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[4] (equation from inertia)",
+      "unknown": "inertia.a"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[5] (equation from torque)",
+      "unknown": "torque.phi_support"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[10] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
+      "unknown": "torque.flange.phi"
+    }
+  ]
+}

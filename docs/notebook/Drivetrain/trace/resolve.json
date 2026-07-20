@@ -1,0 +1,4205 @@
+{
+  "def_id": 85,
+  "scope_id": 1,
+  "name": {
+    "text": "Drivetrain",
+    "location": {
+      "start_line": 1,
+      "start_column": 7,
+      "end_line": 1,
+      "end_column": 17,
+      "start": 6,
+      "end": 16,
+      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+    },
+    "token_number": 1,
+    "token_type": 64
+  },
+  "class_type": "Model",
+  "class_type_token": {
+    "text": "model",
+    "location": {
+      "start_line": 1,
+      "start_column": 1,
+      "end_line": 1,
+      "end_column": 6,
+      "start": 0,
+      "end": 5,
+      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+    },
+    "token_number": 0,
+    "token_type": 41
+  },
+  "encapsulated": false,
+  "partial": false,
+  "expandable": false,
+  "operator_record": false,
+  "pure": true,
+  "purity_declared": false,
+  "causality": "Empty",
+  "description": [
+    {
+      "text": "Motor–gearbox–link drivetrain: electrical → rotational → translational",
+      "location": {
+        "start_line": 1,
+        "start_column": 18,
+        "end_line": 1,
+        "end_column": 90,
+        "start": 17,
+        "end": 97,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "token_number": 2,
+      "token_type": 66
+    }
+  ],
+  "location": {
+    "start_line": 1,
+    "start_column": 7,
+    "end_line": 44,
+    "end_column": 15,
+    "start": 6,
+    "end": 2266,
+    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+  },
+  "extends": [],
+  "imports": [],
+  "classes": {},
+  "components": {
+    "src": {
+      "def_id": 89,
+      "type_id": null,
+      "type_def_id": 6013,
+      "name": "src",
+      "name_token": {
+        "text": "src",
+        "location": {
+          "start_line": 10,
+          "start_column": 54,
+          "end_line": 10,
+          "end_column": 57,
+          "start": 720,
+          "end": 723,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 19,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 10,
+              "start_column": 3,
+              "end_line": 10,
+              "end_column": 11,
+              "start": 669,
+              "end": 677,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 10,
+            "token_type": 64
+          },
+          {
+            "text": "Electrical",
+            "location": {
+              "start_line": 10,
+              "start_column": 12,
+              "end_line": 10,
+              "end_column": 22,
+              "start": 678,
+              "end": 688,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 12,
+            "token_type": 64
+          },
+          {
+            "text": "Analog",
+            "location": {
+              "start_line": 10,
+              "start_column": 23,
+              "end_line": 10,
+              "end_column": 29,
+              "start": 689,
+              "end": 695,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 14,
+            "token_type": 64
+          },
+          {
+            "text": "Sources",
+            "location": {
+              "start_line": 10,
+              "start_column": 30,
+              "end_line": 10,
+              "end_column": 37,
+              "start": 696,
+              "end": 703,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 16,
+            "token_type": 64
+          },
+          {
+            "text": "ConstantVoltage",
+            "location": {
+              "start_line": 10,
+              "start_column": 38,
+              "end_line": 10,
+              "end_column": 53,
+              "start": 704,
+              "end": 719,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 18,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 669,
+            "end": 723
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "V",
+                    "location": {
+                      "start_line": 10,
+                      "start_column": 58,
+                      "end_line": 10,
+                      "end_column": 59,
+                      "start": 724,
+                      "end": 725,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 21,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 724,
+                "end": 725
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "12",
+                  "location": {
+                    "start_line": 10,
+                    "start_column": 62,
+                    "end_line": 10,
+                    "end_column": 64,
+                    "start": 728,
+                    "end": 730,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 23,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 728,
+                  "end": 730
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 724,
+              "end": 730
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "V": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "12",
+              "location": {
+                "start_line": 10,
+                "start_column": 62,
+                "end_line": 10,
+                "end_column": 64,
+                "start": 728,
+                "end": 730,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 23,
+              "token_type": 67
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 728,
+              "end": 730
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 10,
+        "start_column": 3,
+        "end_line": 10,
+        "end_column": 57,
+        "start": 669,
+        "end": 723,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "R": {
+      "def_id": 90,
+      "type_id": null,
+      "type_def_id": 4055,
+      "name": "R",
+      "name_token": {
+        "text": "R",
+        "location": {
+          "start_line": 11,
+          "start_column": 45,
+          "end_line": 11,
+          "end_column": 46,
+          "start": 777,
+          "end": 778,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 35,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 11,
+              "start_column": 3,
+              "end_line": 11,
+              "end_column": 11,
+              "start": 735,
+              "end": 743,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 26,
+            "token_type": 64
+          },
+          {
+            "text": "Electrical",
+            "location": {
+              "start_line": 11,
+              "start_column": 12,
+              "end_line": 11,
+              "end_column": 22,
+              "start": 744,
+              "end": 754,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 28,
+            "token_type": 64
+          },
+          {
+            "text": "Analog",
+            "location": {
+              "start_line": 11,
+              "start_column": 23,
+              "end_line": 11,
+              "end_column": 29,
+              "start": 755,
+              "end": 761,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 30,
+            "token_type": 64
+          },
+          {
+            "text": "Basic",
+            "location": {
+              "start_line": 11,
+              "start_column": 30,
+              "end_line": 11,
+              "end_column": 35,
+              "start": 762,
+              "end": 767,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 32,
+            "token_type": 64
+          },
+          {
+            "text": "Resistor",
+            "location": {
+              "start_line": 11,
+              "start_column": 36,
+              "end_line": 11,
+              "end_column": 44,
+              "start": 768,
+              "end": 776,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 34,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 735,
+            "end": 778
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "R",
+                    "location": {
+                      "start_line": 11,
+                      "start_column": 47,
+                      "end_line": 11,
+                      "end_column": 48,
+                      "start": 779,
+                      "end": 780,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 37,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 779,
+                "end": 780
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "0.5",
+                  "location": {
+                    "start_line": 11,
+                    "start_column": 51,
+                    "end_line": 11,
+                    "end_column": 54,
+                    "start": 783,
+                    "end": 786,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 39,
+                  "token_type": 68
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 783,
+                  "end": 786
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 779,
+              "end": 786
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "R": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "0.5",
+              "location": {
+                "start_line": 11,
+                "start_column": 51,
+                "end_line": 11,
+                "end_column": 54,
+                "start": 783,
+                "end": 786,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 39,
+              "token_type": 68
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 783,
+              "end": 786
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 11,
+        "start_column": 3,
+        "end_line": 11,
+        "end_column": 46,
+        "start": 735,
+        "end": 778,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "L": {
+      "def_id": 91,
+      "type_id": null,
+      "type_def_id": 4050,
+      "name": "L",
+      "name_token": {
+        "text": "L",
+        "location": {
+          "start_line": 12,
+          "start_column": 45,
+          "end_line": 12,
+          "end_column": 46,
+          "start": 833,
+          "end": 834,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 51,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 12,
+              "start_column": 3,
+              "end_line": 12,
+              "end_column": 11,
+              "start": 791,
+              "end": 799,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 42,
+            "token_type": 64
+          },
+          {
+            "text": "Electrical",
+            "location": {
+              "start_line": 12,
+              "start_column": 12,
+              "end_line": 12,
+              "end_column": 22,
+              "start": 800,
+              "end": 810,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 44,
+            "token_type": 64
+          },
+          {
+            "text": "Analog",
+            "location": {
+              "start_line": 12,
+              "start_column": 23,
+              "end_line": 12,
+              "end_column": 29,
+              "start": 811,
+              "end": 817,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 46,
+            "token_type": 64
+          },
+          {
+            "text": "Basic",
+            "location": {
+              "start_line": 12,
+              "start_column": 30,
+              "end_line": 12,
+              "end_column": 35,
+              "start": 818,
+              "end": 823,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 48,
+            "token_type": 64
+          },
+          {
+            "text": "Inductor",
+            "location": {
+              "start_line": 12,
+              "start_column": 36,
+              "end_line": 12,
+              "end_column": 44,
+              "start": 824,
+              "end": 832,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 50,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 791,
+            "end": 834
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "L",
+                    "location": {
+                      "start_line": 12,
+                      "start_column": 47,
+                      "end_line": 12,
+                      "end_column": 48,
+                      "start": 835,
+                      "end": 836,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 53,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 835,
+                "end": 836
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "0.05",
+                  "location": {
+                    "start_line": 12,
+                    "start_column": 51,
+                    "end_line": 12,
+                    "end_column": 55,
+                    "start": 839,
+                    "end": 843,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 55,
+                  "token_type": 68
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 839,
+                  "end": 843
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 835,
+              "end": 843
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "L": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "0.05",
+              "location": {
+                "start_line": 12,
+                "start_column": 51,
+                "end_line": 12,
+                "end_column": 55,
+                "start": 839,
+                "end": 843,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 55,
+              "token_type": 68
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 839,
+              "end": 843
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 12,
+        "start_column": 3,
+        "end_line": 12,
+        "end_column": 46,
+        "start": 791,
+        "end": 834,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "emf": {
+      "def_id": 92,
+      "type_id": null,
+      "type_def_id": 4056,
+      "name": "emf",
+      "name_token": {
+        "text": "emf",
+        "location": {
+          "start_line": 13,
+          "start_column": 50,
+          "end_line": 13,
+          "end_column": 53,
+          "start": 895,
+          "end": 898,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 67,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 13,
+              "start_column": 3,
+              "end_line": 13,
+              "end_column": 11,
+              "start": 848,
+              "end": 856,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 58,
+            "token_type": 64
+          },
+          {
+            "text": "Electrical",
+            "location": {
+              "start_line": 13,
+              "start_column": 12,
+              "end_line": 13,
+              "end_column": 22,
+              "start": 857,
+              "end": 867,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 60,
+            "token_type": 64
+          },
+          {
+            "text": "Analog",
+            "location": {
+              "start_line": 13,
+              "start_column": 23,
+              "end_line": 13,
+              "end_column": 29,
+              "start": 868,
+              "end": 874,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 62,
+            "token_type": 64
+          },
+          {
+            "text": "Basic",
+            "location": {
+              "start_line": 13,
+              "start_column": 30,
+              "end_line": 13,
+              "end_column": 35,
+              "start": 875,
+              "end": 880,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 64,
+            "token_type": 64
+          },
+          {
+            "text": "RotationalEMF",
+            "location": {
+              "start_line": 13,
+              "start_column": 36,
+              "end_line": 13,
+              "end_column": 49,
+              "start": 881,
+              "end": 894,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 66,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 848,
+            "end": 898
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "k",
+                    "location": {
+                      "start_line": 13,
+                      "start_column": 54,
+                      "end_line": 13,
+                      "end_column": 55,
+                      "start": 899,
+                      "end": 900,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 69,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 899,
+                "end": 900
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "0.1",
+                  "location": {
+                    "start_line": 13,
+                    "start_column": 58,
+                    "end_line": 13,
+                    "end_column": 61,
+                    "start": 903,
+                    "end": 906,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 71,
+                  "token_type": 68
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 903,
+                  "end": 906
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 899,
+              "end": 906
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "k": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "0.1",
+              "location": {
+                "start_line": 13,
+                "start_column": 58,
+                "end_line": 13,
+                "end_column": 61,
+                "start": 903,
+                "end": 906,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 71,
+              "token_type": 68
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 903,
+              "end": 906
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 13,
+        "start_column": 3,
+        "end_line": 13,
+        "end_column": 53,
+        "start": 848,
+        "end": 898,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "gnd": {
+      "def_id": 93,
+      "type_id": null,
+      "type_def_id": 4048,
+      "name": "gnd",
+      "name_token": {
+        "text": "gnd",
+        "location": {
+          "start_line": 14,
+          "start_column": 43,
+          "end_line": 14,
+          "end_column": 46,
+          "start": 951,
+          "end": 954,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 83,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 14,
+              "start_column": 3,
+              "end_line": 14,
+              "end_column": 11,
+              "start": 911,
+              "end": 919,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 74,
+            "token_type": 64
+          },
+          {
+            "text": "Electrical",
+            "location": {
+              "start_line": 14,
+              "start_column": 12,
+              "end_line": 14,
+              "end_column": 22,
+              "start": 920,
+              "end": 930,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 76,
+            "token_type": 64
+          },
+          {
+            "text": "Analog",
+            "location": {
+              "start_line": 14,
+              "start_column": 23,
+              "end_line": 14,
+              "end_column": 29,
+              "start": 931,
+              "end": 937,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 78,
+            "token_type": 64
+          },
+          {
+            "text": "Basic",
+            "location": {
+              "start_line": 14,
+              "start_column": 30,
+              "end_line": 14,
+              "end_column": 35,
+              "start": 938,
+              "end": 943,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 80,
+            "token_type": 64
+          },
+          {
+            "text": "Ground",
+            "location": {
+              "start_line": 14,
+              "start_column": 36,
+              "end_line": 14,
+              "end_column": 42,
+              "start": 944,
+              "end": 950,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 82,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 911,
+            "end": 954
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 14,
+        "start_column": 3,
+        "end_line": 14,
+        "end_column": 46,
+        "start": 911,
+        "end": 954,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "rotor": {
+      "def_id": 94,
+      "type_id": null,
+      "type_def_id": 27588,
+      "name": "rotor",
+      "name_token": {
+        "text": "rotor",
+        "location": {
+          "start_line": 17,
+          "start_column": 52,
+          "end_line": 17,
+          "end_column": 57,
+          "start": 1093,
+          "end": 1098,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 95,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 17,
+              "start_column": 3,
+              "end_line": 17,
+              "end_column": 11,
+              "start": 1044,
+              "end": 1052,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 86,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 17,
+              "start_column": 12,
+              "end_line": 17,
+              "end_column": 21,
+              "start": 1053,
+              "end": 1062,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 88,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 17,
+              "start_column": 22,
+              "end_line": 17,
+              "end_column": 32,
+              "start": 1063,
+              "end": 1073,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 90,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 17,
+              "start_column": 33,
+              "end_line": 17,
+              "end_column": 43,
+              "start": 1074,
+              "end": 1084,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 92,
+            "token_type": 64
+          },
+          {
+            "text": "Inertia",
+            "location": {
+              "start_line": 17,
+              "start_column": 44,
+              "end_line": 17,
+              "end_column": 51,
+              "start": 1085,
+              "end": 1092,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 94,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1044,
+            "end": 1098
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "J",
+                    "location": {
+                      "start_line": 17,
+                      "start_column": 58,
+                      "end_line": 17,
+                      "end_column": 59,
+                      "start": 1099,
+                      "end": 1100,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 97,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1099,
+                "end": 1100
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "1e-4",
+                  "location": {
+                    "start_line": 17,
+                    "start_column": 62,
+                    "end_line": 17,
+                    "end_column": 66,
+                    "start": 1103,
+                    "end": 1107,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 99,
+                  "token_type": 71
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1103,
+                  "end": 1107
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1099,
+              "end": 1107
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "J": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "1e-4",
+              "location": {
+                "start_line": 17,
+                "start_column": 62,
+                "end_line": 17,
+                "end_column": 66,
+                "start": 1103,
+                "end": 1107,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 99,
+              "token_type": 71
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1103,
+              "end": 1107
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 17,
+        "start_column": 3,
+        "end_line": 17,
+        "end_column": 57,
+        "start": 1044,
+        "end": 1098,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "gear": {
+      "def_id": 95,
+      "type_id": null,
+      "type_def_id": 27584,
+      "name": "gear",
+      "name_token": {
+        "text": "gear",
+        "location": {
+          "start_line": 18,
+          "start_column": 54,
+          "end_line": 18,
+          "end_column": 58,
+          "start": 1163,
+          "end": 1167,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 111,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 18,
+              "start_column": 3,
+              "end_line": 18,
+              "end_column": 11,
+              "start": 1112,
+              "end": 1120,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 102,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 18,
+              "start_column": 12,
+              "end_line": 18,
+              "end_column": 21,
+              "start": 1121,
+              "end": 1130,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 104,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 18,
+              "start_column": 22,
+              "end_line": 18,
+              "end_column": 32,
+              "start": 1131,
+              "end": 1141,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 106,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 18,
+              "start_column": 33,
+              "end_line": 18,
+              "end_column": 43,
+              "start": 1142,
+              "end": 1152,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 108,
+            "token_type": 64
+          },
+          {
+            "text": "IdealGear",
+            "location": {
+              "start_line": 18,
+              "start_column": 44,
+              "end_line": 18,
+              "end_column": 53,
+              "start": 1153,
+              "end": 1162,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 110,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1112,
+            "end": 1167
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "ratio",
+                    "location": {
+                      "start_line": 18,
+                      "start_column": 59,
+                      "end_line": 18,
+                      "end_column": 64,
+                      "start": 1168,
+                      "end": 1173,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 113,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1168,
+                "end": 1173
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "5",
+                  "location": {
+                    "start_line": 18,
+                    "start_column": 67,
+                    "end_line": 18,
+                    "end_column": 68,
+                    "start": 1176,
+                    "end": 1177,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 115,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1176,
+                  "end": 1177
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1168,
+              "end": 1177
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "ratio": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "5",
+              "location": {
+                "start_line": 18,
+                "start_column": 67,
+                "end_line": 18,
+                "end_column": 68,
+                "start": 1176,
+                "end": 1177,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 115,
+              "token_type": 67
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1176,
+              "end": 1177
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 18,
+        "start_column": 3,
+        "end_line": 18,
+        "end_column": 58,
+        "start": 1112,
+        "end": 1167,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "shaft": {
+      "def_id": 96,
+      "type_id": null,
+      "type_def_id": 27588,
+      "name": "shaft",
+      "name_token": {
+        "text": "shaft",
+        "location": {
+          "start_line": 19,
+          "start_column": 52,
+          "end_line": 19,
+          "end_column": 57,
+          "start": 1231,
+          "end": 1236,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 127,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 19,
+              "start_column": 3,
+              "end_line": 19,
+              "end_column": 11,
+              "start": 1182,
+              "end": 1190,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 118,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 19,
+              "start_column": 12,
+              "end_line": 19,
+              "end_column": 21,
+              "start": 1191,
+              "end": 1200,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 120,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 19,
+              "start_column": 22,
+              "end_line": 19,
+              "end_column": 32,
+              "start": 1201,
+              "end": 1211,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 122,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 19,
+              "start_column": 33,
+              "end_line": 19,
+              "end_column": 43,
+              "start": 1212,
+              "end": 1222,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 124,
+            "token_type": 64
+          },
+          {
+            "text": "Inertia",
+            "location": {
+              "start_line": 19,
+              "start_column": 44,
+              "end_line": 19,
+              "end_column": 51,
+              "start": 1223,
+              "end": 1230,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 126,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1182,
+            "end": 1236
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "J",
+                    "location": {
+                      "start_line": 19,
+                      "start_column": 58,
+                      "end_line": 19,
+                      "end_column": 59,
+                      "start": 1237,
+                      "end": 1238,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 129,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1237,
+                "end": 1238
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "5e-4",
+                  "location": {
+                    "start_line": 19,
+                    "start_column": 62,
+                    "end_line": 19,
+                    "end_column": 66,
+                    "start": 1241,
+                    "end": 1245,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 131,
+                  "token_type": 71
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1241,
+                  "end": 1245
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1237,
+              "end": 1245
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "J": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "5e-4",
+              "location": {
+                "start_line": 19,
+                "start_column": 62,
+                "end_line": 19,
+                "end_column": 66,
+                "start": 1241,
+                "end": 1245,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 131,
+              "token_type": 71
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1241,
+              "end": 1245
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 19,
+        "start_column": 3,
+        "end_line": 19,
+        "end_column": 57,
+        "start": 1182,
+        "end": 1236,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "r2t": {
+      "def_id": 97,
+      "type_id": null,
+      "type_def_id": 27585,
+      "name": "r2t",
+      "name_token": {
+        "text": "r2t",
+        "location": {
+          "start_line": 23,
+          "start_column": 57,
+          "end_line": 23,
+          "end_column": 60,
+          "start": 1457,
+          "end": 1460,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 145,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 23,
+              "start_column": 3,
+              "end_line": 23,
+              "end_column": 11,
+              "start": 1403,
+              "end": 1411,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 136,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 23,
+              "start_column": 12,
+              "end_line": 23,
+              "end_column": 21,
+              "start": 1412,
+              "end": 1421,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 138,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 23,
+              "start_column": 22,
+              "end_line": 23,
+              "end_column": 32,
+              "start": 1422,
+              "end": 1432,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 140,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 23,
+              "start_column": 33,
+              "end_line": 23,
+              "end_column": 43,
+              "start": 1433,
+              "end": 1443,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 142,
+            "token_type": 64
+          },
+          {
+            "text": "IdealGearR2T",
+            "location": {
+              "start_line": 23,
+              "start_column": 44,
+              "end_line": 23,
+              "end_column": 56,
+              "start": 1444,
+              "end": 1456,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 144,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1403,
+            "end": 1460
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "ratio",
+                    "location": {
+                      "start_line": 23,
+                      "start_column": 61,
+                      "end_line": 23,
+                      "end_column": 66,
+                      "start": 1461,
+                      "end": 1466,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 147,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1461,
+                "end": 1466
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "200",
+                  "location": {
+                    "start_line": 23,
+                    "start_column": 69,
+                    "end_line": 23,
+                    "end_column": 72,
+                    "start": 1469,
+                    "end": 1472,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 149,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1469,
+                  "end": 1472
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1461,
+              "end": 1472
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "ratio": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "200",
+              "location": {
+                "start_line": 23,
+                "start_column": 69,
+                "end_line": 23,
+                "end_column": 72,
+                "start": 1469,
+                "end": 1472,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 149,
+              "token_type": 67
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1469,
+              "end": 1472
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 23,
+        "start_column": 3,
+        "end_line": 23,
+        "end_column": 60,
+        "start": 1403,
+        "end": 1460,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "load": {
+      "def_id": 98,
+      "type_id": null,
+      "type_def_id": 28325,
+      "name": "load",
+      "name_token": {
+        "text": "load",
+        "location": {
+          "start_line": 24,
+          "start_column": 52,
+          "end_line": 24,
+          "end_column": 56,
+          "start": 1526,
+          "end": 1530,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 161,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 24,
+              "start_column": 3,
+              "end_line": 24,
+              "end_column": 11,
+              "start": 1477,
+              "end": 1485,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 152,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 24,
+              "start_column": 12,
+              "end_line": 24,
+              "end_column": 21,
+              "start": 1486,
+              "end": 1495,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 154,
+            "token_type": 64
+          },
+          {
+            "text": "Translational",
+            "location": {
+              "start_line": 24,
+              "start_column": 22,
+              "end_line": 24,
+              "end_column": 35,
+              "start": 1496,
+              "end": 1509,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 156,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 24,
+              "start_column": 36,
+              "end_line": 24,
+              "end_column": 46,
+              "start": 1510,
+              "end": 1520,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 158,
+            "token_type": 64
+          },
+          {
+            "text": "Mass",
+            "location": {
+              "start_line": 24,
+              "start_column": 47,
+              "end_line": 24,
+              "end_column": 51,
+              "start": 1521,
+              "end": 1525,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 160,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1477,
+            "end": 1530
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "m",
+                    "location": {
+                      "start_line": 24,
+                      "start_column": 57,
+                      "end_line": 24,
+                      "end_column": 58,
+                      "start": 1531,
+                      "end": 1532,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 163,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1531,
+                "end": 1532
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "2",
+                  "location": {
+                    "start_line": 24,
+                    "start_column": 61,
+                    "end_line": 24,
+                    "end_column": 62,
+                    "start": 1535,
+                    "end": 1536,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 165,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1535,
+                  "end": 1536
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1531,
+              "end": 1536
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "m": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "2",
+              "location": {
+                "start_line": 24,
+                "start_column": 61,
+                "end_line": 24,
+                "end_column": 62,
+                "start": 1535,
+                "end": 1536,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 165,
+              "token_type": 67
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1535,
+              "end": 1536
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 24,
+        "start_column": 3,
+        "end_line": 24,
+        "end_column": 56,
+        "start": 1477,
+        "end": 1530,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "mount": {
+      "def_id": 99,
+      "type_id": null,
+      "type_def_id": 28331,
+      "name": "mount",
+      "name_token": {
+        "text": "mount",
+        "location": {
+          "start_line": 25,
+          "start_column": 60,
+          "end_line": 25,
+          "end_column": 65,
+          "start": 1598,
+          "end": 1603,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 177,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 25,
+              "start_column": 3,
+              "end_line": 25,
+              "end_column": 11,
+              "start": 1541,
+              "end": 1549,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 168,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 25,
+              "start_column": 12,
+              "end_line": 25,
+              "end_column": 21,
+              "start": 1550,
+              "end": 1559,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 170,
+            "token_type": 64
+          },
+          {
+            "text": "Translational",
+            "location": {
+              "start_line": 25,
+              "start_column": 22,
+              "end_line": 25,
+              "end_column": 35,
+              "start": 1560,
+              "end": 1573,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 172,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 25,
+              "start_column": 36,
+              "end_line": 25,
+              "end_column": 46,
+              "start": 1574,
+              "end": 1584,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 174,
+            "token_type": 64
+          },
+          {
+            "text": "SpringDamper",
+            "location": {
+              "start_line": 25,
+              "start_column": 47,
+              "end_line": 25,
+              "end_column": 59,
+              "start": 1585,
+              "end": 1597,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 176,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1541,
+            "end": 1603
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "c",
+                    "location": {
+                      "start_line": 25,
+                      "start_column": 66,
+                      "end_line": 25,
+                      "end_column": 67,
+                      "start": 1604,
+                      "end": 1605,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 179,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1604,
+                "end": 1605
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "1000",
+                  "location": {
+                    "start_line": 25,
+                    "start_column": 70,
+                    "end_line": 25,
+                    "end_column": 74,
+                    "start": 1608,
+                    "end": 1612,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 181,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1608,
+                  "end": 1612
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1604,
+              "end": 1612
+            }
+          }
+        },
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "d",
+                    "location": {
+                      "start_line": 25,
+                      "start_column": 76,
+                      "end_line": 25,
+                      "end_column": 77,
+                      "start": 1614,
+                      "end": 1615,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 183,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 14633093171283739162,
+                "start": 1614,
+                "end": 1615
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "20",
+                  "location": {
+                    "start_line": 25,
+                    "start_column": 80,
+                    "end_line": 25,
+                    "end_column": 82,
+                    "start": 1618,
+                    "end": 1620,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                  },
+                  "token_number": 185,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 1618,
+                  "end": 1620
+                }
+              }
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1614,
+              "end": 1620
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false,
+        false
+      ],
+      "source_modification_final_flags": [
+        false,
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false,
+        false
+      ],
+      "modifications": {
+        "c": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "1000",
+              "location": {
+                "start_line": 25,
+                "start_column": 70,
+                "end_line": 25,
+                "end_column": 74,
+                "start": 1608,
+                "end": 1612,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 181,
+              "token_type": 67
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1608,
+              "end": 1612
+            }
+          }
+        },
+        "d": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "20",
+              "location": {
+                "start_line": 25,
+                "start_column": 80,
+                "end_line": 25,
+                "end_column": 82,
+                "start": 1618,
+                "end": 1620,
+                "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+              },
+              "token_number": 185,
+              "token_type": 67
+            },
+            "span": {
+              "source": 14633093171283739162,
+              "start": 1618,
+              "end": 1620
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 25,
+        "start_column": 3,
+        "end_line": 25,
+        "end_column": 65,
+        "start": 1541,
+        "end": 1603,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "wall": {
+      "def_id": 100,
+      "type_id": null,
+      "type_def_id": 28319,
+      "name": "wall",
+      "name_token": {
+        "text": "wall",
+        "location": {
+          "start_line": 26,
+          "start_column": 53,
+          "end_line": 26,
+          "end_column": 57,
+          "start": 1675,
+          "end": 1679,
+          "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+        },
+        "token_number": 197,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 26,
+              "start_column": 3,
+              "end_line": 26,
+              "end_column": 11,
+              "start": 1625,
+              "end": 1633,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 188,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 26,
+              "start_column": 12,
+              "end_line": 26,
+              "end_column": 21,
+              "start": 1634,
+              "end": 1643,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 190,
+            "token_type": 64
+          },
+          {
+            "text": "Translational",
+            "location": {
+              "start_line": 26,
+              "start_column": 22,
+              "end_line": 26,
+              "end_column": 35,
+              "start": 1644,
+              "end": 1657,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 192,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 26,
+              "start_column": 36,
+              "end_line": 26,
+              "end_column": 46,
+              "start": 1658,
+              "end": 1668,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 194,
+            "token_type": 64
+          },
+          {
+            "text": "Fixed",
+            "location": {
+              "start_line": 26,
+              "start_column": 47,
+              "end_line": 26,
+              "end_column": 52,
+              "start": 1669,
+              "end": 1674,
+              "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+            },
+            "token_number": 196,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1625,
+            "end": 1679
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 26,
+        "start_column": 3,
+        "end_line": 26,
+        "end_column": 57,
+        "start": 1625,
+        "end": 1679,
+        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    }
+  },
+  "equations": [
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "src",
+                "location": {
+                  "start_line": 29,
+                  "start_column": 11,
+                  "end_line": 29,
+                  "end_column": 14,
+                  "start": 1722,
+                  "end": 1725,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 203,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "p",
+                "location": {
+                  "start_line": 29,
+                  "start_column": 15,
+                  "end_line": 29,
+                  "end_column": 16,
+                  "start": 1726,
+                  "end": 1727,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 205,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1722,
+            "end": 1727
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "R",
+                "location": {
+                  "start_line": 29,
+                  "start_column": 18,
+                  "end_line": 29,
+                  "end_column": 19,
+                  "start": 1729,
+                  "end": 1730,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 207,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "p",
+                "location": {
+                  "start_line": 29,
+                  "start_column": 20,
+                  "end_line": 29,
+                  "end_column": 21,
+                  "start": 1731,
+                  "end": 1732,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 209,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1729,
+            "end": 1732
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "R",
+                "location": {
+                  "start_line": 30,
+                  "start_column": 11,
+                  "end_line": 30,
+                  "end_column": 12,
+                  "start": 1745,
+                  "end": 1746,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 214,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "n",
+                "location": {
+                  "start_line": 30,
+                  "start_column": 13,
+                  "end_line": 30,
+                  "end_column": 14,
+                  "start": 1747,
+                  "end": 1748,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 216,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1745,
+            "end": 1748
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "L",
+                "location": {
+                  "start_line": 30,
+                  "start_column": 16,
+                  "end_line": 30,
+                  "end_column": 17,
+                  "start": 1750,
+                  "end": 1751,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 218,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "p",
+                "location": {
+                  "start_line": 30,
+                  "start_column": 18,
+                  "end_line": 30,
+                  "end_column": 19,
+                  "start": 1752,
+                  "end": 1753,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 220,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1750,
+            "end": 1753
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "L",
+                "location": {
+                  "start_line": 31,
+                  "start_column": 11,
+                  "end_line": 31,
+                  "end_column": 12,
+                  "start": 1766,
+                  "end": 1767,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 225,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "n",
+                "location": {
+                  "start_line": 31,
+                  "start_column": 13,
+                  "end_line": 31,
+                  "end_column": 14,
+                  "start": 1768,
+                  "end": 1769,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 227,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1766,
+            "end": 1769
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "emf",
+                "location": {
+                  "start_line": 31,
+                  "start_column": 16,
+                  "end_line": 31,
+                  "end_column": 19,
+                  "start": 1771,
+                  "end": 1774,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 229,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "p",
+                "location": {
+                  "start_line": 31,
+                  "start_column": 20,
+                  "end_line": 31,
+                  "end_column": 21,
+                  "start": 1775,
+                  "end": 1776,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 231,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1771,
+            "end": 1776
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "emf",
+                "location": {
+                  "start_line": 32,
+                  "start_column": 11,
+                  "end_line": 32,
+                  "end_column": 14,
+                  "start": 1789,
+                  "end": 1792,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 236,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "n",
+                "location": {
+                  "start_line": 32,
+                  "start_column": 15,
+                  "end_line": 32,
+                  "end_column": 16,
+                  "start": 1793,
+                  "end": 1794,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 238,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1789,
+            "end": 1794
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "src",
+                "location": {
+                  "start_line": 32,
+                  "start_column": 18,
+                  "end_line": 32,
+                  "end_column": 21,
+                  "start": 1796,
+                  "end": 1799,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 240,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "n",
+                "location": {
+                  "start_line": 32,
+                  "start_column": 22,
+                  "end_line": 32,
+                  "end_column": 23,
+                  "start": 1800,
+                  "end": 1801,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 242,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1796,
+            "end": 1801
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "src",
+                "location": {
+                  "start_line": 33,
+                  "start_column": 11,
+                  "end_line": 33,
+                  "end_column": 14,
+                  "start": 1814,
+                  "end": 1817,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 247,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "n",
+                "location": {
+                  "start_line": 33,
+                  "start_column": 15,
+                  "end_line": 33,
+                  "end_column": 16,
+                  "start": 1818,
+                  "end": 1819,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 249,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1814,
+            "end": 1819
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "gnd",
+                "location": {
+                  "start_line": 33,
+                  "start_column": 18,
+                  "end_line": 33,
+                  "end_column": 21,
+                  "start": 1821,
+                  "end": 1824,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 251,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "p",
+                "location": {
+                  "start_line": 33,
+                  "start_column": 22,
+                  "end_line": 33,
+                  "end_column": 23,
+                  "start": 1825,
+                  "end": 1826,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 253,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1821,
+            "end": 1826
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "emf",
+                "location": {
+                  "start_line": 35,
+                  "start_column": 11,
+                  "end_line": 35,
+                  "end_column": 14,
+                  "start": 1862,
+                  "end": 1865,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 259,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange",
+                "location": {
+                  "start_line": 35,
+                  "start_column": 15,
+                  "end_line": 35,
+                  "end_column": 21,
+                  "start": 1866,
+                  "end": 1872,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 261,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1862,
+            "end": 1872
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "rotor",
+                "location": {
+                  "start_line": 35,
+                  "start_column": 23,
+                  "end_line": 35,
+                  "end_column": 28,
+                  "start": 1874,
+                  "end": 1879,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 263,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 35,
+                  "start_column": 29,
+                  "end_line": 35,
+                  "end_column": 37,
+                  "start": 1880,
+                  "end": 1888,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 265,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1874,
+            "end": 1888
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "rotor",
+                "location": {
+                  "start_line": 36,
+                  "start_column": 11,
+                  "end_line": 36,
+                  "end_column": 16,
+                  "start": 1901,
+                  "end": 1906,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 270,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 36,
+                  "start_column": 17,
+                  "end_line": 36,
+                  "end_column": 25,
+                  "start": 1907,
+                  "end": 1915,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 272,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1901,
+            "end": 1915
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "gear",
+                "location": {
+                  "start_line": 36,
+                  "start_column": 27,
+                  "end_line": 36,
+                  "end_column": 31,
+                  "start": 1917,
+                  "end": 1921,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 274,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 36,
+                  "start_column": 32,
+                  "end_line": 36,
+                  "end_column": 40,
+                  "start": 1922,
+                  "end": 1930,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 276,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1917,
+            "end": 1930
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "gear",
+                "location": {
+                  "start_line": 37,
+                  "start_column": 11,
+                  "end_line": 37,
+                  "end_column": 15,
+                  "start": 1943,
+                  "end": 1947,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 281,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 37,
+                  "start_column": 16,
+                  "end_line": 37,
+                  "end_column": 24,
+                  "start": 1948,
+                  "end": 1956,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 283,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1943,
+            "end": 1956
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "shaft",
+                "location": {
+                  "start_line": 37,
+                  "start_column": 26,
+                  "end_line": 37,
+                  "end_column": 31,
+                  "start": 1958,
+                  "end": 1963,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 285,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 37,
+                  "start_column": 32,
+                  "end_line": 37,
+                  "end_column": 40,
+                  "start": 1964,
+                  "end": 1972,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 287,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1958,
+            "end": 1972
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "shaft",
+                "location": {
+                  "start_line": 38,
+                  "start_column": 11,
+                  "end_line": 38,
+                  "end_column": 16,
+                  "start": 1985,
+                  "end": 1990,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 292,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 38,
+                  "start_column": 17,
+                  "end_line": 38,
+                  "end_column": 25,
+                  "start": 1991,
+                  "end": 1999,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 294,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 1985,
+            "end": 1999
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "r2t",
+                "location": {
+                  "start_line": 38,
+                  "start_column": 27,
+                  "end_line": 38,
+                  "end_column": 30,
+                  "start": 2001,
+                  "end": 2004,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 296,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flangeR",
+                "location": {
+                  "start_line": 38,
+                  "start_column": 31,
+                  "end_line": 38,
+                  "end_column": 38,
+                  "start": 2005,
+                  "end": 2012,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 298,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2001,
+            "end": 2012
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "r2t",
+                "location": {
+                  "start_line": 40,
+                  "start_column": 11,
+                  "end_line": 40,
+                  "end_column": 14,
+                  "start": 2050,
+                  "end": 2053,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 304,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flangeT",
+                "location": {
+                  "start_line": 40,
+                  "start_column": 15,
+                  "end_line": 40,
+                  "end_column": 22,
+                  "start": 2054,
+                  "end": 2061,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 306,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2050,
+            "end": 2061
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "load",
+                "location": {
+                  "start_line": 40,
+                  "start_column": 24,
+                  "end_line": 40,
+                  "end_column": 28,
+                  "start": 2063,
+                  "end": 2067,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 308,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 40,
+                  "start_column": 29,
+                  "end_line": 40,
+                  "end_column": 37,
+                  "start": 2068,
+                  "end": 2076,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 310,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2063,
+            "end": 2076
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "load",
+                "location": {
+                  "start_line": 41,
+                  "start_column": 11,
+                  "end_line": 41,
+                  "end_column": 15,
+                  "start": 2089,
+                  "end": 2093,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 315,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 41,
+                  "start_column": 16,
+                  "end_line": 41,
+                  "end_column": 24,
+                  "start": 2094,
+                  "end": 2102,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 317,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2089,
+            "end": 2102
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "mount",
+                "location": {
+                  "start_line": 41,
+                  "start_column": 26,
+                  "end_line": 41,
+                  "end_column": 31,
+                  "start": 2104,
+                  "end": 2109,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 319,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 41,
+                  "start_column": 32,
+                  "end_line": 41,
+                  "end_column": 40,
+                  "start": 2110,
+                  "end": 2118,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 321,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2104,
+            "end": 2118
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "mount",
+                "location": {
+                  "start_line": 42,
+                  "start_column": 11,
+                  "end_line": 42,
+                  "end_column": 16,
+                  "start": 2131,
+                  "end": 2136,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 326,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 42,
+                  "start_column": 17,
+                  "end_line": 42,
+                  "end_column": 25,
+                  "start": 2137,
+                  "end": 2145,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 328,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2131,
+            "end": 2145
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "wall",
+                "location": {
+                  "start_line": 42,
+                  "start_column": 27,
+                  "end_line": 42,
+                  "end_column": 31,
+                  "start": 2147,
+                  "end": 2151,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 330,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange",
+                "location": {
+                  "start_line": 42,
+                  "start_column": 32,
+                  "end_line": 42,
+                  "end_column": 38,
+                  "start": 2152,
+                  "end": 2158,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 332,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2147,
+            "end": 2158
+          }
+        }
+      }
+    }
+  ],
+  "initial_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "equation_keyword": {
+    "text": "equation",
+    "location": {
+      "start_line": 27,
+      "start_column": 1,
+      "end_line": 27,
+      "end_column": 9,
+      "start": 1681,
+      "end": 1689,
+      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+    },
+    "token_number": 199,
+    "token_type": 24
+  },
+  "initial_equation_keyword": null,
+  "algorithm_keyword": null,
+  "initial_algorithm_keyword": null,
+  "end_name_token": {
+    "text": "Drivetrain",
+    "location": {
+      "start_line": 44,
+      "start_column": 5,
+      "end_line": 44,
+      "end_column": 15,
+      "start": 2256,
+      "end": 2266,
+      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+    },
+    "token_number": 358,
+    "token_type": 64
+  },
+  "enum_literals": [],
+  "annotation": [
+    {
+      "ClassModification": {
+        "target": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "experiment",
+                "location": {
+                  "start_line": 43,
+                  "start_column": 14,
+                  "end_line": 43,
+                  "end_column": 24,
+                  "start": 2174,
+                  "end": 2184,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                },
+                "token_number": 337,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 14633093171283739162,
+            "start": 2174,
+            "end": 2184
+          }
+        },
+        "modifications": [
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "StartTime",
+                      "location": {
+                        "start_line": 43,
+                        "start_column": 25,
+                        "end_line": 43,
+                        "end_column": 34,
+                        "start": 2185,
+                        "end": 2194,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                      },
+                      "token_number": 339,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 2185,
+                  "end": 2194
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "0",
+                    "location": {
+                      "start_line": 43,
+                      "start_column": 37,
+                      "end_line": 43,
+                      "end_column": 38,
+                      "start": 2197,
+                      "end": 2198,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 341,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 14633093171283739162,
+                    "start": 2197,
+                    "end": 2198
+                  }
+                }
+              },
+              "span": {
+                "source": 14633093171283739162,
+                "start": 2185,
+                "end": 2198
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "StopTime",
+                      "location": {
+                        "start_line": 43,
+                        "start_column": 40,
+                        "end_line": 43,
+                        "end_column": 48,
+                        "start": 2200,
+                        "end": 2208,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                      },
+                      "token_number": 343,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 2200,
+                  "end": 2208
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "2",
+                    "location": {
+                      "start_line": 43,
+                      "start_column": 51,
+                      "end_line": 43,
+                      "end_column": 52,
+                      "start": 2211,
+                      "end": 2212,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 345,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 14633093171283739162,
+                    "start": 2211,
+                    "end": 2212
+                  }
+                }
+              },
+              "span": {
+                "source": 14633093171283739162,
+                "start": 2200,
+                "end": 2212
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "Interval",
+                      "location": {
+                        "start_line": 43,
+                        "start_column": 54,
+                        "end_line": 43,
+                        "end_column": 62,
+                        "start": 2214,
+                        "end": 2222,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                      },
+                      "token_number": 347,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 2214,
+                  "end": 2222
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "0.001",
+                    "location": {
+                      "start_line": 43,
+                      "start_column": 65,
+                      "end_line": 43,
+                      "end_column": 70,
+                      "start": 2225,
+                      "end": 2230,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 349,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 14633093171283739162,
+                    "start": 2225,
+                    "end": 2230
+                  }
+                }
+              },
+              "span": {
+                "source": 14633093171283739162,
+                "start": 2214,
+                "end": 2230
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "Tolerance",
+                      "location": {
+                        "start_line": 43,
+                        "start_column": 72,
+                        "end_line": 43,
+                        "end_column": 81,
+                        "start": 2232,
+                        "end": 2241,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                      },
+                      "token_number": 351,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 14633093171283739162,
+                  "start": 2232,
+                  "end": 2241
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "1e-6",
+                    "location": {
+                      "start_line": 43,
+                      "start_column": 84,
+                      "end_line": 43,
+                      "end_column": 88,
+                      "start": 2244,
+                      "end": 2248,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/Drivetrain.mo"
+                    },
+                    "token_number": 353,
+                    "token_type": 71
+                  },
+                  "span": {
+                    "source": 14633093171283739162,
+                    "start": 2244,
+                    "end": 2248
+                  }
+                }
+              },
+              "span": {
+                "source": 14633093171283739162,
+                "start": 2232,
+                "end": 2248
+              }
+            }
+          }
+        ],
+        "each_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "final_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "redeclare_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "span": {
+          "source": 14633093171283739162,
+          "start": 2174,
+          "end": 2248
+        }
+      }
+    }
+  ],
+  "is_protected": false,
+  "is_final": false,
+  "is_inner": false,
+  "is_outer": false,
+  "is_replaceable": false,
+  "is_redeclare": false,
+  "constrainedby": null,
+  "array_subscripts": [],
+  "external": null
+}

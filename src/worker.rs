@@ -330,6 +330,17 @@ impl WorkerState {
     }
 }
 
+/// Compile a specimen through every pipeline stage with the given library roots,
+/// headlessly — the exact path the worker thread runs, minus the thread/channel.
+/// Used by `examples/gen_trace` (trace-log generation) and tests, so their output
+/// is byte-identical to what the running app produces. Returns the `Compiled`
+/// result, or an error if the libraries fail to load.
+pub fn compile_specimen(specimen: &Path, libraries: Vec<PathBuf>) -> Result<FromWorker, String> {
+    let mut state = WorkerState::new();
+    state.load_libraries(libraries)?;
+    Ok(state.compile(specimen))
+}
+
 /// Structural analysis of the model's DAE (Arc 3): maximum matching + BLT blocks
 /// + tearing, from `build_structural_report`. Only available on a full Success
 /// (the DAE must exist). The report types aren't `Serialize`, so build JSON.
