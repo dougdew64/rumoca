@@ -486,3 +486,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `worker_simulate_runs_bouncing_ball` (the hybrid model's events are handled by the solver — ball stays
   above the floor) + `single_inertia_simulates_to_a_correct_trajectory` (w(2) ≈ 2). Next: #4 (stiff
   bench-actuator specimen) + step-mode plotting for discontinuities.
+- **2026-07-20 — Arc 7 #4: the stiff bench-actuator specimen (`BenchActuator`).** A DC motor
+  (`ConstantVoltage → R → L → RotationalEMF`) spinning up an `Inertia` — the canonical stiff pairing
+  (fast winding `L/R ≈ 1e-4 s` vs slow rotor `J = 0.05`, ~1000×). Full-pipeline round trip: raw Structural
+  is **singular** (grounded-circuit reference redundancy, 47/48), but **index reduction resolves it** (unlike
+  CapacitorLoop — it's a linear redundancy), solve lowering succeeds, and it **simulates** (Auto → BDF/diffsol
+  copes with the stiffness where RK45 would crawl): `L.i` spikes toward `V/R = 12 A` then eases as back-EMF
+  grows (~10.9 A @ 0.5 s), `load.w` ramps slowly (~11.4 rad/s). First specimen you *run*; guarded by
+  `worker::tests::bench_actuator_simulates_stiff_spinup`. Note: the charter's Damper-to-Fixed friction made
+  the **initializer** fail to converge (`initial variable projection plan did not converge`), so the specimen
+  is the friction-free motor→inertia form. Step-mode plotting for discontinuities logged as `docs/ideas.md` #8.

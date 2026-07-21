@@ -1133,6 +1133,27 @@ mod tests {
         assert!((w_final - 2.0).abs() < 0.05, "w(2) should be ~2.0 (constant torque), got {w_final}");
     }
 
+
+    /// Arc 7 #4: the stiff bench actuator (a DC motor spinning up an inertial
+    /// load) simulates — the Auto solver (BDF) copes with the ~1000x separation
+    /// between the fast winding (L/R ~ 1e-4 s) and the slow rotor (J = 0.05). The
+    /// current is driven high and the load spins up.
+    #[test]
+    fn bench_actuator_simulates_stiff_spinup() {
+        let d = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BenchActuator.mo"));
+            w.simulate(path, "BenchActuator", 0.5)
+        }
+        .expect("simulate BenchActuator");
+        let get = |name: &str| -> f64 {
+            let i = d.names.iter().position(|n| n == name).unwrap_or_else(|| panic!("{name} in outputs"));
+            *d.data[i].last().unwrap()
+        };
+        assert!(get("L.i") > 5.0, "winding current should be driven high");
+        assert!(get("load.w") > 1.0, "the load should spin up");
+    }
+
     /// Arc 7 #3: the worker's `simulate` path (compile → lower → integrate) runs a
     /// hybrid model — BouncingBall — and returns trajectories. Exercises event
     /// handling in the solver (the ball must stay ~above the floor).

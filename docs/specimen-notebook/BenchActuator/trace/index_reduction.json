@@ -1,0 +1,79 @@
+{
+  "n_equations": 7,
+  "n_unknowns": 7,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from L)",
+      "unknown": "der(L.i)"
+    },
+    {
+      "equation": "f_x[1] (equation from load)",
+      "unknown": "der(load.phi)"
+    },
+    {
+      "equation": "f_x[2] (equation from load)",
+      "unknown": "der(load.w)"
+    },
+    {
+      "equation": "f_x[3] (equation from load)",
+      "unknown": "load.a"
+    },
+    {
+      "equation": "f_x[4] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "unknown": "emf.internalSupport.flange.phi"
+    },
+    {
+      "equation": "f_x[5] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    },
+    {
+      "equation": "f_x[6] (connection equation: emf.flange.phi = load.flange_a.phi)",
+      "unknown": "emf.flange.phi"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[5] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (equation from L)",
+      "unknown": "der(L.i)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (equation from load)",
+      "unknown": "der(load.phi)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[2] (equation from load)",
+      "unknown": "der(load.w)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (equation from load)",
+      "unknown": "load.a"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[4] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "unknown": "emf.internalSupport.flange.phi"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[6] (connection equation: emf.flange.phi = load.flange_a.phi)",
+      "unknown": "emf.flange.phi"
+    }
+  ]
+}

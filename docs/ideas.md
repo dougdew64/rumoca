@@ -164,3 +164,16 @@ init — but neither incorporates the user's `initial equation`s / fixed starts 
 matched system. If Rumoca does not expose it, reproducing the assembly risks a
 subtly-wrong analysis (cf. the Arc-4 nonlinear-constraint reimplementation caution) —
 weigh an upstream contribution instead.
+
+## 8. Step-mode plotting for discontinuities (Arc 7 refinement)
+
+Captured 2026-07-20. The Simulation pane (Arc 7 #3) plots each trajectory as a
+straight-line `egui_plot::Line`. For a **hybrid** model like `BouncingBall`, the
+velocity `v` jumps discontinuously at each bounce; with a fine time grid the jump
+renders as a near-vertical segment, but a true **step-mode** render (hold the value
+between samples / draw the jump as a vertical) would show discontinuities *as*
+discontinuities — the charter's §4.2.6 "step-mode plotting so discontinuities render
+as discontinuities". Needs: knowing which outputs are discrete/discontinuous (the
+`SimResult.variable_meta` roles, or the first `n_states`), and using egui_plot's
+line-style / a manual step polyline for those. Smooth specimens (BenchActuator) don't
+need it; it's specifically for the event/hybrid ones.

@@ -66,3 +66,6 @@ Roughly in order of increasing structural interest:
 - [`BouncingBall`](BouncingBall/narrative.md) — the Arc-6 **hybrid** specimen: a
   `when h <= 0 then reinit(v, …)` bounce → the Events tab shows the condition
   (`h <= 0`) + the discrete reinit. The first specimen with a non-empty Events tab.
+- [`BenchActuator`](BenchActuator/narrative.md) — the Arc-7 **stiff** specimen: a DC
+  motor spinning up an inertial load (fast winding L/R vs slow rotor J). The first
+  specimen you **run** — the ▶ Simulation tab plots the trajectories (BDF).
