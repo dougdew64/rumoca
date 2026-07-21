@@ -58,6 +58,8 @@ members = [
     "crates/rumoca-exec-cranelift",
     "crates/rumoca-exec-mlir",
     "crates/rumoca-exec-wasm",
+    # HRW observatory (studies this workspace via path deps; instrumentation host)
+    "hrw",
 ]
 
 [workspace.package]

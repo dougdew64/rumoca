@@ -1,14 +1,19 @@
-# Updating the pinned Rumoca version
+# Updating Rumoca (rebasing the `hrw` branch on upstream)
 
-HRW depends on official Rumoca as a **git dependency pinned to a commit** (`rev` in
-`Cargo.toml`). Moving to a newer Rumoca is deliberate and follows this checklist. The Rust
-compiler and the test suite do most of the work; a few generated artifacts (the field-help table
-and the per-specimen traces) need explicit regeneration.
+HRW now lives **inside a fork of the Rumoca workspace** (`hrw/`), depending on the Rumoca crates
+via **path deps** (see [`decisions`](../../DECISIONS.md) — the in-workspace move). So "updating
+Rumoca" is no longer a pin bump; it's **rebasing the `hrw` branch on a newer upstream** and fixing
+the fallout. The Rust compiler and the test suite do most of the work; a few generated artifacts
+(the field-help table and the per-specimen traces) need explicit regeneration.
 
-## 1. Bump the pin
-- In `Cargo.toml`, change `rev = "…"` on the `rumoca-*` git dependencies to the new commit.
-- Re-lock: `cargo update -p rumoca-compile -p rumoca-ir-ast -p rumoca-phase-parse`
-  (or delete the rumoca entries from `Cargo.lock` and `cargo build`). Commit the new `Cargo.lock`.
+## 1. Rebase the `hrw` branch on upstream
+- `git fetch upstream` (CogniPilot/rumoca), then `git rebase upstream/main` (or a chosen upstream
+  rev) on the `hrw` branch. Rumoca's own code advances underneath; your **additive instrumentation
+  hooks** should rebase cleanly (that's the point of keeping them observation-only), and `hrw/`
+  itself won't conflict — upstream has no files there.
+- Path deps track the checked-out tree automatically — no `rev` to edit. `cargo build -p hrw`
+  re-locks against the new Rumoca. Commit the updated `Cargo.lock`.
+- Resolve any conflicts in the instrumentation hooks against the moved phase code, then continue.
 
 ## 2. Fix compile breakage — the compiler is the guide
 - `cargo build`. Rust flags every API change HRW's code relies on: `Session` methods,
@@ -54,10 +59,18 @@ and the per-specimen traces) need explicit regeneration.
 - `cargo run`; load a specimen; confirm each stage renders, and the bridge capture / field-help
   panel / "Go to" navigation / debugger arming / "Read: specimen narrative" still work.
 
-## 8. Update the pin references
-- **Help → About auto-updates** — `build.rs` reads the pin from `Cargo.lock` and the dialog shows
-  it via `env!(...)`. Do **not** hand-edit it; just confirm About shows the new version/git rev after
-  rebuilding (a good final sanity check that the pin actually moved).
+## 8. Confirm the version/commit readout
+- **Help → About auto-updates** — `build.rs` reads `rumoca-compile`'s version from `Cargo.lock` and
+  the **commit from the workspace git HEAD** (HRW is an in-workspace member, so HEAD *is* the Rumoca
+  source it's built against). Do **not** hand-edit it; just confirm About shows the new version/commit
+  after rebuilding (a good final sanity check that the rebase landed).
+
+---
+
+**Note on commands:** run everything from the workspace root with `-p hrw`
+(`cargo build -p hrw`, `cargo test -p hrw`, `cargo run -p hrw`,
+`cargo run -p hrw --example gen_trace -- <Model>`), or `cd hrw/` first. The steps below still read
+`cargo build` / `cargo test` for brevity.
 - Still manual (prose, not derived): update the pinned rev noted in `CLAUDE.md` (Reference
   documentation) and add a `DECISIONS.md` line recording the bump and anything non-trivial it required.
 

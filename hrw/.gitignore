@@ -3,3 +3,5 @@
 /vendor
 # Claude bridge scratch: the transient focus file the app writes on "Ask Claude about this".
 /.hrw-bridge
+# Workspace member: the root Cargo.lock is authoritative; ignore any local one.
+/Cargo.lock

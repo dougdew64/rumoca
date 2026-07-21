@@ -1,39 +1,49 @@
-//! Build script: expose the *pinned Rumoca version* to the app at compile time,
-//! read from `Cargo.lock`. The Help/About dialog shows it via `env!(...)`, so it
-//! always reflects what HRW was actually built against and can never drift — no
-//! manual step when the pin is bumped (see `docs/updating-rumoca.md`).
+//! Build script: expose the Rumoca version + commit to the app at compile time.
+//! HRW now lives *inside* the Rumoca workspace (path deps), so the authoritative
+//! commit is the workspace's own git HEAD — the exact Rumoca source being built.
+//! The version comes from `rumoca-compile`'s entry in `Cargo.lock`. The Help/About
+//! dialog shows both via `env!(...)`, so they can't drift. (Before the in-workspace
+//! move, the rev came from the `git+…#<sha>` source line of the pinned dependency.)
 
 use std::fs;
+use std::process::Command;
 
 fn main() {
-    // Re-run whenever the lock changes (i.e. when the Rumoca pin is bumped).
-    println!("cargo:rerun-if-changed=Cargo.lock");
-    let (version, rev) = read_rumoca_pin();
+    // Re-run when the lock changes (version) or HEAD moves (commit). In a
+    // workspace only the ROOT Cargo.lock is maintained, so read that (../).
+    println!("cargo:rerun-if-changed=../Cargo.lock");
+    println!("cargo:rerun-if-changed=../.git/HEAD");
+    let version = read_rumoca_version();
+    let rev = git_head_short().unwrap_or_else(|| String::from("unknown"));
     println!("cargo:rustc-env=HRW_RUMOCA_VERSION={version}");
     println!("cargo:rustc-env=HRW_RUMOCA_REV={rev}");
 }
 
-/// `rumoca-compile`'s resolved semver version and short git commit from
-/// `Cargo.lock`. Falls back to "unknown" so `env!` in the app always resolves.
-fn read_rumoca_pin() -> (String, String) {
-    let lock = fs::read_to_string("Cargo.lock").unwrap_or_default();
+/// `rumoca-compile`'s resolved semver version from the workspace-root `Cargo.lock`.
+/// Falls back to "unknown" so `env!` in the app always resolves.
+fn read_rumoca_version() -> String {
+    let lock = fs::read_to_string("../Cargo.lock").unwrap_or_default();
     for block in lock.split("[[package]]") {
         if block.lines().any(|l| l.trim() == "name = \"rumoca-compile\"") {
-            let mut version = String::from("unknown");
-            let mut rev = String::from("unknown");
             for line in block.lines() {
-                let line = line.trim();
-                if let Some(v) = line.strip_prefix("version = \"").and_then(|s| s.strip_suffix('"')) {
-                    version = v.to_owned();
-                } else if let Some(src) = line.strip_prefix("source = \"").and_then(|s| s.strip_suffix('"')) {
-                    // git+…?rev=<sha>#<sha> — the commit is after the '#'.
-                    if let Some(sha) = src.rsplit('#').next().filter(|s| !s.is_empty()) {
-                        rev = sha.chars().take(9).collect();
-                    }
+                if let Some(v) =
+                    line.trim().strip_prefix("version = \"").and_then(|s| s.strip_suffix('"'))
+                {
+                    return v.to_owned();
                 }
             }
-            return (version, rev);
         }
     }
-    (String::from("unknown"), String::from("unknown"))
+    String::from("unknown")
+}
+
+/// Short commit of the workspace HEAD — the Rumoca source HRW is built against,
+/// now that HRW is an in-workspace member. `None` outside a git checkout.
+fn git_head_short() -> Option<String> {
+    let out = Command::new("git").args(["rev-parse", "--short", "HEAD"]).output().ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let rev = String::from_utf8(out.stdout).ok()?.trim().to_owned();
+    (!rev.is_empty()).then_some(rev)
 }

@@ -61,14 +61,16 @@ Candidates, not commitments — consult when planning new work; promote items in
 
 ## Reference documentation
 
-- Rumoca source: **git dependency on official Rumoca** (`github.com/CogniPilot/rumoca`) pinned to
-  commit `8cdc7419` in `Cargo.toml`. The compiled source lives in Cargo's cache —
-  `~/.cargo/git/checkouts/rumoca-*/8cdc7419/crates/...` — read it there (locate files with
-  `find ~/.cargo/git/checkouts -path '*rumoca*/<file>'`). This is the authoritative source HRW
-  builds against; a local `~/dev/rumoca` clone, if present, is only a personal reference and may
-  differ from the pin. **Bumping this pin follows `docs/updating-rumoca.md`** (compiler + tests
-  drive the code fixes; `cargo run --example gen_field_help` refreshes the generic field-help
-  table; `docs/compiler-phases` is refreshed only by Doug).
+- Rumoca source: **HRW lives INSIDE a fork of the Rumoca workspace** — `hrw/` is a workspace member
+  of `github.com/dougdew64/rumoca` (fork of `CogniPilot/rumoca`) on the `hrw` branch, depending on
+  the Rumoca crates via **path deps** (`../crates/rumoca-*`). Read the source directly in the sibling
+  `../crates/...` — it's the exact tree HRW builds against (no Cargo cache indirection). The `hrw`
+  branch was cut from the former pin `8cdc7419` (v0.9.20); "updating Rumoca" now means **rebasing the
+  `hrw` branch on upstream**, per `docs/updating-rumoca.md` (compiler + tests drive the code fixes;
+  `cargo run -p hrw --example gen_field_help` refreshes the generic field-help table;
+  `docs/compiler-phases` is refreshed only by Doug). This in-workspace move exists to enable
+  **instrumenting Rumoca internals** (the public API exposes phase *results*, not the algorithms'
+  *process*); build/run/test from the workspace root with `-p hrw`, or `cd hrw/`. See `DECISIONS.md`.
 - Doug's phase explanations: **`docs/compiler-phases/`** (in THIS repo) — top-level summary, one
   subdirectory per compiler phase containing a phase description, some with drill-down documents
   (e.g. Pantelides, tearing, BLT). These are Doug's own explanations, matching the pinned Rumoca
@@ -80,9 +82,11 @@ Candidates, not commitments — consult when planning new work; promote items in
 
 ## Architecture rules (from charter §4.4 and Decision 6)
 
-- Rumoca is linked **as a library** (path/git dependency on the workspace — v0.8+ has no
-  crates.io release). Never shell out to the Rumoca CLI. A load-IR-from-JSON import path is
-  retained as a secondary mode only.
+- Rumoca is linked **as a library** — now via **path deps on the sibling `../crates/rumoca-*`**
+  (HRW is an in-workspace member of the fork; the charter's "path dependency on the workspace" option).
+  Never shell out to the Rumoca CLI. A load-IR-from-JSON import path is retained as a secondary mode only.
+  **Instrumentation is permitted and intended** — additive, observation-only hooks in the Rumoca crates
+  (semantics-preserving, so HRW stays faithful to real Rumoca), designed to be upstreamable. See `DECISIONS.md`.
 - Compilation and simulation run on a **worker thread**, results returned over a channel. The
   egui `update()` loop never blocks and never calls into the compiler or solver directly.
 - Native builds only. No WASM targets, no web deployment (charter Decision 5).

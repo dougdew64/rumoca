@@ -3,23 +3,32 @@ name = "hrw"
 version = "0.1.0"
 edition = "2024"
 
+# HRW is an egui UI crate: deeply-nested builder/handler closures and multi-arg
+# widget fns are idiomatic. It deliberately does NOT inherit Rumoca's internal
+# complexity budget (SPEC_0021 clippy.toml / workspace.lints) — those govern the
+# compiler crates, not a UI. The rest of clippy stays at its default warn level.
+[lints.clippy]
+excessive_nesting = "allow"
+too_many_arguments = "allow"
+
 [dependencies]
 anyhow = "1.0.103"
 eframe = "0.35.0"
 egui_plot = "0.36"  # Arc 7: plot sim trajectories (0.36 targets egui 0.35; egui_plot versions are offset)
-# Official Rumoca, pinned by commit for reproducibility (a path dep tracks
-# whatever the local clone is checked out to; a `rev` is immutable + locked).
-# 8cdc7419 == the code HRW was developed against (was ../rumoca @ upstream/main).
-rumoca-compile = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
-rumoca-ir-ast = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
-rumoca-phase-parse = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+# Rumoca, in-workspace via PATH deps (HRW now lives in the Rumoca fork as a
+# workspace member — `hrw/`). Path deps track the checked-out tree, enabling
+# atomic phase+render changes and instrumentation. The former upstream pin was
+# rev 8cdc7419 (v0.9.20); the `hrw` branch is cut from that commit.
+rumoca-compile = { path = "../crates/rumoca-compile" }
+rumoca-ir-ast = { path = "../crates/rumoca-ir-ast" }
+rumoca-phase-parse = { path = "../crates/rumoca-phase-parse" }
 # Arc 2 increment 2: instantiate + instanced-typecheck the model directly, to
 # render the InstancedTree overlay (which the high-level pipeline doesn't expose).
-rumoca-phase-instantiate = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
-rumoca-phase-typecheck = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-phase-instantiate = { path = "../crates/rumoca-phase-instantiate" }
+rumoca-phase-typecheck = { path = "../crates/rumoca-phase-typecheck" }
 # Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
-rumoca-phase-structural = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
-rumoca-ir-dae = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 4: name the DAE type for the index-reduction funnel
-rumoca-phase-solve = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 7: DAE -> SolveModel (solve lowering)
-rumoca-sim = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
+rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
+rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # Arc 4: name the DAE type for the index-reduction funnel
+rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # Arc 7: DAE -> SolveModel (solve lowering)
+rumoca-sim = { path = "../crates/rumoca-sim" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
 serde_json = "1.0.150"

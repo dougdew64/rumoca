@@ -526,3 +526,25 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   satisfiable-by-acceptance per Doug's standing reconsideration of those gates; (5) CLAUDE.md advanced.
   The charter has no Arc 8 — subsequent work is drawn from docs/ideas.md, the deferred items, or a new
   charter decision, chosen with Doug rather than assumed.
+
+- **HRW moved INTO the Rumoca fork as a workspace member (2026-07-21).** Pass one (the seven-arc
+  curriculum) hit the ceiling of Rumoca's *public API*, which exposes phase *results* (the IR) but not
+  the algorithms' internal *process* (Pantelides iterating, matching's augmenting paths, BDF order/step
+  control, Newton iterations) — exactly what deep learning requires. So pass two must **instrument
+  Rumoca internals**, which means depending on a branch of Doug's fork. Given that, moved HRW itself
+  into the fork (`github.com/dougdew64/rumoca`, branch `hrw`) as a top-level workspace member `hrw/`,
+  swapping the 9 `rumoca-* = { git, rev = 8cdc7419 }` deps for `path = "../crates/rumoca-*"`. Rationale:
+  pass-two features are intrinsically two-sided (a hook inside a phase + HRW's render of it), so a
+  monorepo gives **atomic co-evolution** (one commit changes phase + consumer), path-dep iteration
+  (`cargo run -p hrw`, no rev-bump), seamless debugger stepping, and one toolchain/profile
+  (`hrw` inherits Rumoca's `optimized+debuginfo` dev profile — the charter's debugger tuning, now free).
+  Charter-consistent: Decision 6 already blesses "path dependency on the workspace." Doug values
+  learning over HRW's independent identity, and aims to **upstream the instrumentation (and possibly
+  HRW) and become a Rumoca maintainer**. Mechanics: `hrw` branch cut from the pin `8cdc7419` (v0.9.20,
+  the exact code HRW knew); `git subtree add --prefix=hrw` preserved HRW's full history under `hrw/`;
+  MSL provisioned at `hrw/vendor/` (gitignored copy); `build.rs` now reads the commit from the
+  workspace git HEAD (path deps carry no git rev). Disciplines: hooks are **additive, observation-only**
+  (semantics-preserving → faithful to real Rumoca, clean rebases) and shaped to be **upstreamable**;
+  keep HRW in `hrw/` and hooks separable so an upstream PR is a clean cherry-pick of Rumoca-only changes.
+  Verified: `cargo build -p hrw` + `cargo test -p hrw` green (29 tests) in the workspace. "Updating
+  Rumoca" is now **rebasing the `hrw` branch on upstream**, not a pin bump (see `docs/updating-rumoca.md`).

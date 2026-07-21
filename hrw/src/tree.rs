@@ -153,11 +153,11 @@ fn row_menu(
             *debug = Some(path.to_vec());
             ui.close();
         }
-        if let Some(name) = &nav {
-            if ui.button(format!("↪ Go to {name}")).clicked() {
-                *nav_to = Some(name.clone());
-                ui.close();
-            }
+        if let Some(name) = &nav
+            && ui.button(format!("↪ Go to {name}")).clicked()
+        {
+            *nav_to = Some(name.clone());
+            ui.close();
         }
         if ui.button("📋 Copy text").clicked() {
             ui.ctx().copy_text(copy_text.to_owned());

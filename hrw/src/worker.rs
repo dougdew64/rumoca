@@ -533,8 +533,8 @@ pub fn compile_specimen(specimen: &Path, libraries: Vec<PathBuf>) -> Result<From
     Ok(state.compile(specimen, &|_: FromWorker| {}))
 }
 
-/// Structural analysis of the model's DAE (Arc 3): maximum matching + BLT blocks
-/// + tearing, from `build_structural_report`. Only available on a full Success
+/// Structural analysis of the model's DAE (Arc 3): maximum matching, BLT blocks,
+/// and tearing, from `build_structural_report`. Only available on a full Success
 /// (the DAE must exist). The report types aren't `Serialize`, so build JSON.
 fn structural_stage(result: Option<&PhaseResult>) -> Stage {
     match result {
@@ -909,10 +909,10 @@ fn collect_def_ids(v: &serde_json::Value, out: &mut BTreeSet<u64>) {
     match v {
         serde_json::Value::Object(map) => {
             for (k, val) in map {
-                if is_def_id_key(k) {
-                    if let Some(n) = val.as_u64() {
-                        out.insert(n);
-                    }
+                if is_def_id_key(k)
+                    && let Some(n) = val.as_u64()
+                {
+                    out.insert(n);
                 }
                 collect_def_ids(val, out);
             }
