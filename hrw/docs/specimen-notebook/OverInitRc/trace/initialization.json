@@ -1,0 +1,1654 @@
+{
+  "n_states": 1,
+  "n_equations": 23,
+  "block_count": 21,
+  "blocks": [
+    {
+      "kind": "scalar_direct",
+      "var": "src.v",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "src.V",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 12642008935256245671,
+                "start": 107,
+                "end": 119
+              },
+              "parts": [
+                {
+                  "ident": "src",
+                  "span": {
+                    "source": 12642008935256245671,
+                    "start": 107,
+                    "end": 119
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "V",
+                  "span": {
+                    "source": 12642008935256245671,
+                    "start": 107,
+                    "end": 119
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39473
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 12642008935256245671,
+            "start": 261,
+            "end": 262
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "gnd.p.v",
+      "solution": {
+        "Literal": {
+          "value": {
+            "Integer": 0
+          },
+          "span": {
+            "source": 405098915260320302,
+            "start": 228,
+            "end": 229
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "src.n.v",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "gnd.p.v",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 16143679917513848382,
+                "start": 95,
+                "end": 117
+              },
+              "parts": [
+                {
+                  "ident": "gnd",
+                  "span": {
+                    "source": 16143679917513848382,
+                    "start": 95,
+                    "end": 117
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "p",
+                  "span": {
+                    "source": 16143679917513848382,
+                    "start": 95,
+                    "end": 117
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "v",
+                  "span": {
+                    "source": 16143679917513848382,
+                    "start": 95,
+                    "end": 117
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39511
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 9327231529189084057,
+            "start": 112,
+            "end": 134
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "src.p.v",
+      "solution": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 106,
+                    "end": 118
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 106,
+                        "end": 118
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 106,
+                        "end": 118
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39464
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15489391414259482994,
+                "start": 407,
+                "end": 408
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 0.0
+                  },
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 407,
+                    "end": 408
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "src.n.v",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "parts": [
+                        {
+                          "ident": "src",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 112,
+                            "end": 134
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 112,
+                            "end": 134
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "v",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 112,
+                            "end": 134
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39471
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 417,
+                    "end": 420
+                  }
+                }
+              },
+              "span": {
+                "source": 15489391414259482994,
+                "start": 407,
+                "end": 408
+              }
+            }
+          },
+          "span": {
+            "source": 15489391414259482994,
+            "start": 407,
+            "end": 408
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.p.v",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "src.p.v",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 14287977476672713817,
+                "start": 112,
+                "end": 134
+              },
+              "parts": [
+                {
+                  "ident": "src",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "p",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "v",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39467
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 14287977476672713817,
+            "start": 112,
+            "end": 134
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "C.n.v",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "src.n.v",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 9327231529189084057,
+                "start": 112,
+                "end": 134
+              },
+              "parts": [
+                {
+                  "ident": "src",
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "n",
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "v",
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39471
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 9327231529189084057,
+            "start": 112,
+            "end": 134
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "C.p.v",
+      "solution": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 106,
+                    "end": 118
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 106,
+                        "end": 118
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 106,
+                        "end": 118
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39497
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15489391414259482994,
+                "start": 407,
+                "end": 408
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 0.0
+                  },
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 407,
+                    "end": 408
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.n.v",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 112,
+                            "end": 134
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 112,
+                            "end": 134
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "v",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 112,
+                            "end": 134
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39504
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 417,
+                    "end": 420
+                  }
+                }
+              },
+              "span": {
+                "source": 15489391414259482994,
+                "start": 407,
+                "end": 408
+              }
+            }
+          },
+          "span": {
+            "source": 15489391414259482994,
+            "start": 407,
+            "end": 408
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.n.v",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "C.p.v",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 14287977476672713817,
+                "start": 112,
+                "end": 134
+              },
+              "parts": [
+                {
+                  "ident": "C",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "p",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "v",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39500
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 9327231529189084057,
+            "start": 112,
+            "end": 134
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.v",
+      "solution": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.p.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39480
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15489391414259482994,
+                "start": 411,
+                "end": 414
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.n.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "n",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39484
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15489391414259482994,
+                "start": 417,
+                "end": 420
+              }
+            }
+          },
+          "span": {
+            "source": 15489391414259482994,
+            "start": 411,
+            "end": 420
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.T_heatPort",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "R.T",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 981402907724329664,
+                "start": 346,
+                "end": 362
+              },
+              "parts": [
+                {
+                  "ident": "R",
+                  "span": {
+                    "source": 981402907724329664,
+                    "start": 346,
+                    "end": 362
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "T",
+                  "span": {
+                    "source": 981402907724329664,
+                    "start": 346,
+                    "end": 362
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39487
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 981402907724329664,
+            "start": 925,
+            "end": 926
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.R_actual",
+      "solution": {
+        "Binary": {
+          "op": "Mul",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.R",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 756793601108145250,
+                    "start": 103,
+                    "end": 118
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 756793601108145250,
+                        "start": 103,
+                        "end": 118
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 756793601108145250,
+                        "start": 103,
+                        "end": 118
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39490
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 756793601108145250,
+                "start": 735,
+                "end": 736
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "Literal": {
+                  "value": {
+                    "Integer": 1
+                  },
+                  "span": {
+                    "source": 756793601108145250,
+                    "start": 738,
+                    "end": 739
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "R.alpha",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 756793601108145250,
+                            "start": 244,
+                            "end": 281
+                          },
+                          "parts": [
+                            {
+                              "ident": "R",
+                              "span": {
+                                "source": 756793601108145250,
+                                "start": 244,
+                                "end": 281
+                              },
+                              "subs": []
+                            },
+                            {
+                              "ident": "alpha",
+                              "span": {
+                                "source": 756793601108145250,
+                                "start": 244,
+                                "end": 281
+                              },
+                              "subs": []
+                            }
+                          ],
+                          "def_id": 39492
+                        }
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 756793601108145250,
+                        "start": 742,
+                        "end": 747
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Sub",
+                      "lhs": {
+                        "VarRef": {
+                          "name": {
+                            "name": "R.T_heatPort",
+                            "component_ref": {
+                              "local": false,
+                              "span": {
+                                "source": 981402907724329664,
+                                "start": 819,
+                                "end": 844
+                              },
+                              "parts": [
+                                {
+                                  "ident": "R",
+                                  "span": {
+                                    "source": 981402907724329664,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "T_heatPort",
+                                  "span": {
+                                    "source": 981402907724329664,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                }
+                              ],
+                              "def_id": 39489
+                            }
+                          },
+                          "subscripts": [],
+                          "span": {
+                            "source": 756793601108145250,
+                            "start": 749,
+                            "end": 759
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "VarRef": {
+                          "name": {
+                            "name": "R.T_ref",
+                            "component_ref": {
+                              "local": false,
+                              "span": {
+                                "source": 756793601108145250,
+                                "start": 179,
+                                "end": 199
+                              },
+                              "parts": [
+                                {
+                                  "ident": "R",
+                                  "span": {
+                                    "source": 756793601108145250,
+                                    "start": 179,
+                                    "end": 199
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "T_ref",
+                                  "span": {
+                                    "source": 756793601108145250,
+                                    "start": 179,
+                                    "end": 199
+                                  },
+                                  "subs": []
+                                }
+                              ],
+                              "def_id": 39491
+                            }
+                          },
+                          "subscripts": [],
+                          "span": {
+                            "source": 756793601108145250,
+                            "start": 762,
+                            "end": 767
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 756793601108145250,
+                        "start": 749,
+                        "end": 767
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 756793601108145250,
+                    "start": 742,
+                    "end": 767
+                  }
+                }
+              },
+              "span": {
+                "source": 756793601108145250,
+                "start": 738,
+                "end": 767
+              }
+            }
+          },
+          "span": {
+            "source": 756793601108145250,
+            "start": 735,
+            "end": 767
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_newton",
+      "var": "R.i",
+      "equation": 9
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.p.i",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "R.i",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 2411789250716741266,
+                "start": 161,
+                "end": 173
+              },
+              "parts": [
+                {
+                  "ident": "R",
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 161,
+                    "end": 173
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "i",
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 161,
+                    "end": 173
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39476
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 2411789250716741266,
+            "start": 241,
+            "end": 242
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "src.p.i",
+      "solution": {
+        "Unary": {
+          "op": "Minus",
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39481
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 14287977476672713817,
+                "start": 477,
+                "end": 489
+              }
+            }
+          },
+          "span": {
+            "source": 14287977476672713817,
+            "start": 477,
+            "end": 489
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "src.i",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "src.p.i",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 14287977476672713817,
+                "start": 477,
+                "end": 489
+              },
+              "parts": [
+                {
+                  "ident": "src",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "p",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "i",
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39468
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 2411789250716741266,
+            "start": 245,
+            "end": 248
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.n.i",
+      "solution": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 2411789250716741266,
+                "start": 224,
+                "end": 225
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39481
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2411789250716741266,
+                "start": 228,
+                "end": 231
+              }
+            }
+          },
+          "span": {
+            "source": 2411789250716741266,
+            "start": 224,
+            "end": 225
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "R.LossPower",
+      "solution": {
+        "Binary": {
+          "op": "Mul",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 106,
+                    "end": 118
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 106,
+                        "end": 118
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 106,
+                        "end": 118
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39477
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 756793601108145250,
+                "start": 803,
+                "end": 804
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "R.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 161,
+                    "end": 173
+                  },
+                  "parts": [
+                    {
+                      "ident": "R",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 161,
+                        "end": 173
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 161,
+                        "end": 173
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39476
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 756793601108145250,
+                "start": 805,
+                "end": 806
+              }
+            }
+          },
+          "span": {
+            "source": 756793601108145250,
+            "start": 803,
+            "end": 806
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "C.i",
+      "solution": {
+        "Binary": {
+          "op": "Mul",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.C",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 6410184515208909993,
+                    "start": 147,
+                    "end": 163
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 6410184515208909993,
+                        "start": 147,
+                        "end": 163
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 6410184515208909993,
+                        "start": 147,
+                        "end": 163
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39506
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 6410184515208909993,
+                "start": 204,
+                "end": 205
+              }
+            }
+          },
+          "rhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "C.v",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 15489391414259482994,
+                          "start": 106,
+                          "end": 118
+                        },
+                        "parts": [
+                          {
+                            "ident": "C",
+                            "span": {
+                              "source": 15489391414259482994,
+                              "start": 106,
+                              "end": 118
+                            },
+                            "subs": []
+                          },
+                          {
+                            "ident": "v",
+                            "span": {
+                              "source": 15489391414259482994,
+                              "start": 106,
+                              "end": 118
+                            },
+                            "subs": []
+                          }
+                        ],
+                        "def_id": 39497
+                      }
+                    },
+                    "subscripts": [],
+                    "span": {
+                      "source": 6410184515208909993,
+                      "start": 210,
+                      "end": 211
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 6410184515208909993,
+                "start": 206,
+                "end": 209
+              }
+            }
+          },
+          "span": {
+            "source": 6410184515208909993,
+            "start": 204,
+            "end": 211
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "C.p.i",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "C.i",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 2411789250716741266,
+                "start": 161,
+                "end": 173
+              },
+              "parts": [
+                {
+                  "ident": "C",
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 161,
+                    "end": 173
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "i",
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 161,
+                    "end": 173
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39496
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 2411789250716741266,
+            "start": 241,
+            "end": 242
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "C.n.i",
+      "solution": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 2411789250716741266,
+                "start": 224,
+                "end": 225
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39501
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2411789250716741266,
+                "start": 228,
+                "end": 231
+              }
+            }
+          },
+          "span": {
+            "source": 2411789250716741266,
+            "start": 224,
+            "end": 225
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "src.n.i",
+      "solution": {
+        "Unary": {
+          "op": "Minus",
+          "rhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.n.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39505
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 477,
+                    "end": 489
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "gnd.p.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 460,
+                        "end": 472
+                      },
+                      "parts": [
+                        {
+                          "ident": "gnd",
+                          "span": {
+                            "source": 16143679917513848382,
+                            "start": 460,
+                            "end": 472
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "p",
+                          "span": {
+                            "source": 16143679917513848382,
+                            "start": 460,
+                            "end": 472
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 16143679917513848382,
+                            "start": 460,
+                            "end": 472
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39512
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 477,
+                    "end": 489
+                  }
+                }
+              },
+              "span": {
+                "source": 9327231529189084057,
+                "start": 477,
+                "end": 489
+              }
+            }
+          },
+          "span": {
+            "source": 9327231529189084057,
+            "start": 477,
+            "end": 489
+          }
+        }
+      }
+    }
+  ],
+  "relaxation_hint": {
+    "dropped_equations": [
+      17
+    ],
+    "pinned_unknowns": [
+      "gnd.p.i"
+    ]
+  },
+  "determinacy": {
+    "states": 1,
+    "initial_equations": 2,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 2,
+    "surplus_over_states": 1,
+    "verdict": "over-determined"
+  }
+}

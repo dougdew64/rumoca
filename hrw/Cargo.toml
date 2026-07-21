@@ -1,0 +1,25 @@
+[package]
+name = "hrw"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.103"
+eframe = "0.35.0"
+egui_plot = "0.36"  # Arc 7: plot sim trajectories (0.36 targets egui 0.35; egui_plot versions are offset)
+# Official Rumoca, pinned by commit for reproducibility (a path dep tracks
+# whatever the local clone is checked out to; a `rev` is immutable + locked).
+# 8cdc7419 == the code HRW was developed against (was ../rumoca @ upstream/main).
+rumoca-compile = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-ir-ast = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-phase-parse = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+# Arc 2 increment 2: instantiate + instanced-typecheck the model directly, to
+# render the InstancedTree overlay (which the high-level pipeline doesn't expose).
+rumoca-phase-instantiate = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-phase-typecheck = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+# Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
+rumoca-phase-structural = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
+rumoca-ir-dae = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 4: name the DAE type for the index-reduction funnel
+rumoca-phase-solve = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 7: DAE -> SolveModel (solve lowering)
+rumoca-sim = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
+serde_json = "1.0.150"

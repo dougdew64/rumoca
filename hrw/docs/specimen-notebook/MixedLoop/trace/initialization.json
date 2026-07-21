@@ -1,0 +1,197 @@
+{
+  "n_states": 0,
+  "n_equations": 5,
+  "block_count": 3,
+  "blocks": [
+    {
+      "kind": "scalar_direct",
+      "var": "setpoint",
+      "solution": {
+        "Binary": {
+          "op": "Mul",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "sensorGain",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 895,
+                    "end": 910
+                  },
+                  "parts": [
+                    {
+                      "ident": "sensorGain",
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 895,
+                        "end": 910
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39468
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 11411428034885745715,
+                "start": 1429,
+                "end": 1439
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "reference",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 846,
+                    "end": 860
+                  },
+                  "parts": [
+                    {
+                      "ident": "reference",
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 846,
+                        "end": 860
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39467
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 11411428034885745715,
+                "start": 1442,
+                "end": 1451
+              }
+            }
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1429,
+            "end": 1451
+          }
+        }
+      }
+    },
+    {
+      "kind": "torn_block",
+      "tear_vars": [
+        "command"
+      ],
+      "residual_equations": [
+        2
+      ],
+      "causal_steps": [
+        {
+          "var": "error",
+          "equation": 1,
+          "newton": false
+        },
+        {
+          "var": "measurement",
+          "equation": 3,
+          "newton": false
+        }
+      ]
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "result",
+      "solution": {
+        "Binary": {
+          "op": "Mul",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "outputGain",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1084,
+                    "end": 1099
+                  },
+                  "parts": [
+                    {
+                      "ident": "outputGain",
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1084,
+                        "end": 1099
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39471
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 11411428034885745715,
+                "start": 1698,
+                "end": 1708
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "measurement",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1300,
+                    "end": 1316
+                  },
+                  "parts": [
+                    {
+                      "ident": "measurement",
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1300,
+                        "end": 1316
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39475
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 11411428034885745715,
+                "start": 1711,
+                "end": 1722
+              }
+            }
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1698,
+            "end": 1722
+          }
+        }
+      }
+    }
+  ],
+  "relaxation_hint": null,
+  "determinacy": {
+    "states": 0,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": 0,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

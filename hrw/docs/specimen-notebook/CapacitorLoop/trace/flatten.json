@@ -1,0 +1,4304 @@
+{
+  "variables": {
+    "src.i": {
+      "name": "src.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 2411789250716741266,
+          "start": 161,
+          "end": 173
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 2411789250716741266,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 2411789250716741266,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39462
+      },
+      "source_span": {
+        "source": 2411789250716741266,
+        "start": 161,
+        "end": 173
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing from pin p to pin n",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "src.v": {
+      "name": "src.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15489391414259482994,
+          "start": 106,
+          "end": 118
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 15489391414259482994,
+              "start": 106,
+              "end": 118
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 15489391414259482994,
+              "start": 106,
+              "end": 118
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39463
+      },
+      "source_span": {
+        "source": 15489391414259482994,
+        "start": 106,
+        "end": 118
+      },
+      "type_id": 6148,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Voltage drop of the two pins (= p.v - n.v)",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "src.p.v": {
+      "name": "src.p.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14287977476672713817,
+          "start": 112,
+          "end": 134
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "p",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39466
+      },
+      "source_span": {
+        "source": 14287977476672713817,
+        "start": 112,
+        "end": 134
+      },
+      "type_id": 6147,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Potential at the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "src.p.i": {
+      "name": "src.p.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14287977476672713817,
+          "start": 477,
+          "end": 489
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "p",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39467
+      },
+      "source_span": {
+        "source": 14287977476672713817,
+        "start": 477,
+        "end": 489
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": true,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing into the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "src.n.v": {
+      "name": "src.n.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 9327231529189084057,
+          "start": 112,
+          "end": 134
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "n",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39470
+      },
+      "source_span": {
+        "source": 9327231529189084057,
+        "start": 112,
+        "end": 134
+      },
+      "type_id": 6147,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Potential at the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "src.n.i": {
+      "name": "src.n.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 9327231529189084057,
+          "start": 477,
+          "end": 489
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "n",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39471
+      },
+      "source_span": {
+        "source": 9327231529189084057,
+        "start": 477,
+        "end": 489
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": true,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing into the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "src.V": {
+      "name": "src.V",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 12642008935256245671,
+          "start": 107,
+          "end": 119
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 12642008935256245671,
+              "start": 107,
+              "end": 119
+            },
+            "subs": []
+          },
+          {
+            "ident": "V",
+            "span": {
+              "source": 12642008935256245671,
+              "start": 107,
+              "end": 119
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39472
+      },
+      "source_span": {
+        "source": 12642008935256245671,
+        "start": 107,
+        "end": 119
+      },
+      "type_id": 6148,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 3,
+            "start_column": 3,
+            "end_line": 3,
+            "end_column": 12,
+            "start": 97,
+            "end": 106,
+            "file_name": "/home/dougdew/dev/hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Sources/ConstantVoltage.mo"
+          },
+          "token_number": 12,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 1
+          },
+          "span": {
+            "source": 12642008935256245671,
+            "start": 126,
+            "end": 127
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Value of constant voltage",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Integer": 5
+          },
+          "span": {
+            "source": 15951695413039418718,
+            "start": 296,
+            "end": 297
+          }
+        }
+      },
+      "binding_from_modification": true,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.i": {
+      "name": "C.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 2411789250716741266,
+          "start": 161,
+          "end": 173
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 2411789250716741266,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 2411789250716741266,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39475
+      },
+      "source_span": {
+        "source": 2411789250716741266,
+        "start": 161,
+        "end": 173
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing from pin p to pin n",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.v": {
+      "name": "C.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15489391414259482994,
+          "start": 106,
+          "end": 118
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 15489391414259482994,
+              "start": 106,
+              "end": 118
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 15489391414259482994,
+              "start": 106,
+              "end": 118
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39476
+      },
+      "source_span": {
+        "source": 15489391414259482994,
+        "start": 106,
+        "end": 118
+      },
+      "type_id": 6148,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 0
+          },
+          "span": {
+            "source": 6410184515208909993,
+            "start": 130,
+            "end": 131
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Voltage drop of the two pins (= p.v - n.v)",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.p.v": {
+      "name": "C.p.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14287977476672713817,
+          "start": 112,
+          "end": 134
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "p",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39479
+      },
+      "source_span": {
+        "source": 14287977476672713817,
+        "start": 112,
+        "end": 134
+      },
+      "type_id": 6147,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Potential at the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.p.i": {
+      "name": "C.p.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14287977476672713817,
+          "start": 477,
+          "end": 489
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "p",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 14287977476672713817,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39480
+      },
+      "source_span": {
+        "source": 14287977476672713817,
+        "start": 477,
+        "end": 489
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": true,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing into the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.n.v": {
+      "name": "C.n.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 9327231529189084057,
+          "start": 112,
+          "end": 134
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "n",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 112,
+              "end": 134
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39483
+      },
+      "source_span": {
+        "source": 9327231529189084057,
+        "start": 112,
+        "end": 134
+      },
+      "type_id": 6147,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Potential at the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.n.i": {
+      "name": "C.n.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 9327231529189084057,
+          "start": 477,
+          "end": 489
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "n",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 9327231529189084057,
+              "start": 477,
+              "end": 489
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39484
+      },
+      "source_span": {
+        "source": 9327231529189084057,
+        "start": 477,
+        "end": 489
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": true,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing into the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "C.C": {
+      "name": "C.C",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 6410184515208909993,
+          "start": 147,
+          "end": 163
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 6410184515208909993,
+              "start": 147,
+              "end": 163
+            },
+            "subs": []
+          },
+          {
+            "ident": "C",
+            "span": {
+              "source": 6410184515208909993,
+              "start": 147,
+              "end": 163
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39485
+      },
+      "source_span": {
+        "source": 6410184515208909993,
+        "start": 147,
+        "end": 163
+      },
+      "type_id": 6155,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 4,
+            "start_column": 3,
+            "end_line": 4,
+            "end_column": 12,
+            "start": 137,
+            "end": 146,
+            "file_name": "/home/dougdew/dev/hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/Capacitor.mo"
+          },
+          "token_number": 25,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 1
+          },
+          "span": {
+            "source": 6410184515208909993,
+            "start": 170,
+            "end": 171
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "Capacitance",
+      "unit": "F",
+      "display_unit": null,
+      "description": "Capacitance",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 0.001
+          },
+          "span": {
+            "source": 15951695413039418718,
+            "start": 351,
+            "end": 355
+          }
+        }
+      },
+      "binding_from_modification": true,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "gnd.p.v": {
+      "name": "gnd.p.v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 16143679917513848382,
+          "start": 95,
+          "end": 117
+        },
+        "parts": [
+          {
+            "ident": "gnd",
+            "span": {
+              "source": 16143679917513848382,
+              "start": 95,
+              "end": 117
+            },
+            "subs": []
+          },
+          {
+            "ident": "p",
+            "span": {
+              "source": 16143679917513848382,
+              "start": 95,
+              "end": 117
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 16143679917513848382,
+              "start": 95,
+              "end": 117
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39490
+      },
+      "source_span": {
+        "source": 16143679917513848382,
+        "start": 95,
+        "end": 117
+      },
+      "type_id": 6147,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricPotential",
+      "unit": "V",
+      "display_unit": null,
+      "description": "Potential at the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "gnd.p.i": {
+      "name": "gnd.p.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 16143679917513848382,
+          "start": 460,
+          "end": 472
+        },
+        "parts": [
+          {
+            "ident": "gnd",
+            "span": {
+              "source": 16143679917513848382,
+              "start": 460,
+              "end": 472
+            },
+            "subs": []
+          },
+          {
+            "ident": "p",
+            "span": {
+              "source": 16143679917513848382,
+              "start": 460,
+              "end": 472
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 16143679917513848382,
+              "start": 460,
+              "end": 472
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39491
+      },
+      "source_span": {
+        "source": 16143679917513848382,
+        "start": 460,
+        "end": 472
+      },
+      "type_id": 6140,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": true,
+      "stream": false,
+      "dims": [],
+      "connected": true,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": "ElectricCurrent",
+      "unit": "A",
+      "display_unit": null,
+      "description": "Current flowing into the pin",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "variable_type_names": {
+    "src.i": "SI.Current",
+    "src.v": "SI.Voltage",
+    "src.p.v": "SI.ElectricPotential",
+    "src.p.i": "SI.Current",
+    "src.n.v": "SI.ElectricPotential",
+    "src.n.i": "SI.Current",
+    "src.V": "SI.Voltage",
+    "C.i": "SI.Current",
+    "C.v": "SI.Voltage",
+    "C.p.v": "SI.ElectricPotential",
+    "C.p.i": "SI.Current",
+    "C.n.v": "SI.ElectricPotential",
+    "C.n.i": "SI.Current",
+    "C.C": "SI.Capacitance",
+    "gnd.p.v": "SI.ElectricPotential",
+    "gnd.p.i": "SI.Current"
+  },
+  "variable_final_flags": {},
+  "equations": [
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 2411789250716741266,
+                "start": 224,
+                "end": 225
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "src.p.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 228,
+                        "end": 231
+                      },
+                      "parts": [
+                        {
+                          "ident": "src",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 228,
+                            "end": 231
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "p",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 228,
+                            "end": 231
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 228,
+                            "end": 231
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": null
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 228,
+                    "end": 231
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "src.n.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 234,
+                        "end": 237
+                      },
+                      "parts": [
+                        {
+                          "ident": "src",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 234,
+                            "end": 237
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 234,
+                            "end": 237
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 234,
+                            "end": 237
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": null
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 234,
+                    "end": 237
+                  }
+                }
+              },
+              "span": {
+                "source": 2411789250716741266,
+                "start": 228,
+                "end": 237
+              }
+            }
+          },
+          "span": {
+            "source": 2411789250716741266,
+            "start": 224,
+            "end": 225
+          }
+        }
+      },
+      "span": {
+        "source": 2411789250716741266,
+        "start": 224,
+        "end": 225
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "src"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 241,
+                    "end": 242
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 241,
+                        "end": 242
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 241,
+                        "end": 242
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 5563
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2411789250716741266,
+                "start": 241,
+                "end": 242
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 245,
+                    "end": 248
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 245,
+                        "end": 248
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 245,
+                        "end": 248
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 245,
+                        "end": 248
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": null
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2411789250716741266,
+                "start": 245,
+                "end": 248
+              }
+            }
+          },
+          "span": {
+            "source": 2411789250716741266,
+            "start": 241,
+            "end": 242
+          }
+        }
+      },
+      "span": {
+        "source": 2411789250716741266,
+        "start": 241,
+        "end": 242
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "src"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 407,
+                    "end": 408
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 407,
+                        "end": 408
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 407,
+                        "end": 408
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 5576
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15489391414259482994,
+                "start": 407,
+                "end": 408
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "src.p.v",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 411,
+                        "end": 414
+                      },
+                      "parts": [
+                        {
+                          "ident": "src",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 411,
+                            "end": 414
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "p",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 411,
+                            "end": 414
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "v",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 411,
+                            "end": 414
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 5577
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 411,
+                    "end": 414
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "src.n.v",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 417,
+                        "end": 420
+                      },
+                      "parts": [
+                        {
+                          "ident": "src",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 417,
+                            "end": 420
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 417,
+                            "end": 420
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "v",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 417,
+                            "end": 420
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 5578
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 417,
+                    "end": 420
+                  }
+                }
+              },
+              "span": {
+                "source": 15489391414259482994,
+                "start": 411,
+                "end": 420
+              }
+            }
+          },
+          "span": {
+            "source": 15489391414259482994,
+            "start": 407,
+            "end": 408
+          }
+        }
+      },
+      "span": {
+        "source": 15489391414259482994,
+        "start": 407,
+        "end": 408
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "src"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 12642008935256245671,
+                    "start": 257,
+                    "end": 258
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 12642008935256245671,
+                        "start": 257,
+                        "end": 258
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 12642008935256245671,
+                        "start": 257,
+                        "end": 258
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": null
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 12642008935256245671,
+                "start": 257,
+                "end": 258
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.V",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 12642008935256245671,
+                    "start": 261,
+                    "end": 262
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 12642008935256245671,
+                        "start": 261,
+                        "end": 262
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "V",
+                      "span": {
+                        "source": 12642008935256245671,
+                        "start": 261,
+                        "end": 262
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 6037
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 12642008935256245671,
+                "start": 261,
+                "end": 262
+              }
+            }
+          },
+          "span": {
+            "source": 12642008935256245671,
+            "start": 257,
+            "end": 258
+          }
+        }
+      },
+      "span": {
+        "source": 12642008935256245671,
+        "start": 257,
+        "end": 258
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "src"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 2411789250716741266,
+                "start": 224,
+                "end": 225
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.p.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 228,
+                        "end": 231
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 228,
+                            "end": 231
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "p",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 228,
+                            "end": 231
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 228,
+                            "end": 231
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": null
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 228,
+                    "end": 231
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.n.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 234,
+                        "end": 237
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 234,
+                            "end": 237
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 234,
+                            "end": 237
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 2411789250716741266,
+                            "start": 234,
+                            "end": 237
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": null
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 234,
+                    "end": 237
+                  }
+                }
+              },
+              "span": {
+                "source": 2411789250716741266,
+                "start": 228,
+                "end": 237
+              }
+            }
+          },
+          "span": {
+            "source": 2411789250716741266,
+            "start": 224,
+            "end": 225
+          }
+        }
+      },
+      "span": {
+        "source": 2411789250716741266,
+        "start": 224,
+        "end": 225
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "C"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 241,
+                    "end": 242
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 241,
+                        "end": 242
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 241,
+                        "end": 242
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 5563
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2411789250716741266,
+                "start": 241,
+                "end": 242
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 2411789250716741266,
+                    "start": 245,
+                    "end": 248
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 245,
+                        "end": 248
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 245,
+                        "end": 248
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 2411789250716741266,
+                        "start": 245,
+                        "end": 248
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": null
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2411789250716741266,
+                "start": 245,
+                "end": 248
+              }
+            }
+          },
+          "span": {
+            "source": 2411789250716741266,
+            "start": 241,
+            "end": 242
+          }
+        }
+      },
+      "span": {
+        "source": 2411789250716741266,
+        "start": 241,
+        "end": 242
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "C"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 407,
+                    "end": 408
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 407,
+                        "end": 408
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 407,
+                        "end": 408
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 5576
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15489391414259482994,
+                "start": 407,
+                "end": 408
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.p.v",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 411,
+                        "end": 414
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 411,
+                            "end": 414
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "p",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 411,
+                            "end": 414
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "v",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 411,
+                            "end": 414
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 5577
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 411,
+                    "end": 414
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.n.v",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15489391414259482994,
+                        "start": 417,
+                        "end": 420
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 417,
+                            "end": 420
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 417,
+                            "end": 420
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "v",
+                          "span": {
+                            "source": 15489391414259482994,
+                            "start": 417,
+                            "end": 420
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 5578
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15489391414259482994,
+                    "start": 417,
+                    "end": 420
+                  }
+                }
+              },
+              "span": {
+                "source": 15489391414259482994,
+                "start": 411,
+                "end": 420
+              }
+            }
+          },
+          "span": {
+            "source": 15489391414259482994,
+            "start": 407,
+            "end": 408
+          }
+        }
+      },
+      "span": {
+        "source": 15489391414259482994,
+        "start": 407,
+        "end": 408
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "C"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 6410184515208909993,
+                    "start": 200,
+                    "end": 201
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 6410184515208909993,
+                        "start": 200,
+                        "end": 201
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 6410184515208909993,
+                        "start": 200,
+                        "end": 201
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": null
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 6410184515208909993,
+                "start": 200,
+                "end": 201
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.C",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 6410184515208909993,
+                        "start": 204,
+                        "end": 205
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 6410184515208909993,
+                            "start": 204,
+                            "end": 205
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 6410184515208909993,
+                            "start": 204,
+                            "end": 205
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 4059
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 6410184515208909993,
+                    "start": 204,
+                    "end": 205
+                  }
+                }
+              },
+              "rhs": {
+                "BuiltinCall": {
+                  "function": "Der",
+                  "args": [
+                    {
+                      "VarRef": {
+                        "name": {
+                          "name": "C.v",
+                          "component_ref": {
+                            "local": false,
+                            "span": {
+                              "source": 6410184515208909993,
+                              "start": 210,
+                              "end": 211
+                            },
+                            "parts": [
+                              {
+                                "ident": "C",
+                                "span": {
+                                  "source": 6410184515208909993,
+                                  "start": 210,
+                                  "end": 211
+                                },
+                                "subs": []
+                              },
+                              {
+                                "ident": "v",
+                                "span": {
+                                  "source": 6410184515208909993,
+                                  "start": 210,
+                                  "end": 211
+                                },
+                                "subs": []
+                              }
+                            ],
+                            "def_id": null
+                          }
+                        },
+                        "subscripts": [],
+                        "span": {
+                          "source": 6410184515208909993,
+                          "start": 210,
+                          "end": 211
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 6410184515208909993,
+                    "start": 206,
+                    "end": 209
+                  }
+                }
+              },
+              "span": {
+                "source": 6410184515208909993,
+                "start": 204,
+                "end": 211
+              }
+            }
+          },
+          "span": {
+            "source": 6410184515208909993,
+            "start": 200,
+            "end": 201
+          }
+        }
+      },
+      "span": {
+        "source": 6410184515208909993,
+        "start": 200,
+        "end": 201
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "C"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "gnd.p.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 405098915260320302,
+                    "start": 222,
+                    "end": 225
+                  },
+                  "parts": [
+                    {
+                      "ident": "gnd",
+                      "span": {
+                        "source": 405098915260320302,
+                        "start": 222,
+                        "end": 225
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 405098915260320302,
+                        "start": 222,
+                        "end": 225
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 405098915260320302,
+                        "start": 222,
+                        "end": 225
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 4072
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 405098915260320302,
+                "start": 222,
+                "end": 225
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 405098915260320302,
+                "start": 228,
+                "end": 229
+              }
+            }
+          },
+          "span": {
+            "source": 405098915260320302,
+            "start": 222,
+            "end": 225
+          }
+        }
+      },
+      "span": {
+        "source": 405098915260320302,
+        "start": 222,
+        "end": 223
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": "gnd"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Add",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39467
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 14287977476672713817,
+                "start": 477,
+                "end": 489
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 477,
+                    "end": 489
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39480
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 14287977476672713817,
+                "start": 477,
+                "end": 489
+              }
+            }
+          },
+          "span": {
+            "source": 14287977476672713817,
+            "start": 477,
+            "end": 489
+          }
+        }
+      },
+      "span": {
+        "source": 14287977476672713817,
+        "start": 477,
+        "end": 489
+      },
+      "origin": {
+        "FlowSum": {
+          "description": "src.p.i + C.p.i = 0"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Add",
+          "lhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "src.n.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "parts": [
+                        {
+                          "ident": "src",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39471
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 477,
+                    "end": 489
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "C.n.i",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 477,
+                        "end": 489
+                      },
+                      "parts": [
+                        {
+                          "ident": "C",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "n",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        },
+                        {
+                          "ident": "i",
+                          "span": {
+                            "source": 9327231529189084057,
+                            "start": 477,
+                            "end": 489
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39484
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 477,
+                    "end": 489
+                  }
+                }
+              },
+              "span": {
+                "source": 9327231529189084057,
+                "start": 477,
+                "end": 489
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "gnd.p.i",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 16143679917513848382,
+                    "start": 460,
+                    "end": 472
+                  },
+                  "parts": [
+                    {
+                      "ident": "gnd",
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 460,
+                        "end": 472
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 460,
+                        "end": 472
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "i",
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 460,
+                        "end": 472
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39491
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 9327231529189084057,
+                "start": 477,
+                "end": 489
+              }
+            }
+          },
+          "span": {
+            "source": 9327231529189084057,
+            "start": 477,
+            "end": 489
+          }
+        }
+      },
+      "span": {
+        "source": 9327231529189084057,
+        "start": 477,
+        "end": 489
+      },
+      "origin": {
+        "FlowSum": {
+          "description": "src.n.i + C.n.i + gnd.p.i = 0"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.p.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39466
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 14287977476672713817,
+                "start": 112,
+                "end": 134
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.p.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 14287977476672713817,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 14287977476672713817,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39479
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 14287977476672713817,
+                "start": 112,
+                "end": 134
+              }
+            }
+          },
+          "span": {
+            "source": 14287977476672713817,
+            "start": 112,
+            "end": 134
+          }
+        }
+      },
+      "span": {
+        "source": 14287977476672713817,
+        "start": 112,
+        "end": 134
+      },
+      "origin": {
+        "Connection": {
+          "lhs": "src.p.v",
+          "rhs": "C.p.v"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "src.n.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "src",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "n",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39470
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 9327231529189084057,
+                "start": 112,
+                "end": 134
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.n.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "n",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39483
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 9327231529189084057,
+                "start": 112,
+                "end": 134
+              }
+            }
+          },
+          "span": {
+            "source": 9327231529189084057,
+            "start": 112,
+            "end": 134
+          }
+        }
+      },
+      "span": {
+        "source": 9327231529189084057,
+        "start": 112,
+        "end": 134
+      },
+      "origin": {
+        "Connection": {
+          "lhs": "src.n.v",
+          "rhs": "C.n.v"
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "C.n.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 9327231529189084057,
+                    "start": 112,
+                    "end": 134
+                  },
+                  "parts": [
+                    {
+                      "ident": "C",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "n",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 9327231529189084057,
+                        "start": 112,
+                        "end": 134
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39483
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 9327231529189084057,
+                "start": 112,
+                "end": 134
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "gnd.p.v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 16143679917513848382,
+                    "start": 95,
+                    "end": 117
+                  },
+                  "parts": [
+                    {
+                      "ident": "gnd",
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 95,
+                        "end": 117
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "p",
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 95,
+                        "end": 117
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 16143679917513848382,
+                        "start": 95,
+                        "end": 117
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39490
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 9327231529189084057,
+                "start": 112,
+                "end": 134
+              }
+            }
+          },
+          "span": {
+            "source": 9327231529189084057,
+            "start": 112,
+            "end": 134
+          }
+        }
+      },
+      "span": {
+        "source": 9327231529189084057,
+        "start": 112,
+        "end": 134
+      },
+      "origin": {
+        "Connection": {
+          "lhs": "C.n.v",
+          "rhs": "gnd.p.v"
+        }
+      },
+      "scalar_count": 1
+    }
+  ],
+  "structured_equations": [],
+  "assert_equations": [],
+  "initial_equations": [],
+  "initial_structured_equations": [],
+  "initial_assert_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "when_clauses": [],
+  "functions": {},
+  "is_partial": false,
+  "class_type": "Model",
+  "model_description": "A capacitor directly across an ideal voltage source — an ill-posed initialization (RC blow-up)",
+  "definite_roots": [],
+  "branches": [],
+  "optional_edges": [],
+  "potential_roots": [],
+  "top_level_connectors": [],
+  "top_level_input_components": [],
+  "oc_break_edge_scalar_count": 0,
+  "enum_literal_ordinals": {
+    "StateSelect.never": 1,
+    "StateSelect.'never'": 1,
+    "StateSelect.avoid": 2,
+    "StateSelect.'avoid'": 2,
+    "StateSelect.default": 3,
+    "StateSelect.'default'": 3,
+    "StateSelect.prefer": 4,
+    "StateSelect.'prefer'": 4,
+    "StateSelect.always": 5,
+    "StateSelect.'always'": 5,
+    "AssertionLevel.warning": 1,
+    "AssertionLevel.'warning'": 1,
+    "AssertionLevel.error": 2,
+    "AssertionLevel.'error'": 2,
+    "Modelica.Blocks.Types.Smoothness.LinearSegments": 1,
+    "Smoothness.LinearSegments": 1,
+    "Modelica.Blocks.Types.Smoothness.'LinearSegments'": 1,
+    "Smoothness.'LinearSegments'": 1,
+    "Modelica.Blocks.Types.Smoothness.ContinuousDerivative": 2,
+    "Smoothness.ContinuousDerivative": 2,
+    "Modelica.Blocks.Types.Smoothness.'ContinuousDerivative'": 2,
+    "Smoothness.'ContinuousDerivative'": 2,
+    "Modelica.Blocks.Types.Smoothness.ConstantSegments": 3,
+    "Smoothness.ConstantSegments": 3,
+    "Modelica.Blocks.Types.Smoothness.'ConstantSegments'": 3,
+    "Smoothness.'ConstantSegments'": 3,
+    "Modelica.Blocks.Types.Smoothness.MonotoneContinuousDerivative1": 4,
+    "Smoothness.MonotoneContinuousDerivative1": 4,
+    "Modelica.Blocks.Types.Smoothness.'MonotoneContinuousDerivative1'": 4,
+    "Smoothness.'MonotoneContinuousDerivative1'": 4,
+    "Modelica.Blocks.Types.Smoothness.MonotoneContinuousDerivative2": 5,
+    "Smoothness.MonotoneContinuousDerivative2": 5,
+    "Modelica.Blocks.Types.Smoothness.'MonotoneContinuousDerivative2'": 5,
+    "Smoothness.'MonotoneContinuousDerivative2'": 5,
+    "Modelica.Blocks.Types.Smoothness.ModifiedContinuousDerivative": 6,
+    "Smoothness.ModifiedContinuousDerivative": 6,
+    "Modelica.Blocks.Types.Smoothness.'ModifiedContinuousDerivative'": 6,
+    "Smoothness.'ModifiedContinuousDerivative'": 6,
+    "Modelica.Blocks.Types.Extrapolation.HoldLastPoint": 1,
+    "Extrapolation.HoldLastPoint": 1,
+    "Modelica.Blocks.Types.Extrapolation.'HoldLastPoint'": 1,
+    "Extrapolation.'HoldLastPoint'": 1,
+    "Modelica.Blocks.Types.Extrapolation.LastTwoPoints": 2,
+    "Extrapolation.LastTwoPoints": 2,
+    "Modelica.Blocks.Types.Extrapolation.'LastTwoPoints'": 2,
+    "Extrapolation.'LastTwoPoints'": 2,
+    "Modelica.Blocks.Types.Extrapolation.Periodic": 3,
+    "Extrapolation.Periodic": 3,
+    "Modelica.Blocks.Types.Extrapolation.'Periodic'": 3,
+    "Extrapolation.'Periodic'": 3,
+    "Modelica.Blocks.Types.Extrapolation.NoExtrapolation": 4,
+    "Extrapolation.NoExtrapolation": 4,
+    "Modelica.Blocks.Types.Extrapolation.'NoExtrapolation'": 4,
+    "Extrapolation.'NoExtrapolation'": 4,
+    "Modelica.Blocks.Types.TimeEvents.Always": 1,
+    "TimeEvents.Always": 1,
+    "Modelica.Blocks.Types.TimeEvents.'Always'": 1,
+    "TimeEvents.'Always'": 1,
+    "Modelica.Blocks.Types.TimeEvents.AtDiscontinuities": 2,
+    "TimeEvents.AtDiscontinuities": 2,
+    "Modelica.Blocks.Types.TimeEvents.'AtDiscontinuities'": 2,
+    "TimeEvents.'AtDiscontinuities'": 2,
+    "Modelica.Blocks.Types.TimeEvents.NoTimeEvents": 3,
+    "TimeEvents.NoTimeEvents": 3,
+    "Modelica.Blocks.Types.TimeEvents.'NoTimeEvents'": 3,
+    "TimeEvents.'NoTimeEvents'": 3,
+    "Modelica.Blocks.Types.Init.NoInit": 1,
+    "Init.NoInit": 1,
+    "Modelica.Blocks.Types.Init.'NoInit'": 1,
+    "Init.'NoInit'": 1,
+    "Modelica.Blocks.Types.Init.SteadyState": 2,
+    "Init.SteadyState": 2,
+    "Modelica.Blocks.Types.Init.'SteadyState'": 2,
+    "Init.'SteadyState'": 2,
+    "Modelica.Blocks.Types.Init.InitialState": 3,
+    "Init.InitialState": 3,
+    "Modelica.Blocks.Types.Init.'InitialState'": 3,
+    "Init.'InitialState'": 3,
+    "Modelica.Blocks.Types.Init.InitialOutput": 4,
+    "Init.InitialOutput": 4,
+    "Modelica.Blocks.Types.Init.'InitialOutput'": 4,
+    "Init.'InitialOutput'": 4,
+    "Modelica.Blocks.Types.SimpleController.P": 1,
+    "SimpleController.P": 1,
+    "Modelica.Blocks.Types.SimpleController.'P'": 1,
+    "SimpleController.'P'": 1,
+    "Modelica.Blocks.Types.SimpleController.PI": 2,
+    "SimpleController.PI": 2,
+    "Modelica.Blocks.Types.SimpleController.'PI'": 2,
+    "SimpleController.'PI'": 2,
+    "Modelica.Blocks.Types.SimpleController.PD": 3,
+    "SimpleController.PD": 3,
+    "Modelica.Blocks.Types.SimpleController.'PD'": 3,
+    "SimpleController.'PD'": 3,
+    "Modelica.Blocks.Types.SimpleController.PID": 4,
+    "SimpleController.PID": 4,
+    "Modelica.Blocks.Types.SimpleController.'PID'": 4,
+    "SimpleController.'PID'": 4,
+    "Modelica.Blocks.Types.AnalogFilter.CriticalDamping": 1,
+    "AnalogFilter.CriticalDamping": 1,
+    "Modelica.Blocks.Types.AnalogFilter.'CriticalDamping'": 1,
+    "AnalogFilter.'CriticalDamping'": 1,
+    "Modelica.Blocks.Types.AnalogFilter.Bessel": 2,
+    "AnalogFilter.Bessel": 2,
+    "Modelica.Blocks.Types.AnalogFilter.'Bessel'": 2,
+    "AnalogFilter.'Bessel'": 2,
+    "Modelica.Blocks.Types.AnalogFilter.Butterworth": 3,
+    "AnalogFilter.Butterworth": 3,
+    "Modelica.Blocks.Types.AnalogFilter.'Butterworth'": 3,
+    "AnalogFilter.'Butterworth'": 3,
+    "Modelica.Blocks.Types.AnalogFilter.ChebyshevI": 4,
+    "AnalogFilter.ChebyshevI": 4,
+    "Modelica.Blocks.Types.AnalogFilter.'ChebyshevI'": 4,
+    "AnalogFilter.'ChebyshevI'": 4,
+    "Modelica.Blocks.Types.FilterType.LowPass": 1,
+    "FilterType.LowPass": 1,
+    "Modelica.Blocks.Types.FilterType.'LowPass'": 1,
+    "FilterType.'LowPass'": 1,
+    "Modelica.Blocks.Types.FilterType.HighPass": 2,
+    "FilterType.HighPass": 2,
+    "Modelica.Blocks.Types.FilterType.'HighPass'": 2,
+    "FilterType.'HighPass'": 2,
+    "Modelica.Blocks.Types.FilterType.BandPass": 3,
+    "FilterType.BandPass": 3,
+    "Modelica.Blocks.Types.FilterType.'BandPass'": 3,
+    "FilterType.'BandPass'": 3,
+    "Modelica.Blocks.Types.FilterType.BandStop": 4,
+    "FilterType.BandStop": 4,
+    "Modelica.Blocks.Types.FilterType.'BandStop'": 4,
+    "FilterType.'BandStop'": 4,
+    "Modelica.Blocks.Types.Regularization.Exp": 1,
+    "Regularization.Exp": 1,
+    "Modelica.Blocks.Types.Regularization.'Exp'": 1,
+    "Regularization.'Exp'": 1,
+    "Modelica.Blocks.Types.Regularization.Sine": 2,
+    "Regularization.Sine": 2,
+    "Modelica.Blocks.Types.Regularization.'Sine'": 2,
+    "Regularization.'Sine'": 2,
+    "Modelica.Blocks.Types.Regularization.Linear": 3,
+    "Regularization.Linear": 3,
+    "Modelica.Blocks.Types.Regularization.'Linear'": 3,
+    "Regularization.'Linear'": 3,
+    "Modelica.Blocks.Types.Regularization.Cosine": 4,
+    "Regularization.Cosine": 4,
+    "Modelica.Blocks.Types.Regularization.'Cosine'": 4,
+    "Regularization.'Cosine'": 4,
+    "Modelica.Blocks.Types.LimiterHomotopy.NoHomotopy": 1,
+    "LimiterHomotopy.NoHomotopy": 1,
+    "Modelica.Blocks.Types.LimiterHomotopy.'NoHomotopy'": 1,
+    "LimiterHomotopy.'NoHomotopy'": 1,
+    "Modelica.Blocks.Types.LimiterHomotopy.Linear": 2,
+    "LimiterHomotopy.Linear": 2,
+    "Modelica.Blocks.Types.LimiterHomotopy.'Linear'": 2,
+    "LimiterHomotopy.'Linear'": 2,
+    "Modelica.Blocks.Types.LimiterHomotopy.UpperLimit": 3,
+    "LimiterHomotopy.UpperLimit": 3,
+    "Modelica.Blocks.Types.LimiterHomotopy.'UpperLimit'": 3,
+    "LimiterHomotopy.'UpperLimit'": 3,
+    "Modelica.Blocks.Types.LimiterHomotopy.LowerLimit": 4,
+    "LimiterHomotopy.LowerLimit": 4,
+    "Modelica.Blocks.Types.LimiterHomotopy.'LowerLimit'": 4,
+    "LimiterHomotopy.'LowerLimit'": 4,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.NoHomotopy": 1,
+    "VariableLimiterHomotopy.NoHomotopy": 1,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.'NoHomotopy'": 1,
+    "VariableLimiterHomotopy.'NoHomotopy'": 1,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.Linear": 2,
+    "VariableLimiterHomotopy.Linear": 2,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.'Linear'": 2,
+    "VariableLimiterHomotopy.'Linear'": 2,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.Fixed": 3,
+    "VariableLimiterHomotopy.Fixed": 3,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.'Fixed'": 3,
+    "VariableLimiterHomotopy.'Fixed'": 3,
+    "Modelica.Clocked.Types.Resolution.y": 1,
+    "Resolution.y": 1,
+    "Modelica.Clocked.Types.Resolution.'y'": 1,
+    "Resolution.'y'": 1,
+    "Modelica.Clocked.Types.Resolution.d": 2,
+    "Resolution.d": 2,
+    "Modelica.Clocked.Types.Resolution.'d'": 2,
+    "Resolution.'d'": 2,
+    "Modelica.Clocked.Types.Resolution.h": 3,
+    "Resolution.h": 3,
+    "Modelica.Clocked.Types.Resolution.'h'": 3,
+    "Resolution.'h'": 3,
+    "Modelica.Clocked.Types.Resolution.m": 4,
+    "Resolution.m": 4,
+    "Modelica.Clocked.Types.Resolution.'m'": 4,
+    "Resolution.'m'": 4,
+    "Modelica.Clocked.Types.Resolution.s": 5,
+    "Resolution.s": 5,
+    "Modelica.Clocked.Types.Resolution.'s'": 5,
+    "Resolution.'s'": 5,
+    "Modelica.Clocked.Types.Resolution.ms": 6,
+    "Resolution.ms": 6,
+    "Modelica.Clocked.Types.Resolution.'ms'": 6,
+    "Resolution.'ms'": 6,
+    "Modelica.Clocked.Types.Resolution.us": 7,
+    "Resolution.us": 7,
+    "Modelica.Clocked.Types.Resolution.'us'": 7,
+    "Resolution.'us'": 7,
+    "Modelica.Clocked.Types.Resolution.ns": 8,
+    "Resolution.ns": 8,
+    "Modelica.Clocked.Types.Resolution.'ns'": 8,
+    "Resolution.'ns'": 8,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.DoubleExp": 1,
+    "ImpulseApproximation.DoubleExp": 1,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.'DoubleExp'": 1,
+    "ImpulseApproximation.'DoubleExp'": 1,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.Heidler": 2,
+    "ImpulseApproximation.Heidler": 2,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.'Heidler'": 2,
+    "ImpulseApproximation.'Heidler'": 2,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'U'": 1,
+    "Logic.'U'": 1,
+    "Modelica.Electrical.Digital.Interfaces.Logic.U": 1,
+    "Logic.U": 1,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'X'": 2,
+    "Logic.'X'": 2,
+    "Modelica.Electrical.Digital.Interfaces.Logic.X": 2,
+    "Logic.X": 2,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'0'": 3,
+    "Logic.'0'": 3,
+    "Modelica.Electrical.Digital.Interfaces.Logic.0": 3,
+    "Logic.0": 3,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'1'": 4,
+    "Logic.'1'": 4,
+    "Modelica.Electrical.Digital.Interfaces.Logic.1": 4,
+    "Logic.1": 4,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'Z'": 5,
+    "Logic.'Z'": 5,
+    "Modelica.Electrical.Digital.Interfaces.Logic.Z": 5,
+    "Logic.Z": 5,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'W'": 6,
+    "Logic.'W'": 6,
+    "Modelica.Electrical.Digital.Interfaces.Logic.W": 6,
+    "Logic.W": 6,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'L'": 7,
+    "Logic.'L'": 7,
+    "Modelica.Electrical.Digital.Interfaces.Logic.L": 7,
+    "Logic.L": 7,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'H'": 8,
+    "Logic.'H'": 8,
+    "Modelica.Electrical.Digital.Interfaces.Logic.H": 8,
+    "Logic.H": 8,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'-'": 9,
+    "Logic.'-'": 9,
+    "Modelica.Electrical.Digital.Interfaces.Logic.-": 9,
+    "Logic.-": 9,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'U'": 1,
+    "UX01.'U'": 1,
+    "Modelica.Electrical.Digital.Interfaces.UX01.U": 1,
+    "UX01.U": 1,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'X'": 2,
+    "UX01.'X'": 2,
+    "Modelica.Electrical.Digital.Interfaces.UX01.X": 2,
+    "UX01.X": 2,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'0'": 3,
+    "UX01.'0'": 3,
+    "Modelica.Electrical.Digital.Interfaces.UX01.0": 3,
+    "UX01.0": 3,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'1'": 4,
+    "UX01.'1'": 4,
+    "Modelica.Electrical.Digital.Interfaces.UX01.1": 4,
+    "UX01.1": 4,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X01'": 1,
+    "Strength.'S_X01'": 1,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_X01": 1,
+    "Strength.S_X01": 1,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X0H'": 2,
+    "Strength.'S_X0H'": 2,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_X0H": 2,
+    "Strength.S_X0H": 2,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_XL1'": 3,
+    "Strength.'S_XL1'": 3,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_XL1": 3,
+    "Strength.S_XL1": 3,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X0Z'": 4,
+    "Strength.'S_X0Z'": 4,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_X0Z": 4,
+    "Strength.S_X0Z": 4,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_XZ1'": 5,
+    "Strength.'S_XZ1'": 5,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_XZ1": 5,
+    "Strength.S_XZ1": 5,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WLH'": 6,
+    "Strength.'S_WLH'": 6,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WLH": 6,
+    "Strength.S_WLH": 6,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WLZ'": 7,
+    "Strength.'S_WLZ'": 7,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WLZ": 7,
+    "Strength.S_WLZ": 7,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WZH'": 8,
+    "Strength.'S_WZH'": 8,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WZH": 8,
+    "Strength.S_WZH": 8,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_W0H'": 9,
+    "Strength.'S_W0H'": 9,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_W0H": 9,
+    "Strength.S_W0H": 9,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WL1'": 10,
+    "Strength.'S_WL1'": 10,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WL1": 10,
+    "Strength.S_WL1": 10,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.SVPWM": 1,
+    "PWMType.SVPWM": 1,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.'SVPWM'": 1,
+    "PWMType.'SVPWM'": 1,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.Intersective": 2,
+    "PWMType.Intersective": 2,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.'Intersective'": 2,
+    "PWMType.'Intersective'": 2,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Sawtooth1": 1,
+    "ReferenceType.Sawtooth1": 1,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Sawtooth1'": 1,
+    "ReferenceType.'Sawtooth1'": 1,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Sawtooth3": 2,
+    "ReferenceType.Sawtooth3": 2,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Sawtooth3'": 2,
+    "ReferenceType.'Sawtooth3'": 2,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Triangle1": 3,
+    "ReferenceType.Triangle1": 3,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Triangle1'": 3,
+    "ReferenceType.'Triangle1'": 3,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Triangle3": 4,
+    "ReferenceType.Triangle3": 4,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Triangle3'": 4,
+    "ReferenceType.'Triangle3'": 4,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.Sawtooth": 1,
+    "SingleReferenceType.Sawtooth": 1,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.'Sawtooth'": 1,
+    "SingleReferenceType.'Sawtooth'": 1,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.Triangle": 2,
+    "SingleReferenceType.Triangle": 2,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.'Triangle'": 2,
+    "SingleReferenceType.'Triangle'": 2,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Off": 1,
+    "SoftStarterModeOfOperation.Off": 1,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Off'": 1,
+    "SoftStarterModeOfOperation.'Off'": 1,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Up": 2,
+    "SoftStarterModeOfOperation.Up": 2,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Up'": 2,
+    "SoftStarterModeOfOperation.'Up'": 2,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.On": 3,
+    "SoftStarterModeOfOperation.On": 3,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'On'": 3,
+    "SoftStarterModeOfOperation.'On'": 3,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Down": 4,
+    "SoftStarterModeOfOperation.Down": 4,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Down'": 4,
+    "SoftStarterModeOfOperation.'Down'": 4,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.Lin": 1,
+    "Voltage2AngleType.Lin": 1,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'Lin'": 1,
+    "Voltage2AngleType.'Lin'": 1,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.H01": 2,
+    "Voltage2AngleType.H01": 2,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'H01'": 2,
+    "Voltage2AngleType.'H01'": 2,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.RMS": 3,
+    "Voltage2AngleType.RMS": 3,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'RMS'": 3,
+    "Voltage2AngleType.'RMS'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.Friedel": 1,
+    "TwoPhaseFrictionalPressureLoss.Friedel": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.'Friedel'": 1,
+    "TwoPhaseFrictionalPressureLoss.'Friedel'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.Chisholm": 2,
+    "TwoPhaseFrictionalPressureLoss.Chisholm": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.'Chisholm'": 2,
+    "TwoPhaseFrictionalPressureLoss.'Chisholm'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.Neglected": 1,
+    "Roughness.Neglected": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.'Neglected'": 1,
+    "Roughness.'Neglected'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.Considered": 2,
+    "Roughness.Considered": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.'Considered'": 2,
+    "Roughness.'Considered'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.BoilHor": 1,
+    "TwoPhaseHeatTransferTarget.BoilHor": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'BoilHor'": 1,
+    "TwoPhaseHeatTransferTarget.'BoilHor'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.BoilVer": 2,
+    "TwoPhaseHeatTransferTarget.BoilVer": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'BoilVer'": 2,
+    "TwoPhaseHeatTransferTarget.'BoilVer'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.CondHor": 3,
+    "TwoPhaseHeatTransferTarget.CondHor": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'CondHor'": 3,
+    "TwoPhaseHeatTransferTarget.'CondHor'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.PressureLoss": 1,
+    "PressureLossTarget.PressureLoss": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.'PressureLoss'": 1,
+    "PressureLossTarget.'PressureLoss'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.MassFlowRate": 2,
+    "PressureLossTarget.MassFlowRate": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.'MassFlowRate'": 2,
+    "PressureLossTarget.'MassFlowRate'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Annular": 1,
+    "GeometryOfInternalFlow.Annular": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Annular'": 1,
+    "GeometryOfInternalFlow.'Annular'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Circular": 2,
+    "GeometryOfInternalFlow.Circular": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Circular'": 2,
+    "GeometryOfInternalFlow.'Circular'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Elliptical": 3,
+    "GeometryOfInternalFlow.Elliptical": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Elliptical'": 3,
+    "GeometryOfInternalFlow.'Elliptical'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Rectangular": 4,
+    "GeometryOfInternalFlow.Rectangular": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Rectangular'": 4,
+    "GeometryOfInternalFlow.'Rectangular'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Isosceles": 5,
+    "GeometryOfInternalFlow.Isosceles": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Isosceles'": 5,
+    "GeometryOfInternalFlow.'Isosceles'": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne": 1,
+    "kc_evenGap.DevOne": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'DevOne'": 1,
+    "kc_evenGap.'DevOne'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth": 2,
+    "kc_evenGap.DevBoth": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'DevBoth'": 2,
+    "kc_evenGap.'DevBoth'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne": 3,
+    "kc_evenGap.UndevOne": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'UndevOne'": 3,
+    "kc_evenGap.'UndevOne'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth": 4,
+    "kc_evenGap.UndevBoth": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'UndevBoth'": 4,
+    "kc_evenGap.'UndevBoth'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Rough": 1,
+    "kc_general.Rough": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Rough'": 1,
+    "kc_general.'Rough'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Middle": 2,
+    "kc_general.Middle": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Middle'": 2,
+    "kc_general.'Middle'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Finest": 3,
+    "kc_general.Finest": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Finest'": 3,
+    "kc_general.'Finest'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UWTuDFF": 1,
+    "HeatTransferBoundary.UWTuDFF": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UWTuDFF'": 1,
+    "HeatTransferBoundary.'UWTuDFF'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UHFuDFF": 2,
+    "HeatTransferBoundary.UHFuDFF": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UHFuDFF'": 2,
+    "HeatTransferBoundary.'UHFuDFF'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UWTuUFF": 3,
+    "HeatTransferBoundary.UWTuUFF": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UWTuUFF'": 3,
+    "HeatTransferBoundary.'UWTuUFF'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UHFuUFF": 4,
+    "HeatTransferBoundary.UHFuUFF": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UHFuUFF'": 4,
+    "HeatTransferBoundary.'UHFuUFF'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.MassFlowRate": 1,
+    "MassOrVolumeFlowRate.MassFlowRate": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.'MassFlowRate'": 1,
+    "MassOrVolumeFlowRate.'MassFlowRate'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.VolumeFlowRate": 2,
+    "MassOrVolumeFlowRate.VolumeFlowRate": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.'VolumeFlowRate'": 2,
+    "MassOrVolumeFlowRate.'VolumeFlowRate'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Homogeneous": 1,
+    "VoidFractionApproach.Homogeneous": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Homogeneous'": 1,
+    "VoidFractionApproach.'Homogeneous'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Momentum": 2,
+    "VoidFractionApproach.Momentum": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Momentum'": 2,
+    "VoidFractionApproach.'Momentum'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Energy": 3,
+    "VoidFractionApproach.Energy": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Energy'": 3,
+    "VoidFractionApproach.'Energy'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Chisholm": 4,
+    "VoidFractionApproach.Chisholm": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Chisholm'": 4,
+    "VoidFractionApproach.'Chisholm'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.SharpEdged": 1,
+    "OrificeGeometry.SharpEdged": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'SharpEdged'": 1,
+    "OrificeGeometry.'SharpEdged'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.ThickEdged": 2,
+    "OrificeGeometry.ThickEdged": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'ThickEdged'": 2,
+    "OrificeGeometry.'ThickEdged'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.TiltedEdged": 3,
+    "OrificeGeometry.TiltedEdged": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'TiltedEdged'": 3,
+    "OrificeGeometry.'TiltedEdged'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.RoundedEdged": 4,
+    "OrificeGeometry.RoundedEdged": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'RoundedEdged'": 4,
+    "OrificeGeometry.'RoundedEdged'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Ball": 1,
+    "ValveGeometry.Ball": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Ball'": 1,
+    "ValveGeometry.'Ball'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Diaphragm": 2,
+    "ValveGeometry.Diaphragm": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Diaphragm'": 2,
+    "ValveGeometry.'Diaphragm'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Butterfly": 3,
+    "ValveGeometry.Butterfly": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Butterfly'": 3,
+    "ValveGeometry.'Butterfly'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Gate": 4,
+    "ValveGeometry.Gate": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Gate'": 4,
+    "ValveGeometry.'Gate'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Sluice": 5,
+    "ValveGeometry.Sluice": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Sluice'": 5,
+    "ValveGeometry.'Sluice'": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.AV": 1,
+    "ValveCoefficient.AV": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'AV'": 1,
+    "ValveCoefficient.'AV'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.KV": 2,
+    "ValveCoefficient.KV": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'KV'": 2,
+    "ValveCoefficient.'KV'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.CV": 3,
+    "ValveCoefficient.CV": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'CV'": 3,
+    "ValveCoefficient.'CV'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.OP": 4,
+    "ValveCoefficient.OP": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'OP'": 4,
+    "ValveCoefficient.'OP'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Laminar": 1,
+    "FluidFlowRegime.Laminar": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Laminar'": 1,
+    "FluidFlowRegime.'Laminar'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Overall": 2,
+    "FluidFlowRegime.Overall": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Overall'": 2,
+    "FluidFlowRegime.'Overall'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Turbulent": 3,
+    "FluidFlowRegime.Turbulent": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Turbulent'": 3,
+    "FluidFlowRegime.'Turbulent'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.LouverFin": 1,
+    "HTXGeometry_flatTubes.LouverFin": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.'LouverFin'": 1,
+    "HTXGeometry_flatTubes.'LouverFin'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.RectangularFin": 2,
+    "HTXGeometry_flatTubes.RectangularFin": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.'RectangularFin'": 2,
+    "HTXGeometry_flatTubes.'RectangularFin'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.PlainFin": 1,
+    "HTXGeometry_roundTubes.PlainFin": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'PlainFin'": 1,
+    "HTXGeometry_roundTubes.'PlainFin'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.LouverFin": 2,
+    "HTXGeometry_roundTubes.LouverFin": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'LouverFin'": 2,
+    "HTXGeometry_roundTubes.'LouverFin'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.SlitFin": 3,
+    "HTXGeometry_roundTubes.SlitFin": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'SlitFin'": 3,
+    "HTXGeometry_roundTubes.'SlitFin'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.WavyFin": 4,
+    "HTXGeometry_roundTubes.WavyFin": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'WavyFin'": 4,
+    "HTXGeometry_roundTubes.'WavyFin'": 4,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.GuessValues": 1,
+    "Init.GuessValues": 1,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'GuessValues'": 1,
+    "Init.'GuessValues'": 1,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.InitialValues": 2,
+    "Init.InitialValues": 2,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'InitialValues'": 2,
+    "Init.'InitialValues'": 2,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyStateMomentum": 3,
+    "Init.SteadyStateMomentum": 3,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyStateMomentum'": 3,
+    "Init.'SteadyStateMomentum'": 3,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyStateHydraulic": 4,
+    "Init.SteadyStateHydraulic": 4,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyStateHydraulic'": 4,
+    "Init.'SteadyStateHydraulic'": 4,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyState": 5,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyState'": 5,
+    "Modelica.Fluid.Types.Dynamics.DynamicFreeInitial": 1,
+    "Dynamics.DynamicFreeInitial": 1,
+    "Modelica.Fluid.Types.Dynamics.'DynamicFreeInitial'": 1,
+    "Dynamics.'DynamicFreeInitial'": 1,
+    "Modelica.Fluid.Types.Dynamics.FixedInitial": 2,
+    "Dynamics.FixedInitial": 2,
+    "Modelica.Fluid.Types.Dynamics.'FixedInitial'": 2,
+    "Dynamics.'FixedInitial'": 2,
+    "Modelica.Fluid.Types.Dynamics.SteadyStateInitial": 3,
+    "Dynamics.SteadyStateInitial": 3,
+    "Modelica.Fluid.Types.Dynamics.'SteadyStateInitial'": 3,
+    "Dynamics.'SteadyStateInitial'": 3,
+    "Modelica.Fluid.Types.Dynamics.SteadyState": 4,
+    "Dynamics.SteadyState": 4,
+    "Modelica.Fluid.Types.Dynamics.'SteadyState'": 4,
+    "Dynamics.'SteadyState'": 4,
+    "Modelica.Fluid.Types.CvTypes.Av": 1,
+    "CvTypes.Av": 1,
+    "Modelica.Fluid.Types.CvTypes.'Av'": 1,
+    "CvTypes.'Av'": 1,
+    "Modelica.Fluid.Types.CvTypes.Kv": 2,
+    "CvTypes.Kv": 2,
+    "Modelica.Fluid.Types.CvTypes.'Kv'": 2,
+    "CvTypes.'Kv'": 2,
+    "Modelica.Fluid.Types.CvTypes.Cv": 3,
+    "CvTypes.Cv": 3,
+    "Modelica.Fluid.Types.CvTypes.'Cv'": 3,
+    "CvTypes.'Cv'": 3,
+    "Modelica.Fluid.Types.CvTypes.OpPoint": 4,
+    "CvTypes.OpPoint": 4,
+    "Modelica.Fluid.Types.CvTypes.'OpPoint'": 4,
+    "CvTypes.'OpPoint'": 4,
+    "Modelica.Fluid.Types.PortFlowDirection.Entering": 1,
+    "PortFlowDirection.Entering": 1,
+    "Modelica.Fluid.Types.PortFlowDirection.'Entering'": 1,
+    "PortFlowDirection.'Entering'": 1,
+    "Modelica.Fluid.Types.PortFlowDirection.Leaving": 2,
+    "PortFlowDirection.Leaving": 2,
+    "Modelica.Fluid.Types.PortFlowDirection.'Leaving'": 2,
+    "PortFlowDirection.'Leaving'": 2,
+    "Modelica.Fluid.Types.PortFlowDirection.Bidirectional": 3,
+    "PortFlowDirection.Bidirectional": 3,
+    "Modelica.Fluid.Types.PortFlowDirection.'Bidirectional'": 3,
+    "PortFlowDirection.'Bidirectional'": 3,
+    "Modelica.Fluid.Types.ModelStructure.av_vb": 1,
+    "ModelStructure.av_vb": 1,
+    "Modelica.Fluid.Types.ModelStructure.'av_vb'": 1,
+    "ModelStructure.'av_vb'": 1,
+    "Modelica.Fluid.Types.ModelStructure.a_v_b": 2,
+    "ModelStructure.a_v_b": 2,
+    "Modelica.Fluid.Types.ModelStructure.'a_v_b'": 2,
+    "ModelStructure.'a_v_b'": 2,
+    "Modelica.Fluid.Types.ModelStructure.av_b": 3,
+    "ModelStructure.av_b": 3,
+    "Modelica.Fluid.Types.ModelStructure.'av_b'": 3,
+    "ModelStructure.'av_b'": 3,
+    "Modelica.Fluid.Types.ModelStructure.a_vb": 4,
+    "ModelStructure.a_vb": 4,
+    "Modelica.Fluid.Types.ModelStructure.'a_vb'": 4,
+    "ModelStructure.'a_vb'": 4,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.Open": 1,
+    "CheckValveHomotopyType.Open": 1,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.'Open'": 1,
+    "CheckValveHomotopyType.'Open'": 1,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.Closed": 2,
+    "CheckValveHomotopyType.Closed": 2,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.'Closed'": 2,
+    "CheckValveHomotopyType.'Closed'": 2,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.NoHomotopy": 3,
+    "CheckValveHomotopyType.NoHomotopy": 3,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.'NoHomotopy'": 3,
+    "CheckValveHomotopyType.'NoHomotopy'": 3,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.NoGravity": 1,
+    "GravityTypes.NoGravity": 1,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'NoGravity'": 1,
+    "GravityTypes.'NoGravity'": 1,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity": 2,
+    "GravityTypes.UniformGravity": 2,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'UniformGravity'": 2,
+    "GravityTypes.'UniformGravity'": 2,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity": 3,
+    "GravityTypes.PointGravity": 3,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'PointGravity'": 3,
+    "GravityTypes.'PointGravity'": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.world": 1,
+    "ResolveInFrameA.world": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'world'": 1,
+    "ResolveInFrameA.'world'": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.frame_a": 2,
+    "ResolveInFrameA.frame_a": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'frame_a'": 2,
+    "ResolveInFrameA.'frame_a'": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.frame_resolve": 3,
+    "ResolveInFrameA.frame_resolve": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'frame_resolve'": 3,
+    "ResolveInFrameA.'frame_resolve'": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.world": 1,
+    "ResolveInFrameAB.world": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'world'": 1,
+    "ResolveInFrameAB.'world'": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_a": 2,
+    "ResolveInFrameAB.frame_a": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_a'": 2,
+    "ResolveInFrameAB.'frame_a'": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_b": 3,
+    "ResolveInFrameAB.frame_b": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_b'": 3,
+    "ResolveInFrameAB.'frame_b'": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_resolve": 4,
+    "ResolveInFrameAB.frame_resolve": 4,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_resolve'": 4,
+    "ResolveInFrameAB.'frame_resolve'": 4,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.world": 1,
+    "ResolveInFrameB.world": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'world'": 1,
+    "ResolveInFrameB.'world'": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.frame_b": 2,
+    "ResolveInFrameB.frame_b": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'frame_b'": 2,
+    "ResolveInFrameB.'frame_b'": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.frame_resolve": 3,
+    "ResolveInFrameB.frame_resolve": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'frame_resolve'": 3,
+    "ResolveInFrameB.'frame_resolve'": 3,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.RotationAxis": 1,
+    "RotationTypes.RotationAxis": 1,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'RotationAxis'": 1,
+    "RotationTypes.'RotationAxis'": 1,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.TwoAxesVectors": 2,
+    "RotationTypes.TwoAxesVectors": 2,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'TwoAxesVectors'": 2,
+    "RotationTypes.'TwoAxesVectors'": 2,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.PlanarRotationSequence": 3,
+    "RotationTypes.PlanarRotationSequence": 3,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'PlanarRotationSequence'": 3,
+    "RotationTypes.'PlanarRotationSequence'": 3,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Force": 1,
+    "VectorQuantity.Force": 1,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Force'": 1,
+    "VectorQuantity.'Force'": 1,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Torque": 2,
+    "VectorQuantity.Torque": 2,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Torque'": 2,
+    "VectorQuantity.'Torque'": 2,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Velocity": 3,
+    "VectorQuantity.Velocity": 3,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Velocity'": 3,
+    "VectorQuantity.'Velocity'": 3,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Acceleration": 4,
+    "VectorQuantity.Acceleration": 4,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Acceleration'": 4,
+    "VectorQuantity.'Acceleration'": 4,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.AngularVelocity": 5,
+    "VectorQuantity.AngularVelocity": 5,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'AngularVelocity'": 5,
+    "VectorQuantity.'AngularVelocity'": 5,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.AngularAcceleration": 6,
+    "VectorQuantity.AngularAcceleration": 6,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'AngularAcceleration'": 6,
+    "VectorQuantity.'AngularAcceleration'": 6,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.RelativePosition": 7,
+    "VectorQuantity.RelativePosition": 7,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'RelativePosition'": 7,
+    "VectorQuantity.'RelativePosition'": 7,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgBeginAndEnd": 1,
+    "HeaderType.svgBeginAndEnd": 1,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgBeginAndEnd'": 1,
+    "HeaderType.'svgBeginAndEnd'": 1,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgBegin": 2,
+    "HeaderType.svgBegin": 2,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgBegin'": 2,
+    "HeaderType.'svgBegin'": 2,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgEnd": 3,
+    "HeaderType.svgEnd": 3,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgEnd'": 3,
+    "HeaderType.'svgEnd'": 3,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.noHeader": 4,
+    "HeaderType.noHeader": 4,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'noHeader'": 4,
+    "HeaderType.'noHeader'": 4,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.T": 1,
+    "IndependentVariables.T": 1,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'T'": 1,
+    "IndependentVariables.'T'": 1,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.pT": 2,
+    "IndependentVariables.pT": 2,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'pT'": 2,
+    "IndependentVariables.'pT'": 2,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.ph": 3,
+    "IndependentVariables.ph": 3,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'ph'": 3,
+    "IndependentVariables.'ph'": 3,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.phX": 4,
+    "IndependentVariables.phX": 4,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'phX'": 4,
+    "IndependentVariables.'phX'": 4,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.pTX": 5,
+    "IndependentVariables.pTX": 5,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'pTX'": 5,
+    "IndependentVariables.'pTX'": 5,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.dTX": 6,
+    "IndependentVariables.dTX": 6,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'dTX'": 6,
+    "IndependentVariables.'dTX'": 6,
+    "Modelica.Media.Interfaces.Choices.Init.NoInit": 1,
+    "Modelica.Media.Interfaces.Choices.Init.'NoInit'": 1,
+    "Modelica.Media.Interfaces.Choices.Init.InitialStates": 2,
+    "Init.InitialStates": 2,
+    "Modelica.Media.Interfaces.Choices.Init.'InitialStates'": 2,
+    "Init.'InitialStates'": 2,
+    "Modelica.Media.Interfaces.Choices.Init.SteadyState": 3,
+    "Modelica.Media.Interfaces.Choices.Init.'SteadyState'": 3,
+    "Modelica.Media.Interfaces.Choices.Init.SteadyMass": 4,
+    "Init.SteadyMass": 4,
+    "Modelica.Media.Interfaces.Choices.Init.'SteadyMass'": 4,
+    "Init.'SteadyMass'": 4,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K": 1,
+    "ReferenceEnthalpy.ZeroAt0K": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'ZeroAt0K'": 1,
+    "ReferenceEnthalpy.'ZeroAt0K'": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt25C": 2,
+    "ReferenceEnthalpy.ZeroAt25C": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'ZeroAt25C'": 2,
+    "ReferenceEnthalpy.'ZeroAt25C'": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined": 3,
+    "ReferenceEnthalpy.UserDefined": 3,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'UserDefined'": 3,
+    "ReferenceEnthalpy.'UserDefined'": 3,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.ZeroAt0K": 1,
+    "ReferenceEntropy.ZeroAt0K": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'ZeroAt0K'": 1,
+    "ReferenceEntropy.'ZeroAt0K'": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.ZeroAt0C": 2,
+    "ReferenceEntropy.ZeroAt0C": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'ZeroAt0C'": 2,
+    "ReferenceEntropy.'ZeroAt0C'": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.UserDefined": 3,
+    "ReferenceEntropy.UserDefined": 3,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'UserDefined'": 3,
+    "ReferenceEntropy.'UserDefined'": 3,
+    "Modelica.Media.Interfaces.Choices.pd.default": 1,
+    "pd.default": 1,
+    "Modelica.Media.Interfaces.Choices.pd.'default'": 1,
+    "pd.'default'": 1,
+    "Modelica.Media.Interfaces.Choices.pd.p_known": 2,
+    "pd.p_known": 2,
+    "Modelica.Media.Interfaces.Choices.pd.'p_known'": 2,
+    "pd.'p_known'": 2,
+    "Modelica.Media.Interfaces.Choices.pd.d_known": 3,
+    "pd.d_known": 3,
+    "Modelica.Media.Interfaces.Choices.pd.'d_known'": 3,
+    "pd.'d_known'": 3,
+    "Modelica.Media.Interfaces.Choices.Th.default": 1,
+    "Th.default": 1,
+    "Modelica.Media.Interfaces.Choices.Th.'default'": 1,
+    "Th.'default'": 1,
+    "Modelica.Media.Interfaces.Choices.Th.T_known": 2,
+    "Th.T_known": 2,
+    "Modelica.Media.Interfaces.Choices.Th.'T_known'": 2,
+    "Th.'T_known'": 2,
+    "Modelica.Media.Interfaces.Choices.Th.h_known": 3,
+    "Th.h_known": 3,
+    "Modelica.Media.Interfaces.Choices.Th.'h_known'": 3,
+    "Th.'h_known'": 3,
+    "Modelica.Utilities.Types.Compare.Less": 1,
+    "Compare.Less": 1,
+    "Modelica.Utilities.Types.Compare.'Less'": 1,
+    "Compare.'Less'": 1,
+    "Modelica.Utilities.Types.Compare.Equal": 2,
+    "Compare.Equal": 2,
+    "Modelica.Utilities.Types.Compare.'Equal'": 2,
+    "Compare.'Equal'": 2,
+    "Modelica.Utilities.Types.Compare.Greater": 3,
+    "Compare.Greater": 3,
+    "Modelica.Utilities.Types.Compare.'Greater'": 3,
+    "Compare.'Greater'": 3,
+    "Modelica.Utilities.Types.FileType.NoFile": 1,
+    "FileType.NoFile": 1,
+    "Modelica.Utilities.Types.FileType.'NoFile'": 1,
+    "FileType.'NoFile'": 1,
+    "Modelica.Utilities.Types.FileType.RegularFile": 2,
+    "FileType.RegularFile": 2,
+    "Modelica.Utilities.Types.FileType.'RegularFile'": 2,
+    "FileType.'RegularFile'": 2,
+    "Modelica.Utilities.Types.FileType.Directory": 3,
+    "FileType.Directory": 3,
+    "Modelica.Utilities.Types.FileType.'Directory'": 3,
+    "FileType.'Directory'": 3,
+    "Modelica.Utilities.Types.FileType.SpecialFile": 4,
+    "FileType.SpecialFile": 4,
+    "Modelica.Utilities.Types.FileType.'SpecialFile'": 4,
+    "FileType.'SpecialFile'": 4,
+    "Modelica.Utilities.Types.TokenType.RealToken": 1,
+    "TokenType.RealToken": 1,
+    "Modelica.Utilities.Types.TokenType.'RealToken'": 1,
+    "TokenType.'RealToken'": 1,
+    "Modelica.Utilities.Types.TokenType.IntegerToken": 2,
+    "TokenType.IntegerToken": 2,
+    "Modelica.Utilities.Types.TokenType.'IntegerToken'": 2,
+    "TokenType.'IntegerToken'": 2,
+    "Modelica.Utilities.Types.TokenType.BooleanToken": 3,
+    "TokenType.BooleanToken": 3,
+    "Modelica.Utilities.Types.TokenType.'BooleanToken'": 3,
+    "TokenType.'BooleanToken'": 3,
+    "Modelica.Utilities.Types.TokenType.StringToken": 4,
+    "TokenType.StringToken": 4,
+    "Modelica.Utilities.Types.TokenType.'StringToken'": 4,
+    "TokenType.'StringToken'": 4,
+    "Modelica.Utilities.Types.TokenType.IdentifierToken": 5,
+    "TokenType.IdentifierToken": 5,
+    "Modelica.Utilities.Types.TokenType.'IdentifierToken'": 5,
+    "TokenType.'IdentifierToken'": 5,
+    "Modelica.Utilities.Types.TokenType.DelimiterToken": 6,
+    "TokenType.DelimiterToken": 6,
+    "Modelica.Utilities.Types.TokenType.'DelimiterToken'": 6,
+    "TokenType.'DelimiterToken'": 6,
+    "Modelica.Utilities.Types.TokenType.NoToken": 7,
+    "TokenType.NoToken": 7,
+    "Modelica.Utilities.Types.TokenType.'NoToken'": 7,
+    "TokenType.'NoToken'": 7
+  },
+  "symbol_ancestry": {
+    "5563": [
+      87,
+      157,
+      4014,
+      4026,
+      5514,
+      5563
+    ],
+    "39462": [
+      87,
+      157,
+      4014,
+      4026,
+      5514,
+      5563
+    ],
+    "5576": [
+      87,
+      157,
+      4014,
+      4026,
+      5519,
+      5576
+    ],
+    "39463": [
+      87,
+      157,
+      4014,
+      4026,
+      5519,
+      5576
+    ],
+    "5571": [
+      87,
+      157,
+      4014,
+      4026,
+      5517,
+      5571
+    ],
+    "39466": [
+      87,
+      157,
+      4014,
+      4026,
+      5517,
+      5571
+    ],
+    "5572": [
+      87,
+      157,
+      4014,
+      4026,
+      5517,
+      5572
+    ],
+    "39467": [
+      87,
+      157,
+      4014,
+      4026,
+      5517,
+      5572
+    ],
+    "5561": [
+      87,
+      157,
+      4014,
+      4026,
+      5513,
+      5561
+    ],
+    "39470": [
+      87,
+      157,
+      4014,
+      4026,
+      5513,
+      5561
+    ],
+    "5562": [
+      87,
+      157,
+      4014,
+      4026,
+      5513,
+      5562
+    ],
+    "39471": [
+      87,
+      157,
+      4014,
+      4026,
+      5513,
+      5562
+    ],
+    "6037": [
+      87,
+      157,
+      4014,
+      4030,
+      6004,
+      6037
+    ],
+    "39472": [
+      87,
+      157,
+      4014,
+      4030,
+      6004,
+      6037
+    ],
+    "39475": [
+      87,
+      157,
+      4014,
+      4026,
+      5514,
+      5563
+    ],
+    "39476": [
+      87,
+      157,
+      4014,
+      4026,
+      5519,
+      5576
+    ],
+    "39479": [
+      87,
+      157,
+      4014,
+      4026,
+      5517,
+      5571
+    ],
+    "39480": [
+      87,
+      157,
+      4014,
+      4026,
+      5517,
+      5572
+    ],
+    "39483": [
+      87,
+      157,
+      4014,
+      4026,
+      5513,
+      5561
+    ],
+    "39484": [
+      87,
+      157,
+      4014,
+      4026,
+      5513,
+      5562
+    ],
+    "4059": [
+      87,
+      157,
+      4014,
+      4022,
+      4035,
+      4059
+    ],
+    "39485": [
+      87,
+      157,
+      4014,
+      4022,
+      4035,
+      4059
+    ],
+    "5569": [
+      87,
+      157,
+      4014,
+      4026,
+      5516,
+      5569
+    ],
+    "39490": [
+      87,
+      157,
+      4014,
+      4026,
+      5516,
+      5569
+    ],
+    "5570": [
+      87,
+      157,
+      4014,
+      4026,
+      5516,
+      5570
+    ],
+    "39491": [
+      87,
+      157,
+      4014,
+      4026,
+      5516,
+      5570
+    ]
+  }
+}

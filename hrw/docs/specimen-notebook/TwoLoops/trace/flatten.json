@@ -1,0 +1,2367 @@
+{
+  "variables": {
+    "reference": {
+      "name": "reference",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 751,
+          "end": 765
+        },
+        "parts": [
+          {
+            "ident": "reference",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 751,
+              "end": 765
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39466
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 751,
+        "end": 765
+      },
+      "type_id": 0,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 10,
+            "start_column": 3,
+            "end_line": 10,
+            "end_column": 12,
+            "start": 741,
+            "end": 750,
+            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+          },
+          "token_number": 11,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 768,
+            "end": 771
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "setpoint for loop A",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 768,
+            "end": 771
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "gainA": {
+      "name": "gainA",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 807,
+          "end": 817
+        },
+        "parts": [
+          {
+            "ident": "gainA",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 807,
+              "end": 817
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39467
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 807,
+        "end": 817
+      },
+      "type_id": 0,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 11,
+            "start_column": 3,
+            "end_line": 11,
+            "end_column": 12,
+            "start": 797,
+            "end": 806,
+            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+          },
+          "token_number": 18,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 10.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 820,
+            "end": 824
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-A proportional gain",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 10.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 820,
+            "end": 824
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "plantA": {
+      "name": "plantA",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 865,
+          "end": 876
+        },
+        "parts": [
+          {
+            "ident": "plantA",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 865,
+              "end": 876
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39468
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 865,
+        "end": 876
+      },
+      "type_id": 0,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 12,
+            "start_column": 3,
+            "end_line": 12,
+            "end_column": 12,
+            "start": 855,
+            "end": 864,
+            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+          },
+          "token_number": 25,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 2.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 879,
+            "end": 882
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-A static plant gain",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 2.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 879,
+            "end": 882
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "gainB": {
+      "name": "gainB",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 923,
+          "end": 933
+        },
+        "parts": [
+          {
+            "ident": "gainB",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 923,
+              "end": 933
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39469
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 923,
+        "end": 933
+      },
+      "type_id": 0,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 13,
+            "start_column": 3,
+            "end_line": 13,
+            "end_column": 12,
+            "start": 913,
+            "end": 922,
+            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+          },
+          "token_number": 32,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 5.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 936,
+            "end": 939
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-B proportional gain",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 5.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 936,
+            "end": 939
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "plantB": {
+      "name": "plantB",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 980,
+          "end": 991
+        },
+        "parts": [
+          {
+            "ident": "plantB",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 980,
+              "end": 991
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39470
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 980,
+        "end": 991
+      },
+      "type_id": 0,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 14,
+            "start_column": 3,
+            "end_line": 14,
+            "end_column": 12,
+            "start": 970,
+            "end": 979,
+            "file_name": "/home/dougdew/dev/hrw/specimens/TwoLoops.mo"
+          },
+          "token_number": 39,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 3.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 994,
+            "end": 997
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-B static plant gain",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 3.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 994,
+            "end": 997
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "errorA": {
+      "name": "errorA",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 1028,
+          "end": 1039
+        },
+        "parts": [
+          {
+            "ident": "errorA",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 1028,
+              "end": 1039
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39471
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 1028,
+        "end": 1039
+      },
+      "type_id": 0,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1028,
+            "end": 1039
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-A error",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "commandA": {
+      "name": "commandA",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 1058,
+          "end": 1071
+        },
+        "parts": [
+          {
+            "ident": "commandA",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 1058,
+              "end": 1071
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39472
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 1058,
+        "end": 1071
+      },
+      "type_id": 0,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1058,
+            "end": 1071
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-A controller output (also loop-B's setpoint)",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "errorB": {
+      "name": "errorB",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 1127,
+          "end": 1138
+        },
+        "parts": [
+          {
+            "ident": "errorB",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 1127,
+              "end": 1138
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39473
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 1127,
+        "end": 1138
+      },
+      "type_id": 0,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1127,
+            "end": 1138
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-B error",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "commandB": {
+      "name": "commandB",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15524718192234813095,
+          "start": 1157,
+          "end": 1170
+        },
+        "parts": [
+          {
+            "ident": "commandB",
+            "span": {
+              "source": 15524718192234813095,
+              "start": 1157,
+              "end": 1170
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39474
+      },
+      "source_span": {
+        "source": 15524718192234813095,
+        "start": 1157,
+        "end": 1170
+      },
+      "type_id": 0,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1157,
+            "end": 1170
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "loop-B controller output",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "variable_type_names": {
+    "reference": "Real",
+    "gainA": "Real",
+    "plantA": "Real",
+    "gainB": "Real",
+    "plantB": "Real",
+    "errorA": "Real",
+    "commandA": "Real",
+    "errorB": "Real",
+    "commandB": "Real"
+  },
+  "variable_final_flags": {},
+  "equations": [
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "errorA",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1210,
+                    "end": 1216
+                  },
+                  "parts": [
+                    {
+                      "ident": "errorA",
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1210,
+                        "end": 1216
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 94
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1210,
+                "end": 1216
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "reference",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1219,
+                        "end": 1228
+                      },
+                      "parts": [
+                        {
+                          "ident": "reference",
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1219,
+                            "end": 1228
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 89
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1219,
+                    "end": 1228
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "plantA",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1231,
+                            "end": 1237
+                          },
+                          "parts": [
+                            {
+                              "ident": "plantA",
+                              "span": {
+                                "source": 15524718192234813095,
+                                "start": 1231,
+                                "end": 1237
+                              },
+                              "subs": []
+                            }
+                          ],
+                          "def_id": 91
+                        }
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1231,
+                        "end": 1237
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "commandA",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1240,
+                            "end": 1248
+                          },
+                          "parts": [
+                            {
+                              "ident": "commandA",
+                              "span": {
+                                "source": 15524718192234813095,
+                                "start": 1240,
+                                "end": 1248
+                              },
+                              "subs": []
+                            }
+                          ],
+                          "def_id": 95
+                        }
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1240,
+                        "end": 1248
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1231,
+                    "end": 1248
+                  }
+                }
+              },
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1219,
+                "end": 1248
+              }
+            }
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1210,
+            "end": 1216
+          }
+        }
+      },
+      "span": {
+        "source": 15524718192234813095,
+        "start": 1210,
+        "end": 1216
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "commandA",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1284,
+                    "end": 1292
+                  },
+                  "parts": [
+                    {
+                      "ident": "commandA",
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1284,
+                        "end": 1292
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 95
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1284,
+                "end": 1292
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "gainA",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1295,
+                        "end": 1300
+                      },
+                      "parts": [
+                        {
+                          "ident": "gainA",
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1295,
+                            "end": 1300
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 90
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1295,
+                    "end": 1300
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "errorA",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1303,
+                        "end": 1309
+                      },
+                      "parts": [
+                        {
+                          "ident": "errorA",
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1303,
+                            "end": 1309
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 94
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1303,
+                    "end": 1309
+                  }
+                }
+              },
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1295,
+                "end": 1309
+              }
+            }
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1284,
+            "end": 1292
+          }
+        }
+      },
+      "span": {
+        "source": 15524718192234813095,
+        "start": 1284,
+        "end": 1292
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "errorB",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1335,
+                    "end": 1341
+                  },
+                  "parts": [
+                    {
+                      "ident": "errorB",
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1335,
+                        "end": 1341
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 96
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1335,
+                "end": 1341
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "commandA",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1344,
+                        "end": 1352
+                      },
+                      "parts": [
+                        {
+                          "ident": "commandA",
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1344,
+                            "end": 1352
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 95
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1344,
+                    "end": 1352
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "plantB",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1355,
+                            "end": 1361
+                          },
+                          "parts": [
+                            {
+                              "ident": "plantB",
+                              "span": {
+                                "source": 15524718192234813095,
+                                "start": 1355,
+                                "end": 1361
+                              },
+                              "subs": []
+                            }
+                          ],
+                          "def_id": 93
+                        }
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1355,
+                        "end": 1361
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "commandB",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1364,
+                            "end": 1372
+                          },
+                          "parts": [
+                            {
+                              "ident": "commandB",
+                              "span": {
+                                "source": 15524718192234813095,
+                                "start": 1364,
+                                "end": 1372
+                              },
+                              "subs": []
+                            }
+                          ],
+                          "def_id": 97
+                        }
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1364,
+                        "end": 1372
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1355,
+                    "end": 1372
+                  }
+                }
+              },
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1344,
+                "end": 1372
+              }
+            }
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1335,
+            "end": 1341
+          }
+        }
+      },
+      "span": {
+        "source": 15524718192234813095,
+        "start": 1335,
+        "end": 1341
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "commandB",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1429,
+                    "end": 1437
+                  },
+                  "parts": [
+                    {
+                      "ident": "commandB",
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1429,
+                        "end": 1437
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 97
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1429,
+                "end": 1437
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "gainB",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1440,
+                        "end": 1445
+                      },
+                      "parts": [
+                        {
+                          "ident": "gainB",
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1440,
+                            "end": 1445
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 92
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1440,
+                    "end": 1445
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "errorB",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15524718192234813095,
+                        "start": 1448,
+                        "end": 1454
+                      },
+                      "parts": [
+                        {
+                          "ident": "errorB",
+                          "span": {
+                            "source": 15524718192234813095,
+                            "start": 1448,
+                            "end": 1454
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 96
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15524718192234813095,
+                    "start": 1448,
+                    "end": 1454
+                  }
+                }
+              },
+              "span": {
+                "source": 15524718192234813095,
+                "start": 1440,
+                "end": 1454
+              }
+            }
+          },
+          "span": {
+            "source": 15524718192234813095,
+            "start": 1429,
+            "end": 1437
+          }
+        }
+      },
+      "span": {
+        "source": 15524718192234813095,
+        "start": 1429,
+        "end": 1437
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    }
+  ],
+  "structured_equations": [],
+  "assert_equations": [],
+  "initial_equations": [],
+  "initial_structured_equations": [],
+  "initial_assert_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "when_clauses": [],
+  "functions": {},
+  "is_partial": false,
+  "class_type": "Model",
+  "model_description": "Two algebraic feedback loops in series — two separate coupled blocks",
+  "definite_roots": [],
+  "branches": [],
+  "optional_edges": [],
+  "potential_roots": [],
+  "top_level_connectors": [],
+  "top_level_input_components": [],
+  "oc_break_edge_scalar_count": 0,
+  "enum_literal_ordinals": {
+    "StateSelect.never": 1,
+    "StateSelect.'never'": 1,
+    "StateSelect.avoid": 2,
+    "StateSelect.'avoid'": 2,
+    "StateSelect.default": 3,
+    "StateSelect.'default'": 3,
+    "StateSelect.prefer": 4,
+    "StateSelect.'prefer'": 4,
+    "StateSelect.always": 5,
+    "StateSelect.'always'": 5,
+    "AssertionLevel.warning": 1,
+    "AssertionLevel.'warning'": 1,
+    "AssertionLevel.error": 2,
+    "AssertionLevel.'error'": 2,
+    "Modelica.Blocks.Types.Smoothness.LinearSegments": 1,
+    "Smoothness.LinearSegments": 1,
+    "Modelica.Blocks.Types.Smoothness.'LinearSegments'": 1,
+    "Smoothness.'LinearSegments'": 1,
+    "Modelica.Blocks.Types.Smoothness.ContinuousDerivative": 2,
+    "Smoothness.ContinuousDerivative": 2,
+    "Modelica.Blocks.Types.Smoothness.'ContinuousDerivative'": 2,
+    "Smoothness.'ContinuousDerivative'": 2,
+    "Modelica.Blocks.Types.Smoothness.ConstantSegments": 3,
+    "Smoothness.ConstantSegments": 3,
+    "Modelica.Blocks.Types.Smoothness.'ConstantSegments'": 3,
+    "Smoothness.'ConstantSegments'": 3,
+    "Modelica.Blocks.Types.Smoothness.MonotoneContinuousDerivative1": 4,
+    "Smoothness.MonotoneContinuousDerivative1": 4,
+    "Modelica.Blocks.Types.Smoothness.'MonotoneContinuousDerivative1'": 4,
+    "Smoothness.'MonotoneContinuousDerivative1'": 4,
+    "Modelica.Blocks.Types.Smoothness.MonotoneContinuousDerivative2": 5,
+    "Smoothness.MonotoneContinuousDerivative2": 5,
+    "Modelica.Blocks.Types.Smoothness.'MonotoneContinuousDerivative2'": 5,
+    "Smoothness.'MonotoneContinuousDerivative2'": 5,
+    "Modelica.Blocks.Types.Smoothness.ModifiedContinuousDerivative": 6,
+    "Smoothness.ModifiedContinuousDerivative": 6,
+    "Modelica.Blocks.Types.Smoothness.'ModifiedContinuousDerivative'": 6,
+    "Smoothness.'ModifiedContinuousDerivative'": 6,
+    "Modelica.Blocks.Types.Extrapolation.HoldLastPoint": 1,
+    "Extrapolation.HoldLastPoint": 1,
+    "Modelica.Blocks.Types.Extrapolation.'HoldLastPoint'": 1,
+    "Extrapolation.'HoldLastPoint'": 1,
+    "Modelica.Blocks.Types.Extrapolation.LastTwoPoints": 2,
+    "Extrapolation.LastTwoPoints": 2,
+    "Modelica.Blocks.Types.Extrapolation.'LastTwoPoints'": 2,
+    "Extrapolation.'LastTwoPoints'": 2,
+    "Modelica.Blocks.Types.Extrapolation.Periodic": 3,
+    "Extrapolation.Periodic": 3,
+    "Modelica.Blocks.Types.Extrapolation.'Periodic'": 3,
+    "Extrapolation.'Periodic'": 3,
+    "Modelica.Blocks.Types.Extrapolation.NoExtrapolation": 4,
+    "Extrapolation.NoExtrapolation": 4,
+    "Modelica.Blocks.Types.Extrapolation.'NoExtrapolation'": 4,
+    "Extrapolation.'NoExtrapolation'": 4,
+    "Modelica.Blocks.Types.TimeEvents.Always": 1,
+    "TimeEvents.Always": 1,
+    "Modelica.Blocks.Types.TimeEvents.'Always'": 1,
+    "TimeEvents.'Always'": 1,
+    "Modelica.Blocks.Types.TimeEvents.AtDiscontinuities": 2,
+    "TimeEvents.AtDiscontinuities": 2,
+    "Modelica.Blocks.Types.TimeEvents.'AtDiscontinuities'": 2,
+    "TimeEvents.'AtDiscontinuities'": 2,
+    "Modelica.Blocks.Types.TimeEvents.NoTimeEvents": 3,
+    "TimeEvents.NoTimeEvents": 3,
+    "Modelica.Blocks.Types.TimeEvents.'NoTimeEvents'": 3,
+    "TimeEvents.'NoTimeEvents'": 3,
+    "Modelica.Blocks.Types.Init.NoInit": 1,
+    "Init.NoInit": 1,
+    "Modelica.Blocks.Types.Init.'NoInit'": 1,
+    "Init.'NoInit'": 1,
+    "Modelica.Blocks.Types.Init.SteadyState": 2,
+    "Init.SteadyState": 2,
+    "Modelica.Blocks.Types.Init.'SteadyState'": 2,
+    "Init.'SteadyState'": 2,
+    "Modelica.Blocks.Types.Init.InitialState": 3,
+    "Init.InitialState": 3,
+    "Modelica.Blocks.Types.Init.'InitialState'": 3,
+    "Init.'InitialState'": 3,
+    "Modelica.Blocks.Types.Init.InitialOutput": 4,
+    "Init.InitialOutput": 4,
+    "Modelica.Blocks.Types.Init.'InitialOutput'": 4,
+    "Init.'InitialOutput'": 4,
+    "Modelica.Blocks.Types.SimpleController.P": 1,
+    "SimpleController.P": 1,
+    "Modelica.Blocks.Types.SimpleController.'P'": 1,
+    "SimpleController.'P'": 1,
+    "Modelica.Blocks.Types.SimpleController.PI": 2,
+    "SimpleController.PI": 2,
+    "Modelica.Blocks.Types.SimpleController.'PI'": 2,
+    "SimpleController.'PI'": 2,
+    "Modelica.Blocks.Types.SimpleController.PD": 3,
+    "SimpleController.PD": 3,
+    "Modelica.Blocks.Types.SimpleController.'PD'": 3,
+    "SimpleController.'PD'": 3,
+    "Modelica.Blocks.Types.SimpleController.PID": 4,
+    "SimpleController.PID": 4,
+    "Modelica.Blocks.Types.SimpleController.'PID'": 4,
+    "SimpleController.'PID'": 4,
+    "Modelica.Blocks.Types.AnalogFilter.CriticalDamping": 1,
+    "AnalogFilter.CriticalDamping": 1,
+    "Modelica.Blocks.Types.AnalogFilter.'CriticalDamping'": 1,
+    "AnalogFilter.'CriticalDamping'": 1,
+    "Modelica.Blocks.Types.AnalogFilter.Bessel": 2,
+    "AnalogFilter.Bessel": 2,
+    "Modelica.Blocks.Types.AnalogFilter.'Bessel'": 2,
+    "AnalogFilter.'Bessel'": 2,
+    "Modelica.Blocks.Types.AnalogFilter.Butterworth": 3,
+    "AnalogFilter.Butterworth": 3,
+    "Modelica.Blocks.Types.AnalogFilter.'Butterworth'": 3,
+    "AnalogFilter.'Butterworth'": 3,
+    "Modelica.Blocks.Types.AnalogFilter.ChebyshevI": 4,
+    "AnalogFilter.ChebyshevI": 4,
+    "Modelica.Blocks.Types.AnalogFilter.'ChebyshevI'": 4,
+    "AnalogFilter.'ChebyshevI'": 4,
+    "Modelica.Blocks.Types.FilterType.LowPass": 1,
+    "FilterType.LowPass": 1,
+    "Modelica.Blocks.Types.FilterType.'LowPass'": 1,
+    "FilterType.'LowPass'": 1,
+    "Modelica.Blocks.Types.FilterType.HighPass": 2,
+    "FilterType.HighPass": 2,
+    "Modelica.Blocks.Types.FilterType.'HighPass'": 2,
+    "FilterType.'HighPass'": 2,
+    "Modelica.Blocks.Types.FilterType.BandPass": 3,
+    "FilterType.BandPass": 3,
+    "Modelica.Blocks.Types.FilterType.'BandPass'": 3,
+    "FilterType.'BandPass'": 3,
+    "Modelica.Blocks.Types.FilterType.BandStop": 4,
+    "FilterType.BandStop": 4,
+    "Modelica.Blocks.Types.FilterType.'BandStop'": 4,
+    "FilterType.'BandStop'": 4,
+    "Modelica.Blocks.Types.Regularization.Exp": 1,
+    "Regularization.Exp": 1,
+    "Modelica.Blocks.Types.Regularization.'Exp'": 1,
+    "Regularization.'Exp'": 1,
+    "Modelica.Blocks.Types.Regularization.Sine": 2,
+    "Regularization.Sine": 2,
+    "Modelica.Blocks.Types.Regularization.'Sine'": 2,
+    "Regularization.'Sine'": 2,
+    "Modelica.Blocks.Types.Regularization.Linear": 3,
+    "Regularization.Linear": 3,
+    "Modelica.Blocks.Types.Regularization.'Linear'": 3,
+    "Regularization.'Linear'": 3,
+    "Modelica.Blocks.Types.Regularization.Cosine": 4,
+    "Regularization.Cosine": 4,
+    "Modelica.Blocks.Types.Regularization.'Cosine'": 4,
+    "Regularization.'Cosine'": 4,
+    "Modelica.Blocks.Types.LimiterHomotopy.NoHomotopy": 1,
+    "LimiterHomotopy.NoHomotopy": 1,
+    "Modelica.Blocks.Types.LimiterHomotopy.'NoHomotopy'": 1,
+    "LimiterHomotopy.'NoHomotopy'": 1,
+    "Modelica.Blocks.Types.LimiterHomotopy.Linear": 2,
+    "LimiterHomotopy.Linear": 2,
+    "Modelica.Blocks.Types.LimiterHomotopy.'Linear'": 2,
+    "LimiterHomotopy.'Linear'": 2,
+    "Modelica.Blocks.Types.LimiterHomotopy.UpperLimit": 3,
+    "LimiterHomotopy.UpperLimit": 3,
+    "Modelica.Blocks.Types.LimiterHomotopy.'UpperLimit'": 3,
+    "LimiterHomotopy.'UpperLimit'": 3,
+    "Modelica.Blocks.Types.LimiterHomotopy.LowerLimit": 4,
+    "LimiterHomotopy.LowerLimit": 4,
+    "Modelica.Blocks.Types.LimiterHomotopy.'LowerLimit'": 4,
+    "LimiterHomotopy.'LowerLimit'": 4,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.NoHomotopy": 1,
+    "VariableLimiterHomotopy.NoHomotopy": 1,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.'NoHomotopy'": 1,
+    "VariableLimiterHomotopy.'NoHomotopy'": 1,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.Linear": 2,
+    "VariableLimiterHomotopy.Linear": 2,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.'Linear'": 2,
+    "VariableLimiterHomotopy.'Linear'": 2,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.Fixed": 3,
+    "VariableLimiterHomotopy.Fixed": 3,
+    "Modelica.Blocks.Types.VariableLimiterHomotopy.'Fixed'": 3,
+    "VariableLimiterHomotopy.'Fixed'": 3,
+    "Modelica.Clocked.Types.Resolution.y": 1,
+    "Resolution.y": 1,
+    "Modelica.Clocked.Types.Resolution.'y'": 1,
+    "Resolution.'y'": 1,
+    "Modelica.Clocked.Types.Resolution.d": 2,
+    "Resolution.d": 2,
+    "Modelica.Clocked.Types.Resolution.'d'": 2,
+    "Resolution.'d'": 2,
+    "Modelica.Clocked.Types.Resolution.h": 3,
+    "Resolution.h": 3,
+    "Modelica.Clocked.Types.Resolution.'h'": 3,
+    "Resolution.'h'": 3,
+    "Modelica.Clocked.Types.Resolution.m": 4,
+    "Resolution.m": 4,
+    "Modelica.Clocked.Types.Resolution.'m'": 4,
+    "Resolution.'m'": 4,
+    "Modelica.Clocked.Types.Resolution.s": 5,
+    "Resolution.s": 5,
+    "Modelica.Clocked.Types.Resolution.'s'": 5,
+    "Resolution.'s'": 5,
+    "Modelica.Clocked.Types.Resolution.ms": 6,
+    "Resolution.ms": 6,
+    "Modelica.Clocked.Types.Resolution.'ms'": 6,
+    "Resolution.'ms'": 6,
+    "Modelica.Clocked.Types.Resolution.us": 7,
+    "Resolution.us": 7,
+    "Modelica.Clocked.Types.Resolution.'us'": 7,
+    "Resolution.'us'": 7,
+    "Modelica.Clocked.Types.Resolution.ns": 8,
+    "Resolution.ns": 8,
+    "Modelica.Clocked.Types.Resolution.'ns'": 8,
+    "Resolution.'ns'": 8,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.DoubleExp": 1,
+    "ImpulseApproximation.DoubleExp": 1,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.'DoubleExp'": 1,
+    "ImpulseApproximation.'DoubleExp'": 1,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.Heidler": 2,
+    "ImpulseApproximation.Heidler": 2,
+    "Modelica.Electrical.Analog.Types.ImpulseApproximation.'Heidler'": 2,
+    "ImpulseApproximation.'Heidler'": 2,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'U'": 1,
+    "Logic.'U'": 1,
+    "Modelica.Electrical.Digital.Interfaces.Logic.U": 1,
+    "Logic.U": 1,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'X'": 2,
+    "Logic.'X'": 2,
+    "Modelica.Electrical.Digital.Interfaces.Logic.X": 2,
+    "Logic.X": 2,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'0'": 3,
+    "Logic.'0'": 3,
+    "Modelica.Electrical.Digital.Interfaces.Logic.0": 3,
+    "Logic.0": 3,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'1'": 4,
+    "Logic.'1'": 4,
+    "Modelica.Electrical.Digital.Interfaces.Logic.1": 4,
+    "Logic.1": 4,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'Z'": 5,
+    "Logic.'Z'": 5,
+    "Modelica.Electrical.Digital.Interfaces.Logic.Z": 5,
+    "Logic.Z": 5,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'W'": 6,
+    "Logic.'W'": 6,
+    "Modelica.Electrical.Digital.Interfaces.Logic.W": 6,
+    "Logic.W": 6,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'L'": 7,
+    "Logic.'L'": 7,
+    "Modelica.Electrical.Digital.Interfaces.Logic.L": 7,
+    "Logic.L": 7,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'H'": 8,
+    "Logic.'H'": 8,
+    "Modelica.Electrical.Digital.Interfaces.Logic.H": 8,
+    "Logic.H": 8,
+    "Modelica.Electrical.Digital.Interfaces.Logic.'-'": 9,
+    "Logic.'-'": 9,
+    "Modelica.Electrical.Digital.Interfaces.Logic.-": 9,
+    "Logic.-": 9,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'U'": 1,
+    "UX01.'U'": 1,
+    "Modelica.Electrical.Digital.Interfaces.UX01.U": 1,
+    "UX01.U": 1,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'X'": 2,
+    "UX01.'X'": 2,
+    "Modelica.Electrical.Digital.Interfaces.UX01.X": 2,
+    "UX01.X": 2,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'0'": 3,
+    "UX01.'0'": 3,
+    "Modelica.Electrical.Digital.Interfaces.UX01.0": 3,
+    "UX01.0": 3,
+    "Modelica.Electrical.Digital.Interfaces.UX01.'1'": 4,
+    "UX01.'1'": 4,
+    "Modelica.Electrical.Digital.Interfaces.UX01.1": 4,
+    "UX01.1": 4,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X01'": 1,
+    "Strength.'S_X01'": 1,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_X01": 1,
+    "Strength.S_X01": 1,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X0H'": 2,
+    "Strength.'S_X0H'": 2,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_X0H": 2,
+    "Strength.S_X0H": 2,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_XL1'": 3,
+    "Strength.'S_XL1'": 3,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_XL1": 3,
+    "Strength.S_XL1": 3,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X0Z'": 4,
+    "Strength.'S_X0Z'": 4,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_X0Z": 4,
+    "Strength.S_X0Z": 4,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_XZ1'": 5,
+    "Strength.'S_XZ1'": 5,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_XZ1": 5,
+    "Strength.S_XZ1": 5,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WLH'": 6,
+    "Strength.'S_WLH'": 6,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WLH": 6,
+    "Strength.S_WLH": 6,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WLZ'": 7,
+    "Strength.'S_WLZ'": 7,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WLZ": 7,
+    "Strength.S_WLZ": 7,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WZH'": 8,
+    "Strength.'S_WZH'": 8,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WZH": 8,
+    "Strength.S_WZH": 8,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_W0H'": 9,
+    "Strength.'S_W0H'": 9,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_W0H": 9,
+    "Strength.S_W0H": 9,
+    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WL1'": 10,
+    "Strength.'S_WL1'": 10,
+    "Modelica.Electrical.Digital.Interfaces.Strength.S_WL1": 10,
+    "Strength.S_WL1": 10,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.SVPWM": 1,
+    "PWMType.SVPWM": 1,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.'SVPWM'": 1,
+    "PWMType.'SVPWM'": 1,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.Intersective": 2,
+    "PWMType.Intersective": 2,
+    "Modelica.Electrical.PowerConverters.Types.PWMType.'Intersective'": 2,
+    "PWMType.'Intersective'": 2,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Sawtooth1": 1,
+    "ReferenceType.Sawtooth1": 1,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Sawtooth1'": 1,
+    "ReferenceType.'Sawtooth1'": 1,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Sawtooth3": 2,
+    "ReferenceType.Sawtooth3": 2,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Sawtooth3'": 2,
+    "ReferenceType.'Sawtooth3'": 2,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Triangle1": 3,
+    "ReferenceType.Triangle1": 3,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Triangle1'": 3,
+    "ReferenceType.'Triangle1'": 3,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Triangle3": 4,
+    "ReferenceType.Triangle3": 4,
+    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Triangle3'": 4,
+    "ReferenceType.'Triangle3'": 4,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.Sawtooth": 1,
+    "SingleReferenceType.Sawtooth": 1,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.'Sawtooth'": 1,
+    "SingleReferenceType.'Sawtooth'": 1,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.Triangle": 2,
+    "SingleReferenceType.Triangle": 2,
+    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.'Triangle'": 2,
+    "SingleReferenceType.'Triangle'": 2,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Off": 1,
+    "SoftStarterModeOfOperation.Off": 1,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Off'": 1,
+    "SoftStarterModeOfOperation.'Off'": 1,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Up": 2,
+    "SoftStarterModeOfOperation.Up": 2,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Up'": 2,
+    "SoftStarterModeOfOperation.'Up'": 2,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.On": 3,
+    "SoftStarterModeOfOperation.On": 3,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'On'": 3,
+    "SoftStarterModeOfOperation.'On'": 3,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Down": 4,
+    "SoftStarterModeOfOperation.Down": 4,
+    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Down'": 4,
+    "SoftStarterModeOfOperation.'Down'": 4,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.Lin": 1,
+    "Voltage2AngleType.Lin": 1,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'Lin'": 1,
+    "Voltage2AngleType.'Lin'": 1,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.H01": 2,
+    "Voltage2AngleType.H01": 2,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'H01'": 2,
+    "Voltage2AngleType.'H01'": 2,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.RMS": 3,
+    "Voltage2AngleType.RMS": 3,
+    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'RMS'": 3,
+    "Voltage2AngleType.'RMS'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.Friedel": 1,
+    "TwoPhaseFrictionalPressureLoss.Friedel": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.'Friedel'": 1,
+    "TwoPhaseFrictionalPressureLoss.'Friedel'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.Chisholm": 2,
+    "TwoPhaseFrictionalPressureLoss.Chisholm": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.'Chisholm'": 2,
+    "TwoPhaseFrictionalPressureLoss.'Chisholm'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.Neglected": 1,
+    "Roughness.Neglected": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.'Neglected'": 1,
+    "Roughness.'Neglected'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.Considered": 2,
+    "Roughness.Considered": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.'Considered'": 2,
+    "Roughness.'Considered'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.BoilHor": 1,
+    "TwoPhaseHeatTransferTarget.BoilHor": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'BoilHor'": 1,
+    "TwoPhaseHeatTransferTarget.'BoilHor'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.BoilVer": 2,
+    "TwoPhaseHeatTransferTarget.BoilVer": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'BoilVer'": 2,
+    "TwoPhaseHeatTransferTarget.'BoilVer'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.CondHor": 3,
+    "TwoPhaseHeatTransferTarget.CondHor": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'CondHor'": 3,
+    "TwoPhaseHeatTransferTarget.'CondHor'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.PressureLoss": 1,
+    "PressureLossTarget.PressureLoss": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.'PressureLoss'": 1,
+    "PressureLossTarget.'PressureLoss'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.MassFlowRate": 2,
+    "PressureLossTarget.MassFlowRate": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.'MassFlowRate'": 2,
+    "PressureLossTarget.'MassFlowRate'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Annular": 1,
+    "GeometryOfInternalFlow.Annular": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Annular'": 1,
+    "GeometryOfInternalFlow.'Annular'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Circular": 2,
+    "GeometryOfInternalFlow.Circular": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Circular'": 2,
+    "GeometryOfInternalFlow.'Circular'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Elliptical": 3,
+    "GeometryOfInternalFlow.Elliptical": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Elliptical'": 3,
+    "GeometryOfInternalFlow.'Elliptical'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Rectangular": 4,
+    "GeometryOfInternalFlow.Rectangular": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Rectangular'": 4,
+    "GeometryOfInternalFlow.'Rectangular'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Isosceles": 5,
+    "GeometryOfInternalFlow.Isosceles": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Isosceles'": 5,
+    "GeometryOfInternalFlow.'Isosceles'": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne": 1,
+    "kc_evenGap.DevOne": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'DevOne'": 1,
+    "kc_evenGap.'DevOne'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth": 2,
+    "kc_evenGap.DevBoth": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'DevBoth'": 2,
+    "kc_evenGap.'DevBoth'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne": 3,
+    "kc_evenGap.UndevOne": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'UndevOne'": 3,
+    "kc_evenGap.'UndevOne'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth": 4,
+    "kc_evenGap.UndevBoth": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'UndevBoth'": 4,
+    "kc_evenGap.'UndevBoth'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Rough": 1,
+    "kc_general.Rough": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Rough'": 1,
+    "kc_general.'Rough'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Middle": 2,
+    "kc_general.Middle": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Middle'": 2,
+    "kc_general.'Middle'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Finest": 3,
+    "kc_general.Finest": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Finest'": 3,
+    "kc_general.'Finest'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UWTuDFF": 1,
+    "HeatTransferBoundary.UWTuDFF": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UWTuDFF'": 1,
+    "HeatTransferBoundary.'UWTuDFF'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UHFuDFF": 2,
+    "HeatTransferBoundary.UHFuDFF": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UHFuDFF'": 2,
+    "HeatTransferBoundary.'UHFuDFF'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UWTuUFF": 3,
+    "HeatTransferBoundary.UWTuUFF": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UWTuUFF'": 3,
+    "HeatTransferBoundary.'UWTuUFF'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UHFuUFF": 4,
+    "HeatTransferBoundary.UHFuUFF": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UHFuUFF'": 4,
+    "HeatTransferBoundary.'UHFuUFF'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.MassFlowRate": 1,
+    "MassOrVolumeFlowRate.MassFlowRate": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.'MassFlowRate'": 1,
+    "MassOrVolumeFlowRate.'MassFlowRate'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.VolumeFlowRate": 2,
+    "MassOrVolumeFlowRate.VolumeFlowRate": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.'VolumeFlowRate'": 2,
+    "MassOrVolumeFlowRate.'VolumeFlowRate'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Homogeneous": 1,
+    "VoidFractionApproach.Homogeneous": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Homogeneous'": 1,
+    "VoidFractionApproach.'Homogeneous'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Momentum": 2,
+    "VoidFractionApproach.Momentum": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Momentum'": 2,
+    "VoidFractionApproach.'Momentum'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Energy": 3,
+    "VoidFractionApproach.Energy": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Energy'": 3,
+    "VoidFractionApproach.'Energy'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Chisholm": 4,
+    "VoidFractionApproach.Chisholm": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Chisholm'": 4,
+    "VoidFractionApproach.'Chisholm'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.SharpEdged": 1,
+    "OrificeGeometry.SharpEdged": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'SharpEdged'": 1,
+    "OrificeGeometry.'SharpEdged'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.ThickEdged": 2,
+    "OrificeGeometry.ThickEdged": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'ThickEdged'": 2,
+    "OrificeGeometry.'ThickEdged'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.TiltedEdged": 3,
+    "OrificeGeometry.TiltedEdged": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'TiltedEdged'": 3,
+    "OrificeGeometry.'TiltedEdged'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.RoundedEdged": 4,
+    "OrificeGeometry.RoundedEdged": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'RoundedEdged'": 4,
+    "OrificeGeometry.'RoundedEdged'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Ball": 1,
+    "ValveGeometry.Ball": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Ball'": 1,
+    "ValveGeometry.'Ball'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Diaphragm": 2,
+    "ValveGeometry.Diaphragm": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Diaphragm'": 2,
+    "ValveGeometry.'Diaphragm'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Butterfly": 3,
+    "ValveGeometry.Butterfly": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Butterfly'": 3,
+    "ValveGeometry.'Butterfly'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Gate": 4,
+    "ValveGeometry.Gate": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Gate'": 4,
+    "ValveGeometry.'Gate'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Sluice": 5,
+    "ValveGeometry.Sluice": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Sluice'": 5,
+    "ValveGeometry.'Sluice'": 5,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.AV": 1,
+    "ValveCoefficient.AV": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'AV'": 1,
+    "ValveCoefficient.'AV'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.KV": 2,
+    "ValveCoefficient.KV": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'KV'": 2,
+    "ValveCoefficient.'KV'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.CV": 3,
+    "ValveCoefficient.CV": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'CV'": 3,
+    "ValveCoefficient.'CV'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.OP": 4,
+    "ValveCoefficient.OP": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'OP'": 4,
+    "ValveCoefficient.'OP'": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Laminar": 1,
+    "FluidFlowRegime.Laminar": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Laminar'": 1,
+    "FluidFlowRegime.'Laminar'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Overall": 2,
+    "FluidFlowRegime.Overall": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Overall'": 2,
+    "FluidFlowRegime.'Overall'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Turbulent": 3,
+    "FluidFlowRegime.Turbulent": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Turbulent'": 3,
+    "FluidFlowRegime.'Turbulent'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.LouverFin": 1,
+    "HTXGeometry_flatTubes.LouverFin": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.'LouverFin'": 1,
+    "HTXGeometry_flatTubes.'LouverFin'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.RectangularFin": 2,
+    "HTXGeometry_flatTubes.RectangularFin": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.'RectangularFin'": 2,
+    "HTXGeometry_flatTubes.'RectangularFin'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.PlainFin": 1,
+    "HTXGeometry_roundTubes.PlainFin": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'PlainFin'": 1,
+    "HTXGeometry_roundTubes.'PlainFin'": 1,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.LouverFin": 2,
+    "HTXGeometry_roundTubes.LouverFin": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'LouverFin'": 2,
+    "HTXGeometry_roundTubes.'LouverFin'": 2,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.SlitFin": 3,
+    "HTXGeometry_roundTubes.SlitFin": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'SlitFin'": 3,
+    "HTXGeometry_roundTubes.'SlitFin'": 3,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.WavyFin": 4,
+    "HTXGeometry_roundTubes.WavyFin": 4,
+    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'WavyFin'": 4,
+    "HTXGeometry_roundTubes.'WavyFin'": 4,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.GuessValues": 1,
+    "Init.GuessValues": 1,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'GuessValues'": 1,
+    "Init.'GuessValues'": 1,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.InitialValues": 2,
+    "Init.InitialValues": 2,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'InitialValues'": 2,
+    "Init.'InitialValues'": 2,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyStateMomentum": 3,
+    "Init.SteadyStateMomentum": 3,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyStateMomentum'": 3,
+    "Init.'SteadyStateMomentum'": 3,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyStateHydraulic": 4,
+    "Init.SteadyStateHydraulic": 4,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyStateHydraulic'": 4,
+    "Init.'SteadyStateHydraulic'": 4,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyState": 5,
+    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyState'": 5,
+    "Modelica.Fluid.Types.Dynamics.DynamicFreeInitial": 1,
+    "Dynamics.DynamicFreeInitial": 1,
+    "Modelica.Fluid.Types.Dynamics.'DynamicFreeInitial'": 1,
+    "Dynamics.'DynamicFreeInitial'": 1,
+    "Modelica.Fluid.Types.Dynamics.FixedInitial": 2,
+    "Dynamics.FixedInitial": 2,
+    "Modelica.Fluid.Types.Dynamics.'FixedInitial'": 2,
+    "Dynamics.'FixedInitial'": 2,
+    "Modelica.Fluid.Types.Dynamics.SteadyStateInitial": 3,
+    "Dynamics.SteadyStateInitial": 3,
+    "Modelica.Fluid.Types.Dynamics.'SteadyStateInitial'": 3,
+    "Dynamics.'SteadyStateInitial'": 3,
+    "Modelica.Fluid.Types.Dynamics.SteadyState": 4,
+    "Dynamics.SteadyState": 4,
+    "Modelica.Fluid.Types.Dynamics.'SteadyState'": 4,
+    "Dynamics.'SteadyState'": 4,
+    "Modelica.Fluid.Types.CvTypes.Av": 1,
+    "CvTypes.Av": 1,
+    "Modelica.Fluid.Types.CvTypes.'Av'": 1,
+    "CvTypes.'Av'": 1,
+    "Modelica.Fluid.Types.CvTypes.Kv": 2,
+    "CvTypes.Kv": 2,
+    "Modelica.Fluid.Types.CvTypes.'Kv'": 2,
+    "CvTypes.'Kv'": 2,
+    "Modelica.Fluid.Types.CvTypes.Cv": 3,
+    "CvTypes.Cv": 3,
+    "Modelica.Fluid.Types.CvTypes.'Cv'": 3,
+    "CvTypes.'Cv'": 3,
+    "Modelica.Fluid.Types.CvTypes.OpPoint": 4,
+    "CvTypes.OpPoint": 4,
+    "Modelica.Fluid.Types.CvTypes.'OpPoint'": 4,
+    "CvTypes.'OpPoint'": 4,
+    "Modelica.Fluid.Types.PortFlowDirection.Entering": 1,
+    "PortFlowDirection.Entering": 1,
+    "Modelica.Fluid.Types.PortFlowDirection.'Entering'": 1,
+    "PortFlowDirection.'Entering'": 1,
+    "Modelica.Fluid.Types.PortFlowDirection.Leaving": 2,
+    "PortFlowDirection.Leaving": 2,
+    "Modelica.Fluid.Types.PortFlowDirection.'Leaving'": 2,
+    "PortFlowDirection.'Leaving'": 2,
+    "Modelica.Fluid.Types.PortFlowDirection.Bidirectional": 3,
+    "PortFlowDirection.Bidirectional": 3,
+    "Modelica.Fluid.Types.PortFlowDirection.'Bidirectional'": 3,
+    "PortFlowDirection.'Bidirectional'": 3,
+    "Modelica.Fluid.Types.ModelStructure.av_vb": 1,
+    "ModelStructure.av_vb": 1,
+    "Modelica.Fluid.Types.ModelStructure.'av_vb'": 1,
+    "ModelStructure.'av_vb'": 1,
+    "Modelica.Fluid.Types.ModelStructure.a_v_b": 2,
+    "ModelStructure.a_v_b": 2,
+    "Modelica.Fluid.Types.ModelStructure.'a_v_b'": 2,
+    "ModelStructure.'a_v_b'": 2,
+    "Modelica.Fluid.Types.ModelStructure.av_b": 3,
+    "ModelStructure.av_b": 3,
+    "Modelica.Fluid.Types.ModelStructure.'av_b'": 3,
+    "ModelStructure.'av_b'": 3,
+    "Modelica.Fluid.Types.ModelStructure.a_vb": 4,
+    "ModelStructure.a_vb": 4,
+    "Modelica.Fluid.Types.ModelStructure.'a_vb'": 4,
+    "ModelStructure.'a_vb'": 4,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.Open": 1,
+    "CheckValveHomotopyType.Open": 1,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.'Open'": 1,
+    "CheckValveHomotopyType.'Open'": 1,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.Closed": 2,
+    "CheckValveHomotopyType.Closed": 2,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.'Closed'": 2,
+    "CheckValveHomotopyType.'Closed'": 2,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.NoHomotopy": 3,
+    "CheckValveHomotopyType.NoHomotopy": 3,
+    "Modelica.Fluid.Types.CheckValveHomotopyType.'NoHomotopy'": 3,
+    "CheckValveHomotopyType.'NoHomotopy'": 3,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.NoGravity": 1,
+    "GravityTypes.NoGravity": 1,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'NoGravity'": 1,
+    "GravityTypes.'NoGravity'": 1,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity": 2,
+    "GravityTypes.UniformGravity": 2,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'UniformGravity'": 2,
+    "GravityTypes.'UniformGravity'": 2,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity": 3,
+    "GravityTypes.PointGravity": 3,
+    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'PointGravity'": 3,
+    "GravityTypes.'PointGravity'": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.world": 1,
+    "ResolveInFrameA.world": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'world'": 1,
+    "ResolveInFrameA.'world'": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.frame_a": 2,
+    "ResolveInFrameA.frame_a": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'frame_a'": 2,
+    "ResolveInFrameA.'frame_a'": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.frame_resolve": 3,
+    "ResolveInFrameA.frame_resolve": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'frame_resolve'": 3,
+    "ResolveInFrameA.'frame_resolve'": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.world": 1,
+    "ResolveInFrameAB.world": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'world'": 1,
+    "ResolveInFrameAB.'world'": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_a": 2,
+    "ResolveInFrameAB.frame_a": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_a'": 2,
+    "ResolveInFrameAB.'frame_a'": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_b": 3,
+    "ResolveInFrameAB.frame_b": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_b'": 3,
+    "ResolveInFrameAB.'frame_b'": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_resolve": 4,
+    "ResolveInFrameAB.frame_resolve": 4,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_resolve'": 4,
+    "ResolveInFrameAB.'frame_resolve'": 4,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.world": 1,
+    "ResolveInFrameB.world": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'world'": 1,
+    "ResolveInFrameB.'world'": 1,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.frame_b": 2,
+    "ResolveInFrameB.frame_b": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'frame_b'": 2,
+    "ResolveInFrameB.'frame_b'": 2,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.frame_resolve": 3,
+    "ResolveInFrameB.frame_resolve": 3,
+    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'frame_resolve'": 3,
+    "ResolveInFrameB.'frame_resolve'": 3,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.RotationAxis": 1,
+    "RotationTypes.RotationAxis": 1,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'RotationAxis'": 1,
+    "RotationTypes.'RotationAxis'": 1,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.TwoAxesVectors": 2,
+    "RotationTypes.TwoAxesVectors": 2,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'TwoAxesVectors'": 2,
+    "RotationTypes.'TwoAxesVectors'": 2,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.PlanarRotationSequence": 3,
+    "RotationTypes.PlanarRotationSequence": 3,
+    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'PlanarRotationSequence'": 3,
+    "RotationTypes.'PlanarRotationSequence'": 3,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Force": 1,
+    "VectorQuantity.Force": 1,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Force'": 1,
+    "VectorQuantity.'Force'": 1,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Torque": 2,
+    "VectorQuantity.Torque": 2,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Torque'": 2,
+    "VectorQuantity.'Torque'": 2,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Velocity": 3,
+    "VectorQuantity.Velocity": 3,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Velocity'": 3,
+    "VectorQuantity.'Velocity'": 3,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Acceleration": 4,
+    "VectorQuantity.Acceleration": 4,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Acceleration'": 4,
+    "VectorQuantity.'Acceleration'": 4,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.AngularVelocity": 5,
+    "VectorQuantity.AngularVelocity": 5,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'AngularVelocity'": 5,
+    "VectorQuantity.'AngularVelocity'": 5,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.AngularAcceleration": 6,
+    "VectorQuantity.AngularAcceleration": 6,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'AngularAcceleration'": 6,
+    "VectorQuantity.'AngularAcceleration'": 6,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.RelativePosition": 7,
+    "VectorQuantity.RelativePosition": 7,
+    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'RelativePosition'": 7,
+    "VectorQuantity.'RelativePosition'": 7,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgBeginAndEnd": 1,
+    "HeaderType.svgBeginAndEnd": 1,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgBeginAndEnd'": 1,
+    "HeaderType.'svgBeginAndEnd'": 1,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgBegin": 2,
+    "HeaderType.svgBegin": 2,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgBegin'": 2,
+    "HeaderType.'svgBegin'": 2,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgEnd": 3,
+    "HeaderType.svgEnd": 3,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgEnd'": 3,
+    "HeaderType.'svgEnd'": 3,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.noHeader": 4,
+    "HeaderType.noHeader": 4,
+    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'noHeader'": 4,
+    "HeaderType.'noHeader'": 4,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.T": 1,
+    "IndependentVariables.T": 1,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'T'": 1,
+    "IndependentVariables.'T'": 1,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.pT": 2,
+    "IndependentVariables.pT": 2,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'pT'": 2,
+    "IndependentVariables.'pT'": 2,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.ph": 3,
+    "IndependentVariables.ph": 3,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'ph'": 3,
+    "IndependentVariables.'ph'": 3,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.phX": 4,
+    "IndependentVariables.phX": 4,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'phX'": 4,
+    "IndependentVariables.'phX'": 4,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.pTX": 5,
+    "IndependentVariables.pTX": 5,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'pTX'": 5,
+    "IndependentVariables.'pTX'": 5,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.dTX": 6,
+    "IndependentVariables.dTX": 6,
+    "Modelica.Media.Interfaces.Choices.IndependentVariables.'dTX'": 6,
+    "IndependentVariables.'dTX'": 6,
+    "Modelica.Media.Interfaces.Choices.Init.NoInit": 1,
+    "Modelica.Media.Interfaces.Choices.Init.'NoInit'": 1,
+    "Modelica.Media.Interfaces.Choices.Init.InitialStates": 2,
+    "Init.InitialStates": 2,
+    "Modelica.Media.Interfaces.Choices.Init.'InitialStates'": 2,
+    "Init.'InitialStates'": 2,
+    "Modelica.Media.Interfaces.Choices.Init.SteadyState": 3,
+    "Modelica.Media.Interfaces.Choices.Init.'SteadyState'": 3,
+    "Modelica.Media.Interfaces.Choices.Init.SteadyMass": 4,
+    "Init.SteadyMass": 4,
+    "Modelica.Media.Interfaces.Choices.Init.'SteadyMass'": 4,
+    "Init.'SteadyMass'": 4,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K": 1,
+    "ReferenceEnthalpy.ZeroAt0K": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'ZeroAt0K'": 1,
+    "ReferenceEnthalpy.'ZeroAt0K'": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt25C": 2,
+    "ReferenceEnthalpy.ZeroAt25C": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'ZeroAt25C'": 2,
+    "ReferenceEnthalpy.'ZeroAt25C'": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined": 3,
+    "ReferenceEnthalpy.UserDefined": 3,
+    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'UserDefined'": 3,
+    "ReferenceEnthalpy.'UserDefined'": 3,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.ZeroAt0K": 1,
+    "ReferenceEntropy.ZeroAt0K": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'ZeroAt0K'": 1,
+    "ReferenceEntropy.'ZeroAt0K'": 1,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.ZeroAt0C": 2,
+    "ReferenceEntropy.ZeroAt0C": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'ZeroAt0C'": 2,
+    "ReferenceEntropy.'ZeroAt0C'": 2,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.UserDefined": 3,
+    "ReferenceEntropy.UserDefined": 3,
+    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'UserDefined'": 3,
+    "ReferenceEntropy.'UserDefined'": 3,
+    "Modelica.Media.Interfaces.Choices.pd.default": 1,
+    "pd.default": 1,
+    "Modelica.Media.Interfaces.Choices.pd.'default'": 1,
+    "pd.'default'": 1,
+    "Modelica.Media.Interfaces.Choices.pd.p_known": 2,
+    "pd.p_known": 2,
+    "Modelica.Media.Interfaces.Choices.pd.'p_known'": 2,
+    "pd.'p_known'": 2,
+    "Modelica.Media.Interfaces.Choices.pd.d_known": 3,
+    "pd.d_known": 3,
+    "Modelica.Media.Interfaces.Choices.pd.'d_known'": 3,
+    "pd.'d_known'": 3,
+    "Modelica.Media.Interfaces.Choices.Th.default": 1,
+    "Th.default": 1,
+    "Modelica.Media.Interfaces.Choices.Th.'default'": 1,
+    "Th.'default'": 1,
+    "Modelica.Media.Interfaces.Choices.Th.T_known": 2,
+    "Th.T_known": 2,
+    "Modelica.Media.Interfaces.Choices.Th.'T_known'": 2,
+    "Th.'T_known'": 2,
+    "Modelica.Media.Interfaces.Choices.Th.h_known": 3,
+    "Th.h_known": 3,
+    "Modelica.Media.Interfaces.Choices.Th.'h_known'": 3,
+    "Th.'h_known'": 3,
+    "Modelica.Utilities.Types.Compare.Less": 1,
+    "Compare.Less": 1,
+    "Modelica.Utilities.Types.Compare.'Less'": 1,
+    "Compare.'Less'": 1,
+    "Modelica.Utilities.Types.Compare.Equal": 2,
+    "Compare.Equal": 2,
+    "Modelica.Utilities.Types.Compare.'Equal'": 2,
+    "Compare.'Equal'": 2,
+    "Modelica.Utilities.Types.Compare.Greater": 3,
+    "Compare.Greater": 3,
+    "Modelica.Utilities.Types.Compare.'Greater'": 3,
+    "Compare.'Greater'": 3,
+    "Modelica.Utilities.Types.FileType.NoFile": 1,
+    "FileType.NoFile": 1,
+    "Modelica.Utilities.Types.FileType.'NoFile'": 1,
+    "FileType.'NoFile'": 1,
+    "Modelica.Utilities.Types.FileType.RegularFile": 2,
+    "FileType.RegularFile": 2,
+    "Modelica.Utilities.Types.FileType.'RegularFile'": 2,
+    "FileType.'RegularFile'": 2,
+    "Modelica.Utilities.Types.FileType.Directory": 3,
+    "FileType.Directory": 3,
+    "Modelica.Utilities.Types.FileType.'Directory'": 3,
+    "FileType.'Directory'": 3,
+    "Modelica.Utilities.Types.FileType.SpecialFile": 4,
+    "FileType.SpecialFile": 4,
+    "Modelica.Utilities.Types.FileType.'SpecialFile'": 4,
+    "FileType.'SpecialFile'": 4,
+    "Modelica.Utilities.Types.TokenType.RealToken": 1,
+    "TokenType.RealToken": 1,
+    "Modelica.Utilities.Types.TokenType.'RealToken'": 1,
+    "TokenType.'RealToken'": 1,
+    "Modelica.Utilities.Types.TokenType.IntegerToken": 2,
+    "TokenType.IntegerToken": 2,
+    "Modelica.Utilities.Types.TokenType.'IntegerToken'": 2,
+    "TokenType.'IntegerToken'": 2,
+    "Modelica.Utilities.Types.TokenType.BooleanToken": 3,
+    "TokenType.BooleanToken": 3,
+    "Modelica.Utilities.Types.TokenType.'BooleanToken'": 3,
+    "TokenType.'BooleanToken'": 3,
+    "Modelica.Utilities.Types.TokenType.StringToken": 4,
+    "TokenType.StringToken": 4,
+    "Modelica.Utilities.Types.TokenType.'StringToken'": 4,
+    "TokenType.'StringToken'": 4,
+    "Modelica.Utilities.Types.TokenType.IdentifierToken": 5,
+    "TokenType.IdentifierToken": 5,
+    "Modelica.Utilities.Types.TokenType.'IdentifierToken'": 5,
+    "TokenType.'IdentifierToken'": 5,
+    "Modelica.Utilities.Types.TokenType.DelimiterToken": 6,
+    "TokenType.DelimiterToken": 6,
+    "Modelica.Utilities.Types.TokenType.'DelimiterToken'": 6,
+    "TokenType.'DelimiterToken'": 6,
+    "Modelica.Utilities.Types.TokenType.NoToken": 7,
+    "TokenType.NoToken": 7,
+    "Modelica.Utilities.Types.TokenType.'NoToken'": 7,
+    "TokenType.'NoToken'": 7
+  },
+  "symbol_ancestry": {
+    "89": [
+      85,
+      89
+    ],
+    "39466": [
+      85,
+      89
+    ],
+    "90": [
+      85,
+      90
+    ],
+    "39467": [
+      85,
+      90
+    ],
+    "91": [
+      85,
+      91
+    ],
+    "39468": [
+      85,
+      91
+    ],
+    "92": [
+      85,
+      92
+    ],
+    "39469": [
+      85,
+      92
+    ],
+    "93": [
+      85,
+      93
+    ],
+    "39470": [
+      85,
+      93
+    ],
+    "94": [
+      85,
+      94
+    ],
+    "39471": [
+      85,
+      94
+    ],
+    "95": [
+      85,
+      95
+    ],
+    "39472": [
+      85,
+      95
+    ],
+    "96": [
+      85,
+      96
+    ],
+    "39473": [
+      85,
+      96
+    ],
+    "97": [
+      85,
+      97
+    ],
+    "39474": [
+      85,
+      97
+    ]
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "n_equations": 20,
+  "n_unknowns": 20,
+  "coupled_block_count": 1,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from L)",
+      "unknown": "der(L.i)"
+    },
+    {
+      "equation": "f_x[1] (equation from rotor)",
+      "unknown": "shaft.a"
+    },
+    {
+      "equation": "f_x[2] (equation from gear)",
+      "unknown": "gear.flange_a.tau"
+    },
+    {
+      "equation": "f_x[3] (equation from shaft)",
+      "unknown": "mount.v_rel"
+    },
+    {
+      "equation": "f_x[4] (equation from shaft)",
+      "unknown": "der(shaft.w)"
+    },
+    {
+      "equation": "f_x[5] (equation from shaft)",
+      "unknown": "shaft.flange_a.tau"
+    },
+    {
+      "equation": "f_x[6] (equation from r2t)",
+      "unknown": "r2t.flangeR.tau"
+    },
+    {
+      "equation": "f_x[7] (equation from load)",
+      "unknown": "load.flange_a.f"
+    },
+    {
+      "equation": "f_x[8] (equation from mount)",
+      "unknown": "der(mount.s_rel)"
+    },
+    {
+      "equation": "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+      "unknown": "rotor.flange_b.tau"
+    },
+    {
+      "equation": "f_x[10] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+      "unknown": "gear.flange_b.tau"
+    },
+    {
+      "equation": "f_x[11] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+      "unknown": "shaft.flange_b.tau"
+    },
+    {
+      "equation": "f_x[12] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+      "unknown": "r2t.flangeT.f"
+    },
+    {
+      "equation": "f_x[13] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "unknown": "emf.internalSupport.flange.phi"
+    },
+    {
+      "equation": "f_x[14] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+      "unknown": "r2t.internalSupportR.flange.phi"
+    },
+    {
+      "equation": "f_x[15] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+      "unknown": "r2t.internalSupportT.flange.s"
+    },
+    {
+      "equation": "f_x[16] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    },
+    {
+      "equation": "f_x[17] (connection equation: r2t.flangeT.s = load.flange_a.s)",
+      "unknown": "r2t.flangeT.s"
+    },
+    {
+      "equation": "f_x[18] (connection equation: load.flange_b.s = mount.flange_a.s)",
+      "unknown": "load.s"
+    },
+    {
+      "equation": "f_x[19] (connection equation: mount.flange_b.s = wall.flange.s)",
+      "unknown": "mount.flange_b.s"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[16] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (equation from L)",
+      "unknown": "der(L.i)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (equation from shaft)",
+      "unknown": "mount.v_rel"
+    },
+    {
+      "kind": "coupled",
+      "size": 9,
+      "equations": [
+        "f_x[7] (equation from load)",
+        "f_x[12] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+        "f_x[6] (equation from r2t)",
+        "f_x[11] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+        "f_x[5] (equation from shaft)",
+        "f_x[10] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+        "f_x[2] (equation from gear)",
+        "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+        "f_x[1] (equation from rotor)"
+      ],
+      "unknowns": [
+        "load.flange_a.f",
+        "r2t.flangeT.f",
+        "r2t.flangeR.tau",
+        "shaft.flange_b.tau",
+        "shaft.flange_a.tau",
+        "gear.flange_b.tau",
+        "gear.flange_a.tau",
+        "rotor.flange_b.tau",
+        "shaft.a"
+      ],
+      "tearing": {
+        "tear_vars": [
+          "shaft.a"
+        ],
+        "residual_equations": [
+          "f_x[5] (equation from shaft)"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[7] (equation from load)",
+            "variable": "load.flange_a.f"
+          },
+          {
+            "equation": "f_x[1] (equation from rotor)",
+            "variable": "rotor.flange_b.tau"
+          },
+          {
+            "equation": "f_x[12] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+            "variable": "r2t.flangeT.f"
+          },
+          {
+            "equation": "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+            "variable": "gear.flange_a.tau"
+          },
+          {
+            "equation": "f_x[6] (equation from r2t)",
+            "variable": "r2t.flangeR.tau"
+          },
+          {
+            "equation": "f_x[2] (equation from gear)",
+            "variable": "gear.flange_b.tau"
+          },
+          {
+            "equation": "f_x[11] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+            "variable": "shaft.flange_b.tau"
+          },
+          {
+            "equation": "f_x[10] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+            "variable": "shaft.flange_a.tau"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[4] (equation from shaft)",
+      "unknown": "der(shaft.w)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[8] (equation from mount)",
+      "unknown": "der(mount.s_rel)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[13] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "unknown": "emf.internalSupport.flange.phi"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[14] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+      "unknown": "r2t.internalSupportR.flange.phi"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[15] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+      "unknown": "r2t.internalSupportT.flange.s"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[19] (connection equation: mount.flange_b.s = wall.flange.s)",
+      "unknown": "mount.flange_b.s"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[18] (connection equation: load.flange_b.s = mount.flange_a.s)",
+      "unknown": "load.s"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[17] (connection equation: r2t.flangeT.s = load.flange_a.s)",
+      "unknown": "r2t.flangeT.s"
+    }
+  ]
+}

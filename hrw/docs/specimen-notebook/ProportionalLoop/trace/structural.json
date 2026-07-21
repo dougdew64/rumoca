@@ -1,0 +1,53 @@
+{
+  "n_equations": 3,
+  "n_unknowns": 3,
+  "coupled_block_count": 1,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "unknown": "measurement"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "unknown": "error"
+    },
+    {
+      "equation": "f_x[2] (top-level model equation)",
+      "unknown": "command"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "coupled",
+      "size": 3,
+      "equations": [
+        "f_x[2] (top-level model equation)",
+        "f_x[1] (top-level model equation)",
+        "f_x[0] (top-level model equation)"
+      ],
+      "unknowns": [
+        "command",
+        "error",
+        "measurement"
+      ],
+      "tearing": {
+        "tear_vars": [
+          "command"
+        ],
+        "residual_equations": [
+          "f_x[0] (top-level model equation)"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[1] (top-level model equation)",
+            "variable": "error"
+          },
+          {
+            "equation": "f_x[2] (top-level model equation)",
+            "variable": "measurement"
+          }
+        ]
+      }
+    }
+  ]
+}

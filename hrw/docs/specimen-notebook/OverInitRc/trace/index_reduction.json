@@ -1,0 +1,39 @@
+{
+  "n_equations": 3,
+  "n_unknowns": 3,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from R)",
+      "unknown": "R.p.i"
+    },
+    {
+      "equation": "f_x[1] (equation from C)",
+      "unknown": "der(C.v)"
+    },
+    {
+      "equation": "f_x[2] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[2] (connection equation: src.n.v = gnd.p.v)",
+      "unknown": "src.n.v"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (equation from R)",
+      "unknown": "R.p.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (equation from C)",
+      "unknown": "der(C.v)"
+    }
+  ]
+}

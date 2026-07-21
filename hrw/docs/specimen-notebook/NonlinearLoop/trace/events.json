@@ -1,0 +1,22 @@
+{
+  "summary": {
+    "condition_equations": 0,
+    "relations": 0,
+    "discrete_real_updates": 0,
+    "discrete_valued_updates": 0,
+    "zero_crossing_conditions": 0,
+    "scheduled_time_events": 0
+  },
+  "conditions": {
+    "equations_f_c": [],
+    "relations": []
+  },
+  "discrete_updates": {
+    "real_updates_f_z": [],
+    "valued_updates_f_m": []
+  },
+  "events": {
+    "zero_crossing_conditions": [],
+    "scheduled_time_events": []
+  }
+}

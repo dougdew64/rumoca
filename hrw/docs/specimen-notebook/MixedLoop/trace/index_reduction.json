@@ -1,0 +1,19 @@
+{
+  "n_equations": 1,
+  "n_unknowns": 1,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "unknown": "error"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (top-level model equation)",
+      "unknown": "error"
+    }
+  ]
+}

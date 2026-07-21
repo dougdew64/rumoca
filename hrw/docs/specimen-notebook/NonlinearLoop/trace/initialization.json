@@ -1,0 +1,37 @@
+{
+  "n_states": 0,
+  "n_equations": 3,
+  "block_count": 1,
+  "blocks": [
+    {
+      "kind": "torn_block",
+      "tear_vars": [
+        "command"
+      ],
+      "residual_equations": [
+        1
+      ],
+      "causal_steps": [
+        {
+          "var": "error",
+          "equation": 0,
+          "newton": false
+        },
+        {
+          "var": "measurement",
+          "equation": 2,
+          "newton": false
+        }
+      ]
+    }
+  ],
+  "relaxation_hint": null,
+  "determinacy": {
+    "states": 0,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": 0,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

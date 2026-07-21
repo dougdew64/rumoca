@@ -1,0 +1,49 @@
+{
+  "model": "BouncingBall",
+  "specimen": "specimens/BouncingBall.mo",
+  "specimen_fnv1a": "b5af7f4daae91f1b",
+  "rumoca_rev": "8cdc74198",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "structural": {
+      "has_ir": true,
+      "note": null
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": "no algebraic initialization subsystem (equations ≤ states)"
+    },
+    "events": {
+      "has_ir": true,
+      "note": null
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  }
+}

@@ -1,0 +1,1899 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 846,
+          "end": 860
+        },
+        "parts": [
+          {
+            "ident": "reference",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 846,
+              "end": 860
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "reference",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 11,
+        "start_column": 13,
+        "end_line": 11,
+        "end_column": 27,
+        "start": 846,
+        "end": 860,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 11,
+            "start_column": 3,
+            "end_line": 11,
+            "end_column": 12,
+            "start": 836,
+            "end": 845,
+            "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+          },
+          "token_number": 12,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 11,
+              "start_column": 30,
+              "end_line": 11,
+              "end_column": 33,
+              "start": 863,
+              "end": 866,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 16,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 863,
+            "end": 866
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "raw setpoint",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 11,
+              "start_column": 30,
+              "end_line": 11,
+              "end_column": 33,
+              "start": 863,
+              "end": 866,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 16,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 863,
+            "end": 866
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 895,
+          "end": 910
+        },
+        "parts": [
+          {
+            "ident": "sensorGain",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 895,
+              "end": 910
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "sensorGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 12,
+        "start_column": 13,
+        "end_line": 12,
+        "end_column": 28,
+        "start": 895,
+        "end": 910,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 12,
+            "start_column": 3,
+            "end_line": 12,
+            "end_column": 12,
+            "start": 885,
+            "end": 894,
+            "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+          },
+          "token_number": 19,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.5",
+            "location": {
+              "start_line": 12,
+              "start_column": 31,
+              "end_line": 12,
+              "end_column": 34,
+              "start": 913,
+              "end": 916,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 23,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 913,
+            "end": 916
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "pre-scaling on the reference",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.5",
+            "location": {
+              "start_line": 12,
+              "start_column": 31,
+              "end_line": 12,
+              "end_column": 34,
+              "start": 913,
+              "end": 916,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 23,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 913,
+            "end": 916
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 961,
+          "end": 980
+        },
+        "parts": [
+          {
+            "ident": "controllerGain",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 961,
+              "end": 980
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "controllerGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 13,
+        "start_column": 13,
+        "end_line": 13,
+        "end_column": 32,
+        "start": 961,
+        "end": 980,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 13,
+            "start_column": 3,
+            "end_line": 13,
+            "end_column": 12,
+            "start": 951,
+            "end": 960,
+            "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+          },
+          "token_number": 26,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 35,
+              "end_line": 13,
+              "end_column": 39,
+              "start": 983,
+              "end": 987,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 30,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 983,
+            "end": 987
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "proportional gain Kp",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 35,
+              "end_line": 13,
+              "end_column": 39,
+              "start": 983,
+              "end": 987,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 30,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 983,
+            "end": 987
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1024,
+          "end": 1038
+        },
+        "parts": [
+          {
+            "ident": "plantGain",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1024,
+              "end": 1038
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 92
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "plantGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 14,
+        "start_column": 13,
+        "end_line": 14,
+        "end_column": 27,
+        "start": 1024,
+        "end": 1038,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 14,
+            "start_column": 3,
+            "end_line": 14,
+            "end_column": 12,
+            "start": 1014,
+            "end": 1023,
+            "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+          },
+          "token_number": 33,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "2.0",
+            "location": {
+              "start_line": 14,
+              "start_column": 30,
+              "end_line": 14,
+              "end_column": 33,
+              "start": 1041,
+              "end": 1044,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 37,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1041,
+            "end": 1044
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "ideal static plant gain",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "2.0",
+            "location": {
+              "start_line": 14,
+              "start_column": 30,
+              "end_line": 14,
+              "end_column": 33,
+              "start": 1041,
+              "end": 1044,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 37,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1041,
+            "end": 1044
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "5": {
+      "instance_id": 5,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1084,
+          "end": 1099
+        },
+        "parts": [
+          {
+            "ident": "outputGain",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1084,
+              "end": 1099
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 93
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "outputGain",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 15,
+        "start_column": 13,
+        "end_line": 15,
+        "end_column": 28,
+        "start": 1084,
+        "end": 1099,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 15,
+            "start_column": 3,
+            "end_line": 15,
+            "end_column": 12,
+            "start": 1074,
+            "end": 1083,
+            "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+          },
+          "token_number": 40,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "3.0",
+            "location": {
+              "start_line": 15,
+              "start_column": 31,
+              "end_line": 15,
+              "end_column": 34,
+              "start": 1102,
+              "end": 1105,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 44,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1102,
+            "end": 1105
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "post-scaling on the measurement",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "3.0",
+            "location": {
+              "start_line": 15,
+              "start_column": 31,
+              "end_line": 15,
+              "end_column": 34,
+              "start": 1102,
+              "end": 1105,
+              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+            },
+            "token_number": 44,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1102,
+            "end": 1105
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "6": {
+      "instance_id": 6,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1143,
+          "end": 1156
+        },
+        "parts": [
+          {
+            "ident": "setpoint",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1143,
+              "end": 1156
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 94
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "setpoint",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 16,
+        "start_column": 3,
+        "end_line": 16,
+        "end_column": 16,
+        "start": 1143,
+        "end": 1156,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1143,
+            "end": 1156
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "scaled reference — computed before the loop",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "7": {
+      "instance_id": 7,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1208,
+          "end": 1218
+        },
+        "parts": [
+          {
+            "ident": "error",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1208,
+              "end": 1218
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 95
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "error",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 17,
+        "start_column": 3,
+        "end_line": 17,
+        "end_column": 13,
+        "start": 1208,
+        "end": 1218,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1208,
+            "end": 1218
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "reference − measurement",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "8": {
+      "instance_id": 8,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1250,
+          "end": 1262
+        },
+        "parts": [
+          {
+            "ident": "command",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1250,
+              "end": 1262
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 96
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "command",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 18,
+        "start_column": 3,
+        "end_line": 18,
+        "end_column": 15,
+        "start": 1250,
+        "end": 1262,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1250,
+            "end": 1262
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "controller output = Kp · error",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "9": {
+      "instance_id": 9,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1300,
+          "end": 1316
+        },
+        "parts": [
+          {
+            "ident": "measurement",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1300,
+              "end": 1316
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 97
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "measurement",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 19,
+        "start_column": 3,
+        "end_line": 19,
+        "end_column": 19,
+        "start": 1300,
+        "end": 1316,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1300,
+            "end": 1316
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "plant output, fed back",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "10": {
+      "instance_id": 10,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 11411428034885745715,
+          "start": 1345,
+          "end": 1356
+        },
+        "parts": [
+          {
+            "ident": "result",
+            "span": {
+              "source": 11411428034885745715,
+              "start": 1345,
+              "end": 1356
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 98
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "result",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 20,
+        "start_column": 3,
+        "end_line": 20,
+        "end_column": 14,
+        "start": 1345,
+        "end": 1356,
+        "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1345,
+            "end": 1356
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "scaled measurement — computed after the loop",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "MixedLoop",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "setpoint",
+                        "location": {
+                          "start_line": 22,
+                          "start_column": 3,
+                          "end_line": 22,
+                          "end_column": 11,
+                          "start": 1418,
+                          "end": 1426,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                        },
+                        "token_number": 68,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1418,
+                    "end": 1426
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "sensorGain",
+                            "location": {
+                              "start_line": 22,
+                              "start_column": 14,
+                              "end_line": 22,
+                              "end_column": 24,
+                              "start": 1429,
+                              "end": 1439,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 70,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1429,
+                        "end": 1439
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "reference",
+                            "location": {
+                              "start_line": 22,
+                              "start_column": 27,
+                              "end_line": 22,
+                              "end_column": 36,
+                              "start": 1442,
+                              "end": 1451,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 72,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1442,
+                        "end": 1451
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1429,
+                    "end": 1451
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "MixedLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1418,
+            "end": 1426
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "error",
+                        "location": {
+                          "start_line": 23,
+                          "start_column": 3,
+                          "end_line": 23,
+                          "end_column": 8,
+                          "start": 1514,
+                          "end": 1519,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                        },
+                        "token_number": 75,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1514,
+                    "end": 1519
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Sub",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "setpoint",
+                            "location": {
+                              "start_line": 23,
+                              "start_column": 11,
+                              "end_line": 23,
+                              "end_column": 19,
+                              "start": 1522,
+                              "end": 1530,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 77,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1522,
+                        "end": 1530
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "measurement",
+                            "location": {
+                              "start_line": 23,
+                              "start_column": 22,
+                              "end_line": 23,
+                              "end_column": 33,
+                              "start": 1533,
+                              "end": 1544,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 79,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1533,
+                        "end": 1544
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1522,
+                    "end": 1544
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "MixedLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1514,
+            "end": 1519
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "command",
+                        "location": {
+                          "start_line": 24,
+                          "start_column": 3,
+                          "end_line": 24,
+                          "end_column": 10,
+                          "start": 1563,
+                          "end": 1570,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                        },
+                        "token_number": 82,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1563,
+                    "end": 1570
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "controllerGain",
+                            "location": {
+                              "start_line": 24,
+                              "start_column": 13,
+                              "end_line": 24,
+                              "end_column": 27,
+                              "start": 1573,
+                              "end": 1587,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 84,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1573,
+                        "end": 1587
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "error",
+                            "location": {
+                              "start_line": 24,
+                              "start_column": 30,
+                              "end_line": 24,
+                              "end_column": 35,
+                              "start": 1590,
+                              "end": 1595,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 86,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1590,
+                        "end": 1595
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1573,
+                    "end": 1595
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "MixedLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1563,
+            "end": 1570
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "measurement",
+                        "location": {
+                          "start_line": 25,
+                          "start_column": 3,
+                          "end_line": 25,
+                          "end_column": 14,
+                          "start": 1640,
+                          "end": 1651,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                        },
+                        "token_number": 89,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1640,
+                    "end": 1651
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "plantGain",
+                            "location": {
+                              "start_line": 25,
+                              "start_column": 17,
+                              "end_line": 25,
+                              "end_column": 26,
+                              "start": 1654,
+                              "end": 1663,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 91,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1654,
+                        "end": 1663
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "command",
+                            "location": {
+                              "start_line": 25,
+                              "start_column": 29,
+                              "end_line": 25,
+                              "end_column": 36,
+                              "start": 1666,
+                              "end": 1673,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 93,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1666,
+                        "end": 1673
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1654,
+                    "end": 1673
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "MixedLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1640,
+            "end": 1651
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "result",
+                        "location": {
+                          "start_line": 26,
+                          "start_column": 3,
+                          "end_line": 26,
+                          "end_column": 9,
+                          "start": 1689,
+                          "end": 1695,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                        },
+                        "token_number": 96,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1689,
+                    "end": 1695
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "outputGain",
+                            "location": {
+                              "start_line": 26,
+                              "start_column": 12,
+                              "end_line": 26,
+                              "end_column": 22,
+                              "start": 1698,
+                              "end": 1708,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 98,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1698,
+                        "end": 1708
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "measurement",
+                            "location": {
+                              "start_line": 26,
+                              "start_column": 25,
+                              "end_line": 26,
+                              "end_column": 36,
+                              "start": 1711,
+                              "end": 1722,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/MixedLoop.mo"
+                            },
+                            "token_number": 100,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 11411428034885745715,
+                        "start": 1711,
+                        "end": 1722
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 11411428034885745715,
+                    "start": 1698,
+                    "end": 1722
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "MixedLoop",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 11411428034885745715,
+            "start": 1689,
+            "end": 1695
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "Algebraic feedback loop bracketed by scalar solves — a mixed BLT structure",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 11
+}

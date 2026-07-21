@@ -1,0 +1,1554 @@
+{
+  "def_id": 85,
+  "scope_id": 1,
+  "name": {
+    "text": "NonlinearLoop",
+    "location": {
+      "start_line": 1,
+      "start_column": 7,
+      "end_line": 1,
+      "end_column": 20,
+      "start": 6,
+      "end": 19,
+      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+    },
+    "token_number": 1,
+    "token_type": 64
+  },
+  "class_type": "Model",
+  "class_type_token": {
+    "text": "model",
+    "location": {
+      "start_line": 1,
+      "start_column": 1,
+      "end_line": 1,
+      "end_column": 6,
+      "start": 0,
+      "end": 5,
+      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+    },
+    "token_number": 0,
+    "token_type": 41
+  },
+  "encapsulated": false,
+  "partial": false,
+  "expandable": false,
+  "operator_record": false,
+  "pure": true,
+  "purity_declared": false,
+  "causality": "Empty",
+  "description": [
+    {
+      "text": "Idealized proportional loop closed around a NONLINEAR plant",
+      "location": {
+        "start_line": 1,
+        "start_column": 21,
+        "end_line": 1,
+        "end_column": 82,
+        "start": 20,
+        "end": 81,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "token_number": 2,
+      "token_type": 66
+    }
+  ],
+  "location": {
+    "start_line": 1,
+    "start_column": 7,
+    "end_line": 23,
+    "end_column": 18,
+    "start": 6,
+    "end": 1509,
+    "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+  },
+  "extends": [],
+  "imports": [],
+  "classes": {},
+  "components": {
+    "reference": {
+      "def_id": 89,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "reference",
+      "name_token": {
+        "text": "reference",
+        "location": {
+          "start_line": 12,
+          "start_column": 18,
+          "end_line": 12,
+          "end_column": 27,
+          "start": 934,
+          "end": 943,
+          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+        },
+        "token_number": 15,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 12,
+              "start_column": 13,
+              "end_line": 12,
+              "end_column": 17,
+              "start": 929,
+              "end": 933,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 14,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 12,
+            "start_column": 3,
+            "end_line": 12,
+            "end_column": 12,
+            "start": 919,
+            "end": 928,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 13,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "setpoint",
+          "location": {
+            "start_line": 12,
+            "start_column": 34,
+            "end_line": 12,
+            "end_column": 44,
+            "start": 950,
+            "end": 960,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 18,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 929,
+            "end": 943
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": true,
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 12,
+              "start_column": 30,
+              "end_line": 12,
+              "end_column": 33,
+              "start": 946,
+              "end": 949,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 17,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 946,
+            "end": 949
+          }
+        }
+      },
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 12,
+        "start_column": 13,
+        "end_line": 12,
+        "end_column": 27,
+        "start": 929,
+        "end": 943,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "controllerGain": {
+      "def_id": 90,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "controllerGain",
+      "name_token": {
+        "text": "controllerGain",
+        "location": {
+          "start_line": 13,
+          "start_column": 18,
+          "end_line": 13,
+          "end_column": 32,
+          "start": 979,
+          "end": 993,
+          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+        },
+        "token_number": 22,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 13,
+              "start_column": 13,
+              "end_line": 13,
+              "end_column": 17,
+              "start": 974,
+              "end": 978,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 21,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 13,
+            "start_column": 3,
+            "end_line": 13,
+            "end_column": 12,
+            "start": 964,
+            "end": 973,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 20,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "proportional gain Kp",
+          "location": {
+            "start_line": 13,
+            "start_column": 40,
+            "end_line": 13,
+            "end_column": 62,
+            "start": 1001,
+            "end": 1023,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 25,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 974,
+            "end": 993
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": true,
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 13,
+              "start_column": 35,
+              "end_line": 13,
+              "end_column": 39,
+              "start": 996,
+              "end": 1000,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 24,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 996,
+            "end": 1000
+          }
+        }
+      },
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 13,
+        "start_column": 13,
+        "end_line": 13,
+        "end_column": 32,
+        "start": 974,
+        "end": 993,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "plantGain": {
+      "def_id": 91,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "plantGain",
+      "name_token": {
+        "text": "plantGain",
+        "location": {
+          "start_line": 14,
+          "start_column": 18,
+          "end_line": 14,
+          "end_column": 27,
+          "start": 1042,
+          "end": 1051,
+          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+        },
+        "token_number": 29,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 14,
+              "start_column": 13,
+              "end_line": 14,
+              "end_column": 17,
+              "start": 1037,
+              "end": 1041,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 28,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 14,
+            "start_column": 3,
+            "end_line": 14,
+            "end_column": 12,
+            "start": 1027,
+            "end": 1036,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 27,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "nonlinear (quadratic) plant coefficient",
+          "location": {
+            "start_line": 14,
+            "start_column": 34,
+            "end_line": 14,
+            "end_column": 75,
+            "start": 1058,
+            "end": 1099,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 32,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1037,
+            "end": 1051
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": true,
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "2.0",
+            "location": {
+              "start_line": 14,
+              "start_column": 30,
+              "end_line": 14,
+              "end_column": 33,
+              "start": 1054,
+              "end": 1057,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 31,
+            "token_type": 68
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1054,
+            "end": 1057
+          }
+        }
+      },
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 14,
+        "start_column": 13,
+        "end_line": 14,
+        "end_column": 27,
+        "start": 1037,
+        "end": 1051,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "error": {
+      "def_id": 92,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "error",
+      "name_token": {
+        "text": "error",
+        "location": {
+          "start_line": 15,
+          "start_column": 8,
+          "end_line": 15,
+          "end_column": 13,
+          "start": 1108,
+          "end": 1113,
+          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+        },
+        "token_number": 35,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 15,
+              "start_column": 3,
+              "end_line": 15,
+              "end_column": 7,
+              "start": 1103,
+              "end": 1107,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 34,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "reference − measurement",
+          "location": {
+            "start_line": 15,
+            "start_column": 14,
+            "end_line": 15,
+            "end_column": 39,
+            "start": 1114,
+            "end": 1141,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 36,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1103,
+            "end": 1113
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 15,
+        "start_column": 3,
+        "end_line": 15,
+        "end_column": 13,
+        "start": 1103,
+        "end": 1113,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "command": {
+      "def_id": 93,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "command",
+      "name_token": {
+        "text": "command",
+        "location": {
+          "start_line": 16,
+          "start_column": 8,
+          "end_line": 16,
+          "end_column": 15,
+          "start": 1150,
+          "end": 1157,
+          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+        },
+        "token_number": 39,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 16,
+              "start_column": 3,
+              "end_line": 16,
+              "end_column": 7,
+              "start": 1145,
+              "end": 1149,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 38,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "controller output = Kp · error",
+          "location": {
+            "start_line": 16,
+            "start_column": 16,
+            "end_line": 16,
+            "end_column": 48,
+            "start": 1158,
+            "end": 1191,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 40,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1145,
+            "end": 1157
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 16,
+        "start_column": 3,
+        "end_line": 16,
+        "end_column": 15,
+        "start": 1145,
+        "end": 1157,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "measurement": {
+      "def_id": 94,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "measurement",
+      "name_token": {
+        "text": "measurement",
+        "location": {
+          "start_line": 17,
+          "start_column": 8,
+          "end_line": 17,
+          "end_column": 19,
+          "start": 1200,
+          "end": 1211,
+          "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+        },
+        "token_number": 43,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 17,
+              "start_column": 3,
+              "end_line": 17,
+              "end_column": 7,
+              "start": 1195,
+              "end": 1199,
+              "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+            },
+            "token_number": 42,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "plant output, fed back",
+          "location": {
+            "start_line": 17,
+            "start_column": 20,
+            "end_line": 17,
+            "end_column": 44,
+            "start": 1212,
+            "end": 1236,
+            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+          },
+          "token_number": 44,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1195,
+            "end": 1211
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 17,
+        "start_column": 3,
+        "end_line": 17,
+        "end_column": 19,
+        "start": 1195,
+        "end": 1211,
+        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    }
+  },
+  "equations": [
+    {
+      "Simple": {
+        "lhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "error",
+                  "location": {
+                    "start_line": 19,
+                    "start_column": 3,
+                    "end_line": 19,
+                    "end_column": 8,
+                    "start": 1249,
+                    "end": 1254,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                  },
+                  "token_number": 47,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1249,
+              "end": 1254
+            }
+          }
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Sub",
+            "lhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "reference",
+                      "location": {
+                        "start_line": 19,
+                        "start_column": 11,
+                        "end_line": 19,
+                        "end_column": 20,
+                        "start": 1257,
+                        "end": 1266,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 49,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1257,
+                  "end": 1266
+                }
+              }
+            },
+            "rhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "measurement",
+                      "location": {
+                        "start_line": 19,
+                        "start_column": 23,
+                        "end_line": 19,
+                        "end_column": 34,
+                        "start": 1269,
+                        "end": 1280,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 51,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1269,
+                  "end": 1280
+                }
+              }
+            },
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1257,
+              "end": 1280
+            }
+          }
+        }
+      }
+    },
+    {
+      "Simple": {
+        "lhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "command",
+                  "location": {
+                    "start_line": 20,
+                    "start_column": 3,
+                    "end_line": 20,
+                    "end_column": 10,
+                    "start": 1284,
+                    "end": 1291,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                  },
+                  "token_number": 53,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1284,
+              "end": 1291
+            }
+          }
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Mul",
+            "lhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "controllerGain",
+                      "location": {
+                        "start_line": 20,
+                        "start_column": 13,
+                        "end_line": 20,
+                        "end_column": 27,
+                        "start": 1294,
+                        "end": 1308,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 55,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1294,
+                  "end": 1308
+                }
+              }
+            },
+            "rhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "error",
+                      "location": {
+                        "start_line": 20,
+                        "start_column": 30,
+                        "end_line": 20,
+                        "end_column": 35,
+                        "start": 1311,
+                        "end": 1316,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 57,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1311,
+                  "end": 1316
+                }
+              }
+            },
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1294,
+              "end": 1316
+            }
+          }
+        }
+      }
+    },
+    {
+      "Simple": {
+        "lhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "measurement",
+                  "location": {
+                    "start_line": 21,
+                    "start_column": 3,
+                    "end_line": 21,
+                    "end_column": 14,
+                    "start": 1320,
+                    "end": 1331,
+                    "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                  },
+                  "token_number": 59,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1320,
+              "end": 1331
+            }
+          }
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Mul",
+            "lhs": {
+              "Binary": {
+                "op": "Mul",
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "plantGain",
+                          "location": {
+                            "start_line": 21,
+                            "start_column": 17,
+                            "end_line": 21,
+                            "end_column": 26,
+                            "start": 1334,
+                            "end": 1343,
+                            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                          },
+                          "token_number": 61,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 12973387870978279536,
+                      "start": 1334,
+                      "end": 1343
+                    }
+                  }
+                },
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "command",
+                          "location": {
+                            "start_line": 21,
+                            "start_column": 29,
+                            "end_line": 21,
+                            "end_column": 36,
+                            "start": 1346,
+                            "end": 1353,
+                            "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                          },
+                          "token_number": 63,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 12973387870978279536,
+                      "start": 1346,
+                      "end": 1353
+                    }
+                  }
+                },
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1334,
+                  "end": 1353
+                }
+              }
+            },
+            "rhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "command",
+                      "location": {
+                        "start_line": 21,
+                        "start_column": 39,
+                        "end_line": 21,
+                        "end_column": 46,
+                        "start": 1356,
+                        "end": 1363,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 65,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1356,
+                  "end": 1363
+                }
+              }
+            },
+            "span": {
+              "source": 12973387870978279536,
+              "start": 1334,
+              "end": 1363
+            }
+          }
+        }
+      }
+    }
+  ],
+  "initial_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "equation_keyword": {
+    "text": "equation",
+    "location": {
+      "start_line": 18,
+      "start_column": 1,
+      "end_line": 18,
+      "end_column": 9,
+      "start": 1238,
+      "end": 1246,
+      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+    },
+    "token_number": 46,
+    "token_type": 24
+  },
+  "initial_equation_keyword": null,
+  "algorithm_keyword": null,
+  "initial_algorithm_keyword": null,
+  "end_name_token": {
+    "text": "NonlinearLoop",
+    "location": {
+      "start_line": 23,
+      "start_column": 5,
+      "end_line": 23,
+      "end_column": 18,
+      "start": 1496,
+      "end": 1509,
+      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+    },
+    "token_number": 91,
+    "token_type": 64
+  },
+  "enum_literals": [],
+  "annotation": [
+    {
+      "ClassModification": {
+        "target": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "experiment",
+                "location": {
+                  "start_line": 22,
+                  "start_column": 14,
+                  "end_line": 22,
+                  "end_column": 24,
+                  "start": 1414,
+                  "end": 1424,
+                  "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                },
+                "token_number": 70,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 12973387870978279536,
+            "start": 1414,
+            "end": 1424
+          }
+        },
+        "modifications": [
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "StartTime",
+                      "location": {
+                        "start_line": 22,
+                        "start_column": 25,
+                        "end_line": 22,
+                        "end_column": 34,
+                        "start": 1425,
+                        "end": 1434,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 72,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1425,
+                  "end": 1434
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "0",
+                    "location": {
+                      "start_line": 22,
+                      "start_column": 37,
+                      "end_line": 22,
+                      "end_column": 38,
+                      "start": 1437,
+                      "end": 1438,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                    },
+                    "token_number": 74,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1437,
+                    "end": 1438
+                  }
+                }
+              },
+              "span": {
+                "source": 12973387870978279536,
+                "start": 1425,
+                "end": 1438
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "StopTime",
+                      "location": {
+                        "start_line": 22,
+                        "start_column": 40,
+                        "end_line": 22,
+                        "end_column": 48,
+                        "start": 1440,
+                        "end": 1448,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 76,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1440,
+                  "end": 1448
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "1",
+                    "location": {
+                      "start_line": 22,
+                      "start_column": 51,
+                      "end_line": 22,
+                      "end_column": 52,
+                      "start": 1451,
+                      "end": 1452,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                    },
+                    "token_number": 78,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1451,
+                    "end": 1452
+                  }
+                }
+              },
+              "span": {
+                "source": 12973387870978279536,
+                "start": 1440,
+                "end": 1452
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "Interval",
+                      "location": {
+                        "start_line": 22,
+                        "start_column": 54,
+                        "end_line": 22,
+                        "end_column": 62,
+                        "start": 1454,
+                        "end": 1462,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 80,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1454,
+                  "end": 1462
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "0.001",
+                    "location": {
+                      "start_line": 22,
+                      "start_column": 65,
+                      "end_line": 22,
+                      "end_column": 70,
+                      "start": 1465,
+                      "end": 1470,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                    },
+                    "token_number": 82,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1465,
+                    "end": 1470
+                  }
+                }
+              },
+              "span": {
+                "source": 12973387870978279536,
+                "start": 1454,
+                "end": 1470
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "Tolerance",
+                      "location": {
+                        "start_line": 22,
+                        "start_column": 72,
+                        "end_line": 22,
+                        "end_column": 81,
+                        "start": 1472,
+                        "end": 1481,
+                        "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                      },
+                      "token_number": 84,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 12973387870978279536,
+                  "start": 1472,
+                  "end": 1481
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "1e-6",
+                    "location": {
+                      "start_line": 22,
+                      "start_column": 84,
+                      "end_line": 22,
+                      "end_column": 88,
+                      "start": 1484,
+                      "end": 1488,
+                      "file_name": "/home/dougdew/dev/hrw/specimens/NonlinearLoop.mo"
+                    },
+                    "token_number": 86,
+                    "token_type": 71
+                  },
+                  "span": {
+                    "source": 12973387870978279536,
+                    "start": 1484,
+                    "end": 1488
+                  }
+                }
+              },
+              "span": {
+                "source": 12973387870978279536,
+                "start": 1472,
+                "end": 1488
+              }
+            }
+          }
+        ],
+        "each_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "final_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "redeclare_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "span": {
+          "source": 12973387870978279536,
+          "start": 1414,
+          "end": 1488
+        }
+      }
+    }
+  ],
+  "is_protected": false,
+  "is_final": false,
+  "is_inner": false,
+  "is_outer": false,
+  "is_replaceable": false,
+  "is_redeclare": false,
+  "constrainedby": null,
+  "array_subscripts": [],
+  "external": null
+}

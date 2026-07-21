@@ -1,0 +1,1059 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 16151201885511687010,
+          "start": 239,
+          "end": 245
+        },
+        "parts": [
+          {
+            "ident": "g",
+            "span": {
+              "source": 16151201885511687010,
+              "start": 239,
+              "end": 245
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "g",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 3,
+        "start_column": 13,
+        "end_line": 3,
+        "end_column": 19,
+        "start": 239,
+        "end": 245,
+        "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "BouncingBall",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 3,
+            "start_column": 3,
+            "end_line": 3,
+            "end_column": 12,
+            "start": 229,
+            "end": 238,
+            "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+          },
+          "token_number": 4,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "9.81",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 26,
+              "start": 248,
+              "end": 252,
+              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 248,
+            "end": 252
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "gravity",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "9.81",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 26,
+              "start": 248,
+              "end": 252,
+              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 248,
+            "end": 252
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 16151201885511687010,
+          "start": 276,
+          "end": 282
+        },
+        "parts": [
+          {
+            "ident": "e",
+            "span": {
+              "source": 16151201885511687010,
+              "start": 276,
+              "end": 282
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "e",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 4,
+        "start_column": 13,
+        "end_line": 4,
+        "end_column": 19,
+        "start": 276,
+        "end": 282,
+        "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "BouncingBall",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 4,
+            "start_column": 3,
+            "end_line": 4,
+            "end_column": 12,
+            "start": 266,
+            "end": 275,
+            "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+          },
+          "token_number": 11,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.8",
+            "location": {
+              "start_line": 4,
+              "start_column": 22,
+              "end_line": 4,
+              "end_column": 25,
+              "start": 285,
+              "end": 288,
+              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 285,
+            "end": 288
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "coefficient of restitution",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.8",
+            "location": {
+              "start_line": 4,
+              "start_column": 22,
+              "end_line": 4,
+              "end_column": 25,
+              "start": 285,
+              "end": 288,
+              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 285,
+            "end": 288
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 16151201885511687010,
+          "start": 321,
+          "end": 327
+        },
+        "parts": [
+          {
+            "ident": "h",
+            "span": {
+              "source": 16151201885511687010,
+              "start": 321,
+              "end": 327
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "h",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 5,
+        "start_column": 3,
+        "end_line": 5,
+        "end_column": 9,
+        "start": 321,
+        "end": 327,
+        "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "BouncingBall",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 5,
+              "start_column": 18,
+              "end_line": 5,
+              "end_column": 21,
+              "start": 336,
+              "end": 339,
+              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+            },
+            "token_number": 23,
+            "token_type": 68
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 336,
+            "end": 339
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "height",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 16151201885511687010,
+          "start": 353,
+          "end": 359
+        },
+        "parts": [
+          {
+            "ident": "v",
+            "span": {
+              "source": 16151201885511687010,
+              "start": 353,
+              "end": 359
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 92
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "v",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 6,
+        "start_column": 3,
+        "end_line": 6,
+        "end_column": 9,
+        "start": 353,
+        "end": 359,
+        "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "BouncingBall",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 6,
+              "start_column": 18,
+              "end_line": 6,
+              "end_column": 21,
+              "start": 368,
+              "end": 371,
+              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+            },
+            "token_number": 32,
+            "token_type": 68
+          },
+          "span": {
+            "source": 16151201885511687010,
+            "start": 368,
+            "end": 371
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "BouncingBall",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 8,
+                            "start_column": 3,
+                            "end_line": 8,
+                            "end_column": 6,
+                            "start": 396,
+                            "end": 399,
+                            "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                          },
+                          "token_number": 37,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 396,
+                      "end": 399
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "h",
+                              "location": {
+                                "start_line": 8,
+                                "start_column": 7,
+                                "end_line": 8,
+                                "end_column": 8,
+                                "start": 400,
+                                "end": 401,
+                                "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                              },
+                              "token_number": 39,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 400,
+                          "end": 401
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 16151201885511687010,
+                    "start": 396,
+                    "end": 401
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "v",
+                        "location": {
+                          "start_line": 8,
+                          "start_column": 12,
+                          "end_line": 8,
+                          "end_column": 13,
+                          "start": 405,
+                          "end": 406,
+                          "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                        },
+                        "token_number": 42,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 16151201885511687010,
+                    "start": 405,
+                    "end": 406
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "BouncingBall",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 16151201885511687010,
+            "start": 396,
+            "end": 399
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 9,
+                            "start_column": 3,
+                            "end_line": 9,
+                            "end_column": 6,
+                            "start": 410,
+                            "end": 413,
+                            "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                          },
+                          "token_number": 44,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 410,
+                      "end": 413
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "v",
+                              "location": {
+                                "start_line": 9,
+                                "start_column": 7,
+                                "end_line": 9,
+                                "end_column": 8,
+                                "start": 414,
+                                "end": 415,
+                                "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                              },
+                              "token_number": 46,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 414,
+                          "end": 415
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 16151201885511687010,
+                    "start": 410,
+                    "end": 415
+                  }
+                }
+              },
+              "rhs": {
+                "Unary": {
+                  "op": "Minus",
+                  "rhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "g",
+                            "location": {
+                              "start_line": 9,
+                              "start_column": 13,
+                              "end_line": 9,
+                              "end_column": 14,
+                              "start": 420,
+                              "end": 421,
+                              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                            },
+                            "token_number": 50,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 16151201885511687010,
+                        "start": 420,
+                        "end": 421
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 16151201885511687010,
+                    "start": 419,
+                    "end": 421
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "BouncingBall",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 16151201885511687010,
+            "start": 410,
+            "end": 413
+          }
+        },
+        {
+          "equation": {
+            "When": [
+              {
+                "cond": {
+                  "Binary": {
+                    "op": "Le",
+                    "lhs": {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "h",
+                              "location": {
+                                "start_line": 10,
+                                "start_column": 8,
+                                "end_line": 10,
+                                "end_column": 9,
+                                "start": 430,
+                                "end": 431,
+                                "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                              },
+                              "token_number": 53,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 430,
+                          "end": 431
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Terminal": {
+                        "terminal_type": "UnsignedInteger",
+                        "token": {
+                          "text": "0",
+                          "location": {
+                            "start_line": 10,
+                            "start_column": 13,
+                            "end_line": 10,
+                            "end_column": 14,
+                            "start": 435,
+                            "end": 436,
+                            "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                          },
+                          "token_number": 55,
+                          "token_type": 67
+                        },
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 435,
+                          "end": 436
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 16151201885511687010,
+                      "start": 430,
+                      "end": 436
+                    }
+                  }
+                },
+                "eqs": [
+                  {
+                    "FunctionCall": {
+                      "comp": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "reinit",
+                              "location": {
+                                "start_line": 11,
+                                "start_column": 5,
+                                "end_line": 11,
+                                "end_column": 11,
+                                "start": 446,
+                                "end": 452,
+                                "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                              },
+                              "token_number": 57,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 16151201885511687010,
+                          "start": 446,
+                          "end": 452
+                        }
+                      },
+                      "args": [
+                        {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "v",
+                                  "location": {
+                                    "start_line": 11,
+                                    "start_column": 12,
+                                    "end_line": 11,
+                                    "end_column": 13,
+                                    "start": 453,
+                                    "end": 454,
+                                    "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                                  },
+                                  "token_number": 59,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 16151201885511687010,
+                              "start": 453,
+                              "end": 454
+                            }
+                          }
+                        },
+                        {
+                          "Unary": {
+                            "op": "Minus",
+                            "rhs": {
+                              "Binary": {
+                                "op": "Mul",
+                                "lhs": {
+                                  "ComponentReference": {
+                                    "local": false,
+                                    "parts": [
+                                      {
+                                        "ident": {
+                                          "text": "e",
+                                          "location": {
+                                            "start_line": 11,
+                                            "start_column": 16,
+                                            "end_line": 11,
+                                            "end_column": 17,
+                                            "start": 457,
+                                            "end": 458,
+                                            "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                                          },
+                                          "token_number": 62,
+                                          "token_type": 64
+                                        },
+                                        "subs": null
+                                      }
+                                    ],
+                                    "span": {
+                                      "source": 16151201885511687010,
+                                      "start": 457,
+                                      "end": 458
+                                    }
+                                  }
+                                },
+                                "rhs": {
+                                  "FunctionCall": {
+                                    "comp": {
+                                      "local": false,
+                                      "parts": [
+                                        {
+                                          "ident": {
+                                            "text": "pre",
+                                            "location": {
+                                              "start_line": 11,
+                                              "start_column": 20,
+                                              "end_line": 11,
+                                              "end_column": 23,
+                                              "start": 461,
+                                              "end": 464,
+                                              "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                                            },
+                                            "token_number": 64,
+                                            "token_type": 64
+                                          },
+                                          "subs": null
+                                        }
+                                      ],
+                                      "span": {
+                                        "source": 16151201885511687010,
+                                        "start": 461,
+                                        "end": 464
+                                      }
+                                    },
+                                    "args": [
+                                      {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "v",
+                                                "location": {
+                                                  "start_line": 11,
+                                                  "start_column": 24,
+                                                  "end_line": 11,
+                                                  "end_column": 25,
+                                                  "start": 465,
+                                                  "end": 466,
+                                                  "file_name": "/home/dougdew/dev/hrw/specimens/BouncingBall.mo"
+                                                },
+                                                "token_number": 66,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 16151201885511687010,
+                                            "start": 465,
+                                            "end": 466
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "span": {
+                                      "source": 16151201885511687010,
+                                      "start": 461,
+                                      "end": 466
+                                    }
+                                  }
+                                },
+                                "span": {
+                                  "source": 16151201885511687010,
+                                  "start": 457,
+                                  "end": 466
+                                }
+                              }
+                            },
+                            "span": {
+                              "source": 16151201885511687010,
+                              "start": 456,
+                              "end": 466
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "BouncingBall",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 16151201885511687010,
+            "start": 430,
+            "end": 431
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "A ball bouncing under gravity — the archetypal hybrid model (state event + reinit)",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 5
+}
