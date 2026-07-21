@@ -27,7 +27,7 @@ mod variable_scope;
 pub use diagnostics::{AlgebraicLoop, StructuralDiagnostics};
 pub use eliminate::{EliminationResult, Substitution};
 pub use ic_plan::{CausalStep, IcBlock, IcRelaxationHint, build_ic_plan, build_ic_relaxation_hint};
-pub use incidence::{Incidence, build_solver_sparsity_triplets};
+pub use incidence::{Incidence, build_incidence, build_solver_sparsity_triplets};
 pub use report::{BlockReport, StructuralReport, TearingReport};
 pub use runtime_defined::{
     runtime_defined_continuous_unknown_names, runtime_defined_unknown_names,

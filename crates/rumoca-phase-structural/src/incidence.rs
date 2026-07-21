@@ -47,7 +47,7 @@ impl Incidence {
 }
 
 /// Build incidence data from a DAE.
-pub(crate) fn build_incidence(dae: &dae::Dae) -> Incidence {
+pub fn build_incidence(dae: &dae::Dae) -> Incidence {
     let (_unknown_map, unknown_names, unknown_spans) = build_unknown_map(dae);
     let (der_resolver, variable_resolver) = build_unknown_resolvers(&unknown_names);
 
