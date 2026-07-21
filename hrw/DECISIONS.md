@@ -548,3 +548,19 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   keep HRW in `hrw/` and hooks separable so an upstream PR is a clean cherry-pick of Rumoca-only changes.
   Verified: `cargo build -p hrw` + `cargo test -p hrw` green (29 tests) in the workspace. "Updating
   Rumoca" is now **rebasing the `hrw` branch on upstream**, not a pin bump (see `docs/updating-rumoca.md`).
+
+- **Pass two: re-implement Arcs 1–7 with internal Rumoca access, then the log view (2026-07-21).**
+  Now that HRW is in-workspace, revisit each of the seven arcs to deliver *richer* stage views than the
+  public-API-only pass one allowed, then build a log view as the payoff. Key mechanic: across a crate
+  boundary a phase's `pub(crate)` internals aren't reachable, so "using non-public APIs" means
+  **additively widening visibility / adding observation hooks in `../crates/rumoca-*`** — it *is* the
+  instrumentation, held to the additive/observation-only/upstreamable discipline. Sequence Doug set:
+  **(1) re-implement Arcs 1–7** (per arc: scout the crate → expose additively → render → re-wire into
+  the per-stage systems + notebook), **(2) the log view** — compilation + simulation log with
+  **timestamps** and far more phase/solver detail than was possible (per-phase timing was impossible
+  when phases 5–9 come from one opaque `compile_model_strict_reachable_with_recovery` call). The log
+  view is the deliberate *proof the migration was worthwhile*. Pass one is the baseline to surpass, not
+  discard. Highest-confidence early unlocks: the **incidence-matrix view** (Arc 3 — deferred in pass one
+  *because incidence was `pub(crate)`*) and the **real Pantelides/dummy-derivative process** (Arc 4 —
+  pass one only replicated it via public `dae_prepare` and couldn't do nonlinear constraints). Per-arc
+  roadmap: `docs/pass-two-plan.md`.

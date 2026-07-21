@@ -7,12 +7,30 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**The seven-arc curriculum is COMPLETE (Arc 7 closed 2026-07-21).** The charter's curriculum (§4.2) is
-seven arcs, one per phase; the observatory now instruments the whole pipeline **Parse → Resolve →
-Instantiate → Typecheck → Flatten → Structural → Index reduction → Initialization → Events → Solve
-lowering → Simulation** — from static IR inspection through live execution. There is **no Arc 8 in the
-charter**: further work comes from the backlog (`docs/ideas.md`), the deferred items below, or a new
-charter decision — not a pre-planned next arc. Pick the next thrust *with Doug*; don't assume one.
+**Pass one (the public-API build of Arcs 1–7) is COMPLETE. Pass two is now the current work:
+RE-IMPLEMENT Arcs 1–7 with internal Rumoca access, then build the log view.** Pass one built the
+whole pipeline observatory (Parse → Resolve → Instantiate → Typecheck → Flatten → Structural → Index
+reduction → Initialization → Events → Solve lowering → Simulation) under a self-imposed
+**public-API-only** constraint. That constraint is **now lifted** — HRW lives in the Rumoca workspace
+(`hrw/`) and may reach internal phase state. **Key mechanic:** across a crate boundary a phase's
+`pub(crate)` internals aren't reachable, so "accessing non-public APIs" means **additively widening
+visibility / adding observation hooks in the `../crates/rumoca-*` crates** — i.e. it *is* the
+instrumentation, and it must stay **additive, observation-only, and upstreamable** (see
+[`DECISIONS.md`](DECISIONS.md)).
+
+**Current work — Pass two, in this order:**
+1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than
+   the public API allowed. Per arc: scout what state the phase holds (read the crate under
+   `../crates/`), expose it additively, render it. Roadmap + per-arc opportunities in
+   [`docs/pass-two-plan.md`](docs/pass-two-plan.md). Clearest concrete win: the **incidence-matrix
+   view** (Arc 3) — deferred in pass one *precisely because incidence was `pub(crate)`*; now reachable.
+2. **The log view** — a pane streaming compilation + simulation log messages with **timestamps** and
+   far more phase/solver detail than the public API could give (per-phase timing was impossible when
+   phases 5–9 arrived from one opaque `compile_model_strict_reachable_with_recovery` call). Deliberately
+   the **proof the migration was worthwhile** (Doug).
+
+Pass one is the **baseline to surpass, not discard** — its stage views, specimens, notebook, and tests
+are the reference that pass two enriches. The pass-one arc record follows.
 
 **Arc 7 closed (2026-07-21) — The simulation core** (charter §4.2.7), the biggest inflection (static IR →
 live execution). Delivered: **Solve lowering** (phase 8 — DAE → `SolveModel`, via
