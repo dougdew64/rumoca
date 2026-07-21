@@ -481,8 +481,8 @@ impl WorkerState {
             },
         });
 
-        // --- Flatten stage: from the reachable-closure pipeline (increment 1).
-        // Instantiate/Typecheck were computed above from the resolved tree. ---
+        // --- DAE stages: from the reachable-closure pipeline. Each stage
+        // emits a CompileProgress so its tab colours as soon as it's known. ---
         let (flatten, structural, index_reduction, initialization, events, solve_lowering) = match &model {
             None => {
                 let e = "parse produced no model to compile";
@@ -492,14 +492,40 @@ impl WorkerState {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
                 let result = report.requested_result.as_ref();
-                (
-                    flatten_stage(result),
-                    structural_stage(result),
-                    index_reduction_stage(result),
-                    initialization_stage(result),
-                    events_stage(result),
-                    solve_lowering_stage(result),
-                )
+
+                let mut bundle = StageBundle {
+                    parse: parse.clone(),
+                    resolve: resolve.clone(),
+                    instantiate: instantiate.clone(),
+                    typecheck: typecheck.clone(),
+                    ..Default::default()
+                };
+
+                let flatten = flatten_stage(result);
+                bundle.flatten = flatten.clone();
+                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
+
+                let structural = structural_stage(result);
+                bundle.structural = structural.clone();
+                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
+
+                let index_reduction = index_reduction_stage(result);
+                bundle.index_reduction = index_reduction.clone();
+                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
+
+                let initialization = initialization_stage(result);
+                bundle.initialization = initialization.clone();
+                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
+
+                let events = events_stage(result);
+                bundle.events = events.clone();
+                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
+
+                let solve_lowering = solve_lowering_stage(result);
+                bundle.solve_lowering = solve_lowering.clone();
+                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle });
+
+                (flatten, structural, index_reduction, initialization, events, solve_lowering)
             }
         };
 
