@@ -11,6 +11,9 @@ edition = "2024"
 excessive_nesting = "allow"
 too_many_arguments = "allow"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [dependencies]
 anyhow = "1.0.103"
 eframe = "0.35.0"
@@ -19,7 +22,7 @@ egui_plot = "0.36"  # Arc 7: plot sim trajectories (0.36 targets egui 0.35; egui
 # workspace member — `hrw/`). Path deps track the checked-out tree, enabling
 # atomic phase+render changes and instrumentation. The former upstream pin was
 # rev 8cdc7419 (v0.9.20); the `hrw` branch is cut from that commit.
-rumoca-compile = { path = "../crates/rumoca-compile" }
+rumoca-compile = { path = "../crates/rumoca-compile", features = ["tracing"] }
 rumoca-ir-ast = { path = "../crates/rumoca-ir-ast" }
 rumoca-phase-parse = { path = "../crates/rumoca-phase-parse" }
 # Arc 2 increment 2: instantiate + instanced-typecheck the model directly, to
@@ -32,3 +35,5 @@ rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # Arc 4: name the DAE type
 rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # Arc 7: DAE -> SolveModel (solve lowering)
 rumoca-sim = { path = "../crates/rumoca-sim" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
 serde_json = "1.0.150"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

@@ -37,6 +37,8 @@ pub enum ToWorker {
     /// to `t_end`, returning the state trajectories to plot. Runs on this worker
     /// thread so the UI never blocks.
     Simulate { path: PathBuf, model: String, t_end: f64 },
+    /// Enable or disable Rumoca's internal `tracing` subscriber on this thread.
+    SetTracing(bool),
 }
 
 /// Arc 7: simulation output for plotting — one time axis and, per output variable,
@@ -190,10 +192,33 @@ impl DefInfo {
     }
 }
 
+/// A single log entry streamed from the worker to the UI.
+#[derive(Clone)]
+pub struct LogEntry {
+    /// Seconds elapsed since the compile started.
+    pub elapsed_secs: f64,
+    pub level: LogLevel,
+    pub message: String,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum LogLevel {
+    Info,
+    StageStart,
+    StageEnd,
+    Warn,
+    Error,
+    Stdout,
+    Stderr,
+    Trace,
+}
+
 /// A result from the worker back to the UI thread.
 pub enum FromWorker {
     /// Outcome of loading libraries: total documents loaded, or an error.
     Libraries(Result<usize, String>),
+    /// A log entry streamed during compilation (stage timing, milestones, stderr).
+    Log(LogEntry),
     /// Partial compile progress: the stages known so far (rest neutral). Streamed
     /// after each compile chunk so the UI colours tabs as work lands; the compile
     /// is still running (`compiling` stays true) and a final `Compiled` follows.
@@ -260,11 +285,12 @@ impl Worker {
                         let _ = tx_res.send(m);
                         ctx.request_repaint();
                     };
-                    let response = state.handle(msg, &emit);
-                    if tx_res.send(response).is_err() {
-                        break; // UI gone
+                    if let Some(response) = state.handle(msg, &emit) {
+                        if tx_res.send(response).is_err() {
+                            break; // UI gone
+                        }
+                        ctx.request_repaint();
                     }
-                    ctx.request_repaint();
                 }
             })
             .expect("failed to spawn rumoca-worker thread");
@@ -283,24 +309,44 @@ struct WorkerState {
     session: Session,
     /// Library roots currently loaded, so a specimen compile knows they're ready.
     libraries: Vec<PathBuf>,
+    /// Guard for the thread-local tracing subscriber. Held while tracing is
+    /// enabled; dropped to deactivate.
+    tracing_guard: Option<tracing::subscriber::DefaultGuard>,
 }
 
 impl WorkerState {
     fn new() -> Self {
-        WorkerState { session: Session::new(SessionConfig::default()), libraries: Vec::new() }
+        WorkerState {
+            session: Session::new(SessionConfig::default()),
+            libraries: Vec::new(),
+            tracing_guard: None,
+        }
     }
 
     /// Dispatch one request. Natural breakpoint site for studying a phase.
     /// `emit` streams intermediate results (compile-stage progress) ahead of the
-    /// returned final result.
-    fn handle(&mut self, msg: ToWorker, emit: &impl Fn(FromWorker)) -> FromWorker {
+    /// returned final result. Returns `None` for fire-and-forget messages
+    /// (SetTracing) that don't produce a response.
+    fn handle(&mut self, msg: ToWorker, emit: &impl Fn(FromWorker)) -> Option<FromWorker> {
         match msg {
-            ToWorker::SetLibraries(roots) => FromWorker::Libraries(self.load_libraries(roots)),
-            ToWorker::Compile(path) => self.compile(&path, emit),
-            ToWorker::OpenDef(name) => self.open_def(&name),
+            ToWorker::SetLibraries(roots) => Some(FromWorker::Libraries(self.load_libraries(roots))),
+            ToWorker::Compile(path) => Some(self.compile(&path, emit)),
+            ToWorker::OpenDef(name) => Some(self.open_def(&name)),
             ToWorker::Simulate { path, model, t_end } => {
                 let result = self.simulate(&path, &model, t_end);
-                FromWorker::Simulated { path, result }
+                Some(FromWorker::Simulated { path, result })
+            }
+            ToWorker::SetTracing(enabled) => {
+                if enabled {
+                    if self.tracing_guard.is_none() {
+                        let subscriber = TracingForwarder;
+                        self.tracing_guard =
+                            Some(tracing::subscriber::set_default(subscriber));
+                    }
+                } else {
+                    self.tracing_guard = None;
+                }
+                None
             }
         }
     }
@@ -383,9 +429,44 @@ impl WorkerState {
     /// instantiation (Arc 2); the pre-instantiation whole-tree typecheck fails
     /// on the full MSL.
     fn compile(&mut self, path: &Path, emit: &impl Fn(FromWorker)) -> FromWorker {
+        use std::time::Instant;
+        let t0 = Instant::now();
+
+        let log = |level: LogLevel, msg: String| {
+            emit(FromWorker::Log(LogEntry {
+                elapsed_secs: t0.elapsed().as_secs_f64(),
+                level,
+                message: msg,
+            }));
+        };
+
+        #[cfg(unix)]
+        let mut output_capture = OutputCapture::start();
+
+        let drain_output = |#[allow(unused)] capture: &mut Option<OutputCapture>, log_fn: &dyn Fn(LogLevel, String)| {
+            #[cfg(unix)]
+            if let Some(cap) = capture.as_mut() {
+                let (stdout, stderr) = cap.drain();
+                for line in stdout.lines() {
+                    if !line.is_empty() {
+                        log_fn(LogLevel::Stdout, line.to_owned());
+                    }
+                }
+                for line in stderr.lines() {
+                    if !line.is_empty() {
+                        log_fn(LogLevel::Stderr, line.to_owned());
+                    }
+                }
+            }
+        };
+
+        log(LogLevel::Info, format!("compiling {}", path.file_name().and_then(|n| n.to_str()).unwrap_or("?")));
+
         let source = match std::fs::read_to_string(path) {
             Ok(s) => s,
             Err(e) => {
+                #[cfg(unix)]
+                drop(output_capture.take());
                 return FromWorker::Compiled {
                     path: path.to_owned(),
                     model: None,
@@ -406,7 +487,9 @@ impl WorkerState {
         let uri = path.to_string_lossy().to_string();
         let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("buffer.mo");
 
-        // --- Parse stage: raw AST of the user file (def_ids all None). ---
+        // --- Parse stage ---
+        log(LogLevel::StageStart, "Parse".to_owned());
+        let t_stage = Instant::now();
         let (parse, model) = match rumoca_phase_parse::parse_to_ast(&source, file_name) {
             Ok(ast) => {
                 let model = ast.classes.keys().next().cloned();
@@ -415,22 +498,20 @@ impl WorkerState {
             }
             Err(e) => (Stage::err(format!("{e:#}")), None),
         };
-        // Parse done → colour the Parse tab now (the resolve chunk below is the
-        // first big wait — resolving the MSL closure).
+        drain_traces(&log);
+        #[cfg(unix)]
+        drain_output(&mut output_capture, &log);
+        log(LogLevel::StageEnd, format!("Parse ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         emit(FromWorker::CompileProgress {
             path: path.to_owned(),
             stages: StageBundle { parse: parse.clone(), ..Default::default() },
         });
 
-        // --- Resolve stage: the user model's class with def_ids populated. ---
-        // The session resolves the whole aggregate (user model + libraries); we
-        // pull out just the user model's resolved class for display.
+        // --- Resolve stage ---
+        log(LogLevel::StageStart, "Resolve".to_owned());
+        let t_stage = Instant::now();
         self.session.update_document(&uri, &source);
-        // Resolutions for the DefIds referenced in the resolved model, built
-        // wherever we successfully extract a resolved class below.
         let mut def_index = BTreeMap::new();
-        // Increment 2: instantiate + instanced-typecheck stages, computed from
-        // the resolved tree while we still hold it (default = empty if resolve fails).
         let mut instantiate = Stage::default();
         let mut typecheck = Stage::default();
         let resolve = match &model {
@@ -443,7 +524,10 @@ impl WorkerState {
                         if let Some(v) = &stage.value {
                             def_index = build_def_index(&rt.0, v);
                         }
+                        log(LogLevel::StageStart, "Instantiate + Typecheck".to_owned());
+                        let t_sub = Instant::now();
                         let (i, t) = instantiate_and_typecheck(&rt.0, &qualified);
+                        log(LogLevel::StageEnd, format!("Instantiate + Typecheck ({:.1}ms)", t_sub.elapsed().as_secs_f64() * 1000.0));
                         instantiate = i;
                         typecheck = t;
                         stage
@@ -466,10 +550,10 @@ impl WorkerState {
             }
         };
 
-        // Resolve chunk done → colour Resolve/Instantiate/Typecheck now (the DAE
-        // compile below is the second big wait). This is the granularity the
-        // worker can see: parse, the resolve chunk, then the six DAE stages that
-        // Rumoca computes together in one reachable-closure call.
+        drain_traces(&log);
+        #[cfg(unix)]
+        drain_output(&mut output_capture, &log);
+        log(LogLevel::StageEnd, format!("Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         emit(FromWorker::CompileProgress {
             path: path.to_owned(),
             stages: StageBundle {
@@ -490,7 +574,14 @@ impl WorkerState {
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
+
+                log(LogLevel::StageStart, "DAE pipeline (flatten → solve lowering)".to_owned());
+                let t_pipeline = Instant::now();
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
+                drain_traces(&log);
+                #[cfg(unix)]
+                drain_output(&mut output_capture, &log);
+
                 let result = report.requested_result.as_ref();
 
                 let mut bundle = StageBundle {
@@ -501,33 +592,63 @@ impl WorkerState {
                     ..Default::default()
                 };
 
+                log(LogLevel::StageStart, "Flatten".to_owned());
+                let t_stage = Instant::now();
                 let flatten = flatten_stage(result);
+                drain_traces(&log);
+                log(LogLevel::StageEnd, format!("Flatten ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
                 bundle.flatten = flatten.clone();
                 emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
 
+                log(LogLevel::StageStart, "Structural analysis".to_owned());
+                let t_stage = Instant::now();
                 let structural = structural_stage(result);
+                drain_traces(&log);
+                log(LogLevel::StageEnd, format!("Structural analysis ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
                 bundle.structural = structural.clone();
                 emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
 
+                log(LogLevel::StageStart, "Index reduction".to_owned());
+                let t_stage = Instant::now();
                 let index_reduction = index_reduction_stage(result);
+                drain_traces(&log);
+                log(LogLevel::StageEnd, format!("Index reduction ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
                 bundle.index_reduction = index_reduction.clone();
                 emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
 
+                log(LogLevel::StageStart, "Initialization".to_owned());
+                let t_stage = Instant::now();
                 let initialization = initialization_stage(result);
+                drain_traces(&log);
+                log(LogLevel::StageEnd, format!("Initialization ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
                 bundle.initialization = initialization.clone();
                 emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
 
+                log(LogLevel::StageStart, "Events".to_owned());
+                let t_stage = Instant::now();
                 let events = events_stage(result);
+                drain_traces(&log);
+                log(LogLevel::StageEnd, format!("Events ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
                 bundle.events = events.clone();
                 emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
 
+                log(LogLevel::StageStart, "Solve lowering".to_owned());
+                let t_stage = Instant::now();
                 let solve_lowering = solve_lowering_stage(result);
+                drain_traces(&log);
+                log(LogLevel::StageEnd, format!("Solve lowering ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
                 bundle.solve_lowering = solve_lowering.clone();
                 emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle });
+
+                log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
 
                 (flatten, structural, index_reduction, initialization, events, solve_lowering)
             }
         };
+
+        #[cfg(unix)]
+        drop(output_capture.take());
+        log(LogLevel::Info, format!("done ({:.1}ms total)", t0.elapsed().as_secs_f64() * 1000.0));
 
         FromWorker::Compiled {
             path: path.to_owned(),
@@ -1644,4 +1765,176 @@ fn extract_class(tree: &rumoca_ir_ast::ClassTree, qualified_name: &str) -> Stage
         Some(class) => Stage::ok(serde_json::to_value(class).unwrap_or_default()),
         None => Stage::err(format!("`{qualified_name}` not found in resolved tree")),
     }
+}
+
+/// Captures stdout and stderr at the file-descriptor level so that `println!`
+/// and `eprintln!` output from Rumoca library calls is intercepted and forwarded
+/// as log entries.
+#[cfg(unix)]
+struct OutputCapture {
+    old_stdout: i32,
+    old_stderr: i32,
+    stdout_read: std::fs::File,
+    stderr_read: std::fs::File,
+}
+
+#[cfg(unix)]
+impl OutputCapture {
+    fn start() -> Option<Self> {
+        use std::os::unix::io::FromRawFd;
+
+        unsafe {
+            let _ = std::io::Write::flush(&mut std::io::stdout());
+            let _ = std::io::Write::flush(&mut std::io::stderr());
+
+            let mut out_fds = [0i32; 2];
+            let mut err_fds = [0i32; 2];
+            if libc::pipe(out_fds.as_mut_ptr()) != 0 {
+                return None;
+            }
+            if libc::pipe(err_fds.as_mut_ptr()) != 0 {
+                libc::close(out_fds[0]);
+                libc::close(out_fds[1]);
+                return None;
+            }
+
+            let old_stdout = libc::dup(1);
+            let old_stderr = libc::dup(2);
+            if old_stdout < 0 || old_stderr < 0 {
+                if old_stdout >= 0 { libc::close(old_stdout); }
+                if old_stderr >= 0 { libc::close(old_stderr); }
+                libc::close(out_fds[0]); libc::close(out_fds[1]);
+                libc::close(err_fds[0]); libc::close(err_fds[1]);
+                return None;
+            }
+
+            if libc::dup2(out_fds[1], 1) < 0 || libc::dup2(err_fds[1], 2) < 0 {
+                libc::dup2(old_stdout, 1);
+                libc::dup2(old_stderr, 2);
+                libc::close(old_stdout); libc::close(old_stderr);
+                libc::close(out_fds[0]); libc::close(out_fds[1]);
+                libc::close(err_fds[0]); libc::close(err_fds[1]);
+                return None;
+            }
+            libc::close(out_fds[1]);
+            libc::close(err_fds[1]);
+
+            Some(OutputCapture {
+                old_stdout,
+                old_stderr,
+                stdout_read: std::fs::File::from_raw_fd(out_fds[0]),
+                stderr_read: std::fs::File::from_raw_fd(err_fds[0]),
+            })
+        }
+    }
+
+    fn drain(&mut self) -> (String, String) {
+        let _ = std::io::Write::flush(&mut std::io::stdout());
+        let _ = std::io::Write::flush(&mut std::io::stderr());
+        (Self::drain_pipe(&mut self.stdout_read), Self::drain_pipe(&mut self.stderr_read))
+    }
+
+    fn drain_pipe(file: &mut std::fs::File) -> String {
+        use std::io::Read;
+        use std::os::unix::io::AsRawFd;
+        let fd = file.as_raw_fd();
+        unsafe {
+            let flags = libc::fcntl(fd, libc::F_GETFL);
+            libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
+        }
+        let mut buf = Vec::new();
+        let _ = file.read_to_end(&mut buf);
+        unsafe {
+            let flags = libc::fcntl(fd, libc::F_GETFL);
+            libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK);
+        }
+        String::from_utf8_lossy(&buf).into_owned()
+    }
+}
+
+#[cfg(unix)]
+impl Drop for OutputCapture {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = std::io::Write::flush(&mut std::io::stdout());
+            let _ = std::io::Write::flush(&mut std::io::stderr());
+            libc::dup2(self.old_stdout, 1);
+            libc::dup2(self.old_stderr, 2);
+            libc::close(self.old_stdout);
+            libc::close(self.old_stderr);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tracing subscriber that buffers Rumoca's `tracing::debug!` / `tracing::warn!`
+// events into a thread-local vec, drained by `compile()` after each stage.
+// ---------------------------------------------------------------------------
+
+use std::cell::RefCell;
+
+thread_local! {
+    static TRACE_BUFFER: RefCell<Vec<(tracing::Level, String)>> = const { RefCell::new(Vec::new()) };
+}
+
+fn drain_traces(log_fn: &dyn Fn(LogLevel, String)) {
+    TRACE_BUFFER.with(|buf| {
+        for (level, msg) in buf.borrow_mut().drain(..) {
+            let ll = match level {
+                tracing::Level::ERROR => LogLevel::Error,
+                tracing::Level::WARN => LogLevel::Warn,
+                _ => LogLevel::Trace,
+            };
+            log_fn(ll, msg);
+        }
+    });
+}
+
+struct TracingForwarder;
+
+impl tracing::Subscriber for TracingForwarder {
+    fn enabled(&self, metadata: &tracing::Metadata<'_>) -> bool {
+        *metadata.level() <= tracing::Level::DEBUG
+    }
+
+    fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
+        tracing::span::Id::from_u64(1)
+    }
+
+    fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
+    fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
+
+    fn event(&self, event: &tracing::Event<'_>) {
+        use std::fmt::Write;
+        let meta = event.metadata();
+        let mut msg = String::new();
+        let target = meta.target();
+        let _ = write!(msg, "[{target}] ");
+
+        struct Visitor<'a>(&'a mut String);
+        impl tracing::field::Visit for Visitor<'_> {
+            fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+                use std::fmt::Write;
+                if field.name() == "message" {
+                    let _ = write!(self.0, "{value:?}");
+                } else {
+                    let _ = write!(self.0, " {}={:?}", field.name(), value);
+                }
+            }
+            fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+                use std::fmt::Write;
+                if field.name() == "message" {
+                    let _ = write!(self.0, "{value}");
+                } else {
+                    let _ = write!(self.0, " {}={value}", field.name());
+                }
+            }
+        }
+        event.record(&mut Visitor(&mut msg));
+
+        TRACE_BUFFER.with(|buf| buf.borrow_mut().push((*meta.level(), msg)));
+    }
+
+    fn enter(&self, _: &tracing::span::Id) {}
+    fn exit(&self, _: &tracing::span::Id) {}
 }

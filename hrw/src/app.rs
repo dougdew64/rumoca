@@ -15,11 +15,13 @@ use crate::bridge::{self, Ask, Focus, Seg};
 use crate::canvas::Canvas;
 use crate::field_help;
 use crate::incidence_view;
+use crate::log_view;
 use crate::reduction_view;
 use crate::spyplot;
 use crate::tree;
 use crate::worker::{
-    discontinuity_segments, DefInfo, FromWorker, SimData, Stage, StageBundle, ToWorker, Worker,
+    discontinuity_segments, DefInfo, FromWorker, LogEntry, SimData, Stage, StageBundle, ToWorker,
+    Worker,
 };
 
 /// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
@@ -131,6 +133,13 @@ pub struct App {
     spy_canvas: Canvas,
     incidence_canvas: Canvas,
 
+    // The compilation log — timestamped events streamed from the worker thread.
+    // `viewing_log` is true when the log view is selected (the Log button left of
+    // the stage tabs); auto-selected when a specimen is opened.
+    log_entries: Vec<LogEntry>,
+    viewing_log: bool,
+    tracing_enabled: bool,
+
     // Arc 7: on-demand simulation (the Simulation tab) — not a compile stage.
     // `simulation` is an always-empty placeholder so `current_stage` has a Stage
     // to return; the Simulation view is the egui_plot pane, rendered specially.
@@ -201,6 +210,9 @@ impl App {
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default(),
             incidence_canvas: Canvas::default(),
+            log_entries: Vec::new(),
+            viewing_log: false,
+            tracing_enabled: false,
             simulation: Stage::default(),
             sim_data: None,
             sim_running: false,
@@ -273,6 +285,8 @@ impl App {
         self.nav_loading = None;
         self.nav_error = None;
         self.selected_field = None;
+        self.log_entries.clear();
+        self.viewing_log = true;
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
     }
@@ -293,6 +307,9 @@ impl App {
                         Ok(n) => format!("loaded {n} library document(s)"),
                         Err(e) => format!("library load failed — {e}"),
                     };
+                }
+                FromWorker::Log(entry) => {
+                    self.log_entries.push(entry);
                 }
                 FromWorker::CompileProgress { path, stages } => {
                     // A partial result mid-compile: apply the stages known so far so
@@ -1047,9 +1064,11 @@ impl eframe::App for App {
                     // painted red when that stage errored, so failed stages are
                     // visible without opening each (e.g. CapacitorLoop fails at
                     // Structural + Index reduction while landing on Initialization).
+                    if ui.selectable_label(self.viewing_log, "Log").clicked() {
+                        self.viewing_log = true;
+                    }
+                    ui.separator();
                     let err = ui.visuals().error_fg_color;
-                    // Green for a succeeded stage (egui has no semantic success colour):
-                    // theme-aware GitHub-style greens, readable on dark and light.
                     let ok = if ui.visuals().dark_mode {
                         egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
                     } else {
@@ -1066,7 +1085,7 @@ impl eframe::App for App {
                     // separate 🔎 button) — so its context is ready the instant you view
                     // it; the capture fires once below. Simulation is excluded: it's a
                     // run/plot action, not an IR capture.
-                    let stage_selected = !self.compiling;
+                    let stage_selected = !self.compiling && !self.viewing_log;
                     let mut stage_tab_clicked = false;
                     if ui.selectable_label(stage_selected && self.stage == StageKind::Parse, tab_label("Parse", &self.parse, ok, err)).clicked() {
                         self.stage = StageKind::Parse;
@@ -1168,12 +1187,13 @@ impl eframe::App for App {
                         .clicked()
                     {
                         self.stage = StageKind::Simulation;
+                        self.viewing_log = false;
                     }
-                    // Clicking any IR stage tab captures that stage for the chat (replaces
-                    // the old 🔎 Capture button). Guarded so browsing tabs before a specimen
-                    // is loaded does nothing.
-                    if stage_tab_clicked && self.selected.is_some() {
-                        want_stage_ask = true;
+                    if stage_tab_clicked {
+                        self.viewing_log = false;
+                        if self.selected.is_some() {
+                            want_stage_ask = true;
+                        }
                     }
                     ui.separator();
                     // The compiled-model identity (first class in the AST — not the
@@ -1196,9 +1216,11 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
-                // Simulation is a plot, not IR — render the plot pane and skip the
-                // whole note/report/tree block below.
-                if self.stage == StageKind::Simulation {
+                if self.viewing_log {
+                    if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
+                        self.worker.send(ToWorker::SetTracing(self.tracing_enabled));
+                    }
+                } else if self.stage == StageKind::Simulation {
                     self.simulation_pane(ui);
                 } else {
                 // Stage note (in its own scope so its borrow of `self` ends

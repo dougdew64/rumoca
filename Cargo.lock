@@ -3162,6 +3162,7 @@ dependencies = [
  "anyhow",
  "eframe",
  "egui_plot",
+ "libc",
  "rumoca-compile",
  "rumoca-ir-ast",
  "rumoca-ir-dae",
@@ -3172,6 +3173,8 @@ dependencies = [
  "rumoca-phase-typecheck",
  "rumoca-sim",
  "serde_json",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
