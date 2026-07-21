@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.103"
 eframe = "0.35.0"
+egui_plot = "0.36"  # Arc 7: plot sim trajectories (0.36 targets egui 0.35; egui_plot versions are offset)
 # Official Rumoca, pinned by commit for reproducibility (a path dep tracks
 # whatever the local clone is checked out to; a `rev` is immutable + locked).
 # 8cdc7419 == the code HRW was developed against (was ../rumoca @ upstream/main).

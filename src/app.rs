@@ -16,7 +16,7 @@ use crate::canvas::Canvas;
 use crate::field_help;
 use crate::spyplot;
 use crate::tree;
-use crate::worker::{DefInfo, FromWorker, Stage, ToWorker, Worker};
+use crate::worker::{DefInfo, FromWorker, SimData, Stage, ToWorker, Worker};
 
 /// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
 /// live via Settings (or Ctrl +/−); egui's `zoom_factor` is the idiomatic knob.
@@ -48,6 +48,7 @@ enum StageKind {
     Initialization,
     Events,
     SolveLowering,
+    Simulation,
 }
 
 /// How to render the Structural stage: the custom BLT spy-plot (the visual
@@ -122,6 +123,15 @@ pub struct App {
     // Arc 3: the Structural stage's custom BLT spy-plot and its pan/zoom camera.
     structural_view: StructuralView,
     spy_canvas: Canvas,
+
+    // Arc 7: on-demand simulation (the Simulation tab) — not a compile stage.
+    // `simulation` is an always-empty placeholder so `current_stage` has a Stage
+    // to return; the Simulation view is the egui_plot pane, rendered specially.
+    simulation: Stage,
+    sim_data: Option<SimData>,
+    sim_running: bool,
+    sim_error: Option<String>,
+    sim_t_end: f64,
 }
 
 impl App {
@@ -183,6 +193,11 @@ impl App {
             selected_field: None,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default(),
+            simulation: Stage::default(),
+            sim_data: None,
+            sim_running: false,
+            sim_error: None,
+            sim_t_end: 2.0,
         };
         app.rescan();
         app.load_libraries(); // load MSL at startup so resolve works immediately
@@ -242,6 +257,9 @@ impl App {
         self.initialization = Stage::default();
         self.events = Stage::default();
         self.solve_lowering = Stage::default();
+        self.sim_data = None;
+        self.sim_error = None;
+        self.sim_running = false;
         self.def_index = BTreeMap::new();
         self.nav.clear();
         self.nav_loading = None;
@@ -306,6 +324,22 @@ impl App {
                         ("solve_lowering", self.solve_lowering.value.as_ref()),
                     ]);
                 }
+                FromWorker::Simulated { path, result } => {
+                    if self.selected.as_deref() != Some(path.as_path()) {
+                        continue; // stale result for a different specimen
+                    }
+                    self.sim_running = false;
+                    match result {
+                        Ok(data) => {
+                            self.sim_data = Some(data);
+                            self.sim_error = None;
+                        }
+                        Err(e) => {
+                            self.sim_data = None;
+                            self.sim_error = Some(e);
+                        }
+                    }
+                }
                 FromWorker::DefTree { name, result } => {
                     self.nav_loading = None;
                     match result {
@@ -332,6 +366,9 @@ impl App {
             StageKind::Initialization => &self.initialization,
             StageKind::Events => &self.events,
             StageKind::SolveLowering => &self.solve_lowering,
+            // Simulation isn't a compile stage; this placeholder is always empty
+            // (the Simulation view is the plot pane, rendered specially).
+            StageKind::Simulation => &self.simulation,
         }
     }
 
@@ -347,6 +384,7 @@ impl App {
             StageKind::Initialization => "Initialization",
             StageKind::Events => "Events",
             StageKind::SolveLowering => "Solve lowering",
+            StageKind::Simulation => "Simulation",
         }
     }
 
@@ -380,6 +418,8 @@ impl App {
             StageKind::Events => None,
             // The SolveModel is a different shape from the DAE — no path-aligned prior.
             StageKind::SolveLowering => None,
+            // Simulation is a plot, not IR — no tree, no prior.
+            StageKind::Simulation => None,
         }
     }
 
@@ -490,6 +530,62 @@ impl App {
             }
         };
         self.bridge_status = Some(status);
+    }
+
+    /// Arc 7: the Simulation view — a Run control + an `egui_plot` pane of the
+    /// state trajectories. Running the model is on-demand (not a compile stage):
+    /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
+    /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
+    fn simulation_pane(&mut self, ui: &mut egui::Ui) {
+        use egui_plot::{Legend, Line, Plot, PlotPoints};
+
+        let mut run = false;
+        ui.horizontal(|ui| {
+            run = ui
+                .add_enabled(self.selected.is_some() && !self.sim_running, egui::Button::new("▶ Run"))
+                .on_hover_text("Compile → lower → integrate, then plot the trajectories.")
+                .clicked();
+            ui.add(egui::Slider::new(&mut self.sim_t_end, 0.1..=20.0).step_by(0.1).text("stop time"));
+            if self.sim_running {
+                ui.spinner();
+                ui.weak("simulating…");
+            }
+        });
+        if let Some(e) = &self.sim_error {
+            egui::ScrollArea::horizontal().id_salt("sim_err").show(ui, |ui| {
+                ui.colored_label(ui.visuals().error_fg_color, egui::RichText::new(e).monospace());
+            });
+        }
+        if run
+            && let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone())
+        {
+            self.sim_running = true;
+            self.sim_error = None;
+            self.worker.send(ToWorker::Simulate { path, model, t_end: self.sim_t_end });
+        }
+        ui.separator();
+        match &self.sim_data {
+            Some(data) => {
+                Plot::new("sim_plot")
+                    .legend(Legend::default())
+                    .x_axis_label("time")
+                    .show(ui, |plot_ui| {
+                        for (i, name) in data.names.iter().enumerate() {
+                            let pts: PlotPoints = data
+                                .times
+                                .iter()
+                                .zip(&data.data[i])
+                                .map(|(&t, &y)| [t, y])
+                                .collect();
+                            plot_ui.line(Line::new(name.clone(), pts));
+                        }
+                    });
+            }
+            None if !self.sim_running => {
+                ui.weak("Press ▶ Run to simulate this specimen and plot its state trajectories.");
+            }
+            None => {}
+        }
     }
 }
 
@@ -865,6 +961,12 @@ impl eframe::App for App {
                              simulator runs — residual programs, variable layout, mass matrix, Jacobian \
                              sparsity. This is the compile step just before simulation.",
                         );
+                    ui.selectable_value(&mut self.stage, StageKind::Simulation, "▶ Simulation")
+                        .on_hover_text(
+                            "Run the model (Arc 7, phase 9): compile → lower to a SolveModel → integrate \
+                             (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
+                             on the worker thread, so the UI stays live.",
+                        );
                     if self.selected.is_some()
                         && ui
                             .button("🔎 Capture")
@@ -899,6 +1001,11 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
+                // Simulation is a plot, not IR — render the plot pane and skip the
+                // whole note/report/tree block below.
+                if self.stage == StageKind::Simulation {
+                    self.simulation_pane(ui);
+                } else {
                 // Stage note (in its own scope so its borrow of `self` ends
                 // before the value section, which may borrow `self` mutably for
                 // the spy-plot canvas).
@@ -959,6 +1066,7 @@ impl eframe::App for App {
                         None => {}
                     }
                 }
+                } // end: non-Simulation stage rendering
             } else {
                 // ---- Navigation view (a class reached via "Go to definition") ----
                 ui.horizontal(|ui| {

@@ -33,6 +33,21 @@ pub enum ToWorker {
     /// Extract an arbitrary class from the resolved tree by qualified name, so
     /// the UI can navigate into a definition a `def_id`/`type_def_id` points at.
     OpenDef(String),
+    /// Arc 7: compile the model, lower it to a `SolveModel`, and run a simulation
+    /// to `t_end`, returning the state trajectories to plot. Runs on this worker
+    /// thread so the UI never blocks.
+    Simulate { path: PathBuf, model: String, t_end: f64 },
+}
+
+/// Arc 7: simulation output for plotting — one time axis and, per output variable,
+/// its trajectory (`data[var][t]`). Deliberately plain (no Rumoca types) so the UI
+/// stays decoupled from the solver crates.
+pub struct SimData {
+    pub times: Vec<f64>,
+    pub names: Vec<String>,
+    pub data: Vec<Vec<f64>>,
+    /// The first `n_states` names are true states (the rest are algebraics/outputs).
+    pub n_states: usize,
 }
 
 /// One pipeline stage's outcome for the selected model: the serialized IR node
@@ -143,6 +158,11 @@ pub enum FromWorker {
         name: String,
         result: Result<(serde_json::Value, BTreeMap<u64, DefInfo>), String>,
     },
+    /// Arc 7: the outcome of a simulation request — trajectories or an error.
+    Simulated {
+        path: PathBuf,
+        result: Result<SimData, String>,
+    },
 }
 
 /// Handle held by the UI thread for talking to the worker.
@@ -198,7 +218,35 @@ impl WorkerState {
             ToWorker::SetLibraries(roots) => FromWorker::Libraries(self.load_libraries(roots)),
             ToWorker::Compile(path) => self.compile(&path),
             ToWorker::OpenDef(name) => self.open_def(&name),
+            ToWorker::Simulate { path, model, t_end } => {
+                let result = self.simulate(&path, &model, t_end);
+                FromWorker::Simulated { path, result }
+            }
         }
+    }
+
+    /// Arc 7: compile the model to its DAE, lower it to a `SolveModel`, and run a
+    /// simulation to `t_end` — returning the state trajectories. On this worker
+    /// thread; the UI drives it via `ToWorker::Simulate` and never blocks.
+    fn simulate(&mut self, path: &Path, model: &str, t_end: f64) -> Result<SimData, String> {
+        let source = std::fs::read_to_string(path).map_err(|e| format!("read error: {e}"))?;
+        let uri = path.to_string_lossy().to_string();
+        self.session.update_document(&uri, &source);
+        let qualified = self.session.qualify_model_name(&uri, model);
+        let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
+        let cr = match report.requested_result.as_ref() {
+            Some(PhaseResult::Success(cr)) => cr,
+            Some(PhaseResult::Failed { phase, error, .. }) => {
+                return Err(format!("compile failed at {phase}: {error}"));
+            }
+            _ => return Err("the pipeline produced no simulable result for this model".to_owned()),
+        };
+        let sm = rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae)
+            .map_err(|e| format!("solve lowering failed: {e}"))?;
+        let opts = rumoca_sim::SimOptions { t_end, ..Default::default() };
+        let res = rumoca_sim::simulate_solve_model(&sm, &opts)
+            .map_err(|e| format!("simulation failed: {e}"))?;
+        Ok(SimData { times: res.times, names: res.names, data: res.data, n_states: res.n_states })
     }
 
     /// Extract a class from the resolved tree by qualified name for navigation.
@@ -1083,6 +1131,25 @@ mod tests {
         assert_eq!(result.data[w_idx].len(), result.times.len(), "trajectory length = time points");
         let w_final = *result.data[w_idx].last().unwrap();
         assert!((w_final - 2.0).abs() < 0.05, "w(2) should be ~2.0 (constant torque), got {w_final}");
+    }
+
+    /// Arc 7 #3: the worker's `simulate` path (compile → lower → integrate) runs a
+    /// hybrid model — BouncingBall — and returns trajectories. Exercises event
+    /// handling in the solver (the ball must stay ~above the floor).
+    #[test]
+    fn worker_simulate_runs_bouncing_ball() {
+        let data = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BouncingBall.mo"));
+            w.simulate(path, "BouncingBall", 3.0)
+        }
+        .expect("simulate BouncingBall");
+        assert!(!data.times.is_empty(), "should produce a trajectory");
+        let h_idx = data.names.iter().position(|n| n == "h").expect("h in outputs");
+        assert!(
+            data.data[h_idx].iter().all(|&h| h > -0.5),
+            "the ball should stay ~above the floor (events reflect it)"
+        );
     }
 
     /// Arc 7 (phase 8): the Solve-lowering stage lowers the DAE to a `SolveModel`

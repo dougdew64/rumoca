@@ -474,3 +474,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   field/init/reset/store/current_stage/stage_name/tab/last_successful_stage/previous_stage_value(None)/
   write_stages; field_help → phase8_solve_lowering/solve_lowering.md; gen_trace STAGES+by_name, all traces
   regenerated → +solve_lowering.json). Guarded by `worker::tests::single_inertia_lowers_to_a_solve_model`.
+- **2026-07-20 — Arc 7 #3: worker-thread simulation runner + egui_plot pane.** A new **Simulation** tab
+  (last, `▶`) with a Run button + stop-time slider; Run dispatches `ToWorker::Simulate { path, model, t_end }`
+  to the worker, which compiles → `lower_dae_to_solve_model` → `simulate_solve_model` and returns
+  `FromWorker::Simulated { SimData }` (plain `{ times, names, data[var][t], n_states }` — no Rumoca types
+  cross into the UI). The pane plots each variable's trajectory with `egui_plot`. Runs on the worker thread
+  (UI never blocks); Simulation is on-demand (not a compile stage), so it has an empty placeholder `Stage`
+  for `current_stage` and is rendered specially (not a tree). **Dependency note:** used `egui_plot = "0.36"`
+  — egui_plot's version numbers are **offset** from egui's (egui_plot 0.35 → egui 0.34; **0.36 → egui 0.35**),
+  so "0.35" pulled a second egui version; 0.36 unifies on egui 0.35. Verified end to end:
+  `worker_simulate_runs_bouncing_ball` (the hybrid model's events are handled by the solver — ball stays
+  above the floor) + `single_inertia_simulates_to_a_correct_trajectory` (w(2) ≈ 2). Next: #4 (stiff
+  bench-actuator specimen) + step-mode plotting for discontinuities.
