@@ -496,3 +496,12 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `worker::tests::bench_actuator_simulates_stiff_spinup`. Note: the charter's Damper-to-Fixed friction made
   the **initializer** fail to converge (`initial variable projection plan did not converge`), so the specimen
   is the friction-free motor→inertia form. Step-mode plotting for discontinuities logged as `docs/ideas.md` #8.
+
+- **Arc 7 UI: context-sensitive right-hand panel.** The RHS panel used to be unconditionally titled
+  "About this field" with tree-item help + doc links — wrong on the Simulation tab (no tree, no field).
+  Split into `App::right_panel` which dispatches on view: `right_panel_simulation` (a "Simulation" panel:
+  model name, plot-control hints, a plan-ahead placeholder — *"capture a curve or time window to ask Claude
+  about the run"* — the seat for the future plot-question view) when `nav.is_empty() && stage==Simulation`,
+  else `right_panel_field_help` (the old generic field help). Both share `right_panel_read_links` (the
+  "Read: <phase chapter>" + "Read: specimen narrative" buttons). Added a `Simulation → phase9_simulation/
+  simulation.md` mapping to `field_help::chapter_for_stage`.

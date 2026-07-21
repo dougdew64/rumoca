@@ -589,6 +589,109 @@ impl App {
             None => {}
         }
     }
+
+    /// The right-hand context panel. Its content depends on what's on screen: the
+    /// Simulation view gets a plot-oriented panel; every other stage gets the
+    /// generic field help. (Both share the "Read: …" doc links at the bottom.)
+    fn right_panel(&mut self, ui: &mut egui::Ui) {
+        if self.nav.is_empty() && self.stage == StageKind::Simulation {
+            self.right_panel_simulation(ui);
+        } else {
+            self.right_panel_field_help(ui);
+        }
+    }
+
+    /// Generic (build-time) field help for the last-clicked tree item — the fast
+    /// tier (no Claude). Shown for every stage whose view is the IR tree.
+    fn right_panel_field_help(&mut self, ui: &mut egui::Ui) {
+        // Title the pane with the stage on screen (e.g. "Flatten") — "About this
+        // field" was meaningless when nothing was selected. While navigating a
+        // definition the view is Resolve context, so say so.
+        let title = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
+        ui.strong(title);
+        ui.separator();
+        match &self.selected_field {
+            Some(name) => {
+                ui.label(egui::RichText::new(name).monospace().strong());
+                ui.add_space(4.0);
+                match self.field_help.get(name) {
+                    Some(doc) => {
+                        ui.label(doc);
+                    }
+                    None => {
+                        ui.weak(format!(
+                            "No generic help for “{name}”. Left-click captures it; type \
+                             “explain” in the chat for a specific explanation.",
+                        ));
+                    }
+                }
+            }
+            None => {
+                ui.weak(
+                    "Left-click a tree item to see what it is (generic help). Then type \
+                     “explain” in the chat for the specific story.",
+                );
+            }
+        }
+        ui.add_space(8.0);
+        ui.separator();
+        self.right_panel_read_links(ui);
+    }
+
+    /// The Simulation view's right-hand panel — about the *run*, not a tree field.
+    /// PLANNED: this is where a plot-question view will live (capture a curve or a
+    /// time window → ask Claude about the trajectory, the events, the stiffness).
+    /// For now it explains the plot controls and points questions at the chat.
+    fn right_panel_simulation(&mut self, ui: &mut egui::Ui) {
+        ui.strong("Simulation");
+        ui.separator();
+        if let Some(m) = &self.model {
+            ui.label(egui::RichText::new(m).monospace().strong());
+            ui.add_space(4.0);
+        }
+        ui.label("Press ▶ Run to integrate the model; each state/output is plotted vs time.");
+        ui.add_space(4.0);
+        ui.weak("Drag to pan, scroll to zoom, double-click to reset; toggle a series in the legend.");
+        ui.add_space(8.0);
+        // Plan-ahead placeholder for the bigger simulation work: a view that
+        // captures a plotted curve / time window as question context for Claude.
+        ui.weak("Coming soon: capture a curve or a time window to ask Claude about the run.");
+        ui.add_space(8.0);
+        ui.separator();
+        self.right_panel_read_links(ui);
+    }
+
+    /// The two "Read: …" doc links shared by both right-hand panels: the phase's
+    /// generic `docs/compiler-phases` chapter, and this specimen's notebook narrative.
+    fn right_panel_read_links(&self, ui: &mut egui::Ui) {
+        // Concept-level link: the docs/compiler-phases chapter for the phase whose
+        // view is on screen (Resolve while navigating a definition).
+        let stage_ctx = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
+        let (label, rel) = field_help::chapter_for_stage(stage_ctx);
+        if ui
+            .button(format!("Read: {label}"))
+            .on_hover_text("Open this docs/compiler-phases chapter (generic phase theory) in your editor")
+            .clicked()
+        {
+            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+            let _ = std::process::Command::new("code").arg(abs).spawn();
+        }
+        // Specimen-specific link: this specimen's compilation narrative, when one exists.
+        if self.nav.is_empty()
+            && let Some(model) = &self.model
+        {
+            let rel = format!("docs/specimen-notebook/{model}/narrative.md");
+            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+            if std::path::Path::new(&abs).exists()
+                && ui
+                    .button("Read: specimen narrative")
+                    .on_hover_text(rel)
+                    .clicked()
+            {
+                let _ = std::process::Command::new("code").arg(&abs).spawn();
+            }
+        }
+    }
 }
 
 /// One-line status for a completed bridge write, tailored to the request kind.
@@ -826,65 +929,7 @@ impl eframe::App for App {
             .resizable(true)
             .default_size(380.0)
             .min_size(220.0)
-            .show(ui, |ui| {
-                ui.strong("About this field");
-                ui.separator();
-                match &self.selected_field {
-                    Some(name) => {
-                        ui.label(egui::RichText::new(name).monospace().strong());
-                        ui.add_space(4.0);
-                        match self.field_help.get(name) {
-                            Some(doc) => {
-                                ui.label(doc);
-                            }
-                            None => {
-                                ui.weak(format!(
-                                    "No generic help for “{name}”. Left-click captures it; type \
-                                     “explain” in the chat for a specific explanation.",
-                                ));
-                            }
-                        }
-                    }
-                    None => {
-                        ui.weak(
-                            "Left-click a tree item to see what it is (generic help). Then type \
-                             “explain” in the chat for the specific story.",
-                        );
-                    }
-                }
-                ui.add_space(8.0);
-                ui.separator();
-                // Concept-level link: the docs/compiler-phases chapter for the phase
-                // whose IR is on screen (Resolve while navigating a definition).
-                let stage_ctx = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
-                let (label, rel) = field_help::chapter_for_stage(stage_ctx);
-                if ui
-                    .button(format!("Read: {label}"))
-                    .on_hover_text("Open this docs/compiler-phases chapter (generic phase theory) in your editor")
-                    .clicked()
-                {
-                    let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-                    let _ = std::process::Command::new("code").arg(abs).spawn();
-                }
-                // Specimen-specific link: this specimen's compilation narrative
-                // (docs/specimen-notebook/<model>/narrative.md), shown only when one exists.
-                // The generic chapter above is phase theory; this is the story of
-                // *this* specimen's trip through the pipeline, grounded in its trace.
-                if self.nav.is_empty()
-                    && let Some(model) = &self.model
-                {
-                    let rel = format!("docs/specimen-notebook/{model}/narrative.md");
-                    let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-                    if std::path::Path::new(&abs).exists()
-                        && ui
-                            .button("Read: specimen narrative")
-                            .on_hover_text(rel)
-                            .clicked()
-                    {
-                        let _ = std::process::Command::new("code").arg(&abs).spawn();
-                    }
-                }
-            });
+            .show(ui, |ui| self.right_panel(ui));
 
         // Bridge "ask" + navigation requests collected during this frame, acted
         // on after the panel closure releases its borrow of `self`.
@@ -906,11 +951,13 @@ impl eframe::App for App {
                     ui.weak("Select a specimen to compile.");
                     return;
                 }
-                ui.horizontal(|ui| {
-                    // One row: stage selectors + capture-stage, then a divider,
-                    // then the model label + capture-model. Whole-stage/model
-                    // buttons capture context; node-level captures come from the
-                    // right-click menu on any tree row. A stage's tab label is
+                ui.horizontal_wrapped(|ui| {
+                    // Stage selectors + capture-stage, a divider, then the model
+                    // label + capture-model. Wrapped: with 11 stage tabs the row
+                    // won't fit a narrow window, so it flows onto a second line
+                    // rather than pushing Simulation off the right edge. Whole-
+                    // stage/model buttons capture context; node-level captures come
+                    // from the right-click menu on any tree row. A stage's tab label is
                     // painted red when that stage errored, so failed stages are
                     // visible without opening each (e.g. CapacitorLoop fails at
                     // Structural + Index reduction while landing on Initialization).

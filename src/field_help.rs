@@ -62,6 +62,10 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "Phase 8 · Solve lowering",
             "docs/compiler-phases/phase8_solve_lowering/solve_lowering.md",
         ),
+        "Simulation" => (
+            "Phase 9 · Simulation",
+            "docs/compiler-phases/phase9_simulation/simulation.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/compiler-phases/high_level_overview.md",
