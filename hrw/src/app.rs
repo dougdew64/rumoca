@@ -1075,6 +1075,32 @@ impl eframe::App for App {
                         self.viewing_log = true;
                     }
                     ui.separator();
+                    let can_sim = !self.compiling
+                        && !self.sim_running
+                        && self.model.is_some()
+                        && self.solve_lowering.value.is_some();
+                    if ui
+                        .add_enabled(can_sim, egui::Button::new("▶"))
+                        .on_hover_text("Run simulation (stays on the current view)")
+                        .on_disabled_hover_text("Compile a specimen first")
+                        .clicked()
+                    {
+                        if let (Some(path), Some(model)) =
+                            (self.selected.clone(), self.model.clone())
+                        {
+                            self.sim_running = true;
+                            self.sim_error = None;
+                            self.worker.send(ToWorker::Simulate {
+                                path,
+                                model,
+                                t_end: self.sim_t_end,
+                            });
+                        }
+                    }
+                    if self.sim_running {
+                        ui.spinner();
+                    }
+                    ui.separator();
                     let err = ui.visuals().error_fg_color;
                     let ok = if ui.visuals().dark_mode {
                         egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
@@ -1185,7 +1211,7 @@ impl eframe::App for App {
                         stage_tab_clicked = true;
                     }
                     // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, "▶ Simulation")
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, "Simulation")
                         .on_hover_text(
                             "Run the model (Arc 7, phase 9): compile → lower to a SolveModel → integrate \
                              (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
