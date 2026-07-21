@@ -33,7 +33,7 @@ appears on both sides: **an algebraic loop.** That is the single phenomenon this
 specimen is built to trigger — the smallest model that forces Rumoca's structural
 phase to report a genuine *simultaneous algebraic block* (a coupled BLT block)
 and to *tear* it. It is not numerically hard (one linear solve, `measurement =
-20/21`); it is *structurally* interesting, which is the whole point of Arc 3.
+20/21`); it is *structurally* interesting.
 
 ---
 
@@ -96,7 +96,7 @@ idealized (integrator-free) loop, and it is what guarantees the next stage finds
 loop instead of an ODE. See [Phase 5 · Flatten](../../compiler-phases/phase5_flatten/flatten.md).
 
 ### 6 · Structural → [`trace/structural.json`](trace/structural.json)
-This is the arc's phase, and it does not rewrite the DAE — it **analyzes** it,
+This is the specimen's key phase, and it does not rewrite the DAE — it **analyzes** it,
 emitting a report (matching + BLT blocks + tearing). The deep read follows.
 
 ---
@@ -142,7 +142,7 @@ Tarjan (1972) — the same paper underlying BLT ordering.
 A coupled block must be solved *simultaneously* — but tearing shrinks the
 simultaneous part. Rumoca's greedy Cellier-style tearing (in Rumoca's
 `tearing.rs :: tear_algebraic_loop`, the line the debugger breaks on — see the
-[arc trace log note](../../debug-set-sites.md)) picks the fewest **tear
+[trace log note](../../debug-set-sites.md)) picks the fewest **tear
 (iteration) variables** such that, once guessed, the rest solve causally. The
 report's `tearing`:
 
@@ -171,14 +171,13 @@ Pantelides below.
   [`Drivetrain`](../Drivetrain/narrative.md), which is *structurally singular*
   (93/97 matched) because its ideal gears impose position constraints — that is
   **high differential index**, and it needs index reduction (Pantelides / dummy
-  derivatives), the subject of Arc 4, not tearing. Same phase, two very different
+  derivatives), not tearing. Same phase, two very different
   verdicts; keeping both specimens side by side is the point.
 - **The spy-plot shows the diagonal only.** The orange box is faithful (block
   membership + BLT order + tearing), but the *off-diagonal* incidence — e.g. that
   `f_x[0]` also reads `measurement`, the wiring that makes it a loop — is not
   drawn, because Rumoca's raw incidence matrix is `pub(crate)` and HRW draws only
-  what the public report exposes (see [DECISIONS.md](../../../DECISIONS.md), Arc 3
-  increment 2). For a 3×3 single block the box *is* the story; on larger systems,
+  what the public report exposes (see [DECISIONS.md](../../../DECISIONS.md)). For a 3×3 single block the box *is* the story; on larger systems,
   remember the between-block structure is omitted.
 - **The rest of the family.** [`SingleInertia`](../SingleInertia/narrative.md) and
   [`RotationalInertia`](../RotationalInertia/narrative.md) are the opposite pole —
@@ -205,10 +204,10 @@ Pantelides below.
 - C. C. Pantelides, "The consistent initialization of differential-algebraic
   systems," *SIAM J. Sci. Stat. Comput.* 9(2):213–231, 1988.
   [doi:10.1137/0909014](https://epubs.siam.org/doi/10.1137/0909014) — structural
-  index reduction (why `Drivetrain` needs Arc 4, and this specimen does not).
+  index reduction (why `Drivetrain` needs it, and this specimen does not).
 - S. E. Mattsson & G. Söderlind, "Index reduction in differential-algebraic
   equations using dummy derivatives," *SIAM J. Sci. Comput.* 14(3):677–692, 1993.
   [doi:10.1137/0914043](https://epubs.siam.org/doi/10.1137/0914043) — the
-  index-reduction method Arc 4 will study.
+  the dummy-derivative index-reduction method.
 - Modelica Language Specification — [specification.modelica.org](https://specification.modelica.org/)
   (equation systems, `connect`, and the handling of algebraic loops).

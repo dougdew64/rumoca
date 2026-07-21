@@ -21,7 +21,7 @@ returned to ground:
 ConstantVoltage src(V = 5)  →  Resistor R(R = 100)  →  Capacitor C(C = 1e-3)  →  (src.n, ground)
 ```
 
-It is the **Arc 5** (initialization / IC planning) specimen. A dynamic model needs
+It is the **initialization / IC planning** specimen. A dynamic model needs
 a **consistent initial state at t = 0** before the integrator can step: every one
 of the flat DAE's variables — node voltages, branch currents, and the one true
 state (`C.v`) — must be assigned values that satisfy *all* the equations
@@ -50,8 +50,8 @@ expand their connectors — the same machinery as
 - **Index reduction → [`trace/index_reduction.json`](trace/index_reduction.json)**
   — a no-op (already index-1), identical to Structural.
 
-### Initialization → [`trace/initialization.json`](trace/initialization.json)  *(Arc 5)*
-This is the arc's phase. `build_ic_plan(dae, n_states)` returns the **ordered
+### Initialization → [`trace/initialization.json`](trace/initialization.json)
+This is the specimen's key phase. `build_ic_plan(dae, n_states)` returns the **ordered
 solve plan** for the initial values — **21 blocks**:
 
 - **20 `ScalarDirect`** — each computes one variable by a symbolic formula from
@@ -70,8 +70,8 @@ initialization (one equation is a linear combination of the others), with the
 ground current `gnd.p.i` undetermined. Rumoca detects this
 (`build_ic_relaxation_hint`), drops the redundant equation, and pins the ground
 current — exactly the "select a balanced subset" move needed to make the initial
-subsystem square. Watching *that* decision is much of Arc 5's value: it is where a
-young compiler's initialization logic most often goes wrong (charter §4.2.5).
+subsystem square. Watching *that* decision is much of this specimen's value: it is
+where a young compiler's initialization logic most often goes wrong (charter §4.2.5).
 
 ---
 

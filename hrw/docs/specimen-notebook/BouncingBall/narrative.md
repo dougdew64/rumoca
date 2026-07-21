@@ -26,13 +26,13 @@ equation
   end when;
 ```
 
-It is the **Arc 6** (events & hybrid structure) specimen. Between bounces the model
+It is the **events & hybrid structure** specimen. Between bounces the model
 is a plain smooth ODE; **at contact the equation structure changes** — a discrete
-event fires and resets a state. This arc studies how Rumoca lowers that `when` /
+event fires and resets a state. This specimen studies how Rumoca lowers that `when` /
 `reinit` / `pre` into the DAE's event machinery. It is self-contained (portable
-subset), chosen as the reframe for Arc 6 because the charter's stick-slip-friction
-specimen needs the parked planar mechanics library, and an MSL `IdealDiode`
-rectifier fails Rumoca's typecheck (see [DECISIONS.md](../../../DECISIONS.md)).
+subset), chosen because the charter's stick-slip-friction specimen needs the parked
+planar mechanics library, and an MSL `IdealDiode` rectifier fails Rumoca's typecheck
+(see [DECISIONS.md](../../../DECISIONS.md)).
 
 ---
 
@@ -44,9 +44,9 @@ rectifier fails Rumoca's typecheck (see [DECISIONS.md](../../../DECISIONS.md)).
   not empty.
 - **Structural / Index reduction / Initialization** — nothing hybrid shows up: those
   analyses see only the *continuous* part (`der(h) = v`, `der(v) = -g`). The event
-  is invisible to them — which is exactly why Arc 6 needs its own view.
+  is invisible to them — which is exactly why events need their own view.
 
-### Events → [`trace/events.json`](trace/events.json)  *(Arc 6)*
+### Events → [`trace/events.json`](trace/events.json)
 Here the `when` clause appears, lowered into the DAE's hybrid partitions. The
 `summary`:
 
@@ -76,11 +76,10 @@ overlay becomes visible. `zero_crossing_conditions` / `scheduled_time_events` ar
 empty here (the trigger lives in `conditions.relations`); a model with `sample(...)`
 or an `after`-style schedule would populate `scheduled_time_events` instead.
 
-**What Arc 6 does *not* show (yet).** The charter's "step-mode plotting" — running
-the model and watching `h` bounce with discontinuous `v` — is a genuinely new
-capability (a simulation runner + a plot pane) that belongs to **Arc 7 (the
-simulation core)**. Arc 6 shows the *structure* of the hybrid model at compile time;
-Arc 7 will run it.
+**What the Events tab does *not* show.** Step-mode plotting — running
+the model and watching `h` bounce with discontinuous `v` — is a simulation
+capability (a simulation runner + a plot pane). The Events tab shows the *structure*
+of the hybrid model at compile time; the Simulation tab runs it.
 
 ---
 

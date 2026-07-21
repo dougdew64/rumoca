@@ -8,8 +8,8 @@ foregrounding what **this** specimen is designed to make interesting.*
 > `cargo run --example gen_trace -- Drivetrain`, Rumoca `rev 8cdc74198` (v0.9.20);
 > see [`trace/manifest.json`](trace/manifest.json). Note: `structural.json` is
 > **intentionally absent** — structural analysis *fails* (singular) on the raw DAE,
-> and that failure is the point; `index_reduction.json` then shows it *resolved*
-> (Arc 4). Regenerate on edit / pin bump, then re-read.
+> and that failure is the point; `index_reduction.json` then shows it *resolved*.
+> Regenerate on edit / pin bump, then re-read.
 
 ---
 
@@ -78,12 +78,12 @@ Read this carefully — it is a *diagnosis*, not a bug:
   position/velocity constraints the ideal gears impose.
 
 That differentiation is **index reduction** (Pantelides' algorithm; dummy
-derivatives) — the subject of **Arc 4**. So the honest output of the matching/BLT
+derivatives). So the honest output of the matching/BLT
 phase on this specimen is "I cannot schedule this as-is," which is why the trace's
 `structural.json` is absent while every earlier stage is present.
 
-### Index reduction → [`trace/index_reduction.json`](trace/index_reduction.json)  *(Arc 4)*
-This is where Arc 4 resolves what Arc 3 could only diagnose. HRW runs Rumoca's
+### Index reduction → [`trace/index_reduction.json`](trace/index_reduction.json)
+This is where index reduction resolves what structural analysis could only diagnose. HRW runs Rumoca's
 dummy-derivative funnel (`worker::index_reduce_for_structural_analysis`, mirroring
 rumoca-sim's `prepare_dae_for_structural_analysis`: demote states → differentiate
 constraints → eliminate derivative aliases → expand compound derivatives), then
@@ -128,7 +128,7 @@ two tabs are identical; the reduction is a no-op there.)
 - S. E. Mattsson & G. Söderlind, "Index reduction in differential-algebraic
   equations using dummy derivatives," *SIAM J. Sci. Comput.* 14(3):677–692, 1993
   ([doi:10.1137/0914043](https://epubs.siam.org/doi/10.1137/0914043)) — the method
-  Arc 4 will study.
+  Rumoca uses for index reduction.
 - F. E. Cellier & E. Kofman, *Continuous System Simulation*, Springer, 2006, ISBN
   978-0-387-26102-7 ([doi:10.1007/0-387-30260-3](https://link.springer.com/book/10.1007/0-387-30260-3))
   — DAE index, structural analysis, and index reduction in context.

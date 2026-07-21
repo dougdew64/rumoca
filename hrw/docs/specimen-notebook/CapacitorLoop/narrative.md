@@ -21,7 +21,7 @@ is a capacitor connected **directly across an ideal voltage source** — no resi
 ConstantVoltage src(V = 5)  →  Capacitor C  (src.p→C.p, src.n→C.n, ground)
 ```
 
-It is the **Arc 5** *blow-up* specimen — the "here's where it fails and why" case,
+It is the *blow-up* specimen — the "here's where it fails and why" case,
 the RC counterpart to the charter's resurrected 2025 initialization bug. A
 capacitor's voltage `C.v` is a **state**: it wants a free initial value and
 evolves by `C.i = C·der(C.v)`. But wiring it straight across an ideal source

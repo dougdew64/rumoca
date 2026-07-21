@@ -58,19 +58,18 @@ Roughly in order of increasing structural interest:
   coupled blocks**, sequenced by their data dependency.
 - [`Drivetrain`](Drivetrain/narrative.md) — cross-domain train with **ideal gears**
   → **high index** (structurally singular), then **index-reduced** to a solvable
-  system (Arc 4): the Structural vs Index-reduction tabs show before → after.
+  system: the Structural vs Index-reduction tabs show before → after.
 - [`RcCircuit`](RcCircuit/narrative.md) — an RC circuit; the **Initialization / IC
-  planning** specimen (Arc 5): the t=0 solve plan + the ground-redundancy
-  relaxation hint.
-- [`CapacitorLoop`](CapacitorLoop/narrative.md) — the Arc-5 **blow-up**: a capacitor
-  across an ideal source can't be consistently initialized; Structural + Index
-  reduction both stay singular (contrast Drivetrain: reducible).
-- [`OverInitRc`](OverInitRc/narrative.md) — the Arc-5 **initialization blow-up**:
-  a clean RC with conflicting `initial equation`s → the Initialization tab flags an
-  **over-determined** init (idea #6). Structurally fine; wrong at t=0.
-- [`BouncingBall`](BouncingBall/narrative.md) — the Arc-6 **hybrid** specimen: a
+  planning** specimen: the t=0 solve plan + the ground-redundancy relaxation hint.
+- [`CapacitorLoop`](CapacitorLoop/narrative.md) — the **initialization blow-up**: a
+  capacitor across an ideal source can't be consistently initialized; Structural +
+  Index reduction both stay singular (contrast Drivetrain: reducible).
+- [`OverInitRc`](OverInitRc/narrative.md) — the **initialization-determinacy
+  blow-up**: a clean RC with conflicting `initial equation`s → the Initialization
+  tab flags an **over-determined** init (idea #6). Structurally fine; wrong at t=0.
+- [`BouncingBall`](BouncingBall/narrative.md) — the **hybrid** specimen: a
   `when h <= 0 then reinit(v, …)` bounce → the Events tab shows the condition
   (`h <= 0`) + the discrete reinit. The first specimen with a non-empty Events tab.
-- [`BenchActuator`](BenchActuator/narrative.md) — the Arc-7 **stiff** specimen: a DC
+- [`BenchActuator`](BenchActuator/narrative.md) — the **stiff** specimen: a DC
   motor spinning up an inertial load (fast winding L/R vs slow rotor J). The first
-  specimen you **run** — the ▶ Simulation tab plots the trajectories (BDF).
+  specimen you **run** — the Simulation tab plots the trajectories (BDF).

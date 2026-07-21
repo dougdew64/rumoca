@@ -73,7 +73,7 @@ Over-specification is the unambiguous, actionable signal.
   difference is the two conflicting `initial equation`s. One is well-posed, the
   other blows up — and the difference is visible *only* in the Initialization tab's
   determinacy verdict, nowhere upstream.
-- vs [`CapacitorLoop`](../CapacitorLoop/narrative.md): both are Arc-5 "blow-ups,"
+- vs [`CapacitorLoop`](../CapacitorLoop/narrative.md): both are "blow-ups,"
   but of **different kinds**. CapacitorLoop's DAE is *structurally* ill-posed (it
   fails at Structural / Index reduction); OverInitRc's DAE is *structurally fine*
   and fails only in the **initialization determinacy**. Together they cover the two

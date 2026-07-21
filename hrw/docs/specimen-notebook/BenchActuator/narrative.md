@@ -22,7 +22,7 @@ is a DC motor spinning up an inertial load — a voltage source through the wind
 ConstantVoltage(12) → R(1Ω) → L(1e-4 H) → RotationalEMF(k=0.1) → Inertia(J=0.05)
 ```
 
-It is the **Arc 7** capstone — the **stiff** specimen, and the first one you *run*
+It is the **stiff** specimen, and the first one you *run*
 rather than inspect. Its two subsystems evolve on wildly different timescales:
 
 - the **winding** is fast — electrical time constant `L/R ≈ 1e-4 s`;
@@ -34,9 +34,9 @@ slow run). This specimen is where BDF earns its keep.
 
 ---
 
-## The pipeline — a full-arc round trip
+## The pipeline — a full round trip
 
-BenchActuator exercises *every* arc's stage in one model:
+BenchActuator exercises *every* pipeline stage in one model:
 
 - **Flatten → [`trace/flatten.json`](trace/flatten.json)** — the flat cross-domain
   DAE (electrical + rotational), like [`Drivetrain`](../Drivetrain/narrative.md)'s
@@ -53,7 +53,7 @@ BenchActuator exercises *every* arc's stage in one model:
   the exact object the integrator runs.
 - **Simulation** *(run it)* — the payoff.
 
-### Simulation — the stiff spin-up *(Arc 7)*
+### Simulation — the stiff spin-up
 Open the **`▶ Simulation`** tab and Run (stop time 0.5 s). The Auto solver picks
 **BDF** (diffsol). Two trajectories tell the stiffness story:
 
@@ -64,8 +64,8 @@ Open the **`▶ Simulation`** tab and Run (stop time 0.5 s). The Auto solver pic
   still early in its long ramp toward the no-load speed `V/k = 120 rad/s`.
 
 One plot, two timescales three orders of magnitude apart, integrated in a handful
-of BDF steps. That is what "the simulation core" buys, and why the charter's Arc-7
-specimen is a *stiff* one.
+of BDF steps. That is what the simulation core buys, and why the specimen is a
+*stiff* one.
 
 ---
 
@@ -83,7 +83,7 @@ specimen is a *stiff* one.
   do. (**Step-mode plotting** now renders BouncingBall's velocity jump as a true
   discontinuity — the plot breaks the line at each reinit instead of sloping
   through it; gated on the DAE having a discrete update, so this smooth specimen's
-  steep current spike is never mis-broken. See `docs/ideas.md` #8 / Arc 7 #4.)
+  steep current spike is never mis-broken. See `docs/ideas.md` #8.)
 
 ## References
 [Solve lowering](../../compiler-phases/phase8_solve_lowering/solve_lowering.md) ·

@@ -28,7 +28,7 @@ analysis is blind to nonlinearity.** The incidence matrix only asks *which unkno
 appear in which equation* — not how. So `command²` and `command` have the *same*
 incidence, and the matching / BLT / tearing are **identical** to the linear loop.
 The difference is entirely *numerical*, and it surfaces only once a solver tries to
-close the torn loop — which makes this specimen the bridge from the structural arc
+close the torn loop — which makes this specimen the bridge from structural analysis
 to the simulation/convergence work ([`docs/ideas.md`](../../ideas.md) #1).
 
 ---
