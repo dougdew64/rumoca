@@ -80,8 +80,10 @@ specimen is a *stiff* one.
 - vs [`BouncingBall`](../BouncingBall/narrative.md): the other runnable specimen —
   *hybrid* (a discontinuity at each bounce) rather than *stiff* (smooth but
   multi-timescale). Between them they cover the two hard things a simulator must
-  do. (A refinement still open: **step-mode plotting**, so BouncingBall's velocity
-  jump renders as a true discontinuity — `docs/ideas.md`.)
+  do. (**Step-mode plotting** now renders BouncingBall's velocity jump as a true
+  discontinuity — the plot breaks the line at each reinit instead of sloping
+  through it; gated on the DAE having a discrete update, so this smooth specimen's
+  steep current spike is never mis-broken. See `docs/ideas.md` #8 / Arc 7 #4.)
 
 ## References
 [Solve lowering](../../compiler-phases/phase8_solve_lowering/solve_lowering.md) ·

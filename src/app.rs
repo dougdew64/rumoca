@@ -16,7 +16,7 @@ use crate::canvas::Canvas;
 use crate::field_help;
 use crate::spyplot;
 use crate::tree;
-use crate::worker::{DefInfo, FromWorker, SimData, Stage, ToWorker, Worker};
+use crate::worker::{discontinuity_segments, DefInfo, FromWorker, SimData, Stage, ToWorker, Worker};
 
 /// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
 /// live via Settings (or Ctrl +/−); egui's `zoom_factor` is the idiomatic knob.
@@ -567,19 +567,38 @@ impl App {
         match &self.sim_data {
             Some(data) => {
                 Plot::new("sim_plot")
-                    // Top-LEFT so the legend clears the right-hand "About this field"
-                    // panel (the default top-right corner sits against it).
+                    // Top-LEFT so the legend clears the right-hand panel (the
+                    // default top-right corner sits against it).
                     .legend(Legend::default().position(Corner::LeftTop))
                     .x_axis_label("time")
                     .show(ui, |plot_ui| {
                         for (i, name) in data.names.iter().enumerate() {
-                            let pts: PlotPoints = data
-                                .times
-                                .iter()
-                                .zip(&data.data[i])
-                                .map(|(&t, &y)| [t, y])
-                                .collect();
-                            plot_ui.line(Line::new(name.clone(), pts));
+                            let series = &data.data[i];
+                            // A model with discrete updates can jump a variable at an
+                            // event (BouncingBall's velocity flips at each bounce). Break
+                            // the polyline there so the plot shows a true discontinuity,
+                            // not a sloped line through the jump. Continuous models draw
+                            // as one segment.
+                            let segments = if data.has_discontinuities {
+                                discontinuity_segments(series)
+                            } else {
+                                std::iter::once(0..series.len()).collect()
+                            };
+                            // Pin an explicit colour per VARIABLE. egui_plot's auto-colour
+                            // increments per Line added, so a variable's multiple segments
+                            // would otherwise each get a different hue while the legend
+                            // (grouped by name) shows only one. Keyed on `i`, every segment
+                            // matches the legend and equals the old one-line-per-variable
+                            // colour.
+                            let color = series_color(i);
+                            for seg in segments {
+                                let pts: PlotPoints = data.times[seg.clone()]
+                                    .iter()
+                                    .zip(&series[seg])
+                                    .map(|(&t, &y)| [t, y])
+                                    .collect();
+                                plot_ui.line(Line::new(name.clone(), pts).color(color));
+                            }
                         }
                     });
             }
@@ -1191,6 +1210,16 @@ fn read_purpose(path: &Path) -> Option<String> {
             .filter(|hint| !hint.is_empty())
             .map(str::to_owned)
     })
+}
+
+/// The colour for simulation series `i` — egui_plot's own auto-colour palette
+/// (golden-ratio hue, `Hsva`), replicated so we can pin it explicitly. We must:
+/// a variable plotted as several segments (broken at discontinuities) would else
+/// take a different auto-colour per segment. Keyed on the variable index, this
+/// equals the colour egui_plot picked when each variable was a single line.
+fn series_color(i: usize) -> egui::Color32 {
+    let golden_ratio = (5.0_f32.sqrt() - 1.0) / 2.0; // 0.61803398875
+    egui::ecolor::Hsva::new(i as f32 * golden_ratio, 0.85, 0.5, 1.0).into()
 }
 
 /// A stage-tab label, painted red when that stage errored (`note_is_error`), so

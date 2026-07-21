@@ -505,3 +505,16 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   else `right_panel_field_help` (the old generic field help). Both share `right_panel_read_links` (the
   "Read: <phase chapter>" + "Read: specimen narrative" buttons). Added a `Simulation → phase9_simulation/
   simulation.md` mapping to `field_help::chapter_for_stage`.
+
+- **Arc 7 #4: step-mode / discontinuity plotting.** The simulator resamples onto a uniform time grid
+  (no event times in `SimResult`), so a reinit at an event lands *between* two samples and a plain line
+  interpolates a misleading diagonal across the jump. Fix: `worker::discontinuity_segments(&[f64])`
+  splits a series into contiguous index ranges, breaking where `|Δ| > max(range·0.08, 6·median|Δ|)`
+  (for BouncingBall's `v` the smooth step ~0.06 and the bounce jump ~8 differ ~40×, a clean gap); the
+  plot draws one polyline per segment so egui never slopes a line through the discontinuity. GATED on
+  `SimData.has_discontinuities` = "the DAE has a discrete update (`reinit` f_z or `when` assignment f_m)":
+  without the gate a smooth-but-stiff transient (BenchActuator's current spike, 0→~11 in one grid step)
+  would false-trigger. Chose the DISCRETE-UPDATE gate over "has any event" because BenchActuator carries
+  a bare zero-crossing (`zero_crossing_conditions: 1`) yet no update — so its trajectories are continuous.
+  Honest rendering = a break (gap) at the jump, not a fabricated vertical/step riser at an endpoint (we
+  don't know the exact event time). Closes `docs/ideas.md` #8.

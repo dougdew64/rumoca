@@ -165,7 +165,15 @@ matched system. If Rumoca does not expose it, reproducing the assembly risks a
 subtly-wrong analysis (cf. the Arc-4 nonlinear-constraint reimplementation caution) —
 weigh an upstream contribution instead.
 
-## 8. Step-mode plotting for discontinuities (Arc 7 refinement)
+## 8. Step-mode plotting for discontinuities (Arc 7 refinement) — DONE (2026-07-21)
+
+**Implemented** as Arc 7 #4. `worker::discontinuity_segments` breaks each trajectory
+into segments at reinit jumps (threshold `max(range·0.08, 6·median|Δ|)`); the plot
+draws one polyline per segment so the line never slopes through the jump. Gated on
+`SimData.has_discontinuities` (the DAE has a `reinit`/`when` discrete update), so
+smooth-but-stiff models like BenchActuator are never mis-broken. Landed differently
+from the sketch below: a **break (gap)** at the jump rather than a fabricated vertical
+riser, since the resampled `SimResult` doesn't carry exact event times. Original note:
 
 Captured 2026-07-20. The Simulation pane (Arc 7 #3) plots each trajectory as a
 straight-line `egui_plot::Line`. For a **hybrid** model like `BouncingBall`, the

@@ -48,6 +48,55 @@ pub struct SimData {
     pub data: Vec<Vec<f64>>,
     /// The first `n_states` names are true states (the rest are algebraics/outputs).
     pub n_states: usize,
+    /// True when the model has a **discrete update** — a `reinit` (`f_z`) or a
+    /// `when`-clause assignment (`f_m`) — that can jump a variable's value at an
+    /// event. Only then does the plot break the polyline at discontinuities. A
+    /// bare zero-crossing with no update (BenchActuator has one, yet is smooth)
+    /// does *not* count, and a smooth model's coarse-but-steep transients (a stiff
+    /// current spike) must never be mistaken for jumps. See [`discontinuity_segments`].
+    pub has_discontinuities: bool,
+}
+
+/// Split a plotted trajectory into contiguous segments, breaking it where the
+/// value **jumps discontinuously** — a state reinitialized at an event (the ball's
+/// velocity flips at a bounce). Returns half-open index ranges into `values`;
+/// the caller draws one polyline per range so egui never interpolates a *sloped*
+/// line across the jump ("discontinuities render as discontinuities", charter Arc 7).
+///
+/// A break sits between `i-1` and `i` when `|Δ|` exceeds
+/// `max(range · 0.08, 6 · median|Δ|)` — a per-series threshold well above the
+/// smooth step yet well below any real reinit (for BouncingBall's `v` the two
+/// differ ~40×). Caller gates this on [`SimData::has_discontinuities`]; on a uniform
+/// output grid alone a jump is indistinguishable from an under-resolved steep transient.
+pub fn discontinuity_segments(values: &[f64]) -> Vec<std::ops::Range<usize>> {
+    let n = values.len();
+    if n < 3 {
+        return std::iter::once(0..n).collect();
+    }
+    let diffs: Vec<f64> = (1..n).map(|i| (values[i] - values[i - 1]).abs()).collect();
+    let (mut lo, mut hi) = (f64::MAX, f64::MIN);
+    for &v in values {
+        lo = lo.min(v);
+        hi = hi.max(v);
+    }
+    let mut sorted = diffs.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let median = sorted[sorted.len() / 2];
+    let threshold = ((hi - lo) * 0.08).max(6.0 * median);
+    // A flat/degenerate series (threshold 0) has no meaningful jumps — one segment.
+    if threshold <= f64::EPSILON {
+        return std::iter::once(0..n).collect();
+    }
+    let mut segments = Vec::new();
+    let mut start = 0;
+    for (k, &d) in diffs.iter().enumerate() {
+        if d > threshold {
+            segments.push(start..k + 1); // segment ends at the pre-jump sample k
+            start = k + 1;
+        }
+    }
+    segments.push(start..n);
+    segments
 }
 
 /// One pipeline stage's outcome for the selected model: the serialized IR node
@@ -243,10 +292,22 @@ impl WorkerState {
         };
         let sm = rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae)
             .map_err(|e| format!("solve lowering failed: {e}"))?;
+        // Can a plotted variable jump? Only if the model has a discrete update —
+        // a `reinit` (f_z) or a `when` assignment (f_m). A bare zero-crossing with
+        // no update (BenchActuator has one) leaves every trajectory continuous, so
+        // the plot must NOT break there.
+        let has_discontinuities =
+            !cr.dae.discrete.real_updates.is_empty() || !cr.dae.discrete.valued_updates.is_empty();
         let opts = rumoca_sim::SimOptions { t_end, ..Default::default() };
         let res = rumoca_sim::simulate_solve_model(&sm, &opts)
             .map_err(|e| format!("simulation failed: {e}"))?;
-        Ok(SimData { times: res.times, names: res.names, data: res.data, n_states: res.n_states })
+        Ok(SimData {
+            times: res.times,
+            names: res.names,
+            data: res.data,
+            n_states: res.n_states,
+            has_discontinuities,
+        })
     }
 
     /// Extract a class from the resolved tree by qualified name for navigation.
@@ -1152,6 +1213,54 @@ mod tests {
         };
         assert!(get("L.i") > 5.0, "winding current should be driven high");
         assert!(get("load.w") > 1.0, "the load should spin up");
+        // Smooth trajectories: BenchActuator has a bare zero-crossing but no
+        // discrete update, so the plot must never break its (coarsely sampled,
+        // steep) current spike into false discontinuities.
+        assert!(!d.has_discontinuities, "BenchActuator has no discrete updates — all trajectories continuous");
+    }
+
+    /// Arc 7 #4: the discontinuity-plotting helper. A smooth ramp is one segment;
+    /// a signal with a reinit-style jump splits into two, breaking at the jump so
+    /// the plot won't slope a line across it. Calibrated against BouncingBall's `v`
+    /// (smooth step ~0.06, bounce jump ~8 — a ~40x separation).
+    #[test]
+    fn discontinuity_segments_break_at_jumps() {
+        // Smooth monotone ramp → a single segment.
+        let ramp: Vec<f64> = (0..50).map(|i| f64::from(i) * 0.1).collect();
+        assert_eq!(discontinuity_segments(&ramp), vec![0..50]);
+        // A falling ramp that flips sign once (like a single bounce) → two segments,
+        // split right at the jump.
+        let mut v: Vec<f64> = (0..40).map(|i| -f64::from(i) * 0.1).collect(); // 0 → -3.9
+        v.extend((0..40).map(|i| 3.0 - f64::from(i) * 0.1)); // jumps -3.9 → +3.0
+        let segs = discontinuity_segments(&v);
+        assert_eq!(segs.len(), 2, "one jump → two segments, got {segs:?}");
+        assert_eq!(segs[0], 0..40, "first segment ends at the pre-jump sample");
+        assert_eq!(segs[1], 40..80, "second segment starts at the post-jump sample");
+    }
+
+    /// Arc 7 #4: end-to-end — BouncingBall is hybrid, and its velocity trajectory
+    /// breaks into several segments (one per bounce) while its height stays one
+    /// continuous curve.
+    #[test]
+    fn bouncing_ball_velocity_plots_as_discontinuous() {
+        let data = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BouncingBall.mo"));
+            w.simulate(path, "BouncingBall", 3.0)
+        }
+        .expect("simulate BouncingBall");
+        assert!(data.has_discontinuities, "BouncingBall reinits v at each bounce");
+        let v = &data.data[data.names.iter().position(|n| n == "v").expect("v")];
+        let h = &data.data[data.names.iter().position(|n| n == "h").expect("h")];
+        assert!(
+            discontinuity_segments(v).len() > 1,
+            "velocity flips at each bounce → multiple segments"
+        );
+        assert_eq!(
+            discontinuity_segments(h).len(),
+            1,
+            "height is continuous across bounces → one segment"
+        );
     }
 
     /// Arc 7 #3: the worker's `simulate` path (compile → lower → integrate) runs a
@@ -1172,6 +1281,7 @@ mod tests {
             "the ball should stay ~above the floor (events reflect it)"
         );
     }
+
 
     /// Arc 7 (phase 8): the Solve-lowering stage lowers the DAE to a `SolveModel`
     /// (the solvable form the simulator consumes) and renders it.
