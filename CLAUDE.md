@@ -7,38 +7,30 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 7: The simulation core** (charter §4.2.7). This arc **crosses from static IR inspection to live
-execution** — the observatory's biggest inflection. It covers the two remaining pipeline phases: **solve
-lowering** (phase 8 — DAE → a solvable `SolveModel`: residuals, Jacobian sparsity, mass matrix) and
-**simulation** (phase 9 — running the model: BDF/RK integration, event handling, state trajectories).
-It closes the "solve lowering not instrumented" gap (Doug, 2026-07-20). **Specimen:** charter's bench
-actuator (motor winding fast + mechanical load slow — the canonical *stiff* pairing, BDF's reason to
-exist), reframed **start-simple** (à la Arc 4/6): first run `SingleInertia` / `BouncingBall` to get the
-runner + plot working, then the stiff pairing. BouncingBall gives the "step-mode plotting so
-discontinuities render as discontinuities" that Arc 6 deferred here.
+**The seven-arc curriculum is COMPLETE (Arc 7 closed 2026-07-21).** The charter's curriculum (§4.2) is
+seven arcs, one per phase; the observatory now instruments the whole pipeline **Parse → Resolve →
+Instantiate → Typecheck → Flatten → Structural → Index reduction → Initialization → Events → Solve
+lowering → Simulation** — from static IR inspection through live execution. There is **no Arc 8 in the
+charter**: further work comes from the backlog (`docs/ideas.md`), the deferred items below, or a new
+charter decision — not a pre-planned next arc. Pick the next thrust *with Doug*; don't assume one.
 
-**Rumoca capability CONFIRMED — sim is library-callable, not blocked-on-upstream** (scouted 2026-07-20):
-`rumoca-phase-solve::lower_dae_to_solve_model(&dae) -> SolveModel` (= solve lowering, phase 8), then
-`rumoca-sim::simulate_solve_model(&SolveModel, &SimOptions) -> SimResult` (solver modes Auto / RK45 /
-BDF-via-diffsol), OR the stepwise `rumoca-sim::SimulationSession::{new, step(dt), time(), state()}` —
-ideal for the observatory's step-and-render loop. Solver backends are feature-gated (`solver-rk45`
-non-stiff / `solver-diffsol` BDF-stiff).
-
-**New capability + dependencies (charter §4.4 / Decision 6 pre-bless simulation + egui_plot, but the
-specific crates need ratification):** a simulation runner on the **worker thread** (never block the UI,
-never shell out to the Rumoca CLI) + an **`egui_plot`** pane fed by simulation buffers. New deps to
-confirm: `rumoca-sim` (+ a solver feature), likely `rumoca-phase-solve` + `rumoca-ir-solve`, and
-`egui_plot`. Increment plan: (1) confirm deps + scout: lower `SingleInertia` to a `SolveModel`, run
-`simulate_solve_model`, get trajectories; (2) a **Solve lowering** observation (the `SolveModel` — closes
-phase 8); (3) worker-thread sim runner + `egui_plot` pane (step-mode); (4) the stiff bench-actuator
-specimen + BouncingBall discontinuity plotting.
+**Arc 7 closed (2026-07-21) — The simulation core** (charter §4.2.7), the biggest inflection (static IR →
+live execution). Delivered: **Solve lowering** (phase 8 — DAE → `SolveModel`, via
+`rumoca-phase-solve::lower_dae_to_solve_model`) as a stage tab, and **Simulation** (phase 9 — a
+worker-thread runner calling `rumoca-sim::simulate_solve_model`, Auto solver = BDF-via-diffsol for stiff /
+RK45 otherwise, plotted in an `egui_plot` pane; the UI never blocks, never shells out to the CLI). Ran
+start-simple (`SingleInertia` → `BouncingBall` → the stiff `BenchActuator`). **Step-mode plotting** landed
+(`worker::discontinuity_segments` breaks the line at reinit jumps, gated on `SimData.has_discontinuities` =
+the DAE has a discrete update; `series_color` pins per-variable colour) — closes the Arc-6-deferred
+"discontinuities render as discontinuities" and `docs/ideas.md` #8. Closed the "solve lowering not
+instrumented" gap (Doug, 2026-07-20).
 
 **Arc 6 closed (2026-07-20):** the compile-level hybrid structure is observable — the **Events** tab shows
 `BouncingBall`'s condition (`h <= 0`) + discrete reinit; smooth models show "no events". **Arc 5 closed:**
 initialization observable (`RcCircuit` IC plan + relaxation; `CapacitorLoop` structural + `OverInitRc`
 init-determinacy blow-ups). **Arc 4 closed:** index reduction on `Drivetrain`; the nonlinear four-bar +
-planar library (`lib/PlanarMechanics.mo`) parked/deferred (`docs/ideas.md` #5). Arc 1–6 done (Parse …
-Events + BLT spy-plot + the 11-specimen notebook). **New pipeline stages must be wired into the
+planar library (`lib/PlanarMechanics.mo`) parked/deferred (`docs/ideas.md` #5). Arc 1–7 done (Parse …
+Simulation + BLT spy-plot + the 12-specimen notebook). **New pipeline stages must be wired into the
 stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
 `hrw-stage-diff-highlight-extend` memory).
 
@@ -48,7 +40,7 @@ closed with both accepted (deferred / unconfirmed). Until he decides, treat them
 not hard blockers (see `docs/ideas.md` #4).
 
 **Per-specimen lab notebook (`docs/specimen-notebook/`) — now active.** Each entry pairs a durable
-**compilation trace** (`trace/` = the six stage IR files + a `manifest.json` stamping the Rumoca
+**compilation trace** (`trace/` = the per-stage IR files + a `manifest.json` stamping the Rumoca
 rev + specimen hash, produced by `cargo run --example gen_trace -- <Model>`) with a Claude-written
 **`narrative.md`** — the grounded story of *that specimen's* trip through the pipeline, foregrounding
 the phenomenon the specimen was designed to trigger, citing specific trace locations, and linking to

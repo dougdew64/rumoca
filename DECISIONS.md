@@ -518,3 +518,11 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   a bare zero-crossing (`zero_crossing_conditions: 1`) yet no update — so its trajectories are continuous.
   Honest rendering = a break (gap) at the jump, not a fabricated vertical/step riser at an endpoint (we
   don't know the exact event time). Closes `docs/ideas.md` #8.
+
+- **Arc 7 closed (2026-07-21) — the seven-arc curriculum is complete.** The observatory now instruments
+  the whole Rumoca pipeline Parse → … → Solve lowering → Simulation (static IR through live execution).
+  Close-out ritual: (2) panes render the IR ✓ (Solve lowering + Simulation tabs); (4) traces captured ✓
+  (gen_trace includes solve_lowering); (1) differential test + (3) debugger single-step remain
+  satisfiable-by-acceptance per Doug's standing reconsideration of those gates; (5) CLAUDE.md advanced.
+  The charter has no Arc 8 — subsequent work is drawn from docs/ideas.md, the deferred items, or a new
+  charter decision, chosen with Doug rather than assumed.
