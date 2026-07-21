@@ -14,6 +14,7 @@ use std::collections::{BTreeMap, HashMap};
 use crate::bridge::{self, Ask, Focus, Seg};
 use crate::canvas::Canvas;
 use crate::field_help;
+use crate::incidence_view;
 use crate::spyplot;
 use crate::tree;
 use crate::worker::{
@@ -53,12 +54,13 @@ enum StageKind {
     Simulation,
 }
 
-/// How to render the Structural stage: the custom BLT spy-plot (the visual
-/// emitter) or the generic serde tree over the same report. Only this stage has
-/// a custom view; every other stage is always the tree.
+/// How to render the Structural / Index-reduction stages: the custom BLT
+/// spy-plot, the incidence matrix (pass-two Arc 3), or the generic serde tree
+/// over the same report.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum StructuralView {
     SpyPlot,
+    Incidence,
     Tree,
 }
 
@@ -122,9 +124,10 @@ pub struct App {
     field_help: HashMap<String, String>,
     selected_field: Option<String>,
 
-    // Arc 3: the Structural stage's custom BLT spy-plot and its pan/zoom camera.
+    // Arc 3: the Structural stage's custom views and their pan/zoom cameras.
     structural_view: StructuralView,
     spy_canvas: Canvas,
+    incidence_canvas: Canvas,
 
     // Arc 7: on-demand simulation (the Simulation tab) — not a compile stage.
     // `simulation` is an always-empty placeholder so `current_stage` has a Stage
@@ -195,6 +198,7 @@ impl App {
             selected_field: None,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default(),
+            incidence_canvas: Canvas::default(),
             simulation: Stage::default(),
             sim_data: None,
             sim_running: false,
@@ -331,8 +335,9 @@ impl App {
                     self.events = events;
                     self.solve_lowering = solve_lowering;
                     self.def_index = def_index;
-                    // Re-fit the spy-plot camera to the new report's matrix.
+                    // Re-fit the custom-view cameras to the new report.
                     self.spy_canvas.request_fit();
+                    self.incidence_canvas.request_fit();
                     // Land on the furthest stage that completed cleanly.
                     self.stage = self.last_successful_stage();
                     // Publish every stage's full IR so Claude can diff any pair.
@@ -1221,14 +1226,13 @@ impl eframe::App for App {
                 if report_ready {
                     ui.horizontal(|ui| {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
+                        ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
                     ui.separator();
                 }
 
                 if report_ready && self.structural_view == StructuralView::SpyPlot {
-                    // Build the plot (owns its strings, so the immutable borrow of
-                    // the current stage is released before we touch `spy_canvas`).
                     match self.current_stage().value.as_ref().and_then(spyplot::Plot::from_report) {
                         Some(plot) => {
                             ui.weak(plot.caption());
@@ -1236,6 +1240,16 @@ impl eframe::App for App {
                         }
                         None => {
                             ui.weak("(the structural report has no BLT blocks to plot)");
+                        }
+                    }
+                } else if report_ready && self.structural_view == StructuralView::Incidence {
+                    match self.current_stage().value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report) {
+                        Some(mat) => {
+                            ui.weak(mat.caption());
+                            mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture);
+                        }
+                        None => {
+                            ui.weak("(no incidence data in this report)");
                         }
                     }
                 } else {

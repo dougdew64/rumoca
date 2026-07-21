@@ -534,13 +534,22 @@ pub fn compile_specimen(specimen: &Path, libraries: Vec<PathBuf>) -> Result<From
 }
 
 /// Structural analysis of the model's DAE (Arc 3): maximum matching, BLT blocks,
-/// and tearing, from `build_structural_report`. Only available on a full Success
-/// (the DAE must exist). The report types aren't `Serialize`, so build JSON.
+/// and tearing, from `build_structural_report`, plus the raw incidence matrix
+/// (equation×unknown bipartite adjacency) from `build_incidence`. Only available
+/// on a full Success (the DAE must exist). The report types aren't `Serialize`,
+/// so build JSON.
 fn structural_stage(result: Option<&PhaseResult>) -> Stage {
     match result {
         Some(PhaseResult::Success(cr)) => {
             match rumoca_phase_structural::build_structural_report(&cr.dae) {
-                Ok(rep) => Stage::ok(structural_to_json(&rep)),
+                Ok(rep) => {
+                    let inc = rumoca_phase_structural::build_incidence(&cr.dae);
+                    let mut json = structural_to_json(&rep);
+                    json.as_object_mut()
+                        .unwrap()
+                        .insert("incidence".to_owned(), incidence_to_json(&inc));
+                    Stage::ok(json)
+                }
                 Err(e) => Stage::err(format!("structural analysis failed: {e}")),
             }
         }
@@ -567,12 +576,17 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
             index_reduce_for_structural_analysis(&mut reduced);
             match rumoca_phase_structural::build_structural_report(&reduced) {
                 Ok(rep) => {
+                    let inc = rumoca_phase_structural::build_incidence(&reduced);
                     let note = if raw_ok {
                         "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
                     } else {
                         "index-reduced from a structurally singular (high-index) system — now solvable"
                     };
-                    Stage::ok_with_note(structural_to_json(&rep), note)
+                    let mut json = structural_to_json(&rep);
+                    json.as_object_mut()
+                        .unwrap()
+                        .insert("incidence".to_owned(), incidence_to_json(&inc));
+                    Stage::ok_with_note(json, note)
                 }
                 Err(e) => Stage::err(format!("still singular after index reduction: {e}")),
             }
@@ -807,6 +821,29 @@ fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_
             .map(|(e, u)| serde_json::json!({ "equation": e, "unknown": u }))
             .collect::<Vec<_>>(),
         "blocks": rep.blocks.iter().map(block_to_json).collect::<Vec<_>>(),
+    })
+}
+
+fn incidence_to_json(inc: &rumoca_phase_structural::Incidence) -> serde_json::Value {
+    let rows: Vec<serde_json::Value> = inc
+        .eq_unknowns
+        .iter()
+        .enumerate()
+        .map(|(i, cols)| {
+            let mut sorted: Vec<usize> = cols.iter().copied().collect();
+            sorted.sort_unstable();
+            serde_json::json!({
+                "equation": inc.equation_refs[i].to_string(),
+                "unknowns": sorted,
+            })
+        })
+        .collect();
+    let unknown_names: Vec<String> = inc.unknown_names.iter().map(|u| u.to_string()).collect();
+    serde_json::json!({
+        "n_eq": inc.n_eq,
+        "n_var": inc.n_var,
+        "unknown_names": unknown_names,
+        "rows": rows,
     })
 }
 

@@ -1,20 +1,14 @@
 //! BLT block-structure spy-plot (Arc 3, increment 2) — the first custom-`Painter`
 //! view, drawn on the reusable [`crate::canvas`] scaffold.
 //!
-//! **What it shows and why only this.** Rumoca's structural phase produces a
-//! `StructuralReport` whose *public* surface is the maximum matching (which
-//! equation determines which unknown) and the BLT blocks (the block-lower-
-//! triangular evaluation order: scalar solves, and coupled strongly-connected
-//! components — algebraic loops — with their tearing). The raw incidence matrix
-//! the matching runs on (every equation's full set of referenced unknowns, the
-//! off-diagonal sparsity) is `pub(crate)` in `rumoca-phase-structural` and not
-//! reachable from HRW; reproducing it would mean re-walking the DAE ourselves and
-//! risking a *subtly-wrong* incidence, which the charter's "respect phase
-//! boundaries" rule forbids. So this plot draws exactly what the report exposes:
-//! the **diagonal blocks** in BLT order. Scalar blocks are single diagonal cells;
-//! coupled blocks are boxes on the diagonal (all their equations × unknowns are
-//! mutually coupled). Inter-block (lower-triangular) couplings are not drawn —
-//! they need the unexposed incidence.
+//! **What it shows.** Rumoca's structural phase produces a `StructuralReport`
+//! with the maximum matching (which equation determines which unknown) and the
+//! BLT blocks (the block-lower-triangular evaluation order: scalar solves, and
+//! coupled strongly-connected components — algebraic loops — with their tearing).
+//! This plot draws the **diagonal blocks** in BLT order. Scalar blocks are single
+//! diagonal cells; coupled blocks are boxes on the diagonal. The full incidence
+//! matrix (every equation's referenced unknowns) is shown separately in
+//! [`crate::incidence_view`].
 //!
 //! Per the observatory's dual-emitter goal, the plot is both a thing to *read*
 //! (block structure at a glance — where the algebraic loops are) and a thing to
