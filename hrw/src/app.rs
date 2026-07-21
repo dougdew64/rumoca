@@ -107,6 +107,9 @@ pub struct App {
     events: Stage,
     solve_lowering: Stage,
     stage: StageKind,
+    /// True once the user explicitly clicks a stage tab; false on specimen open.
+    /// While false the RHS panel shows specimen info, not stage-specific help.
+    stage_clicked: bool,
     // Resolved identity of every DefId referenced in the current model's IR.
     def_index: BTreeMap<u64, DefInfo>,
 
@@ -196,6 +199,7 @@ impl App {
             events: Stage::default(),
             solve_lowering: Stage::default(),
             stage: StageKind::Resolve,
+            stage_clicked: false,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
             nav_loading: None,
@@ -281,6 +285,7 @@ impl App {
         self.sim_error = None;
         self.sim_running = false;
         self.def_index = BTreeMap::new();
+        self.stage_clicked = false;
         self.nav.clear();
         self.nav_loading = None;
         self.nav_error = None;
@@ -616,6 +621,7 @@ impl App {
             && let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone())
         {
             self.sim_running = true;
+            self.sim_data = None;
             self.sim_error = None;
             self.worker.send(ToWorker::Simulate { path, model, t_end: self.sim_t_end });
         }
@@ -665,14 +671,57 @@ impl App {
         }
     }
 
-    /// The right-hand context panel. Its content depends on what's on screen: the
-    /// Simulation view gets a plot-oriented panel; every other stage gets the
-    /// generic field help. (Both share the "Read: …" doc links at the bottom.)
+    /// The right-hand context panel. Before any stage tab is clicked it shows
+    /// specimen-level info; after a click it shows stage-specific content
+    /// (Simulation gets its own panel; everything else gets field help).
     fn right_panel(&mut self, ui: &mut egui::Ui) {
-        if self.nav.is_empty() && self.stage == StageKind::Simulation {
+        if !self.stage_clicked && self.nav.is_empty() {
+            self.right_panel_specimen(ui);
+        } else if self.nav.is_empty() && self.stage == StageKind::Simulation {
             self.right_panel_simulation(ui);
         } else {
             self.right_panel_field_help(ui);
+        }
+    }
+
+    /// Specimen-level info shown in the RHS before the user clicks any stage tab.
+    fn right_panel_specimen(&mut self, ui: &mut egui::Ui) {
+        let Some(path) = &self.selected else {
+            ui.weak("Select a specimen to begin.");
+            return;
+        };
+        let name = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("<?>");
+        ui.strong(name);
+        ui.separator();
+        if let Some(m) = &self.model {
+            ui.horizontal(|ui| {
+                ui.label("Model:");
+                ui.label(egui::RichText::new(m).monospace());
+            });
+        } else if self.compiling {
+            ui.weak("Compiling…");
+        }
+        if let Some(purpose) = self.specimen_purposes.get(path) {
+            ui.add_space(4.0);
+            ui.label(purpose);
+        }
+        if let Some(model) = &self.model {
+            let rel = format!("docs/specimen-notebook/{model}/narrative.md");
+            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+            if std::path::Path::new(&abs).exists() {
+                ui.add_space(8.0);
+                ui.separator();
+                if ui
+                    .button("Read: specimen narrative")
+                    .on_hover_text(&rel)
+                    .clicked()
+                {
+                    let _ = std::process::Command::new("code").arg(&abs).spawn();
+                }
+            }
         }
     }
 
@@ -720,10 +769,6 @@ impl App {
     fn right_panel_simulation(&mut self, ui: &mut egui::Ui) {
         ui.strong("Simulation");
         ui.separator();
-        if let Some(m) = &self.model {
-            ui.label(egui::RichText::new(m).monospace().strong());
-            ui.add_space(4.0);
-        }
         ui.label("Press ▶ Run to integrate the model; each state/output is plotted vs time.");
         ui.add_space(4.0);
         ui.weak("Drag to pan, scroll to zoom, double-click to reset; toggle a series in the legend.");
@@ -967,7 +1012,10 @@ impl eframe::App for App {
                 egui::TextStyle::Body.resolve(ui.style()),
                 egui::Color32::WHITE,
             );
-            (galley.size().x * 1.1).max(120.0)
+            let spacing = ui.style().spacing.item_spacing.x;
+            let margin = ui.style().spacing.window_margin.sum().x;
+            let scrollbar = 16.0;
+            (galley.size().x + spacing * 2.0 + margin + scrollbar).max(120.0)
         };
         egui::Panel::left("file_list")
             .resizable(true)
@@ -1027,7 +1075,12 @@ impl eframe::App for App {
                         }
                     }
                     if let Some(path) = to_open {
-                        self.open(path);
+                        if self.selected.as_ref() == Some(&path) {
+                            self.stage_clicked = false;
+                            self.viewing_log = false;
+                        } else {
+                            self.open(path);
+                        }
                     }
                     if capture_specimen {
                         self.emit_focus(Focus::Specimen);
@@ -1091,6 +1144,7 @@ impl eframe::App for App {
                             (self.selected.clone(), self.model.clone())
                         {
                             self.sim_running = true;
+                            self.sim_data = None;
                             self.sim_error = None;
                             self.worker.send(ToWorker::Simulate {
                                 path,
@@ -1213,7 +1267,18 @@ impl eframe::App for App {
                         stage_tab_clicked = true;
                     }
                     // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, "Simulation")
+                    ui.separator();
+                    let sim_label = {
+                        let text = egui::RichText::new("Simulation");
+                        if self.sim_error.is_some() {
+                            text.color(err)
+                        } else if self.sim_data.is_some() {
+                            text.color(ok)
+                        } else {
+                            text
+                        }
+                    };
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, sim_label)
                         .on_hover_text(
                             "Run the model (Arc 7, phase 9): compile → lower to a SolveModel → integrate \
                              (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
@@ -1222,9 +1287,11 @@ impl eframe::App for App {
                         .clicked()
                     {
                         self.stage = StageKind::Simulation;
+                        self.stage_clicked = true;
                         self.viewing_log = false;
                     }
                     if stage_tab_clicked {
+                        self.stage_clicked = true;
                         self.viewing_log = false;
                         if self.selected.is_some() {
                             want_stage_ask = true;
