@@ -957,10 +957,22 @@ impl eframe::App for App {
             ui.add_space(1.0);
         });
 
+        let specimen_width = {
+            let longest = self.files.iter()
+                .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
+                .max_by_key(|n| n.len())
+                .unwrap_or("");
+            let galley = ui.painter().layout_no_wrap(
+                longest.to_owned(),
+                egui::TextStyle::Body.resolve(ui.style()),
+                egui::Color32::WHITE,
+            );
+            (galley.size().x * 1.1).max(120.0)
+        };
         egui::Panel::left("file_list")
             .resizable(true)
-            .default_size(440.0)
-            .min_size(340.0)
+            .default_size(specimen_width)
+            .min_size(120.0)
             .show(ui, |ui| {
                 ui.strong("Specimens");
                 ui.separator();
