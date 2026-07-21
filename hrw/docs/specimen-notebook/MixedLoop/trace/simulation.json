@@ -1,0 +1,51 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 5,
+  "n_states": 0,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "setpoint",
+      "is_state": false,
+      "initial": 0.5,
+      "final": 0.5,
+      "min": 0.5,
+      "max": 0.5
+    },
+    {
+      "name": "error",
+      "is_state": false,
+      "initial": 0.023809523809534383,
+      "final": 0.023809525501292228,
+      "min": 0.02380952372493539,
+      "max": 0.023809525501292228
+    },
+    {
+      "name": "command",
+      "is_state": false,
+      "initial": 0.23809523809534383,
+      "final": 0.23809525501292228,
+      "min": 0.23809523724935389,
+      "max": 0.23809525501292228
+    },
+    {
+      "name": "measurement",
+      "is_state": false,
+      "initial": 0.47619047619068766,
+      "final": 0.47619051002584456,
+      "min": 0.47619047449870777,
+      "max": 0.47619051002584456
+    },
+    {
+      "name": "result",
+      "is_state": false,
+      "initial": 1.428571428572063,
+      "final": 1.4285715300775337,
+      "min": 1.4285714234961233,
+      "max": 1.4285715300775337
+    }
+  ]
+}

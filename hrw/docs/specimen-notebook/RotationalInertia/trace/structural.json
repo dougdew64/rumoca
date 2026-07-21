@@ -125,5 +125,103 @@
       "equation": "f_x[10] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
       "unknown": "torque.flange.phi"
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 12,
+    "n_var": 12,
+    "unknown_names": [
+      "der(inertia.phi)",
+      "der(inertia.w)",
+      "inertia.flange_b.phi",
+      "inertia.flange_b.tau",
+      "inertia.a",
+      "torque.phi_support",
+      "torque.tau",
+      "inertia.flange_a.phi",
+      "inertia.flange_a.tau",
+      "torque.flange.phi",
+      "torque.flange.tau",
+      "tau.y"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          7
+        ]
+      },
+      {
+        "equation": "f_x[1]",
+        "unknowns": [
+          2
+        ]
+      },
+      {
+        "equation": "f_x[2]",
+        "unknowns": [
+          0
+        ]
+      },
+      {
+        "equation": "f_x[3]",
+        "unknowns": [
+          1
+        ]
+      },
+      {
+        "equation": "f_x[4]",
+        "unknowns": [
+          3,
+          4,
+          8
+        ]
+      },
+      {
+        "equation": "f_x[5]",
+        "unknowns": [
+          5
+        ]
+      },
+      {
+        "equation": "f_x[6]",
+        "unknowns": [
+          6,
+          10
+        ]
+      },
+      {
+        "equation": "f_x[7]",
+        "unknowns": [
+          11
+        ]
+      },
+      {
+        "equation": "f_x[8]",
+        "unknowns": [
+          8,
+          10
+        ]
+      },
+      {
+        "equation": "f_x[9]",
+        "unknowns": [
+          6,
+          11
+        ]
+      },
+      {
+        "equation": "f_x[10]",
+        "unknowns": [
+          7,
+          9
+        ]
+      },
+      {
+        "equation": "f_x[11]",
+        "unknowns": [
+          3
+        ]
+      }
+    ]
+  }
 }

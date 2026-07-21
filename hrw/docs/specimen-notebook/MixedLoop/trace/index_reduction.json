@@ -15,5 +15,90 @@
       "equation": "f_x[0] (top-level model equation)",
       "unknown": "error"
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 1,
+    "n_var": 1,
+    "unknown_names": [
+      "error"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          0
+        ]
+      }
+    ]
+  },
+  "reduction": {
+    "states_before": [],
+    "states_after": [],
+    "demoted_states": [],
+    "n_states_before": 0,
+    "n_states_after": 0,
+    "steps": [
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok"
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok"
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 substituted"
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "4 eliminated"
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "setpoint",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"sensorGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":895,\"end\":910},\"parts\":[{\"ident\":\"sensorGain\",\"span\":{\"source\":6374527633400164045,\"start\":895,\"end\":910},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1429,\"end\":1439}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":846,\"end\":860},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":6374527633400164045,\"start\":846,\"end\":860},\"subs\":[]}],\"def_id\":39467}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1442,\"end\":1451}}},\"span\":{\"source\":6374527633400164045,\"start\":1429,\"end\":1451}}}"
+      },
+      {
+        "variable": "command",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":961,\"end\":980},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":6374527633400164045,\"start\":961,\"end\":980},\"subs\":[]}],\"def_id\":39469}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1573,\"end\":1587}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"error\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":1208,\"end\":1218},\"parts\":[{\"ident\":\"error\",\"span\":{\"source\":6374527633400164045,\"start\":1208,\"end\":1218},\"subs\":[]}],\"def_id\":39473}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1590,\"end\":1595}}},\"span\":{\"source\":6374527633400164045,\"start\":1573,\"end\":1595}}}"
+      },
+      {
+        "variable": "measurement",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"plantGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":1024,\"end\":1038},\"parts\":[{\"ident\":\"plantGain\",\"span\":{\"source\":6374527633400164045,\"start\":1024,\"end\":1038},\"subs\":[]}],\"def_id\":39470}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1654,\"end\":1663}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":961,\"end\":980},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":6374527633400164045,\"start\":961,\"end\":980},\"subs\":[]}],\"def_id\":39469}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1573,\"end\":1587}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"error\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":1208,\"end\":1218},\"parts\":[{\"ident\":\"error\",\"span\":{\"source\":6374527633400164045,\"start\":1208,\"end\":1218},\"subs\":[]}],\"def_id\":39473}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1590,\"end\":1595}}},\"span\":{\"source\":6374527633400164045,\"start\":1573,\"end\":1595}}},\"span\":{\"source\":6374527633400164045,\"start\":1654,\"end\":1673}}}"
+      },
+      {
+        "variable": "result",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"outputGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":1084,\"end\":1099},\"parts\":[{\"ident\":\"outputGain\",\"span\":{\"source\":6374527633400164045,\"start\":1084,\"end\":1099},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1698,\"end\":1708}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"plantGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":1024,\"end\":1038},\"parts\":[{\"ident\":\"plantGain\",\"span\":{\"source\":6374527633400164045,\"start\":1024,\"end\":1038},\"subs\":[]}],\"def_id\":39470}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1654,\"end\":1663}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":961,\"end\":980},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":6374527633400164045,\"start\":961,\"end\":980},\"subs\":[]}],\"def_id\":39469}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1573,\"end\":1587}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"error\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6374527633400164045,\"start\":1208,\"end\":1218},\"parts\":[{\"ident\":\"error\",\"span\":{\"source\":6374527633400164045,\"start\":1208,\"end\":1218},\"subs\":[]}],\"def_id\":39473}},\"subscripts\":[],\"span\":{\"source\":6374527633400164045,\"start\":1590,\"end\":1595}}},\"span\":{\"source\":6374527633400164045,\"start\":1573,\"end\":1595}}},\"span\":{\"source\":6374527633400164045,\"start\":1654,\"end\":1673}}},\"span\":{\"source\":6374527633400164045,\"start\":1698,\"end\":1722}}}"
+      }
+    ],
+    "stopped_at": null,
+    "funnel_completed": true
+  }
 }

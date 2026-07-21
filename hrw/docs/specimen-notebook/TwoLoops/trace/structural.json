@@ -73,5 +73,46 @@
         ]
       }
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 4,
+    "n_var": 4,
+    "unknown_names": [
+      "errorA",
+      "commandA",
+      "errorB",
+      "commandB"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          0,
+          1
+        ]
+      },
+      {
+        "equation": "f_x[1]",
+        "unknowns": [
+          0,
+          1
+        ]
+      },
+      {
+        "equation": "f_x[2]",
+        "unknowns": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "equation": "f_x[3]",
+        "unknowns": [
+          2,
+          3
+        ]
+      }
+    ]
+  }
 }

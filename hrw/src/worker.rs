@@ -731,6 +731,19 @@ pub fn compile_specimen(specimen: &Path, libraries: Vec<PathBuf>) -> Result<From
     Ok(state.compile(specimen, &|_: FromWorker| {}))
 }
 
+/// Simulate a specimen headlessly, returning the trajectory data.
+/// Used by `examples/gen_trace` for writing simulation traces.
+pub fn simulate_specimen(
+    specimen: &Path,
+    model: &str,
+    t_end: f64,
+    libraries: Vec<PathBuf>,
+) -> Result<SimData, String> {
+    let mut state = WorkerState::new();
+    state.load_libraries(libraries)?;
+    state.simulate(specimen, model, t_end, &|_: FromWorker| {})
+}
+
 /// Structural analysis of the model's DAE (Arc 3): maximum matching, BLT blocks,
 /// and tearing, from `build_structural_report`, plus the raw incidence matrix
 /// (equation×unknown bipartite adjacency) from `build_incidence`. Only available

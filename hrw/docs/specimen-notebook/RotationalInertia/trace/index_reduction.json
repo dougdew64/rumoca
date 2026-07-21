@@ -55,5 +55,137 @@
       "equation": "f_x[4] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
       "unknown": "torque.flange.phi"
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 5,
+    "n_var": 5,
+    "unknown_names": [
+      "der(inertia.phi)",
+      "der(inertia.w)",
+      "inertia.a",
+      "torque.tau",
+      "torque.flange.phi"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          0
+        ]
+      },
+      {
+        "equation": "f_x[1]",
+        "unknowns": [
+          1
+        ]
+      },
+      {
+        "equation": "f_x[2]",
+        "unknowns": [
+          2,
+          3
+        ]
+      },
+      {
+        "equation": "f_x[3]",
+        "unknowns": [
+          3
+        ]
+      },
+      {
+        "equation": "f_x[4]",
+        "unknowns": [
+          4
+        ]
+      }
+    ]
+  },
+  "reduction": {
+    "states_before": [
+      "inertia.phi",
+      "inertia.w"
+    ],
+    "states_after": [
+      "inertia.phi",
+      "inertia.w"
+    ],
+    "demoted_states": [],
+    "n_states_before": 2,
+    "n_states_after": 2,
+    "steps": [
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok"
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok"
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 substituted"
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "7 eliminated"
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "inertia.flange_a.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"inertia.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"inertia\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+      },
+      {
+        "variable": "inertia.flange_b.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"inertia.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"inertia\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":903,\"end\":906}}}"
+      },
+      {
+        "variable": "torque.phi_support",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":13844103839494831887,\"start\":910,\"end\":921}}}"
+      },
+      {
+        "variable": "tau.y",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"tau.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17884960713661238361,\"start\":6707,\"end\":6713},\"parts\":[{\"ident\":\"tau\",\"span\":{\"source\":17884960713661238361,\"start\":6707,\"end\":6713},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":17884960713661238361,\"start\":6707,\"end\":6713},\"subs\":[]}],\"def_id\":39487}},\"subscripts\":[],\"span\":{\"source\":17884960713661238361,\"start\":6897,\"end\":6898}}}"
+      },
+      {
+        "variable": "inertia.flange_b.tau",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}}"
+      },
+      {
+        "variable": "torque.flange.tau",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"torque.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"parts\":[{\"ident\":\"torque\",\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"subs\":[]}],\"def_id\":39483}},\"subscripts\":[],\"span\":{\"source\":14877195194095120915,\"start\":420,\"end\":423}}},\"span\":{\"source\":14877195194095120915,\"start\":419,\"end\":423}}}"
+      },
+      {
+        "variable": "inertia.flange_a.tau",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"inertia.J\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":165,\"end\":177},\"parts\":[{\"ident\":\"inertia\",\"span\":{\"source\":10383162805277989159,\"start\":165,\"end\":177},\"subs\":[]},{\"ident\":\"J\",\"span\":{\"source\":10383162805277989159,\"start\":165,\"end\":177},\"subs\":[]}],\"def_id\":39470}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":955,\"end\":956}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"inertia.a\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":710,\"end\":734},\"parts\":[{\"ident\":\"inertia\",\"span\":{\"source\":10383162805277989159,\"start\":710,\"end\":734},\"subs\":[]},{\"ident\":\"a\",\"span\":{\"source\":10383162805277989159,\"start\":710,\"end\":734},\"subs\":[]}],\"def_id\":39474}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":957,\"end\":958}}},\"span\":{\"source\":10383162805277989159,\"start\":955,\"end\":958}}}"
+      }
+    ],
+    "stopped_at": null,
+    "funnel_completed": true
+  }
 }

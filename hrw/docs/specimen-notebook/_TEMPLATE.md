@@ -1,8 +1,9 @@
-# <Model> — a compilation narrative
+# <Model> — a compilation + simulation narrative
 
 *A per-specimen lab-notebook entry: the story of one specimen's trip through the
-Rumoca pipeline, told against the committed [`trace/`](trace/) (ground truth) and
-foregrounding what **this** specimen is designed to make interesting.*
+Rumoca pipeline and its runtime behavior, told against the committed
+[`trace/`](trace/) (ground truth) and foregrounding what **this** specimen is
+designed to make interesting.*
 
 > **Provenance.** Written against `trace/` from
 > `cargo run --example gen_trace -- <Model>`, Rumoca `rev <rev>` (see
@@ -38,6 +39,18 @@ residual equations that matter, rendered from the trace.>
 <Matching → BLT blocks → tearing, grounded in the report. If the specimen is
 structurally singular, note that `structural.json` is absent and read the verdict
 from `trace/manifest.json`.>
+
+---
+
+## Simulation → [`trace/simulation.json`](trace/simulation.json)
+
+<If the model simulates: what solver Rumoca chose (Auto = BDF for stiff, RK45
+otherwise), the trajectory summary (initial/final values for each state, total
+time points), and what the run teaches — does the physics make sense? Is it stiff?
+Are there events/discontinuities? Cite variable values from `simulation.json`.
+
+If the model does NOT simulate (compilation failed before solve lowering), note
+why and what the failure teaches.>
 
 ---
 

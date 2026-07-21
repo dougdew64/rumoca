@@ -1,0 +1,123 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 14,
+  "n_states": 1,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "C.v",
+      "is_state": true,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "src.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "C.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "src.i",
+      "is_state": false,
+      "initial": -0.0,
+      "final": 0.0,
+      "min": -0.0,
+      "max": -0.0
+    },
+    {
+      "name": "src.p.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "src.p.i",
+      "is_state": false,
+      "initial": -0.0,
+      "final": 0.0,
+      "min": -0.0,
+      "max": -0.0
+    },
+    {
+      "name": "src.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "src.n.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "C.p.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "C.p.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "C.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "C.n.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "gnd.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "gnd.p.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    }
+  ]
+}

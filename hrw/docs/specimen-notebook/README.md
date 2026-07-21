@@ -9,16 +9,21 @@ link back to it.
 
 Each entry has two parts:
 
-- **`trace/`** — the durable **compilation trace**: the IR of every pipeline stage
-  (`parse … structural`) as JSON, plus a `manifest.json` stamping the Rumoca rev
-  and an FNV-1a hash of the specimen. This is *ground truth*, produced by the app's
-  own worker path so it is byte-identical to what the running observatory shows.
-- **`narrative.md`** — the **compilation narrative**: the grounded story of *this*
-  specimen's trip through the pipeline, foregrounding the phenomenon the specimen
-  was authored to trigger, citing specific trace locations, and linking outward to
-  the relevant `docs/compiler-phases` chapters and external math references. Claude
-  writes and maintains it against the trace; every "interesting" claim points at a
-  trace entry or Rumoca source, so a trace diff flags any prose that has gone stale.
+- **`trace/`** — the durable **compilation + simulation trace**: the IR of every
+  pipeline stage (`parse … solve_lowering`) as JSON, a `simulation.json` with
+  trajectory summaries (variable names, initial/final/min/max values, state vs
+  algebraic, discontinuity flag), and a `manifest.json` stamping the Rumoca rev,
+  an FNV-1a hash of the specimen, and the simulation outcome. This is *ground
+  truth*, produced by the app's own worker path so it is byte-identical to what
+  the running observatory produces. Specimens that don't compile through solve
+  lowering skip simulation; the manifest records the skip reason.
+- **`narrative.md`** — the **compilation + simulation narrative**: the grounded
+  story of *this* specimen's trip through the pipeline and (when it simulates) its
+  runtime behavior, foregrounding the phenomenon the specimen was authored to
+  trigger, citing specific trace locations, and linking outward to the relevant
+  `docs/compiler-phases` chapters and external math references. Claude writes and
+  maintains it against the trace; every "interesting" claim points at a trace entry
+  or Rumoca source, so a trace diff flags any prose that has gone stale.
 
 ## Adding / regenerating an entry
 

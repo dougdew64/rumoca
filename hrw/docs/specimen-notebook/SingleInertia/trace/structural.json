@@ -25,5 +25,27 @@
       "equation": "f_x[1] (top-level model equation)",
       "unknown": "der(w)"
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 2,
+    "n_var": 2,
+    "unknown_names": [
+      "der(phi)",
+      "der(w)"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          0
+        ]
+      },
+      {
+        "equation": "f_x[1]",
+        "unknowns": [
+          1
+        ]
+      }
+    ]
+  }
 }

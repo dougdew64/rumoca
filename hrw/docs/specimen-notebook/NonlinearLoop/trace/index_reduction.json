@@ -15,5 +15,82 @@
       "equation": "f_x[0] (top-level model equation)",
       "unknown": "measurement"
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 1,
+    "n_var": 1,
+    "unknown_names": [
+      "measurement"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          0
+        ]
+      }
+    ]
+  },
+  "reduction": {
+    "states_before": [],
+    "states_after": [],
+    "demoted_states": [],
+    "n_states_before": 0,
+    "n_states_after": 0,
+    "steps": [
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok"
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok"
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 substituted"
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "2 eliminated"
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "error",
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1280}}}"
+      },
+      {
+        "variable": "command",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":974,\"end\":993},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":16342562026599975374,\"start\":974,\"end\":993},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1294,\"end\":1308}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1280}}},\"span\":{\"source\":16342562026599975374,\"start\":1294,\"end\":1316}}}"
+      }
+    ],
+    "stopped_at": null,
+    "funnel_completed": true
+  }
 }

@@ -1,0 +1,43 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 4,
+  "n_states": 0,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "errorA",
+      "is_state": false,
+      "initial": 0.047619047619047616,
+      "final": 0.04761904761862468,
+      "min": 0.04761904744987078,
+      "max": 0.047619051002584456
+    },
+    {
+      "name": "commandA",
+      "is_state": false,
+      "initial": 0.47619047619047616,
+      "final": 0.47619047618624677,
+      "min": 0.47619047449870777,
+      "max": 0.47619051002584456
+    },
+    {
+      "name": "errorB",
+      "is_state": false,
+      "initial": 0.029761904761904684,
+      "final": 0.02976190474723528,
+      "min": 0.02976189824775377,
+      "max": 0.029762036309537998
+    },
+    {
+      "name": "commandB",
+      "is_state": false,
+      "initial": 0.1488095238095234,
+      "final": 0.1488095237361764,
+      "min": 0.14880949123876885,
+      "max": 0.14881018154769
+    }
+  ]
+}

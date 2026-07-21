@@ -25,5 +25,86 @@
       "equation": "f_x[1] (top-level model equation)",
       "unknown": "der(v)"
     }
-  ]
+  ],
+  "incidence": {
+    "n_eq": 2,
+    "n_var": 2,
+    "unknown_names": [
+      "der(h)",
+      "der(v)"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          0
+        ]
+      },
+      {
+        "equation": "f_x[1]",
+        "unknowns": [
+          1
+        ]
+      }
+    ]
+  },
+  "reduction": {
+    "states_before": [
+      "h",
+      "v"
+    ],
+    "states_after": [
+      "h",
+      "v"
+    ],
+    "demoted_states": [],
+    "n_states_before": 2,
+    "n_states_after": 2,
+    "steps": [
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok"
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok"
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 substituted"
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "0 eliminated"
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [],
+    "stopped_at": null,
+    "funnel_completed": true
+  }
 }
