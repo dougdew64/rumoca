@@ -7,36 +7,38 @@ to `DECISIONS.md` with a one-line rationale.
 
 ## Current arc
 
-**Arc 6: Events & hybrid structure** (charter §4.2.6). This arc studies where a model stops being one
-smooth DAE and becomes **hybrid** — the equation structure changes at discrete events. Rumoca's machinery:
-`when` clauses lowered into **discrete updates** (`f_z` real, `f_m` valued), **conditions** (`f_c` + the
-`relation` expressions that trigger them), and the **event partition** (`synthetic_root_conditions` =
-zero-crossing functions, `scheduled_time_events`). **Specimen (reframed 2026-07-20): `BouncingBall`** —
-the archetypal hybrid model (a ball under gravity; `when h <= 0 then reinit(v, -e*pre(v))`). The charter's
-preferred stick-slip-friction / joint-limit specimen needs the **parked** planar mechanics library
-(friction/contact primitives), so — as with Arc 4's reframe around Drivetrain — this arc uses a
-self-contained hybrid specimen that compiles. (Doug's first pick, an MSL `IdealDiode` rectifier, **fails
-Rumoca's typecheck** — too demanding, like MSL MultiBody; hence the bouncing ball.)
+**Arc 7: The simulation core** (charter §4.2.7). This arc **crosses from static IR inspection to live
+execution** — the observatory's biggest inflection. It covers the two remaining pipeline phases: **solve
+lowering** (phase 8 — DAE → a solvable `SolveModel`: residuals, Jacobian sparsity, mass matrix) and
+**simulation** (phase 9 — running the model: BDF/RK integration, event handling, state trajectories).
+It closes the "solve lowering not instrumented" gap (Doug, 2026-07-20). **Specimen:** charter's bench
+actuator (motor winding fast + mechanical load slow — the canonical *stiff* pairing, BDF's reason to
+exist), reframed **start-simple** (à la Arc 4/6): first run `SingleInertia` / `BouncingBall` to get the
+runner + plot working, then the stiff pairing. BouncingBall gives the "step-mode plotting so
+discontinuities render as discontinuities" that Arc 6 deferred here.
 
-**Rumoca capability CONFIRMED — not blocked-on-upstream** (scouted 2026-07-20): the hybrid structure is
-all in **public** `rumoca-ir-dae` fields on `cr.dae` — `dae.discrete.{real_updates, valued_updates}`,
-`dae.conditions.{equations, relations}`, `dae.events.{synthetic_root_conditions, scheduled_time_events}`.
-BouncingBall produces: 1 condition/relation (`h <= 0`), 1 discrete real update (the `reinit`). The when-clause
-analysis is internal, but its *results* live in these partitions, readable directly (like the DAE event
-JSON — no new dep; expressions serialize).
+**Rumoca capability CONFIRMED — sim is library-callable, not blocked-on-upstream** (scouted 2026-07-20):
+`rumoca-phase-solve::lower_dae_to_solve_model(&dae) -> SolveModel` (= solve lowering, phase 8), then
+`rumoca-sim::simulate_solve_model(&SolveModel, &SimOptions) -> SimResult` (solver modes Auto / RK45 /
+BDF-via-diffsol), OR the stepwise `rumoca-sim::SimulationSession::{new, step(dt), time(), state()}` —
+ideal for the observatory's step-and-render loop. Solver backends are feature-gated (`solver-rk45`
+non-stiff / `solver-diffsol` BDF-stiff).
 
-Increment plan: (1) scout the DAE event partitions on `BouncingBall` **[done]**; (2) wire an **Events**
-stage/view rendering the hybrid structure (conditions/relations, discrete updates, zero-crossing / scheduled
-events) — full new-stage checklist (worker → tab → diff-highlight → stage files → field-help → trace →
-narrative); (3) author + narrate `BouncingBall`. The charter's "step-mode plotting" (running the model,
-plotting discontinuities) is a genuinely new capability that bridges toward **Arc 7 (simulation core)** —
-treat as a stretch, not required for Arc 6's compile-level event structure.
+**New capability + dependencies (charter §4.4 / Decision 6 pre-bless simulation + egui_plot, but the
+specific crates need ratification):** a simulation runner on the **worker thread** (never block the UI,
+never shell out to the Rumoca CLI) + an **`egui_plot`** pane fed by simulation buffers. New deps to
+confirm: `rumoca-sim` (+ a solver feature), likely `rumoca-phase-solve` + `rumoca-ir-solve`, and
+`egui_plot`. Increment plan: (1) confirm deps + scout: lower `SingleInertia` to a `SolveModel`, run
+`simulate_solve_model`, get trajectories; (2) a **Solve lowering** observation (the `SolveModel` — closes
+phase 8); (3) worker-thread sim runner + `egui_plot` pane (step-mode); (4) the stiff bench-actuator
+specimen + BouncingBall discontinuity plotting.
 
-**Arc 5 closed (2026-07-20):** initialization is observable — `RcCircuit` shows the IC solve plan +
-ground-redundancy relaxation; two blow-ups (`CapacitorLoop` structural, `OverInitRc` init-determinacy via
-idea #6). **Arc 4 closed:** index reduction observable on `Drivetrain`; the nonlinear four-bar + planar
-library (`lib/PlanarMechanics.mo`) are parked/deferred (`docs/ideas.md` #5). Arc 1–5 done (Parse …
-Initialization + BLT spy-plot + the 9-specimen notebook). **New pipeline stages must be wired into the
+**Arc 6 closed (2026-07-20):** the compile-level hybrid structure is observable — the **Events** tab shows
+`BouncingBall`'s condition (`h <= 0`) + discrete reinit; smooth models show "no events". **Arc 5 closed:**
+initialization observable (`RcCircuit` IC plan + relaxation; `CapacitorLoop` structural + `OverInitRc`
+init-determinacy blow-ups). **Arc 4 closed:** index reduction on `Drivetrain`; the nonlinear four-bar +
+planar library (`lib/PlanarMechanics.mo`) parked/deferred (`docs/ideas.md` #5). Arc 1–6 done (Parse …
+Events + BLT spy-plot + the 11-specimen notebook). **New pipeline stages must be wired into the
 stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
 `hrw-stage-diff-highlight-extend` memory).
 

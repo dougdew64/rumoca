@@ -442,3 +442,16 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   reinit); first specimen with a non-empty Events tab. Guarded by
   `worker::tests::bouncing_ball_has_events_smooth_model_has_none`. "Step-mode plotting" (run + plot) is
   deferred to Arc 7 (simulation core).
+- **2026-07-20 — Arc 6 closed; advanced to Arc 7 (charter §4.2.7): the simulation core.** Arc 6 done
+  (compile-level hybrid structure observable via the Events tab: BouncingBall's `h <= 0` condition + reinit;
+  smooth models "no events"). **Arc 7 crosses from static IR inspection to live execution** — the biggest
+  inflection — covering the two remaining phases: **solve lowering** (phase 8, the gap Doug flagged) +
+  **simulation** (phase 9). **Arc-7 de-risk scout:** Rumoca's sim is library-callable, not blocked-on-upstream
+  — `rumoca-phase-solve::lower_dae_to_solve_model(&dae) -> SolveModel`, then
+  `rumoca-sim::simulate_solve_model(&SolveModel, &SimOptions) -> SimResult` (Auto / RK45 / BDF-diffsol) or the
+  stepwise `SimulationSession::{new, step(dt), time(), state()}` (ideal for the step-and-render loop). New
+  deps to ratify (simulation + egui_plot are charter-pre-blessed §4.4/Decision 6; the specific crates are
+  not yet): `rumoca-sim` (+ a solver feature: `solver-rk45` non-stiff / `solver-diffsol` BDF-stiff), likely
+  `rumoca-phase-solve` + `rumoca-ir-solve`, and `egui_plot`. Increment plan (CLAUDE.md): confirm deps + scout
+  run SingleInertia → trajectories → Solve-lowering observation → worker-thread sim runner + egui_plot pane
+  (step-mode) → stiff bench-actuator specimen + BouncingBall discontinuity plot.
