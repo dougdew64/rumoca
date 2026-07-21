@@ -989,16 +989,6 @@ impl eframe::App for App {
                         let mut resp = ui.selectable_label(selected, name);
                         if let Some(hint) = purpose {
                             resp = resp.on_hover_text(hint);
-                            // Weak, truncated subtext turns the list into an index
-                            // of what each specimen demonstrates; hover for the full line.
-                            ui.horizontal(|ui| {
-                                ui.add_space(14.0);
-                                ui.add(
-                                    egui::Label::new(egui::RichText::new(hint).weak().small())
-                                        .truncate(),
-                                )
-                                .on_hover_text(hint);
-                            });
                         }
                         // Right-click → "🔎 Capture" the whole specimen (mirrors the tree
                         // rows). Disabled until this specimen has finished compiling, so
