@@ -47,6 +47,7 @@ enum StageKind {
     IndexReduction,
     Initialization,
     Events,
+    SolveLowering,
 }
 
 /// How to render the Structural stage: the custom BLT spy-plot (the visual
@@ -95,6 +96,7 @@ pub struct App {
     index_reduction: Stage,
     initialization: Stage,
     events: Stage,
+    solve_lowering: Stage,
     stage: StageKind,
     // Resolved identity of every DefId referenced in the current model's IR.
     def_index: BTreeMap<u64, DefInfo>,
@@ -166,6 +168,7 @@ impl App {
             index_reduction: Stage::default(),
             initialization: Stage::default(),
             events: Stage::default(),
+            solve_lowering: Stage::default(),
             stage: StageKind::Resolve,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
@@ -238,6 +241,7 @@ impl App {
         self.index_reduction = Stage::default();
         self.initialization = Stage::default();
         self.events = Stage::default();
+        self.solve_lowering = Stage::default();
         self.def_index = BTreeMap::new();
         self.nav.clear();
         self.nav_loading = None;
@@ -266,7 +270,7 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, parse, resolve, instantiate, typecheck, flatten, structural,
-                    index_reduction, initialization, events, def_index,
+                    index_reduction, initialization, events, solve_lowering, def_index,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -282,6 +286,7 @@ impl App {
                     self.index_reduction = index_reduction;
                     self.initialization = initialization;
                     self.events = events;
+                    self.solve_lowering = solve_lowering;
                     self.def_index = def_index;
                     // Re-fit the spy-plot camera to the new report's matrix.
                     self.spy_canvas.request_fit();
@@ -298,6 +303,7 @@ impl App {
                         ("index_reduction", self.index_reduction.value.as_ref()),
                         ("initialization", self.initialization.value.as_ref()),
                         ("events", self.events.value.as_ref()),
+                        ("solve_lowering", self.solve_lowering.value.as_ref()),
                     ]);
                 }
                 FromWorker::DefTree { name, result } => {
@@ -325,6 +331,7 @@ impl App {
             StageKind::IndexReduction => &self.index_reduction,
             StageKind::Initialization => &self.initialization,
             StageKind::Events => &self.events,
+            StageKind::SolveLowering => &self.solve_lowering,
         }
     }
 
@@ -339,6 +346,7 @@ impl App {
             StageKind::IndexReduction => "Index reduction",
             StageKind::Initialization => "Initialization",
             StageKind::Events => "Events",
+            StageKind::SolveLowering => "Solve lowering",
         }
     }
 
@@ -370,6 +378,8 @@ impl App {
             StageKind::Initialization => None,
             // The event partitions are their own shape — no path-aligned prior.
             StageKind::Events => None,
+            // The SolveModel is a different shape from the DAE — no path-aligned prior.
+            StageKind::SolveLowering => None,
         }
     }
 
@@ -377,7 +387,9 @@ impl App {
     /// note) — where the tabs should land after a compile. Falls back to Parse.
     fn last_successful_stage(&self) -> StageKind {
         let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
-        if ok(&self.events) {
+        if ok(&self.solve_lowering) {
+            StageKind::SolveLowering
+        } else if ok(&self.events) {
             StageKind::Events
         } else if ok(&self.initialization) {
             StageKind::Initialization
@@ -846,6 +858,12 @@ impl eframe::App for App {
                              trigger events), the discrete updates lowered from `when` clauses (f_z real, \
                              f_m valued), and the event partition (zero-crossing root conditions + scheduled \
                              time events). A smooth (continuous) model shows none.",
+                        );
+                    ui.selectable_value(&mut self.stage, StageKind::SolveLowering, tab_label("Solve lowering", self.solve_lowering.note_is_error, err))
+                        .on_hover_text(
+                            "The DAE lowered to a SolveModel (Arc 7, phase 8): the solvable form the \
+                             simulator runs — residual programs, variable layout, mass matrix, Jacobian \
+                             sparsity. This is the compile step just before simulation.",
                         );
                     if self.selected.is_some()
                         && ui

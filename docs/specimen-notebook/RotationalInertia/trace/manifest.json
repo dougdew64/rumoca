@@ -40,6 +40,10 @@
     "events": {
       "has_ir": true,
       "note": "no events — this model is a smooth (continuous) system"
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
     }
   }
 }

@@ -465,3 +465,12 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `worker::tests::single_inertia_simulates_to_a_correct_trajectory`. **Cost accepted:** diffsol pulls
   linear-algebra crates, so build/binary are heavier now (first build +~45s). Next: a Solve-lowering
   observation (the SolveModel — closes phase 8) → worker-thread sim runner + egui_plot pane (step-mode).
+- **2026-07-20 — Arc 7 #2: Solve-lowering stage (closes the phase-8 gap).** New `StageKind::SolveLowering`
+  tab (after Events), fed by `worker::solve_lowering_stage` → `rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae)`
+  → `serde_json::to_value(&SolveModel)` (SolveModel derives Serialize, so the generic tree renders it — no
+  new type dep). The SolveModel is the solvable form the simulator consumes (keys: problem, artifacts,
+  initial_y, parameters, variable_meta, …). This instruments **phase 8 (solve lowering)**, the gap Doug
+  flagged when auditing docs/compiler-phases. Full new-stage checklist (worker field/compile; app StageKind/
+  field/init/reset/store/current_stage/stage_name/tab/last_successful_stage/previous_stage_value(None)/
+  write_stages; field_help → phase8_solve_lowering/solve_lowering.md; gen_trace STAGES+by_name, all traces
+  regenerated → +solve_lowering.json). Guarded by `worker::tests::single_inertia_lowers_to_a_solve_model`.

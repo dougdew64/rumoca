@@ -132,6 +132,8 @@ pub enum FromWorker {
         initialization: Stage,
         /// Arc 6: the DAE's hybrid / event structure (conditions, discrete updates, events).
         events: Stage,
+        /// Arc 7 (phase 8): the DAE lowered to a `SolveModel` (the simulator's input).
+        solve_lowering: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -256,6 +258,7 @@ impl WorkerState {
                     index_reduction: Stage::default(),
                     initialization: Stage::default(),
                     events: Stage::default(),
+                    solve_lowering: Stage::default(),
                     def_index: BTreeMap::new(),
                 };
             }
@@ -319,10 +322,10 @@ impl WorkerState {
 
         // --- Flatten stage: from the reachable-closure pipeline (increment 1).
         // Instantiate/Typecheck were computed above from the resolved tree. ---
-        let (flatten, structural, index_reduction, initialization, events) = match &model {
+        let (flatten, structural, index_reduction, initialization, events, solve_lowering) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e))
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e))
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -334,6 +337,7 @@ impl WorkerState {
                     index_reduction_stage(result),
                     initialization_stage(result),
                     events_stage(result),
+                    solve_lowering_stage(result),
                 )
             }
         };
@@ -350,6 +354,7 @@ impl WorkerState {
             index_reduction,
             initialization,
             events,
+            solve_lowering,
             def_index,
         }
     }
@@ -602,6 +607,31 @@ fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
             "scheduled_time_events": serde_json::to_value(&events.scheduled_time_events).unwrap_or_default(),
         },
     })
+}
+
+/// Arc 7 (phase 8): solve lowering — the DAE lowered to a `SolveModel`, the
+/// solvable form the simulator runs (residual programs, variable layout, mass
+/// matrix, Jacobian sparsity). `SolveModel` derives `Serialize`, so render it in
+/// the generic tree. This closes the "solve lowering not instrumented" gap.
+fn solve_lowering_stage(result: Option<&PhaseResult>) -> Stage {
+    match result {
+        Some(PhaseResult::Success(cr)) => {
+            match rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae) {
+                Ok(sm) => match serde_json::to_value(&sm) {
+                    Ok(v) => Stage::ok(v),
+                    Err(e) => Stage::err(format!("serialize SolveModel: {e}")),
+                },
+                Err(e) => Stage::err(format!("solve lowering failed: {e}")),
+            }
+        }
+        Some(PhaseResult::Failed { phase, .. }) => {
+            Stage::info(format!("not reached ({phase} failed earlier)"))
+        }
+        Some(PhaseResult::NeedsInner { .. }) => {
+            Stage::info("not reached (model needs inner declarations)")
+        }
+        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    }
 }
 
 fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_json::Value {
@@ -1053,6 +1083,18 @@ mod tests {
         assert_eq!(result.data[w_idx].len(), result.times.len(), "trajectory length = time points");
         let w_final = *result.data[w_idx].last().unwrap();
         assert!((w_final - 2.0).abs() < 0.05, "w(2) should be ~2.0 (constant torque), got {w_final}");
+    }
+
+    /// Arc 7 (phase 8): the Solve-lowering stage lowers the DAE to a `SolveModel`
+    /// (the solvable form the simulator consumes) and renders it.
+    #[test]
+    fn single_inertia_lowers_to_a_solve_model() {
+        let FromWorker::Compiled { solve_lowering, .. } = compile_specimen_shared("SingleInertia") else {
+            panic!("expected Compiled");
+        };
+        let v = solve_lowering.value.expect("SolveModel IR");
+        assert!(v.get("problem").is_some(), "SolveModel should carry the solve problem");
+        assert!(v.get("variable_meta").is_some(), "SolveModel should carry variable metadata");
     }
 
     /// Arc 6: BouncingBall is a hybrid model — the Events stage reports its

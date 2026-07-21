@@ -58,6 +58,10 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
             "DAE construction · events & hybrid structure",
             "docs/compiler-phases/phase6_dae_construction/dae_construction.md",
         ),
+        "Solve lowering" => (
+            "Phase 8 · Solve lowering",
+            "docs/compiler-phases/phase8_solve_lowering/solve_lowering.md",
+        ),
         _ => (
             "Understanding · Overview",
             "docs/compiler-phases/high_level_overview.md",

@@ -40,6 +40,10 @@
     "events": {
       "has_ir": true,
       "note": null
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
     }
   }
 }
