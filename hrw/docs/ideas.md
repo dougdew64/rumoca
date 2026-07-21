@@ -9,6 +9,14 @@ decision when it's picked up.
 
 ## 1. Narratives for *simulation*, especially convergence-failure troubleshooting
 
+**✅ Implemented 2026-07-21.** `gen_trace` now runs simulation after compilation for
+specimens that compile through solve lowering, writing per-variable trajectory
+summaries (`simulation.json`: name, is\_state, initial/final/min/max values) and
+recording the simulation outcome in `manifest.json`. The notebook template and README
+include a Simulation section. All 12 specimens have simulation traces. The deeper
+convergence-failure diagnostics (solver logs, per-step residual history, Jacobian
+conditioning) remain future work. Original capture below.
+
 Captured 2026-07-20 (Doug). The Claude-authored [notebook narrative](specimen-notebook/README.md)
 is powerful for *compilation*; it should extend to **simulation** — and is likely
 *most* valuable when a simulation **fails to converge**.
@@ -185,3 +193,107 @@ as discontinuities". Needs: knowing which outputs are discrete/discontinuous (th
 `SimResult.variable_meta` roles, or the first `n_states`), and using egui_plot's
 line-style / a manual step polyline for those. Smooth specimens (BenchActuator) don't
 need it; it's specifically for the event/hybrid ones.
+
+## 9. Incremental / animated views of algorithms
+
+Captured 2026-07-21 (Doug). **Top-of-mind, long-running theme.** Educational
+animations of challenging compiler algorithms — index reduction (Pantelides
+iterating, SCC discovery, demotion), matching's augmenting paths, tearing — showing
+each step incrementally so the algorithm's *process* is visible, not just its result.
+
+- **Why it matters:** the current observatory shows the *output* of each phase (the
+  IR before/after), but the hardest concepts to learn are the *algorithms themselves*
+  — why Pantelides differentiates this constraint, why matching chose this augmenting
+  path, why tearing picked this tear variable. A steppable animation of the algorithm
+  in progress, synced with the data structures it's mutating, is the highest-value
+  learning instrument HRW can offer.
+- **Debugger integration:** the animations should be driveable from the VS Code
+  debugger — single-step through the Rumoca phase code while watching the animation
+  update in the HRW window. This ties directly to the instrumentation mission:
+  the algorithm must emit step events that the observatory can render, and the
+  debugger breakpoint flow ("arm it") should be able to land inside an algorithm
+  iteration, not just at the phase boundary.
+- **Candidate algorithms:** Pantelides (index reduction), maximum matching
+  (augmenting paths), BLT decomposition (SCC / Tarjan), tearing (selecting tear
+  variables), Newton iteration (convergence per step). Each has a natural visual
+  representation (bipartite graph, incidence matrix, BLT spy plot) that can
+  animate incrementally.
+- **When:** this is pass-two territory — it requires the internal instrumentation
+  that the monorepo move enabled. Likely starts with matching (the bipartite graph
+  view already exists) or Pantelides (the most pedagogically valuable).
+
+## 10. Cross-stage identifier / equation tracking ("follow this through the pipeline")
+
+Captured 2026-07-21 (Doug). Given a Modelica identifier (variable, parameter,
+component) or equation from a specimen, **highlight every piece of information
+associated with it across all stage views** — its declaration in Parse, its resolved
+`def_id` in Resolve, its instantiated form in Instantiate/Typecheck, the flat
+variable(s) it becomes in Flatten, which equation rows and matched unknowns it
+appears in (Structural), whether it was differentiated or demoted (Index reduction),
+its initial-condition plan entry (Initialization), any event conditions it
+participates in (Events), and its solver variable slot (Solve lowering / Simulation).
+
+- **Why it matters:** the pipeline transforms a single Modelica declaration through
+  many representations — a variable named `v` becomes a flat unknown, gets a row in
+  the incidence matrix, may be demoted by Pantelides, gets an IC plan entry, and
+  ends up as a state in the solver. Understanding what happened to *one thing* across
+  all phases is the core learning question, and today requires manually clicking
+  through each tab and searching. A "follow this identifier" mode that highlights
+  the relevant nodes/rows/cells across every stage view answers it in one action.
+- **Sketch:** a search/select interaction — type or click an identifier, and every
+  stage view gains highlights (tree nodes expanded + highlighted, incidence/spy-plot
+  rows/columns lit up, simulation plot series selected). The cross-stage diff
+  machinery already tracks `def_id` continuity; this extends it to a persistent
+  visual filter. Applies to equations too (follow a `der(h) = v` through flatten →
+  structural → index reduction → solve lowering).
+- **When:** after the cross-stage diff infrastructure is solid (pass two). The
+  `def_index` and `def_resolutions` already provide the identity backbone; the work
+  is wiring highlights into each view.
+
+## 11. In-view search for Modelica identifiers
+
+Captured 2026-07-21 (Doug). A search interaction within each stage view: type a
+Modelica identifier (variable, parameter, component, equation label) and the view
+scrolls to / expands / highlights where that identifier's information appears.
+
+- **Why it matters:** the IR trees are deep and wide (especially after MSL expansion).
+  Finding where `v` or `der(h)` lives in a 200-node Flatten tree, or which row of the
+  incidence matrix corresponds to a particular equation, currently requires manual
+  scrolling and visual scanning. A search box that jumps directly to the match removes
+  that friction.
+- **Relationship to #10:** this is the *within-view* complement to #10's *cross-stage*
+  tracking. #10 highlights an identifier across all stages simultaneously; this idea
+  is about finding it efficiently within a single view. Both share the need for an
+  identifier-aware index of each view's content, but the UX is different: #10 is a
+  persistent multi-view filter, this is a transient find-and-jump.
+- **Sketch:** a Ctrl+F-style search bar (or a text field in the tab bar / right
+  panel) that fuzzy-matches against qualified names in the current view — tree node
+  keys, variable names in the flat model, equation labels, spy-plot row/column
+  headers. Matching nodes auto-expand and scroll into view; matching matrix
+  rows/columns highlight.
+- **When:** can start independently of #10 — a single-view search is simpler and
+  immediately useful.
+
+## 12. HRW architecture document — how the code works
+
+Captured 2026-07-21 (Doug). Claude has written 100% of the HRW code. Before any
+upstream PR to the Rumoca repo, Doug needs to understand and be accountable for the
+codebase. A dedicated architecture document that explains how HRW works — the module
+structure, data flow, key abstractions, and design rationale — so Doug can read,
+defend, and maintain the code he'd be submitting.
+
+- **Why it matters:** submitting a PR means owning the code. Doug's learning mission
+  is the Rumoca *compiler*, not the observatory's internals — but an upstream PR
+  makes him the maintainer of both. A clear architecture doc bridges the gap between
+  "I use HRW to study Rumoca" and "I can explain how HRW itself works."
+- **Sketch:** a `docs/architecture.md` covering: module map (`app.rs`, `worker.rs`,
+  `bridge.rs`, `tree.rs`, `log_view.rs`, `field_help.rs`), the worker-thread
+  architecture (channel protocol, `ToWorker`/`FromWorker` messages, why the UI never
+  blocks), the stage pipeline (how compilation results flow from worker → app state →
+  views), the bridge (how captures reach Claude), the tree inspector (generic
+  serde-value rendering, provenance, cross-stage diff), the spy-plot/incidence
+  custom painters, and the instrumentation surface (what HRW touches in the Rumoca
+  crates and why). Written for a reader who knows Rust and egui basics but hasn't
+  read the HRW source.
+- **When:** before preparing the upstream PR. Can be written incrementally — one
+  section per module — and doubles as onboarding material if others contribute.
