@@ -1024,6 +1024,37 @@ mod tests {
     }
 
 
+
+    /// Arc 7 increment 1: HRW can RUN a model, not just inspect it. Lower
+    /// `SingleInertia`'s DAE to a `SolveModel` and simulate it, checking the
+    /// trajectory is produced AND numerically right: constant torque tau=1 with
+    /// J=1 gives der(w)=1, so w(t)=t and w(2) is ~2.
+    #[test]
+    fn single_inertia_simulates_to_a_correct_trajectory() {
+        let report = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo"));
+            let src = std::fs::read_to_string(path).unwrap();
+            let uri = path.to_string_lossy().to_string();
+            w.session.update_document(&uri, &src);
+            let q = w.session.qualify_model_name(&uri, "SingleInertia");
+            w.session.compile_model_strict_reachable_with_recovery(&q)
+        };
+        let cr = match report.requested_result.as_ref() {
+            Some(PhaseResult::Success(cr)) => cr,
+            _ => panic!("expected Success for SingleInertia"),
+        };
+        let sm = rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae).expect("lower DAE -> SolveModel");
+        let opts = rumoca_sim::SimOptions { t_end: 2.0, ..Default::default() };
+        let result = rumoca_sim::simulate_solve_model(&sm, &opts).expect("simulate");
+
+        assert!(result.times.last().copied().unwrap_or(0.0) >= 1.99, "should integrate to t_end");
+        let w_idx = result.names.iter().position(|n| n == "w").expect("w in outputs");
+        assert_eq!(result.data[w_idx].len(), result.times.len(), "trajectory length = time points");
+        let w_final = *result.data[w_idx].last().unwrap();
+        assert!((w_final - 2.0).abs() < 0.05, "w(2) should be ~2.0 (constant torque), got {w_final}");
+    }
+
     /// Arc 6: BouncingBall is a hybrid model — the Events stage reports its
     /// condition (`h <= 0`) + discrete update (the `reinit`). A smooth model
     /// (SingleInertia) reports none.

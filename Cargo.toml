@@ -19,4 +19,6 @@ rumoca-phase-typecheck = { git = "https://github.com/CogniPilot/rumoca.git", rev
 # Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
 rumoca-phase-structural = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }
 rumoca-ir-dae = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 4: name the DAE type for the index-reduction funnel
+rumoca-phase-solve = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 7: DAE -> SolveModel (solve lowering)
+rumoca-sim = { git = "https://github.com/CogniPilot/rumoca.git", rev = "8cdc74198f472e45354769c6b7f9968a93507418" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
 serde_json = "1.0.150"

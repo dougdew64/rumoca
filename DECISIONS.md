@@ -455,3 +455,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `rumoca-phase-solve` + `rumoca-ir-solve`, and `egui_plot`. Increment plan (CLAUDE.md): confirm deps + scout
   run SingleInertia → trajectories → Solve-lowering observation → worker-thread sim runner + egui_plot pane
   (step-mode) → stiff bench-actuator specimen + BouncingBall discontinuity plot.
+- **2026-07-20 — Arc 7 increment 1: HRW can RUN a simulation (deps added, proven).** Added `rumoca-sim`
+  (default features `native-solvers` = both `solver-rk45` + `solver-diffsol`/BDF — Doug chose Auto mode) and
+  `rumoca-phase-solve` (both pinned to `8cdc7419`). Path: `rumoca_phase_solve::lower_dae_to_solve_model(&dae)
+  -> SolveModel` (solve lowering, phase 8) → `rumoca_sim::simulate_solve_model(&sm, &SimOptions)` →
+  `SimResult { times: Vec<f64>, names: Vec<String>, data: Vec<Vec<f64>> (data[var][t]), n_states, ... }`.
+  `SimOptions::default()` = t 0..1, rtol/atol 1e-6, solver Auto (diffsol BDF). Verified numerically:
+  SingleInertia runs to t=2 with `w(t)=t` (`w(2) ≈ 2.0`) — guarded by
+  `worker::tests::single_inertia_simulates_to_a_correct_trajectory`. **Cost accepted:** diffsol pulls
+  linear-algebra crates, so build/binary are heavier now (first build +~45s). Next: a Solve-lowering
+  observation (the SolveModel — closes phase 8) → worker-thread sim runner + egui_plot pane (step-mode).
