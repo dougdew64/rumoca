@@ -132,6 +132,24 @@ impl Stage {
     }
 }
 
+/// The ten pipeline-stage results as one bundle. A compile fills it in chunks and
+/// streams a clone after each (`FromWorker::CompileProgress`) so the UI can colour
+/// tabs as work lands; the finished bundle is unpacked into the final `Compiled`.
+/// Not-yet-computed stages are `Stage::default()` (neutral — no IR, no error).
+#[derive(Clone, Default)]
+pub struct StageBundle {
+    pub parse: Stage,
+    pub resolve: Stage,
+    pub instantiate: Stage,
+    pub typecheck: Stage,
+    pub flatten: Stage,
+    pub structural: Stage,
+    pub index_reduction: Stage,
+    pub initialization: Stage,
+    pub events: Stage,
+    pub solve_lowering: Stage,
+}
+
 /// Resolved identity of a `DefId` referenced in a stage's IR — what an opaque
 /// integer like `type_def_id: 27579` actually points at. A deterministic lookup
 /// against the resolved tree (which the worker owns), *not* reasoning: the UI
@@ -176,6 +194,10 @@ impl DefInfo {
 pub enum FromWorker {
     /// Outcome of loading libraries: total documents loaded, or an error.
     Libraries(Result<usize, String>),
+    /// Partial compile progress: the stages known so far (rest neutral). Streamed
+    /// after each compile chunk so the UI colours tabs as work lands; the compile
+    /// is still running (`compiling` stays true) and a final `Compiled` follows.
+    CompileProgress { path: PathBuf, stages: StageBundle },
     /// Outcome of compiling a specimen through the pipeline stages.
     Compiled {
         path: PathBuf,
@@ -231,7 +253,14 @@ impl Worker {
             .spawn(move || {
                 let mut state = WorkerState::new();
                 while let Ok(msg) = rx_req.recv() {
-                    let response = state.handle(msg);
+                    // Lets a long task (compile) stream partial results — per-chunk
+                    // stage progress — so the UI colours tabs as each chunk lands,
+                    // rather than only at the end. Each emit wakes the UI.
+                    let emit = |m: FromWorker| {
+                        let _ = tx_res.send(m);
+                        ctx.request_repaint();
+                    };
+                    let response = state.handle(msg, &emit);
                     if tx_res.send(response).is_err() {
                         break; // UI gone
                     }
@@ -262,10 +291,12 @@ impl WorkerState {
     }
 
     /// Dispatch one request. Natural breakpoint site for studying a phase.
-    fn handle(&mut self, msg: ToWorker) -> FromWorker {
+    /// `emit` streams intermediate results (compile-stage progress) ahead of the
+    /// returned final result.
+    fn handle(&mut self, msg: ToWorker, emit: &impl Fn(FromWorker)) -> FromWorker {
         match msg {
             ToWorker::SetLibraries(roots) => FromWorker::Libraries(self.load_libraries(roots)),
-            ToWorker::Compile(path) => self.compile(&path),
+            ToWorker::Compile(path) => self.compile(&path, emit),
             ToWorker::OpenDef(name) => self.open_def(&name),
             ToWorker::Simulate { path, model, t_end } => {
                 let result = self.simulate(&path, &model, t_end);
@@ -351,7 +382,7 @@ impl WorkerState {
     /// stage. Typecheck is deferred: a clean, model-scoped typecheck needs
     /// instantiation (Arc 2); the pre-instantiation whole-tree typecheck fails
     /// on the full MSL.
-    fn compile(&mut self, path: &Path) -> FromWorker {
+    fn compile(&mut self, path: &Path, emit: &impl Fn(FromWorker)) -> FromWorker {
         let source = match std::fs::read_to_string(path) {
             Ok(s) => s,
             Err(e) => {
@@ -384,6 +415,12 @@ impl WorkerState {
             }
             Err(e) => (Stage::err(format!("{e:#}")), None),
         };
+        // Parse done → colour the Parse tab now (the resolve chunk below is the
+        // first big wait — resolving the MSL closure).
+        emit(FromWorker::CompileProgress {
+            path: path.to_owned(),
+            stages: StageBundle { parse: parse.clone(), ..Default::default() },
+        });
 
         // --- Resolve stage: the user model's class with def_ids populated. ---
         // The session resolves the whole aggregate (user model + libraries); we
@@ -428,6 +465,21 @@ impl WorkerState {
                 }
             }
         };
+
+        // Resolve chunk done → colour Resolve/Instantiate/Typecheck now (the DAE
+        // compile below is the second big wait). This is the granularity the
+        // worker can see: parse, the resolve chunk, then the six DAE stages that
+        // Rumoca computes together in one reachable-closure call.
+        emit(FromWorker::CompileProgress {
+            path: path.to_owned(),
+            stages: StageBundle {
+                parse: parse.clone(),
+                resolve: resolve.clone(),
+                instantiate: instantiate.clone(),
+                typecheck: typecheck.clone(),
+                ..Default::default()
+            },
+        });
 
         // --- Flatten stage: from the reachable-closure pipeline (increment 1).
         // Instantiate/Typecheck were computed above from the resolved tree. ---
@@ -477,7 +529,8 @@ impl WorkerState {
 pub fn compile_specimen(specimen: &Path, libraries: Vec<PathBuf>) -> Result<FromWorker, String> {
     let mut state = WorkerState::new();
     state.load_libraries(libraries)?;
-    Ok(state.compile(specimen))
+    // Headless: no UI to stream progress to.
+    Ok(state.compile(specimen, &|_: FromWorker| {}))
 }
 
 /// Structural analysis of the model's DAE (Arc 3): maximum matching + BLT blocks
@@ -938,7 +991,7 @@ mod tests {
     fn compile_specimen_shared(name: &str) -> FromWorker {
         let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        w.compile(&path)
+        w.compile(&path, &|_: FromWorker| {})
     }
 
     /// End-to-end: after resolving `RotationalInertia` against the MSL, the
@@ -973,7 +1026,7 @@ mod tests {
         let result = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
-            w.compile(path); // register the specimen document
+            w.compile(path, &|_: FromWorker| {}); // register the specimen document
             let FromWorker::DefTree { result, .. } = w.open_def(name) else {
                 panic!("expected DefTree");
             };

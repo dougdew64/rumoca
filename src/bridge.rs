@@ -100,8 +100,9 @@ pub enum Focus<'a> {
     Node { key_path: Vec<Seg>, stage_value: &'a Value },
     /// The current stage's IR as a whole.
     Stage,
-    /// The model / specimen as a whole.
-    Model,
+    /// The whole specimen (the `.mo` file) — captured from the specimen list.
+    /// Distinct from the `model` field of `Ask`, which names the compiled class.
+    Specimen,
 }
 
 /// Everything needed to write one focus file.
@@ -154,7 +155,7 @@ fn build(ask: &Ask) -> Value {
     let kind = match ask.focus {
         Focus::Node { .. } => "node",
         Focus::Stage => "stage",
-        Focus::Model => "model",
+        Focus::Specimen => "specimen",
     };
     let mut doc = json!({
         "instructions": INSTRUCTIONS,

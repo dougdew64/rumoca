@@ -16,7 +16,9 @@ use crate::canvas::Canvas;
 use crate::field_help;
 use crate::spyplot;
 use crate::tree;
-use crate::worker::{discontinuity_segments, DefInfo, FromWorker, SimData, Stage, ToWorker, Worker};
+use crate::worker::{
+    discontinuity_segments, DefInfo, FromWorker, SimData, Stage, StageBundle, ToWorker, Worker,
+};
 
 /// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
 /// live via Settings (or Ctrl +/−); egui's `zoom_factor` is the idiomatic knob.
@@ -286,6 +288,29 @@ impl App {
                         Err(e) => format!("library load failed — {e}"),
                     };
                 }
+                FromWorker::CompileProgress { path, stages } => {
+                    // A partial result mid-compile: apply the stages known so far so
+                    // the tab colours advance in step with the pipeline. Compilation
+                    // is still running, so DON'T touch `compiling`, `stage`,
+                    // `def_index`, or the bridge — the final `Compiled` owns those.
+                    if self.selected.as_deref() != Some(path.as_path()) {
+                        continue; // stale (specimen switched)
+                    }
+                    let StageBundle {
+                        parse, resolve, instantiate, typecheck, flatten, structural,
+                        index_reduction, initialization, events, solve_lowering,
+                    } = stages;
+                    self.parse = parse;
+                    self.resolve = resolve;
+                    self.instantiate = instantiate;
+                    self.typecheck = typecheck;
+                    self.flatten = flatten;
+                    self.structural = structural;
+                    self.index_reduction = index_reduction;
+                    self.initialization = initialization;
+                    self.events = events;
+                    self.solve_lowering = solve_lowering;
+                }
                 FromWorker::Compiled {
                     path, model, parse, resolve, instantiate, typecheck, flatten, structural,
                     index_reduction, initialization, events, solve_lowering, def_index,
@@ -467,7 +492,14 @@ impl App {
         let target = match &focus {
             Focus::Node { key_path, .. } => bridge::describe_path(key_path),
             Focus::Stage => format!("stage “{}”", self.stage_name()),
-            Focus::Model => format!("model “{}”", self.model.as_deref().unwrap_or("?")),
+            Focus::Specimen => format!(
+                "specimen “{}”",
+                self.selected
+                    .as_deref()
+                    .and_then(|p| p.file_name())
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("?"),
+            ),
         };
         let ask = Ask {
             seq,
@@ -913,9 +945,15 @@ impl eframe::App for App {
 
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     let mut to_open = None;
+                    let mut capture_specimen = false;
                     for path in &self.files {
                         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
                         let selected = self.selected.as_deref() == Some(path.as_path());
+                        // Whole-specimen capture is offered only once this specimen is
+                        // the loaded, done-compiling one — so it captures real IR, and we
+                        // compile exactly once (the left-click load), never again just to
+                        // capture.
+                        let can_capture = selected && !self.compiling && self.model.is_some();
                         let purpose = self.specimen_purposes.get(path);
                         let mut resp = ui.selectable_label(selected, name);
                         if let Some(hint) = purpose {
@@ -931,12 +969,35 @@ impl eframe::App for App {
                                 .on_hover_text(hint);
                             });
                         }
+                        // Right-click → "🔎 Capture" the whole specimen (mirrors the tree
+                        // rows). Disabled until this specimen has finished compiling, so
+                        // the capture carries its IR — no second compile.
+                        resp.context_menu(|ui| {
+                            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                            let btn = ui.add_enabled(can_capture, egui::Button::new("🔎 Capture"));
+                            let btn = if can_capture {
+                                btn.on_hover_text(
+                                    "Capture the whole specimen, then ask Claude about it in the chat.",
+                                )
+                            } else {
+                                btn.on_disabled_hover_text(
+                                    "Left-click to load & compile this specimen first, then Capture.",
+                                )
+                            };
+                            if btn.clicked() {
+                                capture_specimen = true;
+                                ui.close();
+                            }
+                        });
                         if resp.clicked() {
                             to_open = Some(path.clone());
                         }
                     }
                     if let Some(path) = to_open {
                         self.open(path);
+                    }
+                    if capture_specimen {
+                        self.emit_focus(Focus::Specimen);
                     }
                 });
             });
@@ -957,7 +1018,6 @@ impl eframe::App for App {
         let mut canvas_capture: Option<Vec<Seg>> = None;
         let mut nav_to: Option<String> = None;
         let mut want_stage_ask = false;
-        let mut want_model_ask = false;
         let mut go_back = false;
         let mut go_home = false;
 
@@ -981,33 +1041,80 @@ impl eframe::App for App {
                     // visible without opening each (e.g. CapacitorLoop fails at
                     // Structural + Index reduction while landing on Initialization).
                     let err = ui.visuals().error_fg_color;
-                    ui.selectable_value(&mut self.stage, StageKind::Parse, tab_label("Parse", self.parse.note_is_error, err));
-                    ui.selectable_value(&mut self.stage, StageKind::Resolve, tab_label("Resolve", self.resolve.note_is_error, err));
-                    ui.selectable_value(&mut self.stage, StageKind::Instantiate, tab_label("Instantiate", self.instantiate.note_is_error, err));
-                    ui.selectable_value(&mut self.stage, StageKind::Typecheck, tab_label("Typecheck (instanced)", self.typecheck.note_is_error, err))
+                    // Green for a succeeded stage (egui has no semantic success colour):
+                    // theme-aware GitHub-style greens, readable on dark and light.
+                    let ok = if ui.visuals().dark_mode {
+                        egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
+                    } else {
+                        egui::Color32::from_rgb(0x1a, 0x7f, 0x37)
+                    };
+                    // While a freshly-selected specimen is still compiling, NO tab is
+                    // highlighted — the previous specimen's stage must not appear selected
+                    // over an empty/loading one. The highlight returns once results land
+                    // (`self.stage` = the furthest clean stage). Hence `selectable_label`
+                    // with an explicit `stage_selected && …` bool, not `selectable_value`
+                    // (which would always highlight the current stage).
+                    //
+                    // Selecting an IR stage tab ALSO captures that stage for the chat (no
+                    // separate 🔎 button) — so its context is ready the instant you view
+                    // it; the capture fires once below. Simulation is excluded: it's a
+                    // run/plot action, not an IR capture.
+                    let stage_selected = !self.compiling;
+                    let mut stage_tab_clicked = false;
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Parse, tab_label("Parse", &self.parse, ok, err)).clicked() {
+                        self.stage = StageKind::Parse;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Resolve, tab_label("Resolve", &self.resolve, ok, err)).clicked() {
+                        self.stage = StageKind::Resolve;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Instantiate, tab_label("Instantiate", &self.instantiate, ok, err)).clicked() {
+                        self.stage = StageKind::Instantiate;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Typecheck, tab_label("Typecheck (instanced)", &self.typecheck, ok, err))
                         .on_hover_text(
                             "The model-scoped instanced typecheck: it types the instantiated \
                              overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
                              Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
                              pre-instantiation whole-tree typecheck; it fails on the full MSL.",
-                        );
-                    ui.selectable_value(&mut self.stage, StageKind::Flatten, tab_label("Flatten", self.flatten.note_is_error, err));
-                    ui.selectable_value(&mut self.stage, StageKind::Structural, tab_label("Structural", self.structural.note_is_error, err))
+                        )
+                        .clicked()
+                    {
+                        self.stage = StageKind::Typecheck;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Flatten, tab_label("Flatten", &self.flatten, ok, err)).clicked() {
+                        self.stage = StageKind::Flatten;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Structural, tab_label("Structural", &self.structural, ok, err))
                         .on_hover_text(
                             "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
                              (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
                              A high-index system (rigid constraints) reports SINGULAR here — see the \
                              Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
                              to pan, scroll to zoom, click a block to capture) or the raw report tree.",
-                        );
-                    ui.selectable_value(&mut self.stage, StageKind::IndexReduction, tab_label("Index reduction", self.index_reduction.note_is_error, err))
+                        )
+                        .clicked()
+                    {
+                        self.stage = StageKind::Structural;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::IndexReduction, tab_label("Index reduction", &self.index_reduction, ok, err))
                         .on_hover_text(
                             "Structural analysis of the DAE AFTER index reduction (Arc 4, Pantelides / \
                              dummy derivatives): the funnel differentiates constraints and demotes states \
                              so a high-index singular system becomes matchable. For an already-index-1 \
                              model this equals Structural. Same BLT spy-plot / tree.",
-                        );
-                    ui.selectable_value(&mut self.stage, StageKind::Initialization, tab_label("Initialization", self.initialization.note_is_error, err))
+                        )
+                        .clicked()
+                    {
+                        self.stage = StageKind::IndexReduction;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Initialization, tab_label("Initialization", &self.initialization, ok, err))
                         .on_hover_text(
                             "The consistent-initial-condition solve plan (Arc 5, build_ic_plan): the \
                              ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
@@ -1015,45 +1122,58 @@ impl eframe::App for App {
                              dropped / unknowns pinned) when the initial subsystem is singular, and a \
                              determinacy check that flags an OVER-determined init (more explicit initial \
                              conditions than states — conflicting/redundant ICs).",
-                        );
-                    ui.selectable_value(&mut self.stage, StageKind::Events, tab_label("Events", self.events.note_is_error, err))
+                        )
+                        .clicked()
+                    {
+                        self.stage = StageKind::Initialization;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Events, tab_label("Events", &self.events, ok, err))
                         .on_hover_text(
                             "The DAE's hybrid / event structure (Arc 6): the conditions (relations that \
                              trigger events), the discrete updates lowered from `when` clauses (f_z real, \
                              f_m valued), and the event partition (zero-crossing root conditions + scheduled \
                              time events). A smooth (continuous) model shows none.",
-                        );
-                    ui.selectable_value(&mut self.stage, StageKind::SolveLowering, tab_label("Solve lowering", self.solve_lowering.note_is_error, err))
+                        )
+                        .clicked()
+                    {
+                        self.stage = StageKind::Events;
+                        stage_tab_clicked = true;
+                    }
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::SolveLowering, tab_label("Solve lowering", &self.solve_lowering, ok, err))
                         .on_hover_text(
                             "The DAE lowered to a SolveModel (Arc 7, phase 8): the solvable form the \
                              simulator runs — residual programs, variable layout, mass matrix, Jacobian \
                              sparsity. This is the compile step just before simulation.",
-                        );
-                    ui.selectable_value(&mut self.stage, StageKind::Simulation, "▶ Simulation")
+                        )
+                        .clicked()
+                    {
+                        self.stage = StageKind::SolveLowering;
+                        stage_tab_clicked = true;
+                    }
+                    // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, "▶ Simulation")
                         .on_hover_text(
                             "Run the model (Arc 7, phase 9): compile → lower to a SolveModel → integrate \
                              (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
                              on the worker thread, so the UI stays live.",
-                        );
-                    if self.selected.is_some()
-                        && ui
-                            .button("🔎 Capture")
-                            .on_hover_text("Capture the whole current stage's IR, then ask Claude about it here in the chat.")
-                            .clicked()
+                        )
+                        .clicked()
                     {
+                        self.stage = StageKind::Simulation;
+                    }
+                    // Clicking any IR stage tab captures that stage for the chat (replaces
+                    // the old 🔎 Capture button). Guarded so browsing tabs before a specimen
+                    // is loaded does nothing.
+                    if stage_tab_clicked && self.selected.is_some() {
                         want_stage_ask = true;
                     }
                     ui.separator();
+                    // The compiled-model identity (first class in the AST — not the
+                    // filename, and None until parse succeeds). Whole-specimen capture
+                    // now lives on the specimen list's right-click menu, not here.
                     if let Some(m) = &self.model {
                         ui.label(egui::RichText::new(m).monospace().strong());
-                    }
-                    if self.selected.is_some()
-                        && ui
-                            .button("🔎 Capture")
-                            .on_hover_text("Capture the specimen as a whole, then ask Claude about it here in the chat.")
-                            .clicked()
-                    {
-                        want_model_ask = true;
                     }
                     if self.compiling {
                         ui.spinner();
@@ -1191,8 +1311,6 @@ impl eframe::App for App {
             self.emit_node_focus(key_path, "explain");
         } else if want_stage_ask {
             self.emit_focus(Focus::Stage);
-        } else if want_model_ask {
-            self.emit_focus(Focus::Model);
         }
     }
 }
@@ -1222,12 +1340,25 @@ fn series_color(i: usize) -> egui::Color32 {
     egui::ecolor::Hsva::new(i as f32 * golden_ratio, 0.85, 0.5, 1.0).into()
 }
 
-/// A stage-tab label, painted red when that stage errored (`note_is_error`), so
-/// failed stages are visible in the tab row without opening each one. A non-error
-/// status ("not reached", "already index-1") stays the normal color.
-fn tab_label(label: &str, failed: bool, err_color: egui::Color32) -> egui::RichText {
+/// A stage-tab label, coloured by outcome so the whole pipeline's health reads off
+/// the tab row without opening each stage: **red** if the stage errored, **green**
+/// if it produced its IR (succeeded), and the normal colour for an
+/// in-between/neutral status — "not reached" after an upstream failure, or no data
+/// yet (before/while compiling).
+fn tab_label(
+    label: &str,
+    stage: &Stage,
+    ok_color: egui::Color32,
+    err_color: egui::Color32,
+) -> egui::RichText {
     let text = egui::RichText::new(label);
-    if failed { text.color(err_color) } else { text }
+    if stage.note_is_error {
+        text.color(err_color)
+    } else if stage.value.is_some() {
+        text.color(ok_color)
+    } else {
+        text
+    }
 }
 
 /// The field name to look up generic help for = the last object-key segment in
