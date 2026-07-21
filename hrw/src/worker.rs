@@ -333,7 +333,7 @@ impl WorkerState {
             ToWorker::Compile(path) => Some(self.compile(&path, emit)),
             ToWorker::OpenDef(name) => Some(self.open_def(&name)),
             ToWorker::Simulate { path, model, t_end } => {
-                let result = self.simulate(&path, &model, t_end);
+                let result = self.simulate(&path, &model, t_end, emit);
                 Some(FromWorker::Simulated { path, result })
             }
             ToWorker::SetTracing(enabled) => {
@@ -354,30 +354,81 @@ impl WorkerState {
     /// Arc 7: compile the model to its DAE, lower it to a `SolveModel`, and run a
     /// simulation to `t_end` — returning the state trajectories. On this worker
     /// thread; the UI drives it via `ToWorker::Simulate` and never blocks.
-    fn simulate(&mut self, path: &Path, model: &str, t_end: f64) -> Result<SimData, String> {
+    fn simulate(
+        &mut self,
+        path: &Path,
+        model: &str,
+        t_end: f64,
+        emit: &impl Fn(FromWorker),
+    ) -> Result<SimData, String> {
+        use std::time::Instant;
+        let t0 = Instant::now();
+
+        let log = |level: LogLevel, msg: String| {
+            emit(FromWorker::Log(LogEntry {
+                elapsed_secs: t0.elapsed().as_secs_f64(),
+                level,
+                message: msg,
+            }));
+        };
+
+        log(LogLevel::Info, format!("simulating {model} to t={t_end}"));
+
+        log(LogLevel::StageStart, "Compile (for simulation)".to_owned());
+        let t_stage = Instant::now();
         let source = std::fs::read_to_string(path).map_err(|e| format!("read error: {e}"))?;
         let uri = path.to_string_lossy().to_string();
         self.session.update_document(&uri, &source);
         let qualified = self.session.qualify_model_name(&uri, model);
         let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
+        drain_traces(&log);
+        log(LogLevel::StageEnd, format!("Compile ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         let cr = match report.requested_result.as_ref() {
             Some(PhaseResult::Success(cr)) => cr,
             Some(PhaseResult::Failed { phase, error, .. }) => {
+                log(LogLevel::Error, format!("compile failed at {phase}: {error}"));
                 return Err(format!("compile failed at {phase}: {error}"));
             }
-            _ => return Err("the pipeline produced no simulable result for this model".to_owned()),
+            _ => {
+                log(LogLevel::Error, "no simulable result".to_owned());
+                return Err("the pipeline produced no simulable result for this model".to_owned());
+            }
         };
+
+        log(LogLevel::StageStart, "Solve lowering".to_owned());
+        let t_stage = Instant::now();
         let sm = rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae)
-            .map_err(|e| format!("solve lowering failed: {e}"))?;
-        // Can a plotted variable jump? Only if the model has a discrete update —
-        // a `reinit` (f_z) or a `when` assignment (f_m). A bare zero-crossing with
-        // no update (BenchActuator has one) leaves every trajectory continuous, so
-        // the plot must NOT break there.
+            .map_err(|e| {
+                log(LogLevel::Error, format!("solve lowering failed: {e}"));
+                format!("solve lowering failed: {e}")
+            })?;
+        drain_traces(&log);
+        log(LogLevel::StageEnd, format!("Solve lowering ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
+
         let has_discontinuities =
             !cr.dae.discrete.real_updates.is_empty() || !cr.dae.discrete.valued_updates.is_empty();
+        let n_states = cr.dae.variables.states.len();
+        let n_eq = cr.dae.continuous.equations.len();
+        log(LogLevel::Info, format!("{n_eq} equations, {n_states} states, hybrid={has_discontinuities}"));
+
+        log(LogLevel::StageStart, "Integration".to_owned());
+        let t_stage = Instant::now();
         let opts = rumoca_sim::SimOptions { t_end, ..Default::default() };
         let res = rumoca_sim::simulate_solve_model(&sm, &opts)
-            .map_err(|e| format!("simulation failed: {e}"))?;
+            .map_err(|e| {
+                drain_traces(&log);
+                log(LogLevel::Error, format!("simulation failed: {e}"));
+                format!("simulation failed: {e}")
+            })?;
+        drain_traces(&log);
+        log(LogLevel::StageEnd, format!(
+            "Integration ({:.1}ms, {} time points)",
+            t_stage.elapsed().as_secs_f64() * 1000.0,
+            res.times.len(),
+        ));
+
+        log(LogLevel::Info, format!("done ({:.1}ms total)", t0.elapsed().as_secs_f64() * 1000.0));
+
         Ok(SimData {
             times: res.times,
             names: res.names,
@@ -1441,7 +1492,7 @@ mod tests {
         let d = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BenchActuator.mo"));
-            w.simulate(path, "BenchActuator", 0.5)
+            w.simulate(path, "BenchActuator", 0.5, &|_: FromWorker| {})
         }
         .expect("simulate BenchActuator");
         let get = |name: &str| -> f64 {
@@ -1483,7 +1534,7 @@ mod tests {
         let data = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BouncingBall.mo"));
-            w.simulate(path, "BouncingBall", 3.0)
+            w.simulate(path, "BouncingBall", 3.0, &|_: FromWorker| {})
         }
         .expect("simulate BouncingBall");
         assert!(data.has_discontinuities, "BouncingBall reinits v at each bounce");
@@ -1508,7 +1559,7 @@ mod tests {
         let data = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BouncingBall.mo"));
-            w.simulate(path, "BouncingBall", 3.0)
+            w.simulate(path, "BouncingBall", 3.0, &|_: FromWorker| {})
         }
         .expect("simulate BouncingBall");
         assert!(!data.times.is_empty(), "should produce a trajectory");

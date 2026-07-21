@@ -892,6 +892,7 @@ impl eframe::App for App {
         // closure only borrows disjoint fields (not whole `self` via a method),
         // which keeps it compatible with `.open(&mut self.show_settings)`.
         let mut load_libraries = false;
+        let mut rescan_specimens = false;
         egui::Window::new("Settings")
             .open(&mut self.show_settings)
             .collapsible(false)
@@ -905,6 +906,19 @@ impl eframe::App for App {
                 {
                     ui.ctx().set_zoom_factor(zoom);
                 }
+                ui.separator();
+
+                ui.strong("Specimen directory");
+                ui.horizontal(|ui| {
+                    let changed = ui.add(
+                        egui::TextEdit::singleline(&mut self.specimen_dir)
+                            .desired_width(f32::INFINITY)
+                            .font(egui::TextStyle::Monospace),
+                    ).changed();
+                    if ui.button("⟳").on_hover_text("Rescan directory").clicked() || changed {
+                        rescan_specimens = true;
+                    }
+                });
                 ui.separator();
 
                 ui.strong("Library source roots");
@@ -928,6 +942,9 @@ impl eframe::App for App {
         if load_libraries {
             self.load_libraries();
         }
+        if rescan_specimens {
+            self.rescan();
+        }
 
         // Full-width status bar (added before the side panel so it spans the
         // whole window bottom): the last bridge capture / write result.
@@ -945,17 +962,7 @@ impl eframe::App for App {
             .default_size(440.0)
             .min_size(340.0)
             .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.strong("Specimens");
-                    if ui.button("⟳").on_hover_text("Rescan directory").clicked() {
-                        self.rescan();
-                    }
-                });
-                ui.add(
-                    egui::TextEdit::singleline(&mut self.specimen_dir)
-                        .desired_width(f32::INFINITY)
-                        .font(egui::TextStyle::Monospace),
-                );
+                ui.strong("Specimens");
                 ui.separator();
 
                 if let Some(err) = &self.scan_error {
