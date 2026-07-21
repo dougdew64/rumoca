@@ -537,7 +537,7 @@ impl App {
     /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
     /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
     fn simulation_pane(&mut self, ui: &mut egui::Ui) {
-        use egui_plot::{Legend, Line, Plot, PlotPoints};
+        use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
         let mut run = false;
         ui.horizontal(|ui| {
@@ -567,7 +567,9 @@ impl App {
         match &self.sim_data {
             Some(data) => {
                 Plot::new("sim_plot")
-                    .legend(Legend::default())
+                    // Top-LEFT so the legend clears the right-hand "About this field"
+                    // panel (the default top-right corner sits against it).
+                    .legend(Legend::default().position(Corner::LeftTop))
                     .x_axis_label("time")
                     .show(ui, |plot_ui| {
                         for (i, name) in data.names.iter().enumerate() {
