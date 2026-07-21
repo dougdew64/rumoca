@@ -599,7 +599,7 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
         Some(PhaseResult::Success(cr)) => {
             let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
             let mut reduced = cr.dae.clone();
-            index_reduce_for_structural_analysis(&mut reduced);
+            let reduction = index_reduce_for_structural_analysis(&mut reduced);
             match rumoca_phase_structural::build_structural_report(&reduced) {
                 Ok(rep) => {
                     let inc = rumoca_phase_structural::build_incidence(&reduced);
@@ -609,9 +609,9 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
                         "index-reduced from a structurally singular (high-index) system — now solvable"
                     };
                     let mut json = structural_to_json(&rep);
-                    json.as_object_mut()
-                        .unwrap()
-                        .insert("incidence".to_owned(), incidence_to_json(&inc));
+                    let obj = json.as_object_mut().unwrap();
+                    obj.insert("incidence".to_owned(), incidence_to_json(&inc));
+                    obj.insert("reduction".to_owned(), reduction.to_json());
                     Stage::ok_with_note(json, note)
                 }
                 Err(e) => Stage::err(format!("still singular after index reduction: {e}")),
@@ -1461,42 +1461,180 @@ mod tests {
             panic!("index reduction should recover Drivetrain: {:?}", index_reduction.note)
         });
         assert!(v["coupled_block_count"].as_u64().is_some(), "reduced report missing block count");
+        let red = &v["reduction"];
+        assert!(red["funnel_completed"].as_bool() == Some(true), "funnel should complete for Drivetrain");
+        let steps = red["steps"].as_array().expect("steps array");
+        assert!(!steps.is_empty(), "should have logged funnel steps");
+        assert!(red["n_states_before"].as_u64().unwrap() > 0);
     }
 }
 
-/// Apply Rumoca's index-reduction / dummy-derivative funnel to a DAE in place —
-/// the public `dae_prepare` building blocks, in the same order as rumoca-sim's
-/// internal `prepare_dae_for_structural_analysis`. Turns a structurally singular
-/// high-index DAE (e.g. Drivetrain's ideal gears) into a matchable, index-1 one.
+/// Record of what the index-reduction funnel did, step by step.
+struct ReductionReport {
+    /// State variable names present in the raw DAE before reduction.
+    states_before: Vec<String>,
+    /// State variable names remaining after reduction.
+    states_after: Vec<String>,
+    /// Per-step log: (step name, outcome description).
+    steps: Vec<(&'static str, String)>,
+    /// Equations manufactured by differentiation (origin contains
+    /// `"index_reduction:d_dt_for_"`), with the state they were created for.
+    differentiated_rows: Vec<(String, String)>,
+    /// Trivial-elimination substitutions (variable → replacement expression).
+    eliminations: Vec<(String, String)>,
+    /// The step at which the funnel stopped (if it bailed early on error).
+    stopped_at: Option<&'static str>,
+}
+
+/// Apply Rumoca's index-reduction / dummy-derivative funnel to a DAE in place,
+/// returning a structured report of what each step did.
 ///
 /// HRW mirrors Rumoca's funnel *order*; re-verify it against
 /// `rumoca-sim/src/solve_lowering/structural_lowering.rs` on a Rumoca pin bump
-/// (see `docs/updating-rumoca.md`). Steps that can fail return a `StructuralError`;
-/// on failure we stop and leave the DAE partially reduced (the caller re-runs the
-/// structural report, which will report whatever singularity remains).
-fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) {
+/// (see `docs/updating-rumoca.md`).
+fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) -> ReductionReport {
     use rumoca_phase_structural::dae_prepare as dp;
-    // Fallible steps stop the funnel on error, leaving the DAE partially reduced
-    // (the caller's structural report then names whatever singularity remains);
-    // the infallible steps run in their funnel positions.
-    if dp::demote_exact_alias_component_states(dae).is_err() { return; }
-    if dp::demote_direct_assigned_states(dae).is_err() { return; }
-    if dp::reduce_constrained_dummy_derivatives(dae).is_err() { return; }
-    if dp::index_reduce_missing_state_derivatives(dae).is_err() { return; }
-    dp::demote_states_without_assignable_derivative_rows(dae);
-    if dp::eliminate_derivative_aliases(dae).is_err() { return; }
-    if dp::demote_states_without_retained_derivative_rows(dae).is_err() { return; }
-    dp::expand_compound_derivatives(dae);
-    dp::substitute_standalone_state_derivatives_in_non_ode_rows(dae);
-    // Then Rumoca's elimination pass, matching its real sim funnel: `eliminate_trivial`
-    // *computes* the trivial substitutions (aliases, single-unknown rows) and
-    // `apply_..._to_dae` applies them. (It does not resolve nonlinear holonomic
-    // constraints — e.g. a Cartesian pendulum's x²+y²=L² stays singular; that class
-    // is deferred, see DECISIONS.md — but it makes the reduction faithful for the
-    // cases Rumoca does handle, like Drivetrain's linear gear constraints.)
     use rumoca_phase_structural::eliminate;
+
+    let states_before: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
+    let mut steps: Vec<(&str, String)> = Vec::new();
+    let mut stopped_at: Option<&str> = None;
+
+    macro_rules! run_step {
+        ($name:expr, $call:expr) => {
+            match $call {
+                Ok(n) => steps.push(($name, format!("{n} demoted"))),
+                Err(e) => {
+                    steps.push(($name, format!("stopped: {e}")));
+                    stopped_at = Some($name);
+                }
+            }
+        };
+    }
+
+    macro_rules! run_step_unit {
+        ($name:expr, $call:expr) => {
+            match $call {
+                Ok(()) => steps.push(($name, "ok".to_owned())),
+                Err(e) => {
+                    steps.push(($name, format!("stopped: {e}")));
+                    stopped_at = Some($name);
+                }
+            }
+        };
+    }
+
+    run_step!("demote_exact_alias_component_states", dp::demote_exact_alias_component_states(dae));
+    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+
+    run_step!("demote_direct_assigned_states", dp::demote_direct_assigned_states(dae));
+    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+
+    run_step!("reduce_constrained_dummy_derivatives", dp::reduce_constrained_dummy_derivatives(dae));
+    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+
+    run_step!("index_reduce_missing_state_derivatives", dp::index_reduce_missing_state_derivatives(dae));
+    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+
+    let n_unassignable = dp::demote_states_without_assignable_derivative_rows(dae);
+    steps.push(("demote_states_without_assignable_derivative_rows", format!("{n_unassignable} demoted")));
+
+    run_step_unit!("eliminate_derivative_aliases", dp::eliminate_derivative_aliases(dae));
+    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+
+    match dp::demote_states_without_retained_derivative_rows(dae) {
+        Ok((no_der_ref, unassignable)) => steps.push((
+            "demote_states_without_retained_derivative_rows",
+            format!("{no_der_ref} no-derivative-ref + {unassignable} unassignable demoted"),
+        )),
+        Err(e) => {
+            steps.push(("demote_states_without_retained_derivative_rows", format!("stopped: {e}")));
+            stopped_at = Some("demote_states_without_retained_derivative_rows");
+        }
+    }
+    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+
+    dp::expand_compound_derivatives(dae);
+    steps.push(("expand_compound_derivatives", "ok".to_owned()));
+
+    let n_subst = dp::substitute_standalone_state_derivatives_in_non_ode_rows(dae);
+    steps.push(("substitute_standalone_state_derivatives_in_non_ode_rows", format!("{n_subst} substituted")));
+
+    let mut eliminations = Vec::new();
     if let Ok(elim) = eliminate::eliminate_trivial(dae) {
+        steps.push(("eliminate_trivial", format!("{} eliminated", elim.n_eliminated)));
+        for sub in &elim.substitutions {
+            let expr_json = serde_json::to_string(&sub.expr).unwrap_or_default();
+            eliminations.push((sub.var_name.to_string(), expr_json));
+        }
         let _ = eliminate::apply_elimination_substitutions_to_dae(dae, &elim.substitutions);
+    } else {
+        steps.push(("eliminate_trivial", "failed (system may still be singular)".to_owned()));
+    }
+
+    finish_report(dae, states_before, steps, stopped_at)
+        .with_eliminations(eliminations)
+}
+
+fn finish_report(
+    dae: &rumoca_ir_dae::Dae,
+    states_before: Vec<String>,
+    steps: Vec<(&'static str, String)>,
+    stopped_at: Option<&'static str>,
+) -> ReductionReport {
+    let states_after: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
+    let differentiated_rows: Vec<(String, String)> = dae
+        .continuous
+        .equations
+        .iter()
+        .filter_map(|eq| {
+            let marker = "index_reduction:d_dt_for_";
+            eq.origin.find(marker).map(|pos| {
+                let state = eq.origin[pos + marker.len()..].to_owned();
+                (eq.origin.clone(), state)
+            })
+        })
+        .collect();
+    ReductionReport {
+        states_before,
+        states_after,
+        steps,
+        differentiated_rows,
+        eliminations: Vec::new(),
+        stopped_at,
+    }
+}
+
+impl ReductionReport {
+    fn with_eliminations(mut self, eliminations: Vec<(String, String)>) -> Self {
+        self.eliminations = eliminations;
+        self
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        let demoted: Vec<&String> = self
+            .states_before
+            .iter()
+            .filter(|s| !self.states_after.contains(s))
+            .collect();
+        serde_json::json!({
+            "states_before": self.states_before,
+            "states_after": self.states_after,
+            "demoted_states": demoted,
+            "n_states_before": self.states_before.len(),
+            "n_states_after": self.states_after.len(),
+            "steps": self.steps.iter().map(|(name, outcome)| {
+                serde_json::json!({ "step": name, "outcome": outcome })
+            }).collect::<Vec<_>>(),
+            "differentiated_rows": self.differentiated_rows.iter().map(|(origin, state)| {
+                serde_json::json!({ "equation_origin": origin, "for_state": state })
+            }).collect::<Vec<_>>(),
+            "eliminations": self.eliminations.iter().map(|(var, expr)| {
+                serde_json::json!({ "variable": var, "replacement": expr })
+            }).collect::<Vec<_>>(),
+            "stopped_at": self.stopped_at,
+            "funnel_completed": self.stopped_at.is_none(),
+        })
     }
 }
 

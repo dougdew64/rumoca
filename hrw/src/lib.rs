@@ -10,6 +10,7 @@ pub mod bridge;
 pub mod canvas;
 pub mod field_help;
 pub mod incidence_view;
+pub mod reduction_view;
 pub mod spyplot;
 pub mod tree;
 pub mod worker;

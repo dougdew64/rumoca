@@ -15,6 +15,7 @@ use crate::bridge::{self, Ask, Focus, Seg};
 use crate::canvas::Canvas;
 use crate::field_help;
 use crate::incidence_view;
+use crate::reduction_view;
 use crate::spyplot;
 use crate::tree;
 use crate::worker::{
@@ -55,12 +56,13 @@ enum StageKind {
 }
 
 /// How to render the Structural / Index-reduction stages: the custom BLT
-/// spy-plot, the incidence matrix (pass-two Arc 3), or the generic serde tree
-/// over the same report.
+/// spy-plot, the incidence matrix (pass-two Arc 3), the reduction process
+/// summary (pass-two Arc 4, Index reduction only), or the generic serde tree.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum StructuralView {
     SpyPlot,
     Incidence,
+    Reduction,
     Tree,
 }
 
@@ -1224,9 +1226,18 @@ impl eframe::App for App {
                     matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
                 let report_ready = report_stage && self.current_stage().value.is_some();
                 if report_ready {
+                    let is_index_reduction = self.stage == StageKind::IndexReduction;
+                    // If switching away from IndexReduction while Reduction is
+                    // selected, fall back to SpyPlot (Structural has no reduction).
+                    if !is_index_reduction && self.structural_view == StructuralView::Reduction {
+                        self.structural_view = StructuralView::SpyPlot;
+                    }
                     ui.horizontal(|ui| {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                         ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
+                        if is_index_reduction {
+                            ui.selectable_value(&mut self.structural_view, StructuralView::Reduction, "Reduction");
+                        }
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
                     ui.separator();
@@ -1250,6 +1261,15 @@ impl eframe::App for App {
                         }
                         None => {
                             ui.weak("(no incidence data in this report)");
+                        }
+                    }
+                } else if report_ready && self.structural_view == StructuralView::Reduction {
+                    match self.current_stage().value.as_ref().and_then(reduction_view::ReductionView::from_report) {
+                        Some(view) => {
+                            view.ui(ui);
+                        }
+                        None => {
+                            ui.weak("(no reduction data in this report)");
                         }
                     }
                 } else {
