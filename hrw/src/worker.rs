@@ -224,13 +224,29 @@ impl Stage {
     fn ok_with_note(value: serde_json::Value, note: impl Into<String>) -> Self {
         Stage { value: Some(value), note: Some(note.into()), note_is_error: false }
     }
+
+    /// Serialize a value to JSON and wrap in a successful Stage, or return an
+    /// error Stage if serialization fails (instead of silently producing Null).
+    fn from_ser<T: serde::Serialize>(v: &T) -> Self {
+        match serde_json::to_value(v) {
+            Ok(val) => Stage::ok(val),
+            Err(e) => Stage::err(format!("serialization failed: {e}")),
+        }
+    }
+}
+
+/// Serialize to JSON, falling back to a descriptive error string instead of
+/// Null. Used inside `json!()` macros where we need a Value, not a Stage.
+fn ser_value<T: serde::Serialize>(v: &T) -> serde_json::Value {
+    serde_json::to_value(v)
+        .unwrap_or_else(|e| serde_json::Value::String(format!("serialization failed: {e}")))
 }
 
 /// Which pipeline stage the user is viewing. The Rumoca compiler has discrete
 /// phases (Parse, Resolve, etc.), each producing an intermediate representation
 /// (IR). This enum tracks which phase is selected. `Simulation` is special —
 /// it's not a compiler phase but an on-demand run of the compiled model.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StageKind {
     Parse,
     Resolve,
@@ -468,8 +484,8 @@ pub enum FromWorker {
 /// from the UI thread. This separation is enforced by Rust's ownership system —
 /// you literally cannot access the wrong end.
 pub struct Worker {
-    tx: Sender<ToWorker>,
-    pub rx: Receiver<FromWorker>,
+    pub(crate) tx: Sender<ToWorker>,
+    pub(crate) rx: Receiver<FromWorker>,
 }
 
 impl Worker {
@@ -778,7 +794,7 @@ impl WorkerState {
         };
         let result = match rt.0.get_class_by_qualified_name(name) {
             Some(class) => {
-                let value = serde_json::to_value(class).unwrap_or_default();
+                let value = ser_value(class);
                 // Build a DefId→DefInfo map for all DefIds referenced in this
                 // class's IR, so navigation can continue from here.
                 let def_index = build_def_index(&rt.0, &value);
@@ -945,8 +961,7 @@ impl WorkerState {
                 // gets the first (alphabetically) class name. For a specimen file
                 // with one model, this is the model we want.
                 let model = ast.classes.keys().next().cloned();
-                let value = serde_json::to_value(&ast).unwrap_or_default();
-                (Stage::ok(value), model)
+                (Stage::from_ser(&ast), model)
             }
             Err(e) => (Stage::err(format!("{e:#}")), None),
         };
@@ -1082,53 +1097,33 @@ impl WorkerState {
                     ..Default::default()
                 };
 
-                log(LogLevel::StageStart, "Flatten".to_owned());
-                let t_stage = Instant::now();
-                let flatten = flatten_stage(result);
-                drain_traces(&log);
-                log(LogLevel::StageEnd, format!("Flatten ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
-                bundle.flatten = flatten.clone();
-                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
+                // Macro capturing `log`, `drain_traces`, `bundle`, `emit`,
+                // and `path` from the enclosing scope. Each invocation: logs
+                // start/end with timing, runs the extraction function, stores
+                // the result on the bundle, and emits a progress update.
+                macro_rules! run_stage {
+                    ($name:expr, $extract:expr, $field:ident) => {{
+                        log(LogLevel::StageStart, $name.to_owned());
+                        let t = Instant::now();
+                        let stage = $extract;
+                        drain_traces(&log);
+                        log(LogLevel::StageEnd, format!(
+                            "{} ({:.1}ms)", $name, t.elapsed().as_secs_f64() * 1000.0
+                        ));
+                        bundle.$field = stage.clone();
+                        emit(FromWorker::CompileProgress {
+                            path: path.to_owned(), stages: bundle.clone(),
+                        });
+                        stage
+                    }};
+                }
 
-                log(LogLevel::StageStart, "Structural analysis".to_owned());
-                let t_stage = Instant::now();
-                let structural = structural_stage(result);
-                drain_traces(&log);
-                log(LogLevel::StageEnd, format!("Structural analysis ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
-                bundle.structural = structural.clone();
-                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
-
-                log(LogLevel::StageStart, "Index reduction".to_owned());
-                let t_stage = Instant::now();
-                let index_reduction = index_reduction_stage(result);
-                drain_traces(&log);
-                log(LogLevel::StageEnd, format!("Index reduction ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
-                bundle.index_reduction = index_reduction.clone();
-                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
-
-                log(LogLevel::StageStart, "Initialization".to_owned());
-                let t_stage = Instant::now();
-                let initialization = initialization_stage(result);
-                drain_traces(&log);
-                log(LogLevel::StageEnd, format!("Initialization ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
-                bundle.initialization = initialization.clone();
-                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
-
-                log(LogLevel::StageStart, "Events".to_owned());
-                let t_stage = Instant::now();
-                let events = events_stage(result);
-                drain_traces(&log);
-                log(LogLevel::StageEnd, format!("Events ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
-                bundle.events = events.clone();
-                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle.clone() });
-
-                log(LogLevel::StageStart, "Solve lowering".to_owned());
-                let t_stage = Instant::now();
-                let solve_lowering = solve_lowering_stage(result);
-                drain_traces(&log);
-                log(LogLevel::StageEnd, format!("Solve lowering ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
-                bundle.solve_lowering = solve_lowering.clone();
-                emit(FromWorker::CompileProgress { path: path.to_owned(), stages: bundle });
+                let flatten = run_stage!("Flatten", flatten_stage(result), flatten);
+                let structural = run_stage!("Structural analysis", structural_stage(result), structural);
+                let index_reduction = run_stage!("Index reduction", index_reduction_stage(result), index_reduction);
+                let initialization = run_stage!("Initialization", initialization_stage(result), initialization);
+                let events = run_stage!("Events", events_stage(result), events);
+                let solve_lowering = run_stage!("Solve lowering", solve_lowering_stage(result), solve_lowering);
 
                 log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
 
@@ -1400,7 +1395,7 @@ fn ic_plan_to_json(
             IcBlock::ScalarDirect { var_name, solution_expr, .. } => serde_json::json!({
                 "kind": "scalar_direct",
                 "var": var_name,
-                "solution": serde_json::to_value(solution_expr).unwrap_or_default(),
+                "solution": ser_value(solution_expr),
             }),
             IcBlock::ScalarNewton { var_name, eq_idx, .. } => serde_json::json!({
                 "kind": "scalar_newton",
@@ -1489,16 +1484,16 @@ fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
             "scheduled_time_events": events.scheduled_time_events.len(),
         },
         "conditions": {
-            "equations_f_c": serde_json::to_value(&conditions.equations).unwrap_or_default(),
-            "relations": serde_json::to_value(&conditions.relations).unwrap_or_default(),
+            "equations_f_c": ser_value(&conditions.equations),
+            "relations": ser_value(&conditions.relations),
         },
         "discrete_updates": {
-            "real_updates_f_z": serde_json::to_value(&discrete.real_updates).unwrap_or_default(),
-            "valued_updates_f_m": serde_json::to_value(&discrete.valued_updates).unwrap_or_default(),
+            "real_updates_f_z": ser_value(&discrete.real_updates),
+            "valued_updates_f_m": ser_value(&discrete.valued_updates),
         },
         "events": {
-            "zero_crossing_conditions": serde_json::to_value(&events.synthetic_root_conditions).unwrap_or_default(),
-            "scheduled_time_events": serde_json::to_value(&events.scheduled_time_events).unwrap_or_default(),
+            "zero_crossing_conditions": ser_value(&events.synthetic_root_conditions),
+            "scheduled_time_events": ser_value(&events.scheduled_time_events),
         },
     })
 }
@@ -1633,12 +1628,12 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
 fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) -> (Stage, Stage) {
     match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
         Ok(mut overlay) => {
-            let instantiate = Stage::ok(serde_json::to_value(&overlay).unwrap_or_default());
+            let instantiate = Stage::from_ser(&overlay);
             let typecheck = match rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name) {
-                Ok(()) => Stage::ok(serde_json::to_value(&overlay).unwrap_or_default()),
+                Ok(()) => Stage::from_ser(&overlay),
                 // Best-effort: still show the (partially) enriched overlay + the note.
                 Err(_diags) => Stage::recovered(
-                    serde_json::to_value(&overlay).unwrap_or_default(),
+                    ser_value(&overlay),
                     "instanced typecheck reported diagnostics",
                 ),
             };
@@ -2515,6 +2510,83 @@ mod tests {
         assert!(stage_starts.contains(&"Solve lowering"), "missing solve lowering stage");
         assert!(stage_starts.contains(&"Integration"), "missing integration stage");
     }
+
+    // -----------------------------------------------------------------------
+    // Error-path tests (TD-14): verify that the worker reports errors
+    // correctly when given bad inputs, rather than panicking.
+    // -----------------------------------------------------------------------
+
+    /// Compiling a nonexistent file reports a parse-stage error (file read
+    /// failure) instead of panicking.
+    #[test]
+    fn compile_nonexistent_file_reports_error() {
+        let mut w = WorkerState::new();
+        let path = PathBuf::from("/tmp/hrw_test_nonexistent_file_that_does_not_exist.mo");
+        let result = w.compile(&path, &|_: FromWorker| {});
+        let FromWorker::Compiled { stages, .. } = result else {
+            panic!("expected Compiled");
+        };
+        assert!(stages.parse.note_is_error, "parse stage should flag an error for a missing file");
+        assert!(
+            stages.parse.note.as_deref().unwrap_or("").contains("read error"),
+            "parse note should mention a read error, got: {:?}",
+            stages.parse.note
+        );
+    }
+
+    /// Compiling a file with invalid Modelica syntax reports a parse-stage
+    /// error (the parser rejects the input).
+    #[test]
+    fn compile_invalid_syntax_reports_parse_error() {
+        let tmp_dir = PathBuf::from(concat!(
+            "/tmp/claude-1000/-home-dougdew-dev-rumoca/",
+            "0033dab5-98a0-4f7a-8241-a545c97992aa/scratchpad"
+        ));
+        std::fs::create_dir_all(&tmp_dir).expect("create scratchpad dir");
+        let bad_file = tmp_dir.join("bad_syntax.mo");
+        std::fs::write(&bad_file, "not valid modelica {").expect("write temp file");
+
+        let mut w = WorkerState::new();
+        let result = w.compile(&bad_file, &|_: FromWorker| {});
+        let FromWorker::Compiled { stages, .. } = result else {
+            panic!("expected Compiled");
+        };
+        assert!(
+            stages.parse.note_is_error,
+            "parse stage should flag an error for invalid syntax"
+        );
+        assert!(
+            stages.parse.note.is_some(),
+            "parse stage should carry an error message"
+        );
+    }
+
+    /// Calling `open_def` on a fresh worker (no compilation, no resolved tree)
+    /// returns a `DefTree` with `result: Err(...)` instead of panicking.
+    #[test]
+    fn open_def_without_resolved_tree_reports_error() {
+        let mut w = WorkerState::new();
+        let result = w.open_def("SomeName");
+        let FromWorker::DefTree { result, .. } = result else {
+            panic!("expected DefTree");
+        };
+        assert!(result.is_err(), "open_def on a fresh worker should return Err");
+    }
+
+    /// `extract_class` with a name that doesn't exist in the tree returns a
+    /// `Stage` with `note_is_error == true`.
+    #[test]
+    fn extract_class_missing_name_reports_error() {
+        let empty_tree = rumoca_ir_ast::ClassTree::default();
+        let stage = extract_class(&empty_tree, "NonExistent.Model.Name");
+        assert!(stage.note_is_error, "extract_class should flag an error for a missing name");
+        assert!(stage.value.is_none(), "extract_class should produce no value for a missing name");
+        assert!(
+            stage.note.as_deref().unwrap_or("").contains("not found"),
+            "error note should mention 'not found', got: {:?}",
+            stage.note
+        );
+    }
 }
 
 /// Record of what the index-reduction funnel did, step by step.
@@ -2757,7 +2829,7 @@ impl ReductionReport {
 /// generic JSON `Value` (the format the tree inspector displays).
 fn extract_class(tree: &rumoca_ir_ast::ClassTree, qualified_name: &str) -> Stage {
     match tree.get_class_by_qualified_name(qualified_name) {
-        Some(class) => Stage::ok(serde_json::to_value(class).unwrap_or_default()),
+        Some(class) => Stage::from_ser(class),
         None => Stage::err(format!("`{qualified_name}` not found in resolved tree")),
     }
 }

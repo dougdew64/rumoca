@@ -30,6 +30,7 @@
 pub mod app;
 pub mod bridge;
 pub mod canvas;
+pub mod colors;
 pub mod field_help;
 pub mod incidence_view;
 pub mod log_view;

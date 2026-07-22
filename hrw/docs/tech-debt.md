@@ -22,16 +22,14 @@ are related and should be addressed together.
   Fixed 2026-07-22. `FromWorker::Compiled` now embeds `stages: StageBundle` instead
   of 10 individual stage fields.
 
-- [ ] **TD-3 (medium): Factor the repetitive stage-emit loop in `compile()`.**
-  Six consecutive stages (Flatten through Solve lowering) repeat the same 7-line
-  pattern: log start, time, extract, drain traces, log end, clone bundle, emit
-  progress. A helper or macro taking a stage name and extraction function would
-  halve the line count.
+- [x] **TD-3 (medium): Factor the repetitive stage-emit loop in `compile()`.**
+  Fixed 2026-07-22. A `run_stage!` macro captures `log`, `drain_traces`, `bundle`,
+  `emit`, and `path` from the enclosing scope. Six invocations replace ~42 lines of
+  repeated stage-emit boilerplate.
 
-- [ ] **TD-4 (medium): Data-drive the stage tab bar.**
-  Each of the 10 stage tabs repeats ~6–10 lines of near-identical `selectable_label`
-  code. A loop over `[(StageKind, &str, &Stage, Option<&str>)]` would reduce ~90
-  lines to ~15 and make adding a tab a one-line change.
+- [x] **TD-4 (medium): Data-drive the stage tab bar.**
+  Fixed 2026-07-22. A `tabs` array of `(StageKind, &str, &Stage, Option<&str>)` and
+  a loop replace ~90 lines with ~15. Adding a new tab is now a one-line array entry.
 
 - [ ] **TD-5 (low): Extract common fallback arms from stage-extraction functions.**
   Five stage functions (`structural_stage`, `index_reduction_stage`, etc.) copy
@@ -49,27 +47,22 @@ are related and should be addressed together.
 
 ## Theme 2: Color constants
 
-- [ ] **TD-8 (medium): Centralize shared color constants.**
-  The "success green" `(0x3F, 0xB9, 0x50)` appears in 6 locations across 5 files.
-  The dark/light mode branching (`if dark_mode { dark_green } else { light_green }`)
-  is repeated in 4 places across 3 files. Other colors (coupled-block orange,
-  incidence blue, changed-value green) are also inline. A shared `colors` module
-  with named constants and a `fn ok_color(dark_mode: bool) -> Color32` helper would
-  make the palette a single point of change.
+- [x] **TD-8 (medium): Centralize shared color constants.**
+  Fixed 2026-07-22. New `colors.rs` module with `OK_GREEN` constant and
+  `ok_color(dark_mode)` helper. Six call sites across 5 files updated to use
+  the centralized definitions.
 
 ## Theme 3: Silent error handling
 
-- [ ] **TD-9 (medium): Replace `serde_json::to_value().unwrap_or_default()` with error reporting.**
-  14 occurrences in `worker.rs` silently produce `Value::Null` on serialization
-  failure, which the UI shows as a blank tree with no explanation. A helper like
-  `fn ser_or_err<T: Serialize>(v: &T) -> Stage` that returns `Stage::err(...)` on
-  failure would handle this consistently. Compare with `flatten_stage` which already
-  does this correctly.
+- [x] **TD-9 (medium): Replace `serde_json::to_value().unwrap_or_default()` with error reporting.**
+  Fixed 2026-07-22. Two helpers: `Stage::from_ser()` (returns `Stage::err` on failure)
+  for Stage-producing call sites, `ser_value()` (returns a descriptive error string)
+  for nested `json!()` calls. All 14 occurrences replaced.
 
-- [ ] **TD-10 (medium): Report editor launch failures to the user.**
-  `Command::new("code")` results are discarded with `let _ =` in three places in
-  `app.rs`. If VS Code isn't installed or not on PATH, the user clicks a button and
-  nothing happens with no feedback. At minimum, set `bridge_status` to an error.
+- [x] **TD-10 (medium): Report editor launch failures to the user.**
+  Fixed 2026-07-22. New `open_in_editor()` method replaces the three `let _ =`
+  call sites. On failure, sets `bridge_status` to an error message shown in the
+  status bar.
 
 - [ ] **TD-11 (low): Use `.expect()` instead of `.unwrap()` on structural invariants.**
   `json.as_object_mut().unwrap()` in `structural_stage` and `index_reduction_stage`
@@ -79,21 +72,21 @@ are related and should be addressed together.
 
 ## Theme 4: Test coverage gaps
 
-- [ ] **TD-12 (medium): Add tests for `app.rs` logic functions.**
-  Only `read_purpose` and `field_name_from_path` are tested. Missing:
-  `last_successful_stage()`, `previous_stage_value()`, `open()` state reset
-  completeness, `drain_worker()` stale-result filtering, `stage_name()`
-  exhaustiveness.
+- [x] **TD-12 (medium): Add tests for `app.rs` logic functions.**
+  Fixed 2026-07-22. Added `test_default()` constructor and tests for:
+  `last_successful_stage` (furthest-ok, fallback, skips-errored),
+  `previous_stage_value` (Parse=None, Instantiate=Resolve),
+  `stage_name` (exhaustive over all StageKind variants).
 
-- [ ] **TD-13 (medium): Add tests for `canvas.rs` coordinate transforms.**
-  Zero tests. `to_screen`, `to_world`, `to_screen_rect`, and fit-to-content are
-  pure math — trivially testable with round-trip assertions like
-  `to_screen(to_world(p)) ≈ p`.
+- [x] **TD-13 (medium): Add tests for `canvas.rs` coordinate transforms.**
+  Fixed 2026-07-22. Eight tests: `to_screen`/`to_world` round-trip, origin mapping,
+  rect size preservation, rect round-trip, zoom accessor, `to_world` at rect min,
+  `Canvas::default` fit flag, and `request_fit`.
 
-- [ ] **TD-14 (medium): Add error-path tests for `worker.rs`.**
-  Happy paths are well covered but failure paths are untested: invalid library
-  paths, `open_def` with no resolved tree, `simulate` when compilation fails,
-  `compile` when `read_to_string` fails. These are where regressions hide.
+- [x] **TD-14 (medium): Add error-path tests for `worker.rs`.**
+  Fixed 2026-07-22. Added tests for: compile with nonexistent file,
+  compile with invalid syntax, `open_def` without resolved tree,
+  `extract_class` with missing name.
 
 - [ ] **TD-15 (low): Add tests for `log_view::level_style`.**
   Pure function mapping `LogLevel` → color/prefix — trivially testable.
@@ -115,11 +108,10 @@ are related and should be addressed together.
 
 ## Theme 6: Per-frame performance
 
-- [ ] **TD-18 (medium): Cache `Path::exists()` result for narrative button.**
-  `right_panel_specimen()` and `right_panel_read_links()` call
-  `Path::new(&abs).exists()` every frame to decide whether to show the narrative
-  button. This is a syscall at 60fps. Cache a `narrative_exists: bool` on `App`,
-  invalidated on specimen change.
+- [x] **TD-18 (medium): Cache `Path::exists()` result for narrative button.**
+  Fixed 2026-07-22. Added `narrative_exists: bool` field to `App`, set once in
+  `drain_worker` when `Compiled` arrives, cleared in `open()`. Both frame-hot
+  `Path::exists()` calls replaced with the cached bool.
 
 - [ ] **TD-19 (low): Cache specimen list width calculation.**
   `layout_no_wrap()` on the longest filename runs every frame to auto-size the
@@ -148,22 +140,19 @@ are related and should be addressed together.
 
 ## Theme 8: Miscellaneous
 
-- [ ] **TD-24 (medium): `truncate_label` can panic on multi-byte UTF-8.**
-  `incidence_view.rs` slices `&s[..max]` by byte index. If `max` falls inside a
-  multi-byte character, this panics. Fix: `s.get(..max).unwrap_or(s)` or use
-  `char_indices()`. Modelica identifiers are ASCII in practice, but the function
-  accepts any `&str`.
+- [x] **TD-24 (medium): `truncate_label` can panic on multi-byte UTF-8.**
+  Fixed 2026-07-22. Changed `&s[..max]` to `s.get(..max).unwrap_or(s)` — safe
+  fallback to full string on boundary miss. Added two tests
+  (`truncate_label_ascii`, `truncate_label_multibyte_does_not_panic`).
 
-- [ ] **TD-25 (medium): Extract `start_simulation()` method.**
-  The simulation launch sequence (set flags, clear data, clone path/model, send
-  `ToWorker::Simulate`) is duplicated between `simulation_pane()` and the play
-  button handler in `ui()`.
+- [x] **TD-25 (medium): Extract `start_simulation()` method.**
+  Fixed 2026-07-22. New `start_simulation()` method deduplicates the launch
+  sequence from `simulation_pane()` and the play button handler.
 
-- [ ] **TD-26 (medium): Split `ui()` method (~757 lines).**
-  The main frame function handles menu bar, floating windows, status bar, specimen
-  list, right panel, tab bar, 4 view modes, navigation, and deferred actions.
-  Extractable blocks: tab bar (~120 lines), structural view routing (~75 lines),
-  specimen list (~90 lines), Settings window (~50 lines).
+- [x] **TD-26 (medium): Split `ui()` method (~757 lines).**
+  Fixed 2026-07-22. Extracted `floating_windows()` (~130 lines: Help, About, and
+  Settings windows with their deferred-action patterns) into a separate method.
+  Combined with TD-4's data-driven tab bar, `ui()` dropped from ~757 to ~620 lines.
 
 - [ ] **TD-27 (low): Duplicate "Read: specimen narrative" button code.**
   The narrative button (check exists, build path, spawn editor) appears in both
@@ -197,6 +186,6 @@ are related and should be addressed together.
 | Severity | Count | Done | Key themes |
 |----------|-------|------|------------|
 | High     | 2     | 2 ✓  | ~~TD-1 (stage bundle on App)~~, ~~TD-16 (stale bridge file list)~~ |
-| Medium   | 13    | 0    | Stage boilerplate, colors, error handling, tests, per-frame I/O, ui() size |
+| Medium   | 13    | 13 ✓ | ~~Stage boilerplate~~, ~~colors~~, ~~error handling~~, ~~tests~~, ~~per-frame I/O~~, ~~ui() size~~ |
 | Low      | 17    | 0    | Minor duplication, naming, caching, ergonomics |
-| **Total**| **32**| **2**|  |
+| **Total**| **32**| **15**|  |

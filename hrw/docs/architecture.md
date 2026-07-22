@@ -31,6 +31,7 @@ hrw/
 │   ├── app.rs          # The eframe::App — UI layout, tab bar, panel routing
 │   ├── worker.rs       # Background-thread compilation & simulation
 │   ├── bridge.rs       # Claude Code integration — JSON focus-file emitter
+│   ├── colors.rs       # Shared color constants (theme-aware palette)
 │   ├── tree.rs         # Generic serde-value tree inspector widget
 │   ├── canvas.rs       # Reusable pan/zoom scaffold for custom-painted views
 │   ├── spyplot.rs      # BLT (Block Lower Triangular) spy-plot painter
@@ -179,6 +180,10 @@ re-parsing the entire library.
 Phases 5–10 depend on Rumoca's `PhaseResult`, which is either `Success(CompileResult)`
 (carrying the DAE + flat IR) or `Failed { phase, error }`. When a phase fails, later
 stages are skipped and show informational notes ("not reached — Flatten failed").
+
+Phases 5–10 use the `run_stage!` macro to avoid repeating the 7-line log/time/extract/
+emit pattern for each stage. The macro captures `log`, `drain_traces`, `bundle`, `emit`,
+and `path` from the enclosing scope.
 
 ### Simulation
 
@@ -445,6 +450,16 @@ A two-tier help system:
 
 The module also maps each stage to its `docs/compiler-phases` chapter, providing
 the "Read: Phase N" button in the right panel.
+
+### Colors (`colors.rs`, ~40 lines)
+
+Shared color constants used across multiple view modules. Contains:
+- `OK_GREEN` — the fixed dark-mode success green, used in canvas painters
+- `ok_color(dark_mode: bool)` — theme-aware variant (brighter on dark, darker on light)
+
+Centralizes what was previously inline `Color32::from_rgb(...)` and `if dark_mode`
+blocks duplicated across `app.rs`, `spyplot.rs`, `reduction_view.rs`, `log_view.rs`,
+and `tree.rs`.
 
 ### Log view (`log_view.rs`, ~130 lines)
 

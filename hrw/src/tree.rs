@@ -52,7 +52,7 @@ use crate::worker::{is_def_id_key, DefInfo};
 // Using a fixed color rather than a theme color because the "changed" semantic
 // is specific to the cross-stage diff and needs to stand out from normal text
 // in both light and dark themes.
-const CHANGED_COLOR: egui::Color32 = egui::Color32::from_rgb(0x3F, 0xB9, 0x50);
+const CHANGED_COLOR: egui::Color32 = crate::colors::OK_GREEN;
 
 /// Render a `serde_json::Value` as a collapsible tree widget.
 ///

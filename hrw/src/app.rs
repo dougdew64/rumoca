@@ -229,6 +229,11 @@ pub struct App {
     sim_running: bool,
     sim_error: Option<String>,
     sim_t_end: f64,
+
+    // ---- 12. Cached path checks ----
+    // Avoids calling `Path::exists()` every frame for the narrative button.
+    // Invalidated on specimen change (set in `drain_worker` when `Compiled` lands).
+    narrative_exists: bool,
 }
 
 impl App {
@@ -314,6 +319,7 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
+            narrative_exists: false,
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -391,6 +397,7 @@ impl App {
         // Clear all previous results. Every field that could hold stale data
         // from the last specimen is reset to its default.
         self.model = None;
+        self.narrative_exists = false;
         self.stages = StageBundle::default();
         self.sim_data = None;
         self.sim_error = None;
@@ -473,6 +480,10 @@ impl App {
                         continue; // stale result
                     }
                     self.compiling = false;
+                    self.narrative_exists = model.as_ref().is_some_and(|m| {
+                        let p = format!("{}/docs/specimen-notebook/{m}/narrative.md", env!("CARGO_MANIFEST_DIR"));
+                        std::path::Path::new(&p).exists()
+                    });
                     self.model = model;
                     self.stages = stages;
                     self.def_index = def_index;
@@ -731,6 +742,24 @@ impl App {
     /// split into 3 segments would get 3 different hues, while its legend entry
     /// shows only one. By keying color on the variable index, every segment of
     /// the same variable matches the legend.
+    fn open_in_editor(&mut self, path: impl AsRef<std::ffi::OsStr>) {
+        match std::process::Command::new("code").arg(path).spawn() {
+            Ok(_) => {}
+            Err(e) => {
+                self.bridge_status = Some(format!("editor launch failed: {e}"));
+            }
+        }
+    }
+
+    fn start_simulation(&mut self) {
+        if let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone()) {
+            self.sim_running = true;
+            self.sim_data = None;
+            self.sim_error = None;
+            self.worker.send(ToWorker::Simulate { path, model, t_end: self.sim_t_end });
+        }
+    }
+
     fn simulation_pane(&mut self, ui: &mut egui::Ui) {
         use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
@@ -755,13 +784,8 @@ impl App {
                 ui.colored_label(ui.visuals().error_fg_color, egui::RichText::new(e).monospace());
             });
         }
-        if run
-            && let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone())
-        {
-            self.sim_running = true;
-            self.sim_data = None;
-            self.sim_error = None;
-            self.worker.send(ToWorker::Simulate { path, model, t_end: self.sim_t_end });
+        if run {
+            self.start_simulation();
         }
         ui.separator();
         match &self.sim_data {
@@ -855,19 +879,19 @@ impl App {
             ui.add_space(4.0);
             ui.label(purpose);
         }
-        if let Some(model) = &self.model {
+        if self.narrative_exists
+            && let Some(model) = &self.model
+        {
             let rel = format!("docs/specimen-notebook/{model}/narrative.md");
-            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-            if std::path::Path::new(&abs).exists() {
-                ui.add_space(8.0);
-                ui.separator();
-                if ui
-                    .button("Read: specimen narrative")
-                    .on_hover_text(&rel)
-                    .clicked()
-                {
-                    let _ = std::process::Command::new("code").arg(&abs).spawn();
-                }
+            ui.add_space(8.0);
+            ui.separator();
+            if ui
+                .button("Read: specimen narrative")
+                .on_hover_text(&rel)
+                .clicked()
+            {
+                let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+                self.open_in_editor(&abs);
             }
         }
     }
@@ -930,7 +954,7 @@ impl App {
 
     /// The two "Read: …" doc links shared by both right-hand panels: the phase's
     /// generic `docs/compiler-phases` chapter, and this specimen's notebook narrative.
-    fn right_panel_read_links(&self, ui: &mut egui::Ui) {
+    fn right_panel_read_links(&mut self, ui: &mut egui::Ui) {
         // Concept-level link: the docs/compiler-phases chapter for the phase whose
         // view is on screen (Resolve while navigating a definition).
         let stage_ctx = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
@@ -941,21 +965,21 @@ impl App {
             .clicked()
         {
             let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-            let _ = std::process::Command::new("code").arg(abs).spawn();
+            self.open_in_editor(abs);
         }
         // Specimen-specific link: this specimen's compilation narrative, when one exists.
         if self.nav.is_empty()
+            && self.narrative_exists
             && let Some(model) = &self.model
         {
             let rel = format!("docs/specimen-notebook/{model}/narrative.md");
-            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-            if std::path::Path::new(&abs).exists()
-                && ui
-                    .button("Read: specimen narrative")
-                    .on_hover_text(rel)
-                    .clicked()
+            if ui
+                .button("Read: specimen narrative")
+                .on_hover_text(&rel)
+                .clicked()
             {
-                let _ = std::process::Command::new("code").arg(&abs).spawn();
+                let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+                self.open_in_editor(&abs);
             }
         }
     }
@@ -981,6 +1005,136 @@ fn status_line(seq: u64, target: &str, request: &str, result: std::io::Result<st
 // entire window's contents from scratch. This is the heart of the
 // immediate-mode pattern — no persistent widget tree, just code that runs
 // every frame.
+impl App {
+    fn floating_windows(&mut self, ui: &mut egui::Ui) {
+        egui::Window::new("Using HRW")
+            .open(&mut self.show_help)
+            .collapsible(false)
+            .default_width(440.0)
+            .show(ui.ctx(), |ui| {
+                ui.strong("Inspect");
+                ui.label("Pick a specimen (left), choose Parse/Resolve, and expand the IR tree.");
+                ui.add_space(6.0);
+                ui.strong("Ask Claude");
+                ui.label(
+                    "Left-click a node to capture it (right-click for more actions), then ask \
+                     your question in the Claude Code chat — Claude reads the capture.",
+                );
+                ui.add_space(2.0);
+                ui.label(
+                    "Shortcut: right after capturing, just type \u{201c}explain\u{201d} in the chat — Claude \
+                     explains what you captured, no need to phrase a question.",
+                );
+                ui.add_space(6.0);
+                ui.strong("Diff stages");
+                ui.label(
+                    "Every capture publishes all five stages\u{2019} full IR, so Claude can compare any \
+                     two on request. Capture anything, then ask in the chat — e.g. \u{201c}what did \
+                     Typecheck change vs Instantiate?\u{201d} (the resolved type_ids) or \u{201c}diff Parse and \
+                     Resolve here\u{201d} (def_ids filled in) — and Claude reads the two stages and reports \
+                     the differences. (A node captured on Parse/Resolve also carries its own \
+                     before/after inline, so \u{201c}explain\u{201d} alone shows what Resolve changed.)",
+                );
+                ui.add_space(6.0);
+                ui.strong("Structural (spy-plot)");
+                ui.label(
+                    "On the Structural stage, the BLT block structure is drawn as a spy-plot: \
+                     diagonal blocks in evaluation order — scalar solves are single cells, coupled \
+                     algebraic loops are boxes. Drag to pan, scroll to zoom, hover a block to see its \
+                     equations/unknowns/tearing, and click it to capture it for \u{201c}explain\u{201d}. Toggle to \
+                     Tree for the raw report.",
+                );
+                ui.add_space(6.0);
+                ui.strong("Navigate");
+                ui.label(
+                    "Some fields hold a DefId that resolves to a class — the tree shows it inline \
+                     (e.g. \u{201c}type_def_id: 27579 → model …\u{201d}). Right-click that field and choose \
+                     \u{201c}Go to …\u{201d} to open that class\u{2019}s own IR. Use Back to step up one level, or \
+                     Specimen to return to the top.",
+                );
+                ui.add_space(6.0);
+                ui.strong("Debugger");
+                ui.label(
+                    "Right-click a field and choose 🐞 \u{201c}Show this being set\u{201d}, then tell Claude \
+                     \u{201c}arm it\u{201d} in the chat. Claude sets a breakpoint where Rumoca assigns that field; \
+                     launch \u{201c}Debug HRW — break where Claude armed\u{201d} and select the specimen.",
+                );
+            });
+        egui::Window::new("About HRW Observatory")
+            .open(&mut self.show_about)
+            .collapsible(false)
+            .resizable(false)
+            .show(ui.ctx(), |ui| {
+                ui.strong("HRW Observatory");
+                ui.label("An egui instrument for studying the Rumoca Modelica compiler pipeline.");
+                ui.separator();
+                ui.label(format!("HRW v{}", env!("CARGO_PKG_VERSION")));
+                ui.label(format!(
+                    "Built against Rumoca {} · git {}",
+                    env!("HRW_RUMOCA_VERSION"),
+                    env!("HRW_RUMOCA_REV"),
+                ));
+                ui.label("Rumoca is linked as a library; compilation runs on a worker thread.");
+            });
+        // Settings uses the "deferred action" pattern: the `.open()` borrow
+        // prevents calling `self.load_libraries()` inside the closure, so we
+        // collect intent and act after the closure.
+        let mut load_libraries = false;
+        let mut rescan_specimens = false;
+        egui::Window::new("Settings")
+            .open(&mut self.show_settings)
+            .collapsible(false)
+            .default_width(560.0)
+            .show(ui.ctx(), |ui| {
+                ui.strong("Display");
+                let mut zoom = ui.ctx().zoom_factor();
+                if ui
+                    .add(egui::Slider::new(&mut zoom, 0.75..=3.0).step_by(0.05).text("Font / UI scale"))
+                    .changed()
+                {
+                    ui.ctx().set_zoom_factor(zoom);
+                }
+                ui.separator();
+                ui.strong("Specimen directory");
+                ui.horizontal(|ui| {
+                    let changed = ui.add(
+                        egui::TextEdit::singleline(&mut self.specimen_dir)
+                            .desired_width(f32::INFINITY)
+                            .font(egui::TextStyle::Monospace),
+                    ).changed();
+                    if ui.button("⟳").on_hover_text("Rescan directory").clicked() || changed {
+                        rescan_specimens = true;
+                    }
+                });
+                ui.separator();
+                ui.strong("Library source roots");
+                ui.label("One package directory (or single .mo) per line:");
+                ui.add(
+                    egui::TextEdit::multiline(&mut self.libraries_text)
+                        .desired_rows(4)
+                        .desired_width(f32::INFINITY)
+                        .font(egui::TextStyle::Monospace),
+                );
+                ui.horizontal(|ui| {
+                    if ui.add_enabled(!self.libraries_busy, egui::Button::new("Load libraries")).clicked() {
+                        load_libraries = true;
+                    }
+                    if self.libraries_busy {
+                        ui.spinner();
+                    }
+                    ui.weak(&self.library_status);
+                });
+            });
+        if load_libraries {
+            self.load_libraries();
+        }
+        if rescan_specimens {
+            self.rescan();
+        }
+    }
+
+}
+
 impl eframe::App for App {
     /// The main frame function. Called ~60 times/second (or on repaint
     /// request). Every panel, button, label, and tree node is built here.
@@ -1033,152 +1187,7 @@ impl eframe::App for App {
             });
         });
 
-        // ---- Floating windows (Help / About / Settings) ----
-        //
-        // egui::Window creates a floating, draggable window. The `.open(&mut bool)`
-        // method ties the window's visibility to a bool field on App:
-        // - When the bool is true, the window is shown.
-        // - The window's built-in close button (X) sets the bool to false.
-        // - The menu bar sets the bool to true when the user clicks "Using HRW...".
-        //
-        // This is idiomatic egui: the window is "drawn" every frame, but `.open()`
-        // makes it a no-op when the bool is false. There's no show/hide imperative
-        // — just a bool that the framework reads.
-        egui::Window::new("Using HRW")
-            .open(&mut self.show_help)
-            .collapsible(false)
-            .default_width(440.0)
-            .show(ui.ctx(), |ui| {
-                ui.strong("Inspect");
-                ui.label("Pick a specimen (left), choose Parse/Resolve, and expand the IR tree.");
-                ui.add_space(6.0);
-                ui.strong("Ask Claude");
-                ui.label(
-                    "Left-click a node to capture it (right-click for more actions), then ask \
-                     your question in the Claude Code chat — Claude reads the capture.",
-                );
-                ui.add_space(2.0);
-                ui.label(
-                    "Shortcut: right after capturing, just type “explain” in the chat — Claude \
-                     explains what you captured, no need to phrase a question.",
-                );
-                ui.add_space(6.0);
-                ui.strong("Diff stages");
-                ui.label(
-                    "Every capture publishes all five stages' full IR, so Claude can compare any \
-                     two on request. Capture anything, then ask in the chat — e.g. “what did \
-                     Typecheck change vs Instantiate?” (the resolved type_ids) or “diff Parse and \
-                     Resolve here” (def_ids filled in) — and Claude reads the two stages and reports \
-                     the differences. (A node captured on Parse/Resolve also carries its own \
-                     before/after inline, so “explain” alone shows what Resolve changed.)",
-                );
-                ui.add_space(6.0);
-                ui.strong("Structural (spy-plot)");
-                ui.label(
-                    "On the Structural stage, the BLT block structure is drawn as a spy-plot: \
-                     diagonal blocks in evaluation order — scalar solves are single cells, coupled \
-                     algebraic loops are boxes. Drag to pan, scroll to zoom, hover a block to see its \
-                     equations/unknowns/tearing, and click it to capture it for “explain”. Toggle to \
-                     Tree for the raw report.",
-                );
-                ui.add_space(6.0);
-                ui.strong("Navigate");
-                ui.label(
-                    "Some fields hold a DefId that resolves to a class — the tree shows it inline \
-                     (e.g. “type_def_id: 27579 → model …”). Right-click that field and choose \
-                     “Go to …” to open that class's own IR. Use Back to step up one level, or \
-                     Specimen to return to the top.",
-                );
-                ui.add_space(6.0);
-                ui.strong("Debugger");
-                ui.label(
-                    "Right-click a field and choose 🐞 “Show this being set”, then tell Claude \
-                     “arm it” in the chat. Claude sets a breakpoint where Rumoca assigns that field; \
-                     launch “Debug HRW — break where Claude armed” and select the specimen.",
-                );
-            });
-        egui::Window::new("About HRW Observatory")
-            .open(&mut self.show_about)
-            .collapsible(false)
-            .resizable(false)
-            .show(ui.ctx(), |ui| {
-                ui.strong("HRW Observatory");
-                ui.label("An egui instrument for studying the Rumoca Modelica compiler pipeline.");
-                ui.separator();
-                ui.label(format!("HRW v{}", env!("CARGO_PKG_VERSION")));
-                // Derived from Cargo.lock by build.rs — always matches what was
-                // compiled in; never hand-edit (see docs/updating-rumoca.md).
-                ui.label(format!(
-                    "Built against Rumoca {} · git {}",
-                    env!("HRW_RUMOCA_VERSION"),
-                    env!("HRW_RUMOCA_REV"),
-                ));
-                ui.label("Rumoca is linked as a library; compilation runs on a worker thread.");
-            });
-
-        // Settings window. Note the "deferred action" pattern used here:
-        //
-        // The `.open(&mut self.show_settings)` call borrows `self.show_settings`
-        // mutably. Inside the window closure, we can't call `self.load_libraries()`
-        // because that would borrow ALL of `self` — conflicting with the existing
-        // mutable borrow of `self.show_settings`. The workaround: set a local
-        // `load_libraries` flag inside the closure, then act on it AFTER the
-        // closure ends (when the borrow is released). This "collect intent, act
-        // later" pattern appears throughout this file.
-        let mut load_libraries = false;
-        let mut rescan_specimens = false;
-        egui::Window::new("Settings")
-            .open(&mut self.show_settings)
-            .collapsible(false)
-            .default_width(560.0)
-            .show(ui.ctx(), |ui| {
-                ui.strong("Display");
-                let mut zoom = ui.ctx().zoom_factor();
-                if ui
-                    .add(egui::Slider::new(&mut zoom, 0.75..=3.0).step_by(0.05).text("Font / UI scale"))
-                    .changed()
-                {
-                    ui.ctx().set_zoom_factor(zoom);
-                }
-                ui.separator();
-
-                ui.strong("Specimen directory");
-                ui.horizontal(|ui| {
-                    let changed = ui.add(
-                        egui::TextEdit::singleline(&mut self.specimen_dir)
-                            .desired_width(f32::INFINITY)
-                            .font(egui::TextStyle::Monospace),
-                    ).changed();
-                    if ui.button("⟳").on_hover_text("Rescan directory").clicked() || changed {
-                        rescan_specimens = true;
-                    }
-                });
-                ui.separator();
-
-                ui.strong("Library source roots");
-                ui.label("One package directory (or single .mo) per line:");
-                ui.add(
-                    egui::TextEdit::multiline(&mut self.libraries_text)
-                        .desired_rows(4)
-                        .desired_width(f32::INFINITY)
-                        .font(egui::TextStyle::Monospace),
-                );
-                ui.horizontal(|ui| {
-                    if ui.add_enabled(!self.libraries_busy, egui::Button::new("Load libraries")).clicked() {
-                        load_libraries = true;
-                    }
-                    if self.libraries_busy {
-                        ui.spinner();
-                    }
-                    ui.weak(&self.library_status);
-                });
-            });
-        if load_libraries {
-            self.load_libraries();
-        }
-        if rescan_specimens {
-            self.rescan();
-        }
+        self.floating_windows(ui);
 
         // ---- Bottom status bar ----
         // Added BEFORE the side panels so it spans the full window width (egui
@@ -1407,29 +1416,14 @@ impl eframe::App for App {
                         .on_disabled_hover_text("Compile a specimen first")
                         .clicked()
                     {
-                        if let (Some(path), Some(model)) =
-                            (self.selected.clone(), self.model.clone())
-                        {
-                            self.sim_running = true;
-                            self.sim_data = None;
-                            self.sim_error = None;
-                            self.worker.send(ToWorker::Simulate {
-                                path,
-                                model,
-                                t_end: self.sim_t_end,
-                            });
-                        }
+                        self.start_simulation();
                     }
                     if self.sim_running {
                         ui.spinner();
                     }
                     ui.separator();
                     let err = ui.visuals().error_fg_color;
-                    let ok = if ui.visuals().dark_mode {
-                        egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
-                    } else {
-                        egui::Color32::from_rgb(0x1a, 0x7f, 0x37)
-                    };
+                    let ok = crate::colors::ok_color(ui.visuals().dark_mode);
                     // While a freshly-selected specimen is still compiling, NO tab is
                     // highlighted — the previous specimen's stage must not appear selected
                     // over an empty/loading one. The highlight returns once results land
@@ -1443,95 +1437,62 @@ impl eframe::App for App {
                     // run/plot action, not an IR capture.
                     let stage_selected = !self.compiling && !self.viewing_log;
                     let mut stage_tab_clicked = false;
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Parse, tab_label("Parse", &self.stages.parse, ok, err)).clicked() {
-                        self.stage = StageKind::Parse;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Resolve, tab_label("Resolve", &self.stages.resolve, ok, err)).clicked() {
-                        self.stage = StageKind::Resolve;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Instantiate, tab_label("Instantiate", &self.stages.instantiate, ok, err)).clicked() {
-                        self.stage = StageKind::Instantiate;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Typecheck, tab_label("Typecheck (instanced)", &self.stages.typecheck, ok, err))
-                        .on_hover_text(
+                    let tabs: &[(StageKind, &str, &Stage, Option<&str>)] = &[
+                        (StageKind::Parse, "Parse", &self.stages.parse, None),
+                        (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
+                        (StageKind::Instantiate, "Instantiate", &self.stages.instantiate, None),
+                        (StageKind::Typecheck, "Typecheck (instanced)", &self.stages.typecheck, Some(
                             "The model-scoped instanced typecheck: it types the instantiated \
                              overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
                              Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
                              pre-instantiation whole-tree typecheck; it fails on the full MSL.",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::Typecheck;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Flatten, tab_label("Flatten", &self.stages.flatten, ok, err)).clicked() {
-                        self.stage = StageKind::Flatten;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Structural, tab_label("Structural", &self.stages.structural, ok, err))
-                        .on_hover_text(
+                        )),
+                        (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
+                        (StageKind::Structural, "Structural", &self.stages.structural, Some(
                             "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
                              (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
                              A high-index system (rigid constraints) reports SINGULAR here — see the \
                              Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
                              to pan, scroll to zoom, click a block to capture) or the raw report tree.",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::Structural;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::IndexReduction, tab_label("Index reduction", &self.stages.index_reduction, ok, err))
-                        .on_hover_text(
+                        )),
+                        (StageKind::IndexReduction, "Index reduction", &self.stages.index_reduction, Some(
                             "Structural analysis of the DAE AFTER index reduction (Pantelides / \
                              dummy derivatives): the funnel differentiates constraints and demotes states \
                              so a high-index singular system becomes matchable. For an already-index-1 \
                              model this equals Structural. Same BLT spy-plot / tree.",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::IndexReduction;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Initialization, tab_label("Initialization", &self.stages.initialization, ok, err))
-                        .on_hover_text(
+                        )),
+                        (StageKind::Initialization, "Initialization", &self.stages.initialization, Some(
                             "The consistent-initial-condition solve plan (build_ic_plan): the \
                              ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
                              scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
                              dropped / unknowns pinned) when the initial subsystem is singular, and a \
                              determinacy check that flags an OVER-determined init (more explicit initial \
                              conditions than states — conflicting/redundant ICs).",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::Initialization;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Events, tab_label("Events", &self.stages.events, ok, err))
-                        .on_hover_text(
+                        )),
+                        (StageKind::Events, "Events", &self.stages.events, Some(
                             "The DAE's hybrid / event structure: the conditions (relations that \
                              trigger events), the discrete updates lowered from `when` clauses (f_z real, \
                              f_m valued), and the event partition (zero-crossing root conditions + scheduled \
                              time events). A smooth (continuous) model shows none.",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::Events;
-                        stage_tab_clicked = true;
-                    }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::SolveLowering, tab_label("Solve lowering", &self.stages.solve_lowering, ok, err))
-                        .on_hover_text(
+                        )),
+                        (StageKind::SolveLowering, "Solve lowering", &self.stages.solve_lowering, Some(
                             "The DAE lowered to a SolveModel (phase 8): the solvable form the \
                              simulator runs — residual programs, variable layout, mass matrix, Jacobian \
                              sparsity. This is the compile step just before simulation.",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::SolveLowering;
-                        stage_tab_clicked = true;
+                        )),
+                    ];
+                    for &(kind, label, ref stage, hover) in tabs {
+                        let mut resp = ui.selectable_label(
+                            stage_selected && self.stage == kind,
+                            tab_label(label, stage, ok, err),
+                        );
+                        if let Some(tip) = hover {
+                            resp = resp.on_hover_text(tip);
+                        }
+                        if resp.clicked() {
+                            self.stage = kind;
+                            stage_tab_clicked = true;
+                        }
                     }
                     // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
                     ui.separator();
@@ -1851,6 +1812,54 @@ fn field_name_from_path(path: &[Seg]) -> Option<String> {
 }
 
 #[cfg(test)]
+impl App {
+    #[cfg(test)]
+    fn test_default() -> Self {
+        let (tx, _) = std::sync::mpsc::channel();
+        let (_, rx) = std::sync::mpsc::channel();
+        App {
+            worker: Worker { tx, rx },
+            libraries_text: String::new(),
+            library_status: String::new(),
+            libraries_busy: false,
+            specimen_dir: String::new(),
+            files: Vec::new(),
+            specimen_purposes: HashMap::new(),
+            scan_error: None,
+            selected: None,
+            compiling: false,
+            model: None,
+            stages: StageBundle::default(),
+            stage: StageKind::Parse,
+            stage_clicked: false,
+            def_index: BTreeMap::new(),
+            nav: Vec::new(),
+            nav_loading: None,
+            nav_error: None,
+            ask_seq: 0,
+            bridge_status: None,
+            show_settings: false,
+            show_help: false,
+            show_about: false,
+            field_help: HashMap::new(),
+            selected_field: None,
+            structural_view: StructuralView::SpyPlot,
+            spy_canvas: Canvas::default(),
+            incidence_canvas: Canvas::default(),
+            log_entries: Vec::new(),
+            viewing_log: false,
+            tracing_enabled: false,
+            simulation: Stage::default(),
+            sim_data: None,
+            sim_running: false,
+            sim_error: None,
+            sim_t_end: 2.0,
+            narrative_exists: false,
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -1909,5 +1918,82 @@ mod tests {
     #[test]
     fn field_name_from_path_empty() {
         assert_eq!(field_name_from_path(&[]), None);
+    }
+
+    fn make_app_with_stages(ok_through: StageKind) -> App {
+        let ok_stage = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+        let empty = Stage::default();
+        let stages_in_order = [
+            StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
+            StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
+            StageKind::IndexReduction, StageKind::Initialization,
+            StageKind::Events, StageKind::SolveLowering,
+        ];
+        let cutoff = stages_in_order.iter().position(|&s| s == ok_through).unwrap_or(0);
+        let mut bundle = StageBundle::default();
+        for (i, &kind) in stages_in_order.iter().enumerate() {
+            let stage = if i <= cutoff { ok_stage.clone() } else { empty.clone() };
+            match kind {
+                StageKind::Parse => bundle.parse = stage,
+                StageKind::Resolve => bundle.resolve = stage,
+                StageKind::Instantiate => bundle.instantiate = stage,
+                StageKind::Typecheck => bundle.typecheck = stage,
+                StageKind::Flatten => bundle.flatten = stage,
+                StageKind::Structural => bundle.structural = stage,
+                StageKind::IndexReduction => bundle.index_reduction = stage,
+                StageKind::Initialization => bundle.initialization = stage,
+                StageKind::Events => bundle.events = stage,
+                StageKind::SolveLowering => bundle.solve_lowering = stage,
+                StageKind::Simulation => {}
+            }
+        }
+        App { stages: bundle, ..App::test_default() }
+    }
+
+    #[test]
+    fn last_successful_stage_selects_furthest_ok() {
+        let app = make_app_with_stages(StageKind::Flatten);
+        assert_eq!(app.last_successful_stage(), StageKind::Flatten);
+    }
+
+    #[test]
+    fn last_successful_stage_falls_back_to_parse() {
+        let app = App { stages: StageBundle::default(), ..App::test_default() };
+        assert_eq!(app.last_successful_stage(), StageKind::Parse);
+    }
+
+    #[test]
+    fn last_successful_stage_skips_errored() {
+        let mut app = make_app_with_stages(StageKind::Structural);
+        app.stages.structural = Stage { value: Some(serde_json::json!({})), note: Some("singular".into()), note_is_error: true };
+        assert_eq!(app.last_successful_stage(), StageKind::Flatten);
+    }
+
+    #[test]
+    fn previous_stage_value_parse_is_none() {
+        let mut app = make_app_with_stages(StageKind::SolveLowering);
+        app.stage = StageKind::Parse;
+        assert!(app.previous_stage_value().is_none());
+    }
+
+    #[test]
+    fn previous_stage_value_instantiate_returns_resolve() {
+        let mut app = make_app_with_stages(StageKind::SolveLowering);
+        app.stage = StageKind::Instantiate;
+        assert!(app.previous_stage_value().is_some());
+    }
+
+    #[test]
+    fn stage_name_exhaustive() {
+        let all = [
+            StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
+            StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
+            StageKind::IndexReduction, StageKind::Initialization,
+            StageKind::Events, StageKind::SolveLowering, StageKind::Simulation,
+        ];
+        for kind in all {
+            let name = kind.name();
+            assert!(!name.is_empty(), "{kind:?} has an empty name");
+        }
     }
 }

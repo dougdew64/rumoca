@@ -206,11 +206,7 @@ impl ReductionView {
 
         let status = if self.funnel_completed {
             egui::RichText::new("funnel completed").color(
-                if ui.visuals().dark_mode {
-                    egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
-                } else {
-                    egui::Color32::from_rgb(0x1a, 0x7f, 0x37)
-                },
+                crate::colors::ok_color(ui.visuals().dark_mode),
             )
         } else {
             let step = self.stopped_at.as_deref().unwrap_or("unknown");
@@ -250,11 +246,7 @@ impl ReductionView {
         ui.strong("Funnel steps");
         ui.add_space(2.0);
 
-        let ok_color = if ui.visuals().dark_mode {
-            egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
-        } else {
-            egui::Color32::from_rgb(0x1a, 0x7f, 0x37)
-        };
+        let ok_color = crate::colors::ok_color(ui.visuals().dark_mode);
         let err_color = ui.visuals().error_fg_color;
         let neutral_color = ui.visuals().weak_text_color();
 

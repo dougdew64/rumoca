@@ -116,11 +116,7 @@ fn level_style<'a>(entry: &LogEntry, ui: &egui::Ui) -> (&'a str, egui::Color32) 
             egui::Color32::from_rgb(0x0a, 0x5c, 0xc4)
         }),
         // Stage-end: green checkmark prefix
-        LogLevel::StageEnd => ("    \u{2713}", if ui.visuals().dark_mode {
-            egui::Color32::from_rgb(0x3f, 0xb9, 0x50)
-        } else {
-            egui::Color32::from_rgb(0x1a, 0x7f, 0x37)
-        }),
+        LogLevel::StageEnd => ("    \u{2713}", crate::colors::ok_color(ui.visuals().dark_mode)),
         LogLevel::Warn => ("  warn", egui::Color32::from_rgb(0xd2, 0x9e, 0x22)),
         LogLevel::Error => (" error", ui.visuals().error_fg_color),
         // Stdout/stderr from the simulation process, shown dimmer since they

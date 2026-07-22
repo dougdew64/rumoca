@@ -128,6 +128,89 @@ impl View {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_view(rect_w: f32, rect_h: f32, pan: egui::Vec2, zoom: f32) -> View {
+        View {
+            rect: egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(rect_w, rect_h)),
+            pan,
+            zoom,
+        }
+    }
+
+    #[test]
+    fn to_screen_to_world_round_trip() {
+        let view = make_view(800.0, 600.0, egui::vec2(5.0, 10.0), 20.0);
+        let world = egui::pos2(7.0, 12.5);
+        let screen = view.to_screen(world);
+        let back = view.to_world(screen);
+        assert!((back.x - world.x).abs() < 1e-4, "x round-trip failed: {back:?} vs {world:?}");
+        assert!((back.y - world.y).abs() < 1e-4, "y round-trip failed: {back:?} vs {world:?}");
+    }
+
+    #[test]
+    fn to_screen_origin_maps_pan_to_rect_min() {
+        let view = make_view(800.0, 600.0, egui::vec2(5.0, 10.0), 20.0);
+        // The point at the pan origin should map to the rect's top-left corner.
+        let screen = view.to_screen(egui::pos2(5.0, 10.0));
+        assert!((screen.x - 0.0).abs() < 1e-4);
+        assert!((screen.y - 0.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn to_screen_rect_preserves_size() {
+        let view = make_view(800.0, 600.0, egui::Vec2::ZERO, 10.0);
+        let world_rect = egui::Rect::from_min_size(egui::pos2(2.0, 3.0), egui::vec2(4.0, 5.0));
+        let screen_rect = view.to_screen_rect(world_rect);
+        let expected_w = 4.0 * 10.0;
+        let expected_h = 5.0 * 10.0;
+        assert!((screen_rect.width() - expected_w).abs() < 1e-4);
+        assert!((screen_rect.height() - expected_h).abs() < 1e-4);
+    }
+
+    #[test]
+    fn zoom_accessor_returns_view_zoom() {
+        let view = make_view(800.0, 600.0, egui::Vec2::ZERO, 42.0);
+        assert!((view.zoom() - 42.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn to_world_at_rect_min_equals_pan() {
+        let view = make_view(800.0, 600.0, egui::vec2(3.0, 7.0), 15.0);
+        let world = view.to_world(egui::pos2(0.0, 0.0));
+        assert!((world.x - 3.0).abs() < 1e-4);
+        assert!((world.y - 7.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn to_screen_rect_round_trip() {
+        let view = make_view(800.0, 600.0, egui::vec2(1.0, 2.0), 25.0);
+        let world_rect = egui::Rect::from_min_max(egui::pos2(3.0, 4.0), egui::pos2(6.0, 8.0));
+        let screen_rect = view.to_screen_rect(world_rect);
+        let back_min = view.to_world(screen_rect.min);
+        let back_max = view.to_world(screen_rect.max);
+        assert!((back_min.x - world_rect.min.x).abs() < 1e-4);
+        assert!((back_min.y - world_rect.min.y).abs() < 1e-4);
+        assert!((back_max.x - world_rect.max.x).abs() < 1e-4);
+        assert!((back_max.y - world_rect.max.y).abs() < 1e-4);
+    }
+
+    #[test]
+    fn canvas_default_requests_fit() {
+        let canvas = Canvas::default();
+        assert!(canvas.fit, "default canvas should request a fit");
+    }
+
+    #[test]
+    fn request_fit_sets_flag() {
+        let mut canvas = Canvas { fit: false, ..Canvas::default() };
+        canvas.request_fit();
+        assert!(canvas.fit);
+    }
+}
+
 impl Canvas {
     /// Request a fit-to-content on the next paint.
     ///

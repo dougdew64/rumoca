@@ -321,15 +321,14 @@ impl IncidenceMatrix {
     }
 }
 
-// Truncate a label to `max` bytes for display. Used for axis labels where
-// long Modelica names (e.g., "Modelica.Mechanics.Rotational.Inertia.flange_a.tau")
-// would overflow the available space. Note: this truncates by byte count, which
-// is safe because Modelica identifiers are ASCII.
+// Truncate a label to at most `max` bytes for display, safely handling
+// multi-byte UTF-8 (falls back to the full string if `max` splits a
+// character boundary).
 fn truncate_label(s: &str, max: usize) -> &str {
     if s.len() <= max {
         s
     } else {
-        &s[..max]
+        s.get(..max).unwrap_or(s)
     }
 }
 
@@ -371,6 +370,21 @@ mod tests {
         assert!(mat.cell_at(0, 2));
         assert!(!mat.cell_at(1, 2));
         assert!(mat.cell_at(2, 2));
+    }
+
+    #[test]
+    fn truncate_label_ascii() {
+        assert_eq!(truncate_label("abcde", 3), "abc");
+        assert_eq!(truncate_label("ab", 3), "ab");
+        assert_eq!(truncate_label("abc", 3), "abc");
+    }
+
+    #[test]
+    fn truncate_label_multibyte_does_not_panic() {
+        // U+00E9 (é) is 2 bytes; slicing at byte 1 would split the character.
+        let s = "élan";
+        assert_eq!(truncate_label(s, 1), s); // falls back to full string
+        assert_eq!(truncate_label(s, 2), "é"); // lands on a boundary
     }
 
     #[test]

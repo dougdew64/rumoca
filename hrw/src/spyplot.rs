@@ -198,7 +198,7 @@ impl Plot {
         // - Green: matched diagonal cells (the eq-unknown pairing).
         // - Orange fill (semi-transparent): coupled block background.
         // - Orange stroke: coupled block outline (thicker when hovered).
-        let matched_color = egui::Color32::from_rgb(0x3F, 0xB9, 0x50);
+        let matched_color = crate::colors::OK_GREEN;
         let coupled_fill = egui::Color32::from_rgba_unmultiplied(0xF2, 0x8C, 0x28, 0x55);
         let coupled_stroke = egui::Color32::from_rgb(0xF2, 0x8C, 0x28);
         let grid = visuals.weak_text_color().gamma_multiply(0.35);
