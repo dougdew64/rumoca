@@ -6,6 +6,7 @@
 //! each time the debugger pauses there, the UI thread can read the latest
 //! frame and render the algorithm's current state.
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -97,14 +98,16 @@ impl<F: Clone> Default for LiveTrace<F> {
 /// **Set your debugger breakpoint on this function** rather than on
 /// `LiveTrace::push`. This dedicated function is `#[inline(never)]` and
 /// non-generic, so the debugger resolves it to a single unambiguous address
-/// — unlike `Vec::push` calls that may share monomorphized code at higher
-/// opt-levels.
+/// — unlike generic functions (`black_box<T>`, `Vec::push`) that may share
+/// monomorphized code at higher opt-levels.
 ///
 /// `frame_index` is the 0-based index of the frame just pushed — inspect
 /// it in the debugger to know which algorithmic step you're on.
+static LAST_FRAME_INDEX: AtomicUsize = AtomicUsize::new(0);
+
 #[inline(never)]
 pub fn live_trace_breakpoint(frame_index: usize) {
-    let _ = std::hint::black_box(frame_index);
+    LAST_FRAME_INDEX.store(frame_index, Ordering::Relaxed);
 }
 
 #[cfg(test)]
