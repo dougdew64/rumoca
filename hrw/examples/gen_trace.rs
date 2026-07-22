@@ -48,24 +48,23 @@ fn main() {
         .unwrap_or_else(|e| panic!("read {}: {e}", specimen.display()));
 
     let FromWorker::Compiled {
-        model, parse, resolve, instantiate, typecheck, flatten, structural, index_reduction,
-        initialization, events, solve_lowering, ..
+        model, stages, ..
     } = compile_specimen(&specimen, msl_roots()).expect("compile specimen")
     else {
         panic!("expected a Compiled result");
     };
     let model = model.unwrap_or_else(|| name.clone());
     let by_name: [(&str, &Stage); 10] = [
-        ("parse", &parse),
-        ("resolve", &resolve),
-        ("instantiate", &instantiate),
-        ("typecheck", &typecheck),
-        ("flatten", &flatten),
-        ("structural", &structural),
-        ("index_reduction", &index_reduction),
-        ("initialization", &initialization),
-        ("events", &events),
-        ("solve_lowering", &solve_lowering),
+        ("parse", &stages.parse),
+        ("resolve", &stages.resolve),
+        ("instantiate", &stages.instantiate),
+        ("typecheck", &stages.typecheck),
+        ("flatten", &stages.flatten),
+        ("structural", &stages.structural),
+        ("index_reduction", &stages.index_reduction),
+        ("initialization", &stages.initialization),
+        ("events", &stages.events),
+        ("solve_lowering", &stages.solve_lowering),
     ];
 
     let trace_dir = PathBuf::from(format!("{root}/docs/specimen-notebook/{model}/trace"));
@@ -87,7 +86,7 @@ fn main() {
     }
 
     // --- Simulation trace ---
-    let can_simulate = solve_lowering.value.is_some();
+    let can_simulate = stages.solve_lowering.value.is_some();
     let sim_result = if can_simulate {
         match simulate_specimen(&specimen, &model, SIM_T_END, msl_roots()) {
             Ok(data) => {

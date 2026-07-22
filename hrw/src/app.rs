@@ -49,8 +49,8 @@ use crate::tree;
 // commands and receive `FromWorker` results. `Stage` holds one pipeline stage's
 // output (its serde_json::Value IR + optional error note).
 use crate::worker::{
-    discontinuity_segments, DefInfo, FromWorker, LogEntry, SimData, Stage, StageBundle, ToWorker,
-    Worker,
+    discontinuity_segments, DefInfo, FromWorker, LogEntry, SimData, Stage, StageBundle, StageKind,
+    ToWorker, Worker,
 };
 
 /// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
@@ -70,25 +70,6 @@ const DEFAULT_LIBRARIES: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/vendor/msl/Complex.mo",
 );
-
-// The Rumoca compiler pipeline has discrete phases (Parse, Resolve, etc.),
-// each producing an intermediate representation (IR). This enum tracks which
-// phase the user is currently viewing. `Simulation` is special — it's not a
-// compiler phase but an on-demand run of the compiled model.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum StageKind {
-    Parse,
-    Resolve,
-    Instantiate,
-    Typecheck,
-    Flatten,
-    Structural,
-    IndexReduction,
-    Initialization,
-    Events,
-    SolveLowering,
-    Simulation,
-}
 
 /// How to render the Structural / Index-reduction stages: the custom BLT
 /// spy-plot, the incidence matrix, the reduction process
@@ -169,16 +150,11 @@ pub struct App {
     /// The Modelica model name extracted from the parsed file (e.g.
     /// "BouncingBall"). `None` until parsing succeeds.
     model: Option<String>,
-    parse: Stage,
-    resolve: Stage,
-    instantiate: Stage,
-    typecheck: Stage,
-    flatten: Stage,
-    structural: Stage,
-    index_reduction: Stage,
-    initialization: Stage,
-    events: Stage,
-    solve_lowering: Stage,
+    /// All ten pipeline-stage results. Each stage holds a `Stage` (an optional
+    /// JSON IR tree + optional note/error). Populated progressively during
+    /// compilation via `FromWorker::CompileProgress` and finalized by
+    /// `FromWorker::Compiled`.
+    stages: StageBundle,
     /// Which stage tab is currently selected (determines what the center panel
     /// shows). Updated when the user clicks a tab or after compilation finishes
     /// (auto-selects the furthest successful stage).
@@ -313,16 +289,7 @@ impl App {
             selected: None,
             compiling: false,
             model: None,
-            parse: Stage::default(),
-            resolve: Stage::default(),
-            instantiate: Stage::default(),
-            typecheck: Stage::default(),
-            flatten: Stage::default(),
-            structural: Stage::default(),
-            index_reduction: Stage::default(),
-            initialization: Stage::default(),
-            events: Stage::default(),
-            solve_lowering: Stage::default(),
+            stages: StageBundle::default(),
             stage: StageKind::Resolve,
             stage_clicked: false,
             def_index: BTreeMap::new(),
@@ -424,16 +391,7 @@ impl App {
         // Clear all previous results. Every field that could hold stale data
         // from the last specimen is reset to its default.
         self.model = None;
-        self.parse = Stage::default();
-        self.resolve = Stage::default();
-        self.instantiate = Stage::default();
-        self.typecheck = Stage::default();
-        self.flatten = Stage::default();
-        self.structural = Stage::default();
-        self.index_reduction = Stage::default();
-        self.initialization = Stage::default();
-        self.events = Stage::default();
-        self.solve_lowering = Stage::default();
+        self.stages = StageBundle::default();
         self.sim_data = None;
         self.sim_error = None;
         self.sim_running = false;
@@ -506,40 +464,17 @@ impl App {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale (specimen switched)
                     }
-                    let StageBundle {
-                        parse, resolve, instantiate, typecheck, flatten, structural,
-                        index_reduction, initialization, events, solve_lowering,
-                    } = stages;
-                    self.parse = parse;
-                    self.resolve = resolve;
-                    self.instantiate = instantiate;
-                    self.typecheck = typecheck;
-                    self.flatten = flatten;
-                    self.structural = structural;
-                    self.index_reduction = index_reduction;
-                    self.initialization = initialization;
-                    self.events = events;
-                    self.solve_lowering = solve_lowering;
+                    self.stages = stages;
                 }
                 FromWorker::Compiled {
-                    path, model, parse, resolve, instantiate, typecheck, flatten, structural,
-                    index_reduction, initialization, events, solve_lowering, def_index,
+                    path, model, stages, def_index,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
                     }
                     self.compiling = false;
                     self.model = model;
-                    self.parse = parse;
-                    self.resolve = resolve;
-                    self.instantiate = instantiate;
-                    self.typecheck = typecheck;
-                    self.flatten = flatten;
-                    self.structural = structural;
-                    self.index_reduction = index_reduction;
-                    self.initialization = initialization;
-                    self.events = events;
-                    self.solve_lowering = solve_lowering;
+                    self.stages = stages;
                     self.def_index = def_index;
                     // Re-fit the custom-view cameras to the new report.
                     self.spy_canvas.request_fit();
@@ -547,18 +482,7 @@ impl App {
                     // Land on the furthest stage that completed cleanly.
                     self.stage = self.last_successful_stage();
                     // Publish every stage's full IR so Claude can diff any pair.
-                    let _ = bridge::write_stages(&[
-                        ("parse", self.parse.value.as_ref()),
-                        ("resolve", self.resolve.value.as_ref()),
-                        ("instantiate", self.instantiate.value.as_ref()),
-                        ("typecheck", self.typecheck.value.as_ref()),
-                        ("flatten", self.flatten.value.as_ref()),
-                        ("structural", self.structural.value.as_ref()),
-                        ("index_reduction", self.index_reduction.value.as_ref()),
-                        ("initialization", self.initialization.value.as_ref()),
-                        ("events", self.events.value.as_ref()),
-                        ("solve_lowering", self.solve_lowering.value.as_ref()),
-                    ]);
+                    let _ = bridge::write_stages(&self.stages.as_stage_pairs());
                 }
                 FromWorker::Simulated { path, result } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
@@ -590,40 +514,19 @@ impl App {
         }
     }
 
-    /// Look up the `Stage` for the currently selected tab. This is a simple
-    /// dispatch — it maps the `StageKind` enum to the corresponding field on App.
+    /// Look up the `Stage` for the currently selected tab. Delegates to
+    /// `StageBundle::get()` for the ten real stages; Simulation returns the
+    /// always-empty placeholder (the Simulation view is the plot pane, rendered
+    /// specially — not the generic tree inspector).
     fn current_stage(&self) -> &Stage {
         match self.stage {
-            StageKind::Parse => &self.parse,
-            StageKind::Resolve => &self.resolve,
-            StageKind::Instantiate => &self.instantiate,
-            StageKind::Typecheck => &self.typecheck,
-            StageKind::Flatten => &self.flatten,
-            StageKind::Structural => &self.structural,
-            StageKind::IndexReduction => &self.index_reduction,
-            StageKind::Initialization => &self.initialization,
-            StageKind::Events => &self.events,
-            StageKind::SolveLowering => &self.solve_lowering,
-            // Simulation isn't a compile stage; this placeholder is always empty
-            // (the Simulation view is the plot pane, rendered specially).
             StageKind::Simulation => &self.simulation,
+            other => self.stages.get(other),
         }
     }
 
     fn stage_name(&self) -> &'static str {
-        match self.stage {
-            StageKind::Parse => "Parse",
-            StageKind::Resolve => "Resolve",
-            StageKind::Instantiate => "Instantiate",
-            StageKind::Typecheck => "Typecheck",
-            StageKind::Flatten => "Flatten",
-            StageKind::Structural => "Structural",
-            StageKind::IndexReduction => "Index reduction",
-            StageKind::Initialization => "Initialization",
-            StageKind::Events => "Events",
-            StageKind::SolveLowering => "Solve lowering",
-            StageKind::Simulation => "Simulation",
-        }
+        self.stage.name()
     }
 
     /// The previous stage's IR, aligned to the *current* stage's tree root, for
@@ -635,21 +538,22 @@ impl App {
             StageKind::Parse => None,
             // Parse's root is the StoredDefinition; the class is under classes.<model>.
             StageKind::Resolve => self
+                .stages
                 .parse
                 .value
                 .as_ref()?
                 .get("classes")?
                 .get(self.model.as_deref()?),
-            StageKind::Instantiate => self.resolve.value.as_ref(),
-            StageKind::Typecheck => self.instantiate.value.as_ref(),
-            StageKind::Flatten => self.typecheck.value.as_ref(),
+            StageKind::Instantiate => self.stages.resolve.value.as_ref(),
+            StageKind::Typecheck => self.stages.instantiate.value.as_ref(),
+            StageKind::Flatten => self.stages.typecheck.value.as_ref(),
             // The structural report is a different shape from the flat model —
             // no path-aligned previous, so nothing to highlight.
             StageKind::Structural => None,
             // Diff the reduced report against the raw one: for an already-index-1
             // model they're identical (nothing highlights); for a reduced
             // high-index model the raw report is absent (it was singular).
-            StageKind::IndexReduction => self.structural.value.as_ref(),
+            StageKind::IndexReduction => self.stages.structural.value.as_ref(),
             // The IC plan is its own shape (a solve sequence) — no path-aligned prior.
             StageKind::Initialization => None,
             // The event partitions are their own shape — no path-aligned prior.
@@ -665,23 +569,23 @@ impl App {
     /// note) — where the tabs should land after a compile. Falls back to Parse.
     fn last_successful_stage(&self) -> StageKind {
         let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
-        if ok(&self.solve_lowering) {
+        if ok(&self.stages.solve_lowering) {
             StageKind::SolveLowering
-        } else if ok(&self.events) {
+        } else if ok(&self.stages.events) {
             StageKind::Events
-        } else if ok(&self.initialization) {
+        } else if ok(&self.stages.initialization) {
             StageKind::Initialization
-        } else if ok(&self.index_reduction) {
+        } else if ok(&self.stages.index_reduction) {
             StageKind::IndexReduction
-        } else if ok(&self.structural) {
+        } else if ok(&self.stages.structural) {
             StageKind::Structural
-        } else if ok(&self.flatten) {
+        } else if ok(&self.stages.flatten) {
             StageKind::Flatten
-        } else if ok(&self.typecheck) {
+        } else if ok(&self.stages.typecheck) {
             StageKind::Typecheck
-        } else if ok(&self.instantiate) {
+        } else if ok(&self.stages.instantiate) {
             StageKind::Instantiate
-        } else if ok(&self.resolve) {
+        } else if ok(&self.stages.resolve) {
             StageKind::Resolve
         } else {
             StageKind::Parse
@@ -735,8 +639,8 @@ impl App {
             stage: self.stage_name(),
             libraries: self.library_strings(),
             def_index: &self.def_index,
-            parse_value: self.parse.value.as_ref(),
-            resolve_value: self.resolve.value.as_ref(),
+            parse_value: self.stages.parse.value.as_ref(),
+            resolve_value: self.stages.resolve.value.as_ref(),
             focus,
         };
         self.bridge_status = Some(status_line(seq, &target, "explain", bridge::write(&ask)));
@@ -786,8 +690,8 @@ impl App {
                         stage: self.stage_name(),
                         libraries,
                         def_index: &self.def_index,
-                        parse_value: self.parse.value.as_ref(),
-                        resolve_value: self.resolve.value.as_ref(),
+                        parse_value: self.stages.parse.value.as_ref(),
+                        resolve_value: self.stages.resolve.value.as_ref(),
                         focus: Focus::Node { key_path, stage_value: value },
                     };
                     status_line(seq, &target, request, bridge::write(&ask))
@@ -1496,7 +1400,7 @@ impl eframe::App for App {
                     let can_sim = !self.compiling
                         && !self.sim_running
                         && self.model.is_some()
-                        && self.solve_lowering.value.is_some();
+                        && self.stages.solve_lowering.value.is_some();
                     if ui
                         .add_enabled(can_sim, egui::Button::new("▶"))
                         .on_hover_text("Run simulation (stays on the current view)")
@@ -1539,19 +1443,19 @@ impl eframe::App for App {
                     // run/plot action, not an IR capture.
                     let stage_selected = !self.compiling && !self.viewing_log;
                     let mut stage_tab_clicked = false;
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Parse, tab_label("Parse", &self.parse, ok, err)).clicked() {
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Parse, tab_label("Parse", &self.stages.parse, ok, err)).clicked() {
                         self.stage = StageKind::Parse;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Resolve, tab_label("Resolve", &self.resolve, ok, err)).clicked() {
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Resolve, tab_label("Resolve", &self.stages.resolve, ok, err)).clicked() {
                         self.stage = StageKind::Resolve;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Instantiate, tab_label("Instantiate", &self.instantiate, ok, err)).clicked() {
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Instantiate, tab_label("Instantiate", &self.stages.instantiate, ok, err)).clicked() {
                         self.stage = StageKind::Instantiate;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Typecheck, tab_label("Typecheck (instanced)", &self.typecheck, ok, err))
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Typecheck, tab_label("Typecheck (instanced)", &self.stages.typecheck, ok, err))
                         .on_hover_text(
                             "The model-scoped instanced typecheck: it types the instantiated \
                              overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
@@ -1563,11 +1467,11 @@ impl eframe::App for App {
                         self.stage = StageKind::Typecheck;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Flatten, tab_label("Flatten", &self.flatten, ok, err)).clicked() {
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Flatten, tab_label("Flatten", &self.stages.flatten, ok, err)).clicked() {
                         self.stage = StageKind::Flatten;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Structural, tab_label("Structural", &self.structural, ok, err))
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Structural, tab_label("Structural", &self.stages.structural, ok, err))
                         .on_hover_text(
                             "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
                              (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
@@ -1580,7 +1484,7 @@ impl eframe::App for App {
                         self.stage = StageKind::Structural;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::IndexReduction, tab_label("Index reduction", &self.index_reduction, ok, err))
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::IndexReduction, tab_label("Index reduction", &self.stages.index_reduction, ok, err))
                         .on_hover_text(
                             "Structural analysis of the DAE AFTER index reduction (Pantelides / \
                              dummy derivatives): the funnel differentiates constraints and demotes states \
@@ -1592,7 +1496,7 @@ impl eframe::App for App {
                         self.stage = StageKind::IndexReduction;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Initialization, tab_label("Initialization", &self.initialization, ok, err))
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Initialization, tab_label("Initialization", &self.stages.initialization, ok, err))
                         .on_hover_text(
                             "The consistent-initial-condition solve plan (build_ic_plan): the \
                              ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
@@ -1606,7 +1510,7 @@ impl eframe::App for App {
                         self.stage = StageKind::Initialization;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Events, tab_label("Events", &self.events, ok, err))
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::Events, tab_label("Events", &self.stages.events, ok, err))
                         .on_hover_text(
                             "The DAE's hybrid / event structure: the conditions (relations that \
                              trigger events), the discrete updates lowered from `when` clauses (f_z real, \
@@ -1618,7 +1522,7 @@ impl eframe::App for App {
                         self.stage = StageKind::Events;
                         stage_tab_clicked = true;
                     }
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::SolveLowering, tab_label("Solve lowering", &self.solve_lowering, ok, err))
+                    if ui.selectable_label(stage_selected && self.stage == StageKind::SolveLowering, tab_label("Solve lowering", &self.stages.solve_lowering, ok, err))
                         .on_hover_text(
                             "The DAE lowered to a SolveModel (phase 8): the solvable form the \
                              simulator runs — residual programs, variable layout, mass matrix, Jacobian \

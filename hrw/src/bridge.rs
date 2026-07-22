@@ -75,6 +75,26 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge")
 /// evaluated). This avoids bloating the focus file with all stages' IR.
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
 
+/// The canonical list of pipeline stage file names written to `.hrw-bridge/stages/`.
+///
+/// This constant is the single source of truth for which stage files exist.
+/// Both the focus JSON (so Claude knows what to read) and `write_stages` callers
+/// should reference this list. If a new stage is added to the pipeline, add its
+/// filename here — a test (`focus_json_stage_files_match_constant`) will fail if
+/// the focus JSON and this list diverge.
+pub const STAGE_FILE_NAMES: &[&str] = &[
+    "parse.json",
+    "resolve.json",
+    "instantiate.json",
+    "typecheck.json",
+    "flatten.json",
+    "structural.json",
+    "index_reduction.json",
+    "initialization.json",
+    "events.json",
+    "solve_lowering.json",
+];
+
 // Maximum size (in bytes) of a node subtree to inline in the focus file.
 // Nodes larger than this are described by "shape" only (list of keys, or array
 // length). Claude can always re-derive the full subtree from the staged IR file.
@@ -288,7 +308,7 @@ fn build(ask: &Ask) -> Value {
                      (absent if the stage produced none). To diff two stages, read the two \
                      files and compare — e.g. instantiate.json vs typecheck.json shows what the \
                      instanced typecheck added (type_ids resolved, dimensions evaluated).",
-            "files": ["parse.json", "resolve.json", "instantiate.json", "typecheck.json", "flatten.json"],
+            "files": STAGE_FILE_NAMES,
         },
     });
     if let Focus::Node { key_path, stage_value } = &ask.focus {
@@ -766,6 +786,59 @@ mod tests {
             focus: Focus::Node { key_path: vec![Seg::Key("within".into())], stage_value: &parse },
         };
         assert_eq!(build(&ask)["cross_stage"]["applicable"], json!(false));
+    }
+
+    /// The focus JSON's `stages.files` array must list exactly `STAGE_FILE_NAMES`.
+    /// This test catches the staleness bug where new stages were added to
+    /// `write_stages` but not to the focus JSON (TD-16).
+    #[test]
+    fn focus_json_stage_files_match_constant() {
+        let empty = BTreeMap::new();
+        let ask = Ask {
+            seq: 1,
+            request: "explain",
+            specimen: None,
+            model: Some("M"),
+            stage: "Parse",
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Specimen,
+        };
+        let doc = build(&ask);
+        let files = doc["stages"]["files"]
+            .as_array()
+            .expect("stages.files should be an array");
+        let file_strs: Vec<&str> = files
+            .iter()
+            .map(|v| v.as_str().expect("each file should be a string"))
+            .collect();
+        assert_eq!(
+            file_strs.as_slice(),
+            STAGE_FILE_NAMES,
+            "focus JSON's stages.files is out of sync with STAGE_FILE_NAMES"
+        );
+    }
+
+    /// `STAGE_FILE_NAMES` must cover every stage the app writes via `write_stages`.
+    /// This test checks the count matches the pipeline's 10 stages so a new stage
+    /// addition without updating the constant is caught.
+    #[test]
+    fn stage_file_names_covers_all_pipeline_stages() {
+        // The pipeline has exactly 10 stages: Parse through Solve lowering.
+        assert_eq!(
+            STAGE_FILE_NAMES.len(),
+            10,
+            "STAGE_FILE_NAMES has {} entries but the pipeline has 10 stages",
+            STAGE_FILE_NAMES.len(),
+        );
+        // Every name must end with .json and be unique.
+        for name in STAGE_FILE_NAMES {
+            assert!(name.ends_with(".json"), "stage file name should end with .json: {name}");
+        }
+        let unique: std::collections::HashSet<&&str> = STAGE_FILE_NAMES.iter().collect();
+        assert_eq!(unique.len(), STAGE_FILE_NAMES.len(), "duplicate stage file names");
     }
 
     /// Depth-first search for the first object with a usable `location`,

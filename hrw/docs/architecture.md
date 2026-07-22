@@ -137,9 +137,10 @@ lives in `WorkerState` on the worker thread — the UI never touches it.
 
 ### Progressive streaming
 
-Compilation doesn't wait until all 10 stages finish before reporting. Each stage's
-result is sent immediately via `FromWorker::CompileProgress` as soon as it's
-computed:
+Compilation doesn't wait until all 10 stages finish before reporting. All stages
+are grouped in a `StageBundle` struct. After each stage completes, the worker sends
+a clone of the bundle via `FromWorker::CompileProgress`; the UI assigns it directly
+to `App.stages` so tabs update in real time:
 
 ```
 parse completes    → send CompileProgress { parse: Some(...), resolve: None, ... }
@@ -219,7 +220,7 @@ if ui.button("Run").clicked() {
 1. **Worker** — the `Worker` handle (send/receive channels)
 2. **Library config** — MSL source-root paths, load status
 3. **Specimen list** — directory path, file list, purpose hints
-4. **Compilation results** — one `Stage` per pipeline phase, model name, def_index
+4. **Compilation results** — a `StageBundle` (all 10 pipeline stages in one struct), model name, def_index
 5. **Navigation** — the "go to definition" stack for browsing library classes
 6. **Bridge** — Claude Code capture state (monotonic `ask_seq` counter)
 7. **View toggles** — Settings, Help, About window visibility

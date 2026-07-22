@@ -226,6 +226,44 @@ impl Stage {
     }
 }
 
+/// Which pipeline stage the user is viewing. The Rumoca compiler has discrete
+/// phases (Parse, Resolve, etc.), each producing an intermediate representation
+/// (IR). This enum tracks which phase is selected. `Simulation` is special —
+/// it's not a compiler phase but an on-demand run of the compiled model.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum StageKind {
+    Parse,
+    Resolve,
+    Instantiate,
+    Typecheck,
+    Flatten,
+    Structural,
+    IndexReduction,
+    Initialization,
+    Events,
+    SolveLowering,
+    Simulation,
+}
+
+impl StageKind {
+    /// Human-readable name for this stage, matching the tab labels in the UI.
+    pub fn name(self) -> &'static str {
+        match self {
+            StageKind::Parse => "Parse",
+            StageKind::Resolve => "Resolve",
+            StageKind::Instantiate => "Instantiate",
+            StageKind::Typecheck => "Typecheck",
+            StageKind::Flatten => "Flatten",
+            StageKind::Structural => "Structural",
+            StageKind::IndexReduction => "Index reduction",
+            StageKind::Initialization => "Initialization",
+            StageKind::Events => "Events",
+            StageKind::SolveLowering => "Solve lowering",
+            StageKind::Simulation => "Simulation",
+        }
+    }
+}
+
 /// The ten pipeline-stage results as one bundle, used for progressive streaming.
 ///
 /// During a compile, the worker fills this bundle one stage at a time and sends
@@ -248,6 +286,44 @@ pub struct StageBundle {
     pub initialization: Stage,
     pub events: Stage,
     pub solve_lowering: Stage,
+}
+
+impl StageBundle {
+    /// Access a stage by kind. Panics on `Simulation` — that variant has no
+    /// corresponding stage in the bundle (it's an on-demand run, not a
+    /// compilation stage). Callers must handle `Simulation` before calling this.
+    pub fn get(&self, kind: StageKind) -> &Stage {
+        match kind {
+            StageKind::Parse => &self.parse,
+            StageKind::Resolve => &self.resolve,
+            StageKind::Instantiate => &self.instantiate,
+            StageKind::Typecheck => &self.typecheck,
+            StageKind::Flatten => &self.flatten,
+            StageKind::Structural => &self.structural,
+            StageKind::IndexReduction => &self.index_reduction,
+            StageKind::Initialization => &self.initialization,
+            StageKind::Events => &self.events,
+            StageKind::SolveLowering => &self.solve_lowering,
+            StageKind::Simulation => panic!("Simulation is not a compilation stage — handle it before calling StageBundle::get()"),
+        }
+    }
+
+    /// All ten stages as (name, optional JSON value) pairs, for
+    /// `bridge::write_stages` and similar bulk consumers.
+    pub fn as_stage_pairs(&self) -> [(&'static str, Option<&serde_json::Value>); 10] {
+        [
+            ("parse", self.parse.value.as_ref()),
+            ("resolve", self.resolve.value.as_ref()),
+            ("instantiate", self.instantiate.value.as_ref()),
+            ("typecheck", self.typecheck.value.as_ref()),
+            ("flatten", self.flatten.value.as_ref()),
+            ("structural", self.structural.value.as_ref()),
+            ("index_reduction", self.index_reduction.value.as_ref()),
+            ("initialization", self.initialization.value.as_ref()),
+            ("events", self.events.value.as_ref()),
+            ("solve_lowering", self.solve_lowering.value.as_ref()),
+        ]
+    }
 }
 
 /// Resolved identity of a `DefId` referenced in a stage's IR — what an opaque
@@ -361,23 +437,8 @@ pub enum FromWorker {
         path: PathBuf,
         /// Simple name of the model whose IR the stages show.
         model: Option<String>,
-        parse: Stage,
-        resolve: Stage,
-        instantiate: Stage,
-        typecheck: Stage,
-        flatten: Stage,
-        /// Structural analysis of the RAW DAE — matching + BLT + tearing
-        /// (errors "singular" on a high-index system).
-        structural: Stage,
-        /// Structural analysis of the DAE AFTER index reduction (the
-        /// dummy-derivative funnel) — solvable even when `structural` is singular.
-        index_reduction: Stage,
-        /// The initial-condition solve plan (`build_ic_plan`) + relaxation hint.
-        initialization: Stage,
-        /// The DAE's hybrid / event structure (conditions, discrete updates, events).
-        events: Stage,
-        /// Phase 8: the DAE lowered to a `SolveModel` (the simulator's input).
-        solve_lowering: Stage,
+        /// All ten pipeline-stage results bundled together.
+        stages: StageBundle,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
     },
@@ -859,16 +920,10 @@ impl WorkerState {
                 return FromWorker::Compiled {
                     path: path.to_owned(),
                     model: None,
-                    parse: Stage::err(format!("read error: {e}")),
-                    resolve: Stage::default(),
-                    instantiate: Stage::default(),
-                    typecheck: Stage::default(),
-                    flatten: Stage::default(),
-                    structural: Stage::default(),
-                    index_reduction: Stage::default(),
-                    initialization: Stage::default(),
-                    events: Stage::default(),
-                    solve_lowering: Stage::default(),
+                    stages: StageBundle {
+                        parse: Stage::err(format!("read error: {e}")),
+                        ..Default::default()
+                    },
                     def_index: BTreeMap::new(),
                 };
             }
@@ -1093,16 +1148,18 @@ impl WorkerState {
         FromWorker::Compiled {
             path: path.to_owned(),
             model,
-            parse,
-            resolve,
-            instantiate,
-            typecheck,
-            flatten,
-            structural,
-            index_reduction,
-            initialization,
-            events,
-            solve_lowering,
+            stages: StageBundle {
+                parse,
+                resolve,
+                instantiate,
+                typecheck,
+                flatten,
+                structural,
+                index_reduction,
+                initialization,
+                events,
+                solve_lowering,
+            },
             def_index,
         }
     }
@@ -1797,10 +1854,10 @@ mod tests {
     /// component *types* (`type_def_id`) must resolve to their MSL classes.
     #[test]
     fn resolves_def_ids_against_msl() {
-        let FromWorker::Compiled { def_index, resolve, .. } = compile_specimen_shared("RotationalInertia") else {
+        let FromWorker::Compiled { def_index, stages, .. } = compile_specimen_shared("RotationalInertia") else {
             panic!("expected Compiled");
         };
-        assert!(resolve.value.is_some(), "resolve failed: {:?}", resolve.note);
+        assert!(stages.resolve.value.is_some(), "resolve failed: {:?}", stages.resolve.note);
         assert!(!def_index.is_empty(), "no DefIds resolved");
 
         let names: Vec<&str> = def_index.values().map(|d| d.name.as_str()).collect();
@@ -1843,24 +1900,24 @@ mod tests {
     /// connector expansion / flow-sum generation across domains).
     #[test]
     fn drivetrain_compiles_through_flatten() {
-        let FromWorker::Compiled { model, flatten, .. } = compile_specimen_shared("Drivetrain") else {
+        let FromWorker::Compiled { model, stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
         assert_eq!(model.as_deref(), Some("Drivetrain"));
         assert!(
-            flatten.value.is_some(),
+            stages.flatten.value.is_some(),
             "Drivetrain did not flatten: {:?}",
-            flatten.note
+            stages.flatten.note
         );
     }
 
     /// The structural stage builds a matching + BLT report for an index-1 model.
     #[test]
     fn structural_report_for_rotational_inertia() {
-        let FromWorker::Compiled { structural, .. } = compile_specimen_shared("RotationalInertia") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RotationalInertia") else {
             panic!("expected Compiled");
         };
-        let v = structural.value.expect("structural report");
+        let v = stages.structural.value.expect("structural report");
         assert!(v["matching"].as_array().is_some_and(|a| !a.is_empty()), "no matching");
         assert!(v["blocks"].as_array().is_some_and(|a| !a.is_empty()), "no BLT blocks");
         // A plain index-1 ODE sorts into scalar blocks only — no algebraic loop.
@@ -1873,10 +1930,10 @@ mod tests {
     /// whole reason for existing, so guard it.
     #[test]
     fn proportional_loop_has_a_coupled_block() {
-        let FromWorker::Compiled { structural, .. } = compile_specimen_shared("ProportionalLoop") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("ProportionalLoop") else {
             panic!("expected Compiled");
         };
-        let v = structural.value.unwrap_or_else(|| panic!("no structural report: {:?}", structural.note));
+        let v = stages.structural.value.unwrap_or_else(|| panic!("no structural report: {:?}", stages.structural.note));
         let count = v["coupled_block_count"].as_u64().unwrap_or(0);
         assert!(count >= 1, "expected a coupled algebraic block, got {count}; blocks = {}", v["blocks"]);
         // The coupled block should carry a tearing report (iteration variable(s)).
@@ -1889,10 +1946,10 @@ mod tests {
     /// Compile a `specimens/<name>.mo` against the MSL and return its structural
     /// report JSON — shared by the block-structure guards below.
     fn structural_report_for(name: &str) -> serde_json::Value {
-        let FromWorker::Compiled { structural, .. } = compile_specimen_shared(name) else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
             panic!("expected Compiled");
         };
-        structural.value.unwrap_or_else(|| panic!("no structural report for {name}: {:?}", structural.note))
+        stages.structural.value.unwrap_or_else(|| panic!("no structural report for {name}: {:?}", stages.structural.note))
     }
 
     fn block_kinds(v: &serde_json::Value) -> Vec<String> {
@@ -1974,13 +2031,13 @@ mod tests {
     /// reduction stay singular (an observable initialization blow-up).
     #[test]
     fn capacitor_loop_is_singular_and_irreducible() {
-        let FromWorker::Compiled { flatten, structural, index_reduction, .. } = compile_specimen_shared("CapacitorLoop") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop") else {
             panic!("expected Compiled");
         };
-        assert!(flatten.value.is_some(), "CapacitorLoop should still flatten");
-        assert!(structural.value.is_none() && structural.note_is_error, "expected singular Structural");
+        assert!(stages.flatten.value.is_some(), "CapacitorLoop should still flatten");
+        assert!(stages.structural.value.is_none() && stages.structural.note_is_error, "expected singular Structural");
         assert!(
-            index_reduction.value.is_none() && index_reduction.note_is_error,
+            stages.index_reduction.value.is_none() && stages.index_reduction.note_is_error,
             "index reduction should NOT rescue a capacitor-across-source loop"
         );
     }
@@ -1989,10 +2046,10 @@ mod tests {
     /// circuit — a non-empty IC plan plus the ground-current relaxation hint.
     #[test]
     fn rc_circuit_has_an_ic_plan() {
-        let FromWorker::Compiled { initialization, .. } = compile_specimen_shared("RcCircuit") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
             panic!("expected Compiled");
         };
-        let v = initialization.value.unwrap_or_else(|| panic!("no IC plan: {:?}", initialization.note));
+        let v = stages.initialization.value.unwrap_or_else(|| panic!("no IC plan: {:?}", stages.initialization.note));
         assert!(v["block_count"].as_u64().unwrap_or(0) >= 1, "expected a non-empty IC plan");
         assert!(v["relaxation_hint"].is_object(), "expected a relaxation hint (ground-current redundancy)");
         // Well-posed init must NOT be mis-flagged as over-determined (idea #6).
@@ -2005,13 +2062,13 @@ mod tests {
     /// red note — the pure init blow-up `build_ic_plan` alone doesn't catch.
     #[test]
     fn over_init_rc_is_flagged_over_determined() {
-        let FromWorker::Compiled { initialization, .. } = compile_specimen_shared("OverInitRc") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("OverInitRc") else {
             panic!("expected Compiled");
         };
-        let v = initialization.value.expect("IC plan");
+        let v = stages.initialization.value.expect("IC plan");
         assert_eq!(v["determinacy"]["verdict"], serde_json::json!("over-determined"));
         assert!(v["determinacy"]["surplus_over_states"].as_i64().unwrap_or(0) >= 1);
-        assert!(initialization.note_is_error, "over-determined init should be flagged red");
+        assert!(stages.initialization.note_is_error, "over-determined init should be flagged red");
     }
 
 
@@ -2139,10 +2196,10 @@ mod tests {
     /// (the solvable form the simulator consumes) and renders it.
     #[test]
     fn single_inertia_lowers_to_a_solve_model() {
-        let FromWorker::Compiled { solve_lowering, .. } = compile_specimen_shared("SingleInertia") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
         };
-        let v = solve_lowering.value.expect("SolveModel IR");
+        let v = stages.solve_lowering.value.expect("SolveModel IR");
         assert!(v.get("problem").is_some(), "SolveModel should carry the solve problem");
         assert!(v.get("variable_meta").is_some(), "SolveModel should carry variable metadata");
     }
@@ -2156,20 +2213,20 @@ mod tests {
             v["summary"].as_object().into_iter().flatten()
                 .filter_map(|(_, x)| x.as_u64()).sum()
         };
-        let FromWorker::Compiled { events, .. } = compile_specimen_shared("BouncingBall") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
             panic!("expected Compiled");
         };
-        let v = events.value.expect("events IR");
+        let v = stages.events.value.expect("events IR");
         assert!(total_events(&v) >= 1, "BouncingBall should have hybrid structure");
         assert!(
             v["discrete_updates"]["real_updates_f_z"].as_array().is_some_and(|a| !a.is_empty()),
             "expected the reinit as a discrete real update"
         );
 
-        let FromWorker::Compiled { events: smooth, .. } = compile_specimen_shared("SingleInertia") else {
+        let FromWorker::Compiled { stages: smooth_stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
         };
-        assert_eq!(total_events(&smooth.value.expect("events IR")), 0, "SingleInertia is smooth");
+        assert_eq!(total_events(&smooth_stages.events.value.expect("events IR")), 0, "SingleInertia is smooth");
     }
 
     /// The parked hand-built PlanarMechanics library (the four-bar-linkage
@@ -2189,12 +2246,12 @@ mod tests {
     /// before/after the two tabs show side by side.
     #[test]
     fn drivetrain_index_reduction_stage_recovers_singular() {
-        let FromWorker::Compiled { structural, index_reduction, .. } = compile_specimen_shared("Drivetrain") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
-        assert!(structural.value.is_none(), "raw Structural should be singular for Drivetrain");
-        let v = index_reduction.value.unwrap_or_else(|| {
-            panic!("index reduction should recover Drivetrain: {:?}", index_reduction.note)
+        assert!(stages.structural.value.is_none(), "raw Structural should be singular for Drivetrain");
+        let v = stages.index_reduction.value.unwrap_or_else(|| {
+            panic!("index reduction should recover Drivetrain: {:?}", stages.index_reduction.note)
         });
         assert!(v["coupled_block_count"].as_u64().is_some(), "reduced report missing block count");
         let red = &v["reduction"];
@@ -2223,20 +2280,19 @@ mod tests {
         ];
         for name in healthy {
             let FromWorker::Compiled {
-                model, parse, resolve, instantiate, typecheck, flatten,
-                index_reduction, events, solve_lowering, ..
+                model, stages, ..
             } = compile_specimen_shared(name) else {
                 panic!("{name}: expected Compiled");
             };
             assert!(model.is_some(), "{name}: model name not extracted");
-            assert!(parse.value.is_some(), "{name}: parse failed: {:?}", parse.note);
-            assert!(resolve.value.is_some(), "{name}: resolve failed: {:?}", resolve.note);
-            assert!(instantiate.value.is_some(), "{name}: instantiate failed: {:?}", instantiate.note);
-            assert!(typecheck.value.is_some(), "{name}: typecheck failed: {:?}", typecheck.note);
-            assert!(flatten.value.is_some(), "{name}: flatten failed: {:?}", flatten.note);
-            assert!(index_reduction.value.is_some(), "{name}: index reduction failed: {:?}", index_reduction.note);
-            assert!(events.value.is_some(), "{name}: events failed: {:?}", events.note);
-            assert!(solve_lowering.value.is_some(), "{name}: solve lowering failed: {:?}", solve_lowering.note);
+            assert!(stages.parse.value.is_some(), "{name}: parse failed: {:?}", stages.parse.note);
+            assert!(stages.resolve.value.is_some(), "{name}: resolve failed: {:?}", stages.resolve.note);
+            assert!(stages.instantiate.value.is_some(), "{name}: instantiate failed: {:?}", stages.instantiate.note);
+            assert!(stages.typecheck.value.is_some(), "{name}: typecheck failed: {:?}", stages.typecheck.note);
+            assert!(stages.flatten.value.is_some(), "{name}: flatten failed: {:?}", stages.flatten.note);
+            assert!(stages.index_reduction.value.is_some(), "{name}: index reduction failed: {:?}", stages.index_reduction.note);
+            assert!(stages.events.value.is_some(), "{name}: events failed: {:?}", stages.events.note);
+            assert!(stages.solve_lowering.value.is_some(), "{name}: solve lowering failed: {:?}", stages.solve_lowering.note);
         }
     }
 
@@ -2272,14 +2328,14 @@ mod tests {
             msl_roots(),
         )
         .expect("compile_specimen");
-        let FromWorker::Compiled { model, parse, resolve, flatten, solve_lowering, .. } = result else {
+        let FromWorker::Compiled { model, stages, .. } = result else {
             panic!("expected Compiled");
         };
         assert_eq!(model.as_deref(), Some("SingleInertia"));
-        assert!(parse.value.is_some());
-        assert!(resolve.value.is_some());
-        assert!(flatten.value.is_some());
-        assert!(solve_lowering.value.is_some());
+        assert!(stages.parse.value.is_some());
+        assert!(stages.resolve.value.is_some());
+        assert!(stages.flatten.value.is_some());
+        assert!(stages.solve_lowering.value.is_some());
     }
 
     /// The headless `simulate_specimen` path (used by gen_trace) runs and
@@ -2306,10 +2362,10 @@ mod tests {
     /// structure: variables, equations, and the flat model fields.
     #[test]
     fn flatten_ir_has_expected_structure() {
-        let FromWorker::Compiled { flatten, .. } = compile_specimen_shared("SingleInertia") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
         };
-        let v = flatten.value.expect("flatten IR");
+        let v = stages.flatten.value.expect("flatten IR");
         assert!(v.get("variables").is_some(), "flat IR should have 'variables'");
         assert!(v.get("equations").is_some(), "flat IR should have 'equations'");
     }
@@ -2317,10 +2373,10 @@ mod tests {
     /// The Events stage IR has the expected summary structure.
     #[test]
     fn events_ir_has_expected_summary_keys() {
-        let FromWorker::Compiled { events, .. } = compile_specimen_shared("BouncingBall") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
             panic!("expected Compiled");
         };
-        let v = events.value.expect("events IR");
+        let v = stages.events.value.expect("events IR");
         let summary = v["summary"].as_object().expect("summary object");
         for key in ["condition_equations", "relations", "discrete_real_updates",
                      "discrete_valued_updates", "zero_crossing_conditions", "scheduled_time_events"] {
@@ -2331,10 +2387,10 @@ mod tests {
     /// The Solve-lowering IR has the expected top-level fields.
     #[test]
     fn solve_lowering_ir_has_expected_fields() {
-        let FromWorker::Compiled { solve_lowering, .. } = compile_specimen_shared("SingleInertia") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
         };
-        let v = solve_lowering.value.expect("solve lowering IR");
+        let v = stages.solve_lowering.value.expect("solve lowering IR");
         assert!(v.get("problem").is_some(), "SolveModel should have 'problem'");
         assert!(v.get("variable_meta").is_some(), "SolveModel should have 'variable_meta'");
     }
@@ -2342,10 +2398,10 @@ mod tests {
     /// The Structural stage IR has matching, blocks, and incidence matrix.
     #[test]
     fn structural_ir_has_incidence_matrix() {
-        let FromWorker::Compiled { structural, .. } = compile_specimen_shared("ProportionalLoop") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("ProportionalLoop") else {
             panic!("expected Compiled");
         };
-        let v = structural.value.expect("structural IR");
+        let v = stages.structural.value.expect("structural IR");
         assert!(v["matching"].as_array().is_some_and(|a| !a.is_empty()), "missing matching");
         assert!(v["blocks"].as_array().is_some_and(|a| !a.is_empty()), "missing blocks");
         let inc = &v["incidence"];
@@ -2357,10 +2413,10 @@ mod tests {
     /// The Index-reduction stage IR includes the reduction report.
     #[test]
     fn index_reduction_ir_has_reduction_report() {
-        let FromWorker::Compiled { index_reduction, .. } = compile_specimen_shared("Drivetrain") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
-        let v = index_reduction.value.expect("index reduction IR");
+        let v = stages.index_reduction.value.expect("index reduction IR");
         let red = &v["reduction"];
         assert!(red.is_object(), "should have a reduction report");
         assert!(red.get("steps").is_some(), "reduction should have steps");
@@ -2372,10 +2428,10 @@ mod tests {
     /// The Initialization stage IR includes the determinacy check.
     #[test]
     fn initialization_ir_has_determinacy() {
-        let FromWorker::Compiled { initialization, .. } = compile_specimen_shared("RcCircuit") else {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
             panic!("expected Compiled");
         };
-        let v = initialization.value.expect("initialization IR");
+        let v = stages.initialization.value.expect("initialization IR");
         let det = &v["determinacy"];
         assert!(det.is_object(), "should have a determinacy section");
         for key in ["states", "initial_equations", "fixed_start_states",
