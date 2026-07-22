@@ -43,6 +43,36 @@ fn main() -> eframe::Result<()> {
     run_app()
 }
 
+/// Half the screen width, full screen height — sized for side-by-side use with
+/// VS Code on a single monitor. Falls back to 960×700 if the screen size can't
+/// be queried.
+fn half_screen_size() -> eframe::egui::Vec2 {
+    if let Some((w, h)) = query_screen_dimensions() {
+        eframe::egui::Vec2::new(w as f32 / 2.0, h as f32)
+    } else {
+        eframe::egui::Vec2::new(960.0, 700.0)
+    }
+}
+
+/// Query the X11 display dimensions via `xdpyinfo`. Returns `None` on Wayland-only
+/// systems or if the command isn't available.
+fn query_screen_dimensions() -> Option<(u32, u32)> {
+    let output = std::process::Command::new("xdpyinfo")
+        .output()
+        .ok()?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    for line in text.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("dimensions:") {
+            // "3440x1440 pixels (910x381 millimeters)"
+            let dims = rest.trim().split_whitespace().next()?;
+            let (w, h) = dims.split_once('x')?;
+            return Some((w.parse().ok()?, h.parse().ok()?));
+        }
+    }
+    None
+}
+
 // Configure the native window and start the eframe event loop.
 //
 // `NativeOptions` controls the initial window state (title, maximized, etc.).
@@ -55,7 +85,7 @@ fn run_app() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title(APP_NAME)
-            .with_maximized(true),
+            .with_inner_size(half_screen_size()),
         ..Default::default()
     };
 
