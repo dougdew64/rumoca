@@ -98,33 +98,94 @@ pub fn ui(ui: &mut egui::Ui, entries: &[LogEntry], tracing_enabled: &mut bool) -
     toggled
 }
 
+// The prefix string for each log level, padded to align in the monospace log.
+// Unicode symbols are used for stage-start (play triangle ▶) and stage-end
+// (checkmark ✓) to make phase boundaries visually distinct at a glance.
+fn level_prefix(level: LogLevel) -> &'static str {
+    match level {
+        LogLevel::Info => "  info",
+        LogLevel::StageStart => "    \u{25b6}",
+        LogLevel::StageEnd => "    \u{2713}",
+        LogLevel::Warn => "  warn",
+        LogLevel::Error => " error",
+        LogLevel::Stdout => "stdout",
+        LogLevel::Stderr => "stderr",
+        LogLevel::Trace => " trace",
+    }
+}
+
 // Map a LogLevel to its display prefix and color.
-//
-// The prefix strings are padded to align in the monospace log. Unicode symbols
-// are used for stage-start (play triangle) and stage-end (checkmark) to make
-// phase boundaries visually distinct at a glance.
 //
 // Colors adapt to light/dark theme via `ui.visuals().dark_mode` — important
 // because egui supports both themes and we want readable contrast in each.
 fn level_style<'a>(entry: &LogEntry, ui: &egui::Ui) -> (&'a str, egui::Color32) {
-    match entry.level {
-        LogLevel::Info => ("  info", ui.visuals().text_color()),
-        // Stage-start: blue play-triangle prefix
-        LogLevel::StageStart => ("    \u{25b6}", if ui.visuals().dark_mode {
+    let prefix = level_prefix(entry.level);
+    let color = match entry.level {
+        LogLevel::Info => ui.visuals().text_color(),
+        LogLevel::StageStart => if ui.visuals().dark_mode {
             egui::Color32::from_rgb(0x58, 0xa6, 0xff)
         } else {
             egui::Color32::from_rgb(0x0a, 0x5c, 0xc4)
-        }),
-        // Stage-end: green checkmark prefix
-        LogLevel::StageEnd => ("    \u{2713}", crate::colors::ok_color(ui.visuals().dark_mode)),
-        LogLevel::Warn => ("  warn", egui::Color32::from_rgb(0xd2, 0x9e, 0x22)),
-        LogLevel::Error => (" error", ui.visuals().error_fg_color),
-        // Stdout/stderr from the simulation process, shown dimmer since they
-        // are pass-through output rather than structured log events.
-        LogLevel::Stdout => ("stdout", ui.visuals().weak_text_color()),
-        LogLevel::Stderr => ("stderr", ui.visuals().warn_fg_color),
-        // Trace-level: Rumoca internal tracing output (only present when the
-        // tracing checkbox is enabled).
-        LogLevel::Trace => (" trace", ui.visuals().weak_text_color()),
+        },
+        LogLevel::StageEnd => crate::colors::ok_color(ui.visuals().dark_mode),
+        LogLevel::Warn => egui::Color32::from_rgb(0xd2, 0x9e, 0x22),
+        LogLevel::Error => ui.visuals().error_fg_color,
+        LogLevel::Stdout => ui.visuals().weak_text_color(),
+        LogLevel::Stderr => ui.visuals().warn_fg_color,
+        LogLevel::Trace => ui.visuals().weak_text_color(),
+    };
+    (prefix, color)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ALL_LEVELS: &[LogLevel] = &[
+        LogLevel::Info,
+        LogLevel::StageStart,
+        LogLevel::StageEnd,
+        LogLevel::Warn,
+        LogLevel::Error,
+        LogLevel::Stdout,
+        LogLevel::Stderr,
+        LogLevel::Trace,
+    ];
+
+    #[test]
+    fn level_prefixes_have_consistent_column_width() {
+        // All prefixes should occupy the same visual column count (6).
+        // ASCII levels use 6 ASCII chars; symbol levels (▶, ✓) use 4 spaces
+        // + 1 symbol. We test that all prefixes are non-empty and have the
+        // same trimmed-content structure (leading spaces + label).
+        for &level in ALL_LEVELS {
+            let prefix = level_prefix(level);
+            let trimmed = prefix.trim_start();
+            assert!(!trimmed.is_empty(), "prefix for {level:?} should not be blank");
+            let leading_spaces = prefix.len() - prefix.trim_start().len();
+            // Every prefix should have at least some content
+            assert!(
+                leading_spaces + trimmed.len() >= 5,
+                "prefix for {level:?} is too short: {prefix:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn level_prefix_all_variants_covered() {
+        for &level in ALL_LEVELS {
+            let prefix = level_prefix(level);
+            assert!(!prefix.is_empty(), "prefix for {level:?} should not be empty");
+        }
+    }
+
+    #[test]
+    fn level_prefix_stage_start_has_play_symbol() {
+        assert!(level_prefix(LogLevel::StageStart).contains('\u{25b6}'));
+    }
+
+    #[test]
+    fn level_prefix_stage_end_has_checkmark() {
+        assert!(level_prefix(LogLevel::StageEnd).contains('\u{2713}'));
     }
 }

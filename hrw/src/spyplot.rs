@@ -86,14 +86,7 @@ pub struct Plot {
     coupled_count: usize,
 }
 
-// Helper: extract a JSON array of strings into a Vec<String>.
-// Defensive — returns an empty vec if the value is missing or not an array.
-// Used repeatedly to extract equation names, unknown names, tear vars, etc.
-fn str_vec(v: Option<&Value>) -> Vec<String> {
-    v.and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
-        .unwrap_or_default()
-}
+use crate::str_vec;
 
 impl Plot {
     /// Parse the structural report JSON into a drawable `Plot`.
@@ -203,30 +196,7 @@ impl Plot {
         let coupled_stroke = egui::Color32::from_rgb(0xF2, 0x8C, 0x28);
         let grid = visuals.weak_text_color().gamma_multiply(0.35);
 
-        // Level-of-detail: only draw grid lines when zoomed in enough that
-        // individual cells are distinguishable. At low zoom, the grid would
-        // be a solid gray smear.
-        if view.zoom() >= 6.0 {
-            let stroke = egui::Stroke::new(1.0, grid);
-            for i in 0..=self.n {
-                let t = i as f32;
-                let a = view.to_screen(egui::pos2(t, 0.0));
-                let b = view.to_screen(egui::pos2(t, n));
-                painter.line_segment([a, b], stroke);
-                let c = view.to_screen(egui::pos2(0.0, t));
-                let d = view.to_screen(egui::pos2(n, t));
-                painter.line_segment([c, d], stroke);
-            }
-        }
-
-        // Helper closure: map a single world cell (col, row) to its screen rect.
-        // Each cell is 1x1 in world space.
-        let cell_rect = |col: usize, row: usize| -> egui::Rect {
-            view.to_screen_rect(egui::Rect::from_min_size(
-                egui::pos2(col as f32, row as f32),
-                egui::vec2(1.0, 1.0),
-            ))
-        };
+        view.draw_grid(&painter, self.n, self.n, grid);
 
         // --- Draw each block ---
         for block in &self.blocks {
@@ -249,7 +219,7 @@ impl Plot {
             }
 
             for i in 0..block.size {
-                let cell = cell_rect(block.start + i, block.start + i);
+                let cell = view.cell_rect(block.start + i, block.start + i);
                 painter.rect_filled(cell.shrink(view.zoom() * 0.12), egui::CornerRadius::ZERO, matched_color);
             }
 

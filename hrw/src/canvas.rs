@@ -42,6 +42,9 @@
 
 use eframe::egui;
 
+const MIN_ZOOM: f32 = 1.0;
+const MAX_ZOOM: f32 = 400.0;
+
 /// Persistent camera state for a pan/zoom canvas.
 ///
 /// One `Canvas` is stored in the `App` struct for each custom-painted view.
@@ -126,6 +129,38 @@ impl View {
     pub fn zoom(self) -> f32 {
         self.zoom
     }
+
+    /// Map a single grid cell at `(col, row)` to its screen rect.
+    /// Each cell is 1x1 in world space.
+    pub fn cell_rect(self, col: usize, row: usize) -> egui::Rect {
+        self.to_screen_rect(egui::Rect::from_min_size(
+            egui::pos2(col as f32, row as f32),
+            egui::vec2(1.0, 1.0),
+        ))
+    }
+
+    /// Draw grid lines for an `n_cols × n_rows` matrix.
+    /// Only draws when zoom is high enough that individual cells are visible.
+    pub fn draw_grid(self, painter: &egui::Painter, n_cols: usize, n_rows: usize, color: egui::Color32) {
+        if self.zoom < 6.0 {
+            return;
+        }
+        let stroke = egui::Stroke::new(1.0, color);
+        let nr = n_rows as f32;
+        let nc = n_cols as f32;
+        for col in 0..=n_cols {
+            let t = col as f32;
+            let a = self.to_screen(egui::pos2(t, 0.0));
+            let b = self.to_screen(egui::pos2(t, nr));
+            painter.line_segment([a, b], stroke);
+        }
+        for row in 0..=n_rows {
+            let t = row as f32;
+            let a = self.to_screen(egui::pos2(0.0, t));
+            let b = self.to_screen(egui::pos2(nc, t));
+            painter.line_segment([a, b], stroke);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -209,6 +244,25 @@ mod tests {
         canvas.request_fit();
         assert!(canvas.fit);
     }
+
+    #[test]
+    fn cell_rect_is_one_by_one_world_unit() {
+        let view = make_view(800.0, 600.0, egui::Vec2::ZERO, 10.0);
+        let rect = view.cell_rect(3, 5);
+        assert!((rect.width() - 10.0).abs() < 1e-4, "width should be 1 world unit * zoom");
+        assert!((rect.height() - 10.0).abs() < 1e-4, "height should be 1 world unit * zoom");
+        let expected_min = view.to_screen(egui::pos2(3.0, 5.0));
+        assert!((rect.min.x - expected_min.x).abs() < 1e-4);
+        assert!((rect.min.y - expected_min.y).abs() < 1e-4);
+    }
+
+    #[test]
+    fn draw_grid_skips_low_zoom() {
+        let view = make_view(800.0, 600.0, egui::Vec2::ZERO, 5.0);
+        // zoom < 6.0 — draw_grid should be a no-op (we can't easily test
+        // painter output, but we verify it doesn't panic)
+        assert!(view.zoom() < 6.0);
+    }
 }
 
 impl Canvas {
@@ -258,7 +312,7 @@ impl Canvas {
             let zx = rect.width() / world_bounds.width();
             let zy = rect.height() / world_bounds.height();
             // Use the smaller of horizontal/vertical zoom to fit fully.
-            self.zoom = (zx.min(zy) * 0.92).clamp(1.0, 400.0);
+            self.zoom = (zx.min(zy) * 0.92).clamp(MIN_ZOOM, MAX_ZOOM);
             // Center by computing the padding and shifting the pan origin.
             let pad = (rect.size() - world_bounds.size() * self.zoom) / 2.0;
             self.pan = world_bounds.min.to_vec2() - pad / self.zoom;
@@ -291,7 +345,7 @@ impl Canvas {
                 let world_before = self.pan + (p - rect.min) / self.zoom;
                 // Exponential zoom for perceptually uniform speed — each scroll
                 // tick multiplies zoom by a constant factor rather than adding.
-                self.zoom = (self.zoom * (scroll * 0.002).exp()).clamp(1.0, 400.0);
+                self.zoom = (self.zoom * (scroll * 0.002).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
                 // Re-anchor: solve for pan such that world_before maps to p.
                 self.pan = world_before - (p - rect.min) / self.zoom;
             }

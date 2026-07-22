@@ -31,19 +31,20 @@ are related and should be addressed together.
   Fixed 2026-07-22. A `tabs` array of `(StageKind, &str, &Stage, Option<&str>)` and
   a loop replace ~90 lines with ~15. Adding a new tab is now a one-line array entry.
 
-- [ ] **TD-5 (low): Extract common fallback arms from stage-extraction functions.**
-  Five stage functions (`structural_stage`, `index_reduction_stage`, etc.) copy
-  identical `Failed`/`NeedsInner`/`None` match arms. A helper like
-  `fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage>` would
-  reduce 15 duplicated lines to 1 call per function.
+- [x] **TD-5 (low): Extract common fallback arms from stage-extraction functions.**
+  Fixed 2026-07-22. New `not_reached_stage()` helper returns the placeholder `Stage`
+  for `Failed`/`NeedsInner`/`None` variants. Five stage functions (`structural_stage`,
+  `index_reduction_stage`, `initialization_stage`, `events_stage`, `solve_lowering_stage`)
+  now call it instead of repeating the same three match arms.
 
-- [ ] **TD-6 (low): Move `stage_name()` to `StageKind`.**
-  `App::stage_name()` reads only `self.stage` — it should be
-  `impl StageKind { fn name(self) -> &'static str }` (or `impl Display`).
+- [x] **TD-6 (low): Move `stage_name()` to `StageKind`.**
+  Fixed 2026-07-22. Removed `App::stage_name()` wrapper; all 5 call sites inlined to
+  `self.stage.name()`.
 
-- [ ] **TD-7 (low): `DefInfo.kind` is stringly typed.**
-  `kind: &'static str` takes values `"class"` or `"definition"`. A `DefKind` enum
-  would make the contract explicit and prevent typos.
+- [x] **TD-7 (low): `DefInfo.kind` is stringly typed.**
+  Fixed 2026-07-22. New `DefKind` enum (`Class`, `Definition`) replaces
+  `kind: &'static str`. Two construction sites in `build_def_index` and one
+  comparison site in `tree.rs` updated. `DefKind::as_str()` preserves JSON output.
 
 ## Theme 2: Color constants
 
@@ -64,11 +65,9 @@ are related and should be addressed together.
   call sites. On failure, sets `bridge_status` to an error message shown in the
   status bar.
 
-- [ ] **TD-11 (low): Use `.expect()` instead of `.unwrap()` on structural invariants.**
-  `json.as_object_mut().unwrap()` in `structural_stage` and `index_reduction_stage`
-  assumes JSON is always an Object. If that contract ever breaks, the panic message
-  gives no context. `.expect("structural_to_json returns an object")` costs nothing
-  and aids debugging.
+- [x] **TD-11 (low): Use `.expect()` instead of `.unwrap()` on structural invariants.**
+  Fixed 2026-07-22. Changed to `.expect("structural_to_json returns an object")`
+  in `structural_stage` and `index_reduction_stage`.
 
 ## Theme 4: Test coverage gaps
 
@@ -88,8 +87,10 @@ are related and should be addressed together.
   compile with invalid syntax, `open_def` without resolved tree,
   `extract_class` with missing name.
 
-- [ ] **TD-15 (low): Add tests for `log_view::level_style`.**
-  Pure function mapping `LogLevel` → color/prefix — trivially testable.
+- [x] **TD-15 (low): Add tests for `log_view::level_style`.**
+  Fixed 2026-07-22. Extracted `level_prefix()` pure function from `level_style()`.
+  Four tests: consistent column width, all variants covered, stage-start has play
+  symbol (▶), stage-end has checkmark (✓).
 
 ## Theme 5: Bridge correctness
 
@@ -99,12 +100,10 @@ are related and should be addressed together.
   `focus_json_stage_files_match_constant` and `stage_file_names_covers_all_pipeline_stages`
   to prevent this from going stale again.
 
-- [ ] **TD-17 (low): Cross-stage diff only covers Parse/Resolve.**
-  The diff logic hardcodes only `"Parse"` and `"Resolve"`. Later stages get
-  `applicable: false` with a misleading reason message. Not a bug (the diff was
-  designed for the Parse→Resolve transition), but the fallback message could say
-  "cross-stage diff not yet implemented for this stage" instead of "current stage
-  has no IR."
+- [x] **TD-17 (low): Cross-stage diff only covers Parse/Resolve.**
+  Fixed 2026-07-22. Changed fallback message from "current stage has no IR" to
+  "cross-stage diff not yet implemented for this stage". Added test
+  `cross_stage_fallback_message_for_unsupported_stage`.
 
 ## Theme 6: Per-frame performance
 
@@ -113,30 +112,31 @@ are related and should be addressed together.
   `drain_worker` when `Compiled` arrives, cleared in `open()`. Both frame-hot
   `Path::exists()` calls replaced with the cached bool.
 
-- [ ] **TD-19 (low): Cache specimen list width calculation.**
-  `layout_no_wrap()` on the longest filename runs every frame to auto-size the
-  left panel. The result only changes on rescan or zoom change.
+- [x] **TD-19 (low): Cache specimen list width calculation.**
+  Fixed 2026-07-22. Added `cached_specimen_width: Option<f32>` field to `App`,
+  populated lazily via `get_or_insert_with`, invalidated on `rescan()`.
 
-- [ ] **TD-20 (low): Cache parsed expressions in `ReductionView`.**
-  `abbreviate_expr` re-parses JSON strings every frame. The parsed results could
-  be cached at construction time in `from_report()`.
+- [x] **TD-20 (low): Cache parsed expressions in `ReductionView`.**
+  Fixed 2026-07-22. `Elimination` now stores a pre-rendered `display: String`
+  (computed once in `from_report()` via `abbreviate_expr`) instead of the raw
+  JSON `replacement` that was re-parsed every frame.
 
 ## Theme 7: Code duplication in custom views
 
-- [ ] **TD-21 (low): Extract `cell_rect` into `canvas::View`.**
-  Both `spyplot.rs` and `incidence_view.rs` define an identical `cell_rect`
-  closure mapping `(col, row)` to a screen rect. A method on `View` would
-  eliminate both and serve future custom views.
+- [x] **TD-21 (low): Extract `cell_rect` into `canvas::View`.**
+  Fixed 2026-07-22. New `View::cell_rect(col, row) -> Rect` method; both
+  `spyplot.rs` and `incidence_view.rs` closures replaced with `view.cell_rect(...)`.
+  Added `cell_rect_is_one_by_one_world_unit` test.
 
-- [ ] **TD-22 (low): Extract grid-drawing helper into `canvas`.**
-  Both views draw grid lines at `zoom >= 6.0` with the same pattern. A
-  `View::draw_grid(painter, n_cols, n_rows, color)` method would reduce both
-  to one-liners.
+- [x] **TD-22 (low): Extract grid-drawing helper into `canvas`.**
+  Fixed 2026-07-22. New `View::draw_grid(painter, n_cols, n_rows, color)` method
+  with built-in `zoom >= 6.0` guard. Both views reduced to one-liner calls.
+  Added `draw_grid_skips_low_zoom` test.
 
-- [ ] **TD-23 (low): Share `str_vec` JSON extraction helper.**
-  The pattern `.get("field")?.as_array()?.iter().filter_map(as_str).collect()`
-  appears inline in `spyplot.rs`, `incidence_view.rs`, and `reduction_view.rs`.
-  `spyplot.rs` has a local `str_vec` helper — promote it to a shared utility.
+- [x] **TD-23 (low): Share `str_vec` JSON extraction helper.**
+  Fixed 2026-07-22. Promoted `str_vec` to a `pub fn` in `lib.rs` with four tests.
+  `spyplot.rs`, `incidence_view.rs`, and `reduction_view.rs` all import
+  `crate::str_vec` instead of inlining the pattern.
 
 ## Theme 8: Miscellaneous
 
@@ -154,30 +154,30 @@ are related and should be addressed together.
   Settings windows with their deferred-action patterns) into a separate method.
   Combined with TD-4's data-driven tab bar, `ui()` dropped from ~757 to ~620 lines.
 
-- [ ] **TD-27 (low): Duplicate "Read: specimen narrative" button code.**
-  The narrative button (check exists, build path, spawn editor) appears in both
-  `right_panel_specimen()` and `right_panel_read_links()`. Extract to a shared
-  helper.
+- [x] **TD-27 (low): Duplicate "Read: specimen narrative" button code.**
+  Fixed 2026-07-22. New `narrative_button()` method replaces duplicate code in
+  `right_panel_specimen()` and `right_panel_read_links()`.
 
-- [ ] **TD-28 (low): Duplicate `path.to_owned()` calls in `compile()`.**
-  The same `path.to_owned()` allocation is repeated 9 times. A single
-  `let path_buf = path.to_owned()` at the top with `.clone()` for intermediate
-  sends would be clearer.
+- [x] **TD-28 (low): Duplicate `path.to_owned()` calls in `compile()`.**
+  Fixed 2026-07-22. Single `let path_owned = path.to_owned()` at the top of
+  `compile()`, with `.clone()` for intermediate sends and a final move.
 
-- [ ] **TD-29 (low): Duplicate log closure between `compile()` and `simulate()`.**
-  Both define the same closure pattern for creating `LogEntry`. A private helper
-  or small `Logger` struct would eliminate it.
+- [x] **TD-29 (low): Duplicate log closure between `compile()` and `simulate()`.**
+  Fixed 2026-07-22. New `make_log()` function returns a closure wrapping `emit`
+  with elapsed-time tracking. Both methods call `make_log(&t0, emit)`.
 
-- [ ] **TD-30 (low): Hardcoded editor command `"code"`.**
-  No `$EDITOR` fallback. Acceptable for a personal tool, but a rough edge.
+- [x] **TD-30 (low): Hardcoded editor command `"code"`.**
+  Fixed 2026-07-22. `open_in_editor()` now reads `$EDITOR` and falls back to
+  `"code"` when unset. Error message includes the editor name.
 
-- [ ] **TD-31 (low): Zoom range `1.0..400.0` hardcoded in two places.**
-  The fit calculation and the scroll-zoom handler in `canvas.rs` both hardcode
-  the range. Named constants would keep them in sync.
+- [x] **TD-31 (low): Zoom range `1.0..400.0` hardcoded in two places.**
+  Fixed 2026-07-22. Named constants `MIN_ZOOM` and `MAX_ZOOM` in `canvas.rs`;
+  both clamp sites reference them.
 
-- [ ] **TD-32 (low): `Seg` lacks `Display` impl.**
-  `bridge.rs` has a `describe_path` free function instead. `impl Display for Seg`
-  would improve ergonomics.
+- [x] **TD-32 (low): `Seg` lacks `Display` impl.**
+  Fixed 2026-07-22. Added `impl Display for Seg`; `describe_path` now uses it
+  internally. Three tests: `seg_display_key`, `seg_display_index`,
+  `describe_path_uses_display`.
 
 ---
 
@@ -187,5 +187,5 @@ are related and should be addressed together.
 |----------|-------|------|------------|
 | High     | 2     | 2 ✓  | ~~TD-1 (stage bundle on App)~~, ~~TD-16 (stale bridge file list)~~ |
 | Medium   | 13    | 13 ✓ | ~~Stage boilerplate~~, ~~colors~~, ~~error handling~~, ~~tests~~, ~~per-frame I/O~~, ~~ui() size~~ |
-| Low      | 17    | 0    | Minor duplication, naming, caching, ergonomics |
-| **Total**| **32**| **15**|  |
+| Low      | 17    | 17 ✓ | ~~Duplication~~, ~~naming~~, ~~caching~~, ~~ergonomics~~ |
+| **Total**| **32**| **32 ✓**|  |

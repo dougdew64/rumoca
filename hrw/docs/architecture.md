@@ -185,6 +185,13 @@ Phases 5–10 use the `run_stage!` macro to avoid repeating the 7-line log/time/
 emit pattern for each stage. The macro captures `log`, `drain_traces`, `bundle`, `emit`,
 and `path` from the enclosing scope.
 
+Stage-extraction functions (`structural_stage`, `index_reduction_stage`, etc.) share
+fallback handling via `not_reached_stage()` — a helper that returns placeholder stages
+for `Failed`/`NeedsInner`/`None` result variants, eliminating duplicated match arms.
+
+Both `compile()` and `simulate()` use `make_log(&t0, emit)` to build their timing-aware
+log closures from a shared helper, avoiding the identical closure pattern.
+
 ### Simulation
 
 `WorkerState::simulate()` is a separate pipeline: compile → solve-lower →
@@ -220,7 +227,7 @@ if ui.button("Run").clicked() {
 
 ### The `App` struct
 
-`App` holds all application state, organized into 11 field groups:
+`App` holds all application state, organized into 13 field groups:
 
 1. **Worker** — the `Worker` handle (send/receive channels)
 2. **Library config** — MSL source-root paths, load status
@@ -233,6 +240,8 @@ if ui.button("Run").clicked() {
 9. **Custom views** — pan/zoom cameras for spy-plot and incidence views
 10. **Log** — timestamped compilation/simulation log entries
 11. **Simulation** — `SimData`, plot flags, sim-in-progress state
+12. **Cached path checks** — `narrative_exists` avoids per-frame `Path::exists()`
+13. **Cached layout** — `cached_specimen_width` avoids per-frame `layout_no_wrap`
 
 ### Panel layout
 

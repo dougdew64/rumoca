@@ -53,6 +53,7 @@
 //! one-generic-tree rule.
 
 use std::collections::BTreeMap;
+use std::fmt::{self, Write as _};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -130,6 +131,15 @@ pub enum Seg {
     Index(usize),
 }
 
+impl fmt::Display for Seg {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Seg::Key(k) => write!(f, "{k}"),
+            Seg::Index(i) => write!(f, "[{i}]"),
+        }
+    }
+}
+
 impl Seg {
     // Serialize this segment for inclusion in the focus JSON.
     // Keys become JSON strings, indices become JSON numbers.
@@ -167,13 +177,13 @@ pub fn describe_path(path: &[Seg]) -> String {
     let mut s = String::new();
     for seg in path {
         match seg {
-            Seg::Key(k) => {
+            Seg::Key(_) => {
                 if !s.is_empty() {
                     s.push('.');
                 }
-                s.push_str(k);
+                write!(s, "{seg}").unwrap();
             }
-            Seg::Index(i) => s.push_str(&format!("[{i}]")),
+            Seg::Index(_) => write!(s, "{seg}").unwrap(),
         }
     }
     s
@@ -349,7 +359,7 @@ fn build_cross_stage(ask: &Ask, key_path: &[Seg]) -> Value {
         _ => None,
     };
     let Some(current) = current else {
-        return json!({ "applicable": false, "reason": "current stage has no IR" });
+        return json!({ "applicable": false, "reason": "cross-stage diff not yet implemented for this stage" });
     };
 
     // Strip the current stage's class prefix to get the class-relative path.
@@ -870,5 +880,53 @@ mod tests {
             }
             _ => false,
         }
+    }
+
+    #[test]
+    fn seg_display_key() {
+        assert_eq!(Seg::Key("components".into()).to_string(), "components");
+    }
+
+    #[test]
+    fn seg_display_index() {
+        assert_eq!(Seg::Index(3).to_string(), "[3]");
+    }
+
+    #[test]
+    fn describe_path_uses_display() {
+        let path = vec![
+            Seg::Key("equations".into()),
+            Seg::Index(0),
+            Seg::Key("Connect".into()),
+        ];
+        assert_eq!(describe_path(&path), "equations[0].Connect");
+    }
+
+    #[test]
+    fn cross_stage_fallback_message_for_unsupported_stage() {
+        let empty = BTreeMap::new();
+        let ask = Ask {
+            seq: 1,
+            request: "explain",
+            specimen: None,
+            model: Some("M"),
+            stage: "Typecheck",
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: Some(&json!({})),
+            resolve_value: Some(&json!({})),
+            focus: Focus::Node {
+                key_path: vec![Seg::Key("x".into())],
+                stage_value: &json!({"x": 1}),
+            },
+        };
+        let doc = build(&ask);
+        let cs = &doc["cross_stage"];
+        assert_eq!(cs["applicable"], json!(false));
+        let reason = cs["reason"].as_str().unwrap();
+        assert!(
+            reason.contains("not yet implemented"),
+            "expected 'not yet implemented' in reason, got: {reason}"
+        );
     }
 }

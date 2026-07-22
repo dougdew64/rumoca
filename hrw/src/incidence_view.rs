@@ -41,6 +41,7 @@ use serde_json::Value;
 
 use crate::bridge::Seg;
 use crate::canvas::Canvas;
+use crate::str_vec;
 
 /// A parsed incidence matrix ready for rendering.
 ///
@@ -75,12 +76,7 @@ impl IncidenceMatrix {
             return None;
         }
 
-        let unknown_names: Vec<String> = inc
-            .get("unknown_names")?
-            .as_array()?
-            .iter()
-            .filter_map(|v| v.as_str().map(str::to_owned))
-            .collect();
+        let unknown_names = str_vec(inc.get("unknown_names"));
         if unknown_names.len() != n_var {
             return None;
         }
@@ -192,27 +188,7 @@ impl IncidenceMatrix {
         let hover_color = egui::Color32::from_rgb(0xFF, 0xC1, 0x07);
         let grid = visuals.weak_text_color().gamma_multiply(0.25);
 
-        // Grid lines when zoomed in enough.
-        if view.zoom() >= 6.0 {
-            let stroke = egui::Stroke::new(1.0, grid);
-            for col in 0..=self.n_var {
-                let a = view.to_screen(egui::pos2(col as f32, 0.0));
-                let b = view.to_screen(egui::pos2(col as f32, self.n_eq as f32));
-                painter.line_segment([a, b], stroke);
-            }
-            for row in 0..=self.n_eq {
-                let a = view.to_screen(egui::pos2(0.0, row as f32));
-                let b = view.to_screen(egui::pos2(self.n_var as f32, row as f32));
-                painter.line_segment([a, b], stroke);
-            }
-        }
-
-        let cell_rect = |col: usize, row: usize| -> egui::Rect {
-            view.to_screen_rect(egui::Rect::from_min_size(
-                egui::pos2(col as f32, row as f32),
-                egui::vec2(1.0, 1.0),
-            ))
-        };
+        view.draw_grid(&painter, self.n_var, self.n_eq, grid);
 
         // Crosshair bands: highlight the full row and column of the hovered cell
         // with a faint colored band. This visual cue helps the user trace which
@@ -237,7 +213,7 @@ impl IncidenceMatrix {
             for &col in cols {
                 let is_hovered = hovered_cell == Some((col, row));
                 let color = if is_hovered { hover_color } else { cell_color };
-                let rect = cell_rect(col, row).shrink(view.zoom() * 0.08);
+                let rect = view.cell_rect(col, row).shrink(view.zoom() * 0.08);
                 painter.rect_filled(rect, egui::CornerRadius::ZERO, color);
             }
         }

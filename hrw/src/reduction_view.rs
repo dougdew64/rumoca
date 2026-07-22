@@ -39,6 +39,8 @@
 use eframe::egui;
 use serde_json::Value;
 
+use crate::str_vec;
+
 /// Parsed index-reduction report, ready for rendering.
 ///
 /// Built from the `reduction` sub-object of the structural report JSON.
@@ -77,8 +79,9 @@ struct DiffRow {
 // Example: z was replaced everywhere by y (because the system had z = y).
 struct Elimination {
     variable: String,
-    // The replacement expression, stored as a JSON string (Rumoca IR expression).
-    replacement: String,
+    // The replacement expression, pre-rendered to a human-readable string at
+    // construction time (avoiding per-frame JSON re-parsing).
+    display: String,
 }
 
 impl ReductionView {
@@ -101,11 +104,7 @@ impl ReductionView {
         let n_states_before = red.get("n_states_before")?.as_u64()? as usize;
         let n_states_after = red.get("n_states_after")?.as_u64()? as usize;
 
-        let demoted_states: Vec<String> = red
-            .get("demoted_states")
-            .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect())
-            .unwrap_or_default();
+        let demoted_states = str_vec(red.get("demoted_states"));
 
         let steps: Vec<(String, String)> = red
             .get("steps")
@@ -142,9 +141,10 @@ impl ReductionView {
             .map(|a| {
                 a.iter()
                     .filter_map(|e| {
+                        let replacement = e.get("replacement")?.as_str()?;
                         Some(Elimination {
                             variable: e.get("variable")?.as_str()?.to_owned(),
-                            replacement: e.get("replacement")?.as_str()?.to_owned(),
+                            display: abbreviate_expr(replacement),
                         })
                     })
                     .collect()
@@ -359,8 +359,7 @@ impl ReductionView {
                 ui.end_row();
                 for elim in &self.eliminations {
                     ui.label(egui::RichText::new(&elim.variable).monospace());
-                    let display = abbreviate_expr(&elim.replacement);
-                    ui.label(egui::RichText::new(display).monospace().weak());
+                    ui.label(egui::RichText::new(&elim.display).monospace().weak());
                     ui.end_row();
                 }
             });

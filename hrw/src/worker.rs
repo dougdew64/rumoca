@@ -356,13 +356,30 @@ impl StageBundle {
 pub struct DefInfo {
     /// Qualified name, e.g. "Modelica.Mechanics.Rotational.Components.Inertia".
     pub name: String,
-    /// "class" (a class definition) or "definition" (component/other non-class).
-    pub kind: &'static str,
+    /// Whether this DefId names a class or a non-class definition.
+    pub kind: DefKind,
     /// Class keyword ("model", "block", …) when this DefId names a class.
     pub class_type: Option<String>,
     /// Source location of the class definition (when a class).
     pub file_name: Option<String>,
     pub line: Option<u32>,
+}
+
+/// Whether a `DefId` resolves to a class definition or a non-class definition
+/// (component, type alias, etc.).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DefKind {
+    Class,
+    Definition,
+}
+
+impl DefKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            DefKind::Class => "class",
+            DefKind::Definition => "definition",
+        }
+    }
 }
 
 impl DefInfo {
@@ -379,7 +396,7 @@ impl DefInfo {
     pub fn to_json(&self) -> serde_json::Value {
         serde_json::json!({
             "name": self.name,
-            "kind": self.kind,
+            "kind": self.kind.as_str(),
             "class_type": self.class_type,
             "file_name": self.file_name,
             "line": self.line,
@@ -407,7 +424,7 @@ pub struct LogEntry {
 ///
 /// `Copy` — a single byte, cheaply passed by value (no heap allocation).
 /// `PartialEq + Eq` — enables `matches!(entry.level, LogLevel::StageStart)`.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LogLevel {
     /// General informational message (e.g. "compiling BouncingBall.mo").
     Info,
@@ -579,6 +596,22 @@ struct WorkerState {
     tracing_guard: Option<tracing::subscriber::DefaultGuard>,
 }
 
+/// Build a logging closure that wraps `emit` with elapsed-time tracking.
+/// Both `compile()` and `simulate()` use the same pattern: a local closure
+/// that attaches a timestamp to each log entry.
+fn make_log<'a>(
+    t0: &'a std::time::Instant,
+    emit: &'a impl Fn(FromWorker),
+) -> impl Fn(LogLevel, String) + 'a {
+    move |level, msg| {
+        emit(FromWorker::Log(LogEntry {
+            elapsed_secs: t0.elapsed().as_secs_f64(),
+            level,
+            message: msg,
+        }));
+    }
+}
+
 impl WorkerState {
     fn new() -> Self {
         WorkerState {
@@ -667,17 +700,7 @@ impl WorkerState {
     ) -> Result<SimData, String> {
         use std::time::Instant;
         let t0 = Instant::now();
-
-        // `log` is a local closure that wraps `emit` with timing. Every log
-        // call computes `elapsed_secs` from the same `t0` baseline, so all
-        // entries in this simulate() call share a consistent timeline.
-        let log = |level: LogLevel, msg: String| {
-            emit(FromWorker::Log(LogEntry {
-                elapsed_secs: t0.elapsed().as_secs_f64(),
-                level,
-                message: msg,
-            }));
-        };
+        let log = make_log(&t0, emit);
 
         log(LogLevel::Info, format!("simulating {model} to t={t_end}"));
 
@@ -884,15 +907,8 @@ impl WorkerState {
     fn compile(&mut self, path: &Path, emit: &impl Fn(FromWorker)) -> FromWorker {
         use std::time::Instant;
         let t0 = Instant::now();
-
-        // Local log helper — same pattern as in `simulate()`.
-        let log = |level: LogLevel, msg: String| {
-            emit(FromWorker::Log(LogEntry {
-                elapsed_secs: t0.elapsed().as_secs_f64(),
-                level,
-                message: msg,
-            }));
-        };
+        let path_owned = path.to_owned();
+        let log = make_log(&t0, emit);
 
         // Start capturing stdout/stderr from Rumoca library calls (unix only).
         // Some Rumoca phases print diagnostics via `println!`/`eprintln!` rather
@@ -934,7 +950,7 @@ impl WorkerState {
                 #[cfg(unix)]
                 drop(output_capture.take());
                 return FromWorker::Compiled {
-                    path: path.to_owned(),
+                    path: path_owned.clone(),
                     model: None,
                     stages: StageBundle {
                         parse: Stage::err(format!("read error: {e}")),
@@ -976,7 +992,7 @@ impl WorkerState {
         // remaining struct fields with their default values — a Rust pattern
         // called "struct update syntax".
         emit(FromWorker::CompileProgress {
-            path: path.to_owned(),
+            path: path_owned.clone(),
             stages: StageBundle { parse: parse.clone(), ..Default::default() },
         });
 
@@ -1046,7 +1062,7 @@ impl WorkerState {
         drain_output(&mut output_capture, &log);
         log(LogLevel::StageEnd, format!("Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         emit(FromWorker::CompileProgress {
-            path: path.to_owned(),
+            path: path_owned.clone(),
             stages: StageBundle {
                 parse: parse.clone(),
                 resolve: resolve.clone(),
@@ -1112,7 +1128,7 @@ impl WorkerState {
                         ));
                         bundle.$field = stage.clone();
                         emit(FromWorker::CompileProgress {
-                            path: path.to_owned(), stages: bundle.clone(),
+                            path: path_owned.clone(), stages: bundle.clone(),
                         });
                         stage
                     }};
@@ -1141,7 +1157,7 @@ impl WorkerState {
 
         // Build and return the final `Compiled` message with all ten stages.
         FromWorker::Compiled {
-            path: path.to_owned(),
+            path: path_owned,
             model,
             stages: StageBundle {
                 parse,
@@ -1213,28 +1229,42 @@ pub fn simulate_specimen(
 /// Rumoca API: `build_structural_report(&dae)` runs maximum matching +
 /// BLT decomposition. `build_incidence(&dae)` builds the equation x unknown
 /// bipartite adjacency matrix (which equations reference which unknowns).
-fn structural_stage(result: Option<&PhaseResult>) -> Stage {
+/// If the pipeline result is a non-success variant (failed, needs inner, or
+/// absent), return the appropriate placeholder Stage. Returns `None` when
+/// the result is `Success` — the caller should handle that case.
+fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage> {
     match result {
-        Some(PhaseResult::Success(cr)) => {
-            match rumoca_phase_structural::build_structural_report(&cr.dae) {
-                Ok(rep) => {
-                    let inc = rumoca_phase_structural::build_incidence(&cr.dae);
-                    let mut json = structural_to_json(&rep);
-                    json.as_object_mut()
-                        .unwrap()
-                        .insert("incidence".to_owned(), incidence_to_json(&inc));
-                    Stage::ok(json)
-                }
-                Err(e) => Stage::err(format!("structural analysis failed: {e}")),
-            }
-        }
+        Some(PhaseResult::Success(_)) => None,
         Some(PhaseResult::Failed { phase, .. }) => {
-            Stage::info(format!("not reached ({phase} failed earlier)"))
+            Some(Stage::info(format!("not reached ({phase} failed earlier)")))
         }
         Some(PhaseResult::NeedsInner { .. }) => {
-            Stage::info("not reached (model needs inner declarations)")
+            Some(Stage::info("not reached (model needs inner declarations)"))
         }
-        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+        None => Some(Stage::err(
+            "the reachable-closure pipeline produced no result for this model",
+        )),
+    }
+}
+
+fn structural_stage(result: Option<&PhaseResult>) -> Stage {
+    if let Some(stage) = not_reached_stage(result) {
+        return stage;
+    }
+    let cr = match result {
+        Some(PhaseResult::Success(cr)) => cr,
+        _ => unreachable!("not_reached_stage handles non-Success"),
+    };
+    match rumoca_phase_structural::build_structural_report(&cr.dae) {
+        Ok(rep) => {
+            let inc = rumoca_phase_structural::build_incidence(&cr.dae);
+            let mut json = structural_to_json(&rep);
+            json.as_object_mut()
+                .unwrap()
+                .insert("incidence".to_owned(), incidence_to_json(&inc));
+            Stage::ok(json)
+        }
+        Err(e) => Stage::err(format!("structural analysis failed: {e}")),
     }
 }
 
@@ -1253,35 +1283,31 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
 /// `cr.dae.clone()` — we clone the DAE because `index_reduce_for_structural_analysis`
 /// mutates it in place, and we don't want to modify the original.
 fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
-    match result {
-        Some(PhaseResult::Success(cr)) => {
-            let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
-            let mut reduced = cr.dae.clone();
-            let reduction = index_reduce_for_structural_analysis(&mut reduced);
-            match rumoca_phase_structural::build_structural_report(&reduced) {
-                Ok(rep) => {
-                    let inc = rumoca_phase_structural::build_incidence(&reduced);
-                    let note = if raw_ok {
-                        "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
-                    } else {
-                        "index-reduced from a structurally singular (high-index) system — now solvable"
-                    };
-                    let mut json = structural_to_json(&rep);
-                    let obj = json.as_object_mut().unwrap();
-                    obj.insert("incidence".to_owned(), incidence_to_json(&inc));
-                    obj.insert("reduction".to_owned(), reduction.to_json());
-                    Stage::ok_with_note(json, note)
-                }
-                Err(e) => Stage::err(format!("still singular after index reduction: {e}")),
-            }
+    if let Some(stage) = not_reached_stage(result) {
+        return stage;
+    }
+    let cr = match result {
+        Some(PhaseResult::Success(cr)) => cr,
+        _ => unreachable!("not_reached_stage handles non-Success"),
+    };
+    let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
+    let mut reduced = cr.dae.clone();
+    let reduction = index_reduce_for_structural_analysis(&mut reduced);
+    match rumoca_phase_structural::build_structural_report(&reduced) {
+        Ok(rep) => {
+            let inc = rumoca_phase_structural::build_incidence(&reduced);
+            let note = if raw_ok {
+                "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+            } else {
+                "index-reduced from a structurally singular (high-index) system — now solvable"
+            };
+            let mut json = structural_to_json(&rep);
+            let obj = json.as_object_mut().expect("structural_to_json returns an object");
+            obj.insert("incidence".to_owned(), incidence_to_json(&inc));
+            obj.insert("reduction".to_owned(), reduction.to_json());
+            Stage::ok_with_note(json, note)
         }
-        Some(PhaseResult::Failed { phase, .. }) => {
-            Stage::info(format!("not reached ({phase} failed earlier)"))
-        }
-        Some(PhaseResult::NeedsInner { .. }) => {
-            Stage::info("not reached (model needs inner declarations)")
-        }
-        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+        Err(e) => Stage::err(format!("still singular after index reduction: {e}")),
     }
 }
 
@@ -1305,6 +1331,9 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
 /// the number of states. A surplus means over-determined initialization
 /// (conflicting/redundant conditions), which `build_ic_plan` alone doesn't catch.
 fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
+    if let Some(stage) = not_reached_stage(result) {
+        return stage;
+    }
     match result {
         Some(PhaseResult::Success(cr)) => {
             let n_x = cr.dae.variables.states.len();
@@ -1364,13 +1393,7 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
                 Err(e) => Stage::err(format!("IC planning failed: {e}")),
             }
         }
-        Some(PhaseResult::Failed { phase, .. }) => {
-            Stage::info(format!("not reached ({phase} failed earlier)"))
-        }
-        Some(PhaseResult::NeedsInner { .. }) => {
-            Stage::info("not reached (model needs inner declarations)")
-        }
-        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+        _ => unreachable!("not_reached_stage handles non-Success"),
     }
 }
 
@@ -1439,26 +1462,22 @@ fn ic_plan_to_json(
 /// events), `discrete` (the `f_z`/`f_m` update equations lowered from `when`
 /// clauses), and `events` (zero-crossing root conditions + scheduled time events).
 fn events_stage(result: Option<&PhaseResult>) -> Stage {
-    match result {
-        Some(PhaseResult::Success(cr)) => {
-            let json = events_to_json(&cr.dae);
-            let total = json["summary"]
-                .as_object()
-                .map(|s| s.values().filter_map(serde_json::Value::as_u64).sum::<u64>())
-                .unwrap_or(0);
-            if total == 0 {
-                Stage::ok_with_note(json, "no events — this model is a smooth (continuous) system")
-            } else {
-                Stage::ok(json)
-            }
-        }
-        Some(PhaseResult::Failed { phase, .. }) => {
-            Stage::info(format!("not reached ({phase} failed earlier)"))
-        }
-        Some(PhaseResult::NeedsInner { .. }) => {
-            Stage::info("not reached (model needs inner declarations)")
-        }
-        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    if let Some(stage) = not_reached_stage(result) {
+        return stage;
+    }
+    let cr = match result {
+        Some(PhaseResult::Success(cr)) => cr,
+        _ => unreachable!("not_reached_stage handles non-Success"),
+    };
+    let json = events_to_json(&cr.dae);
+    let total = json["summary"]
+        .as_object()
+        .map(|s| s.values().filter_map(serde_json::Value::as_u64).sum::<u64>())
+        .unwrap_or(0);
+    if total == 0 {
+        Stage::ok_with_note(json, "no events — this model is a smooth (continuous) system")
+    } else {
+        Stage::ok(json)
     }
 }
 
@@ -1509,23 +1528,19 @@ fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
 /// Rumoca API: `lower_dae_to_solve_model(&dae)` transforms the mathematical
 /// DAE into the solver's executable form.
 fn solve_lowering_stage(result: Option<&PhaseResult>) -> Stage {
-    match result {
-        Some(PhaseResult::Success(cr)) => {
-            match rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae) {
-                Ok(sm) => match serde_json::to_value(&sm) {
-                    Ok(v) => Stage::ok(v),
-                    Err(e) => Stage::err(format!("serialize SolveModel: {e}")),
-                },
-                Err(e) => Stage::err(format!("solve lowering failed: {e}")),
-            }
-        }
-        Some(PhaseResult::Failed { phase, .. }) => {
-            Stage::info(format!("not reached ({phase} failed earlier)"))
-        }
-        Some(PhaseResult::NeedsInner { .. }) => {
-            Stage::info("not reached (model needs inner declarations)")
-        }
-        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    if let Some(stage) = not_reached_stage(result) {
+        return stage;
+    }
+    let cr = match result {
+        Some(PhaseResult::Success(cr)) => cr,
+        _ => unreachable!("not_reached_stage handles non-Success"),
+    };
+    match rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae) {
+        Ok(sm) => match serde_json::to_value(&sm) {
+            Ok(v) => Stage::ok(v),
+            Err(e) => Stage::err(format!("serialize SolveModel: {e}")),
+        },
+        Err(e) => Stage::err(format!("solve lowering failed: {e}")),
     }
 }
 
@@ -1756,12 +1771,12 @@ fn build_def_index(
         let info = match tree.get_class_by_qualified_name(&name) {
             Some(class) => DefInfo {
                 name,
-                kind: "class",
+                kind: DefKind::Class,
                 class_type: Some(class.class_type.as_str().to_owned()),
                 file_name: Some(class.location.file_name.clone()),
                 line: Some(class.location.start_line),
             },
-            None => DefInfo { name, kind: "definition", class_type: None, file_name: None, line: None },
+            None => DefInfo { name, kind: DefKind::Definition, class_type: None, file_name: None, line: None },
         };
         index.insert(id, info);
     }
@@ -1863,7 +1878,7 @@ mod tests {
             "Blocks.Sources.Constant",
         ] {
             assert!(
-                def_index.values().any(|d| d.kind == "class" && d.name.ends_with(expected)),
+                def_index.values().any(|d| d.kind == DefKind::Class && d.name.ends_with(expected)),
                 "{expected} not resolved as a class; got {names:?}"
             );
         }

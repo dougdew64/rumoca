@@ -38,3 +38,41 @@ pub mod reduction_view;
 pub mod spyplot;
 pub mod tree;
 pub mod worker;
+
+/// Extract a JSON array of strings into a `Vec<String>`.
+///
+/// Defensive — returns an empty vec if the value is missing or not an array.
+/// Used by multiple views to extract equation names, unknown names, etc.
+pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
+    v.and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
+        .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn str_vec_extracts_strings() {
+        let arr = json!(["a", "b", "c"]);
+        assert_eq!(str_vec(Some(&arr)), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn str_vec_skips_non_strings() {
+        let arr = json!(["a", 42, "b", null]);
+        assert_eq!(str_vec(Some(&arr)), vec!["a", "b"]);
+    }
+
+    #[test]
+    fn str_vec_returns_empty_on_none() {
+        assert!(str_vec(None).is_empty());
+    }
+
+    #[test]
+    fn str_vec_returns_empty_on_non_array() {
+        assert!(str_vec(Some(&json!("not an array"))).is_empty());
+    }
+}

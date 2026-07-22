@@ -234,6 +234,11 @@ pub struct App {
     // Avoids calling `Path::exists()` every frame for the narrative button.
     // Invalidated on specimen change (set in `drain_worker` when `Compiled` lands).
     narrative_exists: bool,
+
+    // ---- 13. Cached layout ----
+    // Avoids running `layout_no_wrap` on the longest filename every frame.
+    // Invalidated on rescan (when `files` changes).
+    cached_specimen_width: Option<f32>,
 }
 
 impl App {
@@ -320,6 +325,7 @@ impl App {
             sim_error: None,
             sim_t_end: 2.0,
             narrative_exists: false,
+            cached_specimen_width: None,
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -374,6 +380,7 @@ impl App {
             .iter()
             .filter_map(|p| read_purpose(p).map(|hint| (p.clone(), hint)))
             .collect();
+        self.cached_specimen_width = None;
     }
 
     /// Open (compile) a specimen. Called when the user clicks a file in the
@@ -536,10 +543,6 @@ impl App {
         }
     }
 
-    fn stage_name(&self) -> &'static str {
-        self.stage.name()
-    }
-
     /// The previous stage's IR, aligned to the *current* stage's tree root, for
     /// the "changed by this stage" green highlight. `None` for Parse (no
     /// previous). Where structures differ (e.g. Resolve's class tree vs the
@@ -632,7 +635,7 @@ impl App {
         // written — not just that some focus was.
         let target = match &focus {
             Focus::Node { key_path, .. } => bridge::describe_path(key_path),
-            Focus::Stage => format!("stage “{}”", self.stage_name()),
+            Focus::Stage => format!("stage “{}”", self.stage.name()),
             Focus::Specimen => format!(
                 "specimen “{}”",
                 self.selected
@@ -647,7 +650,7 @@ impl App {
             request: "explain",
             specimen: self.selected.as_deref(),
             model: self.model.as_deref(),
-            stage: self.stage_name(),
+            stage: self.stage.name(),
             libraries: self.library_strings(),
             def_index: &self.def_index,
             parse_value: self.stages.parse.value.as_ref(),
@@ -698,7 +701,7 @@ impl App {
                         request,
                         specimen: self.selected.as_deref(),
                         model: self.model.as_deref(),
-                        stage: self.stage_name(),
+                        stage: self.stage.name(),
                         libraries,
                         def_index: &self.def_index,
                         parse_value: self.stages.parse.value.as_ref(),
@@ -742,11 +745,30 @@ impl App {
     /// split into 3 segments would get 3 different hues, while its legend entry
     /// shows only one. By keying color on the variable index, every segment of
     /// the same variable matches the legend.
+    fn narrative_button(&mut self, ui: &mut egui::Ui) {
+        if !self.narrative_exists {
+            return;
+        }
+        let Some(model) = &self.model else { return };
+        let rel = format!("docs/specimen-notebook/{model}/narrative.md");
+        ui.add_space(8.0);
+        ui.separator();
+        if ui
+            .button("Read: specimen narrative")
+            .on_hover_text(&rel)
+            .clicked()
+        {
+            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
+            self.open_in_editor(&abs);
+        }
+    }
+
     fn open_in_editor(&mut self, path: impl AsRef<std::ffi::OsStr>) {
-        match std::process::Command::new("code").arg(path).spawn() {
+        let editor = std::env::var("EDITOR").unwrap_or_else(|_| "code".to_owned());
+        match std::process::Command::new(&editor).arg(path).spawn() {
             Ok(_) => {}
             Err(e) => {
-                self.bridge_status = Some(format!("editor launch failed: {e}"));
+                self.bridge_status = Some(format!("{editor}: launch failed: {e}"));
             }
         }
     }
@@ -879,21 +901,7 @@ impl App {
             ui.add_space(4.0);
             ui.label(purpose);
         }
-        if self.narrative_exists
-            && let Some(model) = &self.model
-        {
-            let rel = format!("docs/specimen-notebook/{model}/narrative.md");
-            ui.add_space(8.0);
-            ui.separator();
-            if ui
-                .button("Read: specimen narrative")
-                .on_hover_text(&rel)
-                .clicked()
-            {
-                let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-                self.open_in_editor(&abs);
-            }
-        }
+        self.narrative_button(ui);
     }
 
     /// Generic (build-time) field help for the last-clicked tree item — the fast
@@ -902,7 +910,7 @@ impl App {
         // Title the pane with the stage on screen (e.g. "Flatten") — "About this
         // field" was meaningless when nothing was selected. While navigating a
         // definition the view is Resolve context, so say so.
-        let title = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
+        let title = if self.nav.is_empty() { self.stage.name() } else { "Resolve" };
         ui.strong(title);
         ui.separator();
         match &self.selected_field {
@@ -957,7 +965,7 @@ impl App {
     fn right_panel_read_links(&mut self, ui: &mut egui::Ui) {
         // Concept-level link: the docs/compiler-phases chapter for the phase whose
         // view is on screen (Resolve while navigating a definition).
-        let stage_ctx = if self.nav.is_empty() { self.stage_name() } else { "Resolve" };
+        let stage_ctx = if self.nav.is_empty() { self.stage.name() } else { "Resolve" };
         let (label, rel) = field_help::chapter_for_stage(stage_ctx);
         if ui
             .button(format!("Read: {label}"))
@@ -967,20 +975,8 @@ impl App {
             let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
             self.open_in_editor(abs);
         }
-        // Specimen-specific link: this specimen's compilation narrative, when one exists.
-        if self.nav.is_empty()
-            && self.narrative_exists
-            && let Some(model) = &self.model
-        {
-            let rel = format!("docs/specimen-notebook/{model}/narrative.md");
-            if ui
-                .button("Read: specimen narrative")
-                .on_hover_text(&rel)
-                .clicked()
-            {
-                let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-                self.open_in_editor(&abs);
-            }
+        if self.nav.is_empty() {
+            self.narrative_button(ui);
         }
     }
 }
@@ -1207,7 +1203,7 @@ impl eframe::App for App {
         // padding for spacing, margins, and the scrollbar. The text is measured
         // using egui's layout engine (`layout_no_wrap`) so the width adapts to
         // the actual font/zoom level.
-        let specimen_width = {
+        let specimen_width = *self.cached_specimen_width.get_or_insert_with(|| {
             let longest = self.files.iter()
                 .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
                 .max_by_key(|n| n.len())
@@ -1221,7 +1217,7 @@ impl eframe::App for App {
             let margin = ui.style().spacing.window_margin.sum().x;
             let scrollbar = 16.0;
             (galley.size().x + spacing * 2.0 + margin + scrollbar).max(120.0)
-        };
+        });
         // `Panel::left` claims a resizable strip on the left side. The
         // specimen list scrolls vertically if there are more files than fit.
         egui::Panel::left("file_list")
@@ -1855,6 +1851,7 @@ impl App {
             sim_error: None,
             sim_t_end: 2.0,
             narrative_exists: false,
+            cached_specimen_width: None,
         }
     }
 }

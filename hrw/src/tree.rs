@@ -208,7 +208,7 @@ fn nav_target(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>) -> 
     let info = def_index.get(&scalar.as_u64()?)?;
     // Only class definitions are navigable — you can "go to" a class, but
     // not to a variable or built-in.
-    (info.kind == "class").then(|| info.name.clone())
+    (info.kind == crate::worker::DefKind::Class).then(|| info.name.clone())
 }
 
 // Right-click context menu for any tree row.
