@@ -310,3 +310,172 @@ defend, and maintain the code he'd be submitting.
   read the HRW source.
 - **When:** before preparing the upstream PR. Can be written incrementally — one
   section per module — and doubles as onboarding material if others contribute.
+
+## 13. Guided learning explorations through the Rumoca code
+
+Captured 2026-07-21 (Doug). HRW is not merely an application — it is a **learning
+instrument**. The goal is for Claude to provide guided explorations of the
+mathematical and algorithmic foundations of continuous-system modeling and
+simulation, using the actual Rumoca codebase as the teaching material.
+
+- **Why it matters:** Doug is taking a **linear algebra applications** class at
+  Purdue (Fall 2026, masters in robotics). The Rumoca codebase is rich with applied
+  linear algebra — incidence matrices, maximum matching (transversals), BLT
+  decomposition (Dulmage-Mendelsohn), index reduction (structural rank), Jacobian
+  sparsity, Newton-based BDF integration (sparse LU). These are not abstract
+  textbook exercises — they are algorithms running on real Modelica models, with
+  observable inputs and outputs in HRW's views. A guided exploration ties
+  coursework to working code: "here is the concept, here is the Rumoca function
+  that implements it, here is the specimen that exercises it, here is what HRW
+  shows you."
+- **Initial focus (Fall 2026): linear algebra.** Candidate explorations:
+  - The incidence matrix as a bipartite adjacency matrix — structural rank,
+    matching, and transversals (`build_incidence`, `maximum_matching`)
+  - BLT decomposition as Dulmage-Mendelsohn — permuting to block triangular form,
+    SCCs in the dependency graph (`build_structural_report`)
+  - Index reduction as structural rank repair — Pantelides' algorithm, augmenting
+    paths, the dummy-derivative funnel (`dae_prepare::*`)
+  - The Jacobian — sparsity structure, conditioning, what the solver sees
+    (`build_solver_sparsity_triplets`, diffsol internals)
+  - Newton iteration on coupled BLT blocks — solving J·Δx = −F each step
+  - Initialization as a (possibly overdetermined) linear/nonlinear system at t=0
+- **Later topics:** differential equations (ODE/DAE theory, BDF methods, stability,
+  stiffness), numerical methods (step-size control, error estimation, event
+  detection), and control theory (transfer functions, state-space, the specimens
+  as control-system models).
+- **Shape (to figure out):** the right delivery format — could be structured
+  `docs/explorations/` walkthroughs, could be interactive sessions using HRW's
+  capture→explain flow, could be annotated code tours, or a combination.
+  The format should leverage Claude's ability to read the Rumoca source, point at
+  specific functions and data structures, and connect them to textbook definitions.
+  It should also leverage HRW's views — "open BouncingBall, click the Structural
+  tab, look at the incidence matrix: this IS the bipartite adjacency matrix from
+  your textbook."
+- **The meta-point:** we are using Rumoca and HRW to enable Claude to help Doug
+  **master the math and algorithms** of continuous-system modeling and simulation.
+  Every feature decision should be evaluated against this learning mission.
+
+## 14. Rank deficiency visualization in the incidence matrix
+
+Captured 2026-07-21 (Claude, learning-driven). The incidence view currently reports
+"93/97 matched" as text. Enhancement: **highlight unmatched rows and columns** in
+the incidence matrix with a distinct color (red).
+
+- **Why it matters (linear algebra):** the number of matched rows in a maximum
+  matching equals the **structural rank** of the matrix. Unmatched rows are
+  equations that cannot be assigned to any unknown — they represent rank deficiency.
+  Highlighting them makes rank deficiency something you *see* spatially, not just
+  a number. When Doug studies matrix rank in his linear algebra class, he can open
+  Drivetrain's Structural tab and see: "these 4 red rows are why the system is
+  singular — they correspond to constraint forces at the ideal gears."
+- **Sketch:** the matching result already identifies unmatched equations and
+  unknowns (they're the ones not in the transversal). Color unmatched equation rows
+  with a red band and unmatched unknown columns with a red band. On hover, say
+  "this equation is unmatched — the system has more constraints than unknowns for
+  this variable." Could also annotate the caption: "93/97 matched (structural
+  rank 93, rank deficiency 4)."
+- **Specimens:** Drivetrain (singular, 4 unmatched) vs RotationalInertia (full
+  rank, 0 unmatched) — the contrast teaches the concept.
+
+## 15. Matching-as-permutation view — before and after the transversal
+
+Captured 2026-07-21 (Claude, learning-driven). Show the incidence matrix **before
+and after** the row/column permutation implied by maximum matching.
+
+- **Why it matters (linear algebra):** maximum matching finds a **transversal** — a
+  set of nonzeros, one per row and one per column, that defines a permutation
+  matrix P. Applying P puts a nonzero on every diagonal entry. This is the
+  same operation as the row/column permutation in textbook LU factorization:
+  PAQ = LU. Seeing the matrix transform from scattered nonzeros to a diagonal
+  makes the permutation concept concrete.
+- **Sketch:** a toggle or side-by-side showing (a) the incidence matrix in its
+  original equation/unknown ordering, and (b) the same matrix with rows and
+  columns permuted so matched pairs sit on the diagonal. The diagonal entries
+  (the transversal) are highlighted. Off-diagonal nonzeros become the "fill" that
+  creates coupling — the visual seed for understanding why LU factorization cares
+  about pivoting strategy.
+- **Bonus:** once the matched matrix is permuted, the BLT block structure becomes
+  visually obvious — the diagonal blocks in the spy-plot are the same blocks you'd
+  see as dense sub-matrices along the diagonal of the permuted incidence matrix.
+  This bridges the incidence view and the spy-plot view, showing they're two
+  perspectives on the same decomposition.
+
+## 16. Animated BLT block discovery (Tarjan's SCC algorithm)
+
+Captured 2026-07-21 (Claude, learning-driven). Animate the process of discovering
+BLT blocks — Tarjan's algorithm finding strongly connected components (SCCs) in the
+equation-variable dependency graph, then topological sorting.
+
+- **Why it matters (linear algebra + graph theory):** the BLT decomposition is the
+  structural analogue of permuting a matrix to block triangular form. Each block
+  is an SCC: a set of equations that mutually depend on each other (an algebraic
+  loop). The blocks are topologically ordered, so each block's inputs come from
+  earlier (already-solved) blocks. Seeing the DFS stack grow, the low-link numbers
+  update, and blocks pop off the stack one by one connects the graph algorithm to
+  the matrix structure.
+- **Sketch:** a step-by-step animation over the bipartite dependency graph (or the
+  incidence matrix, with cells lighting up as the DFS visits them):
+  1. DFS visits a node — highlight it, show discovery number
+  2. Back edge found — show the low-link update, highlight the cycle
+  3. SCC complete — outline the block, color it, add it to the BLT ordering
+  4. Repeat until all nodes visited
+  Synchronized with the spy-plot: as each SCC is discovered, the corresponding
+  diagonal block appears in the BLT view.
+- **Ties to idea #9** (animated algorithm views) — this is a concrete instance
+  for one specific algorithm. Requires the instrumentation that emits per-step
+  events from Tarjan's algorithm inside `rumoca-phase-structural`.
+- **Textbook link:** Tarjan (1972), "Depth-first search and linear graph
+  algorithms"; the Dulmage-Mendelsohn decomposition (Pothen & Fan, 1990).
+
+## 17. Jacobian sparsity and conditioning view
+
+Captured 2026-07-21 (Claude, learning-driven). Show the **Jacobian matrix** — the
+actual partial-derivative matrix the solver uses — alongside the incidence matrix,
+and report its conditioning.
+
+- **Why it matters (linear algebra):** the incidence matrix is *structural* (does
+  equation i reference unknown j? yes/no). The Jacobian is *numerical* (∂fᵢ/∂xⱼ —
+  the actual partial derivative value). The incidence matrix can have full
+  structural rank while the Jacobian is numerically singular (the nonzeros happen
+  to cancel). Understanding the difference between structural and numerical rank
+  is fundamental. The condition number κ(J) tells you how sensitive the solution
+  is to perturbations — directly from the linear algebra course.
+- **Sketch:** a spy-plot of the Jacobian's sparsity (same canvas as incidence, but
+  showing ∂fᵢ/∂xⱼ patterns — it may differ from the incidence because the solver
+  works in a different variable ordering). Optionally, for small systems, show the
+  actual numerical values (as a heatmap or labeled matrix). Report the condition
+  number for each coupled BLT block (where Newton iterates). On hover over a
+  coupled block in the spy-plot: "this 3×3 block has condition number κ = 42 —
+  well-conditioned" or "κ = 1e12 — nearly singular, Newton may struggle."
+- **Rumoca entry point:** `build_solver_sparsity_triplets` (public) gives the
+  Jacobian sparsity in solver-column order. The actual numerical Jacobian comes
+  from diffsol during simulation — may require instrumentation.
+- **Specimens:** ProportionalLoop (well-conditioned linear loop) vs NonlinearLoop
+  (same structure, different conditioning) — same incidence, different Jacobian.
+
+## 18. BDF step-size and order control visualization
+
+Captured 2026-07-21 (Claude, learning-driven). During simulation, plot the BDF
+integrator's **step size h(t)** and **method order k(t)** alongside the solution
+trajectories.
+
+- **Why it matters (differential equations / numerical methods):** BDF methods
+  adapt both step size and order to maintain accuracy while taking the largest
+  possible steps. Plotting h(t) reveals *where* the solver works hard (small steps
+  = fast dynamics or events) and where it cruises (large steps = smooth solution).
+  Plotting order k(t) shows the stability/accuracy trade-off the solver makes.
+  For stiff problems (BenchActuator), you'd see BDF taking large steps through the
+  stiff transient where RK45 would collapse to tiny steps — the visual proof of
+  why implicit methods exist.
+- **Sketch:** a secondary plot panel (below or beside the trajectory plot) showing
+  h(t) and k(t) as time series. For comparison: a toggle to run the same model
+  with RK45 and overlay its h(t) — the step-size collapse on a stiff problem is
+  dramatic and immediately explains stiffness.
+- **Rumoca entry point:** diffsol's `OdeSolverMethod` trait exposes step info, but
+  `simulate_solve_model` returns only the resampled output grid. Instrumentation
+  needed: either a callback during integration that logs (t, h, order) per step,
+  or access to diffsol's `OdeSolverState`. This is a pass-two instrumentation
+  target — the simulation loop is inside `rumoca-sim`.
+- **Textbook link:** Hairer & Wanner, *Solving Ordinary Differential Equations II*
+  (stiff problems), chapters on BDF order/step-size selection. Brenan, Campbell &
+  Petzold, *Numerical Solution of Initial-Value Problems in DAEs*.
