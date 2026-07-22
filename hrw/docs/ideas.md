@@ -548,3 +548,25 @@ picture of what the solver is doing at each time step.
 - **Rumoca entry point:** `rumoca-sim::simulate_solve_model` and the diffsol
   integration loop. Instrumentation needed: a per-step callback or post-hoc
   log that records (t, h, order, newton_iters, event_detected).
+
+## 23. Dedicated performance review cycle (when needed)
+
+Captured 2026-07-22 (Doug + Claude). The weekly tech-debt scan already catches
+performance items incidentally (it found per-frame `from_report` re-parsing,
+per-frame `Path::exists()`, and per-frame `layout_no_wrap` — all fixed). A
+**dedicated** performance review with profiling is not yet warranted: the app is
+small, egui's 16ms frame budget has headroom, and compilation/simulation run on
+the worker thread.
+
+- **When to revisit:** (a) specimens grow large enough that the tree inspector or
+  custom views lag visibly (likely trigger: MSL-heavy models with deep IR trees),
+  (b) instrumentation hooks add measurable overhead to compilation (noticeable
+  when comparing instrumented vs upstream Rumoca), or (c) simulation plotting
+  with many variables or long time series causes frame drops.
+- **What it would look like:** a periodic (monthly, not weekly) pass with
+  `cargo flamegraph` or `perf` on a representative specimen, looking for hot
+  spots in the UI thread. Focus areas: tree rendering (deep/wide JSON), canvas
+  painting (large matrices), and channel throughput (many `CompileProgress`
+  messages per compile).
+- **For now:** let the weekly tech-debt scan catch performance issues as they
+  surface — it has a good track record.
