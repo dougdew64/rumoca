@@ -276,6 +276,19 @@ scrolls to / expands / highlights where that identifier's information appears.
 
 ## 12. HRW architecture document — how the code works
 
+**Implemented 2026-07-21.** `docs/architecture.md` covers: crate structure,
+data-flow diagram, worker-thread architecture (channel protocol, progressive
+streaming, the Rumoca Session, compilation pipeline, simulation), the UI shell
+(immediate-mode pattern, App struct, panel layout, tab bar, right-panel routing),
+the generic tree inspector (path accumulation, cross-stage diff, DefId resolution),
+custom-painted views (canvas scaffold, BLT spy-plot, incidence matrix, reduction
+summary), the Claude bridge (thin-emitter/thick-reasoner, file protocol,
+span-ascent, chat shortcuts), supporting modules (field help, log view), the
+instrumentation surface (all Rumoca crate dependencies + discipline), build/run
+commands, and key design decisions (why serde_json::Value, why simulation
+re-compiles, why the funnel is replicated, why thin emitter, why egui). Original
+capture below.
+
 Captured 2026-07-21 (Doug). Claude has written 100% of the HRW code. Before any
 upstream PR to the Rumoca repo, Doug needs to understand and be accountable for the
 codebase. A dedicated architecture document that explains how HRW works — the module
