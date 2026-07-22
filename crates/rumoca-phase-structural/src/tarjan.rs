@@ -1,5 +1,7 @@
 //! Tarjan's algorithm for strongly connected components.
 
+use crate::live_trace::LiveTrace;
+
 /// One step of Tarjan's SCC algorithm, recorded for animation replay.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TarjanStep {
@@ -34,8 +36,15 @@ pub struct TarjanTraceResult {
 }
 
 /// Like `tarjan_scc`, but records every algorithmic step for animation.
-pub fn tarjan_scc_with_trace(n: usize, adj: &[Vec<usize>]) -> TarjanTraceResult {
-    let mut state = TracedTarjanState::new(n);
+///
+/// When `live` is `Some`, each frame is also pushed to the shared
+/// [`LiveTrace`] buffer for live debugger stepping.
+pub fn tarjan_scc_with_trace(
+    n: usize,
+    adj: &[Vec<usize>],
+    live: Option<&LiveTrace<TarjanFrame>>,
+) -> TarjanTraceResult {
+    let mut state = TracedTarjanState::new(n, live.cloned());
     for v in 0..n {
         if state.index[v].is_none() {
             state.strongconnect(v, adj);
@@ -129,10 +138,11 @@ struct TracedTarjanState {
     lowlink: Vec<usize>,
     sccs: Vec<Vec<usize>>,
     frames: Vec<TarjanFrame>,
+    live: Option<LiveTrace<TarjanFrame>>,
 }
 
 impl TracedTarjanState {
-    fn new(n: usize) -> Self {
+    fn new(n: usize, live: Option<LiveTrace<TarjanFrame>>) -> Self {
         Self {
             index_counter: 0,
             stack: Vec::new(),
@@ -141,15 +151,20 @@ impl TracedTarjanState {
             lowlink: vec![0; n],
             sccs: Vec::new(),
             frames: Vec::new(),
+            live,
         }
     }
 
     fn record(&mut self, step: TarjanStep) {
-        self.frames.push(TarjanFrame {
+        let frame = TarjanFrame {
             step,
             stack: self.stack.clone(),
             sccs_so_far: self.sccs.clone(),
-        });
+        };
+        if let Some(lt) = &self.live {
+            lt.push(frame.clone());
+        }
+        self.frames.push(frame);
     }
 
     fn strongconnect(&mut self, v: usize, adj: &[Vec<usize>]) {
@@ -226,14 +241,14 @@ mod tests {
     fn traced_tarjan_produces_same_sccs() {
         let adj = vec![vec![1], vec![2], vec![0]];
         let sccs = tarjan_scc(3, &adj);
-        let traced = tarjan_scc_with_trace(3, &adj);
+        let traced = tarjan_scc_with_trace(3, &adj, None);
         assert_eq!(sccs, traced.sccs);
     }
 
     #[test]
     fn trace_contains_visit_for_each_node() {
         let adj = vec![vec![1], vec![], vec![]];
-        let traced = tarjan_scc_with_trace(3, &adj);
+        let traced = tarjan_scc_with_trace(3, &adj, None);
         let visits: Vec<_> = traced.frames.iter()
             .filter(|f| matches!(f.step, TarjanStep::Visit(_)))
             .collect();
@@ -243,7 +258,7 @@ mod tests {
     #[test]
     fn trace_records_scc_found() {
         let adj = vec![vec![1], vec![0]];
-        let traced = tarjan_scc_with_trace(2, &adj);
+        let traced = tarjan_scc_with_trace(2, &adj, None);
         let scc_events: Vec<_> = traced.frames.iter()
             .filter(|f| matches!(f.step, TarjanStep::SccFound { .. }))
             .collect();
@@ -253,10 +268,23 @@ mod tests {
     #[test]
     fn trace_records_back_edge() {
         let adj = vec![vec![1], vec![0]];
-        let traced = tarjan_scc_with_trace(2, &adj);
+        let traced = tarjan_scc_with_trace(2, &adj, None);
         let back_edges: Vec<_> = traced.frames.iter()
             .filter(|f| matches!(f.step, TarjanStep::BackEdge { .. }))
             .collect();
         assert!(!back_edges.is_empty(), "cycle should produce a back edge");
+    }
+
+    #[test]
+    fn live_trace_receives_same_frames_as_returned() {
+        let adj = vec![vec![1], vec![2], vec![0]];
+        let lt = LiveTrace::new();
+        let traced = tarjan_scc_with_trace(3, &adj, Some(&lt));
+        let live_frames = lt.snapshot();
+        assert_eq!(traced.frames.len(), live_frames.len());
+        for (i, (ret, live)) in traced.frames.iter().zip(live_frames.iter()).enumerate() {
+            assert_eq!(ret.step, live.step, "frame {i} step mismatch");
+            assert_eq!(ret.stack, live.stack, "frame {i} stack mismatch");
+        }
     }
 }
