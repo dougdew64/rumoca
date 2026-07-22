@@ -51,6 +51,24 @@ pub fn coupled_fill() -> Color32 {
     Color32::from_rgba_unmultiplied(0xF2, 0x8C, 0x28, 0x55)
 }
 
+/// Matched-pair marker on the incidence matrix (the transversal diagonal).
+pub const MATCHED_MARKER: Color32 = Color32::from_rgb(0x3F, 0xB9, 0x50);
+
+/// Unmatched row/column band — rank deficiency indicator.
+pub const UNMATCHED_BAND: Color32 = Color32::from_rgb(0xE5, 0x39, 0x35);
+
+/// BLT block boundary stroke on the incidence matrix.
+pub const BLT_BOUNDARY: Color32 = Color32::from_rgb(0xF2, 0x8C, 0x28);
+
+/// Currently-explored edge in the augmenting-path animation.
+pub const ANIM_EXPLORE: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
+
+/// Augmenting-path found — the successful path highlight.
+pub const ANIM_PATH_FOUND: Color32 = Color32::from_rgb(0x66, 0xBB, 0x6A);
+
+/// Failed exploration — dead-end backtrack.
+pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
+
 /// Grid line alpha multiplier for canvas matrix views.
 pub const GRID_ALPHA: f32 = 0.3;
 

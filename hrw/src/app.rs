@@ -40,6 +40,8 @@ use crate::bridge::{self, Ask, Focus, Seg};
 use crate::canvas::Canvas;
 use crate::field_help;
 use crate::incidence_view;
+use crate::matching_anim;
+use crate::tarjan_anim;
 use crate::log_view;
 use crate::reduction_view;
 use crate::spyplot;
@@ -78,6 +80,8 @@ const DEFAULT_LIBRARIES: &str = concat!(
 enum StructuralView {
     SpyPlot,
     Incidence,
+    MatchingAnim,
+    TarjanAnim,
     Reduction,
     Tree,
 }
@@ -248,6 +252,10 @@ pub struct App {
     cached_spy_plot: Option<Option<spyplot::Plot>>,
     cached_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
     cached_reduction: Option<Option<reduction_view::ReductionView>>,
+    cached_matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
+    matching_anim_canvas: Canvas,
+    cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
+    tarjan_anim_canvas: Canvas,
 }
 
 impl App {
@@ -338,6 +346,10 @@ impl App {
             cached_spy_plot: None,
             cached_incidence: None,
             cached_reduction: None,
+            cached_matching_anim: None,
+            matching_anim_canvas: Canvas::default(),
+            cached_tarjan_anim: None,
+            tarjan_anim_canvas: Canvas::default(),
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -509,8 +521,12 @@ impl App {
                     self.cached_spy_plot = None;
                     self.cached_incidence = None;
                     self.cached_reduction = None;
+                    self.cached_matching_anim = None;
+                    self.cached_tarjan_anim = None;
                     self.spy_canvas.request_fit();
                     self.incidence_canvas.request_fit();
+                    self.matching_anim_canvas.request_fit();
+                    self.tarjan_anim_canvas.request_fit();
                     // Land on the furthest stage that completed cleanly.
                     self.stage = self.last_successful_stage();
                     // Publish every stage's full IR so Claude can diff any pair.
@@ -1573,6 +1589,8 @@ impl eframe::App for App {
                     ui.horizontal(|ui| {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                         ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
+                        ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
+                        ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
                         if is_index_reduction {
                             ui.selectable_value(&mut self.structural_view, StructuralView::Reduction, "Reduction");
                         }
@@ -1600,6 +1618,30 @@ impl eframe::App for App {
                         mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture);
                     } else {
                         ui.weak("(no incidence data in this report)");
+                    }
+                } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
+                    let incidence = self.cached_incidence.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report)
+                    });
+                    let anim = self.cached_matching_anim.get_or_insert_with(|| {
+                        incidence.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
+                    });
+                    if let Some(anim) = anim {
+                        anim.ui(ui, &mut self.matching_anim_canvas);
+                    } else {
+                        ui.weak("(no incidence data for matching animation)");
+                    }
+                } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
+                    let incidence = self.cached_incidence.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report)
+                    });
+                    let anim = self.cached_tarjan_anim.get_or_insert_with(|| {
+                        incidence.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
+                    });
+                    if let Some(anim) = anim {
+                        anim.ui(ui, &mut self.tarjan_anim_canvas);
+                    } else {
+                        ui.weak("(no dependency graph for BLT animation)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::Reduction {
                     let cached = self.cached_reduction.get_or_insert_with(|| {
@@ -1841,6 +1883,10 @@ impl App {
             cached_spy_plot: None,
             cached_incidence: None,
             cached_reduction: None,
+            cached_matching_anim: None,
+            matching_anim_canvas: Canvas::default(),
+            cached_tarjan_anim: None,
+            tarjan_anim_canvas: Canvas::default(),
         }
     }
 }

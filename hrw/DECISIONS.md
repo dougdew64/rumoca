@@ -576,3 +576,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   backlog's prioritization table (top of `docs/ideas.md`) maps each item to the tour(s) that need
   it. Claude acts as a curriculum-aware product manager: designing tours, identifying prerequisite
   features, and sequencing work by learning value.
+
+- **2026-07-22 — Algorithm trace instrumentation in Rumoca crates (matching + Tarjan).** Added
+  `MatchingStep`, `MatchingFrame`, `maximum_matching_with_trace()` to `rumoca-phase-structural::matching`
+  and `TarjanStep`, `TarjanFrame`, `tarjan_scc_with_trace()` to `rumoca-phase-structural::tarjan`. Both
+  modules widened from `mod` to `pub mod`. The traces record every algorithmic decision (explore edge,
+  find free variable, displace match, assign pair, visit node, back edge, SCC found) with a snapshot of
+  the state at that moment. HRW replays these traces frame-by-frame in `matching_anim.rs` and
+  `tarjan_anim.rs` (UI tabs "Matching ▶" and "BLT ▶" in the structural view). Design: the trace is
+  computed **on-demand in HRW** from the parsed incidence data (no JSON bloat in the structural report
+  or specimen traces), and the algorithm logic stays in Rumoca (no duplication). This is the first
+  animated stepping (ideas backlog #9), proving the concept for future algorithms (Pantelides, tearing,
+  Newton). The instrumentation follows the additive/observation-only/upstreamable discipline.

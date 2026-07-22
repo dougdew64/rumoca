@@ -23,6 +23,8 @@
 //! - **`canvas`** — reusable pan/zoom scaffold for custom-painted views.
 //! - **`spyplot`** — BLT (block lower triangular) spy-plot, a custom-painter view.
 //! - **`incidence_view`** — incidence matrix (equation x unknown adjacency) view.
+//! - **`matching_anim`** — animated matching stepper (augmenting-path replay).
+//! - **`tarjan_anim`** — animated Tarjan SCC stepper (BLT discovery replay).
 //! - **`reduction_view`** — index reduction process summary (the Pantelides funnel).
 //! - **`log_view`** — timestamped compilation/simulation log panel.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
@@ -33,9 +35,11 @@ pub mod canvas;
 pub mod colors;
 pub mod field_help;
 pub mod incidence_view;
+pub mod matching_anim;
 pub mod log_view;
 pub mod reduction_view;
 pub mod spyplot;
+pub mod tarjan_anim;
 pub mod tree;
 pub mod worker;
 

@@ -43,7 +43,7 @@ use crate::bridge::Seg;
 use crate::canvas::Canvas;
 use crate::str_vec;
 
-/// A parsed incidence matrix ready for rendering.
+/// A parsed incidence matrix ready for rendering, with matching and BLT overlays.
 ///
 /// Constructed from the structural report JSON. Like `spyplot::Plot`, this
 /// struct owns all its data (no lifetime dependency on the JSON), so the
@@ -59,6 +59,29 @@ pub struct IncidenceMatrix {
     // indices where equation i has a non-zero entry. Sorted so we can use
     // binary search for O(log n) hit-testing in `cell_at`.
     rows: Vec<Vec<usize>>,
+    // --- Matching overlay ---
+    // For each equation row, the column index of the matched unknown (the
+    // transversal). `None` if the equation is unmatched (rank deficiency).
+    matched_col: Vec<Option<usize>>,
+    // For each unknown column, whether it is matched by any equation.
+    col_matched: Vec<bool>,
+    // Total number of matched pairs (= structural rank).
+    n_matched: usize,
+    // --- BLT block boundaries ---
+    // Each entry is (start_row, start_col, size) in the matched ordering.
+    // These outline the diagonal blocks on the incidence matrix.
+    blt_blocks: Vec<BltOverlay>,
+}
+
+struct BltOverlay {
+    // Block position in equation/unknown index space. These are indices into
+    // the matched ordering — the block covers equations [eq_start..eq_start+size)
+    // and unknowns [var_start..var_start+size). For the overlay to align with
+    // the incidence matrix, we map equation/unknown *names* from the blocks
+    // array back to their row/column indices in the incidence matrix.
+    eq_indices: Vec<usize>,
+    var_indices: Vec<usize>,
+    coupled: bool,
 }
 
 impl IncidenceMatrix {
@@ -103,17 +126,82 @@ impl IncidenceMatrix {
             rows.push(cols);
         }
 
+        // --- Parse matching overlay ---
+        // The matching array uses string names; resolve to row/col indices.
+        let mut matched_col = vec![None; n_eq];
+        let mut col_matched = vec![false; n_var];
+        let mut n_matched = 0;
+        if let Some(matching) = report.get("matching").and_then(Value::as_array) {
+            // Build name → index lookups.
+            let eq_index: std::collections::HashMap<&str, usize> = equation_names
+                .iter()
+                .enumerate()
+                .map(|(i, n)| (n.as_str(), i))
+                .collect();
+            let var_index: std::collections::HashMap<&str, usize> = unknown_names
+                .iter()
+                .enumerate()
+                .map(|(i, n)| (n.as_str(), i))
+                .collect();
+            for m in matching {
+                let eq_name = m.get("equation").and_then(Value::as_str).unwrap_or("");
+                let var_name = m.get("unknown").and_then(Value::as_str).unwrap_or("");
+                if let (Some(&r), Some(&c)) = (eq_index.get(eq_name), var_index.get(var_name)) {
+                    matched_col[r] = Some(c);
+                    col_matched[c] = true;
+                    n_matched += 1;
+                }
+            }
+        }
+
+        // --- Parse BLT block boundaries ---
+        let mut blt_blocks = Vec::new();
+        if let Some(blocks) = report.get("blocks").and_then(Value::as_array) {
+            let eq_index: std::collections::HashMap<&str, usize> = equation_names
+                .iter()
+                .enumerate()
+                .map(|(i, n)| (n.as_str(), i))
+                .collect();
+            let var_index: std::collections::HashMap<&str, usize> = unknown_names
+                .iter()
+                .enumerate()
+                .map(|(i, n)| (n.as_str(), i))
+                .collect();
+            for b in blocks {
+                let coupled = b.get("kind").and_then(Value::as_str) == Some("coupled");
+                let (eq_names, var_names) = if coupled {
+                    (str_vec(b.get("equations")), str_vec(b.get("unknowns")))
+                } else {
+                    let eq = b.get("equation").and_then(Value::as_str).unwrap_or("").to_owned();
+                    let un = b.get("unknown").and_then(Value::as_str).unwrap_or("").to_owned();
+                    (vec![eq], vec![un])
+                };
+                let eq_indices: Vec<usize> = eq_names.iter()
+                    .filter_map(|n| eq_index.get(n.as_str()).copied())
+                    .collect();
+                let var_indices: Vec<usize> = var_names.iter()
+                    .filter_map(|n| var_index.get(n.as_str()).copied())
+                    .collect();
+                if !eq_indices.is_empty() && !var_indices.is_empty() {
+                    blt_blocks.push(BltOverlay { eq_indices, var_indices, coupled });
+                }
+            }
+        }
+
         Some(IncidenceMatrix {
             n_eq,
             n_var,
             equation_names,
             unknown_names,
             rows,
+            matched_col,
+            col_matched,
+            n_matched,
+            blt_blocks,
         })
     }
 
     /// One-line summary shown above the canvas.
-    /// Reports dimensions, non-zero count, and density percentage.
     pub fn caption(&self) -> String {
         let nnz: usize = self.rows.iter().map(|r| r.len()).sum();
         let total = self.n_eq * self.n_var;
@@ -122,12 +210,24 @@ impl IncidenceMatrix {
         } else {
             0.0
         };
+        let rank_info = if self.n_matched < self.n_eq.min(self.n_var) {
+            let deficiency = self.n_eq.min(self.n_var) - self.n_matched;
+            format!(" · {}/{} matched (rank deficiency {})", self.n_matched, self.n_eq.min(self.n_var), deficiency)
+        } else {
+            format!(" · {}/{} matched (full rank)", self.n_matched, self.n_eq.min(self.n_var))
+        };
         format!(
-            "{}×{} incidence · {} non-zeros ({:.1}% dense) — \
+            "{}×{} incidence · {} non-zeros ({:.1}% dense){} — \
              hover a cell to inspect, click to capture",
-            self.n_eq, self.n_var, nnz, density,
+            self.n_eq, self.n_var, nnz, density, rank_info,
         )
     }
+
+    pub fn n_eq(&self) -> usize { self.n_eq }
+    pub fn n_var(&self) -> usize { self.n_var }
+    pub fn equation_names(&self) -> &[String] { &self.equation_names }
+    pub fn unknown_names(&self) -> &[String] { &self.unknown_names }
+    pub fn rows(&self) -> &[Vec<usize>] { &self.rows }
 
     // Does equation `row` reference unknown `col`?
     //
@@ -196,7 +296,30 @@ impl IncidenceMatrix {
             painter.rect_filled(view.to_screen_rect(col_band), egui::CornerRadius::ZERO, band_color);
         }
 
-        // Draw filled cells.
+        // --- Unmatched row/column bands (rank deficiency) ---
+        // Draw faint red bands behind unmatched rows and columns so rank
+        // deficiency is visible spatially, not just as a count in the caption.
+        let unmatched_band = crate::colors::UNMATCHED_BAND.gamma_multiply(0.15);
+        for (row, mc) in self.matched_col.iter().enumerate() {
+            if mc.is_none() {
+                let band = egui::Rect::from_min_size(
+                    egui::pos2(0.0, row as f32),
+                    egui::vec2(self.n_var as f32, 1.0),
+                );
+                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, unmatched_band);
+            }
+        }
+        for (col, &matched) in self.col_matched.iter().enumerate() {
+            if !matched {
+                let band = egui::Rect::from_min_size(
+                    egui::pos2(col as f32, 0.0),
+                    egui::vec2(1.0, self.n_eq as f32),
+                );
+                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, unmatched_band);
+            }
+        }
+
+        // Draw filled cells (the incidence entries).
         for (row, cols) in self.rows.iter().enumerate() {
             for &col in cols {
                 let is_hovered = hovered_cell == Some((col, row));
@@ -204,6 +327,44 @@ impl IncidenceMatrix {
                 let rect = view.cell_rect(col, row).shrink(view.zoom() * 0.08);
                 painter.rect_filled(rect, egui::CornerRadius::ZERO, color);
             }
+        }
+
+        // --- Matched-pair markers (the transversal) ---
+        // Draw a distinct marker on each matched (row, col) cell so the
+        // learner sees which unknown each equation "owns."
+        let matched_color = crate::colors::MATCHED_MARKER;
+        for (row, mc) in self.matched_col.iter().enumerate() {
+            if let Some(col) = *mc {
+                let rect = view.cell_rect(col, row);
+                let center = rect.center();
+                let r = view.zoom() * 0.2;
+                painter.circle_filled(center, r, matched_color);
+            }
+        }
+
+        // --- BLT block boundaries ---
+        // Draw outlines around each BLT block's equations and unknowns,
+        // connecting the incidence matrix visually to the spy-plot's blocks.
+        let blt_stroke_color = crate::colors::BLT_BOUNDARY;
+        for block in &self.blt_blocks {
+            if block.eq_indices.is_empty() || block.var_indices.is_empty() {
+                continue;
+            }
+            let row_min = *block.eq_indices.iter().min().unwrap();
+            let row_max = *block.eq_indices.iter().max().unwrap();
+            let col_min = *block.var_indices.iter().min().unwrap();
+            let col_max = *block.var_indices.iter().max().unwrap();
+            let block_world = egui::Rect::from_min_max(
+                egui::pos2(col_min as f32, row_min as f32),
+                egui::pos2(col_max as f32 + 1.0, row_max as f32 + 1.0),
+            );
+            let width = if block.coupled { 2.5 } else { 1.5 };
+            painter.rect_stroke(
+                view.to_screen_rect(block_world),
+                egui::CornerRadius::ZERO,
+                egui::Stroke::new(width, blt_stroke_color),
+                egui::StrokeKind::Inside,
+            );
         }
 
         // Axis labels — only drawn when zoomed in far enough that they won't
@@ -355,5 +516,159 @@ mod tests {
     fn empty_incidence_returns_none() {
         assert!(IncidenceMatrix::from_report(&json!({})).is_none());
         assert!(IncidenceMatrix::from_report(&json!({ "incidence": { "n_eq": 0, "n_var": 0, "unknown_names": [], "rows": [] } })).is_none());
+    }
+
+    fn report_with_matching() -> Value {
+        json!({
+            "matching": [
+                { "equation": "f_x[0]", "unknown": "der(x)" },
+                { "equation": "f_x[1]", "unknown": "y" },
+            ],
+            "blocks": [],
+            "incidence": {
+                "n_eq": 3,
+                "n_var": 3,
+                "unknown_names": ["der(x)", "y", "z"],
+                "rows": [
+                    { "equation": "f_x[0]", "unknowns": [0, 1] },
+                    { "equation": "f_x[1]", "unknowns": [1, 2] },
+                    { "equation": "f_x[2]", "unknowns": [0, 2] },
+                ],
+            }
+        })
+    }
+
+    #[test]
+    fn matching_overlay_resolves_names_to_indices() {
+        let mat = IncidenceMatrix::from_report(&report_with_matching()).unwrap();
+        assert_eq!(mat.n_matched, 2);
+        assert_eq!(mat.matched_col[0], Some(0)); // f_x[0] -> der(x) = col 0
+        assert_eq!(mat.matched_col[1], Some(1)); // f_x[1] -> y = col 1
+        assert_eq!(mat.matched_col[2], None);    // f_x[2] unmatched
+    }
+
+    #[test]
+    fn col_matched_tracks_matched_columns() {
+        let mat = IncidenceMatrix::from_report(&report_with_matching()).unwrap();
+        assert!(mat.col_matched[0]);  // der(x) matched
+        assert!(mat.col_matched[1]);  // y matched
+        assert!(!mat.col_matched[2]); // z unmatched
+    }
+
+    #[test]
+    fn no_matching_field_yields_all_unmatched() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        assert_eq!(mat.n_matched, 0);
+        assert!(mat.matched_col.iter().all(|m| m.is_none()));
+        assert!(mat.col_matched.iter().all(|&m| !m));
+    }
+
+    #[test]
+    fn caption_shows_rank_deficiency() {
+        let mat = IncidenceMatrix::from_report(&report_with_matching()).unwrap();
+        let cap = mat.caption();
+        assert!(cap.contains("2/3 matched"), "caption: {cap}");
+        assert!(cap.contains("rank deficiency 1"), "caption: {cap}");
+    }
+
+    #[test]
+    fn caption_shows_full_rank() {
+        let report = json!({
+            "matching": [
+                { "equation": "f_x[0]", "unknown": "der(x)" },
+                { "equation": "f_x[1]", "unknown": "y" },
+                { "equation": "f_x[2]", "unknown": "z" },
+            ],
+            "blocks": [],
+            "incidence": {
+                "n_eq": 3,
+                "n_var": 3,
+                "unknown_names": ["der(x)", "y", "z"],
+                "rows": [
+                    { "equation": "f_x[0]", "unknowns": [0, 1] },
+                    { "equation": "f_x[1]", "unknowns": [1, 2] },
+                    { "equation": "f_x[2]", "unknowns": [0, 2] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        let cap = mat.caption();
+        assert!(cap.contains("3/3 matched"), "caption: {cap}");
+        assert!(cap.contains("full rank"), "caption: {cap}");
+    }
+
+    #[test]
+    fn blt_scalar_block_parsed() {
+        let report = json!({
+            "matching": [
+                { "equation": "f_x[0]", "unknown": "der(x)" },
+            ],
+            "blocks": [
+                { "kind": "scalar", "equation": "f_x[0]", "unknown": "der(x)" },
+            ],
+            "incidence": {
+                "n_eq": 2,
+                "n_var": 2,
+                "unknown_names": ["der(x)", "y"],
+                "rows": [
+                    { "equation": "f_x[0]", "unknowns": [0] },
+                    { "equation": "f_x[1]", "unknowns": [1] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        assert_eq!(mat.blt_blocks.len(), 1);
+        assert!(!mat.blt_blocks[0].coupled);
+        assert_eq!(mat.blt_blocks[0].eq_indices, vec![0]);
+        assert_eq!(mat.blt_blocks[0].var_indices, vec![0]);
+    }
+
+    #[test]
+    fn blt_coupled_block_parsed() {
+        let report = json!({
+            "matching": [],
+            "blocks": [
+                {
+                    "kind": "coupled",
+                    "equations": ["f_x[0]", "f_x[1]"],
+                    "unknowns": ["der(x)", "y"],
+                },
+            ],
+            "incidence": {
+                "n_eq": 2,
+                "n_var": 2,
+                "unknown_names": ["der(x)", "y"],
+                "rows": [
+                    { "equation": "f_x[0]", "unknowns": [0, 1] },
+                    { "equation": "f_x[1]", "unknowns": [0, 1] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        assert_eq!(mat.blt_blocks.len(), 1);
+        assert!(mat.blt_blocks[0].coupled);
+        assert_eq!(mat.blt_blocks[0].eq_indices, vec![0, 1]);
+        assert_eq!(mat.blt_blocks[0].var_indices, vec![0, 1]);
+    }
+
+    #[test]
+    fn unresolvable_matching_names_silently_skipped() {
+        let report = json!({
+            "matching": [
+                { "equation": "BOGUS", "unknown": "ALSO_BOGUS" },
+            ],
+            "blocks": [],
+            "incidence": {
+                "n_eq": 1,
+                "n_var": 1,
+                "unknown_names": ["x"],
+                "rows": [
+                    { "equation": "eq1", "unknowns": [0] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        assert_eq!(mat.n_matched, 0);
+        assert_eq!(mat.matched_col[0], None);
     }
 }

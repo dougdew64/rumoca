@@ -234,6 +234,11 @@ need it; it's specifically for the event/hybrid ones.
 
 ## 9. Incremental / animated views of algorithms
 
+**Partially implemented 2026-07-22.** Matching (augmenting paths) and BLT discovery
+(Tarjan SCC) now have animated steppers — see `matching_anim.rs` and `tarjan_anim.rs`.
+Trace infrastructure added to `rumoca-phase-structural` (`maximum_matching_with_trace`,
+`tarjan_scc_with_trace`). Remaining candidates: Pantelides, tearing, Newton iteration.
+
 Captured 2026-07-21 (Doug). **Top-of-mind, long-running theme.** Educational
 animations of challenging compiler algorithms — index reduction (Pantelides
 iterating, SCC discovery, demotion), matching's augmenting paths, tearing — showing
@@ -395,6 +400,10 @@ simulation, using the actual Rumoca codebase as the teaching material.
 
 ## 14. Rank deficiency visualization in the incidence matrix
 
+**✅ Implemented 2026-07-22.** Unmatched rows and columns now have faint red bands
+on the incidence matrix. Caption shows "N/M matched (rank deficiency D)" or
+"(full rank)". Colors in `colors.rs`: `UNMATCHED_BAND`.
+
 Captured 2026-07-21 (Claude, learning-driven). The incidence view currently reports
 "93/97 matched" as text. Enhancement: **highlight unmatched rows and columns** in
 the incidence matrix with a distinct color (red).
@@ -416,6 +425,12 @@ the incidence matrix with a distinct color (red).
   rank, 0 unmatched) — the contrast teaches the concept.
 
 ## 15. Matching-as-permutation view — before and after the transversal
+
+**Partially implemented 2026-07-22.** Matched-pair green circles now mark the
+transversal diagonal on the incidence matrix. BLT block boundaries draw amber
+outlines. Colors: `MATCHED_MARKER`, `BLT_BOUNDARY`. The full permuted-matrix
+toggle (rows/columns reordered to put matched pairs on the diagonal) remains
+deferred.
 
 Captured 2026-07-21 (Claude, learning-driven). Show the incidence matrix **before
 and after** the row/column permutation implied by maximum matching.
@@ -439,6 +454,10 @@ and after** the row/column permutation implied by maximum matching.
   perspectives on the same decomposition.
 
 ## 16. Animated BLT block discovery (Tarjan's SCC algorithm)
+
+**✅ Implemented 2026-07-22.** `tarjan_anim.rs` replays Tarjan's algorithm frame by
+frame on the equation dependency graph. Trace recorded by `tarjan_scc_with_trace`
+in `rumoca-phase-structural`. UI tab: "BLT ▶" in the structural view.
 
 Captured 2026-07-21 (Claude, learning-driven). Animate the process of discovering
 BLT blocks — Tarjan's algorithm finding strongly connected components (SCCs) in the
