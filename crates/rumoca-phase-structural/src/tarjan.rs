@@ -1,5 +1,52 @@
 //! Tarjan's algorithm for strongly connected components.
 
+/// One step of Tarjan's SCC algorithm, recorded for animation replay.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TarjanStep {
+    /// Visiting node `v` for the first time (assigned index/lowlink).
+    Visit(usize),
+    /// Exploring edge v → w.
+    ExploreEdge { from: usize, to: usize },
+    /// Edge v → w leads to an unvisited node — recursing.
+    TreeEdge { from: usize, to: usize },
+    /// Edge v → w leads to an on-stack node — back edge, lowlink updated.
+    BackEdge { from: usize, to: usize },
+    /// Returning from recursion into `to`, updating `from`'s lowlink.
+    Return { from: usize, to: usize },
+    /// SCC found rooted at `root`, containing `members`.
+    SccFound { root: usize, members: Vec<usize> },
+}
+
+/// Snapshot of Tarjan state at each step, for animation rendering.
+#[derive(Debug, Clone)]
+pub struct TarjanFrame {
+    pub step: TarjanStep,
+    /// Current DFS stack (nodes on the Tarjan stack).
+    pub stack: Vec<usize>,
+    /// SCCs discovered so far.
+    pub sccs_so_far: Vec<Vec<usize>>,
+}
+
+/// Result of `tarjan_scc_with_trace`: the SCCs plus the frame sequence.
+pub struct TarjanTraceResult {
+    pub sccs: Vec<Vec<usize>>,
+    pub frames: Vec<TarjanFrame>,
+}
+
+/// Like `tarjan_scc`, but records every algorithmic step for animation.
+pub fn tarjan_scc_with_trace(n: usize, adj: &[Vec<usize>]) -> TarjanTraceResult {
+    let mut state = TracedTarjanState::new(n);
+    for v in 0..n {
+        if state.index[v].is_none() {
+            state.strongconnect(v, adj);
+        }
+    }
+    TarjanTraceResult {
+        sccs: state.sccs,
+        frames: state.frames,
+    }
+}
+
 /// Find all strongly connected components using Tarjan's algorithm.
 ///
 /// Returns SCCs in reverse topological order. Each SCC is a `Vec` of node indices.
@@ -74,6 +121,76 @@ impl TarjanState {
     }
 }
 
+struct TracedTarjanState {
+    index_counter: usize,
+    stack: Vec<usize>,
+    on_stack: Vec<bool>,
+    index: Vec<Option<usize>>,
+    lowlink: Vec<usize>,
+    sccs: Vec<Vec<usize>>,
+    frames: Vec<TarjanFrame>,
+}
+
+impl TracedTarjanState {
+    fn new(n: usize) -> Self {
+        Self {
+            index_counter: 0,
+            stack: Vec::new(),
+            on_stack: vec![false; n],
+            index: vec![None; n],
+            lowlink: vec![0; n],
+            sccs: Vec::new(),
+            frames: Vec::new(),
+        }
+    }
+
+    fn record(&mut self, step: TarjanStep) {
+        self.frames.push(TarjanFrame {
+            step,
+            stack: self.stack.clone(),
+            sccs_so_far: self.sccs.clone(),
+        });
+    }
+
+    fn strongconnect(&mut self, v: usize, adj: &[Vec<usize>]) {
+        self.index[v] = Some(self.index_counter);
+        self.lowlink[v] = self.index_counter;
+        self.index_counter += 1;
+        self.stack.push(v);
+        self.on_stack[v] = true;
+        self.record(TarjanStep::Visit(v));
+
+        for &w in &adj[v] {
+            self.record(TarjanStep::ExploreEdge { from: v, to: w });
+            if self.index[w].is_none() {
+                self.record(TarjanStep::TreeEdge { from: v, to: w });
+                self.strongconnect(w, adj);
+                self.lowlink[v] = self.lowlink[v].min(self.lowlink[w]);
+                self.record(TarjanStep::Return { from: v, to: w });
+            } else if self.on_stack[w] {
+                self.lowlink[v] = self.lowlink[v]
+                    .min(self.index[w].expect("tarjan invariant: on-stack node must have index"));
+                self.record(TarjanStep::BackEdge { from: v, to: w });
+            }
+        }
+
+        if self.lowlink[v] == self.index[v].expect("tarjan invariant: visited node must have index")
+        {
+            let mut scc = Vec::new();
+            loop {
+                let w = self.stack.pop().expect("tarjan invariant: stack must contain SCC root");
+                self.on_stack[w] = false;
+                scc.push(w);
+                if w == v {
+                    break;
+                }
+            }
+            self.record(TarjanStep::SccFound { root: v, members: scc.clone() });
+            self.sccs.push(scc);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -103,5 +220,43 @@ mod tests {
         let sccs = tarjan_scc(4, &adj);
         let loops: Vec<_> = sccs.iter().filter(|scc| scc.len() > 1).collect();
         assert_eq!(loops.len(), 2, "should find two loops");
+    }
+
+    #[test]
+    fn traced_tarjan_produces_same_sccs() {
+        let adj = vec![vec![1], vec![2], vec![0]];
+        let sccs = tarjan_scc(3, &adj);
+        let traced = tarjan_scc_with_trace(3, &adj);
+        assert_eq!(sccs, traced.sccs);
+    }
+
+    #[test]
+    fn trace_contains_visit_for_each_node() {
+        let adj = vec![vec![1], vec![], vec![]];
+        let traced = tarjan_scc_with_trace(3, &adj);
+        let visits: Vec<_> = traced.frames.iter()
+            .filter(|f| matches!(f.step, TarjanStep::Visit(_)))
+            .collect();
+        assert_eq!(visits.len(), 3);
+    }
+
+    #[test]
+    fn trace_records_scc_found() {
+        let adj = vec![vec![1], vec![0]];
+        let traced = tarjan_scc_with_trace(2, &adj);
+        let scc_events: Vec<_> = traced.frames.iter()
+            .filter(|f| matches!(f.step, TarjanStep::SccFound { .. }))
+            .collect();
+        assert_eq!(scc_events.len(), 1, "one SCC with both nodes");
+    }
+
+    #[test]
+    fn trace_records_back_edge() {
+        let adj = vec![vec![1], vec![0]];
+        let traced = tarjan_scc_with_trace(2, &adj);
+        let back_edges: Vec<_> = traced.frames.iter()
+            .filter(|f| matches!(f.step, TarjanStep::BackEdge { .. }))
+            .collect();
+        assert!(!back_edges.is_empty(), "cycle should produce a back edge");
     }
 }
