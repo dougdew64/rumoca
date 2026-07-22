@@ -1,7 +1,7 @@
-//! Incidence-matrix custom-painter view (Pass two) — the equation×unknown
-//! bipartite adjacency that the matching runs on.
+//! Incidence-matrix custom-painter view — the equation×unknown bipartite
+//! adjacency that the matching runs on.
 //!
-//! Pass one deferred this because `build_incidence` was `pub(crate)`. Now that
+//! Previously deferred because `build_incidence` was `pub(crate)`. Now that
 //! it's `pub`, the worker calls it alongside `build_structural_report` and ships
 //! the sparse adjacency in the stage JSON. This view draws it: equations as rows,
 //! unknowns as columns, a filled cell wherever an equation references an unknown.

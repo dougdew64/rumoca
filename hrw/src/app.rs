@@ -58,7 +58,7 @@ enum StageKind {
 }
 
 /// How to render the Structural / Index-reduction stages: the custom BLT
-/// spy-plot, the incidence matrix (pass-two), the reduction process
+/// spy-plot, the incidence matrix, the reduction process
 /// summary (Index reduction only), or the generic serde tree.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum StructuralView {
