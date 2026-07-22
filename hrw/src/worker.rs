@@ -1274,7 +1274,7 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
             let mut json = structural_to_json(&rep);
             json.as_object_mut()
                 .unwrap()
-                .insert("incidence".to_owned(), incidence_to_json(&inc));
+                .insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae.continuous.equations)));
             Stage::ok(json)
         }
         Err(e) => Stage::err(format!("structural analysis failed: {e}")),
@@ -1313,7 +1313,7 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
             };
             let mut json = structural_to_json(&rep);
             let obj = json.as_object_mut().expect("structural_to_json returns an object");
-            obj.insert("incidence".to_owned(), incidence_to_json(&inc));
+            obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&reduced.continuous.equations)));
             obj.insert("reduction".to_owned(), reduction.to_json());
             Stage::ok_with_note(json, note)
         }
@@ -1556,7 +1556,17 @@ fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_
 /// Convert the incidence matrix (equation x unknown bipartite adjacency) to JSON.
 /// Each row says which unknowns appear in that equation — the raw data the
 /// spy-plot view renders as dots in a matrix.
-fn incidence_to_json(inc: &rumoca_phase_structural::Incidence) -> serde_json::Value {
+///
+/// When `equations` is provided (the DAE's continuous equation list), each row
+/// also carries an `"equation_text"` field with the pretty-printed Modelica
+/// expression (e.g. `der(w) - tau / J`), for human-readable labels.
+fn incidence_to_json(
+    inc: &rumoca_phase_structural::Incidence,
+    equations: Option<&[rumoca_ir_dae::Equation]>,
+) -> serde_json::Value {
+    let eq_texts: Vec<String> = equations
+        .map(|eqs| crate::expr_format::equation_labels(eqs))
+        .unwrap_or_default();
     let rows: Vec<serde_json::Value> = inc
         .eq_unknowns
         .iter()
@@ -1564,10 +1574,16 @@ fn incidence_to_json(inc: &rumoca_phase_structural::Incidence) -> serde_json::Va
         .map(|(i, cols)| {
             let mut sorted: Vec<usize> = cols.iter().copied().collect();
             sorted.sort_unstable();
-            serde_json::json!({
+            let mut row = serde_json::json!({
                 "equation": inc.equation_refs[i].to_string(),
                 "unknowns": sorted,
-            })
+            });
+            if let Some(text) = eq_texts.get(i) {
+                row.as_object_mut()
+                    .unwrap()
+                    .insert("equation_text".to_owned(), serde_json::Value::String(text.clone()));
+            }
+            row
         })
         .collect();
     let unknown_names: Vec<String> = inc.unknown_names.iter().map(|u| u.to_string()).collect();
@@ -2410,6 +2426,22 @@ mod tests {
         assert!(inc["unknown_names"].as_array().is_some(), "incidence missing unknown_names");
         assert!(inc["rows"].as_array().is_some(), "incidence missing rows");
         assert!(inc["n_eq"].as_u64().is_some(), "incidence missing n_eq");
+    }
+
+    #[test]
+    fn structural_incidence_has_equation_text_labels() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
+            panic!("expected Compiled");
+        };
+        let v = stages.structural.value.expect("structural IR");
+        let rows = v["incidence"]["rows"].as_array().expect("incidence rows");
+        for row in rows {
+            let text = row.get("equation_text").and_then(|v| v.as_str());
+            assert!(text.is_some(), "row missing equation_text: {row}");
+            let text = text.unwrap();
+            assert!(!text.is_empty(), "equation_text should not be empty");
+            assert!(!text.starts_with("f_x["), "equation_text should be readable, not an index label: {text}");
+        }
     }
 
     /// The Index-reduction stage IR includes the reduction report.

@@ -38,13 +38,15 @@
         "equation": "f_x[0]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "der(phi) - w"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "J * der(w) - tau"
       }
     ]
   }

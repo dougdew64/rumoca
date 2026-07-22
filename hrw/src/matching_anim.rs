@@ -53,7 +53,7 @@ impl MatchingAnimation {
             frames: result.frames,
             n_eq: mat.n_eq(),
             n_var: mat.n_var(),
-            equation_names: mat.equation_names().to_vec(),
+            equation_names: mat.equation_texts().to_vec(),
             unknown_names: mat.unknown_names().to_vec(),
             rows: mat.rows().to_vec(),
             cursor: 0,

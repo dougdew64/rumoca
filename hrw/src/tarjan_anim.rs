@@ -80,7 +80,7 @@ impl TarjanAnimation {
         Some(Self {
             frames: result.frames,
             n_nodes: n_eq,
-            node_names: mat.equation_names().to_vec(),
+            node_names: mat.equation_texts().to_vec(),
             adj,
             cursor: 0,
             playing: false,

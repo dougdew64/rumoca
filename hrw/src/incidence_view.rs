@@ -52,8 +52,11 @@ pub struct IncidenceMatrix {
     // Dimensions: n_eq equations (rows) x n_var unknowns (columns).
     n_eq: usize,
     n_var: usize,
-    // Human-readable names for display in tooltips and axis labels.
+    // Equation identifiers for matching/BLT overlay lookups (e.g. `f_x[0]`).
     equation_names: Vec<String>,
+    // Pretty-printed equation text for display (e.g. `der(w) - tau / J`).
+    // Falls back to equation_names when unavailable.
+    equation_texts: Vec<String>,
     unknown_names: Vec<String>,
     // Sparse row storage (CSR-like): `rows[i]` is a sorted list of column
     // indices where equation i has a non-zero entry. Sorted so we can use
@@ -110,6 +113,7 @@ impl IncidenceMatrix {
         }
 
         let mut equation_names = Vec::with_capacity(n_eq);
+        let mut equation_texts = Vec::with_capacity(n_eq);
         let mut rows = Vec::with_capacity(n_eq);
         for r in rows_json {
             let eq_name = r
@@ -117,7 +121,13 @@ impl IncidenceMatrix {
                 .and_then(Value::as_str)
                 .unwrap_or("")
                 .to_owned();
+            let eq_text = r
+                .get("equation_text")
+                .and_then(Value::as_str)
+                .unwrap_or(eq_name.as_str())
+                .to_owned();
             equation_names.push(eq_name);
+            equation_texts.push(eq_text);
             let cols: Vec<usize> = r
                 .get("unknowns")
                 .and_then(Value::as_array)
@@ -192,6 +202,7 @@ impl IncidenceMatrix {
             n_eq,
             n_var,
             equation_names,
+            equation_texts,
             unknown_names,
             rows,
             matched_col,
@@ -226,6 +237,7 @@ impl IncidenceMatrix {
     pub fn n_eq(&self) -> usize { self.n_eq }
     pub fn n_var(&self) -> usize { self.n_var }
     pub fn equation_names(&self) -> &[String] { &self.equation_names }
+    pub fn equation_texts(&self) -> &[String] { &self.equation_texts }
     pub fn unknown_names(&self) -> &[String] { &self.unknown_names }
     pub fn rows(&self) -> &[Vec<usize>] { &self.rows }
 
@@ -389,13 +401,13 @@ impl IncidenceMatrix {
                 shape.override_text_color = Some(label_color);
                 painter.add(shape);
             }
-            // Row (equation) labels: drawn to the left of each row, right-aligned.
-            for (row, name) in self.equation_names.iter().enumerate() {
+            // Row (equation) labels: use pretty-printed equation text when available.
+            for (row, text) in self.equation_texts.iter().enumerate() {
                 let pos = view.to_screen(egui::pos2(-0.1, row as f32 + 0.5));
                 painter.text(
                     pos,
                     egui::Align2::RIGHT_CENTER,
-                    truncate_label(name, 20),
+                    truncate_label(text, 30),
                     font.clone(),
                     label_color,
                 );
@@ -427,12 +439,12 @@ impl IncidenceMatrix {
         });
         ui.separator();
         ui.label(egui::RichText::new("equation (row)").weak());
-        ui.label(
-            egui::RichText::new(
-                self.equation_names.get(row).map(String::as_str).unwrap_or("?"),
-            )
-            .monospace(),
-        );
+        let eq_text = self.equation_texts.get(row).map(String::as_str).unwrap_or("?");
+        let eq_name = self.equation_names.get(row).map(String::as_str).unwrap_or("?");
+        ui.label(egui::RichText::new(eq_text).monospace());
+        if eq_text != eq_name {
+            ui.label(egui::RichText::new(eq_name).weak().small());
+        }
         ui.add_space(4.0);
         ui.label(egui::RichText::new("unknown (col)").weak());
         ui.label(
@@ -649,6 +661,31 @@ mod tests {
         assert!(mat.blt_blocks[0].coupled);
         assert_eq!(mat.blt_blocks[0].eq_indices, vec![0, 1]);
         assert_eq!(mat.blt_blocks[0].var_indices, vec![0, 1]);
+    }
+
+    #[test]
+    fn equation_texts_parsed_from_json() {
+        let report = json!({
+            "blocks": [],
+            "incidence": {
+                "n_eq": 2,
+                "n_var": 2,
+                "unknown_names": ["x", "y"],
+                "rows": [
+                    { "equation": "f_x[0]", "equation_text": "der(w) - tau / J", "unknowns": [0] },
+                    { "equation": "f_x[1]", "equation_text": "der(phi) - w", "unknowns": [1] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        assert_eq!(mat.equation_names(), &["f_x[0]", "f_x[1]"]);
+        assert_eq!(mat.equation_texts(), &["der(w) - tau / J", "der(phi) - w"]);
+    }
+
+    #[test]
+    fn equation_texts_fallback_to_names_when_missing() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        assert_eq!(mat.equation_texts(), mat.equation_names());
     }
 
     #[test]

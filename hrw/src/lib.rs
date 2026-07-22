@@ -20,6 +20,7 @@
 //!   what the user captured, so Claude Code can reason about it.
 //! - **`tree`** — the generic serde-value tree inspector, used for every pipeline
 //!   stage's IR (one widget, many stages).
+//! - **`expr_format`** — Modelica-like expression pretty-printer (precedence-aware).
 //! - **`canvas`** — reusable pan/zoom scaffold for custom-painted views.
 //! - **`spyplot`** — BLT (block lower triangular) spy-plot, a custom-painter view.
 //! - **`incidence_view`** — incidence matrix (equation x unknown adjacency) view.
@@ -33,6 +34,7 @@ pub mod app;
 pub mod bridge;
 pub mod canvas;
 pub mod colors;
+pub mod expr_format;
 pub mod field_help;
 pub mod incidence_view;
 pub mod matching_anim;

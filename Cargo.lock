@@ -3164,6 +3164,7 @@ dependencies = [
  "egui_plot",
  "libc",
  "rumoca-compile",
+ "rumoca-core",
  "rumoca-ir-ast",
  "rumoca-ir-dae",
  "rumoca-phase-instantiate",

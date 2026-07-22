@@ -32,10 +32,13 @@ hrw/
 │   ├── worker.rs       # Background-thread compilation & simulation
 │   ├── bridge.rs       # Claude Code integration — JSON focus-file emitter
 │   ├── colors.rs       # Shared color constants (theme-aware palette)
+│   ├── expr_format.rs  # Modelica expression pretty-printer (precedence-aware)
 │   ├── tree.rs         # Generic serde-value tree inspector widget
 │   ├── canvas.rs       # Reusable pan/zoom scaffold for custom-painted views
 │   ├── spyplot.rs      # BLT (Block Lower Triangular) spy-plot painter
 │   ├── incidence_view.rs  # Incidence matrix (equation × unknown) painter
+│   ├── matching_anim.rs   # Animated matching stepper (augmenting-path replay)
+│   ├── tarjan_anim.rs     # Animated Tarjan SCC stepper (BLT discovery replay)
 │   ├── reduction_view.rs  # Index reduction process summary panel
 │   ├── log_view.rs     # Timestamped compilation/simulation log panel
 │   └── field_help.rs   # Build-time-embedded IR field documentation
@@ -387,7 +390,7 @@ Blocks are laid out consecutively along the diagonal. Colors distinguish block t
 (blue for scalar, orange for coupled with tearing). Hover shows the block's equations
 and tearing report; click captures the block into the bridge.
 
-### Incidence matrix (`incidence_view.rs`, ~380 lines)
+### Incidence matrix (`incidence_view.rs`, ~400 lines)
 
 Visualizes the equation × unknown adjacency matrix — the bipartite graph that
 maximum matching runs on. Equations are rows, unknowns are columns; a filled cell
@@ -397,6 +400,28 @@ sorted column indices for O(log n) hit testing via `binary_search`.
 Level-of-detail rendering: grid lines appear at zoom ≥ 6, axis labels (with -45°
 rotation for column headers) at zoom ≥ 16. Hover shows crosshair bands highlighting
 the row and column; click captures the equation's incidence data.
+
+Row labels use pretty-printed equation text (e.g. `der(w) - tau / J`) instead of
+opaque index labels (`f_x[0]`). The text comes from the expression pretty-printer
+(`expr_format.rs`) and is carried in the JSON as `equation_text` alongside the
+identifier-key `equation`. Tooltips show both — the readable text prominently, the
+index label in small print below. The `f_x[N]` identifiers are retained for
+matching/BLT overlay lookups, which cross-reference by name.
+
+### Algorithm animation steppers
+
+Two animated views replay structural analysis algorithms frame by frame, built
+from trace data recorded by instrumented variants of the Rumoca phase functions.
+
+**Matching animation** (`matching_anim.rs`, ~430 lines): replays Kuhn's
+augmenting-path algorithm on the incidence matrix. Each frame highlights the
+current equation, explored edges, found/failed paths, and confirmed matches
+with step-by-step descriptions using readable equation text.
+
+**Tarjan SCC animation** (`tarjan_anim.rs`, ~400 lines): replays Tarjan's
+strongly connected component algorithm on the dependency graph (derived from
+the matching result). Nodes are colored by DFS state (on stack, in discovered
+SCC) and edges are classified as tree/back edges.
 
 ### Index reduction summary (`reduction_view.rs`, ~500 lines)
 
@@ -481,6 +506,33 @@ A two-tier help system:
 The module also maps each stage to its `docs/compiler-phases` chapter, providing
 the "Read: Phase N" button in the right panel.
 
+### Expression pretty-printer (`expr_format.rs`, ~250 lines)
+
+Renders `rumoca_core::Expression` trees as readable Modelica-like text — e.g.
+`der(w) - tau / J` instead of `f_x[0]`. The printer is **precedence-aware**: it
+tracks operator binding strength (Or < And < relational < Add/Sub < Mul/Div < Exp)
+and only inserts parentheses when the child's precedence is lower than the parent's,
+or when same-precedence operators require disambiguation (e.g. `a - (b - c)` but not
+`a - b - c`). Exponentiation is right-associative; all other binary operators are
+left-associative.
+
+Entry points:
+- `format_expr(expr)` — render a single expression
+- `format_equation(eq)` — render a DAE equation as `lhs = rhs` or `0 = rhs`
+- `format_equation_short(eq)` — label form: `lhs = rhs` or just the rhs for residuals
+- `equation_labels(equations)` — batch-format a slice of DAE equations into label strings
+
+The module handles all 14 `Expression` variants (Binary, Unary, VarRef, BuiltinCall,
+FunctionCall, Literal, If, Array, Tuple, Range, ArrayComprehension, Index, FieldAccess,
+Empty) and delegates to existing `Display` impls for `Reference`, `OpBinary`, `OpUnary`,
+`Literal`, and `BuiltinFunction::name()`.
+
+Used by:
+- **`worker.rs`** — `incidence_to_json` formats each equation's text and carries it
+  in the JSON alongside the identifier key
+- **`incidence_view.rs`** — axis labels and tooltips show equation text
+- **`matching_anim.rs`** / **`tarjan_anim.rs`** — step descriptions use equation text
+
 ### Colors (`colors.rs`, ~90 lines)
 
 Shared color constants used across multiple view modules. Contains:
@@ -512,13 +564,14 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
 
 | Crate | What HRW uses |
 |-------|---------------|
+| `rumoca-core` | `Expression`, `OpBinary`, `Subscript`, etc. — IR primitives for the expression pretty-printer |
 | `rumoca-phase-parse` | `parse()` — AST |
 | `rumoca-compile` | `Session`, `SessionConfig`, `PhaseResult`, source-root loading |
 | `rumoca-ir-ast` | IR types (indirectly, via serde serialization) |
 | `rumoca-phase-instantiate` | `instantiate_model()` — InstanceOverlay |
 | `rumoca-phase-typecheck` | `typecheck_instanced()` — type assignment |
-| `rumoca-phase-structural` | `build_structural_report()`, `build_ic_plan()`, `dae_prepare::*` |
-| `rumoca-ir-dae` | `Dae` type for the index-reduction funnel |
+| `rumoca-phase-structural` | `build_structural_report()`, `build_incidence()`, `build_ic_plan()`, `dae_prepare::*`, matching/tarjan trace types |
+| `rumoca-ir-dae` | `Dae`, `Equation` types for the index-reduction funnel and expression formatting |
 | `rumoca-phase-solve` | `lower_dae_to_solve_model()` — SolveModel |
 | `rumoca-sim` | `simulate_solve_model()` — simulation runner |
 
@@ -530,7 +583,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (101 tests) guards against silent
+their call sites. The regression test suite (145 tests) guards against silent
 regressions during a rebase.
 
 
