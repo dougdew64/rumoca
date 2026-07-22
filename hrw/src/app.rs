@@ -331,8 +331,8 @@ impl App {
             field_help: field_help::load(),
             selected_field: None,
             structural_view: StructuralView::SpyPlot,
-            spy_canvas: Canvas::default(),
-            incidence_canvas: Canvas::default(),
+            spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             log_entries: Vec::new(),
             viewing_log: false,
             tracing_enabled: false,
@@ -347,9 +347,9 @@ impl App {
             cached_incidence: None,
             cached_reduction: None,
             cached_matching_anim: None,
-            matching_anim_canvas: Canvas::default(),
+            matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
-            tarjan_anim_canvas: Canvas::default(),
+            tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -1868,8 +1868,8 @@ impl App {
             field_help: HashMap::new(),
             selected_field: None,
             structural_view: StructuralView::SpyPlot,
-            spy_canvas: Canvas::default(),
-            incidence_canvas: Canvas::default(),
+            spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             log_entries: Vec::new(),
             viewing_log: false,
             tracing_enabled: false,
@@ -1884,9 +1884,9 @@ impl App {
             cached_incidence: None,
             cached_reduction: None,
             cached_matching_anim: None,
-            matching_anim_canvas: Canvas::default(),
+            matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
-            tarjan_anim_canvas: Canvas::default(),
+            tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
         }
     }
 }

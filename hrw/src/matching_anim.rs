@@ -167,7 +167,7 @@ impl MatchingAnimation {
     }
 
     fn draw_matrix(&self, ui: &mut egui::Ui, canvas: &mut Canvas) {
-        let label_headroom = 6.0_f32;
+        let label_headroom = 1.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
             egui::Pos2::ZERO,
             egui::vec2(self.n_var as f32, self.n_eq as f32),
@@ -315,7 +315,7 @@ impl MatchingAnimation {
             let label_color = visuals.text_color().gamma_multiply(0.7);
             let angle = -std::f32::consts::FRAC_PI_4;
             for (col, name) in self.unknown_names.iter().enumerate() {
-                let anchor = view.to_screen(egui::pos2(col as f32 + 0.5, -0.15));
+                let anchor = view.to_screen(egui::pos2(col as f32 + 0.5, -0.6));
                 let galley = painter.layout_no_wrap(
                     truncate_label(name, 20).to_owned(),
                     font.clone(),
@@ -327,7 +327,7 @@ impl MatchingAnimation {
                 painter.add(shape);
             }
             for (row, name) in self.equation_names.iter().enumerate() {
-                let pos = view.to_screen(egui::pos2(-0.1, row as f32 + 0.5));
+                let pos = view.to_screen(egui::pos2(-0.6, row as f32 + 0.5));
                 painter.text(
                     pos,
                     egui::Align2::RIGHT_CENTER,

@@ -260,11 +260,10 @@ impl IncidenceMatrix {
     /// - zoom >= 6: grid lines between cells
     /// - zoom >= 16: axis labels (equation names on left, unknown names on top)
     pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>) {
-        // Reserve extra world-space above the matrix for angled column labels.
-        // Without this headroom, the fit-to-content would crop the labels.
-        // 6 world units is generous enough for long Modelica variable names
-        // rendered at -45 degrees.
-        let label_headroom = 6.0_f32;
+        // Bounds include the label anchor region above the matrix (labels sit
+        // at y = -0.6). The fit_vertical_bias (0.1) reserves 10% of the view
+        // height above the bounds, giving the angled column labels room.
+        let label_headroom = 1.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
             egui::Pos2::ZERO,
             egui::vec2(self.n_var as f32, self.n_eq as f32),
@@ -388,8 +387,9 @@ impl IncidenceMatrix {
             // The angle prevents long Modelica names from overlapping each other.
             let angle = -std::f32::consts::FRAC_PI_4;
             for (col, name) in self.unknown_names.iter().enumerate() {
-                // Anchor at the top of each column, slightly above the matrix.
-                let anchor = view.to_screen(egui::pos2(col as f32 + 0.5, -0.15));
+                // Anchor at the top of each column, above the matrix with
+                // clearance so rotated text doesn't overlap the first row.
+                let anchor = view.to_screen(egui::pos2(col as f32 + 0.5, -0.6));
                 let galley = painter.layout_no_wrap(
                     truncate_label(name, 20).to_owned(),
                     font.clone(),
@@ -403,7 +403,7 @@ impl IncidenceMatrix {
             }
             // Row (equation) labels: use pretty-printed equation text when available.
             for (row, text) in self.equation_texts.iter().enumerate() {
-                let pos = view.to_screen(egui::pos2(-0.1, row as f32 + 0.5));
+                let pos = view.to_screen(egui::pos2(-0.6, row as f32 + 0.5));
                 painter.text(
                     pos,
                     egui::Align2::RIGHT_CENTER,

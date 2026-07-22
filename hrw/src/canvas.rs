@@ -67,6 +67,10 @@ pub struct Canvas {
     pan: egui::Vec2,
     zoom: f32,
     fit: bool,
+    /// Fraction of view height reserved as top margin when fitting content.
+    /// 0.0 = content at top, 0.1 = 10% gap above content for labels.
+    /// Matrix views use 0.1 so column labels sit near the view top.
+    fit_vertical_bias: f32,
 }
 
 impl Default for Canvas {
@@ -74,7 +78,7 @@ impl Default for Canvas {
         // Start with fit=true so the first draw auto-fits the content.
         // The default zoom of 20.0 is a reasonable fallback if fit doesn't
         // trigger (e.g., empty content).
-        Canvas { pan: egui::Vec2::ZERO, zoom: 20.0, fit: true }
+        Canvas { pan: egui::Vec2::ZERO, zoom: 20.0, fit: true, fit_vertical_bias: 0.0 }
     }
 }
 
@@ -293,6 +297,13 @@ mod tests {
 }
 
 impl Canvas {
+    /// Set the vertical placement bias for fit-to-content (0.0 = top-aligned,
+    /// 0.5 = centered, 1.0 = bottom-aligned). Returns `self` for chaining.
+    pub fn with_fit_vertical_bias(mut self, bias: f32) -> Self {
+        self.fit_vertical_bias = bias.clamp(0.0, 1.0);
+        self
+    }
+
     /// Request a fit-to-content on the next paint.
     ///
     /// Call this when the drawn data changes — e.g., a new specimen compiled,
@@ -328,21 +339,22 @@ impl Canvas {
         // --- Fit-to-content (one-shot) ---
         //
         // When `self.fit` is true, compute a zoom that fits the world_bounds
-        // into ~92% of the canvas rect (leaving a margin), then center it.
-        // This runs once after new data arrives, then `self.fit` is cleared.
+        // into the canvas rect, then position it.
         //
-        // The 0.92 factor leaves visual breathing room around the content.
-        // The clamp(1.0, 400.0) prevents degenerate zoom levels (too small to
-        // see, or so large that floating-point precision degrades).
+        // `fit_vertical_bias` reserves that fraction of view height as top
+        // margin (e.g. 0.1 = 10% reserved at top for labels). The zoom is
+        // computed from the remaining vertical space so the content always
+        // fits below that margin.
         if self.fit && world_bounds.width() > 0.0 && world_bounds.height() > 0.0 && rect.area() > 0.0
         {
+            let top_reserve = rect.height() * self.fit_vertical_bias;
+            let avail_height = rect.height() - top_reserve;
             let zx = rect.width() / world_bounds.width();
-            let zy = rect.height() / world_bounds.height();
-            // Use the smaller of horizontal/vertical zoom to fit fully.
+            let zy = avail_height / world_bounds.height();
             self.zoom = (zx.min(zy) * FIT_MARGIN).clamp(MIN_ZOOM, MAX_ZOOM);
-            // Center by computing the padding and shifting the pan origin.
-            let pad = (rect.size() - world_bounds.size() * self.zoom) / 2.0;
-            self.pan = world_bounds.min.to_vec2() - pad / self.zoom;
+            // Horizontally center; vertically place content top at top_reserve.
+            let pad_x = (rect.width() - world_bounds.width() * self.zoom) / 2.0;
+            self.pan = world_bounds.min.to_vec2() - egui::vec2(pad_x, top_reserve) / self.zoom;
             self.fit = false;
         }
 
