@@ -279,7 +279,7 @@ impl MatchingAnimation {
             egui::pos2(matrix_rect.min.x, matrix_rect.min.y - label_headroom),
             matrix_rect.max,
         );
-        let (_response, view, painter) = canvas.show(ui, bounds);
+        let (response, view, painter) = canvas.show(ui, bounds);
 
         let visuals = ui.visuals();
         painter.rect_filled(
@@ -445,6 +445,28 @@ impl MatchingAnimation {
                     label_color,
                 );
             }
+        }
+
+        // Cell tooltip — shows full equation and variable names on hover.
+        let hovered_cell = view.hovered_cell(&response, self.n_var, self.n_eq);
+        if let Some((col, row)) = hovered_cell {
+            response.on_hover_ui(|ui| {
+                ui.label(egui::RichText::new("equation (row)").weak());
+                ui.label(
+                    egui::RichText::new(
+                        self.equation_names.get(row).map(String::as_str).unwrap_or("?"),
+                    )
+                    .monospace(),
+                );
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("unknown (col)").weak());
+                ui.label(
+                    egui::RichText::new(
+                        self.unknown_names.get(col).map(String::as_str).unwrap_or("?"),
+                    )
+                    .monospace(),
+                );
+            });
         }
     }
 }
