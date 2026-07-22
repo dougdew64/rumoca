@@ -1527,3 +1527,65 @@ fn field_name_from_path(path: &[Seg]) -> Option<String> {
         Seg::Index(_) => None,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn read_purpose_extracts_hint() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let path = dir.join("specimens/BouncingBall.mo");
+        let purpose = read_purpose(&path);
+        assert!(purpose.is_some(), "BouncingBall should have a // purpose: comment");
+        let text = purpose.unwrap();
+        assert!(!text.is_empty());
+        assert!(text.to_lowercase().contains("event"), "purpose should mention events: {text}");
+    }
+
+    #[test]
+    fn read_purpose_returns_none_for_missing_file() {
+        let purpose = read_purpose(Path::new("/nonexistent/specimen.mo"));
+        assert!(purpose.is_none());
+    }
+
+    #[test]
+    fn every_specimen_has_a_purpose_comment() {
+        let dir = std::path::PathBuf::from(format!("{}/specimens", env!("CARGO_MANIFEST_DIR")));
+        let entries: Vec<_> = std::fs::read_dir(&dir)
+            .expect("read specimens dir")
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "mo"))
+            .collect();
+        assert!(!entries.is_empty(), "no .mo files found in specimens/");
+        for entry in entries {
+            let path = entry.path();
+            let name = path.file_stem().unwrap().to_str().unwrap();
+            assert!(
+                read_purpose(&path).is_some(),
+                "specimen {name} is missing a // purpose: comment"
+            );
+        }
+    }
+
+    #[test]
+    fn field_name_from_path_extracts_key() {
+        assert_eq!(
+            field_name_from_path(&[Seg::Key("classes".to_owned()), Seg::Key("name".to_owned())]),
+            Some("name".to_owned())
+        );
+    }
+
+    #[test]
+    fn field_name_from_path_skips_trailing_index() {
+        assert_eq!(
+            field_name_from_path(&[Seg::Key("equations".to_owned()), Seg::Index(3)]),
+            Some("equations".to_owned())
+        );
+    }
+
+    #[test]
+    fn field_name_from_path_empty() {
+        assert_eq!(field_name_from_path(&[]), None);
+    }
+}

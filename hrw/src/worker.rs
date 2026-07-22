@@ -1652,6 +1652,262 @@ mod tests {
         assert!(!steps.is_empty(), "should have logged funnel steps");
         assert!(red["n_states_before"].as_u64().unwrap() > 0);
     }
+
+    // -----------------------------------------------------------------------
+    // Full-pipeline regression guards: every specimen compiles through ALL
+    // expected stages. These are the most rebase-sensitive tests — if an
+    // upstream Rumoca change breaks a phase or renames an API, at least one
+    // of these will catch it.
+    // -----------------------------------------------------------------------
+
+    /// Every specimen that should compile through solve lowering does so
+    /// (all stages produce IR). The three known exceptions are tested separately:
+    /// CapacitorLoop (structurally singular, irreducible) and OverInitRc
+    /// (over-determined init) still produce partial pipelines.
+    #[test]
+    fn all_healthy_specimens_compile_through_solve_lowering() {
+        let healthy = [
+            "SingleInertia", "RotationalInertia", "ProportionalLoop", "NonlinearLoop",
+            "MixedLoop", "TwoLoops", "Drivetrain", "RcCircuit", "BouncingBall", "BenchActuator",
+        ];
+        for name in healthy {
+            let FromWorker::Compiled {
+                model, parse, resolve, instantiate, typecheck, flatten,
+                index_reduction, events, solve_lowering, ..
+            } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            assert!(model.is_some(), "{name}: model name not extracted");
+            assert!(parse.value.is_some(), "{name}: parse failed: {:?}", parse.note);
+            assert!(resolve.value.is_some(), "{name}: resolve failed: {:?}", resolve.note);
+            assert!(instantiate.value.is_some(), "{name}: instantiate failed: {:?}", instantiate.note);
+            assert!(typecheck.value.is_some(), "{name}: typecheck failed: {:?}", typecheck.note);
+            assert!(flatten.value.is_some(), "{name}: flatten failed: {:?}", flatten.note);
+            assert!(index_reduction.value.is_some(), "{name}: index reduction failed: {:?}", index_reduction.note);
+            assert!(events.value.is_some(), "{name}: events failed: {:?}", events.note);
+            assert!(solve_lowering.value.is_some(), "{name}: solve lowering failed: {:?}", solve_lowering.note);
+        }
+    }
+
+    /// Every specimen that compiles through solve lowering also simulates
+    /// successfully — the end-to-end path from source to trajectories.
+    /// RcCircuit is excluded: it compiles but the BDF solver hits a step-size
+    /// floor (stiff RC with the default tolerances).
+    #[test]
+    fn all_healthy_specimens_simulate() {
+        let healthy = [
+            "SingleInertia", "RotationalInertia", "ProportionalLoop", "NonlinearLoop",
+            "MixedLoop", "TwoLoops", "Drivetrain", "BouncingBall", "BenchActuator",
+        ];
+        for name in healthy {
+            let data = {
+                let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+                let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
+                w.simulate(&path, name, 1.0, &|_: FromWorker| {})
+            };
+            let data = data.unwrap_or_else(|e| panic!("{name}: simulate failed: {e}"));
+            assert!(!data.times.is_empty(), "{name}: no time points");
+            assert!(!data.names.is_empty(), "{name}: no output variables");
+            assert_eq!(data.data.len(), data.names.len(), "{name}: data/names length mismatch");
+        }
+    }
+
+    /// The headless `compile_specimen` path (used by gen_trace) produces the
+    /// same result as compiling through the shared worker.
+    #[test]
+    fn compile_specimen_headless_matches_worker() {
+        let result = compile_specimen(
+            Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo")),
+            msl_roots(),
+        )
+        .expect("compile_specimen");
+        let FromWorker::Compiled { model, parse, resolve, flatten, solve_lowering, .. } = result else {
+            panic!("expected Compiled");
+        };
+        assert_eq!(model.as_deref(), Some("SingleInertia"));
+        assert!(parse.value.is_some());
+        assert!(resolve.value.is_some());
+        assert!(flatten.value.is_some());
+        assert!(solve_lowering.value.is_some());
+    }
+
+    /// The headless `simulate_specimen` path (used by gen_trace) runs and
+    /// produces trajectories.
+    #[test]
+    fn simulate_specimen_headless_produces_trajectories() {
+        let data = simulate_specimen(
+            Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo")),
+            "SingleInertia",
+            2.0,
+            msl_roots(),
+        )
+        .expect("simulate_specimen");
+        assert!(!data.times.is_empty());
+        assert!(data.names.iter().any(|n| n == "w"), "expected 'w' in output names");
+    }
+
+    // -----------------------------------------------------------------------
+    // Stage-specific content guards: verify that key JSON fields are present
+    // in each stage's IR. These catch Rumoca IR renames or restructurings.
+    // -----------------------------------------------------------------------
+
+    /// The Flatten stage IR for a simple model has the expected top-level
+    /// structure: variables, equations, and the flat model fields.
+    #[test]
+    fn flatten_ir_has_expected_structure() {
+        let FromWorker::Compiled { flatten, .. } = compile_specimen_shared("SingleInertia") else {
+            panic!("expected Compiled");
+        };
+        let v = flatten.value.expect("flatten IR");
+        assert!(v.get("variables").is_some(), "flat IR should have 'variables'");
+        assert!(v.get("equations").is_some(), "flat IR should have 'equations'");
+    }
+
+    /// The Events stage IR has the expected summary structure.
+    #[test]
+    fn events_ir_has_expected_summary_keys() {
+        let FromWorker::Compiled { events, .. } = compile_specimen_shared("BouncingBall") else {
+            panic!("expected Compiled");
+        };
+        let v = events.value.expect("events IR");
+        let summary = v["summary"].as_object().expect("summary object");
+        for key in ["condition_equations", "relations", "discrete_real_updates",
+                     "discrete_valued_updates", "zero_crossing_conditions", "scheduled_time_events"] {
+            assert!(summary.contains_key(key), "events summary missing key: {key}");
+        }
+    }
+
+    /// The Solve-lowering IR has the expected top-level fields.
+    #[test]
+    fn solve_lowering_ir_has_expected_fields() {
+        let FromWorker::Compiled { solve_lowering, .. } = compile_specimen_shared("SingleInertia") else {
+            panic!("expected Compiled");
+        };
+        let v = solve_lowering.value.expect("solve lowering IR");
+        assert!(v.get("problem").is_some(), "SolveModel should have 'problem'");
+        assert!(v.get("variable_meta").is_some(), "SolveModel should have 'variable_meta'");
+    }
+
+    /// The Structural stage IR has matching, blocks, and incidence matrix.
+    #[test]
+    fn structural_ir_has_incidence_matrix() {
+        let FromWorker::Compiled { structural, .. } = compile_specimen_shared("ProportionalLoop") else {
+            panic!("expected Compiled");
+        };
+        let v = structural.value.expect("structural IR");
+        assert!(v["matching"].as_array().is_some_and(|a| !a.is_empty()), "missing matching");
+        assert!(v["blocks"].as_array().is_some_and(|a| !a.is_empty()), "missing blocks");
+        let inc = &v["incidence"];
+        assert!(inc["unknown_names"].as_array().is_some(), "incidence missing unknown_names");
+        assert!(inc["rows"].as_array().is_some(), "incidence missing rows");
+        assert!(inc["n_eq"].as_u64().is_some(), "incidence missing n_eq");
+    }
+
+    /// The Index-reduction stage IR includes the reduction report.
+    #[test]
+    fn index_reduction_ir_has_reduction_report() {
+        let FromWorker::Compiled { index_reduction, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+        let v = index_reduction.value.expect("index reduction IR");
+        let red = &v["reduction"];
+        assert!(red.is_object(), "should have a reduction report");
+        assert!(red.get("steps").is_some(), "reduction should have steps");
+        assert!(red.get("n_states_before").is_some(), "reduction should have n_states_before");
+        assert!(red.get("n_states_after").is_some(), "reduction should have n_states_after");
+        assert!(red.get("funnel_completed").is_some(), "reduction should have funnel_completed");
+    }
+
+    /// The Initialization stage IR includes the determinacy check.
+    #[test]
+    fn initialization_ir_has_determinacy() {
+        let FromWorker::Compiled { initialization, .. } = compile_specimen_shared("RcCircuit") else {
+            panic!("expected Compiled");
+        };
+        let v = initialization.value.expect("initialization IR");
+        let det = &v["determinacy"];
+        assert!(det.is_object(), "should have a determinacy section");
+        for key in ["states", "initial_equations", "fixed_start_states",
+                     "explicit_initial_conditions", "surplus_over_states", "verdict"] {
+            assert!(det.get(key).is_some(), "determinacy missing key: {key}");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Utility function guards
+    // -----------------------------------------------------------------------
+
+    /// `is_def_id_key` recognizes the three DefId field names.
+    #[test]
+    fn is_def_id_key_recognizes_all_three() {
+        assert!(is_def_id_key("def_id"));
+        assert!(is_def_id_key("type_def_id"));
+        assert!(is_def_id_key("base_def_id"));
+        assert!(!is_def_id_key("id"));
+        assert!(!is_def_id_key("def_id_extra"));
+        assert!(!is_def_id_key(""));
+    }
+
+    /// `discontinuity_segments` handles edge cases.
+    #[test]
+    fn discontinuity_segments_edge_cases() {
+        assert_eq!(discontinuity_segments(&[]).len(), 1); // degenerate: one empty segment
+        assert_eq!(discontinuity_segments(&[1.0]), vec![0..1]);
+        assert_eq!(discontinuity_segments(&[1.0, 1.0, 1.0]), vec![0..3]);
+    }
+
+    /// Compilation produces log entries with the expected stage structure.
+    #[test]
+    fn compilation_emits_log_entries() {
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!("{}/specimens/SingleInertia.mo", env!("CARGO_MANIFEST_DIR")));
+            w.compile(&path, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            });
+        }
+        let logs = logs.into_inner().unwrap();
+        let stage_starts: Vec<&str> = logs.iter()
+            .filter(|e| matches!(e.level, LogLevel::StageStart))
+            .map(|e| e.message.as_str())
+            .collect();
+        let stage_ends: Vec<&str> = logs.iter()
+            .filter(|e| matches!(e.level, LogLevel::StageEnd))
+            .map(|e| e.message.split(" (").next().unwrap_or(""))
+            .collect();
+        assert!(stage_starts.contains(&"Parse"), "missing Parse stage start");
+        assert!(stage_starts.contains(&"Resolve"), "missing Resolve stage start");
+        assert!(stage_starts.contains(&"Flatten"), "missing Flatten stage start");
+        assert!(stage_starts.contains(&"Solve lowering"), "missing Solve lowering stage start");
+        assert_eq!(stage_starts.len(), stage_ends.len(), "every stage start should have a matching end");
+        assert!(logs.iter().any(|e| matches!(e.level, LogLevel::Info)), "should have at least one info entry");
+    }
+
+    /// Simulation also emits log entries with timing.
+    #[test]
+    fn simulation_emits_log_entries() {
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!("{}/specimens/SingleInertia.mo", env!("CARGO_MANIFEST_DIR")));
+            w.simulate(&path, "SingleInertia", 1.0, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            }).expect("simulate");
+        }
+        let logs = logs.into_inner().unwrap();
+        let stage_starts: Vec<&str> = logs.iter()
+            .filter(|e| matches!(e.level, LogLevel::StageStart))
+            .map(|e| e.message.as_str())
+            .collect();
+        assert!(stage_starts.contains(&"Compile (for simulation)"), "missing compile stage");
+        assert!(stage_starts.contains(&"Solve lowering"), "missing solve lowering stage");
+        assert!(stage_starts.contains(&"Integration"), "missing integration stage");
+    }
 }
 
 /// Record of what the index-reduction funnel did, step by step.

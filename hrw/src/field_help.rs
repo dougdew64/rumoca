@@ -72,3 +72,51 @@ pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The embedded field_help.json parses and contains entries.
+    #[test]
+    fn field_help_loads_non_empty() {
+        let help = load();
+        assert!(!help.is_empty(), "field_help.json should contain entries");
+    }
+
+    /// Key IR field names that the tree inspector relies on are present.
+    #[test]
+    fn field_help_contains_core_ir_fields() {
+        let help = load();
+        for key in ["def_id", "classes", "components", "equations", "name"] {
+            assert!(help.contains_key(key), "field_help missing expected key: {key}");
+        }
+    }
+
+    /// Every known stage maps to a chapter file that exists on disk.
+    #[test]
+    fn chapter_for_stage_files_exist() {
+        let stages = [
+            "Parse", "Resolve", "Typecheck", "Instantiate", "Flatten",
+            "Structural", "Index reduction", "Initialization", "Events",
+            "Solve lowering", "Simulation",
+        ];
+        let root = env!("CARGO_MANIFEST_DIR");
+        for stage in stages {
+            let (label, rel) = chapter_for_stage(stage);
+            assert!(!label.is_empty(), "{stage}: empty label");
+            let abs = format!("{root}/{rel}");
+            assert!(
+                std::path::Path::new(&abs).exists(),
+                "{stage}: chapter file not found: {rel}"
+            );
+        }
+    }
+
+    /// An unknown stage falls back to the overview.
+    #[test]
+    fn chapter_for_unknown_stage_falls_back() {
+        let (label, _) = chapter_for_stage("Nonexistent");
+        assert!(label.contains("Overview"));
+    }
+}
