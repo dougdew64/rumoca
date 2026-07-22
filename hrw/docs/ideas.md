@@ -479,3 +479,72 @@ trajectories.
 - **Textbook link:** Hairer & Wanner, *Solving Ordinary Differential Equations II*
   (stiff problems), chapters on BDF order/step-size selection. Brenan, Campbell &
   Petzold, *Numerical Solution of Initial-Value Problems in DAEs*.
+
+## 19. Resolver process view — scope/symbol tables and resolution steps
+
+Captured 2026-07-22 (from pass-two-plan Arc 1). The Resolve tab today shows the
+*result* — the resolved class with `def_id`s populated. Enhancement: surface the
+**resolver's process** — the scope stack, symbol tables, and resolution steps that
+produced those bindings.
+
+- **Why it matters:** name resolution is one of the most complex compiler phases.
+  Seeing *how* `flange_a` resolved to `def_id 27579` — which scopes were searched,
+  what shadowing occurred, which imports were followed — teaches the Modelica
+  scoping model and the Rumoca implementation simultaneously.
+- **Rumoca entry point:** `rumoca-phase-resolve` / `rumoca-compile::Session::resolve()`.
+  Scout the crate for scope/symbol-table data structures and resolution logic.
+- **Also in Arc 1:** the typecheck's **dimension-evaluation steps** (how array
+  dimensions are computed and checked) — scout `rumoca-phase-typecheck` for
+  dimension-related internal state.
+
+## 20. Flattening process view — connector expansion and flow-sum generation
+
+Captured 2026-07-22 (from pass-two-plan Arc 2). The Flatten tab today shows the
+flat model IR. Enhancement: surface the **flattening process** — connector expansion,
+flow-sum equation generation, and modifier application as they happen.
+
+- **Why it matters:** flattening transforms a hierarchical Modelica model into a
+  flat system of equations. The key steps — expanding connectors into
+  potential/flow variables, generating flow-sum equations at each connection node,
+  applying modifications — are where Modelica's connect semantics become concrete
+  equations. Showing this process (not just the result) explains *why* the flat
+  model has the equations it does.
+- **Rumoca entry point:** `rumoca-phase-flatten` (currently opaque — phases 5–9 run
+  inside `compile_model_strict_reachable_with_recovery`). Scout the crate for
+  connector-expansion and flow-sum-generation internals.
+
+## 21. Event lowering process — `when` → zero-crossing construction
+
+Captured 2026-07-22 (from pass-two-plan Arc 6). The Events tab today shows the
+hybrid partitions (conditions + reinit actions). Enhancement: surface the
+**lowering process** — how `when` clauses become zero-crossing functions (`f_z`)
+and mode functions (`f_m`).
+
+- **Why it matters:** the translation from Modelica's `when h <= 0` to the solver's
+  zero-crossing function `f_z(x) = h(x)` with root-finding is where the hybrid
+  semantics become numerical. Understanding this lowering explains event chattering,
+  missed events, and the solver's event-detection machinery.
+- **Rumoca entry point:** scout the DAE construction for `when`/`reinit` lowering
+  and zero-crossing function assembly. The Events stage already reads the DAE's
+  public fields; the process of *constructing* those fields is the target.
+
+## 22. Exact event times and per-step Newton convergence from the solver
+
+Captured 2026-07-22 (from pass-two-plan Arc 7). Two solver-internal data streams
+not yet surfaced:
+
+- **Exact event times:** `StepUntilOutcome::RootFound { t_root }` exists internally
+  in diffsol/rumoca-sim. Surfacing it would replace the heuristic step-mode
+  break-detection with exact event locations, and enable plotting event markers on
+  the time axis.
+- **Newton convergence per step:** for each implicit BDF step, the Newton solver
+  iterates to convergence. Logging iteration count and residual norm per step
+  reveals where the solver struggles — the same coupled BLT blocks that the
+  structural view highlights.
+
+These complement idea #18 (BDF step-size/order) — together they give a complete
+picture of what the solver is doing at each time step.
+
+- **Rumoca entry point:** `rumoca-sim::simulate_solve_model` and the diffsol
+  integration loop. Instrumentation needed: a per-step callback or post-hoc
+  log that records (t, h, order, newton_iters, event_detected).

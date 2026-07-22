@@ -562,5 +562,5 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   view is the deliberate *proof the migration was worthwhile*. Pass one is the baseline to surpass, not
   discard. Highest-confidence early unlocks: the **incidence-matrix view** (Arc 3 — deferred in pass one
   *because incidence was `pub(crate)`*) and the **real Pantelides/dummy-derivative process** (Arc 4 —
-  pass one only replicated it via public `dae_prepare` and couldn't do nonlinear constraints). Per-arc
-  roadmap: `docs/pass-two-plan.md`.
+  pass one only replicated it via public `dae_prepare` and couldn't do nonlinear constraints). Remaining
+  per-arc instrumentation opportunities captured in `docs/ideas.md` (#19–#22).

@@ -21,13 +21,14 @@ instrumentation, and it must stay **additive, observation-only, and upstreamable
 **Current work — Pass two, in this order:**
 1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than
    the public API allowed. Per arc: scout what state the phase holds (read the crate under
-   `../crates/`), expose it additively, render it. Roadmap + per-arc opportunities in
-   [`docs/pass-two-plan.md`](docs/pass-two-plan.md). Clearest concrete win: the **incidence-matrix
-   view** (Arc 3) — deferred in pass one *precisely because incidence was `pub(crate)`*; now reachable.
-2. **The log view** — a pane streaming compilation + simulation log messages with **timestamps** and
-   far more phase/solver detail than the public API could give (per-phase timing was impossible when
-   phases 5–9 arrived from one opaque `compile_model_strict_reachable_with_recovery` call). Deliberately
-   the **proof the migration was worthwhile** (Doug).
+   `../crates/`), expose it additively, render it. Remaining per-arc instrumentation opportunities
+   are captured in [`docs/ideas.md`](docs/ideas.md) (#19–#22). Clearest concrete win: the
+   **incidence-matrix view** (Arc 3) — deferred in pass one *precisely because incidence was
+   `pub(crate)`*; now reachable and delivered.
+2. **The log view** — ✅ **delivered** — a pane streaming compilation + simulation log messages with
+   **timestamps** and far more phase/solver detail than the public API could give (per-phase timing
+   was impossible when phases 5–9 arrived from one opaque
+   `compile_model_strict_reachable_with_recovery` call). The proof the migration was worthwhile (Doug).
 
 Pass one is the **baseline to surpass, not discard** — its stage views, specimens, notebook, and tests
 are the reference that pass two enriches. The pass-one arc record follows.
