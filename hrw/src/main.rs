@@ -16,6 +16,8 @@
 
 use hrw::app;
 
+const APP_NAME: &str = "HRW Observatory";
+
 fn main() -> eframe::Result<()> {
     // --- WSLg Wayland workaround ---
     //
@@ -52,13 +54,13 @@ fn main() -> eframe::Result<()> {
 fn run_app() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
-            .with_title("HRW Observatory")
+            .with_title(APP_NAME)
             .with_maximized(true),
         ..Default::default()
     };
 
     eframe::run_native(
-        "HRW Observatory",
+        APP_NAME,
         options,
         // The `Box::new(|cc| ...)` is a closure that acts as an app factory.
         // eframe calls it exactly once. `cc` (CreationContext) gives access to

@@ -44,6 +44,8 @@ use eframe::egui;
 
 const MIN_ZOOM: f32 = 1.0;
 const MAX_ZOOM: f32 = 400.0;
+const FIT_MARGIN: f32 = 0.92;
+const SCROLL_ZOOM_SENSITIVITY: f32 = 0.002;
 
 /// Persistent camera state for a pan/zoom canvas.
 ///
@@ -137,6 +139,20 @@ impl View {
             egui::pos2(col as f32, row as f32),
             egui::vec2(1.0, 1.0),
         ))
+    }
+
+    /// Identify the grid cell under the hover pointer, if any.
+    /// Returns `None` if the pointer is outside the `n_cols × n_rows` bounds.
+    pub fn hovered_cell(self, response: &egui::Response, n_cols: usize, n_rows: usize) -> Option<(usize, usize)> {
+        response.hover_pos().and_then(|p| {
+            let w = self.to_world(p);
+            if w.x < 0.0 || w.y < 0.0 {
+                return None;
+            }
+            let col = w.x as usize;
+            let row = w.y as usize;
+            if col < n_cols && row < n_rows { Some((col, row)) } else { None }
+        })
     }
 
     /// Draw grid lines for an `n_cols × n_rows` matrix.
@@ -263,6 +279,17 @@ mod tests {
         // painter output, but we verify it doesn't panic)
         assert!(view.zoom() < 6.0);
     }
+
+    #[test]
+    fn fit_margin_is_less_than_one() {
+        assert!(FIT_MARGIN > 0.0 && FIT_MARGIN < 1.0, "FIT_MARGIN should leave breathing room");
+    }
+
+    #[test]
+    fn zoom_bounds_are_sane() {
+        assert!(MIN_ZOOM > 0.0, "MIN_ZOOM must be positive");
+        assert!(MAX_ZOOM > MIN_ZOOM, "MAX_ZOOM must exceed MIN_ZOOM");
+    }
 }
 
 impl Canvas {
@@ -312,7 +339,7 @@ impl Canvas {
             let zx = rect.width() / world_bounds.width();
             let zy = rect.height() / world_bounds.height();
             // Use the smaller of horizontal/vertical zoom to fit fully.
-            self.zoom = (zx.min(zy) * 0.92).clamp(MIN_ZOOM, MAX_ZOOM);
+            self.zoom = (zx.min(zy) * FIT_MARGIN).clamp(MIN_ZOOM, MAX_ZOOM);
             // Center by computing the padding and shifting the pan origin.
             let pad = (rect.size() - world_bounds.size() * self.zoom) / 2.0;
             self.pan = world_bounds.min.to_vec2() - pad / self.zoom;
@@ -345,7 +372,7 @@ impl Canvas {
                 let world_before = self.pan + (p - rect.min) / self.zoom;
                 // Exponential zoom for perceptually uniform speed — each scroll
                 // tick multiplies zoom by a constant factor rather than adding.
-                self.zoom = (self.zoom * (scroll * 0.002).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
+                self.zoom = (self.zoom * (scroll * SCROLL_ZOOM_SENSITIVITY).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
                 // Re-anchor: solve for pan such that world_before maps to p.
                 self.pan = world_before - (p - rect.min) / self.zoom;
             }

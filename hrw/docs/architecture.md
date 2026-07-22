@@ -188,6 +188,11 @@ and `path` from the enclosing scope.
 Stage-extraction functions (`structural_stage`, `index_reduction_stage`, etc.) share
 fallback handling via `not_reached_stage()` — a helper that returns placeholder stages
 for `Failed`/`NeedsInner`/`None` result variants, eliminating duplicated match arms.
+`unwrap_success()` extracts the `&CompilationResult` from a `PhaseResult::Success`,
+replacing inline `match` arms that were duplicated across five stage functions.
+
+`StageKind::ALL` is a const array of all 11 pipeline stages in order, used for
+exhaustive iteration and test assertions.
 
 Both `compile()` and `simulate()` use `make_log(&t0, emit)` to build their timing-aware
 log closures from a shared helper, avoiding the identical closure pattern.
@@ -242,6 +247,9 @@ if ui.button("Run").clicked() {
 11. **Simulation** — `SimData`, plot flags, sim-in-progress state
 12. **Cached path checks** — `narrative_exists` avoids per-frame `Path::exists()`
 13. **Cached layout** — `cached_specimen_width` avoids per-frame `layout_no_wrap`
+14. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`
+    (`Option<Option<T>>` — outer = cache state, inner = parse result) avoid per-frame
+    re-parsing of structural report JSON; invalidated on `Compiled`
 
 ### Panel layout
 
@@ -343,15 +351,16 @@ the target class in the same generic tree.
 
 Three views use egui's low-level `Painter` API instead of the generic tree.
 
-### Canvas scaffold (`canvas.rs`, ~220 lines)
+### Canvas scaffold (`canvas.rs`, ~380 lines)
 
 A reusable pan/zoom camera shared by the spy-plot and incidence views. It maintains
 a persistent transform (offset + zoom) and handles:
 
 - **Pan** — drag to scroll
-- **Zoom** — scroll wheel, zooming about the pointer position
+- **Zoom** — scroll wheel, zooming about the pointer position (sensitivity controlled
+  by `SCROLL_ZOOM_SENSITIVITY`, clamped to `MIN_ZOOM`..`MAX_ZOOM`)
 - **Fit to content** — on first draw, automatically fits the data bounds into the
-  available screen space
+  available screen space (with `FIT_MARGIN` breathing room)
 
 The canvas maps between two coordinate spaces:
 
@@ -359,6 +368,10 @@ The canvas maps between two coordinate spaces:
 - **Screen space** — pixel coordinates on the egui widget
 
 `View::to_screen(world_pos)` and `View::to_world(screen_pos)` convert between them.
+`View::cell_rect(col, row)` maps a grid cell, `View::hovered_cell(response, n_cols,
+n_rows)` resolves the hover pointer to a cell index (shared by spy-plot and incidence),
+and `View::draw_grid(painter, n_cols, n_rows, color)` draws grid lines with a built-in
+zoom guard.
 
 ### BLT spy-plot (`spyplot.rs`, ~350 lines)
 
@@ -406,13 +419,21 @@ reasoning** — it is a pure context emitter. The actual explanation happens in 
 Claude Code session, which reads the focus file along with the Modelica source, the
 staged IR files, and the compiler-phase documentation.
 
+### The `Ask` struct and `AskRequest` enum
+
+The `Ask` struct aggregates all context needed to write one focus file. It borrows
+everything (lifetime `'a`) to avoid cloning large IR trees. The `request` field is
+an `AskRequest` enum (`Explain`, `DebugWhereSet`) — type-safe, not stringly typed.
+The `stage` field is `Option<StageKind>` — `None` for navigated library definitions
+that don't correspond to a pipeline stage.
+
 ### The file protocol
 
 Two categories of files, both in `.hrw-bridge/` (gitignored):
 
 1. **`focus.json`** — written on each capture. Contains:
    - `seq` — monotonic counter (each capture increments it)
-   - `request` — what the user wants: `"explain"` or `"debug-where-set"`
+   - `request` — what the user wants: `"explain"` or `"debug-where-set"` (from `AskRequest`)
    - `kind` — `"node"`, `"stage"`, or `"specimen"`
    - `model` — the Modelica model name
    - `stage` — which pipeline stage the capture came from
@@ -460,15 +481,20 @@ A two-tier help system:
 The module also maps each stage to its `docs/compiler-phases` chapter, providing
 the "Read: Phase N" button in the right panel.
 
-### Colors (`colors.rs`, ~40 lines)
+### Colors (`colors.rs`, ~90 lines)
 
 Shared color constants used across multiple view modules. Contains:
 - `OK_GREEN` — the fixed dark-mode success green, used in canvas painters
 - `ok_color(dark_mode: bool)` — theme-aware variant (brighter on dark, darker on light)
+- `stage_start_color(dark_mode: bool)` — theme-aware stage-start marker (log view)
+- `WARN_AMBER` — fixed warning color (log view)
+- `INCIDENCE_CELL` / `INCIDENCE_HOVER` — incidence matrix colors
+- `COUPLED_STROKE` / `coupled_fill()` — BLT coupled-block colors (fill is semi-transparent)
+- `GRID_ALPHA` — grid line alpha multiplier for canvas views
 
 Centralizes what was previously inline `Color32::from_rgb(...)` and `if dark_mode`
-blocks duplicated across `app.rs`, `spyplot.rs`, `reduction_view.rs`, `log_view.rs`,
-and `tree.rs`.
+blocks duplicated across `app.rs`, `spyplot.rs`, `incidence_view.rs`, `reduction_view.rs`,
+`log_view.rs`, and `tree.rs`.
 
 ### Log view (`log_view.rs`, ~130 lines)
 
@@ -504,7 +530,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (58 tests) guards against silent
+their call sites. The regression test suite (101 tests) guards against silent
 regressions during a rebase.
 
 

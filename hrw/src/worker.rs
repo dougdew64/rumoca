@@ -70,7 +70,7 @@ use eframe::egui;
 //   - `NeedsInner { .. }` — the model needs inner declarations (rare)
 // `FailedPhase` names the phase that failed (Flatten, ToDae, etc.).
 // `SourceRootKind` tags a source set as durable-external (libraries) vs ephemeral.
-use rumoca_compile::compile::{FailedPhase, PhaseResult, SourceRootKind};
+use rumoca_compile::compile::{CompilationResult, FailedPhase, PhaseResult, SourceRootKind};
 // Library-loading helpers: `parse_source_root_with_cache` parses a directory
 // of `.mo` files into a `ParsedSourceRoot`, and `source_root_source_set_key`
 // generates a stable key for caching.
@@ -159,7 +159,9 @@ pub fn discontinuity_segments(values: &[f64]) -> Vec<std::ops::Range<usize>> {
     let mut sorted = diffs.clone();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let median = sorted[sorted.len() / 2];
-    let threshold = ((hi - lo) * 0.08).max(6.0 * median);
+    const RANGE_FRACTION: f64 = 0.08;
+    const MEDIAN_MULTIPLIER: f64 = 6.0;
+    let threshold = ((hi - lo) * RANGE_FRACTION).max(MEDIAN_MULTIPLIER * median);
     // A flat/degenerate series (threshold 0) has no meaningful jumps — one segment.
     if threshold <= f64::EPSILON {
         return std::iter::once(0..n).collect();
@@ -262,6 +264,13 @@ pub enum StageKind {
 }
 
 impl StageKind {
+    pub const ALL: &[StageKind] = &[
+        StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
+        StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
+        StageKind::IndexReduction, StageKind::Initialization, StageKind::Events,
+        StageKind::SolveLowering, StageKind::Simulation,
+    ];
+
     /// Human-readable name for this stage, matching the tab labels in the UI.
     pub fn name(self) -> &'static str {
         match self {
@@ -1247,14 +1256,18 @@ fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage> {
     }
 }
 
+fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
+    match result {
+        Some(PhaseResult::Success(cr)) => cr,
+        _ => unreachable!("not_reached_stage handles non-Success"),
+    }
+}
+
 fn structural_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    let cr = match result {
-        Some(PhaseResult::Success(cr)) => cr,
-        _ => unreachable!("not_reached_stage handles non-Success"),
-    };
+    let cr = unwrap_success(result);
     match rumoca_phase_structural::build_structural_report(&cr.dae) {
         Ok(rep) => {
             let inc = rumoca_phase_structural::build_incidence(&cr.dae);
@@ -1286,10 +1299,7 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    let cr = match result {
-        Some(PhaseResult::Success(cr)) => cr,
-        _ => unreachable!("not_reached_stage handles non-Success"),
-    };
+    let cr = unwrap_success(result);
     let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
     let mut reduced = cr.dae.clone();
     let reduction = index_reduce_for_structural_analysis(&mut reduced);
@@ -1334,66 +1344,54 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    match result {
-        Some(PhaseResult::Success(cr)) => {
-            let n_x = cr.dae.variables.states.len();
-            let n_eq = cr.dae.continuous.equations.len();
-            // Determinacy of the *user* initialization (idea #6): the explicit
-            // initial conditions (initial equations + fixed-start states) vs the
-            // states. A surplus means an OVER-determined init (conflicting /
-            // redundant conditions — a blow-up `build_ic_plan` alone doesn't catch,
-            // since it plans the algebraic subsystem, not the user's init).
-            // Under-determination isn't flagged: remaining states initialize from
-            // their `start` attributes (default init), so a negative count is normal.
-            let n_initial_eq = cr.dae.initialization.equations.len();
-            let n_fixed_start_states = cr
-                .dae
-                .variables
-                .states
-                .values()
-                .filter(|v| v.fixed == Some(true))
-                .count();
-            let explicit = n_initial_eq + n_fixed_start_states;
-            let surplus = explicit as i64 - n_x as i64;
-            let determinacy = serde_json::json!({
-                "states": n_x,
-                "initial_equations": n_initial_eq,
-                "fixed_start_states": n_fixed_start_states,
-                "explicit_initial_conditions": explicit,
-                "surplus_over_states": surplus,
-                "verdict": if surplus > 0 {
-                    "over-determined"
-                } else {
-                    "well-posed (remaining states initialize from their start attributes)"
-                },
-            });
-            match rumoca_phase_structural::build_ic_plan(&cr.dae, n_x) {
-                Ok(plan) => {
-                    let hint = rumoca_phase_structural::build_ic_relaxation_hint(&cr.dae, n_x);
-                    let mut json = ic_plan_to_json(&plan, hint.as_ref(), n_x, n_eq);
-                    if let Some(obj) = json.as_object_mut() {
-                        obj.insert("determinacy".to_owned(), determinacy);
-                    }
-                    if surplus > 0 {
-                        // Over-determined: still show the plan, but flag it red.
-                        Stage::recovered(
-                            json,
-                            format!(
-                                "OVER-DETERMINED initialization: {explicit} explicit initial condition(s) \
-                                 ({n_initial_eq} initial equation(s) + {n_fixed_start_states} fixed start(s)) \
-                                 for {n_x} state(s) — {surplus} too many; conflicting / redundant ICs"
-                            ),
-                        )
-                    } else if plan.is_empty() {
-                        Stage::ok_with_note(json, "no algebraic initialization subsystem (equations ≤ states)")
-                    } else {
-                        Stage::ok(json)
-                    }
-                }
-                Err(e) => Stage::err(format!("IC planning failed: {e}")),
+    let cr = unwrap_success(result);
+    let n_x = cr.dae.variables.states.len();
+    let n_eq = cr.dae.continuous.equations.len();
+    let n_initial_eq = cr.dae.initialization.equations.len();
+    let n_fixed_start_states = cr
+        .dae
+        .variables
+        .states
+        .values()
+        .filter(|v| v.fixed == Some(true))
+        .count();
+    let explicit = n_initial_eq + n_fixed_start_states;
+    let surplus = explicit as i64 - n_x as i64;
+    let determinacy = serde_json::json!({
+        "states": n_x,
+        "initial_equations": n_initial_eq,
+        "fixed_start_states": n_fixed_start_states,
+        "explicit_initial_conditions": explicit,
+        "surplus_over_states": surplus,
+        "verdict": if surplus > 0 {
+            "over-determined"
+        } else {
+            "well-posed (remaining states initialize from their start attributes)"
+        },
+    });
+    match rumoca_phase_structural::build_ic_plan(&cr.dae, n_x) {
+        Ok(plan) => {
+            let hint = rumoca_phase_structural::build_ic_relaxation_hint(&cr.dae, n_x);
+            let mut json = ic_plan_to_json(&plan, hint.as_ref(), n_x, n_eq);
+            if let Some(obj) = json.as_object_mut() {
+                obj.insert("determinacy".to_owned(), determinacy);
+            }
+            if surplus > 0 {
+                Stage::recovered(
+                    json,
+                    format!(
+                        "OVER-DETERMINED initialization: {explicit} explicit initial condition(s) \
+                         ({n_initial_eq} initial equation(s) + {n_fixed_start_states} fixed start(s)) \
+                         for {n_x} state(s) — {surplus} too many; conflicting / redundant ICs"
+                    ),
+                )
+            } else if plan.is_empty() {
+                Stage::ok_with_note(json, "no algebraic initialization subsystem (equations ≤ states)")
+            } else {
+                Stage::ok(json)
             }
         }
-        _ => unreachable!("not_reached_stage handles non-Success"),
+        Err(e) => Stage::err(format!("IC planning failed: {e}")),
     }
 }
 
@@ -1465,10 +1463,7 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    let cr = match result {
-        Some(PhaseResult::Success(cr)) => cr,
-        _ => unreachable!("not_reached_stage handles non-Success"),
-    };
+    let cr = unwrap_success(result);
     let json = events_to_json(&cr.dae);
     let total = json["summary"]
         .as_object()
@@ -1531,10 +1526,7 @@ fn solve_lowering_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    let cr = match result {
-        Some(PhaseResult::Success(cr)) => cr,
-        _ => unreachable!("not_reached_stage handles non-Success"),
-    };
+    let cr = unwrap_success(result);
     match rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae) {
         Ok(sm) => match serde_json::to_value(&sm) {
             Ok(v) => Stage::ok(v),
@@ -2602,6 +2594,22 @@ mod tests {
             stage.note
         );
     }
+
+    #[test]
+    fn stage_kind_all_is_exhaustive() {
+        assert_eq!(
+            StageKind::ALL.len(),
+            11,
+            "StageKind::ALL should list every variant (currently 11 stages)"
+        );
+        // Every name is non-empty and unique.
+        let names: Vec<&str> = StageKind::ALL.iter().map(|s| s.name()).collect();
+        for name in &names {
+            assert!(!name.is_empty());
+        }
+        let unique: std::collections::HashSet<&&str> = names.iter().collect();
+        assert_eq!(unique.len(), names.len(), "duplicate stage names in ALL");
+    }
 }
 
 /// Record of what the index-reduction funnel did, step by step.
@@ -2677,68 +2685,42 @@ fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) -> Reducti
     let mut steps: Vec<(&str, String)> = Vec::new();
     let mut stopped_at: Option<&str> = None;
 
-    // `macro_rules!` defines a Rust macro — a compile-time code template.
-    // `run_step!` wraps a funnel step call, logging its outcome and stopping
-    // the funnel early on error. This avoids repeating the same match/log/bail
-    // pattern for each step. Macros in Rust are hygienic (they don't pollute
-    // the caller's namespace) and are expanded at compile time (zero runtime
-    // cost). `$name:expr` and `$call:expr` are the macro's parameters —
-    // any Rust expression.
+    // Wraps a funnel step call: logs its outcome, bails early on error.
+    // `$outcome` formats the Ok value into the step log string.
     macro_rules! run_step {
-        ($name:expr, $call:expr) => {
+        ($name:expr, $call:expr, $outcome:expr) => {
             match $call {
-                Ok(n) => steps.push(($name, format!("{n} demoted"))),
+                Ok(v) => steps.push(($name, $outcome(v))),
                 Err(e) => {
                     steps.push(($name, format!("stopped: {e}")));
                     stopped_at = Some($name);
+                    return finish_report(dae, states_before, steps, stopped_at);
                 }
             }
         };
     }
 
-    // Same as `run_step!` but for steps that return `Result<(), Error>`
-    // (no count to report).
-    macro_rules! run_step_unit {
-        ($name:expr, $call:expr) => {
-            match $call {
-                Ok(()) => steps.push(($name, "ok".to_owned())),
-                Err(e) => {
-                    steps.push(($name, format!("stopped: {e}")));
-                    stopped_at = Some($name);
-                }
-            }
-        };
-    }
+    run_step!("demote_exact_alias_component_states",
+        dp::demote_exact_alias_component_states(dae), |n| format!("{n} demoted"));
 
-    run_step!("demote_exact_alias_component_states", dp::demote_exact_alias_component_states(dae));
-    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+    run_step!("demote_direct_assigned_states",
+        dp::demote_direct_assigned_states(dae), |n| format!("{n} demoted"));
 
-    run_step!("demote_direct_assigned_states", dp::demote_direct_assigned_states(dae));
-    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+    run_step!("reduce_constrained_dummy_derivatives",
+        dp::reduce_constrained_dummy_derivatives(dae), |n| format!("{n} demoted"));
 
-    run_step!("reduce_constrained_dummy_derivatives", dp::reduce_constrained_dummy_derivatives(dae));
-    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
-
-    run_step!("index_reduce_missing_state_derivatives", dp::index_reduce_missing_state_derivatives(dae));
-    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+    run_step!("index_reduce_missing_state_derivatives",
+        dp::index_reduce_missing_state_derivatives(dae), |n| format!("{n} demoted"));
 
     let n_unassignable = dp::demote_states_without_assignable_derivative_rows(dae);
     steps.push(("demote_states_without_assignable_derivative_rows", format!("{n_unassignable} demoted")));
 
-    run_step_unit!("eliminate_derivative_aliases", dp::eliminate_derivative_aliases(dae));
-    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+    run_step!("eliminate_derivative_aliases",
+        dp::eliminate_derivative_aliases(dae), |()| "ok".to_owned());
 
-    match dp::demote_states_without_retained_derivative_rows(dae) {
-        Ok((no_der_ref, unassignable)) => steps.push((
-            "demote_states_without_retained_derivative_rows",
-            format!("{no_der_ref} no-derivative-ref + {unassignable} unassignable demoted"),
-        )),
-        Err(e) => {
-            steps.push(("demote_states_without_retained_derivative_rows", format!("stopped: {e}")));
-            stopped_at = Some("demote_states_without_retained_derivative_rows");
-        }
-    }
-    if stopped_at.is_some() { return finish_report(dae, states_before, steps, stopped_at); }
+    run_step!("demote_states_without_retained_derivative_rows",
+        dp::demote_states_without_retained_derivative_rows(dae),
+        |(no_der_ref, unassignable)| format!("{no_der_ref} no-derivative-ref + {unassignable} unassignable demoted"));
 
     dp::expand_compound_derivatives(dae);
     steps.push(("expand_compound_derivatives", "ok".to_owned()));
@@ -2774,14 +2756,14 @@ fn finish_report(
     stopped_at: Option<&'static str>,
 ) -> ReductionReport {
     let states_after: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
+    const DIFF_ROW_MARKER: &str = "index_reduction:d_dt_for_";
     let differentiated_rows: Vec<(String, String)> = dae
         .continuous
         .equations
         .iter()
         .filter_map(|eq| {
-            let marker = "index_reduction:d_dt_for_";
-            eq.origin.find(marker).map(|pos| {
-                let state = eq.origin[pos + marker.len()..].to_owned();
+            eq.origin.find(DIFF_ROW_MARKER).map(|pos| {
+                let state = eq.origin[pos + DIFF_ROW_MARKER.len()..].to_owned();
                 (eq.origin.clone(), state)
             })
         })

@@ -59,7 +59,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
 
-use crate::worker::DefInfo;
+use crate::worker::{DefInfo, StageKind};
 
 /// Path to the bridge directory, resolved at compile time via `CARGO_MANIFEST_DIR`.
 ///
@@ -211,6 +211,22 @@ pub enum Focus<'a> {
     Specimen,
 }
 
+/// What the user wants Claude to do with the captured focus.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AskRequest {
+    Explain,
+    DebugWhereSet,
+}
+
+impl AskRequest {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AskRequest::Explain => "explain",
+            AskRequest::DebugWhereSet => "debug-where-set",
+        }
+    }
+}
+
 /// All the context needed to write one focus file.
 ///
 /// This struct aggregates everything the bridge needs from the app's state:
@@ -221,16 +237,15 @@ pub struct Ask<'a> {
     /// Monotonically increasing sequence number — lets Claude detect when a
     /// new capture has occurred since the last question.
     pub seq: u64,
-    /// What the user wants: "explain" (default) or "debug-where-set" (they want
-    /// to watch this field being assigned in the Rumoca phase, in the debugger).
-    pub request: &'a str,
+    /// What the user wants.
+    pub request: AskRequest,
     /// Path to the Modelica source file (`.mo`). `None` if no specimen is loaded.
     pub specimen: Option<&'a Path>,
     /// The class name being compiled (e.g., "RotationalInertia"). A specimen file
     /// can contain multiple classes; this names the one currently viewed.
     pub model: Option<&'a str>,
-    /// The pipeline stage name (e.g., "Parse", "Resolve", "Typecheck").
-    pub stage: &'a str,
+    /// The pipeline stage (`None` for a navigated library definition).
+    pub stage: Option<StageKind>,
     /// Paths to any Modelica library files used during compilation.
     pub libraries: Vec<String>,
     /// Resolved identity of DefIds in the model's IR. The IR contains numeric
@@ -302,14 +317,15 @@ fn build(ask: &Ask) -> Value {
         Focus::Stage => "stage",
         Focus::Specimen => "specimen",
     };
+    let stage_str = ask.stage.map_or("(navigated definition)", StageKind::name);
     let mut doc = json!({
         "instructions": INSTRUCTIONS,
         "seq": ask.seq,
-        "request": ask.request,
+        "request": ask.request.as_str(),
         "kind": kind,
         "specimen": ask.specimen.map(|p| p.to_string_lossy().into_owned()),
         "model": ask.model,
-        "stage": ask.stage,
+        "stage": stage_str,
         "libraries": ask.libraries,
         "def_resolutions": def_resolutions(ask.def_index),
         "stages": {
@@ -354,8 +370,8 @@ fn build_cross_stage(ask: &Ask, key_path: &[Seg]) -> Value {
         return json!({ "applicable": false, "reason": "no model name" });
     };
     let current = match ask.stage {
-        "Parse" => ask.parse_value,
-        "Resolve" => ask.resolve_value,
+        Some(StageKind::Parse) => ask.parse_value,
+        Some(StageKind::Resolve) => ask.resolve_value,
         _ => None,
     };
     let Some(current) = current else {
@@ -753,10 +769,10 @@ mod tests {
         let key_path = vec![Seg::Key("components".into()), Seg::Key("c".into())];
         let ask = Ask {
             seq: 1,
-            request: "explain",
+            request: AskRequest::Explain,
             specimen: None,
             model: Some("M"),
-            stage: "Resolve",
+            stage: Some(StageKind::Resolve),
             libraries: vec![],
             def_index: &empty,
             parse_value: Some(&parse),
@@ -785,10 +801,10 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: "explain",
+            request: AskRequest::Explain,
             specimen: None,
             model: Some("M"),
-            stage: "Parse",
+            stage: Some(StageKind::Parse),
             libraries: vec![],
             def_index: &empty,
             parse_value: Some(&parse),
@@ -806,10 +822,10 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: "explain",
+            request: AskRequest::Explain,
             specimen: None,
             model: Some("M"),
-            stage: "Parse",
+            stage: Some(StageKind::Parse),
             libraries: vec![],
             def_index: &empty,
             parse_value: None,
@@ -836,11 +852,12 @@ mod tests {
     /// addition without updating the constant is caught.
     #[test]
     fn stage_file_names_covers_all_pipeline_stages() {
-        // The pipeline has exactly 10 stages: Parse through Solve lowering.
+        // One file per pipeline stage (Parse through Solve lowering, excluding Simulation).
+        let pipeline_stage_count = StageKind::ALL.len() - 1;
         assert_eq!(
             STAGE_FILE_NAMES.len(),
-            10,
-            "STAGE_FILE_NAMES has {} entries but the pipeline has 10 stages",
+            pipeline_stage_count,
+            "STAGE_FILE_NAMES has {} entries but the pipeline has {pipeline_stage_count} stages",
             STAGE_FILE_NAMES.len(),
         );
         // Every name must end with .json and be unique.
@@ -907,10 +924,10 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: "explain",
+            request: AskRequest::Explain,
             specimen: None,
             model: Some("M"),
-            stage: "Typecheck",
+            stage: Some(StageKind::Typecheck),
             libraries: vec![],
             def_index: &empty,
             parse_value: Some(&json!({})),
@@ -928,5 +945,30 @@ mod tests {
             reason.contains("not yet implemented"),
             "expected 'not yet implemented' in reason, got: {reason}"
         );
+    }
+
+    #[test]
+    fn ask_request_as_str_round_trips() {
+        assert_eq!(AskRequest::Explain.as_str(), "explain");
+        assert_eq!(AskRequest::DebugWhereSet.as_str(), "debug-where-set");
+    }
+
+    #[test]
+    fn ask_stage_none_shows_navigated_definition() {
+        let empty = BTreeMap::new();
+        let ask = Ask {
+            seq: 1,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("M"),
+            stage: None,
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Specimen,
+        };
+        let doc = build(&ask);
+        assert_eq!(doc["stage"], json!("(navigated definition)"));
     }
 }

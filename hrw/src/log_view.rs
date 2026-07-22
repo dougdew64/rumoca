@@ -120,15 +120,12 @@ fn level_prefix(level: LogLevel) -> &'static str {
 // because egui supports both themes and we want readable contrast in each.
 fn level_style<'a>(entry: &LogEntry, ui: &egui::Ui) -> (&'a str, egui::Color32) {
     let prefix = level_prefix(entry.level);
+    let dark = ui.visuals().dark_mode;
     let color = match entry.level {
         LogLevel::Info => ui.visuals().text_color(),
-        LogLevel::StageStart => if ui.visuals().dark_mode {
-            egui::Color32::from_rgb(0x58, 0xa6, 0xff)
-        } else {
-            egui::Color32::from_rgb(0x0a, 0x5c, 0xc4)
-        },
-        LogLevel::StageEnd => crate::colors::ok_color(ui.visuals().dark_mode),
-        LogLevel::Warn => egui::Color32::from_rgb(0xd2, 0x9e, 0x22),
+        LogLevel::StageStart => crate::colors::stage_start_color(dark),
+        LogLevel::StageEnd => crate::colors::ok_color(dark),
+        LogLevel::Warn => crate::colors::WARN_AMBER,
         LogLevel::Error => ui.visuals().error_fg_color,
         LogLevel::Stdout => ui.visuals().weak_text_color(),
         LogLevel::Stderr => ui.visuals().warn_fg_color,

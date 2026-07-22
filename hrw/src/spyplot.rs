@@ -177,24 +177,18 @@ impl Plot {
         // stands out from the panel background (especially in dark mode).
         painter.rect_filled(view.to_screen_rect(bounds), egui::CornerRadius::ZERO, visuals.extreme_bg_color);
 
-        // Hit-test: convert the hover position from screen to world coordinates,
-        // then look up which block (if any) contains that cell.
-        let hovered: Option<&Block> = response.hover_pos().and_then(|p| {
-            let w = view.to_world(p);
-            if w.x < 0.0 || w.y < 0.0 {
-                return None;
-            }
-            self.block_at(w.x as usize, w.y as usize)
-        });
+        let hovered: Option<&Block> = view
+            .hovered_cell(&response, self.n, self.n)
+            .and_then(|(col, row)| self.block_at(col, row));
 
         // Color palette:
         // - Green: matched diagonal cells (the eq-unknown pairing).
         // - Orange fill (semi-transparent): coupled block background.
         // - Orange stroke: coupled block outline (thicker when hovered).
         let matched_color = crate::colors::OK_GREEN;
-        let coupled_fill = egui::Color32::from_rgba_unmultiplied(0xF2, 0x8C, 0x28, 0x55);
-        let coupled_stroke = egui::Color32::from_rgb(0xF2, 0x8C, 0x28);
-        let grid = visuals.weak_text_color().gamma_multiply(0.35);
+        let coupled_fill = crate::colors::coupled_fill();
+        let coupled_stroke = crate::colors::COUPLED_STROKE;
+        let grid = visuals.weak_text_color().gamma_multiply(crate::colors::GRID_ALPHA);
 
         view.draw_grid(&painter, self.n, self.n, grid);
 

@@ -181,7 +181,95 @@ are related and should be addressed together.
 
 ---
 
+## Second-pass items (2026-07-22)
+
+A follow-up scan after the first 32 items were resolved. These are refinements
+that build on the first-pass infrastructure.
+
+### Theme A: Stringly-typed Ask fields
+
+- [x] **TD-33 (medium): `AskRequest` enum replaces `request: &'static str`.**
+  Fixed 2026-07-22. New `AskRequest` enum (`Explain`, `DebugWhereSet`) with
+  `as_str()`. `Ask.request` changed from `&'a str` to `AskRequest`. Tests updated.
+
+- [x] **TD-34 (medium): `Ask.stage` uses `Option<StageKind>` instead of `&str`.**
+  Fixed 2026-07-22. `None` = navigated library definition (was a magic string).
+  `build()` calls `.map_or("(navigated definition)", StageKind::name)`.
+  `build_cross_stage()` matches on `Some(StageKind::Parse)` / `Some(StageKind::Resolve)`.
+
+- [x] **TD-35 (low): `base_ask()` helper deduplicates Ask construction.**
+  Fixed 2026-07-22. New `App::base_ask()` method populates all shared fields;
+  callers only supply `seq`, `request`, and `focus`.
+
+### Theme B: Color centralization (second pass)
+
+- [x] **TD-36 (low): Additional color constants for log_view and custom views.**
+  Fixed 2026-07-22. Added `stage_start_color(dark_mode)`, `WARN_AMBER`,
+  `INCIDENCE_CELL`, `INCIDENCE_HOVER`, `COUPLED_STROKE`, `coupled_fill()`,
+  `GRID_ALPHA` to `colors.rs`. Updated `log_view.rs`, `incidence_view.rs`,
+  `spyplot.rs`. Fixed `ok_color()` dark branch (was duplicating RGB instead
+  of returning `OK_GREEN`).
+
+### Theme C: Per-frame re-parsing
+
+- [x] **TD-37 (medium): Cache `from_report` views in App.**
+  Fixed 2026-07-22. Three `Option<Option<T>>` fields (`cached_spy_plot`,
+  `cached_incidence`, `cached_reduction`) cache parsed views. Outer Option =
+  cache state (None = stale), inner = parse result (None = no data in report).
+  Invalidated on `Compiled`. Rendering uses `get_or_insert_with`.
+
+### Theme D: Worker boilerplate (second pass)
+
+- [x] **TD-38 (low): `unwrap_success()` helper replaces 5 duplicated match arms.**
+  Fixed 2026-07-22. New `unwrap_success(result)` function extracts
+  `&CompilationResult` from `PhaseResult::Success`, replacing inline matches
+  in five stage functions.
+
+- [x] **TD-39 (low): Unified `run_step!` macro with bail-out.**
+  Fixed 2026-07-22. Merged `run_step!` and `run_step_unit!` into a single macro
+  that handles both `Ok(v)` and error bail-out (sets `stopped_at`, returns early).
+
+- [x] **TD-40 (low): `StageKind::ALL` const array.**
+  Fixed 2026-07-22. Lists all 11 variants in order. Used by
+  `stage_file_names_covers_all_pipeline_stages` test (replaced hardcoded `10`).
+
+### Theme E: Miscellaneous (second pass)
+
+- [x] **TD-41 (low): Misplaced doc comment on `narrative_button`.**
+  Fixed 2026-07-22. Moved the simulation-pane doc comment from `narrative_button`
+  to `simulation_pane`.
+
+- [x] **TD-42 (low): Silent `write_stages` error.**
+  Fixed 2026-07-22. Changed `let _ = bridge::write_stages(...)` to report errors
+  to `bridge_status`.
+
+- [x] **TD-43 (low): `APP_NAME` constant in `main.rs`.**
+  Fixed 2026-07-22. Replaced two inline `"HRW Observatory"` strings with
+  `const APP_NAME`.
+
+- [x] **TD-44 (low): `GOLDEN_RATIO` constant in `app.rs`.**
+  Fixed 2026-07-22. Named constant replaces inline `0.618_033_99` magic number.
+
+- [x] **TD-45 (low): Canvas constants `FIT_MARGIN`, `SCROLL_ZOOM_SENSITIVITY`.**
+  Fixed 2026-07-22. Named constants replace inline `0.92` and `0.002` in
+  `Canvas::show()`.
+
+- [x] **TD-46 (low): `RANGE_FRACTION`, `MEDIAN_MULTIPLIER` in worker.rs.**
+  Fixed 2026-07-22. Named constants for discontinuity-detection thresholds.
+
+- [x] **TD-47 (low): `DIFF_ROW_MARKER` in worker.rs.**
+  Fixed 2026-07-22. Named constant for `"index_reduction:d_dt_for_"` prefix
+  used by differentiated-row detection.
+
+- [x] **TD-48 (low): `hovered_cell()` in `canvas::View`.**
+  Fixed 2026-07-22. Shared hover → cell-index logic replaces duplicate code
+  in `spyplot.rs` and `incidence_view.rs`.
+
+---
+
 ## Summary
+
+### First pass (32 items)
 
 | Severity | Count | Done | Key themes |
 |----------|-------|------|------------|
@@ -189,3 +277,11 @@ are related and should be addressed together.
 | Medium   | 13    | 13 ✓ | ~~Stage boilerplate~~, ~~colors~~, ~~error handling~~, ~~tests~~, ~~per-frame I/O~~, ~~ui() size~~ |
 | Low      | 17    | 17 ✓ | ~~Duplication~~, ~~naming~~, ~~caching~~, ~~ergonomics~~ |
 | **Total**| **32**| **32 ✓**|  |
+
+### Second pass (16 items)
+
+| Severity | Count | Done | Key themes |
+|----------|-------|------|------------|
+| Medium   | 3     | 3 ✓  | ~~AskRequest enum~~, ~~Ask.stage type~~, ~~from_report caching~~ |
+| Low      | 13    | 13 ✓ | ~~Color centralization~~, ~~worker helpers~~, ~~named constants~~, ~~hovered_cell~~ |
+| **Total**| **16**| **16 ✓**|  |

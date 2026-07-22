@@ -170,23 +170,11 @@ impl IncidenceMatrix {
             visuals.extreme_bg_color,
         );
 
-        let hovered_cell: Option<(usize, usize)> = response.hover_pos().and_then(|p| {
-            let w = view.to_world(p);
-            if w.x < 0.0 || w.y < 0.0 {
-                return None;
-            }
-            let col = w.x as usize;
-            let row = w.y as usize;
-            if col < self.n_var && row < self.n_eq {
-                Some((col, row))
-            } else {
-                None
-            }
-        });
+        let hovered_cell = view.hovered_cell(&response, self.n_var, self.n_eq);
 
-        let cell_color = egui::Color32::from_rgb(0x42, 0x9E, 0xF5);
-        let hover_color = egui::Color32::from_rgb(0xFF, 0xC1, 0x07);
-        let grid = visuals.weak_text_color().gamma_multiply(0.25);
+        let cell_color = crate::colors::INCIDENCE_CELL;
+        let hover_color = crate::colors::INCIDENCE_HOVER;
+        let grid = visuals.weak_text_color().gamma_multiply(crate::colors::GRID_ALPHA);
 
         view.draw_grid(&painter, self.n_var, self.n_eq, grid);
 

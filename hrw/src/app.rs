@@ -239,6 +239,15 @@ pub struct App {
     // Avoids running `layout_no_wrap` on the longest filename every frame.
     // Invalidated on rescan (when `files` changes).
     cached_specimen_width: Option<f32>,
+
+    // ---- 14. Cached structural views ----
+    // Avoids re-parsing `from_report` JSON every frame. Invalidated when
+    // `stages` changes (in `drain_worker` on `Compiled`). Outer Option is
+    // the cache state (None = not yet computed); inner Option is the parse
+    // result (None = report had no data for this view).
+    cached_spy_plot: Option<Option<spyplot::Plot>>,
+    cached_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
+    cached_reduction: Option<Option<reduction_view::ReductionView>>,
 }
 
 impl App {
@@ -326,6 +335,9 @@ impl App {
             sim_t_end: 2.0,
             narrative_exists: false,
             cached_specimen_width: None,
+            cached_spy_plot: None,
+            cached_incidence: None,
+            cached_reduction: None,
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -494,13 +506,17 @@ impl App {
                     self.model = model;
                     self.stages = stages;
                     self.def_index = def_index;
-                    // Re-fit the custom-view cameras to the new report.
+                    self.cached_spy_plot = None;
+                    self.cached_incidence = None;
+                    self.cached_reduction = None;
                     self.spy_canvas.request_fit();
                     self.incidence_canvas.request_fit();
                     // Land on the furthest stage that completed cleanly.
                     self.stage = self.last_successful_stage();
                     // Publish every stage's full IR so Claude can diff any pair.
-                    let _ = bridge::write_stages(&self.stages.as_stage_pairs());
+                    if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
+                        self.bridge_status = Some(format!("write_stages failed: {e}"));
+                    }
                 }
                 FromWorker::Simulated { path, result } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
@@ -625,6 +641,22 @@ impl App {
     /// cross-references. Claude reads this to understand the user's question
     /// context without the user having to copy-paste IR.
     ///
+    /// Build an `Ask` from the current specimen state (shared fields).
+    fn base_ask<'a>(&'a self, seq: u64, request: bridge::AskRequest, focus: Focus<'a>) -> Ask<'a> {
+        Ask {
+            seq,
+            request,
+            specimen: self.selected.as_deref(),
+            model: self.model.as_deref(),
+            stage: Some(self.stage),
+            libraries: self.library_strings(),
+            def_index: &self.def_index,
+            parse_value: self.stages.parse.value.as_ref(),
+            resolve_value: self.stages.resolve.value.as_ref(),
+            focus,
+        }
+    }
+
     /// The `ask_seq` counter makes each capture unique, and the status bar
     /// confirms what was captured ("captured equations.3.lhs -- now ask me
     /// about it in the chat").
@@ -645,18 +677,7 @@ impl App {
                     .unwrap_or("?"),
             ),
         };
-        let ask = Ask {
-            seq,
-            request: "explain",
-            specimen: self.selected.as_deref(),
-            model: self.model.as_deref(),
-            stage: self.stage.name(),
-            libraries: self.library_strings(),
-            def_index: &self.def_index,
-            parse_value: self.stages.parse.value.as_ref(),
-            resolve_value: self.stages.resolve.value.as_ref(),
-            focus,
-        };
+        let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus);
         self.bridge_status = Some(status_line(seq, &target, "explain", bridge::write(&ask)));
     }
 
@@ -671,44 +692,33 @@ impl App {
     /// - **Specimen stage** (nav stack empty): we're viewing the specimen's own
     ///   IR. The capture includes the Parse and Resolve values so Claude can
     ///   diff across stages (e.g. "what did Typecheck change vs Instantiate?").
-    fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: &'static str) {
+    fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: bridge::AskRequest) {
         self.ask_seq += 1;
         let seq = self.ask_seq;
         let target = bridge::describe_path(&key_path);
-        let libraries = self.library_strings();
+        let request_str = request.as_str();
 
         let status = if let Some(entry) = self.nav.last() {
-            // Navigated library class: no Parse stage, so no cross-stage diff.
             let ask = Ask {
                 seq,
                 request,
                 specimen: None,
                 model: Some(&entry.name),
-                stage: "(navigated definition)",
-                libraries,
+                stage: None,
+                libraries: self.library_strings(),
                 def_index: &entry.def_index,
                 parse_value: None,
                 resolve_value: None,
                 focus: Focus::Node { key_path, stage_value: &entry.value },
             };
-            status_line(seq, &target, request, bridge::write(&ask))
+            status_line(seq, &target, request_str, bridge::write(&ask))
         } else {
             let stage_value = self.current_stage().value.clone();
             match &stage_value {
                 Some(value) => {
-                    let ask = Ask {
-                        seq,
-                        request,
-                        specimen: self.selected.as_deref(),
-                        model: self.model.as_deref(),
-                        stage: self.stage.name(),
-                        libraries,
-                        def_index: &self.def_index,
-                        parse_value: self.stages.parse.value.as_ref(),
-                        resolve_value: self.stages.resolve.value.as_ref(),
-                        focus: Focus::Node { key_path, stage_value: value },
-                    };
-                    status_line(seq, &target, request, bridge::write(&ask))
+                    let focus = Focus::Node { key_path, stage_value: value };
+                    let ask = self.base_ask(seq, request, focus);
+                    status_line(seq, &target, request_str, bridge::write(&ask))
                 }
                 None => "(no IR for this stage to point at)".to_owned(),
             }
@@ -716,35 +726,6 @@ impl App {
         self.bridge_status = Some(status);
     }
 
-    /// The Simulation view — a Run control + an `egui_plot` pane of the
-    /// state trajectories. Running the model is on-demand (not a compile stage):
-    /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
-    /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
-    ///
-    /// ## egui_plot integration
-    ///
-    /// `egui_plot` is an immediate-mode plotting library that integrates with
-    /// egui. `Plot::new("id")` creates a plot area; `.show(ui, |plot_ui| …)`
-    /// renders it. Inside the closure, `plot_ui.line(…)` adds each data series.
-    /// The plot handles pan/zoom/legend automatically.
-    ///
-    /// ## Discontinuity segments
-    ///
-    /// Models with discrete events (like BouncingBall's velocity flip at each
-    /// bounce) have genuine discontinuities in their state variables. If we
-    /// plotted the entire time series as one polyline, the plot would draw a
-    /// sloped line through the jump — visually wrong. `discontinuity_segments`
-    /// breaks the data into contiguous segments at reinit points, and each
-    /// segment is drawn as a separate `Line`. Continuous models draw as one
-    /// segment (the whole range).
-    ///
-    /// ## Consistent series colors
-    ///
-    /// `series_color(i)` pins an explicit color per VARIABLE index. Without
-    /// this, egui_plot's auto-color increments per `Line` added — so a variable
-    /// split into 3 segments would get 3 different hues, while its legend entry
-    /// shows only one. By keying color on the variable index, every segment of
-    /// the same variable matches the legend.
     fn narrative_button(&mut self, ui: &mut egui::Ui) {
         if !self.narrative_exists {
             return;
@@ -782,6 +763,10 @@ impl App {
         }
     }
 
+    /// The Simulation view — a Run control + an `egui_plot` pane of the
+    /// state trajectories. Running the model is on-demand (not a compile stage):
+    /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
+    /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
     fn simulation_pane(&mut self, ui: &mut egui::Ui) {
         use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
@@ -1597,33 +1582,33 @@ impl eframe::App for App {
                 }
 
                 if report_ready && self.structural_view == StructuralView::SpyPlot {
-                    match self.current_stage().value.as_ref().and_then(spyplot::Plot::from_report) {
-                        Some(plot) => {
-                            ui.weak(plot.caption());
-                            plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture);
-                        }
-                        None => {
-                            ui.weak("(the structural report has no BLT blocks to plot)");
-                        }
+                    let cached = self.cached_spy_plot.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref().and_then(spyplot::Plot::from_report)
+                    });
+                    if let Some(plot) = cached {
+                        ui.weak(plot.caption());
+                        plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture);
+                    } else {
+                        ui.weak("(the structural report has no BLT blocks to plot)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::Incidence {
-                    match self.current_stage().value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report) {
-                        Some(mat) => {
-                            ui.weak(mat.caption());
-                            mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture);
-                        }
-                        None => {
-                            ui.weak("(no incidence data in this report)");
-                        }
+                    let cached = self.cached_incidence.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report)
+                    });
+                    if let Some(mat) = cached {
+                        ui.weak(mat.caption());
+                        mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture);
+                    } else {
+                        ui.weak("(no incidence data in this report)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::Reduction {
-                    match self.current_stage().value.as_ref().and_then(reduction_view::ReductionView::from_report) {
-                        Some(view) => {
-                            view.ui(ui);
-                        }
-                        None => {
-                            ui.weak("(no reduction data in this report)");
-                        }
+                    let cached = self.cached_reduction.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
+                    });
+                    if let Some(view) = cached {
+                        view.ui(ui);
+                    } else {
+                        ui.weak("(no reduction data in this report)");
                     }
                 } else {
                     let stage = self.current_stage();
@@ -1702,9 +1687,9 @@ impl eframe::App for App {
         // Priority: debugger capture > explain capture > stage capture.
         // Only one bridge write per frame.
         if let Some(key_path) = debug_ask {
-            self.emit_node_focus(key_path, "debug-where-set");
+            self.emit_node_focus(key_path, bridge::AskRequest::DebugWhereSet);
         } else if let Some(key_path) = node_ask {
-            self.emit_node_focus(key_path, "explain");
+            self.emit_node_focus(key_path, bridge::AskRequest::Explain);
         } else if want_stage_ask {
             self.emit_focus(Focus::Stage);
         }
@@ -1750,9 +1735,10 @@ fn read_purpose(path: &Path) -> Option<String> {
 /// visually distinct colors without a hand-picked palette. `Hsva` constructs
 /// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
 /// automatically.
+const GOLDEN_RATIO: f32 = 0.618_033_99;
+
 fn series_color(i: usize) -> egui::Color32 {
-    let golden_ratio = (5.0_f32.sqrt() - 1.0) / 2.0; // 0.61803398875
-    egui::ecolor::Hsva::new(i as f32 * golden_ratio, 0.85, 0.5, 1.0).into()
+    egui::ecolor::Hsva::new(i as f32 * GOLDEN_RATIO, 0.85, 0.5, 1.0).into()
 }
 
 /// A stage-tab label, coloured by outcome so the whole pipeline's health reads off
@@ -1852,6 +1838,9 @@ impl App {
             sim_t_end: 2.0,
             narrative_exists: false,
             cached_specimen_width: None,
+            cached_spy_plot: None,
+            cached_incidence: None,
+            cached_reduction: None,
         }
     }
 }
