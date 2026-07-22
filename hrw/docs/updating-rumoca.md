@@ -49,17 +49,29 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
   have gone stale (a changed residual, a different tearing, a new/removed block). Update the prose to
   match — the trace is ground truth, the narrative is the story told about it.
 
-## 6. Refresh `docs/compiler-phases/` — only if phases changed, and only by Doug
+## 6. Update guided tours
+- Guided tours (`docs/compiler-phases/*/guided-tour.md`) contain **line numbers, code snippets,
+  and local-variable names** from the Rumoca crates. A rebase that moves code, renames locals, or
+  changes trace-step variants will silently stale the tour without any compiler error.
+- After fixing compile breakage (step 2), grep the tour files for any function, type, or variable
+  name that changed. Pay special attention to:
+  - `LiveTrace::push` line number (the breakpoint site)
+  - `MatchingStep` / `TarjanStep` enum variants (the frame types the tour walks through)
+  - `augment_traced` / `strongconnect` parameter lists and local names
+  - `emit_matching_frame` / `TracedTarjanState::record` call sites
+- Update the affected tours to match the new code — line numbers, code excerpts, and locals tables.
+
+## 7. Refresh `docs/compiler-phases/` — only if phases changed, and only by Doug
 - These are Doug's authored explanations, matching a specific Rumoca commit. Claude does **not**
   rewrite them automatically. If a phase's behavior changed materially, Doug updates the chapter
   (or asks Claude to draft a diff for ratification). Their being pinned-behind is acceptable;
   silently overwriting them is not.
 
-## 7. Smoke-test the app
+## 8. Smoke-test the app
 - `cargo run`; load a specimen; confirm each stage renders, and the bridge capture / field-help
   panel / "Go to" navigation / debugger arming / "Read: specimen narrative" still work.
 
-## 8. Confirm the version/commit readout
+## 9. Confirm the version/commit readout
 - **Help → About auto-updates** — `build.rs` reads `rumoca-compile`'s version from `Cargo.lock` and
   the **commit from the workspace git HEAD** (HRW is an in-workspace member, so HEAD *is* the Rumoca
   source it's built against). Do **not** hand-edit it; just confirm About shows the new version/commit
@@ -77,5 +89,6 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
 ---
 
 **Rule of thumb:** steps 1–3 are mechanical and compiler-driven; steps 4–5 are one command each
-(then review the diffs); steps 6 and 8 are human judgement. If `cargo build` + `cargo test` are
-green and the field-help + trace diffs look sane, the update is in good shape.
+(then review the diffs); step 6 is a targeted search-and-update; steps 7 and 9 are human judgement.
+If `cargo build` + `cargo test` are green and the field-help + trace diffs look sane, the update is
+in good shape.

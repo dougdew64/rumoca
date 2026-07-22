@@ -412,13 +412,74 @@ matching/BLT overlay lookups, which cross-reference by name.
 
 Two animated views replay structural analysis algorithms frame by frame, built
 from trace data recorded by instrumented variants of the Rumoca phase functions.
+Both support two animation modes:
 
-**Matching animation** (`matching_anim.rs`, ~430 lines): replays Kuhn's
+1. **Recorded** (default): pre-computed frames from `from_incidence` — standard
+   play/pause/step/reset controls with a speed slider.
+2. **Live debug**: frames arrive from a shared `LiveTrace<Frame>` buffer as a
+   separate algorithm thread runs. The user sets a breakpoint on
+   `live_trace_breakpoint` in the VS Code debugger and steps through the
+   algorithm code — after each frame push, a 20ms delay lets the UI render,
+   then the breakpoint fires. Started via the "Debug" button in the UI; the
+   button reappears after the session finishes for re-runs.
+
+The `LiveTrace<F>` type (in `rumoca-phase-structural/src/live_trace.rs`) wraps an
+`Arc<Mutex<Vec<F>>>` shared between the algorithm producer and UI consumer. The
+traced algorithms (`maximum_matching_with_trace`, `tarjan_scc_with_trace`) accept
+an optional `&LiveTrace<Frame>` — when present, each frame is pushed to both the
+local vec (returned in the result) and the shared buffer (read by the UI).
+Live mode uses `LiveTrace::new().with_frame_delay(20ms)`, which adds a sleep
+after each push (so the UI thread can render before the debugger pauses all
+threads) and calls `live_trace_breakpoint` — a dedicated `#[inline(never)]`
+function that the debugger resolves unambiguously. This is the upstreamable
+observability API.
+
+**Why re-running the algorithm (clicking Debug again) is safe — a Rust ownership lesson.**
+The Debug button spawns a new algorithm thread that re-runs matching or Tarjan.
+This is safe because the algorithm runs on private copies of the data and writes
+only to its own `LiveTrace` buffer — no shared mutable state is touched. Several
+Rust ownership mechanisms work together to guarantee this at compile time:
+
+- **Immutable borrow `&IncidenceMatrix`**: `start_live` takes `&IncidenceMatrix`,
+  not `&mut`. The compiler guarantees the algorithm thread cannot modify the
+  shared incidence data. In C++, this would be a `const&` convention that the
+  programmer promises to honor — Rust enforces it.
+
+- **Move semantics on `thread::spawn`**: the `move` closure forces the thread to
+  *own* everything it uses. The `eq_vars`, `n_eq`, `n_var` are moved into the
+  closure — they're private copies, not shared references. If you tried to
+  capture a reference to stack-local data, the compiler would reject it because
+  `thread::spawn` requires a `'static` closure. This makes dangling pointers
+  across threads a compile-time error.
+
+- **`Send` and `Sync` traits**: checked automatically by the compiler.
+  `Arc<Mutex<Vec<MatchingFrame>>>` is `Send` (safe to transfer to another
+  thread) because `Mutex<Vec<MatchingFrame>>` is `Sync` (safe to share). If
+  `MatchingFrame` contained a `Rc` or a raw pointer, the compiler would refuse
+  to let it cross the thread boundary. You never have to reason about whether
+  `LiveTrace` is thread-safe — the compiler verifies it structurally from its
+  fields.
+
+- **RAII and `Drop`**: when clicking Debug replaces the old animation
+  (`self.cached_matching_anim = Some(Some(new_anim))`), the old
+  `MatchingAnimation` is dropped automatically. Its `Arc` clone is released; if
+  the old algorithm thread is still running, it holds the other `Arc` clone and
+  finishes normally — the `Arc` reference count manages the lifetime without
+  manual cleanup.
+
+The key insight: **the fact that this code compiles is itself the proof that
+re-running the algorithm is safe.** If any of these invariants were violated —
+mutable aliasing, dangling references, non-thread-safe types crossing
+boundaries — you'd get a compiler error, not a runtime bug. In C++ or Java, the
+equivalent code would work identically, but the safety guarantees would be
+conventions enforced by code review, not by the type system.
+
+**Matching animation** (`matching_anim.rs`, ~600 lines): replays Kuhn's
 augmenting-path algorithm on the incidence matrix. Each frame highlights the
 current equation, explored edges, found/failed paths, and confirmed matches
 with step-by-step descriptions using readable equation text.
 
-**Tarjan SCC animation** (`tarjan_anim.rs`, ~400 lines): replays Tarjan's
+**Tarjan SCC animation** (`tarjan_anim.rs`, ~530 lines): replays Tarjan's
 strongly connected component algorithm on the dependency graph (derived from
 the matching result). Nodes are colored by DFS state (on stack, in discovered
 SCC) and edges are classified as tree/back edges.
@@ -570,7 +631,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
 | `rumoca-ir-ast` | IR types (indirectly, via serde serialization) |
 | `rumoca-phase-instantiate` | `instantiate_model()` — InstanceOverlay |
 | `rumoca-phase-typecheck` | `typecheck_instanced()` — type assignment |
-| `rumoca-phase-structural` | `build_structural_report()`, `build_incidence()`, `build_ic_plan()`, `dae_prepare::*`, matching/tarjan trace types |
+| `rumoca-phase-structural` | `build_structural_report()`, `build_incidence()`, `build_ic_plan()`, `dae_prepare::*`, matching/tarjan trace types, `LiveTrace<F>` |
 | `rumoca-ir-dae` | `Dae`, `Equation` types for the index-reduction funnel and expression formatting |
 | `rumoca-phase-solve` | `lower_dae_to_solve_model()` — SolveModel |
 | `rumoca-sim` | `simulate_solve_model()` — simulation runner |
@@ -583,7 +644,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (145 tests) guards against silent
+their call sites. The regression test suite (149 tests) guards against silent
 regressions during a rebase.
 
 

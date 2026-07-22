@@ -1620,25 +1620,72 @@ impl eframe::App for App {
                         ui.weak("(no incidence data in this report)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
-                    let incidence = self.cached_incidence.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report)
-                    });
-                    let anim = self.cached_matching_anim.get_or_insert_with(|| {
-                        incidence.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
-                    });
-                    if let Some(anim) = anim {
+                    // Ensure incidence is computed first.
+                    if self.cached_incidence.is_none() {
+                        self.cached_incidence = Some(
+                            self.stages.get(self.stage).value.as_ref()
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        );
+                    }
+                    // "Debug" button: start a live debug session (replaces recorded animation).
+                    // Show the button when not in live mode, or when a live session has finished.
+                    let is_live_running = self.cached_matching_anim.as_ref()
+                        .and_then(|o| o.as_ref())
+                        .map_or(false, |a| a.is_live() && !a.live_finished());
+                    if !is_live_running {
+                        if let Some(Some(mat)) = &self.cached_incidence {
+                            if ui.button("Debug").on_hover_text(
+                                "Start live debug session \u{2014} set a breakpoint on LiveTrace::push \
+                                 in matching.rs, then step in the VS Code debugger"
+                            ).clicked() {
+                                self.cached_matching_anim = Some(Some(
+                                    matching_anim::MatchingAnimation::start_live(mat)
+                                ));
+                                self.matching_anim_canvas.request_fit();
+                            }
+                        }
+                    }
+                    if self.cached_matching_anim.is_none() {
+                        let inc = self.cached_incidence.as_ref().unwrap();
+                        self.cached_matching_anim = Some(
+                            inc.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
+                        );
+                    }
+                    if let Some(Some(anim)) = &mut self.cached_matching_anim {
                         anim.ui(ui, &mut self.matching_anim_canvas);
                     } else {
                         ui.weak("(no incidence data for matching animation)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
-                    let incidence = self.cached_incidence.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report)
-                    });
-                    let anim = self.cached_tarjan_anim.get_or_insert_with(|| {
-                        incidence.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
-                    });
-                    if let Some(anim) = anim {
+                    if self.cached_incidence.is_none() {
+                        self.cached_incidence = Some(
+                            self.stages.get(self.stage).value.as_ref()
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        );
+                    }
+                    let is_live_running = self.cached_tarjan_anim.as_ref()
+                        .and_then(|o| o.as_ref())
+                        .map_or(false, |a| a.is_live() && !a.live_finished());
+                    if !is_live_running {
+                        if let Some(Some(mat)) = &self.cached_incidence {
+                            if ui.button("Debug").on_hover_text(
+                                "Start live debug session \u{2014} set a breakpoint on LiveTrace::push \
+                                 in tarjan.rs, then step in the VS Code debugger"
+                            ).clicked() {
+                                self.cached_tarjan_anim = Some(
+                                    tarjan_anim::TarjanAnimation::start_live(mat)
+                                );
+                                self.tarjan_anim_canvas.request_fit();
+                            }
+                        }
+                    }
+                    if self.cached_tarjan_anim.is_none() {
+                        let inc = self.cached_incidence.as_ref().unwrap();
+                        self.cached_tarjan_anim = Some(
+                            inc.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
+                        );
+                    }
+                    if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
                         anim.ui(ui, &mut self.tarjan_anim_canvas);
                     } else {
                         ui.weak("(no dependency graph for BLT animation)");

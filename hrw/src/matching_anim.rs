@@ -15,9 +15,12 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use eframe::egui;
 
+use rumoca_phase_structural::LiveTrace;
 use rumoca_phase_structural::matching::{
     MatchingFrame, MatchingStep, maximum_matching_with_trace,
 };
@@ -25,7 +28,10 @@ use rumoca_phase_structural::matching::{
 use crate::canvas::Canvas;
 use crate::incidence_view::IncidenceMatrix;
 
-/// Animation state machine.
+/// Animation state machine — supports three modes:
+/// 1. **Recorded**: pre-computed frames from `from_incidence` (play/pause/step)
+/// 2. **Live**: reads frames from a shared `LiveTrace` buffer as a debugger
+///    steps through the algorithm on a worker thread
 pub struct MatchingAnimation {
     frames: Vec<MatchingFrame>,
     n_eq: usize,
@@ -38,17 +44,22 @@ pub struct MatchingAnimation {
     /// Seconds between auto-advance frames.
     interval: f64,
     elapsed: f64,
+    /// Live trace buffer — when `Some`, the animation polls for new frames
+    /// from a debugger-paused algorithm thread instead of replaying recorded ones.
+    live: Option<LiveTrace<MatchingFrame>>,
+    /// Whether the live algorithm thread has finished.
+    live_done: Arc<Mutex<bool>>,
 }
 
 impl MatchingAnimation {
-    /// Build the animation trace from a parsed incidence matrix.
+    /// Build the animation trace from a parsed incidence matrix (recorded mode).
     pub fn from_incidence(mat: &IncidenceMatrix) -> Self {
         let eq_vars: Vec<HashSet<usize>> = mat
             .rows()
             .iter()
             .map(|cols| cols.iter().copied().collect())
             .collect();
-        let result = maximum_matching_with_trace(mat.n_eq(), mat.n_var(), &eq_vars);
+        let result = maximum_matching_with_trace(mat.n_eq(), mat.n_var(), &eq_vars, None);
         Self {
             frames: result.frames,
             n_eq: mat.n_eq(),
@@ -60,26 +71,101 @@ impl MatchingAnimation {
             playing: false,
             interval: 0.4,
             elapsed: 0.0,
+            live: None,
+            live_done: Arc::new(Mutex::new(false)),
         }
     }
 
+    /// Start a live debug session: spawn a thread that runs the matching
+    /// algorithm with a shared `LiveTrace`, then return an animation that
+    /// reads from it. Set a breakpoint on `LiveTrace::push` in matching.rs
+    /// to single-step through the algorithm.
+    pub fn start_live(mat: &IncidenceMatrix) -> Self {
+        let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
+        let lt_for_thread = lt.clone();
+        let done = Arc::new(Mutex::new(false));
+        let done_for_thread = Arc::clone(&done);
+
+        let eq_vars: Vec<HashSet<usize>> = mat
+            .rows()
+            .iter()
+            .map(|cols| cols.iter().copied().collect())
+            .collect();
+        let n_eq = mat.n_eq();
+        let n_var = mat.n_var();
+
+        thread::Builder::new()
+            .name("matching-debug".to_owned())
+            .spawn(move || {
+                maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&lt_for_thread));
+                *done_for_thread.lock().expect("done lock") = true;
+            })
+            .expect("failed to spawn matching-debug thread");
+
+        Self {
+            frames: Vec::new(),
+            n_eq: mat.n_eq(),
+            n_var: mat.n_var(),
+            equation_names: mat.equation_texts().to_vec(),
+            unknown_names: mat.unknown_names().to_vec(),
+            rows: mat.rows().to_vec(),
+            cursor: 0,
+            playing: false,
+            interval: 0.4,
+            elapsed: 0.0,
+            live: Some(lt),
+            live_done: done,
+        }
+    }
+
+    /// Whether this animation is in live debug mode.
+    pub fn is_live(&self) -> bool {
+        self.live.is_some()
+    }
+
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty()
+        self.frames.is_empty() && self.live.is_none()
     }
 
     fn current_frame(&self) -> Option<&MatchingFrame> {
         self.frames.get(self.cursor)
     }
 
+    /// In live mode, pull any new frames from the shared buffer and
+    /// auto-advance the cursor to the latest one.
+    fn sync_live(&mut self) {
+        if let Some(lt) = &self.live {
+            let live_len = lt.len();
+            if live_len > self.frames.len() {
+                let snapshot = lt.snapshot();
+                self.frames = snapshot;
+                self.cursor = self.frames.len().saturating_sub(1);
+            }
+        }
+    }
+
+    /// Whether the live algorithm thread has finished running.
+    pub fn live_finished(&self) -> bool {
+        *self.live_done.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
     /// Render the animation controls and the annotated incidence matrix.
     pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas) {
+        // In live mode, sync new frames from the shared buffer.
+        self.sync_live();
+
         if self.frames.is_empty() {
-            ui.label("No matching trace available.");
+            if self.is_live() {
+                ui.label("Waiting for first frame from debugger...");
+                ui.ctx().request_repaint();
+            } else {
+                ui.label("No matching trace available.");
+            }
             return;
         }
 
         let dt = ui.input(|i| i.stable_dt) as f64;
-        if self.playing {
+        if self.playing && !self.is_live() {
             self.elapsed += dt;
             if self.elapsed >= self.interval {
                 self.elapsed = 0.0;
@@ -91,19 +177,34 @@ impl MatchingAnimation {
             }
             ui.ctx().request_repaint();
         }
+        if self.is_live() && !self.live_finished() {
+            ui.ctx().request_repaint();
+        }
 
         // --- Controls ---
         ui.horizontal(|ui| {
-            if self.playing {
-                if ui.button("\u{23f8} Pause").clicked() {
-                    self.playing = false;
+            if self.is_live() {
+                let done = self.live_finished();
+                let status = if done { "Live (done)" } else { "Live" };
+                ui.label(egui::RichText::new(status).color(
+                    if done { egui::Color32::from_rgb(0x66, 0xBB, 0x6A) }
+                    else { egui::Color32::from_rgb(0xEF, 0x53, 0x50) }
+                ).strong());
+                ui.separator();
+            }
+
+            if !self.is_live() {
+                if self.playing {
+                    if ui.button("\u{23f8} Pause").clicked() {
+                        self.playing = false;
+                    }
+                } else if ui.button("\u{25b6} Play").clicked() {
+                    if self.cursor + 1 >= self.frames.len() {
+                        self.cursor = 0;
+                    }
+                    self.playing = true;
+                    self.elapsed = 0.0;
                 }
-            } else if ui.button("\u{25b6} Play").clicked() {
-                if self.cursor + 1 >= self.frames.len() {
-                    self.cursor = 0;
-                }
-                self.playing = true;
-                self.elapsed = 0.0;
             }
 
             if ui.button("\u{23ee} Reset").clicked() {
@@ -136,14 +237,16 @@ impl MatchingAnimation {
                 self.frames.len()
             ));
 
-            ui.separator();
-            ui.label("Speed:");
-            let mut speed_ms = (self.interval * 1000.0) as i32;
-            if ui
-                .add(egui::Slider::new(&mut speed_ms, 50..=2000).suffix("ms"))
-                .changed()
-            {
-                self.interval = speed_ms as f64 / 1000.0;
+            if !self.is_live() {
+                ui.separator();
+                ui.label("Speed:");
+                let mut speed_ms = (self.interval * 1000.0) as i32;
+                if ui
+                    .add(egui::Slider::new(&mut speed_ms, 50..=2000).suffix("ms"))
+                    .changed()
+                {
+                    self.interval = speed_ms as f64 / 1000.0;
+                }
             }
         });
 
@@ -474,5 +577,24 @@ mod tests {
         let last = anim.frames.last().unwrap();
         let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
         assert_eq!(matched, 3, "3x3 system should have perfect matching");
+    }
+
+    #[test]
+    fn live_mode_receives_all_frames() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        let mut anim = MatchingAnimation::start_live(&mat);
+        // The algorithm thread runs with a 20ms inter-frame delay, so
+        // wait for it to finish (with a generous timeout).
+        for _ in 0..100 {
+            if anim.live_finished() { break; }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        anim.sync_live();
+        assert!(!anim.frames.is_empty());
+        assert!(anim.is_live());
+        assert!(anim.live_finished());
+        let last = anim.frames.last().unwrap();
+        let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
+        assert_eq!(matched, 3, "live mode should reach same final matching");
     }
 }

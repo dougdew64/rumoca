@@ -71,3 +71,67 @@ stop), and Claude will lock in whatever expression form your CodeLLDB accepts.
 `def_id`/`scope_id` are assigned in **registration** (identities and scopes are minted). `type_def_id`
 is assigned later in **contents** (a name reference is *resolved* to an existing identity). Watching
 the two breakpoints in one session shows the two halves of Phase 2: *assign* then *resolve*.
+
+---
+
+## Live debug stepping — algorithm animation synced to the VS Code debugger
+
+The third animation mode: the user steps through algorithm code in the VS Code debugger and the HRW
+animation view updates in lockstep, showing each algorithmic decision as it happens.
+
+### Architecture
+
+Each traced algorithm (`maximum_matching_with_trace`, `tarjan_scc_with_trace`) accepts an optional
+`LiveTrace<Frame>` — a shared `Arc<Mutex<Vec<Frame>>>` buffer. When present, every frame push also
+writes to the shared buffer. The animation view polls this buffer each UI frame and auto-advances
+the cursor to the latest frame.
+
+When the debugger pauses the algorithm thread at the `LiveTrace::push` call, the UI shows the
+current state. When the user resumes/steps, the next frame is pushed and the UI updates.
+
+### How to use it
+
+1. **Launch HRW under the debugger** (F5) — **do not set any breakpoints yet**. Setting the
+   breakpoint before loading a specimen can freeze the UI (the debugger pauses all threads when
+   any thread hits a breakpoint).
+2. **Load a specimen** in HRW (select it from the specimen list).
+3. **Navigate to the Structural or Index Reduction tab**, then select the **Matching** or **BLT**
+   animation sub-tab.
+4. **Now set a breakpoint** on `live_trace_breakpoint` (see table below).
+5. **Click the "Debug" button** — this spawns a dedicated algorithm thread. After each frame is
+   pushed, a 20ms delay lets the HRW UI render, then the breakpoint fires. Each time you
+   Continue (F5) in the debugger, the next frame appears in the HRW animation.
+6. **Inspect locals**: at the breakpoint, `frame_index` tells you which step you're on. Step up
+   one frame to reach the algorithm code (`augment_traced` or `strongconnect`) where the full
+   local state (match_eq, match_var, visited, eq, var, etc.) is in scope.
+7. **Re-run**: after the session finishes, the Debug button reappears — click it to start a new
+   live session.
+
+### Breakpoint sites for live stepping
+
+| Algorithm | File | Function | Line to break on |
+|---|---|---|---|
+| **All** (recommended) | `crates/rumoca-phase-structural/src/live_trace.rs` | `live_trace_breakpoint` | the `black_box` line |
+| **Matching** (per-frame) | `crates/rumoca-phase-structural/src/matching.rs` | `emit_matching_frame` | `frames.push(frame)` (after the `lt.push` call) |
+| **Tarjan** (SCC discovery) | `crates/rumoca-phase-structural/src/tarjan.rs` | `TracedTarjanState::record` | `self.frames.push(frame)` (after the `lt.push` call) |
+
+The recommended site is `live_trace_breakpoint` — it is `#[inline(never)]` and non-generic, so the
+debugger resolves it to a single unambiguous address (unlike `Vec::push` calls that can share
+monomorphized code at higher opt-levels). It fires for both matching and Tarjan. The `frame_index`
+parameter tells you which step you're on.
+
+### Thread model
+
+```
+UI thread                     Algorithm thread (matching-debug / tarjan-debug)
+──────────                    ────────────────────────────────────────────────
+clicks "Debug"  ──►           spawns thread running maximum_matching_with_trace
+                               with LiveTrace<MatchingFrame>
+polls LiveTrace  ◄──          pushes frames to shared buffer
+  each UI frame               ◄── debugger pauses here ──►
+shows current frame
+```
+
+The UI thread never blocks — it polls the `LiveTrace` via `Mutex::lock` (uncontended when the
+algorithm thread is paused at a breakpoint). The algorithm thread is the only writer; the UI thread
+is the only reader.

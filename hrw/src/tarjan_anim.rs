@@ -14,9 +14,12 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use eframe::egui;
 
+use rumoca_phase_structural::LiveTrace;
 use rumoca_phase_structural::matching::maximum_matching_with_trace;
 use rumoca_phase_structural::tarjan::{
     TarjanFrame, TarjanStep, tarjan_scc_with_trace,
@@ -25,7 +28,7 @@ use rumoca_phase_structural::tarjan::{
 use crate::canvas::Canvas;
 use crate::incidence_view::IncidenceMatrix;
 
-/// Animation state for Tarjan SCC discovery.
+/// Animation state for Tarjan SCC discovery — supports recorded and live modes.
 pub struct TarjanAnimation {
     frames: Vec<TarjanFrame>,
     n_nodes: usize,
@@ -35,10 +38,39 @@ pub struct TarjanAnimation {
     playing: bool,
     interval: f64,
     elapsed: f64,
+    live: Option<LiveTrace<TarjanFrame>>,
+    live_done: Arc<Mutex<bool>>,
+}
+
+/// Build the equation dependency graph from a matching result.
+/// Factored out so both `from_incidence` and `start_live` can use it.
+fn build_dep_graph(
+    mat: &IncidenceMatrix,
+    match_eq: &[Option<usize>],
+    match_var: &[Option<usize>],
+) -> Vec<Vec<usize>> {
+    let n_eq = mat.n_eq();
+    let mut adj = vec![Vec::new(); n_eq];
+    for (eq, cols) in mat.rows().iter().enumerate() {
+        for &col in cols {
+            if match_eq[eq] == Some(col) {
+                continue;
+            }
+            if let Some(&Some(owner)) = match_var.get(col) {
+                if owner != eq && !adj[eq].contains(&owner) {
+                    adj[eq].push(owner);
+                }
+            }
+        }
+    }
+    for deps in &mut adj {
+        deps.sort_unstable();
+    }
+    adj
 }
 
 impl TarjanAnimation {
-    /// Build the Tarjan trace from a parsed incidence matrix.
+    /// Build the Tarjan trace from a parsed incidence matrix (recorded mode).
     ///
     /// First runs matching to build the dependency graph (equation A
     /// depends on equation B if A references a variable matched to B),
@@ -55,28 +87,9 @@ impl TarjanAnimation {
             .iter()
             .map(|cols| cols.iter().copied().collect())
             .collect();
-        let trace = maximum_matching_with_trace(n_eq, n_var, &eq_vars);
-
-        // Build the dependency graph: for each equation, the equations
-        // whose matched variable it references.
-        let mut adj = vec![Vec::new(); n_eq];
-        for (eq, cols) in mat.rows().iter().enumerate() {
-            for &col in cols {
-                if trace.match_eq[eq] == Some(col) {
-                    continue; // skip the matched variable (self-dep)
-                }
-                if let Some(&Some(owner)) = trace.match_var.get(col) {
-                    if owner != eq && !adj[eq].contains(&owner) {
-                        adj[eq].push(owner);
-                    }
-                }
-            }
-        }
-        for deps in &mut adj {
-            deps.sort_unstable();
-        }
-
-        let result = tarjan_scc_with_trace(n_eq, &adj);
+        let trace = maximum_matching_with_trace(n_eq, n_var, &eq_vars, None);
+        let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
+        let result = tarjan_scc_with_trace(n_eq, &adj, None);
         Some(Self {
             frames: result.frames,
             n_nodes: n_eq,
@@ -86,25 +99,96 @@ impl TarjanAnimation {
             playing: false,
             interval: 0.5,
             elapsed: 0.0,
+            live: None,
+            live_done: Arc::new(Mutex::new(false)),
         })
     }
 
+    /// Start a live debug session for Tarjan's algorithm.
+    pub fn start_live(mat: &IncidenceMatrix) -> Option<Self> {
+        let n_eq = mat.n_eq();
+        let n_var = mat.n_var();
+        if n_eq == 0 {
+            return None;
+        }
+
+        let eq_vars: Vec<HashSet<usize>> = mat
+            .rows()
+            .iter()
+            .map(|cols| cols.iter().copied().collect())
+            .collect();
+        let trace = maximum_matching_with_trace(n_eq, n_var, &eq_vars, None);
+        let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
+
+        let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
+        let lt_for_thread = lt.clone();
+        let done = Arc::new(Mutex::new(false));
+        let done_for_thread = Arc::clone(&done);
+        let adj_for_thread = adj.clone();
+
+        thread::Builder::new()
+            .name("tarjan-debug".to_owned())
+            .spawn(move || {
+                tarjan_scc_with_trace(n_eq, &adj_for_thread, Some(&lt_for_thread));
+                *done_for_thread.lock().expect("done lock") = true;
+            })
+            .expect("failed to spawn tarjan-debug thread");
+
+        Some(Self {
+            frames: Vec::new(),
+            n_nodes: n_eq,
+            node_names: mat.equation_texts().to_vec(),
+            adj,
+            cursor: 0,
+            playing: false,
+            interval: 0.5,
+            elapsed: 0.0,
+            live: Some(lt),
+            live_done: done,
+        })
+    }
+
+    pub fn is_live(&self) -> bool {
+        self.live.is_some()
+    }
+
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty()
+        self.frames.is_empty() && self.live.is_none()
     }
 
     fn current_frame(&self) -> Option<&TarjanFrame> {
         self.frames.get(self.cursor)
     }
 
+    fn sync_live(&mut self) {
+        if let Some(lt) = &self.live {
+            let live_len = lt.len();
+            if live_len > self.frames.len() {
+                self.frames = lt.snapshot();
+                self.cursor = self.frames.len().saturating_sub(1);
+            }
+        }
+    }
+
+    pub fn live_finished(&self) -> bool {
+        *self.live_done.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas) {
+        self.sync_live();
+
         if self.frames.is_empty() {
-            ui.label("No Tarjan trace available.");
+            if self.is_live() {
+                ui.label("Waiting for first frame from debugger...");
+                ui.ctx().request_repaint();
+            } else {
+                ui.label("No Tarjan trace available.");
+            }
             return;
         }
 
         let dt = ui.input(|i| i.stable_dt) as f64;
-        if self.playing {
+        if self.playing && !self.is_live() {
             self.elapsed += dt;
             if self.elapsed >= self.interval {
                 self.elapsed = 0.0;
@@ -116,19 +200,34 @@ impl TarjanAnimation {
             }
             ui.ctx().request_repaint();
         }
+        if self.is_live() && !self.live_finished() {
+            ui.ctx().request_repaint();
+        }
 
         // --- Controls ---
         ui.horizontal(|ui| {
-            if self.playing {
-                if ui.button("\u{23f8} Pause").clicked() {
-                    self.playing = false;
+            if self.is_live() {
+                let done = self.live_finished();
+                let status = if done { "Live (done)" } else { "Live" };
+                ui.label(egui::RichText::new(status).color(
+                    if done { egui::Color32::from_rgb(0x66, 0xBB, 0x6A) }
+                    else { egui::Color32::from_rgb(0xEF, 0x53, 0x50) }
+                ).strong());
+                ui.separator();
+            }
+
+            if !self.is_live() {
+                if self.playing {
+                    if ui.button("\u{23f8} Pause").clicked() {
+                        self.playing = false;
+                    }
+                } else if ui.button("\u{25b6} Play").clicked() {
+                    if self.cursor + 1 >= self.frames.len() {
+                        self.cursor = 0;
+                    }
+                    self.playing = true;
+                    self.elapsed = 0.0;
                 }
-            } else if ui.button("\u{25b6} Play").clicked() {
-                if self.cursor + 1 >= self.frames.len() {
-                    self.cursor = 0;
-                }
-                self.playing = true;
-                self.elapsed = 0.0;
             }
 
             if ui.button("\u{23ee} Reset").clicked() {
@@ -161,14 +260,16 @@ impl TarjanAnimation {
                 self.frames.len()
             ));
 
-            ui.separator();
-            ui.label("Speed:");
-            let mut speed_ms = (self.interval * 1000.0) as i32;
-            if ui
-                .add(egui::Slider::new(&mut speed_ms, 50..=2000).suffix("ms"))
-                .changed()
-            {
-                self.interval = speed_ms as f64 / 1000.0;
+            if !self.is_live() {
+                ui.separator();
+                ui.label("Speed:");
+                let mut speed_ms = (self.interval * 1000.0) as i32;
+                if ui
+                    .add(egui::Slider::new(&mut speed_ms, 50..=2000).suffix("ms"))
+                    .changed()
+                {
+                    self.interval = speed_ms as f64 / 1000.0;
+                }
             }
         });
 
@@ -406,5 +507,19 @@ mod tests {
             assert!(!icon.is_empty());
             assert!(!desc.is_empty());
         }
+    }
+
+    #[test]
+    fn live_mode_receives_all_frames() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        let mut anim = TarjanAnimation::start_live(&mat).unwrap();
+        for _ in 0..100 {
+            if anim.live_finished() { break; }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        anim.sync_live();
+        assert!(!anim.frames.is_empty());
+        assert!(anim.is_live());
+        assert!(anim.live_finished());
     }
 }

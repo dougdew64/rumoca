@@ -36,6 +36,13 @@ proves the concept: theory + HRW actions + specimens = interactive learning.
    algorithm frame by frame on the dependency graph. Trace recorded by
    `tarjan_scc_with_trace` in `rumoca-phase-structural`. Tab: "BLT ▶".
 
+### Live debug stepping — DONE
+
+6. ~~**Live-stepped execution**~~ — DONE. `LiveTrace<F>` shared buffer in
+   `rumoca-phase-structural` enables debugger-synced animation. Both matching
+   and Tarjan support live mode via the "Debug" button. Breakpoint on
+   `LiveTrace::push` pauses the algorithm thread; UI polls and auto-advances.
+
 ### Deferred (not needed for this tour)
 
 - Full permuted-matrix toggle (#15 full version)
@@ -44,7 +51,8 @@ proves the concept: theory + HRW actions + specimens = interactive learning.
 
 1. ~~Build the three essential enhancements (incidence view additions)~~ — DONE
 2. ~~Build animated stepping (matching, then Tarjan)~~ — DONE
-3. Write the five-lesson tour document — NEXT
+3. ~~Build live debug stepping (LiveTrace, Debug button)~~ — DONE
+4. ~~Write the five-lesson tour document with three-tier progression~~ — DONE
 
 ## Instrumentation added to Rumoca crates
 
