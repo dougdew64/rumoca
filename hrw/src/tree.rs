@@ -1,16 +1,44 @@
-//! The generic serde-value tree inspector.
+//! The generic serde-value tree inspector — the primary IR exploration widget.
 //!
-//! Charter §4.4 / Decision 6: one generic serde-value tree inspector, pointed
-//! at every pipeline stage's IR — not per-stage bespoke tree widgets. It walks
-//! a `serde_json::Value` (into which any Serialize IR has been converted), so
-//! it knows nothing about Rumoca types and works unchanged for every arc.
+//! ## Design decision (Charter §4.4 / Decision 6)
 //!
-//! Each row carries a "Capture this for a question" affordance (left-click, or
-//! the right-click menu). It never asks anything here — it records the clicked
-//! node's *key-path* (its address from the stage root) into `ask`, which the app
-//! turns into a bridge focus file (see `bridge`); the user then asks in the chat.
-//! The path is accumulated as the walk descends, so the tree stays type-agnostic
-//! while still handing Claude an exact address.
+//! Instead of building a bespoke tree widget for each compiler phase (one for
+//! the parsed AST, another for resolved IR, etc.), there is ONE generic tree
+//! that renders *any* `serde_json::Value`. Every Rumoca IR type implements
+//! `serde::Serialize`, so we convert each phase's output to a `Value` and
+//! hand it to this tree. The tree knows nothing about Rumoca types — it just
+//! renders JSON objects as collapsible nodes, arrays as indexed lists, and
+//! scalars as colored leaves.
+//!
+//! **Why `serde_json::Value`?** It is the "universal IR" — any Rust struct
+//! that derives `Serialize` can be converted to it via `serde_json::to_value`.
+//! This means the tree inspector automatically supports new IR types and new
+//! compiler phases without any code changes.
+//!
+//! ## Click/capture flow
+//!
+//! Every row in the tree is interactive:
+//!
+//! - **Left-click** a row to "capture" it — this records the node's *key-path*
+//!   (its address from the stage root, like `components.inertia.type_def_id`)
+//!   into the `ask` output parameter. The app then writes a bridge focus file
+//!   (see `bridge.rs`) describing what was captured. The user asks their actual
+//!   question in the Claude Code chat; this tree never asks anything itself.
+//!
+//! - **Right-click** opens a context menu with: Capture, Show-in-debugger,
+//!   Go-to-definition (for DefId-typed fields), and Copy-text.
+//!
+//! The key-path is accumulated as the recursive walk descends: each level
+//! pushes its segment (`Seg::Key` or `Seg::Index`) onto a `Vec<Seg>` path,
+//! and pops it when returning. This keeps the tree entirely type-agnostic
+//! while still giving Claude an exact JSON-path address.
+//!
+//! ## Cross-stage diff highlighting
+//!
+//! The `prev` parameter carries the *previous* stage's IR at the same path.
+//! When a leaf value differs from `prev` (e.g., `def_id` going from `null`
+//! to a real id between Parse and Resolve), it is painted green. This makes
+//! it visually obvious what each compiler phase changed.
 
 use std::collections::BTreeMap;
 
@@ -20,18 +48,30 @@ use serde_json::Value;
 use crate::bridge::Seg;
 use crate::worker::{is_def_id_key, DefInfo};
 
-/// Value color for a leaf whose value differs from the *previous* stage's value
-/// at the same path — the "this stage changed it" highlight (e.g. def_id going
-/// null→id at Resolve, type_id sentinel→id at Typecheck). Reads on light & dark.
+// Green highlight for values that changed from the previous stage.
+// Using a fixed color rather than a theme color because the "changed" semantic
+// is specific to the cross-stage diff and needs to stand out from normal text
+// in both light and dark themes.
 const CHANGED_COLOR: egui::Color32 = egui::Color32::from_rgb(0x3F, 0xB9, 0x50);
 
-/// Render a serde value as a collapsible tree under the given root label. A
-/// right-click "Ask Claude about this" on any row sets `ask` to that node's
-/// key-path from the root. `def_index` resolves `def_id`/`type_def_id` leaves to
-/// the definition they name, shown inline; "Go to definition" on a class DefId
-/// sets `nav_to` to that class's qualified name. `prev` is the previous stage's
-/// IR aligned to the same root; leaf values that differ from it (at the same
-/// path, and only where the path exists in both) are painted green.
+/// Render a `serde_json::Value` as a collapsible tree widget.
+///
+/// This is the top-level entry point. It creates an empty key-path and begins
+/// the recursive descent into `node_ui`.
+///
+/// # Parameters
+///
+/// * `ui` — egui drawing context
+/// * `root_label` — label shown at the tree's root node (e.g., the stage name)
+/// * `value` — the IR to render, as a generic JSON value
+/// * `prev` — the previous stage's IR for diff highlighting (`None` if no
+///   previous stage exists, e.g., for Parse which is the first stage)
+/// * `ask` — output: set to a `Vec<Seg>` key-path when the user captures a node
+/// * `nav_to` — output: set to a class name when the user clicks "Go to definition"
+/// * `debug` — output: set when the user wants to arm a debugger breakpoint
+/// * `def_index` — lookup table mapping numeric DefIds to their resolved names,
+///   so `type_def_id: 27579` renders with an inline annotation like
+///   `-> model Modelica.Mechanics.Rotational.Inertia`
 pub fn tree_ui(
     ui: &mut egui::Ui,
     root_label: &str,
@@ -42,13 +82,41 @@ pub fn tree_ui(
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
 ) {
+    // Start with an empty path — the root. Each recursive call to `node_ui`
+    // pushes/pops one segment as it descends into children.
     let mut path: Vec<Seg> = Vec::new();
     node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index);
 }
 
-/// Render one node. `salt` disambiguates sibling widget ids so repeated field
-/// names or array indices never collide in egui's id space. `path` holds this
-/// node's address from the root (its own segment already pushed by the caller).
+// Render one node of the JSON tree recursively.
+//
+// This is the heart of the tree inspector. It pattern-matches on the three
+// `serde_json::Value` variants that have children (Object, Array) vs leaves
+// (everything else), and recurses into children.
+//
+// ## egui id management
+//
+// egui identifies widgets by id. If two sibling nodes have the same label
+// (e.g., two array elements both labeled "0"), their CollapsingHeaders would
+// collide. `push_id(salt, ...)` wraps each node in a unique id scope using
+// the sibling index as salt, preventing collisions.
+//
+// ## The path accumulation pattern
+//
+// `path` is a mutable Vec that acts as a stack. Before recursing into a child:
+//   path.push(Seg::Key("field_name"))   // or Seg::Index(i) for arrays
+// After returning:
+//   path.pop()
+// At any point during the walk, `path` holds the complete address from the
+// root to the current node. When the user clicks, we snapshot it (`path.to_vec()`).
+//
+// ## Interaction contract
+//
+// Each row must be "interacted" (sense clicks) exactly ONCE. Interacting twice
+// causes egui to register the widget id twice, which breaks click detection.
+// For Objects/Arrays, the CollapsingHeader already senses clicks (it's the
+// clickable header). For scalars, `leaf_ui` creates a sensed Label. Neither
+// caller adds a second `.interact()` call.
 #[allow(clippy::too_many_arguments)]
 fn node_ui(
     ui: &mut egui::Ui,
@@ -63,11 +131,18 @@ fn node_ui(
     def_index: &BTreeMap<u64, DefInfo>,
 ) {
     ui.push_id(salt, |ui| match value {
+        // --- JSON Object: render as a collapsible header with children ---
         Value::Object(map) => {
+            // Show "key  {N}" as the header, where N = number of fields.
             let hint = format!("{{{}}}", map.len());
             let resp = egui::CollapsingHeader::new(header(key, &hint))
                 .default_open(false)
                 .show(ui, |ui| {
+                    // Recurse into each field. `enumerate` gives us the sibling
+                    // index for id-salting. `prev.and_then(|p| p.get(k))`
+                    // threads the previous stage's corresponding subtree down
+                    // to each child — if the previous stage had this same key,
+                    // its value is passed; otherwise None.
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
                         node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index);
@@ -83,6 +158,7 @@ fn node_ui(
             }
             row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
         }
+        // --- JSON Array: same pattern as Object, but indexed by position ---
         Value::Array(arr) => {
             let hint = format!("[{}]", arr.len());
             let resp = egui::CollapsingHeader::new(header(key, &hint))
@@ -99,13 +175,16 @@ fn node_ui(
             }
             row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
         }
+        // --- Scalar (null, bool, number, string): render as a leaf row ---
         scalar => {
-            // Changed by this stage = the same path existed in the previous
-            // stage with a different value (new-to-this-stage paths don't count).
+            // A value is "changed" if the previous stage had a *different* value
+            // at the same path. New-to-this-stage paths (prev is None) don't
+            // count — we only highlight deliberate mutations, not new fields.
             let changed = prev.is_some_and(|p| p != scalar);
             // `leaf_ui` already interacts once; do NOT interact again here.
             let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed);
-            // Leaves don't expand, so left-click is a fast path to capture.
+            // Leaves don't expand/collapse, so left-click is a fast path to
+            // capture (no ambiguity with expand/collapse as with headers).
             if resp.clicked() {
                 *ask = Some(path.to_vec());
             }
@@ -114,19 +193,34 @@ fn node_ui(
     });
 }
 
-/// If a leaf is a `DefId` that resolves to a *class*, that class's qualified
-/// name (the navigation target); otherwise `None`.
+// Check whether a scalar leaf is a DefId that resolves to a *class* definition.
+// If so, return the class's fully-qualified Modelica name (e.g.,
+// "Modelica.Mechanics.Rotational.Inertia") — this becomes the "Go to
+// definition" navigation target. If the DefId resolves to something that isn't
+// a class (a variable, a function), navigation doesn't apply and we return None.
 fn nav_target(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>) -> Option<String> {
+    // Only fields whose name ends with `_def_id` or similar carry DefIds.
     if !is_def_id_key(key) {
         return None;
     }
+    // Look up the numeric id in the def_index (populated by the worker from
+    // Rumoca's resolver output). `as_u64()` returns None for non-number values.
     let info = def_index.get(&scalar.as_u64()?)?;
+    // Only class definitions are navigable — you can "go to" a class, but
+    // not to a variable or built-in.
     (info.kind == "class").then(|| info.name.clone())
 }
 
-/// Right-click menu for any row. `resp` must already sense clicks (interacted
-/// exactly once by the caller — interacting twice makes egui drop the id).
-/// When `nav` is `Some(qualified_name)`, offers "Go to definition".
+// Right-click context menu for any tree row.
+//
+// This provides the "Capture", "Show in debugger", "Go to definition", and
+// "Copy text" actions. It is attached to the row's Response via
+// `resp.context_menu(...)`, which egui shows on right-click.
+//
+// `resp` must already sense clicks (interacted exactly once by the caller).
+// Interacting the same Response twice in a frame makes egui lose track of the
+// widget id, breaking click detection. This is why the menu function takes a
+// reference to an already-interacted Response rather than creating its own.
 #[allow(clippy::too_many_arguments)]
 fn row_menu(
     resp: &egui::Response,
@@ -166,11 +260,27 @@ fn row_menu(
     });
 }
 
-/// A leaf (scalar) row: `key: value`, the value colored by type. When the leaf
-/// is a resolved `DefId`, its resolved definition is shown inline. The row
-/// senses clicks (interacted exactly once) and highlights on hover, so it reads
-/// as interactive — every row carries "Ask Claude about this". Returns the row
-/// response and the plain text for the Copy action.
+// Render a single leaf (scalar) row: "key: value", with per-type coloring.
+//
+// ## Rendering approach
+//
+// Uses an egui `LayoutJob` — a rich-text builder that lets different parts of
+// one label have different colors. The key is rendered in the normal text color,
+// the value is colored by JSON type (strings = hyperlink blue, null = dim, etc.),
+// and the resolved DefId annotation (if any) is in weak text.
+//
+// ## Hover highlight
+//
+// To make rows feel clickable, we paint a hover-highlight rectangle *behind*
+// the text. The trick: `painter.add(Shape::Noop)` reserves a paint-order slot
+// before the text is drawn; after layout, if the row is hovered, we fill that
+// slot with a colored rectangle via `painter.set(bg, ...)`. This ensures the
+// highlight is behind the text, not on top of it.
+//
+// ## Return value
+//
+// Returns `(Response, copy_text)` — the Response for click detection by the
+// caller, and a plain-text string for the "Copy text" context menu action.
 fn leaf_ui(
     ui: &mut egui::Ui,
     key: &str,
@@ -225,16 +335,20 @@ fn leaf_ui(
     (resp, copy_text)
 }
 
-/// If this leaf is a resolved `DefId` field, the label of the definition it
-/// names (e.g. `model Modelica.…Inertia`); otherwise `None`.
+// If this leaf is a `def_id`, `type_def_id`, or `base_def_id` field whose
+// numeric value is in the def_index, return a human-readable label like
+// "model Modelica.Mechanics.Rotational.Inertia". This annotation is displayed
+// inline after the numeric value, turning opaque integers into meaningful names.
 fn def_annotation(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>) -> Option<String> {
     if !is_def_id_key(key) {
         return None;
     }
+    // `DefInfo::label` returns "kind name" (e.g., "model Inertia").
     def_index.get(&scalar.as_u64()?).map(DefInfo::label)
 }
 
-/// A collapsing-header title: bold key plus a dim size/shape hint.
+// Build the collapsing-header title text: monospace "key  {hint}", where hint
+// is a size indicator like "{5}" for objects or "[3]" for arrays.
 fn header(key: &str, hint: &str) -> egui::RichText {
     egui::RichText::new(format!("{key}  {hint}")).monospace()
 }

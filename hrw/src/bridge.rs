@@ -1,23 +1,56 @@
-//! The Claude bridge — question-driven help.
+//! The Claude bridge — the app's communication channel to Claude Code.
 //!
-//! A *thin emitter*. When you invoke "Ask Claude about this," the app writes a
-//! single JSON *focus file* describing what you are looking at: which specimen,
-//! which pipeline stage, which IR node, and — via **span-ascent** — where in
-//! the Modelica source that node came from. It carries no answers and embeds no
-//! model. The reasoning happens in a Claude Code session that reads the file,
-//! with the specimen source, the staged IR, the Rumoca phase code, and Doug's
-//! `docs/compiler-phases` all already in that session's context.
+//! ## Architecture: thin emitter, thick reasoner
 //!
-//! Design rationale (thin emitter, thick reasoner) is in DECISIONS.md.
+//! When the user captures a node (clicks in the tree inspector or a custom view)
+//! and then asks a question in the Claude Code chat, this module writes a single
+//! JSON **focus file** (`focus.json`) describing what the user is looking at:
 //!
-//! Span-ascent: Rumoca IR nodes carry source provenance pervasively, but a leaf
-//! you click (e.g. a bare `"name": "flange_a"`) usually has none of its own —
-//! the nearest `location`/`span` lives on an *ancestor*. So from the clicked
-//! node we walk up the tree to the tightest enclosing `location` (preferred:
-//! `rumoca_core::Location` carries byte offsets *and* a `file_name`) or `span`
-//! (`rumoca_core::Span`: byte offsets, source is an opaque `SourceId`), then
-//! slice that byte range out of the source. This walk is fully generic — it
-//! knows no Rumoca types — keeping the one-generic-tree rule intact.
+//! - Which specimen (`.mo` file)
+//! - Which pipeline stage (Parse, Resolve, Typecheck, etc.)
+//! - Which IR node (by key-path from the stage root)
+//! - The node's source provenance (which Modelica source line it came from)
+//! - A cross-stage diff (how the node differs between Parse and Resolve)
+//! - A DefId resolution table (mapping numeric ids to human-readable names)
+//!
+//! The focus file carries **no answers** and embeds **no language model**. It is
+//! a pure description of context. The reasoning happens entirely in the Claude
+//! Code session, which reads the focus file along with the specimen source, the
+//! staged IR files, the Rumoca phase code, and Doug's `docs/compiler-phases`.
+//! This "thin emitter, thick reasoner" split is documented in DECISIONS.md.
+//!
+//! ## The JSON file protocol
+//!
+//! The bridge uses the filesystem as the communication channel:
+//!
+//! 1. **Focus file** (`.hrw-bridge/focus.json`): written on each capture. Contains
+//!    the `instructions` (self-describing), `seq` (monotonic counter), `request`
+//!    (what the user wants: "explain" or "debug-where-set"), `kind` (node/stage/
+//!    specimen), and the node/provenance/cross-stage data.
+//!
+//! 2. **Stage files** (`.hrw-bridge/stages/<name>.json`): one file per pipeline
+//!    stage's full IR, rewritten once per compile. Claude can diff any two stages
+//!    by reading two files (e.g., `instantiate.json` vs `typecheck.json`).
+//!
+//! The `.hrw-bridge/` directory is gitignored. The paths are repo-relative
+//! (via `CARGO_MANIFEST_DIR`) so they are stable across Claude Code sessions.
+//!
+//! ## Span-ascent (source provenance)
+//!
+//! Rumoca IR nodes carry source provenance (`location` or `span` fields with
+//! byte offsets into the Modelica source). However, leaf nodes you typically
+//! click (e.g., a bare `"name": "flange_a"`) usually have **no provenance of
+//! their own** — the nearest `location`/`span` lives on an ancestor node.
+//!
+//! So the bridge walks **up** the tree from the clicked node to the root,
+//! looking for the tightest enclosing provenance:
+//! - `location` (preferred): `rumoca_core::Location` with byte offsets + `file_name`
+//! - `span` (fallback): `rumoca_core::Span` with byte offsets + opaque `source` id
+//!
+//! Once found, the byte range is sliced out of the Modelica source file, and
+//! the enclosing line(s) are included for context. This walk is fully generic
+//! (it pattern-matches on JSON structure, not Rumoca types), maintaining the
+//! one-generic-tree rule.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -27,21 +60,31 @@ use serde_json::{json, Value};
 
 use crate::worker::DefInfo;
 
-/// Gitignored directory holding the focus file. Repo-relative so it is stable
-/// across Claude Code sessions and the app needs no knowledge of the session.
+/// Path to the bridge directory, resolved at compile time via `CARGO_MANIFEST_DIR`.
+///
+/// Using `CARGO_MANIFEST_DIR` (the directory containing `Cargo.toml`) makes
+/// this path repo-relative and stable regardless of the working directory.
+/// The directory is gitignored so focus files don't pollute version control.
 pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge");
 
-/// Sub-directory holding one JSON file per pipeline stage's *full* IR, rewritten
-/// once per compile. The focus references it so Claude can diff any two stages
-/// (e.g. instantiate vs typecheck) without the focus carrying all five IRs.
+/// Path to the stage-files directory (one JSON file per pipeline stage).
+///
+/// These files are rewritten once per compile. Claude can diff any two stages
+/// by reading two files — e.g., comparing `instantiate.json` to `typecheck.json`
+/// shows what the instanced typecheck phase added (type_ids resolved, dimensions
+/// evaluated). This avoids bloating the focus file with all stages' IR.
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
 
-/// Largest node subtree inlined into the focus file; larger nodes are described
-/// by shape only (Claude can re-derive the rest from the specimen + staged IR).
+// Maximum size (in bytes) of a node subtree to inline in the focus file.
+// Nodes larger than this are described by "shape" only (list of keys, or array
+// length). Claude can always re-derive the full subtree from the staged IR file.
+// 16KB is generous for typical IR nodes (a single component, equation, etc.)
+// but prevents the focus file from exploding on large class definitions.
 const MAX_NODE_BYTES: usize = 16 * 1024;
 
-/// Self-describing note embedded in every focus file, so it reads sensibly when
-/// opened directly during dogfooding.
+// Self-describing instructions embedded in every focus file. When Doug opens
+// `focus.json` directly while dogfooding, this text explains what it is and
+// how to use it, without needing to consult separate documentation.
 const INSTRUCTIONS: &str = "\
 HRW bridge focus file, written by the app when you capture a node/stage/model \
 (the 🔎 Capture actions) — capturing does NOT ask anything by itself. Ask your \
@@ -49,14 +92,27 @@ question in the Claude Code chat; Claude reads this file to see what you \
 captured, then reasons over the specimen source, the staged IR, the Rumoca \
 phase code, and docs/compiler-phases.";
 
-/// One step of a path into the serde tree: an object key or an array index.
+/// One segment of a key-path into a JSON tree.
+///
+/// A key-path is a sequence of `Seg` values that addresses a specific node
+/// from the tree root. For example, the path to `components.inertia.def_id`
+/// would be `[Key("components"), Key("inertia"), Key("def_id")]`. Array
+/// elements use `Index(n)` — e.g., `equations[0]` is `[Key("equations"), Index(0)]`.
+///
+/// This is the tree-agnostic addressing scheme that lets the bridge, tree
+/// inspector, and custom views all refer to the same node without knowing
+/// Rumoca types.
 #[derive(Clone, Debug)]
 pub enum Seg {
+    /// An object field name (e.g., "components", "def_id").
     Key(String),
+    /// An array index (e.g., 0 for the first element).
     Index(usize),
 }
 
 impl Seg {
+    // Serialize this segment for inclusion in the focus JSON.
+    // Keys become JSON strings, indices become JSON numbers.
     fn as_json(&self) -> Value {
         match self {
             Seg::Key(k) => Value::String(k.clone()),
@@ -64,6 +120,9 @@ impl Seg {
         }
     }
 
+    // Navigate one step into a JSON value: `Key("x")` does `v["x"]`,
+    // `Index(3)` does `v[3]`. Returns None if the key/index doesn't exist.
+    // This is the fundamental building block of `navigate()`.
     fn get<'a>(&self, v: &'a Value) -> Option<&'a Value> {
         match self {
             Seg::Key(k) => v.get(k),
@@ -72,9 +131,15 @@ impl Seg {
     }
 }
 
-/// A human-readable path to the clicked node, e.g. `components.inertia.type_def_id`
-/// or `equations[0].Connect.lhs` — so the app can name what was captured instead
-/// of an opaque sequence number. Empty path ⇒ the tree root.
+/// Format a key-path as a human-readable dotted string.
+///
+/// Examples:
+/// - `[Key("components"), Key("inertia"), Key("def_id")]` -> `"components.inertia.def_id"`
+/// - `[Key("equations"), Index(0), Key("Connect")]` -> `"equations[0].Connect"`
+/// - `[]` -> `"(tree root)"`
+///
+/// Used in the UI status bar to show what was captured, and in the bridge
+/// focus file as a human-readable path alongside the machine-readable key array.
 pub fn describe_path(path: &[Seg]) -> String {
     if path.is_empty() {
         return "(tree root)".to_owned();
@@ -94,49 +159,82 @@ pub fn describe_path(path: &[Seg]) -> String {
     s
 }
 
-/// What the user is asking about.
+/// What the user captured — the "focus" of their question.
+///
+/// This enum distinguishes three granularity levels:
+/// - `Node`: a specific IR node (the most common — user clicked a field in the tree)
+/// - `Stage`: the entire stage's IR (user captured from the stage tab header)
+/// - `Specimen`: the whole `.mo` file (user captured from the specimen list)
+///
+/// The lifetime `'a` borrows the IR data from the app's state, avoiding clones
+/// of potentially large JSON trees during the focus-file build.
 pub enum Focus<'a> {
     /// A specific IR node in the current stage, at `key_path` from the stage root.
+    /// `stage_value` is a reference to the stage's full IR (used to navigate to
+    /// the node and build provenance).
     Node { key_path: Vec<Seg>, stage_value: &'a Value },
     /// The current stage's IR as a whole.
     Stage,
     /// The whole specimen (the `.mo` file) — captured from the specimen list.
-    /// Distinct from the `model` field of `Ask`, which names the compiled class.
+    /// Distinct from the `model` field of `Ask`, which names the compiled class
+    /// (a `.mo` file can contain multiple classes).
     Specimen,
 }
 
-/// Everything needed to write one focus file.
+/// All the context needed to write one focus file.
+///
+/// This struct aggregates everything the bridge needs from the app's state:
+/// the capture target, the current specimen/stage, and the IR data for
+/// cross-stage diffing. It borrows everything (lifetime `'a`) to avoid
+/// cloning large IR trees.
 pub struct Ask<'a> {
+    /// Monotonically increasing sequence number — lets Claude detect when a
+    /// new capture has occurred since the last question.
     pub seq: u64,
     /// What the user wants: "explain" (default) or "debug-where-set" (they want
     /// to watch this field being assigned in the Rumoca phase, in the debugger).
     pub request: &'a str,
+    /// Path to the Modelica source file (`.mo`). `None` if no specimen is loaded.
     pub specimen: Option<&'a Path>,
+    /// The class name being compiled (e.g., "RotationalInertia"). A specimen file
+    /// can contain multiple classes; this names the one currently viewed.
     pub model: Option<&'a str>,
+    /// The pipeline stage name (e.g., "Parse", "Resolve", "Typecheck").
     pub stage: &'a str,
+    /// Paths to any Modelica library files used during compilation.
     pub libraries: Vec<String>,
-    /// Resolved identity of the DefIds referenced in the model's IR, so an
-    /// opaque `type_def_id: 27579` in the focus reads as the class it names.
+    /// Resolved identity of DefIds in the model's IR. The IR contains numeric
+    /// DefIds (e.g., `type_def_id: 27579`); this table maps each to its
+    /// human-readable name and kind, so the focus file is self-explanatory.
     pub def_index: &'a BTreeMap<u64, DefInfo>,
-    /// Both stages' IR, so a node focus can carry the *same* node before and
-    /// after resolution (cross-stage diff). `None` if a stage produced no tree.
+    /// The Parse stage's IR (if available). Used for cross-stage diffing.
     pub parse_value: Option<&'a Value>,
+    /// The Resolve stage's IR (if available). Used for cross-stage diffing.
     pub resolve_value: Option<&'a Value>,
+    /// What the user captured (node, stage, or specimen).
     pub focus: Focus<'a>,
 }
 
-/// Write the focus file, returning its path on success.
+/// Write the focus file to `.hrw-bridge/focus.json`.
+///
+/// Called by the app whenever the user captures a node/stage/specimen.
+/// Creates the bridge directory if it doesn't exist. Returns the path
+/// on success (used by the app to show a status message).
 pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     fs::create_dir_all(BRIDGE_DIR)?;
     let path = Path::new(BRIDGE_DIR).join("focus.json");
     let doc = build(ask);
+    // Pretty-print for readability — Doug reads these during dogfooding.
     fs::write(&path, serde_json::to_string_pretty(&doc).unwrap_or_default())?;
     Ok(path)
 }
 
-/// Write each stage's full IR to `.hrw-bridge/stages/<name>.json` (once per
-/// compile). A stage with no IR has its file removed, so the directory always
-/// reflects the current specimen. Diffing two stages = reading two of these.
+/// Write each stage's full IR to `.hrw-bridge/stages/<name>.json`.
+///
+/// Called once per compile (not per capture). Each stage's entire IR is
+/// written as a separate file so Claude can diff any two stages by reading
+/// both files. A stage with no IR (e.g., it failed or doesn't apply) has
+/// its file removed, keeping the directory in sync with the current specimen.
 pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
     fs::create_dir_all(STAGES_DIR)?;
     for (name, value) in stages {
@@ -151,6 +249,23 @@ pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
     Ok(())
 }
 
+// Build the complete focus JSON document from an `Ask`.
+//
+// The document structure:
+// {
+//   "instructions": <self-describing text>,
+//   "seq": <monotonic counter>,
+//   "request": "explain" | "debug-where-set",
+//   "kind": "node" | "stage" | "specimen",
+//   "specimen": <path to .mo file>,
+//   "model": <class name>,
+//   "stage": <pipeline stage name>,
+//   "libraries": [<library paths>],
+//   "def_resolutions": { "<id>": { "name": ..., "kind": ... }, ... },
+//   "stages": { "dir": ..., "files": [...] },
+//   "node": { ... }           // only for kind=node
+//   "cross_stage": { ... }    // only for kind=node
+// }
 fn build(ask: &Ask) -> Value {
     let kind = match ask.focus {
         Focus::Node { .. } => "node",
@@ -183,15 +298,27 @@ fn build(ask: &Ask) -> Value {
     doc
 }
 
-/// Largest change list emitted in a cross-stage diff (backstop; real diffs are
-/// small — a handful of `null → id` fields).
+// Safety limit on the number of scalar changes reported in a cross-stage diff.
+// Real diffs are small (a handful of `null -> id` fields); this backstop
+// prevents pathological cases from producing an enormous focus file.
 const MAX_CHANGES: usize = 400;
 
-/// The clicked node at *both* stages plus the scalar deltas between them, so
-/// "what did Resolve do here?" is answered from data. Correspondence is by
-/// class-relative path: each stage's class subtree is auto-detected (descend
-/// `classes.<model>` if the root wraps it, else the root already *is* the class),
-/// so the same node lines up whether captured from the Parse or Resolve tab.
+// Build the cross-stage diff for a captured node.
+//
+// This answers "what did Resolve do to this node?" by showing the SAME node
+// as it appears in Parse and in Resolve, plus a list of scalar field changes.
+//
+// ## Class-relative path alignment
+//
+// Parse and Resolve have different root structures:
+// - Parse wraps the class in `{ "classes": { "M": { ... } }, "within": ... }`
+// - Resolve extracts the class directly: `{ "def_id": ..., "components": ... }`
+//
+// To find the same node in both stages, we strip the class prefix: if the
+// clicked path starts with `classes.M.`, we drop those two segments to get a
+// class-relative path, then navigate from each stage's class subtree.
+// `class_subtree()` handles the detection: it returns the class subtree and
+// the prefix depth (2 for Parse's wrapped form, 0 for Resolve's flat form).
 fn build_cross_stage(ask: &Ask, key_path: &[Seg]) -> Value {
     let Some(model) = ask.model else {
         return json!({ "applicable": false, "reason": "no model name" });
@@ -255,9 +382,16 @@ fn build_cross_stage(ask: &Ask, key_path: &[Seg]) -> Value {
     })
 }
 
-/// Find a stage's user-class subtree: descend `classes.<model>` when the root
-/// wraps it (the parsed `StoredDefinition`), else the root already is the class
-/// (the resolve extract). Returns the subtree and the prefix depth (2 or 0).
+// Find the class subtree within a stage's IR.
+//
+// Parse wraps the class in a `StoredDefinition`: `{ "classes": { "M": { ... } } }`.
+// Resolve extracts the class directly. This function detects which form is
+// present and returns (subtree, prefix_depth):
+// - Parse: returns (`classes.M` subtree, 2)
+// - Resolve: returns (root, 0)
+//
+// The prefix_depth tells the caller how many segments to strip from the
+// clicked path to get a class-relative path.
 fn class_subtree<'a>(stage_value: &'a Value, model: &str) -> (&'a Value, usize) {
     if let Some(class) = stage_value.get("classes").and_then(|c| c.get(model)) {
         return (class, 2);
@@ -265,7 +399,10 @@ fn class_subtree<'a>(stage_value: &'a Value, model: &str) -> (&'a Value, usize) 
     (stage_value, 0)
 }
 
-/// Node subtree wrapped for the focus: inline when small, shape-only when large.
+// Wrap a node for inclusion in the focus file.
+// Small nodes (< MAX_NODE_BYTES) are inlined as `{ "value": <node> }`.
+// Large nodes are truncated to a shape summary: `{ "truncated": true, "bytes": N, "shape": [...] }`.
+// Claude can always get the full node from the staged IR file if needed.
 fn capped(node: &Value) -> Value {
     let bytes = serde_json::to_string(node).map(|s| s.len()).unwrap_or(0);
     if bytes <= MAX_NODE_BYTES {
@@ -275,8 +412,16 @@ fn capped(node: &Value) -> Value {
     }
 }
 
-/// Recursively collect scalar differences between two IR subtrees as
-/// `{path, parse, resolve}` records. Objects diff by key, arrays by index.
+// Recursively diff two JSON subtrees, collecting scalar-level changes.
+//
+// Each change is a `{ "path": "...", "parse": <old>, "resolve": <new> }` record.
+// The diff is structural:
+// - Objects: diff by key (report added/removed/changed keys)
+// - Arrays: diff by index (element-wise comparison)
+// - Scalars: report if they differ
+//
+// `path` is a mutable stack of path segments (same push/pop pattern as tree.rs).
+// `out` collects the change records, capped at MAX_CHANGES.
 fn diff(a: &Value, b: &Value, path: &mut Vec<String>, out: &mut Vec<Value>) {
     if out.len() >= MAX_CHANGES {
         return;
@@ -318,8 +463,11 @@ fn diff(a: &Value, b: &Value, path: &mut Vec<String>, out: &mut Vec<Value>) {
     }
 }
 
-/// `DefId → DefInfo` as a JSON object (string keys), so any `def_id`/
-/// `type_def_id`/`base_def_id` in the focus can be looked up by number.
+// Convert the DefId -> DefInfo lookup table to a JSON object.
+// Keys are stringified numeric ids (JSON object keys must be strings).
+// This table is included in every focus file so that when Claude sees
+// `type_def_id: 27579`, it can immediately look up that 27579 = "model
+// Modelica.Mechanics.Rotational.Inertia" without needing to re-run the resolver.
 fn def_resolutions(index: &BTreeMap<u64, DefInfo>) -> Value {
     let mut map = serde_json::Map::new();
     for (id, info) in index {
@@ -328,6 +476,12 @@ fn def_resolutions(index: &BTreeMap<u64, DefInfo>) -> Value {
     Value::Object(map)
 }
 
+// Build the `node` section of the focus file.
+//
+// Contains:
+// - `key_path`: the machine-readable path segments (for Claude to navigate)
+// - `subtree`: the node's value (inlined if small, shape if large)
+// - `provenance`: the source-code excerpt this node came from (via span-ascent)
 fn build_node(key_path: &[Seg], root: &Value, specimen: Option<&Path>) -> Value {
     let key_path_json: Vec<Value> = key_path.iter().map(Seg::as_json).collect();
 
@@ -343,7 +497,11 @@ fn build_node(key_path: &[Seg], root: &Value, specimen: Option<&Path>) -> Value 
     })
 }
 
-/// Follow a path from the tree root to the addressed node.
+// Navigate a key-path from the root to a specific node.
+//
+// Returns `None` if any segment in the path doesn't exist (e.g., the key
+// is missing or the index is out of bounds). This is the inverse of the
+// path-accumulation done during tree traversal.
 fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
     let mut cur = root;
     for seg in path {
@@ -352,8 +510,19 @@ fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
     Some(cur)
 }
 
-/// Walk from the clicked node up to the root, returning the tightest enclosing
-/// `location`/`span` provenance (see module docs).
+// The span-ascent algorithm: walk from the clicked node up to the root,
+// returning the tightest (deepest) enclosing `location` or `span`.
+//
+// Why "ascent"? The clicked leaf usually has no provenance of its own.
+// For example, clicking `"name": "flange_a"` gives a bare string — no
+// byte offsets. But its parent (a component object) carries a `location`
+// with byte offsets into the Modelica source. By walking up the path from
+// leaf to root, we find the nearest ancestor that has provenance.
+//
+// The loop iterates `depth` from `path.len()` (the leaf) down to 0 (the root).
+// At each depth, it navigates to `path[..depth]` and checks for a `location`
+// or `span` field. `location` is preferred (it includes a `file_name`);
+// `span` is a fallback (it has an opaque `source` id instead of a filename).
 fn ascend_provenance(root: &Value, path: &[Seg], specimen: Option<&Path>) -> Value {
     for depth in (0..=path.len()).rev() {
         let Some(Value::Object(map)) = navigate(root, &path[..depth]) else { continue };
@@ -367,20 +536,37 @@ fn ascend_provenance(root: &Value, path: &[Seg], specimen: Option<&Path>) -> Val
     json!({ "found": false, "note": "no location/span on this node or its ancestors" })
 }
 
-/// `rumoca_core::Location`: byte offsets plus a `file_name`.
+// Check if a JSON value is a `rumoca_core::Location` (byte offsets + file_name).
+// A Location is the preferred provenance type because it includes the source
+// filename, enabling direct file reads for the excerpt.
 fn is_location(v: &Value) -> bool {
     v.get("start").and_then(Value::as_u64).is_some()
         && v.get("end").and_then(Value::as_u64).is_some()
         && v.get("file_name").and_then(Value::as_str).is_some()
 }
 
-/// `rumoca_core::Span`: byte offsets plus an opaque `source` id.
+// Check if a JSON value is a `rumoca_core::Span` (byte offsets + opaque source id).
+// A Span is the fallback provenance type — it has byte offsets but the source
+// is identified by an opaque `SourceId` rather than a filename, so we fall
+// back to using the specimen path to read the source.
 fn is_span(v: &Value) -> bool {
     v.get("start").and_then(Value::as_u64).is_some()
         && v.get("end").and_then(Value::as_u64).is_some()
         && v.get("source").is_some()
 }
 
+// Build the provenance result JSON from a found location/span.
+//
+// Extracts byte offsets, resolves the source file, slices the excerpt,
+// and expands to enclosing lines. The result includes:
+// - `found: true` / `false`
+// - `kind`: "location" or "span"
+// - `at_depth`: how many levels up from the leaf the provenance was found
+// - `raw`: the original location/span value
+// - `byte_range`: [start, end]
+// - `file`: resolved source file path
+// - `excerpt`: the exact bytes from [start, end)
+// - `line_context`: the enclosing full source line(s)
 fn provenance(raw: &Value, kind: &str, depth: usize, specimen: Option<&Path>) -> Value {
     let start = raw.get("start").and_then(Value::as_u64).unwrap_or(0) as usize;
     let end = raw.get("end").and_then(Value::as_u64).unwrap_or(0) as usize;
@@ -408,10 +594,18 @@ fn provenance(raw: &Value, kind: &str, depth: usize, specimen: Option<&Path>) ->
     out
 }
 
-/// Resolve which file the byte offsets index into, then slice the exact range
-/// and expand it to whole containing lines. Prefers a readable `file_name`
-/// (from a `Location`); otherwise falls back to the specimen (spans carry only
-/// an opaque source id). Returns `(file, excerpt, line_context)`.
+// Resolve the source file and slice the byte range into an excerpt.
+//
+// Tries two strategies to find the source file:
+// 1. Use `file_name` from a Location (if non-empty and the file exists)
+// 2. Fall back to the specimen path (for Spans with opaque source ids)
+//
+// Then slices `bytes[start..end]` for the exact excerpt, and expands to
+// the enclosing full lines for `line_context` (so Claude sees the complete
+// Modelica statement, not just a fragment).
+//
+// Returns `(file_path, excerpt, line_context)` or None if the file can't
+// be read or the byte range is invalid.
 fn slice_source(
     file_name: &str,
     specimen: Option<&Path>,
@@ -436,7 +630,10 @@ fn slice_source(
     Some((path.to_string_lossy().into_owned(), excerpt, line_context))
 }
 
-/// A compact shape summary for an over-large node: object keys, or array length.
+// A compact shape summary for an over-large node that was truncated from
+// the focus file. Shows object keys (so Claude knows the node's structure)
+// or array length (so Claude knows how many elements). This gives Claude
+// enough information to navigate to the full node in the staged IR file.
 fn shape(v: &Value) -> Value {
     match v {
         Value::Object(m) => json!(m.keys().cloned().collect::<Vec<_>>()),

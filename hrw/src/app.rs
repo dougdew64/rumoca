@@ -1,4 +1,24 @@
-//! The observatory shell.
+//! The observatory shell — the top-level egui application.
+//!
+//! ## Immediate-mode UI in a nutshell
+//!
+//! egui is an **immediate-mode** GUI: every frame, the framework calls our
+//! [`App::ui()`] method, and we rebuild the entire UI from scratch — buttons,
+//! labels, panels, trees, plots, everything. There is no retained widget tree
+//! that persists between frames; instead, all durable state lives in the [`App`]
+//! struct itself (stage results, navigation stack, view flags, etc.), and the UI
+//! code reads/writes those fields each frame to decide what to show and how to
+//! react to clicks. This means:
+//!
+//! - **Layout is code, not data.** You won't find XML/HTML templates — the UI
+//!   is specified by Rust function calls (`ui.label(…)`, `ui.button(…)`, etc.)
+//!   executed every frame.
+//! - **State mutations happen in-line.** A button click is detected the same
+//!   frame the button is drawn; a `if button.clicked() { self.flag = true; }`
+//!   both renders the button and handles the event, in one pass.
+//! - **The App struct IS the model.** Any value that must survive across frames
+//!   (the selected specimen, compilation results, which panel is open) must be
+//!   a field on `App`. Local variables inside `ui()` are gone after the frame.
 //!
 //! Eframe shell (charter §4.2.1, §4.4): a file picker over the specimen
 //! directory, a library-path (source-root) configuration for dependency
@@ -11,7 +31,12 @@ use eframe::egui;
 
 use std::collections::{BTreeMap, HashMap};
 
+// The bridge module handles communication with Claude Code (the AI assistant
+// running in a terminal alongside this app): we write JSON "focus" files that
+// Claude reads to understand what the user is looking at.
 use crate::bridge::{self, Ask, Focus, Seg};
+// Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
+// incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::canvas::Canvas;
 use crate::field_help;
 use crate::incidence_view;
@@ -19,6 +44,10 @@ use crate::log_view;
 use crate::reduction_view;
 use crate::spyplot;
 use crate::tree;
+// The worker module runs compilation and simulation on a background thread so
+// the UI never blocks. Communication is via channels: we send `ToWorker`
+// commands and receive `FromWorker` results. `Stage` holds one pipeline stage's
+// output (its serde_json::Value IR + optional error note).
 use crate::worker::{
     discontinuity_segments, DefInfo, FromWorker, LogEntry, SimData, Stage, StageBundle, ToWorker,
     Worker,
@@ -42,6 +71,10 @@ const DEFAULT_LIBRARIES: &str = concat!(
     "/vendor/msl/Complex.mo",
 );
 
+// The Rumoca compiler pipeline has discrete phases (Parse, Resolve, etc.),
+// each producing an intermediate representation (IR). This enum tracks which
+// phase the user is currently viewing. `Simulation` is special — it's not a
+// compiler phase but an on-demand run of the compiled model.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum StageKind {
     Parse,
@@ -70,21 +103,55 @@ enum StructuralView {
 
 /// One level of "go to definition" navigation: a class extracted from the
 /// resolved tree, shown in the same generic tree the specimen stages use.
+///
+/// Navigation forms a stack: clicking "Go to definition" pushes a `NavEntry`,
+/// "Back" pops one, and "Specimen" clears the stack entirely. Each entry
+/// carries its own `def_index` so the tree inspector can resolve DefIds
+/// (numeric cross-references) to human-readable class names within that class.
 struct NavEntry {
     name: String,
+    /// The serde_json representation of this class's IR — the same format every
+    /// stage uses, so the generic tree inspector renders it without any special
+    /// logic.
     value: serde_json::Value,
+    /// Maps numeric DefIds (compiler-internal identifiers) to their resolved
+    /// class names, enabling the tree view to show "type_def_id: 27579 ->
+    /// model Resistor" rather than a bare number.
     def_index: BTreeMap<u64, DefInfo>,
 }
 
+/// The entire application state. In immediate-mode UI, this struct IS the
+/// application — every frame, `ui()` reads and writes these fields to decide
+/// what to render and how to react. Fields are grouped by concern:
+///
+/// 1. **Worker** — the background thread that runs the compiler and simulator.
+/// 2. **Library config** — MSL source roots the compiler needs for `import`.
+/// 3. **Specimen list** — the directory of `.mo` files the user picks from.
+/// 4. **Compilation results** — one `Stage` per pipeline phase, plus selection state.
+/// 5. **Navigation** — the "go to definition" stack for drilling into classes.
+/// 6. **Bridge** — communication with Claude Code (the AI assistant in the terminal).
+/// 7. **View toggles** — Settings/Help/About windows.
+/// 8. **Field help** — generic documentation for IR fields (the fast, no-AI tier).
+/// 9. **Custom views** — spy-plot/incidence cameras for the Structural stages.
+/// 10. **Log** — the compilation event log.
+/// 11. **Simulation** — on-demand model execution and plotting.
 pub struct App {
+    // ---- 1. Worker thread ----
+    // Compilation and simulation run off the UI thread so the app stays
+    // responsive. We send commands (`ToWorker`) and poll results (`FromWorker`)
+    // each frame via `drain_worker()`.
     worker: Worker,
 
-    // Library source roots (dependency resolution context).
+    // ---- 2. Library configuration ----
+    // Modelica models import classes from external libraries (mainly MSL).
+    // These fields hold the library source-root paths the user has configured
+    // and the status of the last library-load operation.
     libraries_text: String,
     library_status: String,
     libraries_busy: bool,
 
-    // Specimen directory + file list.
+    // ---- 3. Specimen directory + file list ----
+    // The left panel shows a list of `.mo` specimen files from this directory.
     specimen_dir: String,
     files: Vec<PathBuf>,
     // Per-specimen one-line purpose hint (the `// purpose:` comment), scanned at
@@ -92,9 +159,15 @@ pub struct App {
     specimen_purposes: HashMap<PathBuf, String>,
     scan_error: Option<String>,
 
-    // Current selection + results.
+    // ---- 4. Current selection + compilation results ----
+    // When the user clicks a specimen, `selected` records the path and
+    // `compiling` goes true. The worker streams `CompileProgress` messages
+    // (partial results) and finally `Compiled` (all stages done). Each `Stage`
+    // holds the JSON IR + an optional note/error for that pipeline phase.
     selected: Option<PathBuf>,
     compiling: bool,
+    /// The Modelica model name extracted from the parsed file (e.g.
+    /// "BouncingBall"). `None` until parsing succeeds.
     model: Option<String>,
     parse: Stage,
     resolve: Stage,
@@ -106,46 +179,75 @@ pub struct App {
     initialization: Stage,
     events: Stage,
     solve_lowering: Stage,
+    /// Which stage tab is currently selected (determines what the center panel
+    /// shows). Updated when the user clicks a tab or after compilation finishes
+    /// (auto-selects the furthest successful stage).
     stage: StageKind,
     /// True once the user explicitly clicks a stage tab; false on specimen open.
     /// While false the RHS panel shows specimen info, not stage-specific help.
+    /// This two-phase UX lets the right panel start with a specimen overview,
+    /// then transition to field-level help once the user dives into a stage.
     stage_clicked: bool,
     // Resolved identity of every DefId referenced in the current model's IR.
+    // Shared across all stages; populated by the final `Compiled` message.
     def_index: BTreeMap<u64, DefInfo>,
 
-    // "Go to definition" navigation stack (empty ⇒ showing the specimen stages).
+    // ---- 5. "Go to definition" navigation stack ----
+    // Empty means we're showing the specimen's own stages; non-empty means we
+    // navigated into a library class (e.g. Resistor's resolved definition).
+    // Renders as a breadcrumb trail: model > class1 > class2.
     nav: Vec<NavEntry>,
     nav_loading: Option<String>,
     nav_error: Option<String>,
 
-    // Claude bridge: monotonic ask counter + last-write feedback.
+    // ---- 6. Claude bridge ----
+    // The "capture" system writes JSON files that Claude Code reads to
+    // understand what the user is looking at. `ask_seq` is a monotonic counter
+    // so each capture gets a unique ID; `bridge_status` shows confirmation in
+    // the bottom status bar.
     ask_seq: u64,
     bridge_status: Option<String>,
 
-    // Windows toggled from the menu bar.
+    // ---- 7. Windows toggled from the menu bar ----
+    // egui's `Window::open(&mut bool)` pattern: the bool controls visibility,
+    // and the window's close button flips it back to false.
     show_settings: bool,
     show_help: bool,
     show_about: bool,
 
-    // Generic (build-time) field help + the field the user last left-clicked.
+    // ---- 8. Generic field help ----
+    // `field_help` is a compile-time HashMap<field_name, explanation> loaded
+    // from a generated help table. `selected_field` tracks the last
+    // left-clicked tree node so the right panel can show its documentation.
+    // This is the "fast tier" (instant, no AI); the "specific tier" is the
+    // bridge capture + Claude chat.
     field_help: HashMap<String, String>,
     selected_field: Option<String>,
 
-    // The Structural stage's custom views and their pan/zoom cameras.
+    // ---- 9. Custom views for Structural/Index-reduction stages ----
+    // These stages have a spy-plot and incidence-matrix visualization in
+    // addition to the generic JSON tree. Each custom view has its own `Canvas`
+    // (pan/zoom camera state).
     structural_view: StructuralView,
     spy_canvas: Canvas,
     incidence_canvas: Canvas,
 
-    // The compilation log — timestamped events streamed from the worker thread.
-    // `viewing_log` is true when the log view is selected (the Log button left of
-    // the stage tabs); auto-selected when a specimen is opened.
+    // ---- 10. Compilation log ----
+    // Timestamped events streamed from the worker thread (phase start/end,
+    // timing, diagnostics). `viewing_log` is true when the Log button (left of
+    // the stage tabs) is active; auto-selected when a specimen is opened so
+    // the user sees compilation progress before any stage IR is ready.
     log_entries: Vec<LogEntry>,
     viewing_log: bool,
     tracing_enabled: bool,
 
-    // On-demand simulation (the Simulation tab) — not a compile stage.
-    // `simulation` is an always-empty placeholder so `current_stage` has a Stage
-    // to return; the Simulation view is the egui_plot pane, rendered specially.
+    // ---- 11. On-demand simulation ----
+    // Simulation is NOT a compiler stage — it's triggered by the user pressing
+    // "Run". `simulation` is an always-empty `Stage` placeholder so that
+    // `current_stage()` can return a `&Stage` for all `StageKind` variants
+    // (the Simulation view is actually rendered by `simulation_pane()`, not
+    // the generic tree inspector). `sim_data` holds the time-series output
+    // from the solver once the run completes.
     simulation: Stage,
     sim_data: Option<SimData>,
     sim_running: bool,
@@ -154,6 +256,27 @@ pub struct App {
 }
 
 impl App {
+    /// Create the application. Called once by eframe at startup.
+    ///
+    /// Three things happen here that are worth understanding:
+    ///
+    /// 1. **Font fallback trick**: egui has two font families (Proportional and
+    ///    Monospace), each with its own list of fonts. Some glyphs (like arrows
+    ///    and ) only exist in the monospace font (Hack), so proportional labels
+    ///    would show blank squares ("tofu") for them. The fix: add every loaded
+    ///    font as a fallback for BOTH families, so egui searches all fonts when
+    ///    a glyph is missing from the primary.
+    ///
+    /// 2. **Zoom factor**: rather than changing individual font sizes, we scale
+    ///    the entire UI (fonts + widget spacing) via `set_zoom_factor`. This
+    ///    keeps the Settings slider and Ctrl+/- keyboard shortcuts working
+    ///    consistently.
+    ///
+    /// 3. **Worker spawn**: the background thread is created here with a clone
+    ///    of the egui context. The worker uses that context to call
+    ///    `request_repaint()` after sending results, which wakes the UI thread
+    ///    to process them — without this, egui would only repaint on user input
+    ///    and results could sit unseen in the channel.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Make every bundled font a fallback for BOTH families, so a glyph that
         // lives in only one (e.g. the → and ← arrows are in Hack/monospace but
@@ -175,6 +298,8 @@ impl App {
         // individual text styles — so the Settings slider and Ctrl +/− both work.
         cc.egui_ctx.set_zoom_factor(DEFAULT_ZOOM);
 
+        // Spawn the worker thread. It gets a clone of the egui context so it
+        // can wake the UI when results are ready (see `drain_worker`).
         let worker = Worker::spawn(cc.egui_ctx.clone());
         let mut app = App {
             worker,
@@ -223,11 +348,16 @@ impl App {
             sim_error: None,
             sim_t_end: 2.0,
         };
+        // Scan the specimen directory and pre-load libraries at startup so the
+        // Resolve phase works immediately when the user selects a specimen
+        // (Resolve needs the MSL classes to resolve `import` references).
         app.rescan();
-        app.load_libraries(); // load MSL at startup so resolve works immediately
+        app.load_libraries();
         app
     }
 
+    /// Parse the multi-line library text field into a list of paths, one per
+    /// non-empty line. The text field is editable in the Settings window.
     fn parse_library_paths(&self) -> Vec<PathBuf> {
         self.libraries_text
             .lines()
@@ -237,6 +367,8 @@ impl App {
             .collect()
     }
 
+    /// Send the current library paths to the worker thread for loading.
+    /// Library loading is async — the result arrives as `FromWorker::Libraries`.
     fn load_libraries(&mut self) {
         let roots = self.parse_library_paths();
         self.libraries_busy = true;
@@ -244,6 +376,9 @@ impl App {
         self.worker.send(ToWorker::SetLibraries(roots));
     }
 
+    /// Re-read the specimen directory, rebuilding the file list and scanning
+    /// each `.mo` file for its `// purpose:` comment. Called at startup and
+    /// when the user changes the directory in Settings.
     fn rescan(&mut self) {
         self.files.clear();
         self.scan_error = None;
@@ -268,8 +403,26 @@ impl App {
             .collect();
     }
 
+    /// Open (compile) a specimen. Called when the user clicks a file in the
+    /// left panel.
+    ///
+    /// **Why everything resets:** each specimen is an independent compilation.
+    /// Leftover stage data from the previous specimen would be confusing (e.g.
+    /// showing BouncingBall's events tab while compiling Drivetrain). So we
+    /// clear every stage, the navigation stack, the simulation results, and the
+    /// field-help selection before sending the new compile command.
+    ///
+    /// **Why `viewing_log` starts `true`:** compilation takes a moment, and
+    /// showing the log view lets the user watch progress (phase start/end
+    /// messages, timing) instead of staring at "compiling..." text. Once
+    /// compilation finishes and the user clicks a stage tab, `viewing_log`
+    /// flips to false.
     fn open(&mut self, path: PathBuf) {
+        // Mark as compiling — this disables stage tab highlighting and shows a
+        // spinner.
         self.compiling = true;
+        // Clear all previous results. Every field that could hold stale data
+        // from the last specimen is reset to its default.
         self.model = None;
         self.parse = Stage::default();
         self.resolve = Stage::default();
@@ -285,24 +438,53 @@ impl App {
         self.sim_error = None;
         self.sim_running = false;
         self.def_index = BTreeMap::new();
+        // Reset the "user has clicked a stage" flag so the right panel starts
+        // with specimen info, not stage-specific help.
         self.stage_clicked = false;
         self.nav.clear();
         self.nav_loading = None;
         self.nav_error = None;
         self.selected_field = None;
+        // Start with the log view so the user sees compilation progress.
         self.log_entries.clear();
         self.viewing_log = true;
+        // Send the compile command to the worker thread. Results will arrive
+        // asynchronously via `FromWorker::CompileProgress` and `FromWorker::Compiled`.
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
     }
 
     /// Fetch a class by qualified name for navigation (async; pushed on arrival).
+    /// The worker resolves the name to a class definition and returns it as a
+    /// `FromWorker::DefTree` message; `drain_worker` pushes it onto `self.nav`.
     fn navigate_to(&mut self, name: String) {
         self.nav_loading = Some(name.clone());
         self.nav_error = None;
         self.worker.send(ToWorker::OpenDef(name));
     }
 
+    /// Drain all pending messages from the worker thread's channel.
+    ///
+    /// This is the **channel drain pattern**: the worker sends results via an
+    /// `mpsc` channel, and we poll it each frame with `try_recv()` in a loop.
+    /// `try_recv` is non-blocking — it returns `Ok(msg)` if a message is
+    /// waiting, or `Err` if the channel is empty. The `while` loop processes
+    /// ALL pending messages in one frame (the worker may have sent several
+    /// between repaints), then falls through so the UI can render.
+    ///
+    /// Two compilation message types work together:
+    /// - **`CompileProgress`**: sent after each pipeline phase completes. It
+    ///   carries partial results so the tab colors update incrementally (you
+    ///   see Parse go green, then Resolve, etc.) while compilation continues.
+    ///   We must NOT touch `compiling` or `stage` here — the pipeline isn't done.
+    /// - **`Compiled`**: sent once when the full pipeline finishes. This is
+    ///   where we clear `compiling`, set `stage` to the furthest clean result,
+    ///   publish all IRs to the bridge, and fit the custom-view cameras.
+    ///
+    /// Both messages carry the specimen `path` so we can detect stale results:
+    /// if the user switched specimens while compilation was running, the old
+    /// results arrive for a path that no longer matches `self.selected`, and
+    /// we skip them with `continue`.
     fn drain_worker(&mut self) {
         while let Ok(msg) = self.worker.rx.try_recv() {
             match msg {
@@ -408,6 +590,8 @@ impl App {
         }
     }
 
+    /// Look up the `Stage` for the currently selected tab. This is a simple
+    /// dispatch — it maps the `StageKind` enum to the corresponding field on App.
     fn current_stage(&self) -> &Stage {
         match self.stage {
             StageKind::Parse => &self.parse,
@@ -513,6 +697,19 @@ impl App {
 
     /// Emit a bridge focus file describing what the user wants to ask about, and
     /// record a one-line status. The reasoning happens in the Claude Code chat.
+    ///
+    /// **What "capture" means:** when the user clicks a tree node, a stage tab,
+    /// or a specimen, HRW writes a JSON file (the "focus file") to a known
+    /// location on disk. Claude Code (running in a terminal alongside the GUI)
+    /// watches that location. The focus file contains: what was clicked (a
+    /// key-path like `["equations", 3, "lhs"]`), which stage, the full IR of
+    /// the current and adjacent stages, and the def_index for resolving
+    /// cross-references. Claude reads this to understand the user's question
+    /// context without the user having to copy-paste IR.
+    ///
+    /// The `ask_seq` counter makes each capture unique, and the status bar
+    /// confirms what was captured ("captured equations.3.lhs -- now ask me
+    /// about it in the chat").
     fn emit_focus(&mut self, focus: Focus) {
         self.ask_seq += 1;
         let seq = self.ask_seq;
@@ -547,7 +744,15 @@ impl App {
 
     /// Capture the node the user acted on — scoped to the navigated class when
     /// navigating, else to the current specimen stage (with cross-stage diff).
-    /// `request` is "explain" (Ask Claude) or "debug-where-set" (🐞 debugger).
+    /// `request` is "explain" (Ask Claude) or "debug-where-set" (the debugger).
+    ///
+    /// The two code paths handle different contexts:
+    /// - **Navigated class** (nav stack non-empty): we're viewing a library
+    ///   class reached via "Go to definition". No Parse stage exists here
+    ///   (it's not a specimen), so no cross-stage diff is possible.
+    /// - **Specimen stage** (nav stack empty): we're viewing the specimen's own
+    ///   IR. The capture includes the Parse and Resolve values so Claude can
+    ///   diff across stages (e.g. "what did Typecheck change vs Instantiate?").
     fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: &'static str) {
         self.ask_seq += 1;
         let seq = self.ask_seq;
@@ -597,9 +802,38 @@ impl App {
     /// state trajectories. Running the model is on-demand (not a compile stage):
     /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
     /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
+    ///
+    /// ## egui_plot integration
+    ///
+    /// `egui_plot` is an immediate-mode plotting library that integrates with
+    /// egui. `Plot::new("id")` creates a plot area; `.show(ui, |plot_ui| …)`
+    /// renders it. Inside the closure, `plot_ui.line(…)` adds each data series.
+    /// The plot handles pan/zoom/legend automatically.
+    ///
+    /// ## Discontinuity segments
+    ///
+    /// Models with discrete events (like BouncingBall's velocity flip at each
+    /// bounce) have genuine discontinuities in their state variables. If we
+    /// plotted the entire time series as one polyline, the plot would draw a
+    /// sloped line through the jump — visually wrong. `discontinuity_segments`
+    /// breaks the data into contiguous segments at reinit points, and each
+    /// segment is drawn as a separate `Line`. Continuous models draw as one
+    /// segment (the whole range).
+    ///
+    /// ## Consistent series colors
+    ///
+    /// `series_color(i)` pins an explicit color per VARIABLE index. Without
+    /// this, egui_plot's auto-color increments per `Line` added — so a variable
+    /// split into 3 segments would get 3 different hues, while its legend entry
+    /// shows only one. By keying color on the variable index, every segment of
+    /// the same variable matches the legend.
     fn simulation_pane(&mut self, ui: &mut egui::Ui) {
         use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
+        // `run` is a flag set by the button click, acted on AFTER the horizontal
+        // bar is drawn. This is a common egui pattern: the button is inside a
+        // `ui.horizontal()` closure, but the action (sending `ToWorker::Simulate`)
+        // needs to happen outside it, so we collect the intent in a local bool.
         let mut run = false;
         ui.horizontal(|ui| {
             run = ui
@@ -671,9 +905,18 @@ impl App {
         }
     }
 
-    /// The right-hand context panel. Before any stage tab is clicked it shows
-    /// specimen-level info; after a click it shows stage-specific content
-    /// (Simulation gets its own panel; everything else gets field help).
+    /// The right-hand context panel. Routes to one of three sub-panels based
+    /// on the current state.
+    ///
+    /// The routing implements a **specimen -> stage transition**: when a
+    /// specimen is first opened, `stage_clicked` is false, so the right panel
+    /// shows specimen-level info (name, model, purpose, narrative link). Once
+    /// the user clicks any stage tab, `stage_clicked` flips to true and the
+    /// panel switches to stage-specific content — either the Simulation help
+    /// panel or the generic field-help panel (which shows documentation for
+    /// the last-clicked IR tree node). This two-phase UX avoids showing an
+    /// empty "no field selected" message before the user has engaged with a
+    /// stage.
     fn right_panel(&mut self, ui: &mut egui::Ui) {
         if !self.stage_clicked && self.nav.is_empty() {
             self.right_panel_specimen(ui);
@@ -815,6 +1058,10 @@ impl App {
 }
 
 /// One-line status for a completed bridge write, tailored to the request kind.
+/// Shown in the bottom status bar to confirm what was captured and what the
+/// user should do next (e.g. "captured equations.3.lhs -- now ask me about it
+/// in the chat"). The `seq` number helps the user correlate captures with
+/// Claude's responses.
 fn status_line(seq: u64, target: &str, request: &str, result: std::io::Result<std::path::PathBuf>) -> String {
     match result {
         Err(e) => format!("bridge write failed: {e}"),
@@ -825,11 +1072,34 @@ fn status_line(seq: u64, target: &str, request: &str, result: std::io::Result<st
     }
 }
 
+// The `eframe::App` trait is what eframe calls each frame. `ui()` is the
+// single entry point: it receives a `&mut egui::Ui` and must build the
+// entire window's contents from scratch. This is the heart of the
+// immediate-mode pattern — no persistent widget tree, just code that runs
+// every frame.
 impl eframe::App for App {
+    /// The main frame function. Called ~60 times/second (or on repaint
+    /// request). Every panel, button, label, and tree node is built here.
+    ///
+    /// The overall layout is:
+    /// - **Top**: menu bar (File, Help)
+    /// - **Bottom**: status bar (bridge capture feedback)
+    /// - **Left panel**: specimen file list
+    /// - **Right panel**: field help / specimen info / simulation help
+    /// - **Center**: the main content area (stage tabs + IR tree/spy-plot/simulation)
+    ///
+    /// egui panels claim space in the order they're added: top/bottom first,
+    /// then left/right, and `CentralPanel` fills whatever remains. This is
+    /// why the panels appear in this specific order in the code.
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        // First thing every frame: check for results from the worker thread.
         self.drain_worker();
 
+        // ---- Top menu bar ----
+        // `Panel::top` claims a strip at the top of the window. Its string ID
+        // ("bar") must be unique among panels so egui can track its state.
         egui::Panel::top("bar").show(ui, |ui| {
+            // `MenuBar` creates a horizontal bar with dropdown menus.
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Rescan specimens").clicked() {
@@ -859,8 +1129,17 @@ impl eframe::App for App {
             });
         });
 
-        // Help / About windows (visibility driven by the menu-bar toggles;
-        // the close button flips the bool back via `.open`).
+        // ---- Floating windows (Help / About / Settings) ----
+        //
+        // egui::Window creates a floating, draggable window. The `.open(&mut bool)`
+        // method ties the window's visibility to a bool field on App:
+        // - When the bool is true, the window is shown.
+        // - The window's built-in close button (X) sets the bool to false.
+        // - The menu bar sets the bool to true when the user clicks "Using HRW...".
+        //
+        // This is idiomatic egui: the window is "drawn" every frame, but `.open()`
+        // makes it a no-op when the bool is false. There's no show/hide imperative
+        // — just a bool that the framework reads.
         egui::Window::new("Using HRW")
             .open(&mut self.show_help)
             .collapsible(false)
@@ -933,9 +1212,15 @@ impl eframe::App for App {
                 ui.label("Rumoca is linked as a library; compilation runs on a worker thread.");
             });
 
-        // Settings window. The library "Load" is deferred to a flag so the
-        // closure only borrows disjoint fields (not whole `self` via a method),
-        // which keeps it compatible with `.open(&mut self.show_settings)`.
+        // Settings window. Note the "deferred action" pattern used here:
+        //
+        // The `.open(&mut self.show_settings)` call borrows `self.show_settings`
+        // mutably. Inside the window closure, we can't call `self.load_libraries()`
+        // because that would borrow ALL of `self` — conflicting with the existing
+        // mutable borrow of `self.show_settings`. The workaround: set a local
+        // `load_libraries` flag inside the closure, then act on it AFTER the
+        // closure ends (when the borrow is released). This "collect intent, act
+        // later" pattern appears throughout this file.
         let mut load_libraries = false;
         let mut rescan_specimens = false;
         egui::Window::new("Settings")
@@ -991,8 +1276,10 @@ impl eframe::App for App {
             self.rescan();
         }
 
-        // Full-width status bar (added before the side panel so it spans the
-        // whole window bottom): the last bridge capture / write result.
+        // ---- Bottom status bar ----
+        // Added BEFORE the side panels so it spans the full window width (egui
+        // panels claim space in the order they're created — a bottom panel added
+        // after left/right panels would only fill the remaining center).
         egui::Panel::bottom("status").show(ui, |ui| {
             ui.add_space(1.0);
             match &self.bridge_status {
@@ -1002,6 +1289,11 @@ impl eframe::App for App {
             ui.add_space(1.0);
         });
 
+        // ---- Left panel: specimen file list ----
+        // Auto-size the panel width to fit the longest specimen filename, with
+        // padding for spacing, margins, and the scrollbar. The text is measured
+        // using egui's layout engine (`layout_no_wrap`) so the width adapts to
+        // the actual font/zoom level.
         let specimen_width = {
             let longest = self.files.iter()
                 .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
@@ -1017,24 +1309,39 @@ impl eframe::App for App {
             let scrollbar = 16.0;
             (galley.size().x + spacing * 2.0 + margin + scrollbar).max(120.0)
         };
+        // `Panel::left` claims a resizable strip on the left side. The
+        // specimen list scrolls vertically if there are more files than fit.
         egui::Panel::left("file_list")
             .resizable(true)
             .default_size(specimen_width)
             .min_size(120.0)
             .show(ui, |ui| {
                 ui.strong("Specimens");
+                // `ui.separator()` draws a horizontal line — a visual divider
+                // between the heading and the list content.
                 ui.separator();
 
                 if let Some(err) = &self.scan_error {
+                    // `colored_label` draws text in a specific color.
+                    // `visuals().error_fg_color` is the theme's standard error
+                    // color (red in both light and dark themes).
                     ui.colored_label(ui.visuals().error_fg_color, err);
                     return;
                 }
                 if self.files.is_empty() {
+                    // `ui.weak(…)` renders text in the theme's "weak" (dimmed) color,
+                    // for secondary/placeholder text.
                     ui.weak("(no .mo specimens found)");
                     return;
                 }
 
+                // `ScrollArea::vertical()` wraps its content in a scrollable
+                // region. The `.show()` closure provides the scrollable content.
                 egui::ScrollArea::vertical().show(ui, |ui| {
+                    // "Deferred action" pattern again: we can't call
+                    // `self.open()` inside this closure (it borrows `self`
+                    // through `self.files`), so we collect the path to open
+                    // and act after the closure.
                     let mut to_open = None;
                     let mut capture_specimen = false;
                     for path in &self.files {
@@ -1046,13 +1353,20 @@ impl eframe::App for App {
                         // capture.
                         let can_capture = selected && !self.compiling && self.model.is_some();
                         let purpose = self.specimen_purposes.get(path);
+                        // `selectable_label` renders a label that highlights when
+                        // `selected` is true and responds to clicks. It returns a
+                        // `Response` that we can query for `.clicked()`, add hover
+                        // text to, or attach a context menu to.
                         let mut resp = ui.selectable_label(selected, name);
+                        // `.on_hover_text()` adds a tooltip shown when the mouse
+                        // hovers over this widget. Returns the same Response so
+                        // calls can be chained.
                         if let Some(hint) = purpose {
                             resp = resp.on_hover_text(hint);
                         }
-                        // Right-click → "🔎 Capture" the whole specimen (mirrors the tree
-                        // rows). Disabled until this specimen has finished compiling, so
-                        // the capture carries its IR — no second compile.
+                        // `.context_menu()` attaches a right-click popup menu to
+                        // this widget. The closure builds the menu content, and
+                        // `ui.close()` dismisses it after an action.
                         resp.context_menu(|ui| {
                             ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
                             let btn = ui.add_enabled(can_capture, egui::Button::new("🔎 Capture"));
@@ -1088,25 +1402,33 @@ impl eframe::App for App {
                 });
             });
 
-        // Right panel: generic (build-time) field help for the last-clicked tree
-        // item — the FAST tier (no Claude). The specific tier ("why did THIS one
-        // happen") is the bridge + chat, via "explain".
+        // ---- Right panel: context help ----
+        // `Panel::right` claims a strip on the right. It shows generic
+        // (build-time) field help for the last-clicked tree item — the FAST
+        // tier (no Claude). The specific tier ("why did THIS one happen") is
+        // the bridge + chat, via "explain".
         egui::Panel::right("field_help")
             .resizable(true)
             .default_size(380.0)
             .min_size(220.0)
             .show(ui, |ui| self.right_panel(ui));
 
-        // Bridge "ask" + navigation requests collected during this frame, acted
-        // on after the panel closure releases its borrow of `self`.
-        let mut node_ask: Option<Vec<Seg>> = None;
-        let mut debug_ask: Option<Vec<Seg>> = None;
-        let mut canvas_capture: Option<Vec<Seg>> = None;
-        let mut nav_to: Option<String> = None;
-        let mut want_stage_ask = false;
-        let mut go_back = false;
-        let mut go_home = false;
+        // ---- Center panel: stage tabs + main content ----
+        //
+        // More "deferred action" variables: the CentralPanel closure borrows
+        // `self` through the panel, so we can't call methods like
+        // `emit_node_focus` inside it. Instead, the closure sets these flags
+        // and the actual method calls happen after the closure, below.
+        let mut node_ask: Option<Vec<Seg>> = None;   // left-click capture (explain)
+        let mut debug_ask: Option<Vec<Seg>> = None;  // right-click debugger capture
+        let mut canvas_capture: Option<Vec<Seg>> = None; // spy-plot block click
+        let mut nav_to: Option<String> = None;       // "Go to definition" target
+        let mut want_stage_ask = false;              // stage tab was clicked
+        let mut go_back = false;                     // navigation "Back" button
+        let mut go_home = false;                     // navigation "Specimen" button
 
+        // `CentralPanel` fills all remaining space after top/bottom/left/right
+        // panels have claimed theirs. This is where the main content lives.
         egui::CentralPanel::default().show(ui, |ui| {
             if self.nav.is_empty() {
                 // ---- Specimen stage view ----
@@ -1116,20 +1438,61 @@ impl eframe::App for App {
                     ui.weak("Select a specimen to compile.");
                     return;
                 }
+                // `horizontal_wrapped` lays widgets left-to-right, wrapping to a
+                // second line when they don't fit. With 11 stage tabs, a narrow
+                // window needs this (vs `horizontal` which would clip).
                 ui.horizontal_wrapped(|ui| {
-                    // Stage selectors + capture-stage, a divider, then the model
-                    // label + capture-model. Wrapped: with 11 stage tabs the row
-                    // won't fit a narrow window, so it flows onto a second line
-                    // rather than pushing Simulation off the right edge. Whole-
-                    // stage/model buttons capture context; node-level captures come
-                    // from the right-click menu on any tree row. A stage's tab label is
-                    // painted red when that stage errored, so failed stages are
-                    // visible without opening each (e.g. CapacitorLoop fails at
-                    // Structural + Index reduction while landing on Initialization).
+                    // ---- Stage tab bar ----
+                    //
+                    // WHY `selectable_label` INSTEAD OF `selectable_value`:
+                    //
+                    // egui has two selection widgets:
+                    // - `selectable_value(&mut val, variant, text)` — ALWAYS highlights
+                    //   when `val == variant`. Good for radio-button groups.
+                    // - `selectable_label(is_selected, text)` — highlights when the
+                    //   bool is true. You control the condition explicitly.
+                    //
+                    // We use `selectable_label` here because we need to SUPPRESS
+                    // highlighting while compiling: when a fresh specimen is loading,
+                    // no tab should appear selected (the previous specimen's stage
+                    // would be misleading). The `stage_selected` bool below gates
+                    // this: it's false while compiling or while viewing the log, so
+                    // no tab highlights. `selectable_value` can't express this
+                    // conditional because it always highlights the current value.
+                    //
+                    // THE `stage_tab_clicked` PATTERN:
+                    //
+                    // Each stage tab checks `.clicked()` and sets the same
+                    // `stage_tab_clicked` flag. After the tab row, a single block
+                    // acts on that flag to: set `stage_clicked = true` (transition
+                    // the right panel), turn off `viewing_log`, and emit a stage
+                    // capture for the bridge. This avoids duplicating that logic
+                    // in every tab's click handler.
+                    //
+                    // TAB COLORING:
+                    //
+                    // Each tab label is colored via `tab_label()`:
+                    // - Red if the stage errored (so you see pipeline failures at a glance)
+                    // - Green if the stage produced IR (success)
+                    // - Default color if not yet reached or still compiling
                     if ui.selectable_label(self.viewing_log, "Log").clicked() {
                         self.viewing_log = true;
                     }
                     ui.separator();
+                    // ---- Play button (inline simulation trigger) ----
+                    //
+                    // This button starts a simulation WITHOUT switching to the
+                    // Simulation tab. The user can be viewing the Structural
+                    // spy-plot or the Log and press play — the sim runs in the
+                    // background and the UI stays on the current view. This is
+                    // useful for watching log messages during simulation or
+                    // studying the IR while a run completes.
+                    //
+                    // `add_enabled` is like `add` (places a widget) but
+                    // greys it out when the bool is false. The button is only
+                    // active when: not compiling, not already simulating, a
+                    // model was parsed, and solve_lowering succeeded (the
+                    // simulator needs the SolveModel IR).
                     let can_sim = !self.compiling
                         && !self.sim_running
                         && self.model.is_some()
@@ -1356,6 +1719,11 @@ impl eframe::App for App {
                     if !is_index_reduction && self.structural_view == StructuralView::Reduction {
                         self.structural_view = StructuralView::SpyPlot;
                     }
+                    // Here we DO use `selectable_value` (unlike the stage tabs
+                    // above) because these sub-view tabs have no conditional
+                    // suppression — one is always selected. `selectable_value`
+                    // acts as a radio button: it highlights when the enum
+                    // matches the given variant, and sets the enum on click.
                     ui.horizontal(|ui| {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                         ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
@@ -1446,7 +1814,12 @@ impl eframe::App for App {
             }
         });
 
-        // Act on requests now that `self` is no longer borrowed by the UI.
+        // ---- Deferred actions ----
+        //
+        // All the flags/options collected during the CentralPanel closure are
+        // now acted on. The panel closure has ended, so `self` is no longer
+        // borrowed and we can call methods freely. This is the payoff of the
+        // "collect intent, act later" pattern used throughout this function.
         if go_home {
             self.nav.clear();
         } else if go_back {
@@ -1455,14 +1828,18 @@ impl eframe::App for App {
         if let Some(name) = nav_to {
             self.navigate_to(name);
         }
-        // A spy-plot block click is an "explain" capture, same as a tree click.
+        // A spy-plot block click is treated identically to a tree-node click
+        // for capture purposes.
         if canvas_capture.is_some() {
             node_ask = canvas_capture;
         }
-        // Populate the generic field-help panel from whichever node was clicked.
+        // Update the right-panel field help to match whichever node was clicked
+        // (debug or explain — both select the same field for documentation).
         if let Some(kp) = debug_ask.as_ref().or(node_ask.as_ref()) {
             self.selected_field = field_name_from_path(kp);
         }
+        // Priority: debugger capture > explain capture > stage capture.
+        // Only one bridge write per frame.
         if let Some(key_path) = debug_ask {
             self.emit_node_focus(key_path, "debug-where-set");
         } else if let Some(key_path) = node_ask {
@@ -1477,6 +1854,17 @@ impl eframe::App for App {
 /// the file (the phenomenon it's authored to exercise). Scanned without compiling
 /// so every file in the list gets a hint, even one that fails to compile. `None`
 /// if the convention is absent.
+///
+/// The convention: each specimen `.mo` file contains a comment like:
+/// ```text
+/// // purpose: high-index, structurally singular DAE
+/// ```
+/// This is scanned at **rescan time** (when the specimen directory is read),
+/// NOT at compile time. This is deliberate — it means every specimen in the
+/// list gets its purpose hint shown in the tooltip even if the specimen fails
+/// to compile. The purpose comment describes the *compiler feature* the
+/// specimen exercises, which is different from the Modelica `annotation`
+/// description string (which describes the *model* itself).
 fn read_purpose(path: &Path) -> Option<String> {
     let text = std::fs::read_to_string(path).ok()?;
     text.lines().find_map(|line| {
@@ -1493,6 +1881,14 @@ fn read_purpose(path: &Path) -> Option<String> {
 /// a variable plotted as several segments (broken at discontinuities) would else
 /// take a different auto-colour per segment. Keyed on the variable index, this
 /// equals the colour egui_plot picked when each variable was a single line.
+///
+/// The **golden-ratio hue trick**: multiplying the series index by the golden
+/// ratio (0.618...) and using the fractional part as a hue angle produces
+/// colors that are maximally spread around the color wheel. Each new series
+/// lands as far as possible from all previous ones in hue space, giving
+/// visually distinct colors without a hand-picked palette. `Hsva` constructs
+/// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
+/// automatically.
 fn series_color(i: usize) -> egui::Color32 {
     let golden_ratio = (5.0_f32.sqrt() - 1.0) / 2.0; // 0.61803398875
     egui::ecolor::Hsva::new(i as f32 * golden_ratio, 0.85, 0.5, 1.0).into()
@@ -1503,6 +1899,12 @@ fn series_color(i: usize) -> egui::Color32 {
 /// if it produced its IR (succeeded), and the normal colour for an
 /// in-between/neutral status — "not reached" after an upstream failure, or no data
 /// yet (before/while compiling).
+///
+/// `RichText` is egui's styled-text type: you create it with `RichText::new(…)`
+/// and chain formatting methods (`.color()`, `.monospace()`, `.strong()`, etc.).
+/// The resulting `RichText` can be passed anywhere a label/button expects text.
+/// Here we use `.color()` to tint the tab label — the text itself is unchanged,
+/// only its rendering color varies based on the stage's outcome.
 fn tab_label(
     label: &str,
     stage: &Stage,
@@ -1515,13 +1917,29 @@ fn tab_label(
     } else if stage.value.is_some() {
         text.color(ok_color)
     } else {
+        // No color override — uses the theme's default text color. This
+        // neutral state covers "not yet reached" (an upstream stage failed
+        // or hasn't completed) and "still compiling".
         text
     }
 }
 
 /// The field name to look up generic help for = the last object-key segment in
 /// the clicked path (an array-index tail falls back to its enclosing field).
+///
+/// A `Seg` (from the bridge module) represents one segment of a JSON path:
+/// - `Seg::Key(String)` — an object field name (e.g. "equations", "lhs", "type_id")
+/// - `Seg::Index(usize)` — an array index (e.g. the `3` in `equations[3]`)
+///
+/// When the user clicks a tree node, the tree inspector produces a path like
+/// `[Key("equations"), Index(3), Key("lhs")]`. To look up field help, we want
+/// the deepest *named* field — here, "lhs". If the path ends with an array
+/// index (e.g. `[Key("equations"), Index(3)]`), we skip the index and use the
+/// enclosing field name ("equations") instead, since the help table is keyed
+/// on field names, not array positions.
 fn field_name_from_path(path: &[Seg]) -> Option<String> {
+    // Walk the path backwards (`.rev()`) and return the first `Key` segment.
+    // `find_map` combines `find` + `map`: it stops at the first `Some` return.
     path.iter().rev().find_map(|seg| match seg {
         Seg::Key(k) => Some(k.clone()),
         Seg::Index(_) => None,

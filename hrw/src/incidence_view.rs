@@ -1,11 +1,40 @@
-//! Incidence-matrix custom-painter view — the equation×unknown bipartite
-//! adjacency that the matching runs on.
+//! Incidence-matrix custom-painter view.
 //!
-//! Previously deferred because `build_incidence` was `pub(crate)`. Now that
-//! it's `pub`, the worker calls it alongside `build_structural_report` and ships
-//! the sparse adjacency in the stage JSON. This view draws it: equations as rows,
-//! unknowns as columns, a filled cell wherever an equation references an unknown.
-//! Hover a cell to see the equation + unknown name; click to capture.
+//! ## What is an incidence matrix?
+//!
+//! An **incidence matrix** (also called a bipartite adjacency matrix) represents
+//! which equations reference which unknowns. It is the fundamental input to
+//! structural analysis: before the compiler can determine a solve order (the BLT
+//! form), it must know which variables appear in which equations.
+//!
+//! In this matrix:
+//! - **Rows** = equations (e.g., `der(x) = v`, `der(v) = F/m`)
+//! - **Columns** = unknowns (e.g., `x`, `v`, `F`)
+//! - A **filled cell** at (row, col) means that equation references that unknown
+//! - An **empty cell** means no reference
+//!
+//! The matrix is typically very **sparse** (most equations reference only a few
+//! of the system's unknowns), which is why we store it in sparse row format
+//! rather than a dense 2D array.
+//!
+//! The incidence matrix is the input to the **maximum matching** algorithm
+//! (Hopcroft-Karp), which pairs each equation with one unknown it can determine.
+//! The matching result feeds into the BLT decomposition shown in the spy-plot.
+//!
+//! ## History
+//!
+//! This view was deferred during pass one because `build_incidence` was
+//! `pub(crate)` in Rumoca — inaccessible from outside the crate. Now that HRW
+//! lives inside the Rumoca workspace, the function was widened to `pub` and the
+//! worker calls it alongside `build_structural_report`.
+//!
+//! ## Interaction
+//!
+//! - **Hover** a cell to see the equation name (row) and unknown name (column),
+//!   plus whether the cell is filled or empty.
+//! - **Click** a cell to capture that equation's incidence row for Claude.
+//! - Crosshair bands highlight the hovered row and column.
+//! - Axis labels appear when zoomed in enough (zoom >= 16).
 
 use eframe::egui;
 use serde_json::Value;
@@ -13,16 +42,31 @@ use serde_json::Value;
 use crate::bridge::Seg;
 use crate::canvas::Canvas;
 
+/// A parsed incidence matrix ready for rendering.
+///
+/// Constructed from the structural report JSON. Like `spyplot::Plot`, this
+/// struct owns all its data (no lifetime dependency on the JSON), so the
+/// borrow on the app state is released after construction.
 pub struct IncidenceMatrix {
+    // Dimensions: n_eq equations (rows) x n_var unknowns (columns).
     n_eq: usize,
     n_var: usize,
+    // Human-readable names for display in tooltips and axis labels.
     equation_names: Vec<String>,
     unknown_names: Vec<String>,
-    /// Sparse row storage: for each equation, sorted column indices.
+    // Sparse row storage (CSR-like): `rows[i]` is a sorted list of column
+    // indices where equation i has a non-zero entry. Sorted so we can use
+    // binary search for O(log n) hit-testing in `cell_at`.
     rows: Vec<Vec<usize>>,
 }
 
 impl IncidenceMatrix {
+    /// Parse the incidence data from a structural report JSON.
+    ///
+    /// The report contains an `incidence` object with `n_eq`, `n_var`,
+    /// `unknown_names`, and `rows` (each row has an `equation` name and
+    /// a list of `unknowns` column indices). Returns `None` if the data
+    /// is missing or malformed (defensive parsing throughout).
     pub fn from_report(report: &Value) -> Option<IncidenceMatrix> {
         let inc = report.get("incidence")?;
         let n_eq = inc.get("n_eq")?.as_u64()? as usize;
@@ -72,6 +116,8 @@ impl IncidenceMatrix {
         })
     }
 
+    /// One-line summary shown above the canvas.
+    /// Reports dimensions, non-zero count, and density percentage.
     pub fn caption(&self) -> String {
         let nnz: usize = self.rows.iter().map(|r| r.len()).sum();
         let total = self.n_eq * self.n_var;
@@ -87,6 +133,10 @@ impl IncidenceMatrix {
         )
     }
 
+    // Does equation `row` reference unknown `col`?
+    //
+    // Uses binary search on the sorted column-index list for O(log n) lookup.
+    // This is called per-frame for the hovered cell, so it needs to be fast.
     fn cell_at(&self, col: usize, row: usize) -> bool {
         if row >= self.n_eq || col >= self.n_var {
             return false;
@@ -94,10 +144,18 @@ impl IncidenceMatrix {
         self.rows[row].binary_search(&col).is_ok()
     }
 
+    /// Draw the incidence matrix and handle hover/click interaction.
+    ///
+    /// Uses the shared `Canvas` for pan/zoom. The rendering has several
+    /// level-of-detail tiers:
+    /// - Always: filled cells (the actual incidence entries)
+    /// - zoom >= 6: grid lines between cells
+    /// - zoom >= 16: axis labels (equation names on left, unknown names on top)
     pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>) {
-        // Reserve headroom above the matrix for the angled column labels so the
-        // fit-to-content keeps them visible. The labels are ~0.35 zoom-units tall
-        // at -45°; 6 world units is generous enough for long names.
+        // Reserve extra world-space above the matrix for angled column labels.
+        // Without this headroom, the fit-to-content would crop the labels.
+        // 6 world units is generous enough for long Modelica variable names
+        // rendered at -45 degrees.
         let label_headroom = 6.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
             egui::Pos2::ZERO,
@@ -156,7 +214,10 @@ impl IncidenceMatrix {
             ))
         };
 
-        // Highlight the hovered row and column with a faint band.
+        // Crosshair bands: highlight the full row and column of the hovered cell
+        // with a faint colored band. This visual cue helps the user trace which
+        // equation (row) and which unknown (column) the cursor is on, even in
+        // large matrices where cell coordinates are hard to count.
         if let Some((hc, hr)) = hovered_cell {
             let row_band = egui::Rect::from_min_size(
                 egui::pos2(0.0, hr as f32),
@@ -181,24 +242,29 @@ impl IncidenceMatrix {
             }
         }
 
-        // Axis labels when zoomed in enough.
+        // Axis labels — only drawn when zoomed in far enough that they won't
+        // overlap (zoom >= 16 means each cell is at least 16px wide).
         if view.zoom() >= 16.0 {
             let font = egui::FontId::proportional(view.zoom() * 0.35);
             let label_color = visuals.text_color().gamma_multiply(0.7);
-            let angle = -std::f32::consts::FRAC_PI_4; // -45° (reads bottom-left to top-right)
+            // Column (unknown) labels: drawn above the matrix at -45 degrees.
+            // The angle prevents long Modelica names from overlapping each other.
+            let angle = -std::f32::consts::FRAC_PI_4;
             for (col, name) in self.unknown_names.iter().enumerate() {
+                // Anchor at the top of each column, slightly above the matrix.
                 let anchor = view.to_screen(egui::pos2(col as f32 + 0.5, -0.15));
                 let galley = painter.layout_no_wrap(
                     truncate_label(name, 20).to_owned(),
                     font.clone(),
                     label_color,
                 );
+                // TextShape allows rotated text — egui's `painter.text()` can't rotate.
                 let mut shape = egui::epaint::TextShape::new(anchor, galley, label_color);
                 shape.angle = angle;
-                // Pivot at the bottom-right of the text so labels fan out above/left.
                 shape.override_text_color = Some(label_color);
                 painter.add(shape);
             }
+            // Row (equation) labels: drawn to the left of each row, right-aligned.
             for (row, name) in self.equation_names.iter().enumerate() {
                 let pos = view.to_screen(egui::pos2(-0.1, row as f32 + 0.5));
                 painter.text(
@@ -211,7 +277,8 @@ impl IncidenceMatrix {
             }
         }
 
-        // Tooltip + click-to-capture.
+        // Tooltip and click-to-capture. The capture path addresses the equation's
+        // row in the incidence data: `incidence.rows[<row_index>]`.
         if let Some((col, row)) = hovered_cell {
             let filled = self.cell_at(col, row);
             if response.clicked() {
@@ -254,6 +321,10 @@ impl IncidenceMatrix {
     }
 }
 
+// Truncate a label to `max` bytes for display. Used for axis labels where
+// long Modelica names (e.g., "Modelica.Mechanics.Rotational.Inertia.flange_a.tau")
+// would overflow the available space. Note: this truncates by byte count, which
+// is safe because Modelica identifiers are ASCII.
 fn truncate_label(s: &str, max: usize) -> &str {
     if s.len() <= max {
         s

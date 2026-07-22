@@ -1,19 +1,41 @@
-//! BLT block-structure spy-plot — the first custom-`Painter`
-//! view, drawn on the reusable [`crate::canvas`] scaffold.
+//! BLT block-structure spy-plot — a custom-painted matrix view.
 //!
-//! **What it shows.** Rumoca's structural phase produces a `StructuralReport`
-//! with the maximum matching (which equation determines which unknown) and the
-//! BLT blocks (the block-lower-triangular evaluation order: scalar solves, and
-//! coupled strongly-connected components — algebraic loops — with their tearing).
-//! This plot draws the **diagonal blocks** in BLT order. Scalar blocks are single
-//! diagonal cells; coupled blocks are boxes on the diagonal. The full incidence
-//! matrix (every equation's referenced unknowns) is shown separately in
-//! [`crate::incidence_view`].
+//! ## What is a BLT spy-plot?
 //!
-//! Per the observatory's dual-emitter goal, the plot is both a thing to *read*
-//! (block structure at a glance — where the algebraic loops are) and a thing to
-//! *point at*: hover a block to inspect it, click to capture it into the bridge
-//! (`focus.json`) so Claude can explain that block.
+//! "BLT" stands for **Block Lower Triangular** — a canonical form for systems
+//! of equations. After Rumoca's structural analysis phase:
+//!
+//! 1. A **maximum matching** is computed: each equation is paired with the one
+//!    unknown it will "determine" (solve for). This gives a square system.
+//!
+//! 2. **Strongly connected components (SCCs)** are identified in the dependency
+//!    graph. Each SCC becomes a "block":
+//!    - A **scalar block** (size 1) means one equation determines one unknown
+//!      independently — it can be solved in isolation.
+//!    - A **coupled block** (size > 1) means those equations form an **algebraic
+//!      loop** — they must be solved simultaneously (e.g., by Newton's method).
+//!
+//! 3. The blocks are arranged in a **topological order** so that each block
+//!    depends only on blocks that come before it (lower-triangular structure).
+//!    This ordering is the BLT form.
+//!
+//! A "spy plot" is a matrix visualization (from MATLAB's `spy()` function) that
+//! shows the sparsity pattern — which entries are non-zero. This plot draws the
+//! BLT's **diagonal blocks**: scalar blocks as single green cells on the
+//! diagonal, coupled blocks as orange-shaded rectangles. The structure reveals
+//! at a glance: how many algebraic loops exist, how large they are, and whether
+//! the system is mostly sequential (many small diagonal blocks) or heavily
+//! coupled (few large blocks).
+//!
+//! The full incidence matrix (every equation's referenced unknowns, including
+//! off-diagonal entries) is shown separately in [`crate::incidence_view`].
+//!
+//! ## Interaction
+//!
+//! - **Hover** a block to see a tooltip with its equations, unknowns, and
+//!   tearing information (for coupled blocks).
+//! - **Click** a block to capture it into the bridge focus file for Claude.
+//! - **Pan/zoom** via the shared `Canvas` scaffold (drag to pan, scroll to zoom).
 
 use eframe::egui;
 use serde_json::Value;
@@ -21,30 +43,52 @@ use serde_json::Value;
 use crate::bridge::Seg;
 use crate::canvas::Canvas;
 
-/// One BLT block, positioned on the diagonal at `[start, start + size)`.
+// One BLT block positioned on the diagonal.
+//
+// Blocks tile the diagonal consecutively: the first block occupies rows/columns
+// [0, size0), the second [size0, size0+size1), etc. This `start` + `size`
+// encoding makes hit-testing simple: "is (col, row) inside this block?"
 struct Block {
-    /// Index into the structural report's `blocks` array (for capture paths).
+    // Index into the structural report's `blocks` JSON array. Used to build the
+    // bridge capture path: `blocks[report_index]`.
     report_index: usize,
-    /// First row/column (equations and unknowns share the BLT order here).
+    // First row/column of this block on the diagonal.
     start: usize,
-    /// Number of equations/unknowns in the block (1 for scalar).
+    // Number of equations/unknowns in the block. Scalar blocks have size=1;
+    // coupled blocks have size >= 2.
     size: usize,
+    // Whether this block is a coupled SCC (algebraic loop). Scalar blocks
+    // are drawn as single green diagonal cells; coupled blocks as orange boxes.
     coupled: bool,
+    // Human-readable names of the equations and unknowns in this block.
     equations: Vec<String>,
     unknowns: Vec<String>,
-    /// Present only for coupled blocks that were torn: (tear vars, residual eqs).
+    // For coupled blocks that use tearing: the iteration ("tear") variables
+    // and residual equations. Tearing decomposes a coupled block into a
+    // smaller nonlinear system by selecting some variables to iterate on.
+    // `None` if the block is scalar or untorn.
     tearing: Option<(Vec<String>, Vec<String>)>,
 }
 
-/// A parsed, drawable BLT structure. Owns its strings (no borrow of the report),
-/// so building it releases the borrow on `App`'s structural value immediately.
+/// A parsed, drawable BLT structure ready for rendering.
+///
+/// Constructed from the structural report JSON by `Plot::from_report`. Owns
+/// all its strings (no lifetime dependency on the report `Value`), so the
+/// borrow on the app's structural data is released immediately after construction.
+/// This is important because egui's immediate-mode rendering needs to borrow
+/// the app mutably for interaction while the plot is being drawn.
 pub struct Plot {
-    /// Total dimension (matched equations = unknowns along the diagonal).
+    // Total dimension: the number of matched equation-unknown pairs.
+    // The spy-plot is an n x n grid.
     n: usize,
     blocks: Vec<Block>,
+    // Count of coupled blocks (algebraic loops) — shown in the caption.
     coupled_count: usize,
 }
 
+// Helper: extract a JSON array of strings into a Vec<String>.
+// Defensive — returns an empty vec if the value is missing or not an array.
+// Used repeatedly to extract equation names, unknown names, tear vars, etc.
 fn str_vec(v: Option<&Value>) -> Vec<String> {
     v.and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
@@ -52,8 +96,14 @@ fn str_vec(v: Option<&Value>) -> Vec<String> {
 }
 
 impl Plot {
-    /// Parse the structural report JSON (as emitted by the worker) into a plot.
-    /// Returns `None` if there are no blocks to draw.
+    /// Parse the structural report JSON into a drawable `Plot`.
+    ///
+    /// The report is produced by the worker thread from Rumoca's structural
+    /// analysis phase. Returns `None` if there are no blocks (e.g., the phase
+    /// failed or the model has no equations).
+    ///
+    /// Blocks are laid out consecutively along the diagonal: each block's
+    /// `start` is the cumulative sum of all previous blocks' sizes.
     pub fn from_report(report: &Value) -> Option<Plot> {
         let blocks_json = report.get("blocks")?.as_array()?;
         if blocks_json.is_empty() {
@@ -88,7 +138,8 @@ impl Plot {
         Some(Plot { n: pos, blocks, coupled_count })
     }
 
-    /// One-line caption summarizing the structure (drawn above the canvas).
+    /// One-line caption summarizing the BLT structure, shown above the canvas.
+    /// Example: "12 block(s) along the diagonal, 2 coupled (algebraic loops), 14x14 matched"
     pub fn caption(&self) -> String {
         format!(
             "{} block(s) along the diagonal · {} coupled (algebraic loop{}) · {}×{} matched — \
@@ -101,8 +152,11 @@ impl Plot {
         )
     }
 
-    /// The block whose diagonal region contains world cell `(col, row)`, if any.
-    /// Only the diagonal boxes are interactive (that's all that's drawn).
+    // Hit-test: which block contains the world cell (col, row)?
+    //
+    // Only diagonal blocks are drawn and interactive. Off-diagonal cells
+    // (between blocks) return None — they are empty space in the BLT form.
+    // The linear scan is fine because block counts are small (typically < 50).
     fn block_at(&self, col: usize, row: usize) -> Option<&Block> {
         self.blocks.iter().find(|b| {
             let in_range = |i: usize| i >= b.start && i < b.start + b.size;
@@ -110,18 +164,28 @@ impl Plot {
         })
     }
 
-    /// Draw the plot and handle interaction. Sets `capture` to a bridge key-path
-    /// (`blocks[i]`) when the user clicks a block.
+    /// Draw the BLT spy-plot and handle hover/click interaction.
+    ///
+    /// This is the main rendering function, called each frame by the app.
+    /// It uses the shared `Canvas` for pan/zoom and coordinate transforms.
+    ///
+    /// Sets `capture` to a bridge key-path (`blocks[i]`) when the user clicks
+    /// a block, enabling the bridge to write a focus file for that block.
     pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>) {
+        // World bounds: an n x n grid starting at origin.
         let n = self.n as f32;
         let bounds = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(n, n));
+        // `canvas.show` allocates the drawing area, applies pan/zoom input,
+        // and returns the interaction response, coordinate transform, and painter.
         let (response, view, painter) = canvas.show(ui, bounds);
 
         let visuals = ui.visuals();
-        // Backdrop for the matrix area, so the plot reads as a distinct surface.
+        // Draw a background rectangle for the entire matrix area, so the plot
+        // stands out from the panel background (especially in dark mode).
         painter.rect_filled(view.to_screen_rect(bounds), egui::CornerRadius::ZERO, visuals.extreme_bg_color);
 
-        // Which block is under the pointer this frame (for highlight + tooltip).
+        // Hit-test: convert the hover position from screen to world coordinates,
+        // then look up which block (if any) contains that cell.
         let hovered: Option<&Block> = response.hover_pos().and_then(|p| {
             let w = view.to_world(p);
             if w.x < 0.0 || w.y < 0.0 {
@@ -130,12 +194,18 @@ impl Plot {
             self.block_at(w.x as usize, w.y as usize)
         });
 
-        let matched_color = egui::Color32::from_rgb(0x3F, 0xB9, 0x50); // shared "signal" green
+        // Color palette:
+        // - Green: matched diagonal cells (the eq-unknown pairing).
+        // - Orange fill (semi-transparent): coupled block background.
+        // - Orange stroke: coupled block outline (thicker when hovered).
+        let matched_color = egui::Color32::from_rgb(0x3F, 0xB9, 0x50);
         let coupled_fill = egui::Color32::from_rgba_unmultiplied(0xF2, 0x8C, 0x28, 0x55);
         let coupled_stroke = egui::Color32::from_rgb(0xF2, 0x8C, 0x28);
         let grid = visuals.weak_text_color().gamma_multiply(0.35);
 
-        // Faint grid only when cells are big enough that it isn't a smear.
+        // Level-of-detail: only draw grid lines when zoomed in enough that
+        // individual cells are distinguishable. At low zoom, the grid would
+        // be a solid gray smear.
         if view.zoom() >= 6.0 {
             let stroke = egui::Stroke::new(1.0, grid);
             for i in 0..=self.n {
@@ -149,6 +219,8 @@ impl Plot {
             }
         }
 
+        // Helper closure: map a single world cell (col, row) to its screen rect.
+        // Each cell is 1x1 in world space.
         let cell_rect = |col: usize, row: usize| -> egui::Rect {
             view.to_screen_rect(egui::Rect::from_min_size(
                 egui::pos2(col as f32, row as f32),
@@ -156,6 +228,7 @@ impl Plot {
             ))
         };
 
+        // --- Draw each block ---
         for block in &self.blocks {
             let is_hovered = hovered.is_some_and(|h| h.report_index == block.report_index);
             let block_world = egui::Rect::from_min_size(
@@ -190,16 +263,24 @@ impl Plot {
             }
         }
 
-        // Hover tooltip + click-to-capture (only over a diagonal block).
+        // --- Hover tooltip + click-to-capture ---
+        // Only active when the pointer is over a diagonal block (not empty space).
         if let Some(block) = hovered {
             if response.clicked() {
+                // Build the bridge capture path: blocks[<index>].
+                // This key-path addresses the block in the structural report JSON,
+                // so Claude can look up its equations, unknowns, and tearing info.
                 *capture = Some(vec![Seg::Key("blocks".to_owned()), Seg::Index(block.report_index)]);
             }
+            // `on_hover_ui` shows an egui tooltip near the cursor.
             response.on_hover_ui(|ui| block_tooltip(ui, block));
         }
     }
 }
 
+// Render the tooltip content for a hovered block.
+// Shows: block type (scalar vs coupled), size, equation/unknown lists,
+// and tearing information for coupled blocks.
 fn block_tooltip(ui: &mut egui::Ui, block: &Block) {
     if block.coupled {
         ui.strong(format!("Coupled block · size {} (algebraic loop)", block.size));

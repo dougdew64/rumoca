@@ -1,37 +1,95 @@
-//! Index-reduction process view — a structured summary of
-//! what the dummy-derivative funnel did to transform a high-index DAE into a
-//! matchable, index-1 system.
+//! Index-reduction process view — a structured summary of the dummy-derivative
+//! funnel's transformations.
 //!
-//! Unlike the spy-plot and incidence views (spatial, canvas-based), this is a
-//! scrollable panel: the reduction is a sequential pipeline story — which steps
-//! ran, which states were demoted, which equations were differentiated, which
-//! variables were eliminated.
+//! ## What is index reduction?
+//!
+//! A **differential-algebraic equation (DAE)** system has an "index" that
+//! measures how far it is from being an ordinary differential equation (ODE).
+//! A DAE of index > 1 cannot be solved directly by standard numerical solvers
+//! (like BDF or Runge-Kutta) — it must first be reduced to index 1.
+//!
+//! **Example:** A mechanical system with constraints (like two gears meshing)
+//! produces a high-index DAE because the constraint equations relate positions
+//! (not velocities or accelerations). The constraint must be differentiated to
+//! introduce velocity-level equations, and some "state" variables must be
+//! demoted to "algebraic" variables (they are no longer independently integrated
+//! but are instead determined by the constraints).
+//!
+//! Rumoca uses the **Pantelides algorithm** combined with **dummy derivatives**
+//! to perform this reduction. The process runs through a "funnel" of steps:
+//!
+//! 1. **Demotion steps:** identify state variables that are actually determined
+//!    by constraints (aliases, directly assigned, etc.) and demote them to
+//!    algebraic. Each step targets a specific pattern (e.g., `demote_exact_alias`
+//!    catches `x = y` constraints).
+//!
+//! 2. **Differentiation:** for states that lost their derivative equation to
+//!    demotion, manufacture a new equation by differentiating a constraint.
+//!
+//! 3. **Elimination:** remove trivially determined variables by substitution
+//!    (e.g., if `z = y`, eliminate `z` everywhere and replace it with `y`).
+//!
+//! ## Why this is a panel, not a canvas
+//!
+//! Unlike the spy-plot and incidence views (spatial, custom-painted on a
+//! pan/zoom canvas), the index-reduction story is *sequential*: a pipeline of
+//! named steps with outcomes. A scrollable text panel with tables is the
+//! natural fit — no coordinate transforms or hit-testing needed.
 
 use eframe::egui;
 use serde_json::Value;
 
+/// Parsed index-reduction report, ready for rendering.
+///
+/// Built from the `reduction` sub-object of the structural report JSON.
+/// The fields mirror the JSON structure but are strongly typed.
 pub struct ReductionView {
+    // Did the funnel complete successfully (all steps ran without error)?
     funnel_completed: bool,
+    // If the funnel stopped early, which step it stopped at.
     stopped_at: Option<String>,
+    // Number of state (differential) variables before and after reduction.
+    // The difference = number of demoted states.
     n_states_before: usize,
     n_states_after: usize,
+    // Names of variables that were demoted from state to algebraic.
     demoted_states: Vec<String>,
+    // Each funnel step: (step_name, outcome_description).
+    // Example: ("demote_exact_alias_component_states", "1 demoted")
     steps: Vec<(String, String)>,
+    // Equations manufactured by differentiating a constraint.
     differentiated_rows: Vec<DiffRow>,
+    // Variables removed by symbolic substitution.
     eliminations: Vec<Elimination>,
 }
 
+// An equation that was created by differentiating an existing constraint,
+// to provide a derivative row for a state that needed one after demotion
+// changed the equation structure.
 struct DiffRow {
+    // Which constraint was differentiated (e.g., "index_reduction:d_dt_for_x").
     equation_origin: String,
+    // Which state variable this new equation serves.
     for_state: String,
 }
 
+// A variable that was eliminated by symbolic substitution.
+// Example: z was replaced everywhere by y (because the system had z = y).
 struct Elimination {
     variable: String,
+    // The replacement expression, stored as a JSON string (Rumoca IR expression).
     replacement: String,
 }
 
 impl ReductionView {
+    /// Parse the `reduction` sub-object from a structural report JSON.
+    ///
+    /// Returns `None` if the report has no reduction data (e.g., the model
+    /// is already index-1 and no reduction was needed, or the structural
+    /// phase failed before reaching index reduction).
+    ///
+    /// The parsing is defensive: each field uses `?` (the try operator) or
+    /// `.unwrap_or_default()` to handle missing/malformed data gracefully.
     pub fn from_report(report: &Value) -> Option<ReductionView> {
         let red = report.get("reduction")?;
 
@@ -105,7 +163,17 @@ impl ReductionView {
         })
     }
 
+    /// Render the full reduction view as a scrollable panel.
+    ///
+    /// The view is organized into sections, each conditionally shown:
+    /// 1. Summary (always) — completion status, state counts
+    /// 2. Funnel steps (always) — the step-by-step pipeline with outcomes
+    /// 3. Demoted states — which variables were demoted (if any)
+    /// 4. Differentiated equations — manufactured equations (if any)
+    /// 5. Trivial eliminations — substituted-away variables (if any)
     pub fn ui(&self, ui: &mut egui::Ui) {
+        // `ScrollArea::both()` enables both vertical and horizontal scrolling.
+        // `auto_shrink(false)` fills the available panel space.
         egui::ScrollArea::both()
             .id_salt("reduction_view")
             .auto_shrink(false)
@@ -113,6 +181,9 @@ impl ReductionView {
                 self.summary(ui);
                 ui.add_space(8.0);
                 self.funnel_steps(ui);
+                // Conditional sections — only shown when there is data to display.
+                // An index-1 model might have no demotions, no differentiations,
+                // and no eliminations.
                 if !self.demoted_states.is_empty() {
                     ui.add_space(8.0);
                     self.demoted_section(ui);
@@ -128,6 +199,7 @@ impl ReductionView {
             });
     }
 
+    // Top-level summary: funnel completion status and state variable counts.
     fn summary(&self, ui: &mut egui::Ui) {
         ui.heading("Index Reduction Summary");
         ui.add_space(4.0);
@@ -170,6 +242,10 @@ impl ReductionView {
         }
     }
 
+    // Render the funnel step table: each row is a named step with its outcome,
+    // color-coded: green for successful reductions, red for stops, dim for no-ops.
+    // Step names have their common prefix stripped (e.g., "demote_" is removed)
+    // for readability.
     fn funnel_steps(&self, ui: &mut egui::Ui) {
         ui.strong("Funnel steps");
         ui.add_space(2.0);
@@ -209,6 +285,8 @@ impl ReductionView {
             });
     }
 
+    // List of demoted state variables — these were differential variables in the
+    // original DAE but were reclassified as algebraic by the reduction funnel.
     fn demoted_section(&self, ui: &mut egui::Ui) {
         ui.strong(format!("Demoted states ({})", self.demoted_states.len()));
         ui.add_space(2.0);
@@ -231,6 +309,10 @@ impl ReductionView {
         }
     }
 
+    // Table of equations that were manufactured by differentiating existing
+    // constraints. When a state variable's original derivative equation is
+    // disrupted by demotion, the compiler differentiates a constraint to
+    // produce a replacement.
     fn differentiated_section(&self, ui: &mut egui::Ui) {
         ui.strong(format!(
             "Differentiated equations ({})",
@@ -260,6 +342,9 @@ impl ReductionView {
             });
     }
 
+    // Table of trivially eliminated variables. When the system contains
+    // equations like `z = y` (a single-unknown row or an alias), the variable
+    // `z` can be replaced everywhere by `y`, reducing the system size.
     fn elimination_section(&self, ui: &mut egui::Ui) {
         ui.strong(format!(
             "Trivial eliminations ({})",
@@ -290,14 +375,29 @@ impl ReductionView {
     }
 }
 
+// Convert a JSON-encoded Rumoca expression into a short human-readable string.
+//
+// The `replacement` field in eliminations stores the replacement expression as a
+// JSON string (it's a serialized Rumoca IR expression). Showing raw JSON in the
+// UI would be unreadable, so this function pattern-matches on common expression
+// kinds and renders them concisely:
+//   - VarRef -> just the variable name (e.g., "omega")
+//   - Literal -> the literal value (e.g., "3.14", "true")
+//   - Binary -> "lhs op rhs" (e.g., "x + y")
+//   - Unary -> "op rhs" (e.g., "-x")
+//   - BuiltinCall -> "func(args)" (e.g., "sin(theta)")
+//   - anything else -> "(expr)" as a fallback
 fn abbreviate_expr(json_expr: &str) -> String {
     if let Ok(v) = serde_json::from_str::<Value>(json_expr) {
         expr_to_short(&v)
     } else {
+        // Not valid JSON — show the raw string (shouldn't happen in practice).
         json_expr.to_owned()
     }
 }
 
+// Recursive expression-to-string renderer. Each branch pattern-matches on the
+// Rumoca IR expression enum variant (serialized as a JSON object with one key).
 fn expr_to_short(v: &Value) -> String {
     match v.get("VarRef").or_else(|| v.get("Literal")) {
         Some(inner) => {

@@ -1,27 +1,54 @@
-//! HRW Observatory — an egui instrument for studying the Rumoca Modelica
-//! compiler pipeline. See `docs/CHARTER.md` and `CLAUDE.md`.
+//! HRW Observatory — entry point.
 //!
-//! Eframe shell, file picker over the specimen directory, generic
-//! serde-value tree inspector showing the parsed AST.
+//! This is the binary crate's `main.rs`. Its only job is to:
+//!   1. Work around a WSLg/Wayland bug (see below), then
+//!   2. Launch the eframe (egui's native windowing wrapper) event loop.
+//!
+//! All real application logic lives in the library crate (`lib.rs` / `app.rs`).
+//! Separating the binary entry point from the library lets headless tools
+//! (like `examples/gen_trace`) reuse the compilation pipeline without pulling
+//! in the GUI event loop.
+//!
+//! **Why eframe?** egui is an immediate-mode GUI library — the app redraws
+//! every frame by calling `update()`. eframe provides the native window, GL
+//! context, and event loop that drives those `update()` calls. The `App` struct
+//! (in `app.rs`) implements `eframe::App`, and eframe owns the main loop.
 
 use hrw::app;
 
 fn main() -> eframe::Result<()> {
-    // WSLg advertises a Wayland display (`WAYLAND_DISPLAY=wayland-0`) but places
-    // the socket under `/mnt/wslg/runtime-dir` while leaving `XDG_RUNTIME_DIR`
-    // pointing elsewhere, so the path winit resolves does not exist and it dies
-    // with `NoCompositor`. winit 0.30 no longer honors `WINIT_UNIX_BACKEND`, and
-    // it forbids creating a second event loop, so a post-failure retry is
-    // impossible — the choice must be made before `run_native`. We probe the
-    // exact socket winit would use; if it is unreachable and X11 is available,
-    // we hide the Wayland env so winit selects X11. Where Wayland genuinely
-    // works (a real Linux box) the probe succeeds and Wayland is kept.
+    // --- WSLg Wayland workaround ---
+    //
+    // Background: WSL2's graphical layer (WSLg) sets `WAYLAND_DISPLAY=wayland-0`
+    // but places the actual Unix socket under `/mnt/wslg/runtime-dir`, while
+    // `XDG_RUNTIME_DIR` points to a *different* directory. When winit (the
+    // window-creation library egui uses) resolves the socket path, it joins
+    // `WAYLAND_DISPLAY` onto `XDG_RUNTIME_DIR` — and the resulting path does
+    // not exist, causing a `NoCompositor` panic.
+    //
+    // Complication: winit 0.30 removed the `WINIT_UNIX_BACKEND` env var and
+    // forbids creating a second event loop, so we cannot try Wayland first and
+    // fall back to X11 on failure. The decision must be made *before*
+    // `run_native`.
+    //
+    // Solution: probe the exact socket path winit would use. If it is
+    // unreachable and X11 (`DISPLAY`) is available, remove the Wayland env vars
+    // so winit selects X11 automatically. On a real Linux desktop where Wayland
+    // works, the probe succeeds and Wayland is kept.
     #[cfg(unix)]
     prefer_x11_if_wayland_dead();
 
     run_app()
 }
 
+// Configure the native window and start the eframe event loop.
+//
+// `NativeOptions` controls the initial window state (title, maximized, etc.).
+// The closure passed to `run_native` is a *factory*: eframe calls it once after
+// creating the GL context, receiving a `CreationContext` (`cc`) that provides
+// access to the egui context for one-time setup (fonts, visuals, persistence).
+// The factory returns a boxed `App` that eframe will call `update()` on each
+// frame for the lifetime of the application.
 fn run_app() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
@@ -33,12 +60,22 @@ fn run_app() -> eframe::Result<()> {
     eframe::run_native(
         "HRW Observatory",
         options,
+        // The `Box::new(|cc| ...)` is a closure that acts as an app factory.
+        // eframe calls it exactly once. `cc` (CreationContext) gives access to
+        // the egui context before the first frame — used for setting up fonts,
+        // visuals, and spawning the background worker thread.
         Box::new(|cc| Ok(Box::new(app::App::new(cc)))),
     )
 }
 
 /// If a Wayland display is advertised but its socket is unreachable, and an X11
 /// display exists, drop the Wayland environment so winit falls back to X11.
+///
+/// # Safety
+///
+/// `std::env::remove_var` is unsafe in Rust 2024 edition because modifying the
+/// environment is not thread-safe. We call this at the very start of `main`,
+/// before any other thread exists, so it is safe here.
 #[cfg(unix)]
 fn prefer_x11_if_wayland_dead() {
     let x11_available = std::env::var("DISPLAY").map(|v| !v.is_empty()).unwrap_or(false);
@@ -54,8 +91,12 @@ fn prefer_x11_if_wayland_dead() {
     }
 }
 
+// Check whether the environment advertises a Wayland display.
+// WSLg always sets `WAYLAND_DISPLAY`; a real Wayland compositor may also set
+// `WAYLAND_SOCKET` (an already-opened fd).
 #[cfg(unix)]
 fn wayland_advertised() -> bool {
+    // The closure `nonempty` checks a single env var: present and non-empty.
     let nonempty = |k| std::env::var(k).map(|v| !v.is_empty()).unwrap_or(false);
     nonempty("WAYLAND_DISPLAY") || nonempty("WAYLAND_SOCKET")
 }
@@ -64,15 +105,23 @@ fn wayland_advertised() -> bool {
 /// resolution: an absolute `WAYLAND_DISPLAY` is used directly, otherwise it is
 /// joined onto `XDG_RUNTIME_DIR`. When the path can't be determined we assume
 /// reachable and let winit try.
+///
+/// This uses a Unix domain socket (`UnixStream`) connection attempt as a
+/// reachability probe — if `connect` succeeds, Wayland is genuinely available.
 #[cfg(unix)]
 fn wayland_socket_reachable() -> bool {
     use std::os::unix::net::UnixStream;
     use std::path::{Path, PathBuf};
 
+    // Read `WAYLAND_DISPLAY` — typically "wayland-0" (relative) or an absolute
+    // path to the socket.
     let disp = match std::env::var("WAYLAND_DISPLAY") {
         Ok(d) if !d.is_empty() => d,
         _ => return false,
     };
+    // Resolve the socket path the same way winit does:
+    // - absolute path → use directly
+    // - relative name → join onto XDG_RUNTIME_DIR (e.g. "/run/user/1000/wayland-0")
     let path = if disp.starts_with('/') {
         PathBuf::from(disp)
     } else {
@@ -81,5 +130,6 @@ fn wayland_socket_reachable() -> bool {
             None => return true, // can't determine; let winit attempt it
         }
     };
+    // Attempt a Unix domain socket connection — the definitive reachability test.
     UnixStream::connect(path).is_ok()
 }
