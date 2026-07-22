@@ -71,6 +71,8 @@ pub struct Canvas {
     /// 0.0 = content at top, 0.1 = 10% gap above content for labels.
     /// Matrix views use 0.1 so column labels sit near the view top.
     fit_vertical_bias: f32,
+    /// Last allocated size, so we can re-fit when the window resizes.
+    last_rect_size: egui::Vec2,
 }
 
 impl Default for Canvas {
@@ -78,7 +80,13 @@ impl Default for Canvas {
         // Start with fit=true so the first draw auto-fits the content.
         // The default zoom of 20.0 is a reasonable fallback if fit doesn't
         // trigger (e.g., empty content).
-        Canvas { pan: egui::Vec2::ZERO, zoom: 20.0, fit: true, fit_vertical_bias: 0.0 }
+        Canvas {
+            pan: egui::Vec2::ZERO,
+            zoom: 20.0,
+            fit: true,
+            fit_vertical_bias: 0.0,
+            last_rect_size: egui::Vec2::ZERO,
+        }
     }
 }
 
@@ -335,6 +343,12 @@ impl Canvas {
         // (for capture) and drags (for panning).
         let (rect, response) =
             ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
+
+        // Re-fit when the canvas area changes (window resize, panel toggle).
+        if rect.size() != self.last_rect_size && self.last_rect_size != egui::Vec2::ZERO {
+            self.fit = true;
+        }
+        self.last_rect_size = rect.size();
 
         // --- Fit-to-content (one-shot) ---
         //

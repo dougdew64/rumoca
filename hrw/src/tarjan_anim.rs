@@ -372,7 +372,7 @@ impl TarjanAnimation {
 
         // Draw nodes.
         let node_radius = view.zoom() * 0.3;
-        let font = egui::FontId::proportional(view.zoom() * 0.2);
+        let font = egui::FontId::proportional((view.zoom() * 0.2).min(14.0));
         for i in 0..self.n_nodes {
             let center = view.to_screen(node_pos(i));
             let fill = if let Some(scc_idx) = in_scc[i] {

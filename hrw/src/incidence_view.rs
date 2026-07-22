@@ -381,30 +381,37 @@ impl IncidenceMatrix {
         // Axis labels — only drawn when zoomed in far enough that they won't
         // overlap (zoom >= 16 means each cell is at least 16px wide).
         if view.zoom() >= 16.0 {
-            let font = egui::FontId::proportional(view.zoom() * 0.35);
+            let font = egui::FontId::proportional((view.zoom() * 0.35).min(14.0));
             let label_color = visuals.text_color().gamma_multiply(0.7);
             // Column (unknown) labels: drawn above the matrix at -45 degrees.
             // The angle prevents long Modelica names from overlapping each other.
+            // The rotated text extends below the anchor, so the gap must clear
+            // the first character's descent: roughly font_size * sin(45°).
             let angle = -std::f32::consts::FRAC_PI_4;
+            let font_size = (view.zoom() * 0.35).min(14.0);
+            let col_gap_px = font_size * 1.6;
             for (col, name) in self.unknown_names.iter().enumerate() {
-                // Anchor at the top of each column, above the matrix with
-                // clearance so rotated text doesn't overlap the first row.
-                let anchor = view.to_screen(egui::pos2(col as f32 + 0.5, -0.6));
+                let cell_top = view.to_screen(egui::pos2(col as f32 + 0.5, 0.0));
+                let anchor = egui::pos2(cell_top.x, cell_top.y - col_gap_px);
                 let galley = painter.layout_no_wrap(
                     truncate_label(name, 20).to_owned(),
                     font.clone(),
                     label_color,
                 );
-                // TextShape allows rotated text — egui's `painter.text()` can't rotate.
                 let mut shape = egui::epaint::TextShape::new(anchor, galley, label_color);
                 shape.angle = angle;
                 shape.override_text_color = Some(label_color);
                 painter.add(shape);
             }
-            // Row (equation) labels: use pretty-printed equation text when available.
+            // Row (equation) labels: drawn to the left of the matrix with a
+            // Use the unclipped UI painter so labels extending left of the
+            // canvas rect are not cut off.
+            let row_gap_px = font_size * 0.5;
+            let unclipped = ui.painter();
             for (row, text) in self.equation_texts.iter().enumerate() {
-                let pos = view.to_screen(egui::pos2(-0.6, row as f32 + 0.5));
-                painter.text(
+                let cell_left = view.to_screen(egui::pos2(0.0, row as f32 + 0.5));
+                let pos = egui::pos2(cell_left.x - row_gap_px, cell_left.y);
+                unclipped.text(
                     pos,
                     egui::Align2::RIGHT_CENTER,
                     truncate_label(text, 30),
