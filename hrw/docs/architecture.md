@@ -277,6 +277,14 @@ if ui.button("Run").clicked() {
 Panels are added in **top → bottom → left → right → center** order. In egui,
 each panel claims space from what remains, so order determines layout.
 
+**Panel visibility toggles.** Both side panels can be hidden via the **View**
+menu (checkboxes for "Specimens panel" and "Help panel"). When hidden, the
+`CentralPanel` reclaims the space — useful during live debug sessions where the
+animation view benefits from full width. The bools `show_left_panel` /
+`show_right_panel` (both default to `true`) gate whether the `Panel::left` /
+`Panel::right` calls run at all; egui's `CentralPanel` automatically fills
+whatever space the side panels don't claim.
+
 ### Right panel routing
 
 The right panel has three modes, selected by a state machine:

@@ -188,7 +188,12 @@ pub struct App {
     ask_seq: u64,
     bridge_status: Option<String>,
 
-    // ---- 7. Windows toggled from the menu bar ----
+    // ---- 7. Panels and windows toggled from the menu bar ----
+    // `show_left_panel` / `show_right_panel` control whether the side panels
+    // are rendered at all — hiding them gives the center stage view full width,
+    // which is especially useful during live debug sessions.
+    show_left_panel: bool,
+    show_right_panel: bool,
     // egui's `Window::open(&mut bool)` pattern: the bool controls visibility,
     // and the window's close button flips it back to false.
     show_settings: bool,
@@ -325,6 +330,8 @@ impl App {
             nav_error: None,
             ask_seq: 0,
             bridge_status: None,
+            show_left_panel: true,
+            show_right_panel: true,
             show_settings: false,
             show_help: false,
             show_about: false,
@@ -1171,6 +1178,10 @@ impl eframe::App for App {
                         ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
+                ui.menu_button("View", |ui| {
+                    ui.checkbox(&mut self.show_left_panel, "Specimens panel");
+                    ui.checkbox(&mut self.show_right_panel, "Help panel");
+                });
                 ui.menu_button("Help", |ui| {
                     if ui.button("Using HRW…").clicked() {
                         self.show_help = true;
@@ -1204,6 +1215,7 @@ impl eframe::App for App {
         // padding for spacing, margins, and the scrollbar. The text is measured
         // using egui's layout engine (`layout_no_wrap`) so the width adapts to
         // the actual font/zoom level.
+        if self.show_left_panel {
         let specimen_width = *self.cached_specimen_width.get_or_insert_with(|| {
             let longest = self.files.iter()
                 .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
@@ -1311,17 +1323,20 @@ impl eframe::App for App {
                     }
                 });
             });
+        }
 
         // ---- Right panel: context help ----
         // `Panel::right` claims a strip on the right. It shows generic
         // (build-time) field help for the last-clicked tree item — the FAST
         // tier (no Claude). The specific tier ("why did THIS one happen") is
         // the bridge + chat, via "explain".
-        egui::Panel::right("field_help")
-            .resizable(true)
-            .default_size(380.0)
-            .min_size(220.0)
-            .show(ui, |ui| self.right_panel(ui));
+        if self.show_right_panel {
+            egui::Panel::right("field_help")
+                .resizable(true)
+                .default_size(380.0)
+                .min_size(220.0)
+                .show(ui, |ui| self.right_panel(ui));
+        }
 
         // ---- Center panel: stage tabs + main content ----
         //
@@ -1909,6 +1924,8 @@ impl App {
             nav_error: None,
             ask_seq: 0,
             bridge_status: None,
+            show_left_panel: true,
+            show_right_panel: true,
             show_settings: false,
             show_help: false,
             show_about: false,
