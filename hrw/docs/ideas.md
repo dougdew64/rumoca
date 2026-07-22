@@ -5,6 +5,44 @@ arc depends on them, and settled decisions live in [`DECISIONS.md`](../DECISIONS
 current work in [`CLAUDE.md`](../CLAUDE.md). Promote an item here into an arc /
 decision when it's picked up.
 
+## Prioritization model: guided tours drive feature priority
+
+The `docs/compiler-phases/` documents are being re-envisioned as **guided tour
+scripts** — each phase chapter becomes a walkthrough that leverages HRW and
+specimens to teach the phase's concepts interactively (see idea #24). This
+re-envisioning provides the **prioritization principle** for this backlog:
+
+> **Build the feature that the next guided tour needs.**
+
+The workflow: (1) design the guided tour for a phase — what concepts it teaches,
+what specimens it uses, what the learner should *see* at each step; (2) identify
+gaps — which "the learner should see X" moments require HRW enhancements that
+don't exist yet; (3) build those enhancements (pulled from this backlog or newly
+identified); (4) write the tour, now fully supported by the tool.
+
+Items below can be **tour-linked** (needed by a specific guided tour) or
+**generic** (supports the tool broadly). Tour-linked items carry a
+`Tours: #phase` tag. When planning work, tour-linked items for the *current*
+tour take priority over unlinked items of the same severity.
+
+| Item | Tours |
+|------|-------|
+| #14 Rank deficiency visualization | Structural Analysis |
+| #15 Matching-as-permutation view | Structural Analysis |
+| #16 Animated BLT block discovery | Structural Analysis |
+| #9 Animated algorithm stepping | Structural Analysis, Index Reduction |
+| #17 Jacobian sparsity and conditioning | Solve Lowering, Simulation |
+| #18 BDF step-size and order control | Simulation |
+| #22 Exact event times + Newton convergence | Simulation |
+| #19 Resolver process view | Parse / Resolve / Typecheck |
+| #20 Flattening process view | Instantiate / Flatten |
+| #21 Event lowering process | Events |
+| #5 Four-bar linkage + planar library | Index Reduction |
+| #7 Full init-system structural analysis | Initialization |
+| #10 Cross-stage identifier tracking | (all tours) |
+| #11 In-view search | (all tours) |
+| #1, #4, #13, #23 | generic |
+
 ---
 
 ## 1. Narratives for *simulation*, especially convergence-failure troubleshooting
@@ -570,3 +608,44 @@ the worker thread.
   messages per compile).
 - **For now:** let the weekly tech-debt scan catch performance issues as they
   surface — it has a good track record.
+
+## 24. Re-envision compiler-phases docs as HRW-driven guided tours
+
+Captured 2026-07-22 (Doug). The `docs/compiler-phases/` documents were written
+before HRW existed — standalone theory explanations of each Rumoca phase with no
+connection to the tool that can *show* the phase happening. Now that HRW can
+render every phase's IR on real specimens, those docs should be re-envisioned as
+**guided tour scripts**: the theory is preserved (and remains the explanation
+layer), but the structure becomes a walkthrough keyed to HRW actions and
+specimens.
+
+- **Why it matters:** a guided tour unifies what was previously separate — "read
+  the theory doc" and "click around in HRW" — into one experience: "open
+  BouncingBall, click Structural, look at the incidence matrix — *this is* the
+  bipartite adjacency matrix from the theory. Hover row 3 — that equation
+  references two unknowns..." The theory explains what you're seeing, not what
+  you might someday see.
+- **The curriculum-aware product manager model:** Claude acts as a
+  curriculum-aware product manager — designing each tour first, then identifying
+  which HRW enhancements the tour needs (features pulled from this ideas
+  backlog), building those features, and finally writing the tour. The tours
+  **drive feature prioritization** for the entire backlog (see the prioritization
+  model at the top of this file).
+- **Shape:** enhanced markdown documents in `docs/compiler-phases/`, each
+  structured as a sequence of steps: "open specimen X → click tab Y → observe Z
+  → here's the theory that explains Z." The existing theory content is
+  refactored into these steps, not discarded. Specimens are chosen for the
+  phenomenon each step teaches (leveraging the `// purpose:` convention).
+- **Sequencing:** start with the phases that have the richest visual/algorithmic
+  content — **Structural Analysis** and **Index Reduction** — where the most
+  backlog items cluster and the learning payoff is highest. Simpler phases
+  (Parse, Resolve) can follow with lighter tours.
+- **Relationship to idea #13 (guided learning explorations):** #13 proposed
+  explorations organized by *mathematical topic* (linear algebra, ODEs, etc.)
+  for Doug's coursework. The guided tours here are organized by *compiler
+  phase*. They're complementary: a tour says "here's what Structural Analysis
+  does," an exploration says "here's how maximum matching connects to your
+  linear algebra class." Both draw on the same HRW features and specimens.
+- **Design constraint:** features built to support tours must be general-purpose
+  HRW enhancements, not one-off tour widgets. The tours are one way to
+  experience the features; the features enrich HRW permanently.

@@ -564,3 +564,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   *because incidence was `pub(crate)`*) and the **real Pantelides/dummy-derivative process** (Arc 4 —
   pass one only replicated it via public `dae_prepare` and couldn't do nonlinear constraints). Remaining
   per-arc instrumentation opportunities captured in `docs/ideas.md` (#19–#22).
+
+## Guided tours and backlog prioritization
+
+- **2026-07-22 — Guided tours drive backlog prioritization.** The `docs/compiler-phases/` documents
+  (written pre-HRW as standalone theory) are being re-envisioned as **guided tour scripts** —
+  walkthroughs that leverage HRW + specimens to teach each phase interactively. The prioritization
+  principle for the ideas backlog becomes: *build the feature that the next guided tour needs.* The
+  workflow: design the tour → identify HRW gaps → build those features (from the backlog) → write
+  the tour. Features must be general-purpose HRW enhancements, not tour-specific widgets. The
+  backlog's prioritization table (top of `docs/ideas.md`) maps each item to the tour(s) that need
+  it. Claude acts as a curriculum-aware product manager: designing tours, identifying prerequisite
+  features, and sequencing work by learning value.
