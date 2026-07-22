@@ -1,4 +1,4 @@
-//! Incidence-matrix custom-painter view (Pass two, Arc 3) — the equation×unknown
+//! Incidence-matrix custom-painter view (Pass two) — the equation×unknown
 //! bipartite adjacency that the matching runs on.
 //!
 //! Pass one deferred this because `build_incidence` was `pub(crate)`. Now that

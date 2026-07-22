@@ -1,4 +1,4 @@
-//! Index-reduction process view (Pass two, Arc 4) — a structured summary of
+//! Index-reduction process view (Pass two) — a structured summary of
 //! what the dummy-derivative funnel did to transform a high-index DAE into a
 //! matchable, index-1 system.
 //!

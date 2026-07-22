@@ -33,7 +33,7 @@ pub enum ToWorker {
     /// Extract an arbitrary class from the resolved tree by qualified name, so
     /// the UI can navigate into a definition a `def_id`/`type_def_id` points at.
     OpenDef(String),
-    /// Arc 7: compile the model, lower it to a `SolveModel`, and run a simulation
+    /// Compile the model, lower it to a `SolveModel`, and run a simulation
     /// to `t_end`, returning the state trajectories to plot. Runs on this worker
     /// thread so the UI never blocks.
     Simulate { path: PathBuf, model: String, t_end: f64 },
@@ -41,7 +41,7 @@ pub enum ToWorker {
     SetTracing(bool),
 }
 
-/// Arc 7: simulation output for plotting — one time axis and, per output variable,
+/// Simulation output for plotting — one time axis and, per output variable,
 /// its trajectory (`data[var][t]`). Deliberately plain (no Rumoca types) so the UI
 /// stays decoupled from the solver crates.
 pub struct SimData {
@@ -63,7 +63,7 @@ pub struct SimData {
 /// value **jumps discontinuously** — a state reinitialized at an event (the ball's
 /// velocity flips at a bounce). Returns half-open index ranges into `values`;
 /// the caller draws one polyline per range so egui never interpolates a *sloped*
-/// line across the jump ("discontinuities render as discontinuities", charter Arc 7).
+/// line across the jump ("discontinuities render as discontinuities").
 ///
 /// A break sits between `i-1` and `i` when `|Δ|` exceeds
 /// `max(range · 0.08, 6 · median|Δ|)` — a per-series threshold well above the
@@ -233,17 +233,17 @@ pub enum FromWorker {
         instantiate: Stage,
         typecheck: Stage,
         flatten: Stage,
-        /// Arc 3: structural analysis of the RAW DAE — matching + BLT + tearing
+        /// Structural analysis of the RAW DAE — matching + BLT + tearing
         /// (errors "singular" on a high-index system).
         structural: Stage,
-        /// Arc 4: structural analysis of the DAE AFTER index reduction (the
+        /// Structural analysis of the DAE AFTER index reduction (the
         /// dummy-derivative funnel) — solvable even when `structural` is singular.
         index_reduction: Stage,
-        /// Arc 5: the initial-condition solve plan (`build_ic_plan`) + relaxation hint.
+        /// The initial-condition solve plan (`build_ic_plan`) + relaxation hint.
         initialization: Stage,
-        /// Arc 6: the DAE's hybrid / event structure (conditions, discrete updates, events).
+        /// The DAE's hybrid / event structure (conditions, discrete updates, events).
         events: Stage,
-        /// Arc 7 (phase 8): the DAE lowered to a `SolveModel` (the simulator's input).
+        /// Phase 8: the DAE lowered to a `SolveModel` (the simulator's input).
         solve_lowering: Stage,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
@@ -254,7 +254,7 @@ pub enum FromWorker {
         name: String,
         result: Result<(serde_json::Value, BTreeMap<u64, DefInfo>), String>,
     },
-    /// Arc 7: the outcome of a simulation request — trajectories or an error.
+    /// The outcome of a simulation request — trajectories or an error.
     Simulated {
         path: PathBuf,
         result: Result<SimData, String>,
@@ -351,7 +351,7 @@ impl WorkerState {
         }
     }
 
-    /// Arc 7: compile the model to its DAE, lower it to a `SolveModel`, and run a
+    /// Compile the model to its DAE, lower it to a `SolveModel`, and run a
     /// simulation to `t_end` — returning the state trajectories. On this worker
     /// thread; the UI drives it via `ToWorker::Simulate` and never blocks.
     fn simulate(
@@ -477,7 +477,7 @@ impl WorkerState {
 
     /// Run parse → resolve on a specimen, extracting the user model's IR at each
     /// stage. Typecheck is deferred: a clean, model-scoped typecheck needs
-    /// instantiation (Arc 2); the pre-instantiation whole-tree typecheck fails
+    /// instantiation; the pre-instantiation whole-tree typecheck fails
     /// on the full MSL.
     fn compile(&mut self, path: &Path, emit: &impl Fn(FromWorker)) -> FromWorker {
         use std::time::Instant;
@@ -744,7 +744,7 @@ pub fn simulate_specimen(
     state.simulate(specimen, model, t_end, &|_: FromWorker| {})
 }
 
-/// Structural analysis of the model's DAE (Arc 3): maximum matching, BLT blocks,
+/// Structural analysis of the model's DAE: maximum matching, BLT blocks,
 /// and tearing, from `build_structural_report`, plus the raw incidence matrix
 /// (equation×unknown bipartite adjacency) from `build_incidence`. Only available
 /// on a full Success (the DAE must exist). The report types aren't `Serialize`,
@@ -774,7 +774,7 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
     }
 }
 
-/// Arc 4: structural analysis of the DAE **after** index reduction. Runs the
+/// Structural analysis of the DAE **after** index reduction. Runs the
 /// dummy-derivative funnel (`index_reduce_for_structural_analysis`) on a copy of
 /// the raw DAE, then `build_structural_report` on the result — so a high-index
 /// system that `structural_stage` reports singular becomes solvable here. The
@@ -812,7 +812,7 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
     }
 }
 
-/// Arc 5: the initial-condition solve plan — how Rumoca computes a consistent
+/// The initial-condition solve plan — how Rumoca computes a consistent
 /// initial state at t=0. `build_ic_plan(dae, n_states)` yields the ordered blocks
 /// (direct symbolic solves, scalar Newton, torn/coupled loops);
 /// `build_ic_relaxation_hint` names the equations dropped / unknowns pinned when
@@ -939,7 +939,7 @@ fn ic_plan_to_json(
     })
 }
 
-/// Arc 6: the DAE's hybrid / event structure — where the equation set changes at
+/// The DAE's hybrid / event structure — where the equation set changes at
 /// discrete events. Read directly from the public `rumoca-ir-dae` partitions:
 /// `conditions` (the `f_c` equations + the `relation` expressions that trigger
 /// events), `discrete` (the `f_z`/`f_m` update equations lowered from `when`
@@ -996,7 +996,7 @@ fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
     })
 }
 
-/// Arc 7 (phase 8): solve lowering — the DAE lowered to a `SolveModel`, the
+/// Solve lowering (phase 8) — the DAE lowered to a `SolveModel`, the
 /// solvable form the simulator runs (residual programs, variable layout, mass
 /// matrix, Jacobian sparsity). `SolveModel` derives `Serialize`, so render it in
 /// the generic tree. This closes the "solve lowering not instrumented" gap.
@@ -1287,7 +1287,7 @@ mod tests {
         assert!(!def_index.is_empty(), "navigated class has no resolved DefIds");
     }
 
-    /// The Arc-2 drivetrain specimen compiles through the whole pipeline (it
+    /// The drivetrain specimen compiles through the whole pipeline (it
     /// crosses electrical → rotational → translational, so this exercises
     /// connector expansion / flow-sum generation across domains).
     #[test]
@@ -1316,7 +1316,7 @@ mod tests {
         assert_eq!(v["coupled_block_count"], serde_json::json!(0), "unexpected coupled block");
     }
 
-    /// The Arc-3 proportional-loop specimen closes an algebraic feedback loop, so
+    /// The proportional-loop specimen closes an algebraic feedback loop, so
     /// structural analysis MUST report a coupled block (a simultaneous algebraic
     /// SCC) — the case the BLT spy-plot draws as a box. This is the specimen's
     /// whole reason for existing, so guard it.
@@ -1379,12 +1379,12 @@ mod tests {
         assert_eq!(v["coupled_block_count"], serde_json::json!(1));
     }
 
-    /// Arc 4: the `dae_prepare` funnel (mirroring rumoca-sim's internal
+    /// The `dae_prepare` funnel (mirroring rumoca-sim's internal
     /// `prepare_dae_for_structural_analysis` — the shared prep the simulator and
     /// `--inspect structure` both run) reduces Drivetrain's **singular, high-index**
     /// DAE to a non-singular, structurally analyzable one. This confirms Rumoca can
     /// index-reduce (not blocked-on-upstream) and pins the exact public API the
-    /// Arc-4 observatory stage will call. NOTE: HRW mirrors Rumoca's funnel *order*;
+    /// observatory stage will call. NOTE: HRW mirrors Rumoca's funnel *order*;
     /// re-verify it against `rumoca-sim/src/solve_lowering/structural_lowering.rs`
     /// on a pin bump.
     #[test]
@@ -1417,7 +1417,7 @@ mod tests {
     }
 
 
-    /// Arc 5 (blow-up): a capacitor directly across an ideal source can't be
+    /// Blow-up: a capacitor directly across an ideal source can't be
     /// consistently initialized — its state voltage is pinned to the source. Unlike
     /// Drivetrain, index reduction can NOT rescue it: both Structural and Index
     /// reduction stay singular (an observable initialization blow-up).
@@ -1434,7 +1434,7 @@ mod tests {
         );
     }
 
-    /// Arc 5: the Initialization stage plans a consistent initial state for the RC
+    /// The Initialization stage plans a consistent initial state for the RC
     /// circuit — a non-empty IC plan plus the ground-current relaxation hint.
     #[test]
     fn rc_circuit_has_an_ic_plan() {
@@ -1465,7 +1465,7 @@ mod tests {
 
 
 
-    /// Arc 7 increment 1: HRW can RUN a model, not just inspect it. Lower
+    /// HRW can RUN a model, not just inspect it. Lower
     /// `SingleInertia`'s DAE to a `SolveModel` and simulate it, checking the
     /// trajectory is produced AND numerically right: constant torque tau=1 with
     /// J=1 gives der(w)=1, so w(t)=t and w(2) is ~2.
@@ -1496,7 +1496,7 @@ mod tests {
     }
 
 
-    /// Arc 7 #4: the stiff bench actuator (a DC motor spinning up an inertial
+    /// The stiff bench actuator (a DC motor spinning up an inertial
     /// load) simulates — the Auto solver (BDF) copes with the ~1000x separation
     /// between the fast winding (L/R ~ 1e-4 s) and the slow rotor (J = 0.05). The
     /// current is driven high and the load spins up.
@@ -1520,7 +1520,7 @@ mod tests {
         assert!(!d.has_discontinuities, "BenchActuator has no discrete updates — all trajectories continuous");
     }
 
-    /// Arc 7 #4: the discontinuity-plotting helper. A smooth ramp is one segment;
+    /// The discontinuity-plotting helper. A smooth ramp is one segment;
     /// a signal with a reinit-style jump splits into two, breaking at the jump so
     /// the plot won't slope a line across it. Calibrated against BouncingBall's `v`
     /// (smooth step ~0.06, bounce jump ~8 — a ~40x separation).
@@ -1539,7 +1539,7 @@ mod tests {
         assert_eq!(segs[1], 40..80, "second segment starts at the post-jump sample");
     }
 
-    /// Arc 7 #4: end-to-end — BouncingBall is hybrid, and its velocity trajectory
+    /// End-to-end: BouncingBall is hybrid, and its velocity trajectory
     /// breaks into several segments (one per bounce) while its height stays one
     /// continuous curve.
     #[test]
@@ -1564,7 +1564,7 @@ mod tests {
         );
     }
 
-    /// Arc 7 #3: the worker's `simulate` path (compile → lower → integrate) runs a
+    /// The worker's `simulate` path (compile → lower → integrate) runs a
     /// hybrid model — BouncingBall — and returns trajectories. Exercises event
     /// handling in the solver (the ball must stay ~above the floor).
     #[test]
@@ -1584,7 +1584,7 @@ mod tests {
     }
 
 
-    /// Arc 7 (phase 8): the Solve-lowering stage lowers the DAE to a `SolveModel`
+    /// The Solve-lowering stage (phase 8) lowers the DAE to a `SolveModel`
     /// (the solvable form the simulator consumes) and renders it.
     #[test]
     fn single_inertia_lowers_to_a_solve_model() {
@@ -1596,7 +1596,7 @@ mod tests {
         assert!(v.get("variable_meta").is_some(), "SolveModel should carry variable metadata");
     }
 
-    /// Arc 6: BouncingBall is a hybrid model — the Events stage reports its
+    /// BouncingBall is a hybrid model — the Events stage reports its
     /// condition (`h <= 0`) + discrete update (the `reinit`). A smooth model
     /// (SingleInertia) reports none.
     #[test]
@@ -1621,7 +1621,7 @@ mod tests {
         assert_eq!(total_events(&smooth.value.expect("events IR")), 0, "SingleInertia is smooth");
     }
 
-    /// Arc 4: the parked hand-built PlanarMechanics library (the four-bar-linkage
+    /// The parked hand-built PlanarMechanics library (the four-bar-linkage
     /// prerequisite, deferred until Rumoca's Rust-path reduction handles nonlinear
     /// holonomic constraints — see DECISIONS.md) still parses as a source root, so
     /// it doesn't bit-rot while deferred.
@@ -1633,7 +1633,7 @@ mod tests {
         assert!(loaded >= 1, "expected the planar mechanics library to load");
     }
 
-    /// Arc 4: for the high-index Drivetrain, the raw `structural` stage is singular
+    /// For the high-index Drivetrain, the raw `structural` stage is singular
     /// (no IR), but the `index_reduction` stage recovers a solvable report — the
     /// before/after the two tabs show side by side.
     #[test]

@@ -1,6 +1,6 @@
 //! The observatory shell.
 //!
-//! Arc 1 (charter §4.2.1, §4.4): eframe shell, a file picker over the specimen
+//! Eframe shell (charter §4.2.1, §4.4): a file picker over the specimen
 //! directory, a library-path (source-root) configuration for dependency
 //! resolution, and the generic serde-value tree inspector showing each stage's
 //! IR for the selected model. Stages present so far: Parse, Resolve.
@@ -58,8 +58,8 @@ enum StageKind {
 }
 
 /// How to render the Structural / Index-reduction stages: the custom BLT
-/// spy-plot, the incidence matrix (pass-two Arc 3), the reduction process
-/// summary (pass-two Arc 4, Index reduction only), or the generic serde tree.
+/// spy-plot, the incidence matrix (pass-two), the reduction process
+/// summary (Index reduction only), or the generic serde tree.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum StructuralView {
     SpyPlot,
@@ -131,7 +131,7 @@ pub struct App {
     field_help: HashMap<String, String>,
     selected_field: Option<String>,
 
-    // Arc 3: the Structural stage's custom views and their pan/zoom cameras.
+    // The Structural stage's custom views and their pan/zoom cameras.
     structural_view: StructuralView,
     spy_canvas: Canvas,
     incidence_canvas: Canvas,
@@ -143,7 +143,7 @@ pub struct App {
     viewing_log: bool,
     tracing_enabled: bool,
 
-    // Arc 7: on-demand simulation (the Simulation tab) — not a compile stage.
+    // On-demand simulation (the Simulation tab) — not a compile stage.
     // `simulation` is an always-empty placeholder so `current_stage` has a Stage
     // to return; the Simulation view is the egui_plot pane, rendered specially.
     simulation: Stage,
@@ -593,7 +593,7 @@ impl App {
         self.bridge_status = Some(status);
     }
 
-    /// Arc 7: the Simulation view — a Run control + an `egui_plot` pane of the
+    /// The Simulation view — a Run control + an `egui_plot` pane of the
     /// state trajectories. Running the model is on-demand (not a compile stage):
     /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
     /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
@@ -1219,7 +1219,7 @@ impl eframe::App for App {
                     }
                     if ui.selectable_label(stage_selected && self.stage == StageKind::IndexReduction, tab_label("Index reduction", &self.index_reduction, ok, err))
                         .on_hover_text(
-                            "Structural analysis of the DAE AFTER index reduction (Arc 4, Pantelides / \
+                            "Structural analysis of the DAE AFTER index reduction (Pantelides / \
                              dummy derivatives): the funnel differentiates constraints and demotes states \
                              so a high-index singular system becomes matchable. For an already-index-1 \
                              model this equals Structural. Same BLT spy-plot / tree.",
@@ -1231,7 +1231,7 @@ impl eframe::App for App {
                     }
                     if ui.selectable_label(stage_selected && self.stage == StageKind::Initialization, tab_label("Initialization", &self.initialization, ok, err))
                         .on_hover_text(
-                            "The consistent-initial-condition solve plan (Arc 5, build_ic_plan): the \
+                            "The consistent-initial-condition solve plan (build_ic_plan): the \
                              ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
                              scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
                              dropped / unknowns pinned) when the initial subsystem is singular, and a \
@@ -1245,7 +1245,7 @@ impl eframe::App for App {
                     }
                     if ui.selectable_label(stage_selected && self.stage == StageKind::Events, tab_label("Events", &self.events, ok, err))
                         .on_hover_text(
-                            "The DAE's hybrid / event structure (Arc 6): the conditions (relations that \
+                            "The DAE's hybrid / event structure: the conditions (relations that \
                              trigger events), the discrete updates lowered from `when` clauses (f_z real, \
                              f_m valued), and the event partition (zero-crossing root conditions + scheduled \
                              time events). A smooth (continuous) model shows none.",
@@ -1257,7 +1257,7 @@ impl eframe::App for App {
                     }
                     if ui.selectable_label(stage_selected && self.stage == StageKind::SolveLowering, tab_label("Solve lowering", &self.solve_lowering, ok, err))
                         .on_hover_text(
-                            "The DAE lowered to a SolveModel (Arc 7, phase 8): the solvable form the \
+                            "The DAE lowered to a SolveModel (phase 8): the solvable form the \
                              simulator runs — residual programs, variable layout, mass matrix, Jacobian \
                              sparsity. This is the compile step just before simulation.",
                         )
@@ -1280,7 +1280,7 @@ impl eframe::App for App {
                     };
                     if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, sim_label)
                         .on_hover_text(
-                            "Run the model (Arc 7, phase 9): compile → lower to a SolveModel → integrate \
+                            "Run the model (phase 9): compile → lower to a SolveModel → integrate \
                              (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
                              on the worker thread, so the UI stays live.",
                         )

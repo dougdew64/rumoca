@@ -1,6 +1,6 @@
-//! Reusable pan/zoom canvas for custom-`Painter` views (Arc 3, charter §4.4).
+//! Reusable pan/zoom canvas for custom-`Painter` views (charter §4.4).
 //!
-//! The tree inspector is one generic widget over every stage's IR; the Arc-3
+//! The tree inspector is one generic widget over every stage's IR; the
 //! structural views (BLT spy-plot now, more later) are custom-painted, and they
 //! all need the same plumbing: allocate a drawing rect, let the user pan (drag)
 //! and zoom (scroll about the pointer), and convert between *world* coordinates

@@ -1,4 +1,4 @@
-//! BLT block-structure spy-plot (Arc 3, increment 2) — the first custom-`Painter`
+//! BLT block-structure spy-plot — the first custom-`Painter`
 //! view, drawn on the reusable [`crate::canvas`] scaffold.
 //!
 //! **What it shows.** Rumoca's structural phase produces a `StructuralReport`

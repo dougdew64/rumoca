@@ -1,7 +1,7 @@
 //! HRW Observatory — an egui instrument for studying the Rumoca Modelica
 //! compiler pipeline. See `docs/CHARTER.md` and `CLAUDE.md`.
 //!
-//! Arc 1: eframe shell, file picker over the specimen directory, generic
+//! Eframe shell, file picker over the specimen directory, generic
 //! serde-value tree inspector showing the parsed AST.
 
 use hrw::app;
