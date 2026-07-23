@@ -719,3 +719,72 @@ CodeLLDB debugger (Rust-aware value formatters make IR legible while
 single-stepping a phase). The trade-off is that the entire UI is rebuilt every
 frame — but for an inspector app with modest widget counts, this is well within
 the 16 ms budget.
+
+### Why a standalone Rust/egui app — and why it works so well
+
+HRW benefits from a fortunate convergence of three design choices that reinforce
+each other: Rumoca's compiler architecture, Rust's ownership system, and egui's
+immediate-mode rendering. Understanding how they fit together explains why the
+observatory is implementable at all, and why the alternatives (e.g. a VS Code
+extension) would be significantly harder.
+
+**Rumoca's strict phase boundaries.** Rumoca's pipeline is a chain of pure
+functions: each phase takes an IR data structure, produces the next one, and has
+no side effects on shared state. The IR crates (`rumoca-ir-ast`, `rumoca-ir-flat`,
+etc.) are pure data — no behavior, no mutation methods, no hidden invariants.
+This means HRW can freely snapshot any phase's output, render it, re-render it,
+diff it against a previous version, or hand it to a background thread, all without
+worrying about stale references or concurrent mutation. The strict phase
+boundaries also make instrumentation safe: adding observation hooks inside a phase
+can't corrupt downstream phases, because phases communicate only through their
+IR outputs.
+
+**Rust's ownership and concurrency guarantees.** The live algorithm stepping
+feature is a good example. A `LiveTrace<F>` shared buffer lets an algorithm
+thread push frames while the UI thread polls them — classic producer/consumer
+concurrency. In most languages this would require careful manual synchronization
+and defensive programming against data races. In Rust, the compiler enforces it:
+
+- The algorithm thread receives its inputs as *copies* (`move` closure) or
+  immutable borrows (`&IncidenceMatrix`), so it cannot corrupt the source data.
+- The `LiveTrace` buffer is `Arc<Mutex<Vec<F>>>` — the `Arc` makes sharing
+  explicit, the `Mutex` makes access exclusive, and `Send + Sync` trait bounds
+  are checked at compile time. A data race is a compile error, not a runtime bug.
+- When the algorithm thread finishes, Rust's RAII/`Drop` cleans up automatically.
+  No leaked threads, no forgotten locks.
+- Re-running an algorithm is safe because `start_live` copies all data into the
+  new thread — there is no shared mutable state to reset.
+
+This is why the live stepping feature was implementable in a single session rather
+than requiring weeks of careful concurrent programming. The language eliminated
+the entire class of bugs that would otherwise dominate the effort.
+
+**egui's immediate-mode rendering.** Custom-painted views (incidence matrices,
+spy plots, matching animations, Tarjan graph visualizations) are straightforward
+because egui's `Painter` API is just "draw a rectangle here, draw text there" —
+there's no retained scene graph to synchronize with changing data. When a new
+algorithm frame arrives in the `LiveTrace` buffer, the UI simply reads it and
+paints it; there's no "update the widget" step, no virtual DOM diffing, no
+callback registration. This directness is what makes the three-tier animation
+architecture (static snapshot → recorded replay → live-stepped execution) work:
+all three tiers use the same painting code, just pointed at different data
+sources.
+
+**Why not a VS Code extension?** A VS Code extension would gain tighter debugger
+integration (live breakpoint arming would be trivial) but lose nearly everything
+else. The custom-painted views would need to be written in HTML/JS/Canvas2D
+inside a webview, losing type safety and the direct Rumoca library link. The
+compilation pipeline would need IPC to a separate Rust process, adding a
+serialization boundary that doesn't exist today. The live algorithm stepping —
+which depends on HRW linking Rumoca as a library and spawning algorithm threads
+directly — would require an entirely different architecture. The one real gap
+(live breakpoint arming on an already-running session, idea #25) has lightweight
+bridge solutions that don't require rebuilding the observatory.
+
+**The side-by-side workflow** (HRW on one half of the screen, VS Code on the
+other) gives the best of both worlds: HRW's rich visual rendering and direct
+compiler access alongside VS Code's debugger and editor. The two tools
+communicate through the file-based bridge (focus files for Claude chat) and
+the shared debugger (breakpoints on instrumented Rumoca code). This loose
+coupling is a feature — each tool does what it's best at, and neither
+constrains the other.
