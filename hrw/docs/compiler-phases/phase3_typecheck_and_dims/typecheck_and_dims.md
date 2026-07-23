@@ -10,7 +10,13 @@ variability and causality constraints.
 - Key modules: `typechecker/late_methods.rs`, `typechecker/builtin_function_checks.rs`,
   `typechecker/equation_compat.rs`, plus additional sub-modules
 
-Input: `ResolvedTree`  
+**Pipeline position:** Typecheck runs *after* instantiation in the Rumoca
+pipeline (despite the doc directory numbering). This is intentional —
+dimensions and modifiers must be validated with full modification context
+(MLS §10.1), which is only available after instantiation has applied all
+modifications. The entry point for this path is `typecheck_instanced()`.
+
+Input: `InstancedTree` (from instantiation, via `typecheck_instanced()`)  
 Output: `TypedTree` — same tree with `TypeId`s populated and `TypeTable` complete
 
 ---
@@ -18,11 +24,11 @@ Output: `TypedTree` — same tree with `TypeId`s populated and `TypeTable` compl
 ## Big Picture: Input and Output
 
 ```
-  ResolvedTree  (from phase 2)
+  InstancedTree  (from instantiation)
         │
         ▼
   ┌─────────────────────────────────────┐
-  │  Phase 3: Typecheck and Dimensions  │
+  │  Phase 4: Typecheck and Dimensions  │
   │                                     │
   │  • Multi-pass dimension evaluation  │
   │    (MLS §10.1)                      │

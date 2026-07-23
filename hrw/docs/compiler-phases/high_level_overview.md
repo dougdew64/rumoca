@@ -26,8 +26,8 @@ Modelica source (.mo)
         ▼
   ┌──────────────────────────────────────────────┐
   │           Rumoca Compiler Pipeline           │
-  │  Parse → Resolve → Typecheck →               │
-  │  Instantiate → Flatten → DAE →               │
+  │  Parse → Resolve → Instantiate →              │
+  │  Typecheck → Flatten → DAE →                  │
   │  Structural Analysis → Solve Lowering        │
   └──────────────────────────────────────────────┘
         │                    │
@@ -54,8 +54,8 @@ Two intermediate forms anchor the pipeline:
 |---|-------------|-------|--------|---------|
 | 1 | `rumoca-phase-parse` | `.mo` text | `StoredDefinition` (AST) | `phase1_parsing_and_ast/` |
 | 2 | `rumoca-phase-resolve` | AST | AST + `DefId`s + scope tree | `phase2_resolve_and_scope/` |
-| 3 | `rumoca-phase-typecheck` | Resolved AST | AST + `TypeId`s, array dims | `phase3_typecheck_and_dims/` |
-| 4 | `rumoca-phase-instantiate` | Typed AST + model name | Instance tree (hierarchy applied) | `phase4_instantiate/` |
+| 3 | `rumoca-phase-instantiate` | Resolved AST + model name | Instance tree (hierarchy applied) | `phase4_instantiate/` |
+| 4 | `rumoca-phase-typecheck` | Instance tree | AST + `TypeId`s, array dims | `phase3_typecheck_and_dims/` |
 | 5 | `rumoca-phase-flatten` | Instance tree | `Model` (flat equations, qualified names) | `phase5_flatten/` |
 | 6 | `rumoca-phase-dae` | `Model` | `Dae` (MLS B.1 variable/equation partition; index-reduced) | `phase6_dae_construction/` |
 | 7 | `rumoca-phase-structural` | `Dae` | `SortedDae` (BLT blocks, IC plan, matching) | `phase7_structural_analysis/` |
@@ -65,6 +65,15 @@ Two intermediate forms anchor the pipeline:
 Phases are **strictly sequential with no back-edges**: each phase consumes
 the previous phase's IR crate and produces its own. This enables caching,
 incremental compilation, and clear error attribution.
+
+**Why instantiation runs before type checking:** Rumoca intentionally
+typechecks *after* instantiation so that array dimensions and modifier
+values are evaluated with full modification context — a dimension like
+`n` can only be resolved once the enclosing model's modifications have
+been applied (MLS §10.1). The doc directories retain their original
+numbering (`phase3_typecheck…`, `phase4_instantiate…`) for link stability,
+but the actual pipeline order is Instantiate then Typecheck, as defined
+in `rumoca-compile/PIPELINE_INVARIANTS.md`.
 
 The runtime simulator (`rumoca-sim`) is not a numbered phase crate — it is a
 separate consumer of either the `Dae` or the `SolveProblem`. The doc
@@ -167,30 +176,31 @@ Full treatment: [resolve_and_scope.md](phase2_resolve_and_scope/resolve_and_scop
 
 ---
 
-## Type Checking and Dimensions (Phase 3)
+## Instantiation (Phase 3)
+
+Instantiation takes the resolved AST plus the name of a top-level model and
+produces an **`InstancedTree`** — a concrete object built by recursively
+applying all modifications, evaluating structural parameters, processing
+`extends` clauses, and resolving `inner`/`outer` references (MLS §5.4).
+Modifications override outside-in: an enclosing modifier takes priority over an
+inner default. Redeclarations are resolved before descending into children. The
+result is a tree of component instances with concrete types and parameter values.
+
+Full treatment: [instantiate.md](phase4_instantiate/instantiate.md).
+
+---
+
+## Type Checking and Dimensions (Phase 4)
 
 Type checking assigns a **`TypeId`** to every expression and component,
 evaluates array dimensions via the multi-pass dimension evaluator required by
 MLS §10.1, identifies **structural parameters** (those whose values determine
 other variables' shapes), and validates variability and causality constraints.
-TypeIds are interned in a `TypeTable` so type comparisons are O(1). The output
-is a `TypedTree`.
+TypeIds are interned in a `TypeTable` so type comparisons are O(1). Typecheck
+runs *after* instantiation so that dimensions and modifiers are validated with
+full modification context. The output is a `TypedTree`.
 
 Full treatment: [typecheck_and_dims.md](phase3_typecheck_and_dims/typecheck_and_dims.md).
-
----
-
-## Instantiation (Phase 4)
-
-Instantiation takes a typed AST plus the name of a top-level model and produces
-an **`InstancedTree`** — a concrete object built by recursively applying all
-modifications, evaluating structural parameters, processing `extends` clauses,
-and resolving `inner`/`outer` references (MLS §5.4). Modifications override
-outside-in: an enclosing modifier takes priority over an inner default.
-Redeclarations are resolved before descending into children. The result is a
-tree of component instances with concrete types and parameter values.
-
-Full treatment: [instantiate.md](phase4_instantiate/instantiate.md).
 
 ---
 
@@ -318,7 +328,9 @@ families coexist:
 | `symforce` | SymForce factor-graph backend |
 | `onnx` | ONNX computation graph |
 | `embedded-c` | Bare-metal C (discrete-only) |
+| `embedded-c-galec` | Embedded C via GALEC intermediate |
 | `fmi2`, `fmi3` | Complete FMI packages (C + XML + CMake + driver) |
+| `galec`, `galec-production` | GALEC intermediate representation (dev / production) |
 | `dae-modelica`, `flat-modelica`, `base-modelica`, `modelica` | Modelica round-trips |
 
 **Solve-path targets** consume the `SolveProblem` tensor IR (new in v0.9.x):
@@ -333,6 +345,7 @@ families coexist:
 | `cuda-nvrtc-solve-jit` | CUDA NVRTC JIT (via `rumoca-exec-mlir`) |
 | `cranelift-solve-jit` | Cranelift native-code JIT (via `rumoca-exec-cranelift`) |
 | `mlir` | MLIR dialect output for further compilation |
+| `rust-fixed-solve` | Standalone Rust harness (fixed-step) |
 | `wgsl-solve` | WebGPU compute shaders |
 
 Full treatment: [codegen_templates.md](phase10_codegen_templates/codegen_templates.md).
@@ -349,8 +362,8 @@ rumoca/
 │   ├── rumoca-core/             # Shared primitives (Token, Expression, Span, …)
 │   ├── rumoca-phase-parse/      # Phase 1
 │   ├── rumoca-phase-resolve/    # Phase 2
-│   ├── rumoca-phase-typecheck/  # Phase 3
-│   ├── rumoca-phase-instantiate/# Phase 4
+│   ├── rumoca-phase-instantiate/# Phase 3 (runs before typecheck)
+│   ├── rumoca-phase-typecheck/  # Phase 4 (runs after instantiate)
 │   ├── rumoca-phase-flatten/    # Phase 5
 │   ├── rumoca-phase-dae/        # Phase 6
 │   ├── rumoca-phase-structural/ # Phase 7 (matching, BLT, tearing, IC, dae_prepare)
@@ -404,8 +417,8 @@ to them.
 
 - [`phase1_parsing_and_ast/parsing_and_ast.md`](phase1_parsing_and_ast/parsing_and_ast.md) — How Modelica is parsed; the parol LL(k) grammar; AST node types
 - [`phase2_resolve_and_scope/resolve_and_scope.md`](phase2_resolve_and_scope/resolve_and_scope.md) — Name resolution, scope trees, DefIds, import/extends handling
-- [`phase3_typecheck_and_dims/typecheck_and_dims.md`](phase3_typecheck_and_dims/typecheck_and_dims.md) — Type inference, MLS §10.1 array dimensions, variability rules
-- [`phase4_instantiate/instantiate.md`](phase4_instantiate/instantiate.md) — Modification application, redeclare, inner/outer, instance tree
+- [`phase4_instantiate/instantiate.md`](phase4_instantiate/instantiate.md) — Modification application, redeclare, inner/outer, instance tree (pipeline phase 3)
+- [`phase3_typecheck_and_dims/typecheck_and_dims.md`](phase3_typecheck_and_dims/typecheck_and_dims.md) — Type inference, MLS §10.1 array dimensions, variability rules (pipeline phase 4)
 - [`phase5_flatten/flatten.md`](phase5_flatten/flatten.md) — Connection expansion, qualified naming, residual-form equations, flat IR
 - [`phase6_dae_construction/dae_construction.md`](phase6_dae_construction/dae_construction.md) — Variable classification, equation partitioning, when-clause lowering, zero-crossings
     - [`index_reduction.md`](phase6_dae_construction/index_reduction.md) — Differential index, symbolic chain-rule differentiator, state demotion sweeps, prep pipeline

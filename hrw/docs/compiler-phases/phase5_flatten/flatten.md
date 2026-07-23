@@ -18,7 +18,7 @@ flat structure with no remaining class hierarchy.
 ## Big Picture: Input and Output
 
 ```
-  InstancedTree  (from phase 4)
+  InstancedTree  (from instantiation + typecheck)
         │
         ▼
   ┌─────────────────────────────────────┐

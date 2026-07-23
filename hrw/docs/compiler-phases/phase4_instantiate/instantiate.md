@@ -9,15 +9,20 @@ simulation. Instantiation comes first: it applies modifications and resolves
 the class hierarchy for one specific model, producing an `InstancedTree`.
 Flattening then walks that tree and emits a globally-qualified flat model.
 
+**Pipeline position:** Instantiation runs *before* type checking in the Rumoca
+pipeline (despite the doc directory numbering). This is intentional — typecheck
+needs the modification context that instantiation provides in order to evaluate
+array dimensions correctly (MLS §10.1).
+
 - Implementation: `crates/rumoca-phase-instantiate/`
-- Output IR: `InstancedTree` (typed AST + per-instance overlay)
+- Output IR: `InstancedTree` (resolved AST + per-instance overlay)
 
 ---
 
 ## Big Picture: Input and Output
 
 ```
-  TypedTree  (from phase 3)  +  root model name
+  ResolvedTree  (from phase 2)  +  root model name
         │
         ▼
   ┌─────────────────────────────────────┐

@@ -399,8 +399,12 @@ real models.
 
 ## Where the Plan Plugs In
 
-The output of `build_ic_plan` is consumed by `rumoca-sim/src/with_diffsol/problem/init/initial_solve.rs`
-(see [the simulation document](../phase9_simulation/simulation.md#initial-condition-ic-solving)).
+The output of `build_ic_plan` is re-exported through `rumoca-compile` and consumed
+during **phase 8 (solve lowering)**, where IC blocks are lowered into the
+`SolveProblem`'s initialization partition (see `rumoca-phase-solve`). At runtime,
+the solver uses the lowered initialization data via `rumoca-solver-diffsol`'s
+`init_projection` module (which operates on the already-lowered `SolveModel`).
+See [the simulation document](../phase9_simulation/simulation.md#initial-condition-ic-solving).
 At simulation startup, the runtime:
 
 1. Seeds the y-vector with `start` values from `dae.variables.states`,
