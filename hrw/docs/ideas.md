@@ -668,3 +668,32 @@ specimens.
 - **Design constraint:** features built to support tours must be general-purpose
   HRW enhancements, not one-off tour widgets. The tours are one way to
   experience the features; the features enrich HRW permanently.
+
+## 25. Live breakpoint arming on an already-running debug session
+
+Captured 2026-07-22 (Doug). The current "arm it" flow writes a breakpoint into
+`launch.json` and requires a fresh debug launch to pick it up. Now that Doug
+runs HRW under the debugger at all times (to be ready for live algorithm
+stepping), restarting just to arm a breakpoint is disruptive.
+
+- **The goal:** capture an IR field in HRW → say "arm it" in Claude chat →
+  the breakpoint appears in the *already-running* debug session, no restart.
+- **Why it's hard:** Claude Code can write files but cannot push commands into
+  a running LLDB session. The debug adapter protocol (DAP) is accessible from
+  a VS Code *extension*, not from an external CLI tool.
+- **Possible paths:**
+  1. **VS Code extension** — a small extension that listens for a file-change
+     signal (e.g. Claude writes a `.breakpoint.json`), then calls
+     `vscode.debug.activeDebugSession.customRequest("setBreakpoints", ...)`
+     to arm the breakpoint on the live session. This is the clean solution but
+     a significant scope increase.
+  2. **LLDB command file** — Claude writes a `.lldb` script with the
+     `breakpoint set` command; the user runs `command source .lldb` in the
+     VS Code Debug Console. Manual but no restart, no extension needed.
+  3. **CodeLLDB `preRunCommands` / `postRunCommands`** — these only fire on
+     launch, so they don't help mid-session.
+- **Relationship to live stepping:** this idea complements the live algorithm
+  stepping feature (idea #9, now implemented). Live stepping uses a fixed
+  breakpoint on `live_trace_breakpoint`; this idea is about arming *conditional*
+  breakpoints on Rumoca phase internals for the "where is this field set?"
+  debugging workflow.
