@@ -41,6 +41,7 @@ tour take priority over unlinked items of the same severity.
 | #7 Full init-system structural analysis | Initialization |
 | #10 Cross-stage identifier tracking | (all tours) |
 | #11 In-view search | (all tours) |
+| #26 VS Code extension: Trace / Debug / Arm-it | (all tours) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -644,12 +645,12 @@ specimens.
   bipartite adjacency matrix from the theory. Hover row 3 — that equation
   references two unknowns..." The theory explains what you're seeing, not what
   you might someday see.
-- **The curriculum-aware product manager model:** Claude acts as a
-  curriculum-aware product manager — designing each tour first, then identifying
-  which HRW enhancements the tour needs (features pulled from this ideas
-  backlog), building those features, and finally writing the tour. The tours
-  **drive feature prioritization** for the entire backlog (see the prioritization
-  model at the top of this file).
+- **The curriculum-aware teacher model:** Claude acts as a curriculum-aware
+  teacher — designing each tour with explicit learning goals first, then
+  identifying which HRW enhancements the tour needs (features pulled from this
+  ideas backlog), building those features, and finally writing the tour. The
+  tours **drive feature prioritization** for the entire backlog (see the
+  prioritization model at the top of this file and `docs/vision.md`).
 - **Shape:** enhanced markdown documents in `docs/compiler-phases/`, each
   structured as a sequence of steps: "open specimen X → click tab Y → observe Z
   → here's the theory that explains Z." The existing theory content is
@@ -697,3 +698,117 @@ stepping), restarting just to arm a breakpoint is disruptive.
   breakpoint on `live_trace_breakpoint`; this idea is about arming *conditional*
   breakpoints on Rumoca phase internals for the "where is this field set?"
   debugging workflow.
+- **Relationship to #26:** the VS Code extension proposed in #26 subsumes this
+  idea — arm-it is one of three capabilities the extension would provide.
+
+## 26. VS Code extension integration: Trace / Debug / Arm-it
+
+Captured 2026-07-23 (Doug). **High-priority learning infrastructure.** Extend the
+existing Rumoca VS Code extension (`packages/vscode`, publisher JamesGoppert) with
+three capabilities that complete HRW's point → observe → understand → ask loop by
+bridging from the Modelica source (where Doug thinks) to HRW (where Doug observes)
+to the debugger (where Doug verifies understanding).
+
+**This is one of the highest-value features on the backlog.** It directly serves the
+learning mission (`docs/vision.md`) by maximizing both axes of the multiplicative
+pair — context identification (right-click on a Modelica identifier is the most
+natural starting point) × context-sensitive explanation (the traced/debugged state
+is the richest possible context for Claude to explain).
+
+### Capability 1: "Trace this identifier"
+
+Right-click on a Modelica identifier in VS Code → select "Trace this identifier" →
+HRW highlights that identifier's contribution to **every stage view** across the
+entire pipeline:
+
+- **Parse:** the AST node for the identifier
+- **Resolve:** the `DefId` assigned to it
+- **Instantiate:** the instance with modifications applied
+- **Typecheck:** the `TypeId` assigned
+- **Flatten:** the qualified name(s) it becomes, the equations it appears in
+- **DAE:** the variable classification (state / algebraic / parameter / …)
+- **Structural:** the row/column in the incidence matrix, the matching assignment
+- **Index reduction:** whether it was differentiated or demoted
+- **Initialization:** its IC plan entry
+- **Events:** any event conditions it participates in
+- **Solve lowering:** its solver variable slot
+- **Simulation:** its time-series plot highlighted
+
+This is the cross-stage identifier tracking (idea #10) initiated from the most
+natural starting point — the Modelica source itself, not the HRW UI.
+
+### Capability 2: "Debug this identifier"
+
+Right-click on a Modelica identifier → select "Debug this identifier" → the
+extension sets **conditional breakpoints** in Rumoca compiler phase code so the
+debugger breaks when that specific identifier is being processed:
+
+- Breakpoint in `rumoca-phase-resolve` conditioned on the identifier name
+- Breakpoint in `rumoca-phase-flatten` conditioned on the qualified name
+- Breakpoint in `rumoca-phase-structural` conditioned on the variable index
+- (etc., one per phase where the identifier is transformed)
+
+This lets Doug single-step through the compiler *while it processes a specific
+variable*, not just at phase boundaries. Combined with HRW's live algorithm
+animations, he sees the compiler's internal state update as it touches his
+chosen identifier.
+
+### Capability 3: "Arm it" (from idea #25)
+
+After capturing an IR field in HRW, say "arm it" in Claude chat → a breakpoint
+appears in the **already-running** debug session without restart. This subsumes
+idea #25 — the extension calls `vscode.debug.addBreakpoints()` on the active
+debug session.
+
+### Technical approach
+
+All three capabilities share the same infrastructure:
+
+1. **IPC channel:** the VS Code extension watches a signal file (e.g.
+   `.hrw-bridge/trace-request.json` or `.hrw-bridge/arm-breakpoint.json`).
+   HRW or Claude writes to the file; the extension reads it and acts.
+2. **VS Code extension API:**
+   - `vscode.debug.addBreakpoints()` for arm-it and debug-this-identifier
+   - Communication with HRW (via the same bridge file protocol) for trace-this
+3. **Existing extension:** the Rumoca extension (`packages/vscode`) already
+   provides Modelica language support via LSP. It has **no debugger integration
+   today** — no `vscode.debug` usage, no `contributes.debuggers` in
+   `package.json`. The extension is TypeScript, ~3860 lines in `extension.ts`.
+   Adding context-menu items and debug API calls is straightforward VS Code
+   extension development.
+
+### The complete learning workflow
+
+With all three capabilities:
+
+1. **Read** the Modelica source in VS Code
+2. **Trace** an identifier through the full pipeline (VS Code → HRW highlights)
+3. **Debug** the compiler processing that identifier (VS Code sets conditional
+   breakpoints, live-stepping with HRW animations)
+4. **Ask** Claude what you're seeing (capture → explain flow)
+5. **Arm** additional breakpoints without restarting (mid-session discovery)
+
+This is the full realization of the vision's four-layer system: textbook theory
+→ Rumoca code → HRW visualization → Claude explanation, all initiated from a
+right-click on a Modelica identifier.
+
+### Considerations
+
+- **Upstream relationship:** this is James Goppert's extension. Extending it
+  means either forking or proposing a PR — a different contribution relationship
+  than the Rumoca compiler itself. The HRW-specific additions should be designed
+  as general Rumoca tooling (useful to any Rumoca user, not just HRW), consistent
+  with the upstreaming goal.
+- **TypeScript:** the extension is TypeScript, a different language from the rest
+  of HRW/Rumoca. Doug would need basic TypeScript familiarity to maintain it.
+- **Sequencing:** the curriculum design should come first — it will clarify which
+  identifiers, which specimens, and which phases are most important to trace/debug,
+  informing the priority of which capabilities to build first.
+
+### Related ideas
+
+- **#10 Cross-stage identifier tracking** — trace-this-identifier is #10 initiated
+  from the Modelica source instead of the HRW UI
+- **#25 Live breakpoint arming** — arm-it is capability 3, subsumed here
+- **#9 Animated algorithm stepping** — debug-this-identifier syncs with live
+  algorithm animations

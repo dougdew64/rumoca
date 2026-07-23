@@ -35,7 +35,15 @@ learning that has not existed before.
 
 ## The curriculum
 
-The curriculum is **top-down**, matching Doug's learning style:
+The curriculum is **top-down**, matching Doug's learning style. Its structure:
+
+- The **end-to-end tour** is the spine
+- The **phase tours** are the chapters
+- The **specimen narratives** are the worked examples
+- The **three-tier views** (snapshot / replay / live-stepping) are the labs
+- Everything gets a **learning goal** and a **place in the sequence**
+
+In detail:
 
 1. **End-to-end guided tour** — the full story of a Modelica model becoming a running
    simulation, framed as a chain of problems and solutions. Each step's output creates
@@ -61,6 +69,38 @@ The curriculum is **top-down**, matching Doug's learning style:
 Every guided tour has **explicit learning goals** — what Doug should understand by the
 end. The three tiers are designed to achieve those goals, not as standalone features.
 
+## Learning goals — end-to-end tour
+
+By the end of the end-to-end tour (the spine), Doug should be able to:
+
+1. **Explain why** a Modelica model cannot be directly simulated — why the
+   hierarchical, object-oriented, equation-based description must be transformed
+   before any numerical solver can touch it.
+
+2. **Trace the chain of problems** — articulate each transformation as a response
+   to a specific insufficiency in what came before (the problem-chain above).
+
+3. **Identify the mathematical form** at each major stage — "at this point we have
+   a flat system of equations; at this point we have F(t, x, x', y) = 0; at this
+   point we have a block-triangular computational plan."
+
+4. **Distinguish structural from numerical** — understand that some analysis
+   (matching, BLT, index) works on the *pattern* of which variables appear where,
+   independent of numerical values, and why that distinction matters.
+
+5. **Explain what a solver needs** to start and to advance — consistent initial
+   conditions, a residual function, a Jacobian, and event detection — and point to
+   where each is produced in the pipeline.
+
+6. **Recognize these transformations as universal** — not Rumoca-specific, but the
+   same chain that System Modeler, Dymola, and OpenModelica all must implement in
+   some form.
+
+7. **Know where to go deeper** — for each stage, know which phase tour (chapter) to
+   read and which specimen best illustrates the concept.
+
+These goals are revisable as Doug's understanding deepens.
+
 ## Principles
 
 - **Problem before solution.** Every explanation, tour stop, and narrative leads with
@@ -82,12 +122,23 @@ end. The three tiers are designed to achieve those goals, not as standalone feat
   the context is established. The end-to-end tour is the entry point; phase tours are
   the deep dives.
 
-## Inspirations
+## Assumptions
+
+The curriculum **complements** the textbooks — it does not replace them. The books
+provide the theory, definitions, and proofs. The curriculum provides what the books
+cannot: "now open HRW, load this specimen, and *see* what you just read about."
+
+Doug will read and work to understand the following (and others as topics arise):
 
 - Cellier & Kofman, *Continuous System Modeling* (2006)
 - Cellier & Kofman, *Continuous System Simulation* (2010)
 - Hairer & Wanner, *Solving Ordinary Differential Equations II* (stiff problems, BDF/ESDIRK theory)
 - Brenan, Campbell & Petzold, *Numerical Solution of Initial-Value Problems in Differential-Algebraic Equations*
 - Modelica Language Specification (MLS) — especially Appendix B (DAE formulation)
-- Doug's Purdue linear algebra applications course (Fall 2026) — connecting Rumoca's
-  algorithms to their matrix and linear algebra foundations
+
+The curriculum may freely reference specific chapters, sections, examples, and
+theorems from these books. Claude's role is to bridge the textbook theory to the
+concrete implementation — not to serve as an alternative author of textbooks.
+
+Additional context: Doug's Purdue linear algebra applications course (Fall 2026)
+connects Rumoca's algorithms to their matrix and linear algebra foundations.
