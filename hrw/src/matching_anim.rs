@@ -78,9 +78,14 @@ impl MatchingAnimation {
 
     /// Start a live debug session: spawn a thread that runs the matching
     /// algorithm with a shared `LiveTrace`, then return an animation that
-    /// reads from it. Set a breakpoint on `LiveTrace::push` in matching.rs
-    /// to single-step through the algorithm.
-    pub fn start_live(mat: &IncidenceMatrix) -> Self {
+    /// reads from it. The debugger breakpoint on `live_trace_breakpoint`
+    /// pauses the thread after each frame push; the user steps with F5.
+    ///
+    /// `on_complete` runs inside the algorithm thread after the last frame
+    /// but before the thread exits — the caller uses this to remove the
+    /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
+    /// the thread terminates.
+    pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Self {
         let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
         let lt_for_thread = lt.clone();
         let done = Arc::new(Mutex::new(false));
@@ -98,6 +103,7 @@ impl MatchingAnimation {
             .name("matching-debug".to_owned())
             .spawn(move || {
                 maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&lt_for_thread));
+                on_complete();
                 *done_for_thread.lock().expect("done lock") = true;
             })
             .expect("failed to spawn matching-debug thread");
@@ -610,7 +616,7 @@ mod tests {
     #[test]
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim = MatchingAnimation::start_live(&mat);
+        let mut anim = MatchingAnimation::start_live(&mat, || {});
         // The algorithm thread runs with a 20ms inter-frame delay, so
         // wait for it to finish (with a generous timeout).
         for _ in 0..100 {

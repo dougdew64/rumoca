@@ -429,11 +429,27 @@ Both support two animation modes:
 1. **Recorded** (default): pre-computed frames from `from_incidence` — standard
    play/pause/step/reset controls with a speed slider.
 2. **Live debug**: frames arrive from a shared `LiveTrace<Frame>` buffer as a
-   separate algorithm thread runs. The user sets a breakpoint on
-   `live_trace_breakpoint` in the VS Code debugger and steps through the
-   algorithm code — after each frame push, a 20ms delay lets the UI render,
-   then the breakpoint fires. Started via the "Debug" button in the UI; the
-   button reappears after the session finishes for re-runs.
+   separate algorithm thread runs. Clicking the "Debug" button automatically
+   arms a breakpoint on `live_trace_breakpoint` via the HRW Debugger Bridge
+   extension, then spawns the algorithm thread — no manual breakpoint setup
+   needed. After each frame push, a 20ms delay lets the UI render, then the
+   breakpoint fires. The user steps through the algorithm with Continue (F5);
+   the button reappears after the session finishes for re-runs.
+
+   **Ack handshake**: HRW does not spawn the algorithm thread immediately
+   after writing the breakpoint request — the extension needs time to process
+   it and register the breakpoint with LLDB. Instead, HRW polls for an
+   acknowledgment file (`breakpoint-ack.json`) that the extension writes after
+   processing. The thread is spawned only after the ack arrives (or after a
+   3-second timeout if the extension isn't running). This guarantees the
+   breakpoint is active before the first frame is pushed.
+
+   **Breakpoint cleanup**: when the algorithm finishes, the thread's
+   `on_complete` callback removes the `live_trace_breakpoint` breakpoint via
+   the bridge's `action: "remove"` protocol *before the thread exits*. This
+   prevents LLDB from delivering SIGSTOP/SIGCHLD when the thread terminates
+   with the breakpoint still armed. A UI-side `live_just_finished` check acts
+   as a safety-net fallback.
 
 The `LiveTrace<F>` type (in `rumoca-phase-structural/src/live_trace.rs`) wraps an
 `Arc<Mutex<Vec<F>>>` shared between the algorithm producer and UI consumer. The
@@ -837,6 +853,10 @@ stepping architecture (spawning algorithm threads directly). The one real gap �
 breakpoint arming on an already-running session — is now bridged by a lightweight
 **companion** VS Code extension (`vscode-extension/`) that watches
 `.hrw-bridge/breakpoint-request.json` and calls `vscode.debug.addBreakpoints()`.
+The two communicate through a file-based protocol with an ack handshake: HRW
+writes a request, the extension processes it and writes an ack, HRW reads the
+ack before proceeding. This ensures breakpoints are registered before algorithm
+threads start, and removed before algorithm threads exit.
 
 **The side-by-side workflow** (HRW on one half of the screen, VS Code on the
 other) gives the best of both worlds: HRW's rich visual rendering and direct

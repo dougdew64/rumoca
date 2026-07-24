@@ -104,8 +104,15 @@ impl TarjanAnimation {
         })
     }
 
-    /// Start a live debug session for Tarjan's algorithm.
-    pub fn start_live(mat: &IncidenceMatrix) -> Option<Self> {
+    /// Start a live debug session for Tarjan's algorithm. Runs matching
+    /// first (non-live) to build the dependency graph, then spawns a thread
+    /// for Tarjan's SCC with a shared `LiveTrace`.
+    ///
+    /// `on_complete` runs inside the algorithm thread after the last frame
+    /// but before the thread exits — the caller uses this to remove the
+    /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
+    /// the thread terminates.
+    pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Option<Self> {
         let n_eq = mat.n_eq();
         let n_var = mat.n_var();
         if n_eq == 0 {
@@ -130,6 +137,7 @@ impl TarjanAnimation {
             .name("tarjan-debug".to_owned())
             .spawn(move || {
                 tarjan_scc_with_trace(n_eq, &adj_for_thread, Some(&lt_for_thread));
+                on_complete();
                 *done_for_thread.lock().expect("done lock") = true;
             })
             .expect("failed to spawn tarjan-debug thread");
@@ -512,7 +520,7 @@ mod tests {
     #[test]
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim = TarjanAnimation::start_live(&mat).unwrap();
+        let mut anim = TarjanAnimation::start_live(&mat, || {}).unwrap();
         for _ in 0..100 {
             if anim.live_finished() { break; }
             std::thread::sleep(std::time::Duration::from_millis(20));

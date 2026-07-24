@@ -37,6 +37,18 @@ and deletes the file. Breakpoints **accumulate** across requests for the same sp
 `specimen` field changes, all previously armed breakpoints are cleared before adding the new ones.
 The status bar shows the total count; clicking it clears all armed breakpoints manually.
 
+To **remove** a breakpoint, set `"action": "remove"` — the extension matches by file path and line,
+removes the breakpoint from VS Code, and updates the status bar. HRW uses this automatically when
+a live debug session finishes (all algorithm frames pushed) to prevent a SIGSTOP signal from the
+debugger hitting a breakpoint on an exiting thread.
+
+**Ack handshake**: after processing any request (add or remove), the extension writes
+`.hrw-bridge/breakpoint-ack.json`. For live debug sessions, HRW polls for this file before spawning
+the algorithm thread — this guarantees the breakpoint is registered with LLDB before the first
+frame is pushed. The ack file is a simple `{"acked": true}` JSON; HRW deletes it after reading.
+`arm_live_trace_breakpoint` clears any stale ack before writing the request so only a fresh ack
+from the current request triggers the spawn.
+
 | IR field | Phase / sub-phase | File · function | Assignment (find this) | Line hint |
 |---|---|---|---|---|
 | `def_id` (class) | resolve · registration | `rumoca-phase-resolve/src/registration.rs` · `register_stored_definition` | `class.def_id = Some(def_id);` | ~22 |
@@ -115,20 +127,19 @@ current state. When the user resumes/steps, the next frame is pushed and the UI 
 
 ### How to use it
 
-1. **Launch HRW under the debugger** (F5) — **do not set any breakpoints yet**. Setting the
-   breakpoint before loading a specimen can freeze the UI (the debugger pauses all threads when
-   any thread hits a breakpoint).
+1. **Launch HRW under the debugger** (F5).
 2. **Load a specimen** in HRW (select it from the specimen list).
 3. **Navigate to the Structural or Index Reduction tab**, then select the **Matching** or **BLT**
    animation sub-tab.
-4. **Now set a breakpoint** on `live_trace_breakpoint` (see table below).
-5. **Click the "Debug" button** — this spawns a dedicated algorithm thread. After each frame is
-   pushed, a 20ms delay lets the HRW UI render, then the breakpoint fires. Each time you
-   Continue (F5) in the debugger, the next frame appears in the HRW animation.
-6. **Inspect locals**: at the breakpoint, `frame_index` tells you which step you're on. Step up
+4. **Click the "Debug" button** — this automatically arms a breakpoint on
+   `live_trace_breakpoint` via the HRW Debugger Bridge extension, then spawns a dedicated
+   algorithm thread. After each frame is pushed, a 20ms delay lets the HRW UI render, then the
+   breakpoint fires. Each time you Continue (F5) in the debugger, the next frame appears in the
+   HRW animation.
+5. **Inspect locals**: at the breakpoint, `frame_index` tells you which step you're on. Step up
    one frame to reach the algorithm code (`augment_traced` or `strongconnect`) where the full
    local state (match_eq, match_var, visited, eq, var, etc.) is in scope.
-7. **Re-run**: after the session finishes, the Debug button reappears — click it to start a new
+6. **Re-run**: after the session finishes, the Debug button reappears — click it to start a new
    live session.
 
 ### Breakpoint sites for live stepping

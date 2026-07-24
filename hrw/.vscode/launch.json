@@ -14,7 +14,13 @@
         "filter": { "name": "hrw", "kind": "bin" }
       },
       "args": [],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      // Suppress SIGCHLD: egui/winit's Linux backend emits SIGCHLD during
+      // startup (child-process lifecycle). Without this, CodeLLDB stops on
+      // it and shows a spurious signal in the debug console.
+      "preRunCommands": [
+        "process handle SIGCHLD -s false -n false"
+      ]
     },
     {
       "type": "lldb",

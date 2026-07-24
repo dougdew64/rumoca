@@ -1,9 +1,29 @@
+/**
+ * HRW Debugger Bridge — VS Code extension that arms/removes breakpoints on
+ * a running debug session in response to file-based requests from the HRW
+ * native app.
+ *
+ * Protocol:
+ *   HRW writes `.hrw-bridge/breakpoint-request.json` →
+ *   this extension reads it, calls `vscode.debug.addBreakpoints()` or
+ *   `removeBreakpoints()`, deletes the request, and writes
+ *   `.hrw-bridge/breakpoint-ack.json` so HRW knows the breakpoint is
+ *   registered before spawning algorithm threads.
+ *
+ * Breakpoints accumulate per specimen. Changing the `specimen` field clears
+ * all previously armed breakpoints. Duplicates (same file + line + condition)
+ * are silently skipped. All armed breakpoints are auto-cleared when the
+ * debug session ends.
+ */
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const BRIDGE_DIR_NAME = '.hrw-bridge';
+/** HRW writes requests here; this extension watches for changes. */
 const REQUEST_FILE = 'breakpoint-request.json';
+/** Written by this extension after processing a request, consumed by HRW. */
+const ACK_FILE = 'breakpoint-ack.json';
 
 interface BreakpointEntry {
     path: string;
@@ -13,6 +33,7 @@ interface BreakpointEntry {
 
 interface BreakpointRequest {
     version: number;
+    action?: 'add' | 'remove';
     specimen?: string;
     breakpoints: BreakpointEntry[];
 }
@@ -30,6 +51,15 @@ export function activate(context: vscode.ExtensionContext): void {
     );
     statusItem.command = 'hrw.clearArmedBreakpoints';
     context.subscriptions.push(statusItem);
+
+    context.subscriptions.push(
+        vscode.debug.onDidTerminateDebugSession(() => {
+            if (armedBreakpoints.length > 0) {
+                clearArmed(output);
+                output.appendLine('Debug session ended — cleared armed breakpoints');
+            }
+        })
+    );
 
     const bridgeDir = findBridgeDir();
     if (!bridgeDir) {
@@ -58,46 +88,21 @@ export function activate(context: vscode.ExtensionContext): void {
                 return;
             }
 
-            // Clear all breakpoints when the specimen changes.
-            if (request.specimen && request.specimen !== currentSpecimen) {
-                clearArmed(output);
-                currentSpecimen = request.specimen;
-                output.appendLine(`Specimen changed to: ${request.specimen}`);
-            }
+            const action = request.action ?? 'add';
 
-            const added: vscode.Breakpoint[] = [];
-            for (const entry of request.breakpoints) {
-                if (!fs.existsSync(entry.path)) {
-                    output.appendLine(`File not found: ${entry.path}`);
-                    continue;
-                }
-
-                const location = new vscode.Location(
-                    vscode.Uri.file(entry.path),
-                    new vscode.Position(entry.line - 1, 0)
-                );
-                const bp = new vscode.SourceBreakpoint(
-                    location,
-                    true,
-                    entry.condition
-                );
-                added.push(bp);
-
-                const label = `${path.basename(entry.path)}:${entry.line}`;
-                const cond = entry.condition ? ` [${entry.condition}]` : '';
-                output.appendLine(`Armed: ${label}${cond}`);
-            }
-
-            if (added.length > 0) {
-                vscode.debug.addBreakpoints(added);
-                armedBreakpoints.push(...added);
-                updateStatus();
-                vscode.window.showInformationMessage(
-                    `HRW: Armed ${added.length} breakpoint(s) (${armedBreakpoints.length} total)`
-                );
+            if (action === 'remove') {
+                handleRemove(request, output);
+            } else {
+                handleAdd(request, output);
             }
 
             fs.unlinkSync(requestPath);
+
+            // Write the ack file so HRW knows the breakpoint is registered
+            // and can safely spawn the algorithm thread. HRW polls for this
+            // file via `bridge::check_breakpoint_ack()`.
+            const ackPath = path.join(bridgeDir, ACK_FILE);
+            fs.writeFileSync(ackPath, JSON.stringify({ acked: true }) + '\n');
         } catch (err) {
             output.appendLine(`Error: ${err}`);
         }
@@ -123,6 +128,101 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(output);
 }
 
+/** Add breakpoints from the request. Accumulates per specimen; clears on specimen change. */
+function handleAdd(request: BreakpointRequest, output: vscode.OutputChannel): void {
+    if (request.specimen && request.specimen !== currentSpecimen) {
+        clearArmed(output);
+        currentSpecimen = request.specimen;
+        output.appendLine(`Specimen changed to: ${request.specimen}`);
+    }
+
+    const added: vscode.Breakpoint[] = [];
+    for (const entry of request.breakpoints) {
+        if (!fs.existsSync(entry.path)) {
+            output.appendLine(`File not found: ${entry.path}`);
+            continue;
+        }
+
+        if (isDuplicate(entry)) {
+            const label = `${path.basename(entry.path)}:${entry.line}`;
+            output.appendLine(`Already armed: ${label} — skipped`);
+            continue;
+        }
+
+        const location = new vscode.Location(
+            vscode.Uri.file(entry.path),
+            new vscode.Position(entry.line - 1, 0)
+        );
+        const bp = new vscode.SourceBreakpoint(
+            location,
+            true,
+            entry.condition
+        );
+        added.push(bp);
+
+        const label = `${path.basename(entry.path)}:${entry.line}`;
+        const cond = entry.condition ? ` [${entry.condition}]` : '';
+        output.appendLine(`Armed: ${label}${cond}`);
+    }
+
+    if (added.length > 0) {
+        vscode.debug.addBreakpoints(added);
+        armedBreakpoints.push(...added);
+        updateStatus();
+        vscode.window.showInformationMessage(
+            `HRW: Armed ${added.length} breakpoint(s) (${armedBreakpoints.length} total)`
+        );
+    }
+}
+
+/** Remove breakpoints matching the request entries (by file URI + line). */
+function handleRemove(request: BreakpointRequest, output: vscode.OutputChannel): void {
+    const toRemove: vscode.Breakpoint[] = [];
+    const toKeep: vscode.Breakpoint[] = [];
+
+    for (const bp of armedBreakpoints) {
+        if (matchesAnyEntry(bp, request.breakpoints)) {
+            toRemove.push(bp);
+        } else {
+            toKeep.push(bp);
+        }
+    }
+
+    if (toRemove.length > 0) {
+        vscode.debug.removeBreakpoints(toRemove);
+        armedBreakpoints = toKeep;
+        updateStatus();
+        for (const entry of request.breakpoints) {
+            const label = `${path.basename(entry.path)}:${entry.line}`;
+            output.appendLine(`Removed: ${label}`);
+        }
+    }
+}
+
+/** Check whether a VS Code breakpoint matches any entry in the request (by file URI + line). */
+function matchesAnyEntry(bp: vscode.Breakpoint, entries: BreakpointEntry[]): boolean {
+    if (!(bp instanceof vscode.SourceBreakpoint)) { return false; }
+    const bpUri = bp.location.uri.toString();
+    const bpLine = bp.location.range.start.line;
+    return entries.some(entry => {
+        const entryUri = vscode.Uri.file(entry.path).toString();
+        return bpUri === entryUri && bpLine === (entry.line - 1);
+    });
+}
+
+/** Prevent duplicate breakpoints: true if an armed breakpoint already covers this entry. */
+function isDuplicate(entry: BreakpointEntry): boolean {
+    const entryUri = vscode.Uri.file(entry.path).toString();
+    const entryLine = entry.line - 1;
+    return armedBreakpoints.some(bp => {
+        if (!(bp instanceof vscode.SourceBreakpoint)) { return false; }
+        return bp.location.uri.toString() === entryUri
+            && bp.location.range.start.line === entryLine
+            && (bp.condition ?? undefined) === (entry.condition ?? undefined);
+    });
+}
+
+/** Locate the `.hrw-bridge` directory — checks both `hrw/.hrw-bridge` and `.hrw-bridge` at root. */
 function findBridgeDir(): string | undefined {
     const folders = vscode.workspace.workspaceFolders;
     if (!folders) { return undefined; }
@@ -142,6 +242,7 @@ function findBridgeDir(): string | undefined {
     return undefined;
 }
 
+/** Remove all armed breakpoints and reset specimen tracking. */
 function clearArmed(output: vscode.OutputChannel): void {
     if (armedBreakpoints.length > 0) {
         vscode.debug.removeBreakpoints(armedBreakpoints);

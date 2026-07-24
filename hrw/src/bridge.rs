@@ -76,6 +76,21 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge")
 /// evaluated). This avoids bloating the focus file with all stages' IR.
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
 
+/// HRW writes breakpoint requests here; the VS Code extension watches it.
+const BREAKPOINT_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-request.json");
+/// The extension writes this ack file after processing a request, confirming
+/// the breakpoint is registered with LLDB. HRW polls for it before spawning
+/// the algorithm thread (see `check_breakpoint_ack`).
+const BREAKPOINT_ACK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-ack.json");
+
+/// Absolute path to `live_trace_breakpoint` in the structural crate, resolved
+/// at compile time so the VS Code extension can set breakpoints without path
+/// resolution.
+const LIVE_TRACE_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../crates/rumoca-phase-structural/src/live_trace.rs"
+);
+
 /// The canonical list of pipeline stage file names written to `.hrw-bridge/stages/`.
 ///
 /// This constant is the single source of truth for which stage files exist.
@@ -272,6 +287,70 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     // Pretty-print for readability — Doug reads these during dogfooding.
     fs::write(&path, serde_json::to_string_pretty(&doc).unwrap_or_default())?;
     Ok(path)
+}
+
+/// Write a breakpoint request for `live_trace_breakpoint` so the HRW Debugger
+/// Bridge extension arms it on the running debug session before the algorithm
+/// thread starts.
+/// Check whether the extension has acknowledged the last breakpoint request.
+/// Returns `true` and deletes the ack file if it exists.
+pub fn check_breakpoint_ack() -> bool {
+    if std::path::Path::new(BREAKPOINT_ACK_FILE).exists() {
+        let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
+        true
+    } else {
+        false
+    }
+}
+
+/// Arm a breakpoint on `live_trace_breakpoint` for live algorithm stepping.
+///
+/// Writes a breakpoint request to `.hrw-bridge/breakpoint-request.json`.
+/// The VS Code extension processes it, registers the breakpoint with LLDB,
+/// and writes an ack file. The caller should poll `check_breakpoint_ack()`
+/// before spawning the algorithm thread.
+///
+/// Clears any stale ack file first so that only a fresh ack from *this*
+/// request triggers the spawn.
+pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> {
+    let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
+    let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
+    let source = fs::read_to_string(&file)?;
+    let line = source
+        .lines()
+        .enumerate()
+        .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
+        .map(|(i, _)| i + 1)
+        .unwrap_or(109);
+    let specimen_field = specimen
+        .map(|s| format!("\"specimen\": \"{s}\",\n  "))
+        .unwrap_or_default();
+    let request = format!(
+        "{{\n  \"version\": 1,\n  {specimen_field}\"breakpoints\": [\n    {{\n      \
+         \"path\": \"{path}\",\n      \"line\": {line},\n      \"condition\": null\n    \
+         }}\n  ]\n}}\n",
+        path = file.display(),
+    );
+    fs::write(BREAKPOINT_REQUEST_FILE, request)
+}
+
+/// Remove the `live_trace_breakpoint` breakpoint when the live debug session
+/// finishes, preventing a SIGSTOP signal when the algorithm thread exits.
+pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
+    let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
+    let source = fs::read_to_string(&file)?;
+    let line = source
+        .lines()
+        .enumerate()
+        .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
+        .map(|(i, _)| i + 1)
+        .unwrap_or(109);
+    let request = format!(
+        "{{\n  \"version\": 1,\n  \"action\": \"remove\",\n  \"breakpoints\": [\n    {{\n      \
+         \"path\": \"{path}\",\n      \"line\": {line}\n    }}\n  ]\n}}\n",
+        path = file.display(),
+    );
+    fs::write(BREAKPOINT_REQUEST_FILE, request)
 }
 
 /// Write each stage's full IR to `.hrw-bridge/stages/<name>.json`.

@@ -261,6 +261,29 @@ pub struct App {
     matching_anim_canvas: Canvas,
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     tarjan_anim_canvas: Canvas,
+
+    // ---- 15. Deferred live debug spawn (ack handshake) ----
+    // When the Debug button is clicked, `arm_live_trace_breakpoint` writes a
+    // breakpoint request to `.hrw-bridge/breakpoint-request.json`. The algorithm
+    // thread is NOT spawned immediately — the VS Code extension must process the
+    // file and register the breakpoint with LLDB first. Each UI frame, we poll
+    // `bridge::check_breakpoint_ack()` for the ack file the extension writes
+    // after arming. The thread launches once the ack arrives (or after a
+    // 3-second timeout if the extension isn't running). The `Instant` records
+    // the request time for the timeout; the enum says which algorithm to spawn.
+    pending_live_debug: Option<(std::time::Instant, PendingLiveDebug)>,
+    // True while a `live_trace_breakpoint` is armed by the Debug button.
+    // Cleared in two places: (1) the algorithm thread's `on_complete` callback
+    // removes the breakpoint via the bridge *before* the thread exits (the
+    // primary path — prevents SIGSTOP/SIGCHLD from LLDB on thread termination);
+    // (2) the UI's `live_just_finished` check acts as a safety-net fallback.
+    live_breakpoint_armed: bool,
+}
+
+#[derive(Clone, Copy)]
+enum PendingLiveDebug {
+    Matching,
+    Tarjan,
 }
 
 impl App {
@@ -357,6 +380,8 @@ impl App {
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            pending_live_debug: None,
+            live_breakpoint_armed: false,
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -1661,22 +1686,74 @@ impl eframe::App for App {
                                 .and_then(incidence_view::IncidenceMatrix::from_report)
                         );
                     }
-                    // "Debug" button: start a live debug session (replaces recorded animation).
-                    // Show the button when not in live mode, or when a live session has finished.
+                    // ── Live debug session lifecycle (matching) ──
+                    //
+                    // Three-phase state machine:
+                    //   1. Idle (no live session) → Debug button visible
+                    //   2. Arming (pending_live_debug is Some) → polls for ack
+                    //   3. Running (live animation active) → user steps with F5
+                    //
+                    // Phase 3→1 transition: the algorithm thread's `on_complete`
+                    // callback removes the breakpoint via the bridge before
+                    // exiting; `live_just_finished` below is a UI-side fallback
+                    // that clears the armed flag.
                     let is_live_running = self.cached_matching_anim.as_ref()
                         .and_then(|o| o.as_ref())
                         .map_or(false, |a| a.is_live() && !a.live_finished());
-                    if !is_live_running {
-                        if let Some(Some(mat)) = &self.cached_incidence {
+
+                    // Safety-net: if the thread finished but the armed flag is
+                    // still set (the on_complete removal is the primary path),
+                    // clean up here so the Debug button reappears.
+                    let live_just_finished = self.live_breakpoint_armed
+                        && self.cached_matching_anim.as_ref()
+                            .and_then(|o| o.as_ref())
+                            .map_or(false, |a| a.is_live() && a.live_finished());
+                    if live_just_finished {
+                        let _ = bridge::remove_live_trace_breakpoint();
+                        self.live_breakpoint_armed = false;
+                    }
+
+                    // Phase 1: show the Debug button when no live session is
+                    // running and no arm request is pending.
+                    if !is_live_running && self.pending_live_debug.is_none() {
+                        if let Some(Some(_)) = &self.cached_incidence {
                             if ui.button("Debug").on_hover_text(
-                                "Start live debug session \u{2014} set a breakpoint on LiveTrace::push \
-                                 in matching.rs, then step in the VS Code debugger"
+                                "Start live debug session \u{2014} arms a breakpoint on \
+                                 live_trace_breakpoint, then step with Continue (F5)"
                             ).clicked() {
+                                let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
+                                self.pending_live_debug = Some((
+                                    std::time::Instant::now(),
+                                    PendingLiveDebug::Matching,
+                                ));
+                            }
+                        }
+                    }
+
+                    // Phase 2: wait for the extension to acknowledge that the
+                    // breakpoint is registered. Poll `check_breakpoint_ack()`
+                    // each frame (~16ms); fall back to a 3s timeout if the
+                    // extension isn't running.
+                    if let Some((armed_at, PendingLiveDebug::Matching)) = self.pending_live_debug {
+                        let acked = bridge::check_breakpoint_ack();
+                        let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
+                        if acked || timed_out {
+                            self.pending_live_debug = None;
+                            self.live_breakpoint_armed = true;
+                            if let Some(Some(mat)) = &self.cached_incidence {
+                                // on_complete runs inside the algorithm thread
+                                // after the last frame — removes the breakpoint
+                                // before the thread exits (prevents SIGSTOP).
                                 self.cached_matching_anim = Some(Some(
-                                    matching_anim::MatchingAnimation::start_live(mat)
+                                    matching_anim::MatchingAnimation::start_live(mat, || {
+                                        let _ = bridge::remove_live_trace_breakpoint();
+                                    })
                                 ));
                                 self.matching_anim_canvas.request_fit();
                             }
+                        } else {
+                            ui.weak("Arming breakpoint\u{2026}");
+                            ui.ctx().request_repaint();
                         }
                     }
                     if self.cached_matching_anim.is_none() {
@@ -1697,20 +1774,50 @@ impl eframe::App for App {
                                 .and_then(incidence_view::IncidenceMatrix::from_report)
                         );
                     }
+                    // ── Live debug session lifecycle (Tarjan) ──
+                    // Same three-phase state machine as matching above.
                     let is_live_running = self.cached_tarjan_anim.as_ref()
                         .and_then(|o| o.as_ref())
                         .map_or(false, |a| a.is_live() && !a.live_finished());
-                    if !is_live_running {
-                        if let Some(Some(mat)) = &self.cached_incidence {
+                    let live_just_finished = self.live_breakpoint_armed
+                        && self.cached_tarjan_anim.as_ref()
+                            .and_then(|o| o.as_ref())
+                            .map_or(false, |a| a.is_live() && a.live_finished());
+                    if live_just_finished {
+                        let _ = bridge::remove_live_trace_breakpoint();
+                        self.live_breakpoint_armed = false;
+                    }
+                    if !is_live_running && self.pending_live_debug.is_none() {
+                        if let Some(Some(_)) = &self.cached_incidence {
                             if ui.button("Debug").on_hover_text(
-                                "Start live debug session \u{2014} set a breakpoint on LiveTrace::push \
-                                 in tarjan.rs, then step in the VS Code debugger"
+                                "Start live debug session \u{2014} arms a breakpoint on \
+                                 live_trace_breakpoint, then step with Continue (F5)"
                             ).clicked() {
+                                let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
+                                self.pending_live_debug = Some((
+                                    std::time::Instant::now(),
+                                    PendingLiveDebug::Tarjan,
+                                ));
+                            }
+                        }
+                    }
+                    if let Some((armed_at, PendingLiveDebug::Tarjan)) = self.pending_live_debug {
+                        let acked = bridge::check_breakpoint_ack();
+                        let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
+                        if acked || timed_out {
+                            self.pending_live_debug = None;
+                            self.live_breakpoint_armed = true;
+                            if let Some(Some(mat)) = &self.cached_incidence {
                                 self.cached_tarjan_anim = Some(
-                                    tarjan_anim::TarjanAnimation::start_live(mat)
+                                    tarjan_anim::TarjanAnimation::start_live(mat, || {
+                                        let _ = bridge::remove_live_trace_breakpoint();
+                                    })
                                 );
                                 self.tarjan_anim_canvas.request_fit();
                             }
+                        } else {
+                            ui.weak("Arming breakpoint\u{2026}");
+                            ui.ctx().request_repaint();
                         }
                     }
                     if self.cached_tarjan_anim.is_none() {
@@ -1970,6 +2077,8 @@ impl App {
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            pending_live_debug: None,
+            live_breakpoint_armed: false,
         }
     }
 }
