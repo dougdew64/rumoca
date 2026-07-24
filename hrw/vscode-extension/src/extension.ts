@@ -157,7 +157,7 @@ function handleAdd(request: BreakpointRequest, output: vscode.OutputChannel): vo
         const bp = new vscode.SourceBreakpoint(
             location,
             true,
-            entry.condition
+            entry.condition ?? undefined
         );
         added.push(bp);
 

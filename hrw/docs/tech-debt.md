@@ -38,7 +38,7 @@ for details.
   `return`).
   *File:* `vscode-extension/src/extension.ts` (~line 86).
 
-- [ ] **Extension: `condition: null` passed to `SourceBreakpoint`.**
+- [x] **Extension: `condition: null` passed to `SourceBreakpoint`.**
   `arm_live_trace_breakpoint` writes `"condition": null` in the JSON.
   The extension passes this `null` as the `condition` parameter to
   `new vscode.SourceBreakpoint(location, true, entry.condition)`. The VS Code

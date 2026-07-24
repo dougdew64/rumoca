@@ -324,7 +324,7 @@ pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> 
         .unwrap_or_default();
     let request = format!(
         "{{\n  \"version\": 1,\n  {specimen_field}\"breakpoints\": [\n    {{\n      \
-         \"path\": \"{path}\",\n      \"line\": {line},\n      \"condition\": null\n    \
+         \"path\": \"{path}\",\n      \"line\": {line}\n    \
          }}\n  ]\n}}\n",
         path = file.display(),
     );
