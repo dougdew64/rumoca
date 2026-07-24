@@ -998,7 +998,7 @@ fn status_line(seq: u64, target: &str, request: &str, result: std::io::Result<st
     match result {
         Err(e) => format!("bridge write failed: {e}"),
         Ok(_) if request == "debug-where-set" => {
-            format!("🐞 captured  {target}  for the debugger — say “arm it” in chat and I'll set the breakpoint  (focus #{seq})")
+            format!("🐞 captured  {target}  for the debugger — say “debug” in chat and I'll set the breakpoint  (focus #{seq})")
         }
         Ok(_) => format!("captured  {target}  — now ask me about it in the chat  (focus #{seq})"),
     }
@@ -1060,8 +1060,8 @@ impl App {
                 ui.strong("Debugger");
                 ui.label(
                     "Right-click a field and choose 🐞 \u{201c}Show this being set\u{201d}, then tell Claude \
-                     \u{201c}arm it\u{201d} in the chat. Claude sets a breakpoint where Rumoca assigns that field; \
-                     launch \u{201c}Debug HRW — break where Claude armed\u{201d} and select the specimen.",
+                     \u{201c}debug\u{201d} in the chat. Claude sets a breakpoint on the running debug session; \
+                     right-click the specimen and choose Recompile to hit it.",
                 );
             });
         egui::Window::new("About HRW Observatory")
@@ -1265,6 +1265,7 @@ impl eframe::App for App {
                     // through `self.files`), so we collect the path to open
                     // and act after the closure.
                     let mut to_open = None;
+                    let mut recompile = None;
                     let mut capture_specimen = false;
                     for path in &self.files {
                         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
@@ -1274,6 +1275,7 @@ impl eframe::App for App {
                         // compile exactly once (the left-click load), never again just to
                         // capture.
                         let can_capture = selected && !self.compiling && self.model.is_some();
+                        let can_recompile = selected && !self.compiling;
                         let purpose = self.specimen_purposes.get(path);
                         // `selectable_label` renders a label that highlights when
                         // `selected` is true and responds to clicks. It returns a
@@ -1291,6 +1293,21 @@ impl eframe::App for App {
                         // `ui.close()` dismisses it after an action.
                         resp.context_menu(|ui| {
                             ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                            let btn = ui.add_enabled(can_recompile, egui::Button::new("🔄 Recompile"));
+                            let btn = if can_recompile {
+                                btn.on_hover_text(
+                                    "Re-run the compiler on this specimen (e.g. to hit an armed breakpoint).",
+                                )
+                            } else {
+                                btn.on_disabled_hover_text(
+                                    "Left-click to load this specimen first.",
+                                )
+                            };
+                            if btn.clicked() {
+                                recompile = Some(path.clone());
+                                ui.close();
+                            }
+                            ui.separator();
                             let btn = ui.add_enabled(can_capture, egui::Button::new("🔎 Capture"));
                             let btn = if can_capture {
                                 btn.on_hover_text(
@@ -1310,7 +1327,9 @@ impl eframe::App for App {
                             to_open = Some(path.clone());
                         }
                     }
-                    if let Some(path) = to_open {
+                    if let Some(path) = recompile {
+                        self.open(path);
+                    } else if let Some(path) = to_open {
                         if self.selected.as_ref() == Some(&path) {
                             self.stage_clicked = false;
                             self.viewing_log = false;

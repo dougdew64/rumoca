@@ -588,3 +588,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   or specimen traces), and the algorithm logic stays in Rumoca (no duplication). This is the first
   animated stepping (ideas backlog #9), proving the concept for future algorithms (Pantelides, tearing,
   Newton). The instrumentation follows the additive/observation-only/upstreamable discipline.
+
+- **Separate HRW VS Code extension for debugger bridge** (`hrw/vscode-extension/`). The `debug`
+  chat shortcut now uses `vscode.debug.addBreakpoints()` via a file-watching bridge instead of
+  rewriting `launch.json` `preRunCommands` — breakpoints are set on the running debug session
+  without restart. A separate extension (not modifying the upstream Rumoca extension in
+  `packages/vscode/`) avoids rebase conflicts, keeps HRW-specific features cleanly separated, and
+  preserves the upstream contribution path. The extension watches `.hrw-bridge/breakpoint-request.json`
+  for requests written by Claude during `debug`. Breakpoints **accumulate** per specimen and are
+  cleared automatically when the specimen changes. The specimen list's context menu offers
+  **Recompile** to re-run compilation and hit armed breakpoints (the worker calls
+  `session.remove_document()` before `update_document()` to bypass the session's
+  content-comparison cache).

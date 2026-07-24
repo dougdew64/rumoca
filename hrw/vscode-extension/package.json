@@ -1,0 +1,35 @@
+{
+  "name": "hrw-debugger-bridge",
+  "displayName": "HRW Debugger Bridge",
+  "description": "Bridges HRW observatory captures to VS Code debugger breakpoints — arm breakpoints on a running debug session without restarting",
+  "version": "0.1.0",
+  "publisher": "dougdew64",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "hrw.clearArmedBreakpoints",
+        "title": "HRW: Clear Armed Breakpoints"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run build && node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1013,7 +1013,10 @@ impl WorkerState {
         // definitions in the class tree.
         log(LogLevel::StageStart, "Resolve".to_owned());
         let t_stage = Instant::now();
-        // Register the specimen source in the session so resolution can find it.
+        // Remove then re-add the specimen so the session treats it as new — without
+        // this, `update_document` sees identical source text and short-circuits,
+        // returning cached results (the registration code never re-runs).
+        self.session.remove_document(&uri);
         self.session.update_document(&uri, &source);
         let mut def_index = BTreeMap::new();
         let mut instantiate = Stage::default();

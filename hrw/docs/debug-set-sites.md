@@ -2,16 +2,40 @@
 
 Reference for the 🐞 **"Show this being set (debugger)"** feature. When a focus with
 `request: "debug-where-set"` is captured, Claude maps the field (the last segment of the node's
-`key_path`) to the Rumoca source line that assigns it, and arms a breakpoint there in the
-`.vscode/launch.json` "Debug HRW — break where Claude armed" config.
+`key_path`) to the Rumoca source line that assigns it, and writes a breakpoint request to
+`.hrw-bridge/breakpoint-request.json`. The **HRW Debugger Bridge** VS Code extension
+(`hrw/vscode-extension/`) watches this file and calls `vscode.debug.addBreakpoints()` to arm the
+breakpoint on the **active debug session** — no restart required.
 
 **Keyed by function + the assignment statement**, not just line numbers — line numbers drift, so
-Claude re-locates the statement in the current clone at arm-time (the numbers below are hints).
+Claude re-locates the statement in the current source at arm-time (the numbers below are hints).
 
-Paths are relative to the Rumoca crate root. Rumoca is now a git dependency pinned in `Cargo.toml`,
-so the source lives in Cargo's cache — locate a file with
-`find ~/.cargo/git/checkouts -path '*rumoca*/<file>'`. The 🐞 launch config matches breakpoints by
-basename, so it works regardless of the absolute path.
+Paths are relative to the Rumoca crate root. With HRW in-workspace, the source lives at
+`crates/<crate-name>/src/<file>` relative to the repo root. Claude writes absolute paths in the
+breakpoint request so the VS Code extension can set breakpoints without path resolution.
+
+### Breakpoint request protocol
+
+Claude writes `.hrw-bridge/breakpoint-request.json`:
+
+```json
+{
+  "version": 1,
+  "specimen": "ProportionalLoop",
+  "breakpoints": [
+    {
+      "path": "/home/dougdew/dev/rumoca/crates/rumoca-phase-resolve/src/registration.rs",
+      "line": 22,
+      "condition": "def_id.0 == 85"
+    }
+  ]
+}
+```
+
+The extension reads it, calls `vscode.debug.addBreakpoints()`, shows a status bar indicator,
+and deletes the file. Breakpoints **accumulate** across requests for the same specimen. When the
+`specimen` field changes, all previously armed breakpoints are cleared before adding the new ones.
+The status bar shows the total count; clicking it clears all armed breakpoints manually.
 
 | IR field | Phase / sub-phase | File · function | Assignment (find this) | Line hint |
 |---|---|---|---|---|
@@ -29,8 +53,8 @@ basename, so it works regardless of the absolute path.
 - **`type_def_id` in a loop:** `contents.rs` resolves every component's type, including MSL ones, so
   that breakpoint hits many times. Continue until the surrounding component/class is the one captured
   (inspect the local names), or Claude adds a name/id condition when arming.
-- **Fresh process required:** resolution runs lazily on first specimen select, so launch the debug
-  config *before* clicking the specimen.
+- **Live arming:** breakpoints are set on the running debug session via the HRW Debugger Bridge
+  extension. No restart needed — arm a breakpoint, then select a new specimen to trigger it.
 
 ## Conditional arming (integer-identity) — break only for the captured item
 

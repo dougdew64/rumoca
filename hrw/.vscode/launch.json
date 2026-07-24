@@ -17,26 +17,6 @@
       "cwd": "${workspaceFolder}"
     },
     {
-      // Claude-managed: `preRunCommands` is empty until you click 🐞 "Show this
-      // being set (debugger)" on a tree node and say "arm it". Claude then REPLACES
-      // it (not appends) with a breakpoint at the exact Rumoca line that assigns
-      // the captured IR field (see docs/debug-set-sites.md). Launch this config,
-      // then select a specimen to trigger it. Note: LLDB-command breakpoints don't
-      // show as gutter dots, but the debugger still stops at the line.
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug HRW — break where Claude armed",
-      "cargo": {
-        "args": ["build", "--bin=hrw"],
-        "filter": { "name": "hrw", "kind": "bin" }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}",
-      "preRunCommands": [
-        "breakpoint set --file registration.rs --line 22"
-      ]
-    },
-    {
       "type": "lldb",
       "request": "launch",
       "name": "Debug unit tests (worker/parse)",

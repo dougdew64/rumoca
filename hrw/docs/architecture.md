@@ -161,8 +161,12 @@ sees each stage appear while later stages are still computing.
 The worker owns a persistent `rumoca_compile::Session` — Rumoca's incremental
 compilation workspace (the same type the LSP server uses). Library dependencies
 (the MSL — ~15,000 files) are loaded once as `DurableExternal` source roots.
-Thereafter, each specimen recompile re-resolves incrementally (~0.3s) rather than
-re-parsing the entire library.
+Thereafter, each specimen compile re-resolves incrementally (~0.3s) rather than
+re-parsing the entire library. On **recompile** (same specimen, same source),
+the worker calls `session.remove_document()` before `update_document()` to
+bypass the session's content-comparison cache — without this, unchanged source
+text short-circuits and phase code never re-executes (armed breakpoints would
+not fire).
 
 ### The compilation pipeline
 
@@ -554,8 +558,64 @@ Modelica source file, expanded to whole lines for context.
 The bridge supports two bare-keyword shortcuts in the Claude Code chat:
 
 - **`explain`** — Claude reads `focus.json` and explains the captured node
-- **`arm it`** — Claude finds the Rumoca source line where the captured field is
-  set and writes a breakpoint into `.vscode/launch.json`
+- **`debug`** — Claude reads `focus.json`, finds the Rumoca source line where the
+  captured item is processed, and writes a breakpoint request to
+  `.hrw-bridge/breakpoint-request.json` with a **conditional** breakpoint keyed on
+  the captured item's identity (e.g. `def_id.0 == 85`). The HRW Debugger Bridge
+  extension (see below) picks up the request and arms it on the running debug
+  session. The user then right-clicks the specimen → **Recompile** to trigger the
+  compiler and hit the breakpoint.
+
+### The HRW Debugger Bridge VS Code extension
+
+**Directory:** `vscode-extension/`
+
+A standalone VS Code extension (`hrw-debugger-bridge`) that bridges the
+file-based `.hrw-bridge/` protocol to VS Code's debug API. It activates on
+startup, finds the `.hrw-bridge/` directory, and watches for
+`breakpoint-request.json` files.
+
+**Protocol:** Claude writes a JSON file:
+
+```json
+{
+  "version": 1,
+  "specimen": "ProportionalLoop",
+  "breakpoints": [
+    {
+      "path": "/absolute/path/to/registration.rs",
+      "line": 22,
+      "condition": "def_id.0 == 85"
+    }
+  ]
+}
+```
+
+The extension reads it, calls `vscode.debug.addBreakpoints()`, shows a status bar
+indicator with the count, and deletes the file.
+
+**Accumulation:** breakpoints accumulate across requests for the same specimen.
+When the `specimen` field changes, all previously armed breakpoints are cleared
+before adding the new ones. The status bar item doubles as a manual clear button.
+
+**Why a separate extension?** The upstream Rumoca VS Code extension
+(`packages/vscode/`) is maintained by CogniPilot. Modifying it on the `hrw`
+branch would create rebase conflicts on every upstream sync. A separate extension
+keeps HRW-specific features isolated, preserves the upstream contribution path,
+and has its own release cycle.
+
+### Recompile
+
+The specimen list's right-click context menu offers a **Recompile** action (in
+addition to the existing **Capture**). It re-runs the full compilation pipeline on
+the currently selected specimen, which is necessary after arming a breakpoint —
+the first compilation already completed before the breakpoint was set.
+
+**Session cache bypass:** Rumoca's `Session::update_document()` compares the
+source text and short-circuits when it's unchanged, returning cached resolution
+results without re-executing phase code. The worker calls
+`session.remove_document()` before `update_document()` to force a fresh
+compilation that hits armed breakpoints.
 
 
 ## 9. Supporting modules
@@ -770,21 +830,18 @@ architecture (static snapshot → recorded replay → live-stepped execution) wo
 all three tiers use the same painting code, just pointed at different data
 sources.
 
-**Why not a VS Code extension?** A VS Code extension would gain tighter debugger
-integration (live breakpoint arming would be trivial) but lose nearly everything
-else. The custom-painted views would need to be written in HTML/JS/Canvas2D
-inside a webview, losing type safety and the direct Rumoca library link. The
-compilation pipeline would need IPC to a separate Rust process, adding a
-serialization boundary that doesn't exist today. The live algorithm stepping —
-which depends on HRW linking Rumoca as a library and spawning algorithm threads
-directly — would require an entirely different architecture. The one real gap
-(live breakpoint arming on an already-running session, idea #25) has lightweight
-bridge solutions that don't require rebuilding the observatory.
+**Why HRW is a native app, not a VS Code extension.** Rebuilding the observatory
+as a VS Code webview would lose type safety (custom views in HTML/JS/Canvas2D),
+the direct Rumoca library link (compilation would need IPC), and the live algorithm
+stepping architecture (spawning algorithm threads directly). The one real gap — live
+breakpoint arming on an already-running session — is now bridged by a lightweight
+**companion** VS Code extension (`vscode-extension/`) that watches
+`.hrw-bridge/breakpoint-request.json` and calls `vscode.debug.addBreakpoints()`.
 
 **The side-by-side workflow** (HRW on one half of the screen, VS Code on the
 other) gives the best of both worlds: HRW's rich visual rendering and direct
 compiler access alongside VS Code's debugger and editor. The two tools
-communicate through the file-based bridge (focus files for Claude chat) and
-the shared debugger (breakpoints on instrumented Rumoca code). This loose
-coupling is a feature — each tool does what it's best at, and neither
-constrains the other.
+communicate through the file-based bridge (focus files for Claude chat,
+breakpoint requests for the debugger extension) and the shared debugger
+(breakpoints on instrumented Rumoca code). This loose coupling is a feature —
+each tool does what it's best at, and neither constrains the other.

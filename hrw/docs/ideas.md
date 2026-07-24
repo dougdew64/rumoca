@@ -255,7 +255,7 @@ each step incrementally so the algorithm's *process* is visible, not just its re
   debugger — single-step through the Rumoca phase code while watching the animation
   update in the HRW window. This ties directly to the instrumentation mission:
   the algorithm must emit step events that the observatory can render, and the
-  debugger breakpoint flow ("arm it") should be able to land inside an algorithm
+  debugger breakpoint flow ("debug") should be able to land inside an algorithm
   iteration, not just at the phase boundary.
 - **Candidate algorithms:** Pantelides (index reduction), maximum matching
   (augmenting paths), BLT decomposition (SCC / Tarjan), tearing (selecting tear
@@ -670,38 +670,20 @@ specimens.
   HRW enhancements, not one-off tour widgets. The tours are one way to
   experience the features; the features enrich HRW permanently.
 
-## 25. Live breakpoint arming on an already-running debug session
+## 25. ~~Live breakpoint arming on an already-running debug session~~ ✅ DELIVERED
 
-Captured 2026-07-22 (Doug). The current "arm it" flow writes a breakpoint into
-`launch.json` and requires a fresh debug launch to pick it up. Now that Doug
-runs HRW under the debugger at all times (to be ready for live algorithm
-stepping), restarting just to arm a breakpoint is disruptive.
+Captured 2026-07-22 (Doug). **Delivered 2026-07-24.** Implemented via the **HRW
+Debugger Bridge** VS Code extension (`hrw/vscode-extension/`). Claude writes
+`.hrw-bridge/breakpoint-request.json` with conditional breakpoints keyed on the
+captured item's identity; the extension calls `vscode.debug.addBreakpoints()` on
+the running debug session. Breakpoints accumulate per specimen and are cleared
+automatically when the specimen changes. The specimen list's context menu offers
+**Recompile** to re-run compilation and hit armed breakpoints (the worker calls
+`session.remove_document()` to bypass the session cache). See
+`docs/debug-set-sites.md` for the protocol and `docs/architecture.md` §8 for the
+full architecture.
 
-- **The goal:** capture an IR field in HRW → say "arm it" in Claude chat →
-  the breakpoint appears in the *already-running* debug session, no restart.
-- **Why it's hard:** Claude Code can write files but cannot push commands into
-  a running LLDB session. The debug adapter protocol (DAP) is accessible from
-  a VS Code *extension*, not from an external CLI tool.
-- **Possible paths:**
-  1. **VS Code extension** — a small extension that listens for a file-change
-     signal (e.g. Claude writes a `.breakpoint.json`), then calls
-     `vscode.debug.activeDebugSession.customRequest("setBreakpoints", ...)`
-     to arm the breakpoint on the live session. This is the clean solution but
-     a significant scope increase.
-  2. **LLDB command file** — Claude writes a `.lldb` script with the
-     `breakpoint set` command; the user runs `command source .lldb` in the
-     VS Code Debug Console. Manual but no restart, no extension needed.
-  3. **CodeLLDB `preRunCommands` / `postRunCommands`** — these only fire on
-     launch, so they don't help mid-session.
-- **Relationship to live stepping:** this idea complements the live algorithm
-  stepping feature (idea #9, now implemented). Live stepping uses a fixed
-  breakpoint on `live_trace_breakpoint`; this idea is about arming *conditional*
-  breakpoints on Rumoca phase internals for the "where is this field set?"
-  debugging workflow.
-- **Relationship to #26:** the VS Code extension proposed in #26 subsumes this
-  idea — arm-it is one of three capabilities the extension would provide.
-
-## 26. VS Code extension integration: Trace / Debug / Arm-it
+## 26. VS Code extension integration: Trace / Debug / Debug-shortcut
 
 Captured 2026-07-23 (Doug). **High-priority learning infrastructure.** Extend the
 existing Rumoca VS Code extension (`packages/vscode`, publisher JamesGoppert) with
@@ -753,22 +735,22 @@ variable*, not just at phase boundaries. Combined with HRW's live algorithm
 animations, he sees the compiler's internal state update as it touches his
 chosen identifier.
 
-### Capability 3: "Arm it" (from idea #25)
+### Capability 3: "Debug" shortcut (from idea #25) — ✅ DELIVERED
 
-After capturing an IR field in HRW, say "arm it" in Claude chat → a breakpoint
-appears in the **already-running** debug session without restart. This subsumes
-idea #25 — the extension calls `vscode.debug.addBreakpoints()` on the active
-debug session.
+**Delivered 2026-07-24** as the HRW Debugger Bridge extension (`hrw/vscode-extension/`).
+After capturing an IR field in HRW, type `debug` in Claude chat → a conditional
+breakpoint appears in the **already-running** debug session without restart.
+Breakpoints accumulate per specimen. See idea #25 and `docs/debug-set-sites.md`.
 
 ### Technical approach
 
 All three capabilities share the same infrastructure:
 
 1. **IPC channel:** the VS Code extension watches a signal file (e.g.
-   `.hrw-bridge/trace-request.json` or `.hrw-bridge/arm-breakpoint.json`).
+   `.hrw-bridge/trace-request.json` or `.hrw-bridge/breakpoint-request.json`).
    HRW or Claude writes to the file; the extension reads it and acts.
 2. **VS Code extension API:**
-   - `vscode.debug.addBreakpoints()` for arm-it and debug-this-identifier
+   - `vscode.debug.addBreakpoints()` for the debug shortcut and debug-this-identifier
    - Communication with HRW (via the same bridge file protocol) for trace-this
 3. **Existing extension:** the Rumoca extension (`packages/vscode`) already
    provides Modelica language support via LSP. It has **no debugger integration
@@ -786,7 +768,7 @@ With all three capabilities:
 3. **Debug** the compiler processing that identifier (VS Code sets conditional
    breakpoints, live-stepping with HRW animations)
 4. **Ask** Claude what you're seeing (capture → explain flow)
-5. **Arm** additional breakpoints without restarting (mid-session discovery)
+5. **Debug** additional breakpoints without restarting (mid-session discovery)
 
 This is the full realization of the vision's four-layer system: textbook theory
 → Rumoca code → HRW visualization → Claude explanation, all initiated from a
@@ -809,6 +791,6 @@ right-click on a Modelica identifier.
 
 - **#10 Cross-stage identifier tracking** — trace-this-identifier is #10 initiated
   from the Modelica source instead of the HRW UI
-- **#25 Live breakpoint arming** — arm-it is capability 3, subsumed here
+- **#25 Live breakpoint arming** — the debug shortcut is capability 3, subsumed here
 - **#9 Animated algorithm stepping** — debug-this-identifier syncs with live
   algorithm animations
