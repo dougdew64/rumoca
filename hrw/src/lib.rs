@@ -27,6 +27,7 @@
 //! - **`matching_anim`** — animated matching stepper (augmenting-path replay).
 //! - **`tarjan_anim`** — animated Tarjan SCC stepper (BLT discovery replay).
 //! - **`reduction_view`** — index reduction process summary (the Pantelides funnel).
+//! - **`equation_sheet`** — readable equation sheet from the flat DAE (grouped by origin).
 //! - **`log_view`** — timestamped compilation/simulation log panel.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
@@ -34,6 +35,7 @@ pub mod app;
 pub mod bridge;
 pub mod canvas;
 pub mod colors;
+pub mod equation_sheet;
 pub mod expr_format;
 pub mod field_help;
 pub mod incidence_view;

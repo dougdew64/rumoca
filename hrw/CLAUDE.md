@@ -18,6 +18,12 @@ visibility / adding observation hooks in the `../crates/rumoca-*` crates** — i
 instrumentation, and it must stay **additive, observation-only, and upstreamable** (see
 [`DECISIONS.md`](DECISIONS.md)).
 
+**Current initiative — End-to-end tour upgrade** ([`docs/end-to-end-tour-plan.md`](docs/end-to-end-tour-plan.md)):
+upgrade the reading tour to an interactive HRW-driven walkthrough by building three visualization
+features: (1) equation sheet (#27), (2) source-to-equation traceability (#28, depends on #27),
+(3) solver stepping (#29, independent). Then wire them into the tour document. Infrastructure
+features are medium-independent — build them now; refine the narrative later from Cellier reading.
+
 **Current work — Pass two, in this order:**
 1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than
    the public API allowed. Per arc: scout what state the phase holds (read the crate under

@@ -35,6 +35,7 @@ use std::collections::{BTreeMap, HashMap};
 // running in a terminal alongside this app): we write JSON "focus" files that
 // Claude reads to understand what the user is looking at.
 use crate::bridge::{self, Ask, Focus, Seg};
+use crate::equation_sheet;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::canvas::Canvas;
@@ -83,6 +84,14 @@ enum StructuralView {
     MatchingAnim,
     TarjanAnim,
     Reduction,
+    Tree,
+}
+
+/// Sub-tab selector for the Flatten stage: readable equation sheet or the
+/// generic serde tree.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FlattenView {
+    Equations,
     Tree,
 }
 
@@ -213,6 +222,7 @@ pub struct App {
     // These stages have a spy-plot and incidence-matrix visualization in
     // addition to the generic JSON tree. Each custom view has its own `Canvas`
     // (pan/zoom camera state).
+    flatten_view: FlattenView,
     structural_view: StructuralView,
     spy_canvas: Canvas,
     incidence_canvas: Canvas,
@@ -257,6 +267,7 @@ pub struct App {
     cached_spy_plot: Option<Option<spyplot::Plot>>,
     cached_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
     cached_reduction: Option<Option<reduction_view::ReductionView>>,
+    cached_equation_sheet: Option<equation_sheet::EquationSheet>,
     cached_matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
     matching_anim_canvas: Canvas,
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
@@ -360,6 +371,7 @@ impl App {
             show_about: false,
             field_help: field_help::load(),
             selected_field: None,
+            flatten_view: FlattenView::Equations,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
@@ -376,6 +388,7 @@ impl App {
             cached_spy_plot: None,
             cached_incidence: None,
             cached_reduction: None,
+            cached_equation_sheet: None,
             cached_matching_anim: None,
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
@@ -466,6 +479,7 @@ impl App {
         self.sim_error = None;
         self.sim_running = false;
         self.def_index = BTreeMap::new();
+        self.cached_equation_sheet = None;
         // Reset the "user has clicked a stage" flag so the right panel starts
         // with specimen info, not stage-specific help.
         self.stage_clicked = false;
@@ -545,7 +559,7 @@ impl App {
                     self.stages = stages;
                 }
                 FromWorker::Compiled {
-                    path, model, stages, def_index,
+                    path, model, stages, def_index, equation_sheet,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -558,6 +572,7 @@ impl App {
                     self.model = model;
                     self.stages = stages;
                     self.def_index = def_index;
+                    self.cached_equation_sheet = equation_sheet;
                     self.cached_spy_plot = None;
                     self.cached_incidence = None;
                     self.cached_reduction = None;
@@ -1175,6 +1190,74 @@ impl App {
         }
     }
 
+    fn equation_sheet_ui(&self, ui: &mut egui::Ui) {
+        let Some(sheet) = &self.cached_equation_sheet else {
+            ui.weak("(no equation sheet)");
+            return;
+        };
+
+        egui::ScrollArea::both()
+            .id_salt("equation_sheet")
+            .auto_shrink(false)
+            .show(ui, |ui| {
+                ui.add_space(4.0);
+                ui.label(
+                    egui::RichText::new(format!(
+                        "{} continuous equations   |   {} states, {} algebraics, {} parameters",
+                        sheet.n_equations, sheet.n_states, sheet.n_algebraics, sheet.n_parameters,
+                    ))
+                    .strong(),
+                );
+                if sheet.n_constants > 0 || sheet.n_discrete > 0 || sheet.n_inputs > 0 || sheet.n_outputs > 0 {
+                    let mut extras = Vec::new();
+                    if sheet.n_constants > 0 { extras.push(format!("{} constants", sheet.n_constants)); }
+                    if sheet.n_discrete > 0 { extras.push(format!("{} discrete", sheet.n_discrete)); }
+                    if sheet.n_inputs > 0 { extras.push(format!("{} inputs", sheet.n_inputs)); }
+                    if sheet.n_outputs > 0 { extras.push(format!("{} outputs", sheet.n_outputs)); }
+                    ui.weak(extras.join(", "));
+                }
+
+                ui.add_space(8.0);
+
+                for (cat, eqs) in &sheet.groups {
+                    ui.add_space(6.0);
+                    ui.label(egui::RichText::new(format!("{} ({})", cat.label(), eqs.len())).strong());
+                    ui.weak(cat.description());
+                    ui.add_space(2.0);
+                    for eq in eqs {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new(&eq.text).monospace());
+                        });
+                    }
+                }
+
+                ui.add_space(12.0);
+                ui.separator();
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("Variable classification").strong());
+                ui.add_space(2.0);
+
+                egui::Grid::new("var_grid")
+                    .striped(true)
+                    .num_columns(4)
+                    .spacing([12.0, 2.0])
+                    .show(ui, |ui| {
+                        ui.label(egui::RichText::new("Name").strong());
+                        ui.label(egui::RichText::new("Kind").strong());
+                        ui.label(egui::RichText::new("Start").strong());
+                        ui.label(egui::RichText::new("Unit").strong());
+                        ui.end_row();
+
+                        for v in &sheet.variables {
+                            ui.label(egui::RichText::new(&v.name).monospace());
+                            ui.label(v.kind);
+                            ui.label(v.start.as_deref().unwrap_or("—"));
+                            ui.label(v.unit.as_deref().unwrap_or(""));
+                            ui.end_row();
+                        }
+                    });
+            });
+    }
 }
 
 impl eframe::App for App {
@@ -1640,6 +1723,17 @@ impl eframe::App for App {
                     }
                 }
 
+                // The Flatten stage offers an equation sheet alongside the tree.
+                let flatten_ready =
+                    self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
+                if flatten_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut self.flatten_view, FlattenView::Equations, "Equations");
+                        ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
+                    });
+                    ui.separator();
+                }
+
                 // The report stages (Structural + Index reduction) offer a custom
                 // BLT spy-plot alongside the generic tree; every other stage is
                 // tree-only.
@@ -1853,6 +1947,8 @@ impl eframe::App for App {
                     } else {
                         ui.weak("(no reduction data in this report)");
                     }
+                } else if flatten_ready && self.flatten_view == FlattenView::Equations {
+                    self.equation_sheet_ui(ui);
                 } else {
                     let stage = self.current_stage();
                     match &stage.value {
@@ -2070,6 +2166,7 @@ impl App {
             show_about: false,
             field_help: HashMap::new(),
             selected_field: None,
+            flatten_view: FlattenView::Equations,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
@@ -2086,6 +2183,7 @@ impl App {
             cached_spy_plot: None,
             cached_incidence: None,
             cached_reduction: None,
+            cached_equation_sheet: None,
             cached_matching_anim: None,
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,

@@ -40,6 +40,7 @@ hrw/
 │   ├── matching_anim.rs   # Animated matching stepper (augmenting-path replay)
 │   ├── tarjan_anim.rs     # Animated Tarjan SCC stepper (BLT discovery replay)
 │   ├── reduction_view.rs  # Index reduction process summary panel
+│   ├── equation_sheet.rs  # Readable equation sheet from the flat DAE
 │   ├── log_view.rs     # Timestamped compilation/simulation log panel
 │   └── field_help.rs   # Build-time-embedded IR field documentation
 ├── specimens/          # Modelica source files (the inputs)
@@ -519,6 +520,20 @@ funnel did: which states were demoted, which equations were differentiated, whic
 variables were eliminated. Renders as sections: summary → funnel steps → demoted
 states → differentiated equations → trivial eliminations. Color-coded: green for
 successful steps, red for stopped, neutral for no-ops.
+
+
+### Equation sheet (`equation_sheet.rs`, ~280 lines)
+
+A readable view of the flat DAE as math, replacing the raw JSON tree for the
+Flatten stage. Built from the typed `Dae` in the worker thread (where the typed IR
+lives), using the precedence-aware `expr_format` pretty-printer. Equations are
+grouped by origin category (component, connection, flow conservation, binding,
+event) with counts and descriptions. Below the equations, a striped grid shows the
+variable classification: name, kind (state/algebraic/parameter/...), start value,
+and unit. The Flatten tab gains sub-tabs: "Equations" (this sheet) and "Tree" (the
+generic serde-value inspector). Data model: `EquationSheet` struct with
+`FormattedEquation` entries and `ClassifiedVariable` entries, built by
+`equation_sheet::build(&dae)`.
 
 
 ## 8. The Claude bridge

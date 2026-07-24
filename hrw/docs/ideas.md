@@ -42,6 +42,9 @@ tour take priority over unlinked items of the same severity.
 | #10 Cross-stage identifier tracking | (all tours) |
 | #11 In-view search | (all tours) |
 | #26 VS Code extension: Trace / Debug / Arm-it | (all tours) |
+| #27 Equation sheet (readable DAE) | Flatten, Structural Analysis |
+| #28 Source-to-equation traceability | Flatten (bridges Parse–Flatten) |
+| #29 Solver stepping visualization | Simulation |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -794,3 +797,110 @@ right-click on a Modelica identifier.
 - **#25 Live breakpoint arming** — the debug shortcut is capability 3, subsumed here
 - **#9 Animated algorithm stepping** — debug-this-identifier syncs with live
   algorithm animations
+
+## 27. Equation sheet — the flat DAE in readable math notation
+
+Captured 2026-07-24 (Doug + Claude). The Flatten tab today shows the flat DAE as a
+JSON tree. Enhancement: render the system of equations in **readable mathematical
+notation** — one equation per line, variables and operators formatted as math, not
+as nested JSON objects.
+
+- **Why it matters:** the flat DAE is the central artifact of the entire compilation
+  pipeline — everything before it (Parse through Typecheck) builds toward it, and
+  everything after it (Structural through Simulation) operates on it. Yet the current
+  view buries the equations inside a serde-value tree where `der(h) = v` reads as
+  `{"lhs": {"Der": {"arg": {"ComponentRef": ...}}}, "rhs": ...}`. Rendering equations
+  as math makes the "what does the solver actually see?" moment land immediately.
+- **Foundation exists:** `expr_format.rs` already renders equation expressions as
+  readable strings for the incidence matrix column labels (e.g. `der(h) = v`,
+  `h + (-g) * t = 0`). The equation sheet extends this from single-line labels to a
+  full formatted listing — variable classification (states, algebraic, parameters),
+  equation grouping (by BLT block, by origin component), and residual vs explicit form.
+- **Tour value:** the Flatten guided tour's central "aha" moment is "your Modelica
+  `connect(a, b)` became *these* conservation equations." That moment needs a readable
+  equation listing, not a JSON tree. The equation sheet would also improve the
+  Structural Analysis tour (annotating which equations are in which BLT blocks) and the
+  Index Reduction tour (showing which equations were differentiated).
+- **Sketch:** a scrollable pane (tab or panel) listing each equation as formatted text,
+  grouped by BLT block (if structural analysis has run) or by origin. Variable
+  classification sidebar (state/algebraic/parameter). Click an equation to highlight
+  its row in the incidence matrix; click a variable to highlight its column. Reuses
+  `expr_format` for rendering, `incidence_view` for cross-linking.
+- **Specimens:** RotationalInertia (small, readable system) → ProportionalLoop
+  (algebraic loop visible in the equation grouping) → BouncingBall (hybrid equations
+  with event conditions annotated).
+
+## 28. Source-to-equation traceability — bridging the OO/flat divide
+
+Captured 2026-07-24 (Doug + Claude). A side-by-side or linked view showing which
+Modelica source lines produced which equations in the flat DAE.
+
+- **Why it matters:** the pipeline's biggest conceptual gap is between the
+  object-oriented model (phases 1–4: Parse, Resolve, Instantiate, Typecheck) and the
+  flat mathematical system (phases 5+: Flatten, Structural, Simulation). A `connect`
+  statement in the source becomes conservation equations; a component's `equation`
+  section becomes residual equations with qualified variable names; a `parameter`
+  becomes a numeric constant. Without a visual bridge, these two worlds feel
+  disconnected — the learner can't answer "where did equation 7 come from?" or
+  "what happened to my `connect(flange_a, flange_b)`?"
+- **Foundation exists:** Rumoca's IR carries `location` spans (byte offsets into the
+  source file) through the pipeline. The bridge module's `ascend_provenance` already
+  traces a node back to its source line. The equation sheet (#27) would give equations
+  readable labels. Combining these: each equation in the flat DAE links back to the
+  source line(s) that produced it.
+- **Sketch:** two panes — Modelica source on the left, equation sheet on the right.
+  Click a source line → highlight the equations it generated. Click an equation →
+  highlight the source line(s) that produced it. Color-code by origin type: `connect`
+  equations (flow sums, potential equalities), component equations, parameter bindings.
+  For `connect`: show "these two flow variables sum to zero because of this connect
+  statement."
+- **Tour value:** the Flatten tour's story arc is "OO model → flat math." This view
+  *is* that story arc, made visual. The guided tour can literally say "click on
+  `connect(flange_a, flange_b)` and see the two equations it generated."
+- **Relationship to #10 and #26:** cross-stage identifier tracking (#10) follows a
+  *variable* through the pipeline; this follows an *equation* back to its *source*.
+  Complementary: #10 answers "what happened to variable `v`?", this answers "where
+  did equation 7 come from?" The VS Code integration (#26) could initiate this from
+  a right-click on a `connect` statement.
+
+## 29. Solver stepping visualization — what the integrator does at each time step
+
+Captured 2026-07-24 (Doug + Claude). During simulation, visualize the solver's
+internal decisions at each time step: step size adaptation, Newton iteration counts,
+convergence behavior, and (for BDF) order changes.
+
+- **Why it matters:** the simulation plot shows *results* but not *process*. The
+  learner sees that `BenchActuator` converges and `BouncingBall` bounces, but not
+  *why* the solver chose those step sizes, *why* it needed 4 Newton iterations at
+  one point and 1 at another, or *why* BDF order 2 was selected over order 1. These
+  are the core questions of numerical methods for DAEs — and they're invisible today.
+  Seeing the solver struggle at a stiff transient (step size shrinking, Newton
+  iterations climbing) and then recover (step size growing, iterations dropping)
+  makes the theory of stiffness, implicit methods, and adaptive control concrete.
+- **Complements #18 and #22:** idea #18 (BDF step-size and order) covers the
+  integrator's macro-level decisions; idea #22 (Newton convergence) covers the
+  per-step micro-level. This idea unifies both into a single solver-stepping view
+  that shows the complete picture: at time t, the solver took a step of size h,
+  at BDF order k, requiring n Newton iterations with final residual r. Together
+  they answer "what is the solver actually doing?" at every level of detail.
+- **Sketch:** a secondary plot panel synchronized with the trajectory plot's time
+  axis. Three time-series sub-plots stacked vertically:
+  1. **Step size h(t)** — log scale, showing adaptation. Dramatic shrinkage at
+     events or stiff transients; smooth growth in quiet regions.
+  2. **Newton iterations per step** — integer values, typically 1–6. Spikes
+     indicate coupling or near-singularity in the BLT blocks.
+  3. **BDF order k(t)** — integer 1–5, showing the stability/accuracy trade-off.
+  Click a time point → see the details: which BLT block required the most Newton
+  iterations, what the residual norm was, whether an event was detected nearby.
+- **The stiffness story:** run `BenchActuator` with both BDF and RK45. Overlay
+  the step-size plots. BDF takes ~100 large steps through the stiff actuator
+  transient; RK45 takes ~10,000 tiny steps (stability-limited). The visual
+  contrast *is* the explanation of stiffness — no textbook definition needed.
+- **Rumoca entry point:** `rumoca-sim::simulate_solve_model` currently returns only
+  the resampled output grid. Instrumentation needed: a per-step callback or a
+  post-hoc log recording `(t, h, order, newton_iters, residual_norm,
+  event_detected)` from diffsol's integration loop. This is pass-two
+  instrumentation territory — the simulation loop is inside `rumoca-sim`.
+- **Textbook link:** Hairer & Wanner, *Solving ODEs II* (BDF step/order control);
+  Brenan, Campbell & Petzold, *Numerical Solution of Initial-Value Problems in
+  DAEs* (Newton convergence on DAE systems).

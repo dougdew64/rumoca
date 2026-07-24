@@ -483,6 +483,8 @@ pub enum FromWorker {
         stages: StageBundle,
         /// Resolved identity of every DefId referenced in the model's IR.
         def_index: BTreeMap<u64, DefInfo>,
+        /// Pre-formatted equation sheet built from the typed DAE.
+        equation_sheet: Option<crate::equation_sheet::EquationSheet>,
     },
     /// A class opened by navigation: its qualified name and (on success) its
     /// resolved IR plus the DefIds it references, so navigation can continue.
@@ -966,6 +968,7 @@ impl WorkerState {
                         ..Default::default()
                     },
                     def_index: BTreeMap::new(),
+                    equation_sheet: None,
                 };
             }
         };
@@ -1100,10 +1103,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, structural, index_reduction, initialization, events, solve_lowering) = match &model {
+        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e))
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None)
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -1116,6 +1119,13 @@ impl WorkerState {
                 drain_output(&mut output_capture, &log);
 
                 let result = report.requested_result.as_ref();
+
+                let eq_sheet = match result {
+                    Some(PhaseResult::Success(cr)) => {
+                        Some(crate::equation_sheet::build(&cr.dae))
+                    }
+                    _ => None,
+                };
 
                 let mut bundle = StageBundle {
                     parse: parse.clone(),
@@ -1155,7 +1165,7 @@ impl WorkerState {
 
                 log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
 
-                (flatten, structural, index_reduction, initialization, events, solve_lowering)
+                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet)
             }
         };
 
@@ -1184,6 +1194,7 @@ impl WorkerState {
                 solve_lowering,
             },
             def_index,
+            equation_sheet,
         }
     }
 }
