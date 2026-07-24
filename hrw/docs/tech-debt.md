@@ -23,14 +23,14 @@ for details.
   but not the debug state).
   *Files:* `app.rs` — `open()` (~line 456) and `Compiled` handler (~line 539).
 
-- [ ] **Dangling doc comment on `check_breakpoint_ack`.**
+- [x] **Dangling doc comment on `check_breakpoint_ack`.**
   `bridge.rs` lines 292–296 have two doc comments concatenated: a stale
   fragment ("Write a breakpoint request for `live_trace_breakpoint`...") left
   from a code edit is prepended to the real doc comment for
   `check_breakpoint_ack`. Remove the stale fragment.
   *File:* `bridge.rs` (~line 292).
 
-- [ ] **Extension: version-check early return leaves request file on disk.**
+- [x] **Extension: version-check early return leaves request file on disk.**
   In `extension.ts` `handleRequest`, if `request.version !== 1` the function
   returns without calling `fs.unlinkSync(requestPath)`. The request file stays
   on disk as dead state. The `return` should still delete the file before

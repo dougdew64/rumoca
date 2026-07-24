@@ -85,6 +85,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
             if (request.version !== 1) {
                 output.appendLine(`Unknown request version: ${request.version}`);
+                fs.unlinkSync(requestPath);
                 return;
             }
 

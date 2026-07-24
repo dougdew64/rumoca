@@ -289,9 +289,6 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     Ok(path)
 }
 
-/// Write a breakpoint request for `live_trace_breakpoint` so the HRW Debugger
-/// Bridge extension arms it on the running debug session before the algorithm
-/// thread starts.
 /// Check whether the extension has acknowledged the last breakpoint request.
 /// Returns `true` and deletes the ack file if it exists.
 pub fn check_breakpoint_ack() -> bool {
