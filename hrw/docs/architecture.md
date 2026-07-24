@@ -531,7 +531,9 @@ grouped by origin category (component, connection, flow conservation, binding,
 event) with counts and descriptions. Below the equations, a striped grid shows the
 variable classification: name, kind (state/algebraic/parameter/...), start value,
 and unit. The Flatten tab gains sub-tabs: "Equations" (this sheet) and "Tree" (the
-generic serde-value inspector). Data model: `EquationSheet` struct with
+generic serde-value inspector). Clicking an equation highlights its row in the
+incidence matrix and auto-switches to the Structural / Incidence view (cross-link
+via `App::highlighted_eq_row`). Data model: `EquationSheet` struct with
 `FormattedEquation` entries and `ClassifiedVariable` entries, built by
 `equation_sheet::build(&dae)`.
 

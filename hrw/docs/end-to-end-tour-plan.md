@@ -87,7 +87,7 @@ The single highest-leverage feature. Transforms the weakest tour stop
   initial)
 - [x] Show variable classification table (states, algebraic, parameters,
   with start values and units)
-- [ ] Click an equation → highlight its incidence matrix row (cross-link
+- [x] Click an equation → highlight its incidence matrix row (cross-link
   to Structural tab)
 
 **Milestone:** open GearWithBrake → Flatten → Equations → see all 44

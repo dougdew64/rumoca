@@ -223,6 +223,7 @@ pub struct App {
     // addition to the generic JSON tree. Each custom view has its own `Canvas`
     // (pan/zoom camera state).
     flatten_view: FlattenView,
+    highlighted_eq_row: Option<usize>,
     structural_view: StructuralView,
     spy_canvas: Canvas,
     incidence_canvas: Canvas,
@@ -372,6 +373,7 @@ impl App {
             field_help: field_help::load(),
             selected_field: None,
             flatten_view: FlattenView::Equations,
+            highlighted_eq_row: None,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
@@ -480,6 +482,7 @@ impl App {
         self.sim_running = false;
         self.def_index = BTreeMap::new();
         self.cached_equation_sheet = None;
+        self.highlighted_eq_row = None;
         // Reset the "user has clicked a stage" flag so the right panel starts
         // with specimen info, not stage-specific help.
         self.stage_clicked = false;
@@ -1190,11 +1193,16 @@ impl App {
         }
     }
 
-    fn equation_sheet_ui(&self, ui: &mut egui::Ui) {
+    fn equation_sheet_ui(&mut self, ui: &mut egui::Ui) {
         let Some(sheet) = &self.cached_equation_sheet else {
             ui.weak("(no equation sheet)");
             return;
         };
+
+        let has_incidence = self.cached_incidence.as_ref().is_some_and(|c| c.is_some())
+            || self.stages.get(StageKind::Structural).value.is_some();
+
+        let mut clicked_row = None;
 
         egui::ScrollArea::both()
             .id_salt("equation_sheet")
@@ -1217,6 +1225,10 @@ impl App {
                     ui.weak(extras.join(", "));
                 }
 
+                if has_incidence {
+                    ui.weak("Click an equation to highlight it in the incidence matrix.");
+                }
+
                 ui.add_space(8.0);
 
                 for (cat, eqs) in &sheet.groups {
@@ -1225,9 +1237,17 @@ impl App {
                     ui.weak(cat.description());
                     ui.add_space(2.0);
                     for eq in eqs {
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(&eq.text).monospace());
-                        });
+                        let selected = self.highlighted_eq_row == Some(eq.index);
+                        let text = egui::RichText::new(&eq.text).monospace();
+                        if has_incidence {
+                            let resp = ui.selectable_label(selected, text);
+                            if resp.clicked() {
+                                clicked_row = Some(if selected { None } else { Some(eq.index) });
+                            }
+                            resp.on_hover_text(format!("f_x[{}] — {}", eq.index, &eq.origin));
+                        } else {
+                            ui.horizontal(|ui| { ui.label(text); });
+                        }
                     }
                 }
 
@@ -1257,6 +1277,15 @@ impl App {
                         }
                     });
             });
+
+        if let Some(new_val) = clicked_row {
+            self.highlighted_eq_row = new_val;
+            if new_val.is_some() {
+                self.stage = StageKind::Structural;
+                self.structural_view = StructuralView::Incidence;
+                self.stage_clicked = true;
+            }
+        }
     }
 }
 
@@ -1781,7 +1810,7 @@ impl eframe::App for App {
                     });
                     if let Some(mat) = cached {
                         ui.weak(mat.caption());
-                        mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture);
+                        mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture, self.highlighted_eq_row);
                     } else {
                         ui.weak("(no incidence data in this report)");
                     }
@@ -2167,6 +2196,7 @@ impl App {
             field_help: HashMap::new(),
             selected_field: None,
             flatten_view: FlattenView::Equations,
+            highlighted_eq_row: None,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),

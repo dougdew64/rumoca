@@ -259,7 +259,13 @@ impl IncidenceMatrix {
     /// - Always: filled cells (the actual incidence entries)
     /// - zoom >= 6: grid lines between cells
     /// - zoom >= 16: axis labels (equation names on left, unknown names on top)
-    pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>) {
+    pub fn ui(
+        &self,
+        ui: &mut egui::Ui,
+        canvas: &mut Canvas,
+        capture: &mut Option<Vec<Seg>>,
+        highlighted_row: Option<usize>,
+    ) {
         // Bounds include the label anchor region above the matrix (labels sit
         // at y = -0.6). The fit_vertical_bias (0.1) reserves 10% of the view
         // height above the bounds, giving the angled column labels room.
@@ -305,6 +311,18 @@ impl IncidenceMatrix {
             let band_color = hover_color.gamma_multiply(0.12);
             painter.rect_filled(view.to_screen_rect(row_band), egui::CornerRadius::ZERO, band_color);
             painter.rect_filled(view.to_screen_rect(col_band), egui::CornerRadius::ZERO, band_color);
+        }
+
+        // --- Persistent highlight from equation sheet cross-link ---
+        if let Some(hr) = highlighted_row {
+            if hr < self.n_eq {
+                let band = egui::Rect::from_min_size(
+                    egui::pos2(0.0, hr as f32),
+                    egui::vec2(self.n_var as f32, 1.0),
+                );
+                let highlight_color = crate::colors::INCIDENCE_HOVER.gamma_multiply(0.25);
+                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
+            }
         }
 
         // --- Unmatched row/column bands (rank deficiency) ---
