@@ -473,6 +473,14 @@ impl App {
         self.nav_loading = None;
         self.nav_error = None;
         self.selected_field = None;
+        // Clean up any in-flight or active live debug session. Without this,
+        // switching specimens while arming or running leaves the breakpoint
+        // armed on the old specimen and the polling state dangling.
+        if self.live_breakpoint_armed {
+            let _ = bridge::remove_live_trace_breakpoint();
+        }
+        self.live_breakpoint_armed = false;
+        self.pending_live_debug = None;
         // Start with the log view so the user sees compilation progress.
         self.log_entries.clear();
         self.viewing_log = true;
@@ -555,6 +563,11 @@ impl App {
                     self.cached_reduction = None;
                     self.cached_matching_anim = None;
                     self.cached_tarjan_anim = None;
+                    if self.live_breakpoint_armed {
+                        let _ = bridge::remove_live_trace_breakpoint();
+                    }
+                    self.live_breakpoint_armed = false;
+                    self.pending_live_debug = None;
                     self.spy_canvas.request_fit();
                     self.incidence_canvas.request_fit();
                     self.matching_anim_canvas.request_fit();
