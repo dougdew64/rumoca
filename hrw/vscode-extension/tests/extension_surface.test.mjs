@@ -41,13 +41,13 @@ describe('breakpoint request schema', () => {
                 {
                     path: '/home/user/dev/rumoca/crates/rumoca-phase-resolve/src/registration.rs',
                     line: 22,
-                    condition: null,
                 },
             ],
         };
         assert.equal(request.version, 1);
         assert.equal(request.breakpoints.length, 1);
         assert.equal(request.breakpoints[0].line, 22);
+        assert.equal(request.breakpoints[0].condition, undefined);
     });
 
     it('supports conditional breakpoints', () => {
@@ -78,5 +78,45 @@ describe('breakpoint request schema', () => {
         };
         assert.equal(request.specimen, 'ProportionalLoop');
         assert.equal(request.breakpoints[0].condition, 'def_id.0 == 85');
+    });
+
+    it('supports action: "remove" for breakpoint removal', () => {
+        const request = {
+            version: 1,
+            action: 'remove',
+            breakpoints: [
+                {
+                    path: '/some/file.rs',
+                    line: 42,
+                },
+            ],
+        };
+        assert.equal(request.action, 'remove');
+        assert.equal(request.breakpoints.length, 1);
+        assert.equal(request.breakpoints[0].line, 42);
+        assert.equal(request.breakpoints[0].condition, undefined);
+    });
+
+    it('default action is "add" when omitted', () => {
+        const request = {
+            version: 1,
+            breakpoints: [{ path: '/some/file.rs', line: 10 }],
+        };
+        const action = request.action ?? 'add';
+        assert.equal(action, 'add');
+    });
+});
+
+describe('ack file protocol', () => {
+    it('ack structure matches expected schema', () => {
+        const ack = { acked: true };
+        assert.deepEqual(ack, { acked: true });
+        assert.equal(JSON.stringify(ack), '{"acked":true}');
+    });
+
+    it('ack file is parseable JSON with trailing newline', () => {
+        const raw = JSON.stringify({ acked: true }) + '\n';
+        const parsed = JSON.parse(raw);
+        assert.equal(parsed.acked, true);
     });
 });

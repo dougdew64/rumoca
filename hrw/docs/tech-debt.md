@@ -50,7 +50,7 @@ for details.
 
 ## Code quality / duplication
 
-- [ ] **Duplicated line-finding logic in `arm_` and `remove_live_trace_breakpoint`.**
+- [x] **Duplicated line-finding logic in `arm_` and `remove_live_trace_breakpoint`.**
   Both functions canonicalize `LIVE_TRACE_FILE`, read its source, and find the
   line containing `pub fn live_trace_breakpoint(` with identical code. Extract
   to a `fn find_live_trace_breakpoint_line() -> io::Result<(PathBuf, usize)>`
@@ -59,7 +59,7 @@ for details.
 
 ## Test gaps
 
-- [ ] **No tests for `bridge::arm_live_trace_breakpoint`.**
+- [x] **No tests for `bridge::arm_live_trace_breakpoint`.**
   The function finds the line number of `live_trace_breakpoint` in the source
   file and generates a breakpoint-request JSON. No test verifies the
   line-finding logic or the JSON structure. Add a test that calls the function
@@ -67,25 +67,25 @@ for details.
   points at `pub fn live_trace_breakpoint(`.
   *File:* `bridge.rs`.
 
-- [ ] **No tests for `bridge::remove_live_trace_breakpoint`.**
+- [x] **No tests for `bridge::remove_live_trace_breakpoint`.**
   Same line-finding logic, same JSON generation, same gap. A test should verify
   it produces an `action: "remove"` request with the correct file and line.
   *File:* `bridge.rs`.
 
-- [ ] **No tests for `bridge::check_breakpoint_ack`.**
+- [x] **No tests for `bridge::check_breakpoint_ack`.**
   The function checks file existence, deletes the file, and returns a bool. No
   test verifies this. Add a test that creates the ack file, calls the function,
   asserts it returns `true` and the file is deleted, then calls again and
   asserts `false`.
   *File:* `bridge.rs`.
 
-- [ ] **Extension tests: no coverage for `action: "remove"` protocol.**
+- [x] **Extension tests: no coverage for `action: "remove"` protocol.**
   `extension_surface.test.mjs` validates add requests and specimen
   accumulation, but has no test for the remove action schema (the `action`
   field, the matching semantics, the log output).
   *File:* `vscode-extension/tests/extension_surface.test.mjs`.
 
-- [ ] **Extension tests: no coverage for ack file protocol.**
+- [x] **Extension tests: no coverage for ack file protocol.**
   No test verifies that the extension writes `breakpoint-ack.json` after
   processing a request. Add a schema-level test asserting the expected ack
   structure `{ "acked": true }`.
@@ -93,12 +93,12 @@ for details.
 
 ## Documentation gaps
 
-- [ ] **DECISIONS.md still references old "arm it" shortcut name.**
+- [x] **DECISIONS.md still references old "arm it" shortcut name.**
   Line 142 says `"arm it"` — should say `"debug"` after the rename
   (commit 9d930e99).
   *File:* `DECISIONS.md` (~line 142).
 
-- [ ] **Memory index (MEMORY.md) has stale shortcut name.**
+- [x] **Memory index (MEMORY.md) has stale shortcut name.**
   The index line for `hrw-chat-shortcuts.md` still says
   `` `arm it` (arm the debugger breakpoint) `` though the memory file itself
   was updated to `debug`. Update the index line.

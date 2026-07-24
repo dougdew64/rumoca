@@ -300,6 +300,20 @@ pub fn check_breakpoint_ack() -> bool {
     }
 }
 
+/// Locate `pub fn live_trace_breakpoint(` in the source and return its
+/// canonical path and 1-based line number.
+fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
+    let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
+    let source = fs::read_to_string(&file)?;
+    let line = source
+        .lines()
+        .enumerate()
+        .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
+        .map(|(i, _)| i + 1)
+        .unwrap_or(109);
+    Ok((file, line))
+}
+
 /// Arm a breakpoint on `live_trace_breakpoint` for live algorithm stepping.
 ///
 /// Writes a breakpoint request to `.hrw-bridge/breakpoint-request.json`.
@@ -311,14 +325,7 @@ pub fn check_breakpoint_ack() -> bool {
 /// request triggers the spawn.
 pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> {
     let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
-    let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
-    let source = fs::read_to_string(&file)?;
-    let line = source
-        .lines()
-        .enumerate()
-        .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
-        .map(|(i, _)| i + 1)
-        .unwrap_or(109);
+    let (file, line) = find_live_trace_line()?;
     let specimen_field = specimen
         .map(|s| format!("\"specimen\": \"{s}\",\n  "))
         .unwrap_or_default();
@@ -334,14 +341,7 @@ pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> 
 /// Remove the `live_trace_breakpoint` breakpoint when the live debug session
 /// finishes, preventing a SIGSTOP signal when the algorithm thread exits.
 pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
-    let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
-    let source = fs::read_to_string(&file)?;
-    let line = source
-        .lines()
-        .enumerate()
-        .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
-        .map(|(i, _)| i + 1)
-        .unwrap_or(109);
+    let (file, line) = find_live_trace_line()?;
     let request = format!(
         "{{\n  \"version\": 1,\n  \"action\": \"remove\",\n  \"breakpoints\": [\n    {{\n      \
          \"path\": \"{path}\",\n      \"line\": {line}\n    }}\n  ]\n}}\n",
@@ -1046,5 +1046,48 @@ mod tests {
         };
         let doc = build(&ask);
         assert_eq!(doc["stage"], json!("(navigated definition)"));
+    }
+
+    #[test]
+    fn find_live_trace_line_locates_function() {
+        let (path, line) = find_live_trace_line().expect("find_live_trace_line");
+        let source = fs::read_to_string(&path).unwrap();
+        let found_line = source.lines().nth(line - 1).unwrap();
+        assert!(
+            found_line.contains("pub fn live_trace_breakpoint("),
+            "line {line} should contain the function signature, got: {found_line}"
+        );
+    }
+
+    /// Tests arm, remove, and ack together to avoid races on the shared
+    /// bridge directory (all three write to the same request/ack files).
+    #[test]
+    fn live_trace_breakpoint_arm_remove_and_ack() {
+        // arm
+        arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
+        let content = fs::read_to_string(BREAKPOINT_REQUEST_FILE).expect("read request");
+        let req: serde_json::Value = serde_json::from_str(&content).expect("parse JSON");
+        assert_eq!(req["version"], json!(1));
+        assert_eq!(req["specimen"], json!("TestModel"));
+        let bp = &req["breakpoints"][0];
+        assert!(bp["path"].as_str().unwrap().contains("live_trace.rs"));
+        assert!(bp["line"].as_u64().unwrap() > 0);
+        assert_eq!(bp.get("condition"), None, "no condition field when absent");
+
+        // remove
+        remove_live_trace_breakpoint().expect("remove");
+        let content = fs::read_to_string(BREAKPOINT_REQUEST_FILE).expect("read request");
+        let req: serde_json::Value = serde_json::from_str(&content).expect("parse JSON");
+        assert_eq!(req["version"], json!(1));
+        assert_eq!(req["action"], json!("remove"));
+        assert!(req["breakpoints"][0]["path"].as_str().unwrap().contains("live_trace.rs"));
+
+        // ack
+        fs::write(BREAKPOINT_ACK_FILE, r#"{"acked":true}"#).unwrap();
+        assert!(check_breakpoint_ack(), "should return true when ack file exists");
+        assert!(!Path::new(BREAKPOINT_ACK_FILE).exists(), "ack file should be deleted");
+        assert!(!check_breakpoint_ack(), "should return false when ack file is gone");
+
+        let _ = fs::remove_file(BREAKPOINT_REQUEST_FILE);
     }
 }

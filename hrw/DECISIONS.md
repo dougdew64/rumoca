@@ -139,7 +139,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   now carries a `request` field). Claude reads that, maps the field → the exact Rumoca assignment site
   (`docs/debug-set-sites.md`, keyed by function so line drift doesn't break it — re-located in the
   clone at arm-time), and rewrites the `preRunCommands` of the `.vscode/launch.json` "Debug HRW — break
-  where Claude armed" config. User flow: right-click → 🐞 → "arm it" → launch that config → select the
+  where Claude armed" config. User flow: right-click → 🐞 → "debug" → launch that config → select the
   specimen. The one irreducible step (launching the debug config) is VS Code's; everything up to it is
   automated. Tier-2 upgrade (a `Monitor` watcher that arms the instant 🐞 is clicked, no cue) is
   offered but not built.
