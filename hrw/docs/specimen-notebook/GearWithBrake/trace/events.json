@@ -1,0 +1,1004 @@
+{
+  "summary": {
+    "condition_equations": 4,
+    "relations": 4,
+    "discrete_real_updates": 0,
+    "discrete_valued_updates": 1,
+    "zero_crossing_conditions": 0,
+    "scheduled_time_events": 0
+  },
+  "conditions": {
+    "equations_f_c": [
+      {
+        "lhs": {
+          "name": "c[1]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3266,
+              "end": 3273
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3266,
+                  "end": 3273
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 1,
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 3266,
+                        "end": 3273
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "VarRef": {
+            "name": {
+              "name": "braking",
+              "component_ref": {
+                "local": false,
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2569,
+                  "end": 2584
+                },
+                "parts": [
+                  {
+                    "ident": "braking",
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 2569,
+                      "end": 2584
+                    },
+                    "subs": []
+                  }
+                ],
+                "def_id": 39565
+              }
+            },
+            "subscripts": [],
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3266,
+              "end": 3273
+            }
+          }
+        },
+        "span": {
+          "source": 2870916914346496452,
+          "start": 3266,
+          "end": 3273
+        },
+        "origin": "condition equation from top-level model equation",
+        "scalar_count": 1
+      },
+      {
+        "lhs": {
+          "name": "c[2]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3287,
+              "end": 3297
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3287,
+                  "end": 3297
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 2,
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 3287,
+                        "end": 3297
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Gt",
+            "lhs": {
+              "VarRef": {
+                "name": {
+                  "name": "load.w",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 10383162805277989159,
+                      "start": 530,
+                      "end": 550
+                    },
+                    "parts": [
+                      {
+                        "ident": "load",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      },
+                      {
+                        "ident": "w",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39522
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3287,
+                  "end": 3293
+                }
+              }
+            },
+            "rhs": {
+              "Literal": {
+                "value": {
+                  "Integer": 0
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3296,
+                  "end": 3297
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3287,
+              "end": 3297
+            }
+          }
+        },
+        "span": {
+          "source": 2870916914346496452,
+          "start": 3287,
+          "end": 3297
+        },
+        "origin": "condition equation from top-level model equation",
+        "scalar_count": 1
+      },
+      {
+        "lhs": {
+          "name": "c[3]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3072,
+              "end": 3089
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3072,
+                  "end": 3089
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 3,
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 3072,
+                        "end": 3089
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Gt",
+            "lhs": {
+              "VarRef": {
+                "name": {
+                  "name": "load.w",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 10383162805277989159,
+                      "start": 530,
+                      "end": 550
+                    },
+                    "parts": [
+                      {
+                        "ident": "load",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      },
+                      {
+                        "ident": "w",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39522
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3072,
+                  "end": 3078
+                }
+              }
+            },
+            "rhs": {
+              "VarRef": {
+                "name": {
+                  "name": "maxSpeed",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 2425,
+                      "end": 2438
+                    },
+                    "parts": [
+                      {
+                        "ident": "maxSpeed",
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 2425,
+                          "end": 2438
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39563
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3081,
+                  "end": 3089
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3072,
+              "end": 3089
+            }
+          }
+        },
+        "span": {
+          "source": 2870916914346496452,
+          "start": 3072,
+          "end": 3089
+        },
+        "origin": "condition equation from guarded when equation assignment to braking",
+        "scalar_count": 1
+      },
+      {
+        "lhs": {
+          "name": "c[4]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3126,
+              "end": 3149
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3126,
+                  "end": 3149
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 4,
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 3126,
+                        "end": 3149
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Lt",
+            "lhs": {
+              "VarRef": {
+                "name": {
+                  "name": "load.w",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 10383162805277989159,
+                      "start": 530,
+                      "end": 550
+                    },
+                    "parts": [
+                      {
+                        "ident": "load",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      },
+                      {
+                        "ident": "w",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39522
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3126,
+                  "end": 3132
+                }
+              }
+            },
+            "rhs": {
+              "Binary": {
+                "op": "Mul",
+                "lhs": {
+                  "VarRef": {
+                    "name": {
+                      "name": "maxSpeed",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 2425,
+                          "end": 2438
+                        },
+                        "parts": [
+                          {
+                            "ident": "maxSpeed",
+                            "span": {
+                              "source": 2870916914346496452,
+                              "start": 2425,
+                              "end": 2438
+                            },
+                            "subs": []
+                          }
+                        ],
+                        "def_id": 39563
+                      }
+                    },
+                    "subscripts": [],
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3135,
+                      "end": 3143
+                    }
+                  }
+                },
+                "rhs": {
+                  "Literal": {
+                    "value": {
+                      "Real": 0.5
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3146,
+                      "end": 3149
+                    }
+                  }
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3135,
+                  "end": 3149
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3126,
+              "end": 3149
+            }
+          }
+        },
+        "span": {
+          "source": 2870916914346496452,
+          "start": 3126,
+          "end": 3149
+        },
+        "origin": "condition equation from guarded when equation assignment to braking",
+        "scalar_count": 1
+      }
+    ],
+    "relations": [
+      {
+        "VarRef": {
+          "name": {
+            "name": "braking",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2569,
+                "end": 2584
+              },
+              "parts": [
+                {
+                  "ident": "braking",
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 2569,
+                    "end": 2584
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39565
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3266,
+            "end": 3273
+          }
+        }
+      },
+      {
+        "Binary": {
+          "op": "Gt",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "load.w",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 530,
+                    "end": 550
+                  },
+                  "parts": [
+                    {
+                      "ident": "load",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "w",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39522
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3287,
+                "end": 3293
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Integer": 0
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3296,
+                "end": 3297
+              }
+            }
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3287,
+            "end": 3297
+          }
+        }
+      },
+      {
+        "Binary": {
+          "op": "Gt",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "load.w",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 530,
+                    "end": 550
+                  },
+                  "parts": [
+                    {
+                      "ident": "load",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "w",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39522
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3072,
+                "end": 3078
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "maxSpeed",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 2425,
+                    "end": 2438
+                  },
+                  "parts": [
+                    {
+                      "ident": "maxSpeed",
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 2425,
+                        "end": 2438
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39563
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3081,
+                "end": 3089
+              }
+            }
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3072,
+            "end": 3089
+          }
+        }
+      },
+      {
+        "Binary": {
+          "op": "Lt",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "load.w",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 530,
+                    "end": 550
+                  },
+                  "parts": [
+                    {
+                      "ident": "load",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "w",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39522
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3126,
+                "end": 3132
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "maxSpeed",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 2425,
+                        "end": 2438
+                      },
+                      "parts": [
+                        {
+                          "ident": "maxSpeed",
+                          "span": {
+                            "source": 2870916914346496452,
+                            "start": 2425,
+                            "end": 2438
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39563
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3135,
+                    "end": 3143
+                  }
+                }
+              },
+              "rhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 0.5
+                  },
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3146,
+                    "end": 3149
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3135,
+                "end": 3149
+              }
+            }
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3126,
+            "end": 3149
+          }
+        }
+      }
+    ]
+  },
+  "discrete_updates": {
+    "real_updates_f_z": [],
+    "valued_updates_f_m": [
+      {
+        "lhs": {
+          "name": "braking",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2569,
+              "end": 2584
+            },
+            "parts": [
+              {
+                "ident": "braking",
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2569,
+                  "end": 2584
+                },
+                "subs": []
+              }
+            ],
+            "def_id": 39565
+          }
+        },
+        "rhs": {
+          "If": {
+            "branches": [
+              [
+                {
+                  "Binary": {
+                    "op": "And",
+                    "lhs": {
+                      "VarRef": {
+                        "name": {
+                          "name": "c",
+                          "generated": true
+                        },
+                        "subscripts": [
+                          {
+                            "Index": {
+                              "value": 3,
+                              "span": {
+                                "source": 2870916914346496452,
+                                "start": 3072,
+                                "end": 3089
+                              }
+                            }
+                          }
+                        ],
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 3072,
+                          "end": 3089
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Unary": {
+                        "op": "Not",
+                        "rhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "__pre__.c",
+                              "generated": true
+                            },
+                            "subscripts": [
+                              {
+                                "Index": {
+                                  "value": 3,
+                                  "span": {
+                                    "source": 2870916914346496452,
+                                    "start": 3072,
+                                    "end": 3089
+                                  }
+                                }
+                              }
+                            ],
+                            "span": {
+                              "source": 2870916914346496452,
+                              "start": 3072,
+                              "end": 3089
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 3072,
+                          "end": 3089
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3072,
+                      "end": 3089
+                    }
+                  }
+                },
+                {
+                  "Literal": {
+                    "value": {
+                      "Boolean": true
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3109,
+                      "end": 3113
+                    }
+                  }
+                }
+              ],
+              [
+                {
+                  "Binary": {
+                    "op": "And",
+                    "lhs": {
+                      "VarRef": {
+                        "name": {
+                          "name": "c",
+                          "generated": true
+                        },
+                        "subscripts": [
+                          {
+                            "Index": {
+                              "value": 4,
+                              "span": {
+                                "source": 2870916914346496452,
+                                "start": 3126,
+                                "end": 3149
+                              }
+                            }
+                          }
+                        ],
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 3126,
+                          "end": 3149
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Unary": {
+                        "op": "Not",
+                        "rhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "__pre__.c",
+                              "generated": true
+                            },
+                            "subscripts": [
+                              {
+                                "Index": {
+                                  "value": 4,
+                                  "span": {
+                                    "source": 2870916914346496452,
+                                    "start": 3126,
+                                    "end": 3149
+                                  }
+                                }
+                              }
+                            ],
+                            "span": {
+                              "source": 2870916914346496452,
+                              "start": 3126,
+                              "end": 3149
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 3126,
+                          "end": 3149
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3126,
+                      "end": 3149
+                    }
+                  }
+                },
+                {
+                  "Literal": {
+                    "value": {
+                      "Boolean": false
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3169,
+                      "end": 3174
+                    }
+                  }
+                }
+              ]
+            ],
+            "else_branch": {
+              "VarRef": {
+                "name": {
+                  "name": "__pre__.braking",
+                  "generated": true
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3072,
+                  "end": 3076
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3072,
+              "end": 3076
+            }
+          }
+        },
+        "span": {
+          "source": 2870916914346496452,
+          "start": 3072,
+          "end": 3076
+        },
+        "origin": "guarded when equation assignment to braking",
+        "scalar_count": 1
+      }
+    ]
+  },
+  "events": {
+    "zero_crossing_conditions": [],
+    "scheduled_time_events": []
+  }
+}

@@ -1,0 +1,3594 @@
+{
+  "def_id": 85,
+  "scope_id": 1,
+  "name": {
+    "text": "GearWithBrake",
+    "location": {
+      "start_line": 1,
+      "start_column": 7,
+      "end_line": 1,
+      "end_column": 20,
+      "start": 6,
+      "end": 19,
+      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+    },
+    "token_number": 1,
+    "token_type": 64
+  },
+  "class_type": "Model",
+  "class_type_token": {
+    "text": "model",
+    "location": {
+      "start_line": 1,
+      "start_column": 1,
+      "end_line": 1,
+      "end_column": 6,
+      "start": 0,
+      "end": 5,
+      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+    },
+    "token_number": 0,
+    "token_type": 41
+  },
+  "encapsulated": false,
+  "partial": false,
+  "expandable": false,
+  "operator_record": false,
+  "pure": true,
+  "purity_declared": false,
+  "causality": "Empty",
+  "description": [
+    {
+      "text": "Geared oscillator with automatic speed-limiting brake",
+      "location": {
+        "start_line": 1,
+        "start_column": 21,
+        "end_line": 1,
+        "end_column": 76,
+        "start": 20,
+        "end": 75,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "token_number": 2,
+      "token_type": 66
+    }
+  ],
+  "location": {
+    "start_line": 1,
+    "start_column": 7,
+    "end_line": 69,
+    "end_column": 18,
+    "start": 6,
+    "end": 3451,
+    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+  },
+  "extends": [],
+  "imports": [],
+  "classes": {},
+  "components": {
+    "motor": {
+      "def_id": 89,
+      "type_id": null,
+      "type_def_id": 28206,
+      "name": "motor",
+      "name_token": {
+        "text": "motor",
+        "location": {
+          "start_line": 30,
+          "start_column": 56,
+          "end_line": 30,
+          "end_column": 61,
+          "start": 1956,
+          "end": 1961,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 39,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 30,
+              "start_column": 3,
+              "end_line": 30,
+              "end_column": 11,
+              "start": 1903,
+              "end": 1911,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 30,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 30,
+              "start_column": 12,
+              "end_line": 30,
+              "end_column": 21,
+              "start": 1912,
+              "end": 1921,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 32,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 30,
+              "start_column": 22,
+              "end_line": 30,
+              "end_column": 32,
+              "start": 1922,
+              "end": 1932,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 34,
+            "token_type": 64
+          },
+          {
+            "text": "Sources",
+            "location": {
+              "start_line": 30,
+              "start_column": 33,
+              "end_line": 30,
+              "end_column": 40,
+              "start": 1933,
+              "end": 1940,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 36,
+            "token_type": 64
+          },
+          {
+            "text": "ConstantTorque",
+            "location": {
+              "start_line": 30,
+              "start_column": 41,
+              "end_line": 30,
+              "end_column": 55,
+              "start": 1941,
+              "end": 1955,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 38,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 1903,
+            "end": 1961
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "tau_constant",
+                    "location": {
+                      "start_line": 30,
+                      "start_column": 62,
+                      "end_line": 30,
+                      "end_column": 74,
+                      "start": 1962,
+                      "end": 1974,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 41,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 1962,
+                "end": 1974
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "2.0",
+                  "location": {
+                    "start_line": 30,
+                    "start_column": 77,
+                    "end_line": 30,
+                    "end_column": 80,
+                    "start": 1977,
+                    "end": 1980,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 43,
+                  "token_type": 68
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 1977,
+                  "end": 1980
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 1962,
+              "end": 1980
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "tau_constant": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "2.0",
+              "location": {
+                "start_line": 30,
+                "start_column": 77,
+                "end_line": 30,
+                "end_column": 80,
+                "start": 1977,
+                "end": 1980,
+                "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+              },
+              "token_number": 43,
+              "token_type": 68
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 1977,
+              "end": 1980
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 30,
+        "start_column": 3,
+        "end_line": 30,
+        "end_column": 61,
+        "start": 1903,
+        "end": 1961,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "rotor": {
+      "def_id": 90,
+      "type_id": null,
+      "type_def_id": 27586,
+      "name": "rotor",
+      "name_token": {
+        "text": "rotor",
+        "location": {
+          "start_line": 31,
+          "start_column": 52,
+          "end_line": 31,
+          "end_column": 57,
+          "start": 2034,
+          "end": 2039,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 55,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 31,
+              "start_column": 3,
+              "end_line": 31,
+              "end_column": 11,
+              "start": 1985,
+              "end": 1993,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 46,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 31,
+              "start_column": 12,
+              "end_line": 31,
+              "end_column": 21,
+              "start": 1994,
+              "end": 2003,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 48,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 31,
+              "start_column": 22,
+              "end_line": 31,
+              "end_column": 32,
+              "start": 2004,
+              "end": 2014,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 50,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 31,
+              "start_column": 33,
+              "end_line": 31,
+              "end_column": 43,
+              "start": 2015,
+              "end": 2025,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 52,
+            "token_type": 64
+          },
+          {
+            "text": "Inertia",
+            "location": {
+              "start_line": 31,
+              "start_column": 44,
+              "end_line": 31,
+              "end_column": 51,
+              "start": 2026,
+              "end": 2033,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 54,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 1985,
+            "end": 2039
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "J",
+                    "location": {
+                      "start_line": 31,
+                      "start_column": 58,
+                      "end_line": 31,
+                      "end_column": 59,
+                      "start": 2040,
+                      "end": 2041,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 57,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2040,
+                "end": 2041
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "0.01",
+                  "location": {
+                    "start_line": 31,
+                    "start_column": 62,
+                    "end_line": 31,
+                    "end_column": 66,
+                    "start": 2044,
+                    "end": 2048,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 59,
+                  "token_type": 68
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2044,
+                  "end": 2048
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2040,
+              "end": 2048
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "J": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "0.01",
+              "location": {
+                "start_line": 31,
+                "start_column": 62,
+                "end_line": 31,
+                "end_column": 66,
+                "start": 2044,
+                "end": 2048,
+                "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+              },
+              "token_number": 59,
+              "token_type": 68
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2044,
+              "end": 2048
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 31,
+        "start_column": 3,
+        "end_line": 31,
+        "end_column": 57,
+        "start": 1985,
+        "end": 2039,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "gear": {
+      "def_id": 91,
+      "type_id": null,
+      "type_def_id": 27582,
+      "name": "gear",
+      "name_token": {
+        "text": "gear",
+        "location": {
+          "start_line": 32,
+          "start_column": 54,
+          "end_line": 32,
+          "end_column": 58,
+          "start": 2104,
+          "end": 2108,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 71,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 32,
+              "start_column": 3,
+              "end_line": 32,
+              "end_column": 11,
+              "start": 2053,
+              "end": 2061,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 62,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 32,
+              "start_column": 12,
+              "end_line": 32,
+              "end_column": 21,
+              "start": 2062,
+              "end": 2071,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 64,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 32,
+              "start_column": 22,
+              "end_line": 32,
+              "end_column": 32,
+              "start": 2072,
+              "end": 2082,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 66,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 32,
+              "start_column": 33,
+              "end_line": 32,
+              "end_column": 43,
+              "start": 2083,
+              "end": 2093,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 68,
+            "token_type": 64
+          },
+          {
+            "text": "IdealGear",
+            "location": {
+              "start_line": 32,
+              "start_column": 44,
+              "end_line": 32,
+              "end_column": 53,
+              "start": 2094,
+              "end": 2103,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 70,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2053,
+            "end": 2108
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "ratio",
+                    "location": {
+                      "start_line": 32,
+                      "start_column": 59,
+                      "end_line": 32,
+                      "end_column": 64,
+                      "start": 2109,
+                      "end": 2114,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 73,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2109,
+                "end": 2114
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "5",
+                  "location": {
+                    "start_line": 32,
+                    "start_column": 67,
+                    "end_line": 32,
+                    "end_column": 68,
+                    "start": 2117,
+                    "end": 2118,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 75,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2117,
+                  "end": 2118
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2109,
+              "end": 2118
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "ratio": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "5",
+              "location": {
+                "start_line": 32,
+                "start_column": 67,
+                "end_line": 32,
+                "end_column": 68,
+                "start": 2117,
+                "end": 2118,
+                "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+              },
+              "token_number": 75,
+              "token_type": 67
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2117,
+              "end": 2118
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 32,
+        "start_column": 3,
+        "end_line": 32,
+        "end_column": 58,
+        "start": 2053,
+        "end": 2108,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "load": {
+      "def_id": 92,
+      "type_id": null,
+      "type_def_id": 27586,
+      "name": "load",
+      "name_token": {
+        "text": "load",
+        "location": {
+          "start_line": 33,
+          "start_column": 52,
+          "end_line": 33,
+          "end_column": 56,
+          "start": 2172,
+          "end": 2176,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 87,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 33,
+              "start_column": 3,
+              "end_line": 33,
+              "end_column": 11,
+              "start": 2123,
+              "end": 2131,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 78,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 33,
+              "start_column": 12,
+              "end_line": 33,
+              "end_column": 21,
+              "start": 2132,
+              "end": 2141,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 80,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 33,
+              "start_column": 22,
+              "end_line": 33,
+              "end_column": 32,
+              "start": 2142,
+              "end": 2152,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 82,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 33,
+              "start_column": 33,
+              "end_line": 33,
+              "end_column": 43,
+              "start": 2153,
+              "end": 2163,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 84,
+            "token_type": 64
+          },
+          {
+            "text": "Inertia",
+            "location": {
+              "start_line": 33,
+              "start_column": 44,
+              "end_line": 33,
+              "end_column": 51,
+              "start": 2164,
+              "end": 2171,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 86,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2123,
+            "end": 2176
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "J",
+                    "location": {
+                      "start_line": 33,
+                      "start_column": 57,
+                      "end_line": 33,
+                      "end_column": 58,
+                      "start": 2177,
+                      "end": 2178,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 89,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2177,
+                "end": 2178
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedReal",
+                "token": {
+                  "text": "0.5",
+                  "location": {
+                    "start_line": 33,
+                    "start_column": 61,
+                    "end_line": 33,
+                    "end_column": 64,
+                    "start": 2181,
+                    "end": 2184,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 91,
+                  "token_type": 68
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2181,
+                  "end": 2184
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2177,
+              "end": 2184
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {
+        "J": {
+          "Terminal": {
+            "terminal_type": "UnsignedReal",
+            "token": {
+              "text": "0.5",
+              "location": {
+                "start_line": 33,
+                "start_column": 61,
+                "end_line": 33,
+                "end_column": 64,
+                "start": 2181,
+                "end": 2184,
+                "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+              },
+              "token_number": 91,
+              "token_type": 68
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2181,
+              "end": 2184
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 33,
+        "start_column": 3,
+        "end_line": 33,
+        "end_column": 56,
+        "start": 2123,
+        "end": 2176,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "spring": {
+      "def_id": 93,
+      "type_id": null,
+      "type_def_id": 27592,
+      "name": "spring",
+      "name_token": {
+        "text": "spring",
+        "location": {
+          "start_line": 34,
+          "start_column": 57,
+          "end_line": 34,
+          "end_column": 63,
+          "start": 2243,
+          "end": 2249,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 103,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 34,
+              "start_column": 3,
+              "end_line": 34,
+              "end_column": 11,
+              "start": 2189,
+              "end": 2197,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 94,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 34,
+              "start_column": 12,
+              "end_line": 34,
+              "end_column": 21,
+              "start": 2198,
+              "end": 2207,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 96,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 34,
+              "start_column": 22,
+              "end_line": 34,
+              "end_column": 32,
+              "start": 2208,
+              "end": 2218,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 98,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 34,
+              "start_column": 33,
+              "end_line": 34,
+              "end_column": 43,
+              "start": 2219,
+              "end": 2229,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 100,
+            "token_type": 64
+          },
+          {
+            "text": "SpringDamper",
+            "location": {
+              "start_line": 34,
+              "start_column": 44,
+              "end_line": 34,
+              "end_column": 56,
+              "start": 2230,
+              "end": 2242,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 102,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2189,
+            "end": 2249
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "c",
+                    "location": {
+                      "start_line": 34,
+                      "start_column": 64,
+                      "end_line": 34,
+                      "end_column": 65,
+                      "start": 2250,
+                      "end": 2251,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 105,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2250,
+                "end": 2251
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "100",
+                  "location": {
+                    "start_line": 34,
+                    "start_column": 68,
+                    "end_line": 34,
+                    "end_column": 71,
+                    "start": 2254,
+                    "end": 2257,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 107,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2254,
+                  "end": 2257
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2250,
+              "end": 2257
+            }
+          }
+        },
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "d",
+                    "location": {
+                      "start_line": 34,
+                      "start_column": 73,
+                      "end_line": 34,
+                      "end_column": 74,
+                      "start": 2259,
+                      "end": 2260,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 109,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2259,
+                "end": 2260
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "2",
+                  "location": {
+                    "start_line": 34,
+                    "start_column": 77,
+                    "end_line": 34,
+                    "end_column": 78,
+                    "start": 2263,
+                    "end": 2264,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 111,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2263,
+                  "end": 2264
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2259,
+              "end": 2264
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false,
+        false
+      ],
+      "source_modification_final_flags": [
+        false,
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false,
+        false
+      ],
+      "modifications": {
+        "c": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "100",
+              "location": {
+                "start_line": 34,
+                "start_column": 68,
+                "end_line": 34,
+                "end_column": 71,
+                "start": 2254,
+                "end": 2257,
+                "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+              },
+              "token_number": 107,
+              "token_type": 67
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2254,
+              "end": 2257
+            }
+          }
+        },
+        "d": {
+          "Terminal": {
+            "terminal_type": "UnsignedInteger",
+            "token": {
+              "text": "2",
+              "location": {
+                "start_line": 34,
+                "start_column": 77,
+                "end_line": 34,
+                "end_column": 78,
+                "start": 2263,
+                "end": 2264,
+                "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+              },
+              "token_number": 111,
+              "token_type": 67
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2263,
+              "end": 2264
+            }
+          }
+        }
+      },
+      "location": {
+        "start_line": 34,
+        "start_column": 3,
+        "end_line": 34,
+        "end_column": 63,
+        "start": 2189,
+        "end": 2249,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "frame": {
+      "def_id": 94,
+      "type_id": null,
+      "type_def_id": 27578,
+      "name": "frame",
+      "name_token": {
+        "text": "frame",
+        "location": {
+          "start_line": 35,
+          "start_column": 50,
+          "end_line": 35,
+          "end_column": 55,
+          "start": 2316,
+          "end": 2321,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 123,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 35,
+              "start_column": 3,
+              "end_line": 35,
+              "end_column": 11,
+              "start": 2269,
+              "end": 2277,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 114,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 35,
+              "start_column": 12,
+              "end_line": 35,
+              "end_column": 21,
+              "start": 2278,
+              "end": 2287,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 116,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 35,
+              "start_column": 22,
+              "end_line": 35,
+              "end_column": 32,
+              "start": 2288,
+              "end": 2298,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 118,
+            "token_type": 64
+          },
+          {
+            "text": "Components",
+            "location": {
+              "start_line": 35,
+              "start_column": 33,
+              "end_line": 35,
+              "end_column": 43,
+              "start": 2299,
+              "end": 2309,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 120,
+            "token_type": 64
+          },
+          {
+            "text": "Fixed",
+            "location": {
+              "start_line": 35,
+              "start_column": 44,
+              "end_line": 35,
+              "end_column": 49,
+              "start": 2310,
+              "end": 2315,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 122,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2269,
+            "end": 2321
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 35,
+        "start_column": 3,
+        "end_line": 35,
+        "end_column": 55,
+        "start": 2269,
+        "end": 2321,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "brakeTorque": {
+      "def_id": 95,
+      "type_id": null,
+      "type_def_id": 28215,
+      "name": "brakeTorque",
+      "name_token": {
+        "text": "brakeTorque",
+        "location": {
+          "start_line": 36,
+          "start_column": 48,
+          "end_line": 36,
+          "end_column": 59,
+          "start": 2370,
+          "end": 2381,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 134,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Modelica",
+            "location": {
+              "start_line": 36,
+              "start_column": 3,
+              "end_line": 36,
+              "end_column": 11,
+              "start": 2325,
+              "end": 2333,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 125,
+            "token_type": 64
+          },
+          {
+            "text": "Mechanics",
+            "location": {
+              "start_line": 36,
+              "start_column": 12,
+              "end_line": 36,
+              "end_column": 21,
+              "start": 2334,
+              "end": 2343,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 127,
+            "token_type": 64
+          },
+          {
+            "text": "Rotational",
+            "location": {
+              "start_line": 36,
+              "start_column": 22,
+              "end_line": 36,
+              "end_column": 32,
+              "start": 2344,
+              "end": 2354,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 129,
+            "token_type": 64
+          },
+          {
+            "text": "Sources",
+            "location": {
+              "start_line": 36,
+              "start_column": 33,
+              "end_line": 36,
+              "end_column": 40,
+              "start": 2355,
+              "end": 2362,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 131,
+            "token_type": 64
+          },
+          {
+            "text": "Torque",
+            "location": {
+              "start_line": 36,
+              "start_column": 41,
+              "end_line": 36,
+              "end_column": 47,
+              "start": 2363,
+              "end": 2369,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 133,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Empty": {
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2325,
+            "end": 2381
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 36,
+        "start_column": 3,
+        "end_line": 36,
+        "end_column": 59,
+        "start": 2325,
+        "end": 2381,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "maxSpeed": {
+      "def_id": 96,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "maxSpeed",
+      "name_token": {
+        "text": "maxSpeed",
+        "location": {
+          "start_line": 39,
+          "start_column": 18,
+          "end_line": 39,
+          "end_column": 26,
+          "start": 2430,
+          "end": 2438,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 139,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 39,
+              "start_column": 13,
+              "end_line": 39,
+              "end_column": 17,
+              "start": 2425,
+              "end": 2429,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 138,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 39,
+            "start_column": 3,
+            "end_line": 39,
+            "end_column": 12,
+            "start": 2415,
+            "end": 2424,
+            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+          },
+          "token_number": 137,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "Load speed threshold for brake engagement [rad/s]",
+          "location": {
+            "start_line": 39,
+            "start_column": 33,
+            "end_line": 39,
+            "end_column": 84,
+            "start": 2445,
+            "end": 2496,
+            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+          },
+          "token_number": 142,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2425,
+            "end": 2438
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": true,
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "5.0",
+            "location": {
+              "start_line": 39,
+              "start_column": 29,
+              "end_line": 39,
+              "end_column": 32,
+              "start": 2441,
+              "end": 2444,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 141,
+            "token_type": 68
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2441,
+            "end": 2444
+          }
+        }
+      },
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 39,
+        "start_column": 13,
+        "end_line": 39,
+        "end_column": 26,
+        "start": 2425,
+        "end": 2438,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "brakeForce": {
+      "def_id": 97,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "brakeForce",
+      "name_token": {
+        "text": "brakeForce",
+        "location": {
+          "start_line": 40,
+          "start_column": 18,
+          "end_line": 40,
+          "end_column": 28,
+          "start": 2515,
+          "end": 2525,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 146,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 40,
+              "start_column": 13,
+              "end_line": 40,
+              "end_column": 17,
+              "start": 2510,
+              "end": 2514,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 145,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 40,
+            "start_column": 3,
+            "end_line": 40,
+            "end_column": 12,
+            "start": 2500,
+            "end": 2509,
+            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+          },
+          "token_number": 144,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "Braking torque magnitude [N.m]",
+          "location": {
+            "start_line": 40,
+            "start_column": 36,
+            "end_line": 40,
+            "end_column": 68,
+            "start": 2533,
+            "end": 2565,
+            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+          },
+          "token_number": 149,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2510,
+            "end": 2525
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": true,
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "20.0",
+            "location": {
+              "start_line": 40,
+              "start_column": 31,
+              "end_line": 40,
+              "end_column": 35,
+              "start": 2528,
+              "end": 2532,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 148,
+            "token_type": 68
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2528,
+            "end": 2532
+          }
+        }
+      },
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 40,
+        "start_column": 13,
+        "end_line": 40,
+        "end_column": 28,
+        "start": 2510,
+        "end": 2525,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "braking": {
+      "def_id": 98,
+      "type_id": null,
+      "type_def_id": 3,
+      "name": "braking",
+      "name_token": {
+        "text": "braking",
+        "location": {
+          "start_line": 41,
+          "start_column": 11,
+          "end_line": 41,
+          "end_column": 18,
+          "start": 2577,
+          "end": 2584,
+          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+        },
+        "token_number": 152,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Boolean",
+            "location": {
+              "start_line": 41,
+              "start_column": 3,
+              "end_line": 41,
+              "end_column": 10,
+              "start": 2569,
+              "end": 2576,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 151,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "True when brake is engaged",
+          "location": {
+            "start_line": 41,
+            "start_column": 34,
+            "end_line": 41,
+            "end_column": 62,
+            "start": 2600,
+            "end": 2628,
+            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+          },
+          "token_number": 158,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "Bool",
+          "token": {
+            "text": "false",
+            "location": {
+              "start_line": 41,
+              "start_column": 27,
+              "end_line": 41,
+              "end_column": 32,
+              "start": 2593,
+              "end": 2598,
+              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+            },
+            "token_number": 156,
+            "token_type": 28
+          },
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2593,
+            "end": 2598
+          }
+        }
+      },
+      "start_is_modification": true,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "start",
+                    "location": {
+                      "start_line": 41,
+                      "start_column": 19,
+                      "end_line": 41,
+                      "end_column": 24,
+                      "start": 2585,
+                      "end": 2590,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 154,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 2870916914346496452,
+                "start": 2585,
+                "end": 2590
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "Bool",
+                "token": {
+                  "text": "false",
+                  "location": {
+                    "start_line": 41,
+                    "start_column": 27,
+                    "end_line": 41,
+                    "end_column": 32,
+                    "start": 2593,
+                    "end": 2598,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 156,
+                  "token_type": 28
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 2593,
+                  "end": 2598
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 2585,
+              "end": 2598
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {},
+      "location": {
+        "start_line": 41,
+        "start_column": 3,
+        "end_line": 41,
+        "end_column": 18,
+        "start": 2569,
+        "end": 2584,
+        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    }
+  },
+  "equations": [
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "motor",
+                "location": {
+                  "start_line": 45,
+                  "start_column": 11,
+                  "end_line": 45,
+                  "end_column": 16,
+                  "start": 2681,
+                  "end": 2686,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 164,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange",
+                "location": {
+                  "start_line": 45,
+                  "start_column": 17,
+                  "end_line": 45,
+                  "end_column": 23,
+                  "start": 2687,
+                  "end": 2693,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 166,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2681,
+            "end": 2693
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "rotor",
+                "location": {
+                  "start_line": 45,
+                  "start_column": 25,
+                  "end_line": 45,
+                  "end_column": 30,
+                  "start": 2695,
+                  "end": 2700,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 168,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 45,
+                  "start_column": 31,
+                  "end_line": 45,
+                  "end_column": 39,
+                  "start": 2701,
+                  "end": 2709,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 170,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2695,
+            "end": 2709
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "rotor",
+                "location": {
+                  "start_line": 46,
+                  "start_column": 11,
+                  "end_line": 46,
+                  "end_column": 16,
+                  "start": 2722,
+                  "end": 2727,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 175,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 46,
+                  "start_column": 17,
+                  "end_line": 46,
+                  "end_column": 25,
+                  "start": 2728,
+                  "end": 2736,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 177,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2722,
+            "end": 2736
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "gear",
+                "location": {
+                  "start_line": 46,
+                  "start_column": 27,
+                  "end_line": 46,
+                  "end_column": 31,
+                  "start": 2738,
+                  "end": 2742,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 179,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 46,
+                  "start_column": 32,
+                  "end_line": 46,
+                  "end_column": 40,
+                  "start": 2743,
+                  "end": 2751,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 181,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2738,
+            "end": 2751
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "gear",
+                "location": {
+                  "start_line": 47,
+                  "start_column": 11,
+                  "end_line": 47,
+                  "end_column": 15,
+                  "start": 2764,
+                  "end": 2768,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 186,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 47,
+                  "start_column": 16,
+                  "end_line": 47,
+                  "end_column": 24,
+                  "start": 2769,
+                  "end": 2777,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 188,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2764,
+            "end": 2777
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "load",
+                "location": {
+                  "start_line": 47,
+                  "start_column": 26,
+                  "end_line": 47,
+                  "end_column": 30,
+                  "start": 2779,
+                  "end": 2783,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 190,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 47,
+                  "start_column": 31,
+                  "end_line": 47,
+                  "end_column": 39,
+                  "start": 2784,
+                  "end": 2792,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 192,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2779,
+            "end": 2792
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "load",
+                "location": {
+                  "start_line": 50,
+                  "start_column": 11,
+                  "end_line": 50,
+                  "end_column": 15,
+                  "start": 2860,
+                  "end": 2864,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 198,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 50,
+                  "start_column": 16,
+                  "end_line": 50,
+                  "end_column": 24,
+                  "start": 2865,
+                  "end": 2873,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 200,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2860,
+            "end": 2873
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "spring",
+                "location": {
+                  "start_line": 50,
+                  "start_column": 26,
+                  "end_line": 50,
+                  "end_column": 32,
+                  "start": 2875,
+                  "end": 2881,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 202,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_a",
+                "location": {
+                  "start_line": 50,
+                  "start_column": 33,
+                  "end_line": 50,
+                  "end_column": 41,
+                  "start": 2882,
+                  "end": 2890,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 204,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2875,
+            "end": 2890
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "spring",
+                "location": {
+                  "start_line": 51,
+                  "start_column": 11,
+                  "end_line": 51,
+                  "end_column": 17,
+                  "start": 2903,
+                  "end": 2909,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 209,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 51,
+                  "start_column": 18,
+                  "end_line": 51,
+                  "end_column": 26,
+                  "start": 2910,
+                  "end": 2918,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 211,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2903,
+            "end": 2918
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "frame",
+                "location": {
+                  "start_line": 51,
+                  "start_column": 28,
+                  "end_line": 51,
+                  "end_column": 33,
+                  "start": 2920,
+                  "end": 2925,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 213,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange",
+                "location": {
+                  "start_line": 51,
+                  "start_column": 34,
+                  "end_line": 51,
+                  "end_column": 40,
+                  "start": 2926,
+                  "end": 2932,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 215,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2920,
+            "end": 2932
+          }
+        }
+      }
+    },
+    {
+      "Connect": {
+        "lhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "brakeTorque",
+                "location": {
+                  "start_line": 54,
+                  "start_column": 11,
+                  "end_line": 54,
+                  "end_column": 22,
+                  "start": 2981,
+                  "end": 2992,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 221,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange",
+                "location": {
+                  "start_line": 54,
+                  "start_column": 23,
+                  "end_line": 54,
+                  "end_column": 29,
+                  "start": 2993,
+                  "end": 2999,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 223,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 2981,
+            "end": 2999
+          }
+        },
+        "rhs": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "load",
+                "location": {
+                  "start_line": 54,
+                  "start_column": 31,
+                  "end_line": 54,
+                  "end_column": 35,
+                  "start": 3001,
+                  "end": 3005,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 225,
+                "token_type": 64
+              },
+              "subs": null
+            },
+            {
+              "ident": {
+                "text": "flange_b",
+                "location": {
+                  "start_line": 54,
+                  "start_column": 36,
+                  "end_line": 54,
+                  "end_column": 44,
+                  "start": 3006,
+                  "end": 3014,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 227,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3001,
+            "end": 3014
+          }
+        }
+      }
+    },
+    {
+      "When": [
+        {
+          "cond": {
+            "Binary": {
+              "op": "Gt",
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "load",
+                        "location": {
+                          "start_line": 57,
+                          "start_column": 8,
+                          "end_line": 57,
+                          "end_column": 12,
+                          "start": 3072,
+                          "end": 3076,
+                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                        },
+                        "token_number": 232,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    },
+                    {
+                      "ident": {
+                        "text": "w",
+                        "location": {
+                          "start_line": 57,
+                          "start_column": 13,
+                          "end_line": 57,
+                          "end_column": 14,
+                          "start": 3077,
+                          "end": 3078,
+                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                        },
+                        "token_number": 234,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3072,
+                    "end": 3078
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "maxSpeed",
+                        "location": {
+                          "start_line": 57,
+                          "start_column": 17,
+                          "end_line": 57,
+                          "end_column": 25,
+                          "start": 3081,
+                          "end": 3089,
+                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                        },
+                        "token_number": 236,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3081,
+                    "end": 3089
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3072,
+                "end": 3089
+              }
+            }
+          },
+          "eqs": [
+            {
+              "Simple": {
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "braking",
+                          "location": {
+                            "start_line": 58,
+                            "start_column": 5,
+                            "end_line": 58,
+                            "end_column": 12,
+                            "start": 3099,
+                            "end": 3106,
+                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                          },
+                          "token_number": 238,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3099,
+                      "end": 3106
+                    }
+                  }
+                },
+                "rhs": {
+                  "Terminal": {
+                    "terminal_type": "Bool",
+                    "token": {
+                      "text": "true",
+                      "location": {
+                        "start_line": 58,
+                        "start_column": 15,
+                        "end_line": 58,
+                        "end_column": 19,
+                        "start": 3109,
+                        "end": 3113,
+                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                      },
+                      "token_number": 240,
+                      "token_type": 59
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3109,
+                      "end": 3113
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cond": {
+            "Binary": {
+              "op": "Lt",
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "load",
+                        "location": {
+                          "start_line": 59,
+                          "start_column": 12,
+                          "end_line": 59,
+                          "end_column": 16,
+                          "start": 3126,
+                          "end": 3130,
+                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                        },
+                        "token_number": 243,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    },
+                    {
+                      "ident": {
+                        "text": "w",
+                        "location": {
+                          "start_line": 59,
+                          "start_column": 17,
+                          "end_line": 59,
+                          "end_column": 18,
+                          "start": 3131,
+                          "end": 3132,
+                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                        },
+                        "token_number": 245,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3126,
+                    "end": 3132
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "maxSpeed",
+                            "location": {
+                              "start_line": 59,
+                              "start_column": 21,
+                              "end_line": 59,
+                              "end_column": 29,
+                              "start": 3135,
+                              "end": 3143,
+                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                            },
+                            "token_number": 247,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 3135,
+                        "end": 3143
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Terminal": {
+                      "terminal_type": "UnsignedReal",
+                      "token": {
+                        "text": "0.5",
+                        "location": {
+                          "start_line": 59,
+                          "start_column": 32,
+                          "end_line": 59,
+                          "end_column": 35,
+                          "start": 3146,
+                          "end": 3149,
+                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                        },
+                        "token_number": 249,
+                        "token_type": 68
+                      },
+                      "span": {
+                        "source": 2870916914346496452,
+                        "start": 3146,
+                        "end": 3149
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3135,
+                    "end": 3149
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3126,
+                "end": 3149
+              }
+            }
+          },
+          "eqs": [
+            {
+              "Simple": {
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "braking",
+                          "location": {
+                            "start_line": 60,
+                            "start_column": 5,
+                            "end_line": 60,
+                            "end_column": 12,
+                            "start": 3159,
+                            "end": 3166,
+                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                          },
+                          "token_number": 251,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3159,
+                      "end": 3166
+                    }
+                  }
+                },
+                "rhs": {
+                  "Terminal": {
+                    "terminal_type": "Bool",
+                    "token": {
+                      "text": "false",
+                      "location": {
+                        "start_line": 60,
+                        "start_column": 15,
+                        "end_line": 60,
+                        "end_column": 20,
+                        "start": 3169,
+                        "end": 3174,
+                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                      },
+                      "token_number": 253,
+                      "token_type": 28
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3169,
+                      "end": 3174
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Simple": {
+        "lhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "brakeTorque",
+                  "location": {
+                    "start_line": 64,
+                    "start_column": 3,
+                    "end_line": 64,
+                    "end_column": 14,
+                    "start": 3245,
+                    "end": 3256,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 259,
+                  "token_type": 64
+                },
+                "subs": null
+              },
+              {
+                "ident": {
+                  "text": "tau",
+                  "location": {
+                    "start_line": 64,
+                    "start_column": 15,
+                    "end_line": 64,
+                    "end_column": 18,
+                    "start": 3257,
+                    "end": 3260,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 261,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3245,
+              "end": 3260
+            }
+          }
+        },
+        "rhs": {
+          "If": {
+            "branches": [
+              [
+                {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "braking",
+                          "location": {
+                            "start_line": 64,
+                            "start_column": 24,
+                            "end_line": 64,
+                            "end_column": 31,
+                            "start": 3266,
+                            "end": 3273,
+                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                          },
+                          "token_number": 264,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3266,
+                      "end": 3273
+                    }
+                  }
+                },
+                {
+                  "Parenthesized": {
+                    "inner": {
+                      "If": {
+                        "branches": [
+                          [
+                            {
+                              "Binary": {
+                                "op": "Gt",
+                                "lhs": {
+                                  "ComponentReference": {
+                                    "local": false,
+                                    "parts": [
+                                      {
+                                        "ident": {
+                                          "text": "load",
+                                          "location": {
+                                            "start_line": 65,
+                                            "start_column": 9,
+                                            "end_line": 65,
+                                            "end_column": 13,
+                                            "start": 3287,
+                                            "end": 3291,
+                                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                                          },
+                                          "token_number": 268,
+                                          "token_type": 64
+                                        },
+                                        "subs": null
+                                      },
+                                      {
+                                        "ident": {
+                                          "text": "w",
+                                          "location": {
+                                            "start_line": 65,
+                                            "start_column": 14,
+                                            "end_line": 65,
+                                            "end_column": 15,
+                                            "start": 3292,
+                                            "end": 3293,
+                                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                                          },
+                                          "token_number": 270,
+                                          "token_type": 64
+                                        },
+                                        "subs": null
+                                      }
+                                    ],
+                                    "span": {
+                                      "source": 2870916914346496452,
+                                      "start": 3287,
+                                      "end": 3293
+                                    }
+                                  }
+                                },
+                                "rhs": {
+                                  "Terminal": {
+                                    "terminal_type": "UnsignedInteger",
+                                    "token": {
+                                      "text": "0",
+                                      "location": {
+                                        "start_line": 65,
+                                        "start_column": 18,
+                                        "end_line": 65,
+                                        "end_column": 19,
+                                        "start": 3296,
+                                        "end": 3297,
+                                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                                      },
+                                      "token_number": 272,
+                                      "token_type": 67
+                                    },
+                                    "span": {
+                                      "source": 2870916914346496452,
+                                      "start": 3296,
+                                      "end": 3297
+                                    }
+                                  }
+                                },
+                                "span": {
+                                  "source": 2870916914346496452,
+                                  "start": 3287,
+                                  "end": 3297
+                                }
+                              }
+                            },
+                            {
+                              "Unary": {
+                                "op": "Minus",
+                                "rhs": {
+                                  "ComponentReference": {
+                                    "local": false,
+                                    "parts": [
+                                      {
+                                        "ident": {
+                                          "text": "brakeForce",
+                                          "location": {
+                                            "start_line": 65,
+                                            "start_column": 26,
+                                            "end_line": 65,
+                                            "end_column": 36,
+                                            "start": 3304,
+                                            "end": 3314,
+                                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                                          },
+                                          "token_number": 275,
+                                          "token_type": 64
+                                        },
+                                        "subs": null
+                                      }
+                                    ],
+                                    "span": {
+                                      "source": 2870916914346496452,
+                                      "start": 3304,
+                                      "end": 3314
+                                    }
+                                  }
+                                },
+                                "span": {
+                                  "source": 2870916914346496452,
+                                  "start": 3303,
+                                  "end": 3314
+                                }
+                              }
+                            }
+                          ]
+                        ],
+                        "else_branch": {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "brakeForce",
+                                  "location": {
+                                    "start_line": 65,
+                                    "start_column": 42,
+                                    "end_line": 65,
+                                    "end_column": 52,
+                                    "start": 3320,
+                                    "end": 3330,
+                                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                                  },
+                                  "token_number": 277,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 2870916914346496452,
+                              "start": 3320,
+                              "end": 3330
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 2870916914346496452,
+                          "start": 3287,
+                          "end": 3330
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 2870916914346496452,
+                      "start": 3287,
+                      "end": 3330
+                    }
+                  }
+                }
+              ]
+            ],
+            "else_branch": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "0",
+                  "location": {
+                    "start_line": 66,
+                    "start_column": 8,
+                    "end_line": 66,
+                    "end_column": 9,
+                    "start": 3339,
+                    "end": 3340,
+                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                  },
+                  "token_number": 280,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3339,
+                  "end": 3340
+                }
+              }
+            },
+            "span": {
+              "source": 2870916914346496452,
+              "start": 3266,
+              "end": 3340
+            }
+          }
+        }
+      }
+    }
+  ],
+  "initial_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "equation_keyword": {
+    "text": "equation",
+    "location": {
+      "start_line": 43,
+      "start_column": 1,
+      "end_line": 43,
+      "end_column": 9,
+      "start": 2631,
+      "end": 2639,
+      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+    },
+    "token_number": 160,
+    "token_type": 24
+  },
+  "initial_equation_keyword": null,
+  "algorithm_keyword": null,
+  "initial_algorithm_keyword": null,
+  "end_name_token": {
+    "text": "GearWithBrake",
+    "location": {
+      "start_line": 69,
+      "start_column": 5,
+      "end_line": 69,
+      "end_column": 18,
+      "start": 3438,
+      "end": 3451,
+      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+    },
+    "token_number": 305,
+    "token_type": 64
+  },
+  "enum_literals": [],
+  "annotation": [
+    {
+      "ClassModification": {
+        "target": {
+          "local": false,
+          "parts": [
+            {
+              "ident": {
+                "text": "experiment",
+                "location": {
+                  "start_line": 68,
+                  "start_column": 14,
+                  "end_line": 68,
+                  "end_column": 24,
+                  "start": 3356,
+                  "end": 3366,
+                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                },
+                "token_number": 284,
+                "token_type": 64
+              },
+              "subs": null
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3356,
+            "end": 3366
+          }
+        },
+        "modifications": [
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "StartTime",
+                      "location": {
+                        "start_line": 68,
+                        "start_column": 25,
+                        "end_line": 68,
+                        "end_column": 34,
+                        "start": 3367,
+                        "end": 3376,
+                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                      },
+                      "token_number": 286,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3367,
+                  "end": 3376
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "0",
+                    "location": {
+                      "start_line": 68,
+                      "start_column": 37,
+                      "end_line": 68,
+                      "end_column": 38,
+                      "start": 3379,
+                      "end": 3380,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 288,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3379,
+                    "end": 3380
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3367,
+                "end": 3380
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "StopTime",
+                      "location": {
+                        "start_line": 68,
+                        "start_column": 40,
+                        "end_line": 68,
+                        "end_column": 48,
+                        "start": 3382,
+                        "end": 3390,
+                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                      },
+                      "token_number": 290,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3382,
+                  "end": 3390
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "5",
+                    "location": {
+                      "start_line": 68,
+                      "start_column": 51,
+                      "end_line": 68,
+                      "end_column": 52,
+                      "start": 3393,
+                      "end": 3394,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 292,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3393,
+                    "end": 3394
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3382,
+                "end": 3394
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "Interval",
+                      "location": {
+                        "start_line": 68,
+                        "start_column": 54,
+                        "end_line": 68,
+                        "end_column": 62,
+                        "start": 3396,
+                        "end": 3404,
+                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                      },
+                      "token_number": 294,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3396,
+                  "end": 3404
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "0.001",
+                    "location": {
+                      "start_line": 68,
+                      "start_column": 65,
+                      "end_line": 68,
+                      "end_column": 70,
+                      "start": 3407,
+                      "end": 3412,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 296,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3407,
+                    "end": 3412
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3396,
+                "end": 3412
+              }
+            }
+          },
+          {
+            "Modification": {
+              "target": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "Tolerance",
+                      "location": {
+                        "start_line": 68,
+                        "start_column": 72,
+                        "end_line": 68,
+                        "end_column": 81,
+                        "start": 3414,
+                        "end": 3423,
+                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                      },
+                      "token_number": 298,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 2870916914346496452,
+                  "start": 3414,
+                  "end": 3423
+                }
+              },
+              "value": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "1e-6",
+                    "location": {
+                      "start_line": 68,
+                      "start_column": 84,
+                      "end_line": 68,
+                      "end_column": 88,
+                      "start": 3426,
+                      "end": 3430,
+                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/GearWithBrake.mo"
+                    },
+                    "token_number": 300,
+                    "token_type": 71
+                  },
+                  "span": {
+                    "source": 2870916914346496452,
+                    "start": 3426,
+                    "end": 3430
+                  }
+                }
+              },
+              "span": {
+                "source": 2870916914346496452,
+                "start": 3414,
+                "end": 3430
+              }
+            }
+          }
+        ],
+        "each_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "final_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "redeclare_flags": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "span": {
+          "source": 2870916914346496452,
+          "start": 3356,
+          "end": 3430
+        }
+      }
+    }
+  ],
+  "is_protected": false,
+  "is_final": false,
+  "is_inner": false,
+  "is_outer": false,
+  "is_replaceable": false,
+  "is_redeclare": false,
+  "constrainedby": null,
+  "array_subscripts": [],
+  "external": null
+}

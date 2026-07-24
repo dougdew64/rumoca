@@ -1,0 +1,439 @@
+{
+  "n_equations": 11,
+  "n_unknowns": 11,
+  "coupled_block_count": 1,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from motor)",
+      "unknown": "motor.flange.tau"
+    },
+    {
+      "equation": "f_x[1] (equation from rotor)",
+      "unknown": "spring.a_rel"
+    },
+    {
+      "equation": "f_x[2] (equation from gear)",
+      "unknown": "gear.flange_a.tau"
+    },
+    {
+      "equation": "f_x[3] (equation from load)",
+      "unknown": "load.w"
+    },
+    {
+      "equation": "f_x[4] (equation from load)",
+      "unknown": "load.flange_a.tau"
+    },
+    {
+      "equation": "f_x[5] (equation from spring)",
+      "unknown": "der(spring.phi_rel)"
+    },
+    {
+      "equation": "f_x[6] (equation from spring)",
+      "unknown": "der(spring.w_rel)"
+    },
+    {
+      "equation": "f_x[7] (top-level model equation)",
+      "unknown": "brakeTorque.tau"
+    },
+    {
+      "equation": "f_x[8] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+      "unknown": "rotor.flange_b.tau"
+    },
+    {
+      "equation": "f_x[9] (flow sum equation: gear.flange_b.tau + load.flange_a.tau = 0)",
+      "unknown": "gear.flange_b.tau"
+    },
+    {
+      "equation": "f_x[10] (connection equation: spring.flange_b.phi = frame.flange.phi)",
+      "unknown": "spring.flange_b.phi"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (equation from motor)",
+      "unknown": "motor.flange.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[7] (top-level model equation)",
+      "unknown": "brakeTorque.tau"
+    },
+    {
+      "kind": "coupled",
+      "size": 5,
+      "equations": [
+        "f_x[4] (equation from load)",
+        "f_x[9] (flow sum equation: gear.flange_b.tau + load.flange_a.tau = 0)",
+        "f_x[2] (equation from gear)",
+        "f_x[8] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+        "f_x[1] (equation from rotor)"
+      ],
+      "unknowns": [
+        "load.flange_a.tau",
+        "gear.flange_b.tau",
+        "gear.flange_a.tau",
+        "rotor.flange_b.tau",
+        "spring.a_rel"
+      ],
+      "tearing": {
+        "tear_vars": [
+          "load.flange_a.tau"
+        ],
+        "residual_equations": [
+          "f_x[8] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[9] (flow sum equation: gear.flange_b.tau + load.flange_a.tau = 0)",
+            "variable": "gear.flange_b.tau"
+          },
+          {
+            "equation": "f_x[4] (equation from load)",
+            "variable": "spring.a_rel"
+          },
+          {
+            "equation": "f_x[2] (equation from gear)",
+            "variable": "gear.flange_a.tau"
+          },
+          {
+            "equation": "f_x[1] (equation from rotor)",
+            "variable": "rotor.flange_b.tau"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (equation from load)",
+      "unknown": "load.w"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[5] (equation from spring)",
+      "unknown": "der(spring.phi_rel)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[6] (equation from spring)",
+      "unknown": "der(spring.w_rel)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[10] (connection equation: spring.flange_b.phi = frame.flange.phi)",
+      "unknown": "spring.flange_b.phi"
+    }
+  ],
+  "incidence": {
+    "n_eq": 11,
+    "n_var": 11,
+    "unknown_names": [
+      "der(spring.phi_rel)",
+      "der(spring.w_rel)",
+      "spring.a_rel",
+      "brakeTorque.tau",
+      "motor.flange.tau",
+      "rotor.flange_b.tau",
+      "gear.flange_a.tau",
+      "gear.flange_b.tau",
+      "load.flange_a.tau",
+      "spring.flange_b.phi",
+      "load.w"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0]",
+        "unknowns": [
+          4
+        ],
+        "equation_text": "motor.tau_constant - -motor.flange.tau"
+      },
+      {
+        "equation": "f_x[1]",
+        "unknowns": [
+          2,
+          4,
+          5
+        ],
+        "equation_text": "rotor.J * -spring.a_rel * 0.2 * 0.2 * 0.2 / (0.2 * 0.2 * 0.2 * 0.2) - (-motor.flange.tau + rotor.flange_b.tau)"
+      },
+      {
+        "equation": "f_x[2]",
+        "unknowns": [
+          6,
+          7
+        ],
+        "equation_text": "-(gear.ratio * gear.flange_a.tau + gear.flange_b.tau)"
+      },
+      {
+        "equation": "f_x[3]",
+        "unknowns": [
+          10
+        ],
+        "equation_text": "load.w - -(0.2 * -spring.w_rel * 0.2 / (0.2 * 0.2)) * -1 / (-1 * -1)"
+      },
+      {
+        "equation": "f_x[4]",
+        "unknowns": [
+          2,
+          3,
+          8
+        ],
+        "equation_text": "load.J * -(0.2 * -spring.a_rel * 0.2 * 0.2 * 0.2 / (0.2 * 0.2 * 0.2 * 0.2)) * -1 * -1 * -1 / (-1 * -1 * -1 * -1) - (load.flange_a.tau + -(-(spring.c * (spring.phi_rel - spring.phi_rel0) + spring.d * spring.w_rel) + -brakeTorque.tau))"
+      },
+      {
+        "equation": "f_x[5]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "spring.w_rel - der(spring.phi_rel)"
+      },
+      {
+        "equation": "f_x[6]",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "spring.a_rel - der(spring.w_rel)"
+      },
+      {
+        "equation": "f_x[7]",
+        "unknowns": [
+          3
+        ],
+        "equation_text": "brakeTorque.tau - if braking then if c[2] then -brakeForce else brakeForce else 0"
+      },
+      {
+        "equation": "f_x[8]",
+        "unknowns": [
+          5,
+          6
+        ],
+        "equation_text": "rotor.flange_b.tau + gear.flange_a.tau"
+      },
+      {
+        "equation": "f_x[9]",
+        "unknowns": [
+          7,
+          8
+        ],
+        "equation_text": "gear.flange_b.tau + load.flange_a.tau"
+      },
+      {
+        "equation": "f_x[10]",
+        "unknowns": [
+          9
+        ],
+        "equation_text": "spring.flange_b.phi - frame.phi0"
+      }
+    ]
+  },
+  "reduction": {
+    "states_before": [
+      "motor.phi",
+      "rotor.phi",
+      "rotor.w",
+      "load.phi",
+      "load.w",
+      "spring.phi_rel",
+      "spring.w_rel"
+    ],
+    "states_after": [
+      "spring.phi_rel",
+      "spring.w_rel"
+    ],
+    "demoted_states": [
+      "motor.phi",
+      "rotor.phi",
+      "rotor.w",
+      "load.phi",
+      "load.w"
+    ],
+    "n_states_before": 7,
+    "n_states_after": 2,
+    "steps": [
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "5 demoted"
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok"
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok"
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 substituted"
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "33 eliminated"
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "motor.phi_support",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":13844103839494831887,\"start\":910,\"end\":921}}}"
+      },
+      {
+        "variable": "motor.tau",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"motor.tau_constant\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7375536514882185587,\"start\":168,\"end\":190},\"parts\":[{\"ident\":\"motor\",\"span\":{\"source\":7375536514882185587,\"start\":168,\"end\":190},\"subs\":[]},{\"ident\":\"tau_constant\",\"span\":{\"source\":7375536514882185587,\"start\":168,\"end\":190},\"subs\":[]}],\"def_id\":39476}},\"subscripts\":[],\"span\":{\"source\":7375536514882185587,\"start\":512,\"end\":524}}}"
+      },
+      {
+        "variable": "rotor.w",
+        "replacement": "{\"Binary\":{\"op\":\"Div\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1396,\"end\":1401}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "gear.phi_support",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":9204583512431594438,\"start\":1054,\"end\":1065}}}"
+      },
+      {
+        "variable": "spring.tau_c",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.c\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]},{\"ident\":\"c\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]}],\"def_id\":39542}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":654}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]},{\"ident\":\"phi_rel\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]}],\"def_id\":39526}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":663}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]},{\"ident\":\"phi_rel0\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]}],\"def_id\":39544}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":666,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":674}}}"
+      },
+      {
+        "variable": "spring.tau_d",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.d\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]},{\"ident\":\"d\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]}],\"def_id\":39543}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":688}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":689,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":694}}}"
+      },
+      {
+        "variable": "frame.flange.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"frame.phi0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"parts\":[{\"ident\":\"frame\",\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"subs\":[]},{\"ident\":\"phi0\",\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"subs\":[]}],\"def_id\":39549}},\"subscripts\":[],\"span\":{\"source\":16206293870977540163,\"start\":329,\"end\":333}}}"
+      },
+      {
+        "variable": "brakeTorque.phi_support",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":13844103839494831887,\"start\":910,\"end\":921}}}"
+      },
+      {
+        "variable": "rotor.flange_a.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"rotor.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"rotor\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+      },
+      {
+        "variable": "rotor.flange_b.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"rotor.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"rotor\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":903,\"end\":906}}}"
+      },
+      {
+        "variable": "rotor.a",
+        "replacement": "{\"Binary\":{\"op\":\"Div\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.a_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":569,\"end\":597},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":569,\"end\":597},\"subs\":[]},{\"ident\":\"a_rel\",\"span\":{\"source\":12415032339925089371,\"start\":569,\"end\":597},\"subs\":[]}],\"def_id\":39528}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1420,\"end\":1425}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "gear.phi_a",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"gear.ratio\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5181458756478690987,\"start\":253,\"end\":263},\"parts\":[{\"ident\":\"gear\",\"span\":{\"source\":5181458756478690987,\"start\":253,\"end\":263},\"subs\":[]},{\"ident\":\"ratio\",\"span\":{\"source\":5181458756478690987,\"start\":253,\"end\":263},\"subs\":[]}],\"def_id\":39506}},\"subscripts\":[],\"span\":{\"source\":5181458756478690987,\"start\":560,\"end\":565}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"gear.phi_b\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5181458756478690987,\"start\":397,\"end\":411},\"parts\":[{\"ident\":\"gear\",\"span\":{\"source\":5181458756478690987,\"start\":397,\"end\":411},\"subs\":[]},{\"ident\":\"phi_b\",\"span\":{\"source\":5181458756478690987,\"start\":397,\"end\":411},\"subs\":[]}],\"def_id\":39508}},\"subscripts\":[],\"span\":{\"source\":5181458756478690987,\"start\":566,\"end\":571}}},\"span\":{\"source\":5181458756478690987,\"start\":560,\"end\":571}}}"
+      },
+      {
+        "variable": "load.flange_a.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39521}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+      },
+      {
+        "variable": "load.flange_b.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39521}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":903,\"end\":906}}}"
+      },
+      {
+        "variable": "spring.flange_b.tau",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"spring.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":661,\"end\":674},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":661,\"end\":674},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":12415032339925089371,\"start\":661,\"end\":674},\"subs\":[]}],\"def_id\":39529}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1457,\"end\":1460}}}"
+      },
+      {
+        "variable": "spring.flange_a.tau",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":661,\"end\":674},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":661,\"end\":674},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":12415032339925089371,\"start\":661,\"end\":674},\"subs\":[]}],\"def_id\":39529}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1480,\"end\":1483}}},\"span\":{\"source\":12415032339925089371,\"start\":1479,\"end\":1483}}}"
+      },
+      {
+        "variable": "spring.lossPower",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.d\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]},{\"ident\":\"d\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]}],\"def_id\":39543}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":688}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":689,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":694}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":739,\"end\":744}}},\"span\":{\"source\":1236933358284710647,\"start\":733,\"end\":744}}}"
+      },
+      {
+        "variable": "brakeTorque.flange.tau",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"brakeTorque.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"parts\":[{\"ident\":\"brakeTorque\",\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"subs\":[]}],\"def_id\":39562}},\"subscripts\":[],\"span\":{\"source\":14877195194095120915,\"start\":420,\"end\":423}}},\"span\":{\"source\":14877195194095120915,\"start\":419,\"end\":423}}}"
+      },
+      {
+        "variable": "motor.flange.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"rotor.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"rotor\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+      },
+      {
+        "variable": "gear.flange_a.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"rotor.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"rotor\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":903,\"end\":906}}}"
+      },
+      {
+        "variable": "gear.flange_b.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39521}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+      },
+      {
+        "variable": "load.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"spring.flange_a.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange_a\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39532}},\"subscripts\":[],\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "brakeTorque.flange.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"spring.flange_a.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange_a\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39532}},\"subscripts\":[],\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "motor.phi",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"rotor.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"rotor\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+      },
+      {
+        "variable": "motor.w",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Div\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1396,\"end\":1401}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "rotor.phi",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"gear.ratio\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5181458756478690987,\"start\":253,\"end\":263},\"parts\":[{\"ident\":\"gear\",\"span\":{\"source\":5181458756478690987,\"start\":253,\"end\":263},\"subs\":[]},{\"ident\":\"ratio\",\"span\":{\"source\":5181458756478690987,\"start\":253,\"end\":263},\"subs\":[]}],\"def_id\":39506}},\"subscripts\":[],\"span\":{\"source\":5181458756478690987,\"start\":560,\"end\":565}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"gear.phi_b\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5181458756478690987,\"start\":397,\"end\":411},\"parts\":[{\"ident\":\"gear\",\"span\":{\"source\":5181458756478690987,\"start\":397,\"end\":411},\"subs\":[]},{\"ident\":\"phi_b\",\"span\":{\"source\":5181458756478690987,\"start\":397,\"end\":411},\"subs\":[]}],\"def_id\":39508}},\"subscripts\":[],\"span\":{\"source\":5181458756478690987,\"start\":566,\"end\":571}}},\"span\":{\"source\":5181458756478690987,\"start\":560,\"end\":571}}}"
+      },
+      {
+        "variable": "gear.phi_b",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"spring.flange_a.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange_a\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39532}},\"subscripts\":[],\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "spring.tau",
+        "replacement": "{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.c\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]},{\"ident\":\"c\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]}],\"def_id\":39542}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":654}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]},{\"ident\":\"phi_rel\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]}],\"def_id\":39526}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":663}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]},{\"ident\":\"phi_rel0\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]}],\"def_id\":39544}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":666,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":674}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.d\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]},{\"ident\":\"d\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]}],\"def_id\":39543}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":688}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":689,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":704,\"end\":717}}}"
+      },
+      {
+        "variable": "load.a",
+        "replacement": "{\"Binary\":{\"op\":\"Div\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Div\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.a_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":569,\"end\":597},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":569,\"end\":597},\"subs\":[]},{\"ident\":\"a_rel\",\"span\":{\"source\":12415032339925089371,\"start\":569,\"end\":597},\"subs\":[]}],\"def_id\":39528}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1420,\"end\":1425}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":0.2},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+      },
+      {
+        "variable": "frame.flange.tau",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.c\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]},{\"ident\":\"c\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]}],\"def_id\":39542}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":654}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]},{\"ident\":\"phi_rel\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]}],\"def_id\":39526}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":663}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]},{\"ident\":\"phi_rel0\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]}],\"def_id\":39544}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":666,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":674}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.d\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]},{\"ident\":\"d\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]}],\"def_id\":39543}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":688}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":689,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":704,\"end\":717}}},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}}"
+      },
+      {
+        "variable": "rotor.flange_a.tau",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"motor.flange.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175},\"parts\":[{\"ident\":\"motor\",\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175},\"subs\":[]}],\"def_id\":39474}},\"subscripts\":[],\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}}"
+      },
+      {
+        "variable": "load.flange_b.tau",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.c\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]},{\"ident\":\"c\",\"span\":{\"source\":1236933358284710647,\"start\":133,\"end\":162},\"subs\":[]}],\"def_id\":39542}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":654}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]},{\"ident\":\"phi_rel\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]}],\"def_id\":39526}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":663}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]},{\"ident\":\"phi_rel0\",\"span\":{\"source\":1236933358284710647,\"start\":313,\"end\":330},\"subs\":[]}],\"def_id\":39544}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":666,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":656,\"end\":674}}},\"span\":{\"source\":1236933358284710647,\"start\":653,\"end\":674}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.d\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]},{\"ident\":\"d\",\"span\":{\"source\":1236933358284710647,\"start\":224,\"end\":254},\"subs\":[]}],\"def_id\":39543}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":688}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.w_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]},{\"ident\":\"w_rel\",\"span\":{\"source\":12415032339925089371,\"start\":458,\"end\":482},\"subs\":[]}],\"def_id\":39527}},\"subscripts\":[],\"span\":{\"source\":1236933358284710647,\"start\":689,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":687,\"end\":694}}},\"span\":{\"source\":1236933358284710647,\"start\":704,\"end\":717}}},\"span\":{\"source\":12415032339925089371,\"start\":1479,\"end\":1483}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"brakeTorque.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"parts\":[{\"ident\":\"brakeTorque\",\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":14877195194095120915,\"start\":204,\"end\":244},\"subs\":[]}],\"def_id\":39562}},\"subscripts\":[],\"span\":{\"source\":14877195194095120915,\"start\":420,\"end\":423}}},\"span\":{\"source\":14877195194095120915,\"start\":419,\"end\":423}}},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}}"
+      },
+      {
+        "variable": "spring.flange_a.phi",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]},{\"ident\":\"phi_rel\",\"span\":{\"source\":12415032339925089371,\"start\":251,\"end\":267},\"subs\":[]}],\"def_id\":39526}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1355,\"end\":1362}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.flange_b.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange_b\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39536}},\"subscripts\":[],\"span\":{\"source\":12415032339925089371,\"start\":1365,\"end\":1377}}},\"span\":{\"source\":12415032339925089371,\"start\":1355,\"end\":1362}}},\"span\":{\"source\":12415032339925089371,\"start\":1355,\"end\":1362}}}"
+      }
+    ],
+    "stopped_at": null,
+    "funnel_completed": true
+  }
+}
