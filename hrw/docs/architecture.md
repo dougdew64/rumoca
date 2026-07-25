@@ -220,6 +220,71 @@ time axis via `egui_plot::Plot::link_axis`, so panning/zooming one updates the o
 The diagnostics panel only appears for models solved with the BDF integrator (stiff
 models); RK45-solved models show only the trajectory plot.
 
+### Output capture (`OutputCapture`)
+
+Some Rumoca phases emit diagnostics via `println!`/`eprintln!` rather than structured
+errors. `OutputCapture` intercepts these at the file-descriptor level and forwards
+them as log entries so they appear in HRW's log pane.
+
+**The problem it solves.** On Unix, stdout/stderr are file descriptors (fd 1 and fd 2).
+`OutputCapture::start()` creates two `pipe()` pairs and uses `dup2()` to redirect
+fd 1 and fd 2 into the write ends of those pipes. Any `println!` or `eprintln!` in
+Rumoca library code now writes into the pipes instead of the terminal. After each
+Rumoca API call, `drain()` reads the accumulated bytes and the `drain_output` closure
+forwards each line as a `LogLevel::Stdout` or `LogLevel::Stderr` log entry.
+
+**The deadlock hazard.** Linux pipes buffer 65,536 bytes. The `drain()` call is
+*post-hoc* — it runs after a Rumoca API call returns. If a single API call writes
+more than 64 KB to stdout/stderr, the `write()` syscall blocks (pipe full), the
+API call never returns, and `drain()` never runs — a classic deadlock. The worker
+thread hangs silently with no error signal.
+
+**The fix: concurrent reader threads.** Rather than draining post-hoc, `start()`
+spawns two lightweight reader threads (one per pipe) that continuously read into
+shared `Arc<Mutex<Vec<u8>>>` buffers:
+
+```
+                              ┌─────────────────────────────────┐
+                              │  Worker thread                  │
+                              │                                 │
+                              │  Rumoca API call                │
+                              │    └─ println!("...")           │
+                              │         └─ write(fd 1, ...)  ───┼──┐
+                              │                                 │  │ pipe
+                              │  drain() ─── lock(stdout_buf)   │  │
+                              │    └─ take accumulated bytes    │  │
+                              └─────────────────────────────────┘  │
+                                                                   │
+                              ┌─────────────────────────────────┐  │
+                              │  Reader thread (stdout)         │  │
+                              │                                 │  │
+                              │  loop {                      ◄──┼──┘
+                              │    read(pipe_read_end, 4096)    │
+                              │    lock(stdout_buf).extend(...) │
+                              │  }                              │
+                              └─────────────────────────────────┘
+```
+
+The write side of the pipe stays in normal **blocking** mode — the reader thread
+keeps the pipe buffer from ever filling, so `write()` never blocks, and
+`println!`/`eprintln!` never see `EAGAIN` or panic.
+
+**Lifecycle:**
+1. `start()` — flush existing stdout/stderr, create pipes, `dup()`-save originals,
+   `dup2()` the write ends onto fd 1/2, close the original write ends (only fd 1/2
+   are writers now), spawn two reader threads.
+2. `drain()` — flush stdout/stderr (push any buffered `BufWriter` data into the pipe),
+   lock each `Mutex<Vec<u8>>`, `mem::take` the accumulated bytes, return as strings.
+   Called after each Rumoca API call.
+3. `Drop` — flush, `dup2()` the saved originals back onto fd 1/2 (restoring normal
+   output), close the saved fds. This closes the pipe write ends, so the reader
+   threads see EOF and exit. `join()` both threads to ensure clean shutdown.
+
+**Platform scope:** `OutputCapture` is `#[cfg(unix)]` — the `pipe()`/`dup2()` calls
+are Unix-specific. On other platforms, `start()` returns `None` and `drain_output` is
+a no-op. The `#[allow(unused)]` annotation on the `capture` parameter suppresses the
+resulting dead-code warning.
+
 ### JSON serialization strategy
 
 Each stage serializes only the **user model's** IR (a few KB), not the whole resolved
@@ -264,7 +329,8 @@ if ui.button("Run").clicked() {
 13. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`,
     `cached_equation_sheet`, `cached_matching_anim`, `cached_tarjan_anim`
     (`Option<Option<T>>` — outer = cache state, inner = parse result) avoid per-frame
-    re-parsing of structural report JSON; invalidated on `Compiled`
+    re-parsing of structural report JSON; invalidated on `Compiled` and when switching
+    between Structural/IndexReduction (tracked by `cached_report_stage`)
 14. **Live debug spawn** — deferred algorithm thread spawn with breakpoint ack handshake
 
 ### Panel layout
@@ -769,7 +835,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (182 tests) guards against silent
+their call sites. The regression test suite (204 tests) guards against silent
 regressions during a rebase.
 
 

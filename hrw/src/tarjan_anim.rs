@@ -140,7 +140,7 @@ impl TarjanAnimation {
                 on_complete();
                 *done_for_thread.lock().expect("done lock") = true;
             })
-            .expect("failed to spawn tarjan-debug thread");
+            .ok()?;
 
         Some(Self {
             frames: Vec::new(),
@@ -213,73 +213,19 @@ impl TarjanAnimation {
         }
 
         // --- Controls ---
-        ui.horizontal(|ui| {
-            if self.is_live() {
-                let done = self.live_finished();
-                let status = if done { "Live (done)" } else { "Live" };
-                ui.label(egui::RichText::new(status).color(
-                    if done { egui::Color32::from_rgb(0x66, 0xBB, 0x6A) }
-                    else { egui::Color32::from_rgb(0xEF, 0x53, 0x50) }
-                ).strong());
-                ui.separator();
-            }
-
-            if !self.is_live() {
-                if self.playing {
-                    if ui.button("\u{23f8} Pause").clicked() {
-                        self.playing = false;
-                    }
-                } else if ui.button("\u{25b6} Play").clicked() {
-                    if self.cursor + 1 >= self.frames.len() {
-                        self.cursor = 0;
-                    }
-                    self.playing = true;
-                    self.elapsed = 0.0;
-                }
-            }
-
-            if ui.button("\u{23ee} Reset").clicked() {
-                self.cursor = 0;
-                self.playing = false;
-            }
-
-            ui.add_enabled_ui(!self.playing, |ui| {
-                if ui
-                    .add_enabled(self.cursor > 0, egui::Button::new("\u{25c0} Back"))
-                    .clicked()
-                {
-                    self.cursor = self.cursor.saturating_sub(1);
-                }
-                if ui
-                    .add_enabled(
-                        self.cursor + 1 < self.frames.len(),
-                        egui::Button::new("Step \u{25b6}"),
-                    )
-                    .clicked()
-                {
-                    self.cursor += 1;
-                }
-            });
-
-            ui.separator();
-            ui.label(format!(
-                "Frame {}/{}",
-                self.cursor + 1,
-                self.frames.len()
-            ));
-
-            if !self.is_live() {
-                ui.separator();
-                ui.label("Speed:");
-                let mut speed_ms = (self.interval * 1000.0) as i32;
-                if ui
-                    .add(egui::Slider::new(&mut speed_ms, 50..=2000).suffix("ms"))
-                    .changed()
-                {
-                    self.interval = speed_ms as f64 / 1000.0;
-                }
-            }
-        });
+        let n_frames = self.frames.len();
+        let is_live = self.is_live();
+        let live_finished = self.live_finished();
+        crate::animation_controls(
+            ui,
+            &mut self.cursor,
+            &mut self.playing,
+            &mut self.elapsed,
+            &mut self.interval,
+            n_frames,
+            is_live,
+            live_finished,
+        );
 
         // --- Step description ---
         if let Some(frame) = self.current_frame() {
@@ -450,13 +396,7 @@ fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, Strin
     }
 }
 
-fn truncate_label(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        s.get(..max).unwrap_or(s)
-    }
-}
+use crate::truncate_label;
 
 #[cfg(test)]
 mod tests {

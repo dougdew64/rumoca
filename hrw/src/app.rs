@@ -249,9 +249,12 @@ pub struct App {
 
     // ---- 14. Cached structural views ----
     // Avoids re-parsing `from_report` JSON every frame. Invalidated when
-    // `stages` changes (in `drain_worker` on `Compiled`). Outer Option is
-    // the cache state (None = not yet computed); inner Option is the parse
-    // result (None = report had no data for this view).
+    // `stages` changes (in `drain_worker` on `Compiled`) or when the
+    // active stage switches between Structural and IndexReduction (each
+    // has its own report data). Outer Option is the cache state (None =
+    // not yet computed); inner Option is the parse result (None = report
+    // had no data for this view).
+    cached_report_stage: Option<StageKind>,
     cached_spy_plot: Option<Option<spyplot::Plot>>,
     cached_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
     cached_reduction: Option<Option<reduction_view::ReductionView>>,
@@ -285,7 +288,62 @@ enum PendingLiveDebug {
     Tarjan,
 }
 
+enum LiveDebugAction {
+    None,
+    SpawnLive,
+}
+
 impl App {
+    /// Three-phase live-debug lifecycle shared by Matching and Tarjan views.
+    ///
+    /// Returns `SpawnLive` when the ack handshake completes and the caller
+    /// should spawn the algorithm thread.
+    fn live_debug_lifecycle(
+        &mut self,
+        ui: &mut egui::Ui,
+        anim_is_live: bool,
+        anim_live_finished: bool,
+        variant: PendingLiveDebug,
+    ) -> LiveDebugAction {
+        if self.live_breakpoint_armed && anim_live_finished {
+            let _ = bridge::remove_live_trace_breakpoint();
+            self.live_breakpoint_armed = false;
+        }
+        if !anim_is_live && self.pending_live_debug.is_none() {
+            if let Some(Some(_)) = &self.cached_incidence {
+                if ui.button("Debug").on_hover_text(
+                    "Start live debug session \u{2014} arms a breakpoint on \
+                     live_trace_breakpoint, then step with Continue (F5)"
+                ).clicked() {
+                    let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
+                    self.pending_live_debug = Some((
+                        std::time::Instant::now(),
+                        variant,
+                    ));
+                }
+            }
+        }
+        if let Some((armed_at, v)) = self.pending_live_debug {
+            let matches_variant = matches!(
+                (v, variant),
+                (PendingLiveDebug::Matching, PendingLiveDebug::Matching)
+                | (PendingLiveDebug::Tarjan, PendingLiveDebug::Tarjan)
+            );
+            if matches_variant {
+                let acked = bridge::check_breakpoint_ack();
+                let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
+                if acked || timed_out {
+                    self.pending_live_debug = None;
+                    self.live_breakpoint_armed = true;
+                    return LiveDebugAction::SpawnLive;
+                }
+                ui.weak("Arming breakpoint\u{2026}");
+                ui.ctx().request_repaint();
+            }
+        }
+        LiveDebugAction::None
+    }
+
     /// Create the application. Called once by eframe at startup.
     ///
     /// Three things happen here that are worth understanding:
@@ -371,6 +429,7 @@ impl App {
             sim_error: None,
             sim_t_end: 2.0,
             cached_specimen_width: None,
+            cached_report_stage: None,
             cached_spy_plot: None,
             cached_incidence: None,
             cached_reduction: None,
@@ -552,6 +611,7 @@ impl App {
                     self.stages = stages;
                     self.def_index = def_index;
                     self.cached_equation_sheet = equation_sheet;
+                    self.cached_report_stage = None;
                     self.cached_spy_plot = None;
                     self.cached_incidence = None;
                     self.cached_reduction = None;
@@ -833,8 +893,7 @@ impl App {
                         .height(ui.available_height() * 0.65);
                 }
                 trajectory_plot.show(ui, |plot_ui| {
-                    for (i, name) in data.names.iter().enumerate() {
-                        let series = &data.data[i];
+                    for (i, (name, series)) in data.names.iter().zip(&data.data).enumerate() {
                         let segments = if data.has_discontinuities {
                             discontinuity_segments(series)
                         } else {
@@ -1823,6 +1882,16 @@ impl eframe::App for App {
                     matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
                 let report_ready = report_stage && self.current_stage().value.is_some();
                 if report_ready {
+                    // Invalidate caches when switching between Structural
+                    // and IndexReduction — each has different report data.
+                    if self.cached_report_stage != Some(self.stage) {
+                        self.cached_spy_plot = None;
+                        self.cached_incidence = None;
+                        self.cached_reduction = None;
+                        self.cached_matching_anim = None;
+                        self.cached_tarjan_anim = None;
+                        self.cached_report_stage = Some(self.stage);
+                    }
                     let is_index_reduction = self.stage == StageKind::IndexReduction;
                     // If switching away from IndexReduction while Reduction is
                     // selected, fall back to SpyPlot (Structural has no reduction).
@@ -1868,81 +1937,32 @@ impl eframe::App for App {
                         ui.weak("(no incidence data in this report)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
-                    // Ensure incidence is computed first.
                     if self.cached_incidence.is_none() {
                         self.cached_incidence = Some(
                             self.stages.get(self.stage).value.as_ref()
                                 .and_then(incidence_view::IncidenceMatrix::from_report)
                         );
                     }
-                    // ── Live debug session lifecycle (matching) ──
-                    //
-                    // Three-phase state machine:
-                    //   1. Idle (no live session) → Debug button visible
-                    //   2. Arming (pending_live_debug is Some) → polls for ack
-                    //   3. Running (live animation active) → user steps with F5
-                    //
-                    // Phase 3→1 transition: the algorithm thread's `on_complete`
-                    // callback removes the breakpoint via the bridge before
-                    // exiting; `live_just_finished` below is a UI-side fallback
-                    // that clears the armed flag.
-                    let is_live_running = self.cached_matching_anim.as_ref()
+                    let is_live = self.cached_matching_anim.as_ref()
                         .and_then(|o| o.as_ref())
                         .map_or(false, |a| a.is_live() && !a.live_finished());
-
-                    // Safety-net: if the thread finished but the armed flag is
-                    // still set (the on_complete removal is the primary path),
-                    // clean up here so the Debug button reappears.
-                    let live_just_finished = self.live_breakpoint_armed
-                        && self.cached_matching_anim.as_ref()
-                            .and_then(|o| o.as_ref())
-                            .map_or(false, |a| a.is_live() && a.live_finished());
-                    if live_just_finished {
-                        let _ = bridge::remove_live_trace_breakpoint();
-                        self.live_breakpoint_armed = false;
-                    }
-
-                    // Phase 1: show the Debug button when no live session is
-                    // running and no arm request is pending.
-                    if !is_live_running && self.pending_live_debug.is_none() {
-                        if let Some(Some(_)) = &self.cached_incidence {
-                            if ui.button("Debug").on_hover_text(
-                                "Start live debug session \u{2014} arms a breakpoint on \
-                                 live_trace_breakpoint, then step with Continue (F5)"
-                            ).clicked() {
-                                let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
-                                self.pending_live_debug = Some((
-                                    std::time::Instant::now(),
-                                    PendingLiveDebug::Matching,
-                                ));
+                    let finished = self.cached_matching_anim.as_ref()
+                        .and_then(|o| o.as_ref())
+                        .map_or(false, |a| a.is_live() && a.live_finished());
+                    let action = self.live_debug_lifecycle(
+                        ui, is_live, finished, PendingLiveDebug::Matching,
+                    );
+                    if matches!(action, LiveDebugAction::SpawnLive) {
+                        if let Some(Some(mat)) = &self.cached_incidence {
+                            let live = matching_anim::MatchingAnimation::start_live(mat, || {
+                                let _ = bridge::remove_live_trace_breakpoint();
+                            });
+                            if live.is_none() {
+                                let _ = bridge::remove_live_trace_breakpoint();
+                                self.live_breakpoint_armed = false;
                             }
-                        }
-                    }
-
-                    // Phase 2: wait for the extension to acknowledge that the
-                    // breakpoint is registered. Poll `check_breakpoint_ack()`
-                    // each frame (~16ms); fall back to a 3s timeout if the
-                    // extension isn't running.
-                    if let Some((armed_at, PendingLiveDebug::Matching)) = self.pending_live_debug {
-                        let acked = bridge::check_breakpoint_ack();
-                        let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
-                        if acked || timed_out {
-                            self.pending_live_debug = None;
-                            self.live_breakpoint_armed = true;
-                            if let Some(Some(mat)) = &self.cached_incidence {
-                                // on_complete runs inside the algorithm thread
-                                // after the last frame — removes the breakpoint
-                                // before the thread exits (prevents SIGSTOP).
-                                self.cached_matching_anim = Some(Some(
-                                    matching_anim::MatchingAnimation::start_live(mat, || {
-                                        let _ = bridge::remove_live_trace_breakpoint();
-                                    })
-                                ));
-                                self.matching_anim_canvas.request_fit();
-                            }
-                        } else {
-                            ui.weak("Arming breakpoint\u{2026}");
-                            ui.ctx().request_repaint();
+                            self.cached_matching_anim = Some(live);
+                            self.matching_anim_canvas.request_fit();
                         }
                     }
                     if self.cached_matching_anim.is_none() {
@@ -1963,50 +1983,26 @@ impl eframe::App for App {
                                 .and_then(incidence_view::IncidenceMatrix::from_report)
                         );
                     }
-                    // ── Live debug session lifecycle (Tarjan) ──
-                    // Same three-phase state machine as matching above.
-                    let is_live_running = self.cached_tarjan_anim.as_ref()
+                    let is_live = self.cached_tarjan_anim.as_ref()
                         .and_then(|o| o.as_ref())
                         .map_or(false, |a| a.is_live() && !a.live_finished());
-                    let live_just_finished = self.live_breakpoint_armed
-                        && self.cached_tarjan_anim.as_ref()
-                            .and_then(|o| o.as_ref())
-                            .map_or(false, |a| a.is_live() && a.live_finished());
-                    if live_just_finished {
-                        let _ = bridge::remove_live_trace_breakpoint();
-                        self.live_breakpoint_armed = false;
-                    }
-                    if !is_live_running && self.pending_live_debug.is_none() {
-                        if let Some(Some(_)) = &self.cached_incidence {
-                            if ui.button("Debug").on_hover_text(
-                                "Start live debug session \u{2014} arms a breakpoint on \
-                                 live_trace_breakpoint, then step with Continue (F5)"
-                            ).clicked() {
-                                let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
-                                self.pending_live_debug = Some((
-                                    std::time::Instant::now(),
-                                    PendingLiveDebug::Tarjan,
-                                ));
+                    let finished = self.cached_tarjan_anim.as_ref()
+                        .and_then(|o| o.as_ref())
+                        .map_or(false, |a| a.is_live() && a.live_finished());
+                    let action = self.live_debug_lifecycle(
+                        ui, is_live, finished, PendingLiveDebug::Tarjan,
+                    );
+                    if matches!(action, LiveDebugAction::SpawnLive) {
+                        if let Some(Some(mat)) = &self.cached_incidence {
+                            let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
+                                let _ = bridge::remove_live_trace_breakpoint();
+                            });
+                            if live.is_none() {
+                                let _ = bridge::remove_live_trace_breakpoint();
+                                self.live_breakpoint_armed = false;
                             }
-                        }
-                    }
-                    if let Some((armed_at, PendingLiveDebug::Tarjan)) = self.pending_live_debug {
-                        let acked = bridge::check_breakpoint_ack();
-                        let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
-                        if acked || timed_out {
-                            self.pending_live_debug = None;
-                            self.live_breakpoint_armed = true;
-                            if let Some(Some(mat)) = &self.cached_incidence {
-                                self.cached_tarjan_anim = Some(
-                                    tarjan_anim::TarjanAnimation::start_live(mat, || {
-                                        let _ = bridge::remove_live_trace_breakpoint();
-                                    })
-                                );
-                                self.tarjan_anim_canvas.request_fit();
-                            }
-                        } else {
-                            ui.weak("Arming breakpoint\u{2026}");
-                            ui.ctx().request_repaint();
+                            self.cached_tarjan_anim = Some(live);
+                            self.tarjan_anim_canvas.request_fit();
                         }
                     }
                     if self.cached_tarjan_anim.is_none() {
@@ -2201,9 +2197,13 @@ fn tab_label(
 impl App {
     #[cfg(test)]
     fn test_default() -> Self {
+        Self::test_with_sender().0
+    }
+
+    fn test_with_sender() -> (Self, std::sync::mpsc::Sender<FromWorker>) {
         let (tx, _) = std::sync::mpsc::channel();
-        let (_, rx) = std::sync::mpsc::channel();
-        App {
+        let (from_tx, rx) = std::sync::mpsc::channel();
+        let app = App {
             worker: Worker { tx, rx },
             libraries_text: String::new(),
             library_status: String::new(),
@@ -2243,6 +2243,7 @@ impl App {
             sim_error: None,
             sim_t_end: 2.0,
             cached_specimen_width: None,
+            cached_report_stage: None,
             cached_spy_plot: None,
             cached_incidence: None,
             cached_reduction: None,
@@ -2253,7 +2254,8 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             pending_live_debug: None,
             live_breakpoint_armed: false,
-        }
+        };
+        (app, from_tx)
     }
 }
 
@@ -2424,5 +2426,206 @@ mod tests {
         let err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
         let msg = status_line(1, "x", "explain", Err(err));
         assert!(msg.contains("bridge write failed"), "should report error: {msg}");
+    }
+
+    #[test]
+    fn report_cache_invalidated_on_stage_switch() {
+        let mut app = App::test_default();
+        // Simulate having cached data for Structural.
+        app.cached_report_stage = Some(StageKind::Structural);
+        app.cached_spy_plot = Some(None);
+        app.cached_incidence = Some(None);
+        app.cached_reduction = Some(None);
+        app.cached_matching_anim = Some(None);
+        app.cached_tarjan_anim = Some(None);
+
+        // Switch to IndexReduction — caches should be invalidated.
+        app.stage = StageKind::IndexReduction;
+        if app.cached_report_stage != Some(app.stage) {
+            app.cached_spy_plot = None;
+            app.cached_incidence = None;
+            app.cached_reduction = None;
+            app.cached_matching_anim = None;
+            app.cached_tarjan_anim = None;
+            app.cached_report_stage = Some(app.stage);
+        }
+        assert!(app.cached_spy_plot.is_none());
+        assert!(app.cached_incidence.is_none());
+        assert!(app.cached_reduction.is_none());
+        assert!(app.cached_matching_anim.is_none());
+        assert!(app.cached_tarjan_anim.is_none());
+        assert_eq!(app.cached_report_stage, Some(StageKind::IndexReduction));
+    }
+
+    #[test]
+    fn report_cache_preserved_for_same_stage() {
+        let mut app = App::test_default();
+        app.cached_report_stage = Some(StageKind::Structural);
+        app.cached_spy_plot = Some(None);
+        app.stage = StageKind::Structural;
+
+        // Same stage — cache should NOT be invalidated.
+        if app.cached_report_stage != Some(app.stage) {
+            app.cached_spy_plot = None;
+            app.cached_report_stage = Some(app.stage);
+        }
+        assert!(app.cached_spy_plot.is_some());
+    }
+
+    #[test]
+    fn drain_worker_libraries_ok_updates_status() {
+        let (mut app, tx) = App::test_with_sender();
+        app.libraries_busy = true;
+        tx.send(FromWorker::Libraries(Ok(3))).unwrap();
+        app.drain_worker();
+        assert!(!app.libraries_busy);
+        assert!(app.library_status.contains("3"));
+    }
+
+    #[test]
+    fn drain_worker_libraries_err_updates_status() {
+        let (mut app, tx) = App::test_with_sender();
+        app.libraries_busy = true;
+        tx.send(FromWorker::Libraries(Err("boom".into()))).unwrap();
+        app.drain_worker();
+        assert!(!app.libraries_busy);
+        assert!(app.library_status.contains("boom"));
+    }
+
+    #[test]
+    fn drain_worker_compile_progress_updates_stages_for_current_specimen() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        let stages = {
+            let mut b = StageBundle::default();
+            b.parse = Stage { value: Some(serde_json::json!({"parsed": true})), note: None, note_is_error: false };
+            b
+        };
+        tx.send(FromWorker::CompileProgress { path, stages }).unwrap();
+        app.drain_worker();
+        assert!(app.stages.parse.value.is_some());
+    }
+
+    #[test]
+    fn drain_worker_compile_progress_ignored_for_stale_specimen() {
+        let (mut app, tx) = App::test_with_sender();
+        app.selected = Some(PathBuf::from("/test/current.mo"));
+        let stages = {
+            let mut b = StageBundle::default();
+            b.parse = Stage { value: Some(serde_json::json!({"parsed": true})), note: None, note_is_error: false };
+            b
+        };
+        tx.send(FromWorker::CompileProgress { path: PathBuf::from("/test/stale.mo"), stages }).unwrap();
+        app.drain_worker();
+        assert!(app.stages.parse.value.is_none());
+    }
+
+    #[test]
+    fn drain_worker_compiled_clears_caches_and_updates_state() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        app.compiling = true;
+        app.cached_spy_plot = Some(None);
+        app.cached_incidence = Some(None);
+        app.cached_report_stage = Some(StageKind::Parse);
+        app.live_breakpoint_armed = false;
+
+        let stages = {
+            let mut b = StageBundle::default();
+            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b
+        };
+        tx.send(FromWorker::Compiled {
+            path,
+            model: Some("TestModel".into()),
+            stages,
+            def_index: BTreeMap::new(),
+            equation_sheet: None,
+        }).unwrap();
+        app.drain_worker();
+
+        assert!(!app.compiling);
+        assert_eq!(app.model.as_deref(), Some("TestModel"));
+        assert!(app.cached_spy_plot.is_none());
+        assert!(app.cached_incidence.is_none());
+        assert!(app.cached_report_stage.is_none());
+        assert!(app.pending_live_debug.is_none());
+    }
+
+    #[test]
+    fn drain_worker_compiled_stale_path_ignored() {
+        let (mut app, tx) = App::test_with_sender();
+        app.selected = Some(PathBuf::from("/test/current.mo"));
+        app.compiling = true;
+
+        tx.send(FromWorker::Compiled {
+            path: PathBuf::from("/test/stale.mo"),
+            model: Some("StaleModel".into()),
+            stages: StageBundle::default(),
+            def_index: BTreeMap::new(),
+            equation_sheet: None,
+        }).unwrap();
+        app.drain_worker();
+
+        assert!(app.compiling);
+        assert!(app.model.is_none());
+    }
+
+    #[test]
+    fn drain_worker_simulated_ok_stores_data() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        app.sim_running = true;
+
+        tx.send(FromWorker::Simulated {
+            path,
+            result: Ok(SimData {
+                times: vec![0.0, 1.0],
+                names: vec!["x".into()],
+                data: vec![vec![0.0, 1.0]],
+                n_states: 1,
+                has_discontinuities: false,
+                solver_steps: vec![],
+            }),
+        }).unwrap();
+        app.drain_worker();
+
+        assert!(!app.sim_running);
+        assert!(app.sim_data.is_some());
+        assert!(app.sim_error.is_none());
+    }
+
+    #[test]
+    fn drain_worker_simulated_err_stores_error() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        app.sim_running = true;
+
+        tx.send(FromWorker::Simulated {
+            path,
+            result: Err("solver diverged".into()),
+        }).unwrap();
+        app.drain_worker();
+
+        assert!(!app.sim_running);
+        assert!(app.sim_data.is_none());
+        assert!(app.sim_error.as_deref() == Some("solver diverged"));
+    }
+
+    #[test]
+    fn drain_worker_log_appends_entry() {
+        let (mut app, tx) = App::test_with_sender();
+        tx.send(FromWorker::Log(LogEntry {
+            elapsed_secs: 0.0,
+            level: crate::worker::LogLevel::Info,
+            message: "test log".into(),
+        })).unwrap();
+        app.drain_worker();
+        assert_eq!(app.log_entries.len(), 1);
+        assert!(app.log_entries[0].message.contains("test log"));
     }
 }

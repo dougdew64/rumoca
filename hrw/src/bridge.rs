@@ -310,7 +310,10 @@ fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
         .enumerate()
         .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
         .map(|(i, _)| i + 1)
-        .unwrap_or(109);
+        .ok_or_else(|| std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "live_trace_breakpoint signature not found in source",
+        ))?;
     Ok((file, line))
 }
 
@@ -326,28 +329,32 @@ fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
 pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> {
     let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
     let (file, line) = find_live_trace_line()?;
-    let specimen_field = specimen
-        .map(|s| format!("\"specimen\": \"{s}\",\n  "))
-        .unwrap_or_default();
-    let request = format!(
-        "{{\n  \"version\": 1,\n  {specimen_field}\"breakpoints\": [\n    {{\n      \
-         \"path\": \"{path}\",\n      \"line\": {line}\n    \
-         }}\n  ]\n}}\n",
-        path = file.display(),
-    );
-    fs::write(BREAKPOINT_REQUEST_FILE, request)
+    let path_str = file.display().to_string();
+    let mut request = json!({
+        "version": 1,
+        "breakpoints": [{ "path": path_str, "line": line }]
+    });
+    if let Some(s) = specimen {
+        request["specimen"] = json!(s);
+    }
+    let text = serde_json::to_string_pretty(&request)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    fs::write(BREAKPOINT_REQUEST_FILE, text)
 }
 
 /// Remove the `live_trace_breakpoint` breakpoint when the live debug session
 /// finishes, preventing a SIGSTOP signal when the algorithm thread exits.
 pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
     let (file, line) = find_live_trace_line()?;
-    let request = format!(
-        "{{\n  \"version\": 1,\n  \"action\": \"remove\",\n  \"breakpoints\": [\n    {{\n      \
-         \"path\": \"{path}\",\n      \"line\": {line}\n    }}\n  ]\n}}\n",
-        path = file.display(),
-    );
-    fs::write(BREAKPOINT_REQUEST_FILE, request)
+    let path_str = file.display().to_string();
+    let request = json!({
+        "version": 1,
+        "action": "remove",
+        "breakpoints": [{ "path": path_str, "line": line }]
+    });
+    let text = serde_json::to_string_pretty(&request)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    fs::write(BREAKPOINT_REQUEST_FILE, text)
 }
 
 /// Write each stage's full IR to `.hrw-bridge/stages/<name>.json`.
@@ -1142,5 +1149,44 @@ mod tests {
         ).unwrap();
         assert_eq!(content["seq"], json!(99));
         assert_eq!(content["model"], json!("TestWriteModel"));
+    }
+
+    fn test_file_path() -> String {
+        format!("{}/src/bridge.rs", env!("CARGO_MANIFEST_DIR"))
+    }
+
+    #[test]
+    fn slice_source_zero_length() {
+        let path = test_file_path();
+        let (_, excerpt, _) = slice_source(&path, None, 0, 0).expect("zero-length should succeed");
+        assert!(excerpt.is_empty());
+    }
+
+    #[test]
+    fn slice_source_file_start() {
+        let path = test_file_path();
+        let (_, excerpt, _) = slice_source(&path, None, 0, 2).expect("file start should succeed");
+        assert_eq!(excerpt.len(), 2);
+    }
+
+    #[test]
+    fn slice_source_file_end() {
+        let path = test_file_path();
+        let src = fs::read_to_string(&path).unwrap();
+        let len = src.len();
+        assert!(slice_source(&path, None, len - 2, len).is_some(), "file end should succeed");
+    }
+
+    #[test]
+    fn slice_source_invalid_range() {
+        let path = test_file_path();
+        assert!(slice_source(&path, None, 5, 3).is_none());
+    }
+
+    #[test]
+    fn slice_source_past_end() {
+        let path = test_file_path();
+        let src = fs::read_to_string(&path).unwrap();
+        assert!(slice_source(&path, None, 0, src.len() + 1).is_none());
     }
 }

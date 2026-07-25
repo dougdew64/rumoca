@@ -387,6 +387,42 @@ fn abbreviate_expr(json_expr: &str) -> String {
     }
 }
 
+fn binary_op_symbol(variant: &str) -> &str {
+    match variant {
+        "Add" => "+",
+        "Sub" => "-",
+        "Mul" => "*",
+        "Div" => "/",
+        "Eq" => "==",
+        "Neq" => "<>",
+        "Lt" => "<",
+        "Le" => "<=",
+        "Gt" => ">",
+        "Ge" => ">=",
+        "And" => "and",
+        "Or" => "or",
+        "Exp" => "^",
+        "ExpElem" => ".^",
+        "AddElem" => ".+",
+        "SubElem" => ".-",
+        "MulElem" => ".*",
+        "DivElem" => "./",
+        "Assign" => "=",
+        _ => variant,
+    }
+}
+
+fn unary_op_symbol(variant: &str) -> &str {
+    match variant {
+        "Minus" => "-",
+        "Plus" => "+",
+        "DotMinus" => ".-",
+        "DotPlus" => ".+",
+        "Not" => "not ",
+        _ => variant,
+    }
+}
+
 // Recursive expression-to-string renderer. Each branch pattern-matches on the
 // Rumoca IR expression enum variant (serialized as a JSON object with one key).
 fn expr_to_short(v: &Value) -> String {
@@ -414,14 +450,16 @@ fn expr_to_short(v: &Value) -> String {
         None => {
             if let Some(bin) = v.get("Binary") {
                 let op = bin.get("op").and_then(|o| o.as_str()).unwrap_or("?");
+                let sym = binary_op_symbol(op);
                 let lhs = bin.get("lhs").map(expr_to_short).unwrap_or_default();
                 let rhs = bin.get("rhs").map(expr_to_short).unwrap_or_default();
-                return format!("{lhs} {op} {rhs}");
+                return format!("{lhs} {sym} {rhs}");
             }
             if let Some(unary) = v.get("Unary") {
                 let op = unary.get("op").and_then(|o| o.as_str()).unwrap_or("?");
+                let sym = unary_op_symbol(op);
                 let rhs = unary.get("rhs").map(expr_to_short).unwrap_or_default();
-                return format!("{op}{rhs}");
+                return format!("{sym}{rhs}");
             }
             if let Some(call) = v.get("BuiltinCall") {
                 let func = call
@@ -517,13 +555,30 @@ mod tests {
     #[test]
     fn abbreviate_renders_binary() {
         let expr = r#"{"Binary":{"op":"Add","lhs":{"VarRef":{"name":"x"}},"rhs":{"VarRef":{"name":"y"}}}}"#;
-        assert_eq!(abbreviate_expr(expr), "x Add y");
+        assert_eq!(abbreviate_expr(expr), "x + y");
+    }
+
+    #[test]
+    fn abbreviate_renders_binary_operators() {
+        let bin = |op| format!(r#"{{"Binary":{{"op":"{op}","lhs":{{"VarRef":{{"name":"x"}}}},"rhs":{{"VarRef":{{"name":"y"}}}}}}}}"#);
+        assert_eq!(abbreviate_expr(&bin("Sub")), "x - y");
+        assert_eq!(abbreviate_expr(&bin("Mul")), "x * y");
+        assert_eq!(abbreviate_expr(&bin("Div")), "x / y");
+        assert_eq!(abbreviate_expr(&bin("Exp")), "x ^ y");
+        assert_eq!(abbreviate_expr(&bin("Ge")), "x >= y");
+        assert_eq!(abbreviate_expr(&bin("And")), "x and y");
     }
 
     #[test]
     fn abbreviate_renders_unary() {
-        let expr = r#"{"Unary":{"op":"Negate","rhs":{"VarRef":{"name":"x"}}}}"#;
-        assert_eq!(abbreviate_expr(expr), "Negatex");
+        let expr = r#"{"Unary":{"op":"Minus","rhs":{"VarRef":{"name":"x"}}}}"#;
+        assert_eq!(abbreviate_expr(expr), "-x");
+    }
+
+    #[test]
+    fn abbreviate_renders_unary_not() {
+        let expr = r#"{"Unary":{"op":"Not","rhs":{"VarRef":{"name":"b"}}}}"#;
+        assert_eq!(abbreviate_expr(expr), "not b");
     }
 
     #[test]
@@ -541,7 +596,7 @@ mod tests {
     #[test]
     fn abbreviate_nested_binary_in_builtin() {
         let expr = r#"{"BuiltinCall":{"function":"abs","args":[{"Binary":{"op":"Sub","lhs":{"VarRef":{"name":"a"}},"rhs":{"VarRef":{"name":"b"}}}}]}}"#;
-        assert_eq!(abbreviate_expr(expr), "abs(a Sub b)");
+        assert_eq!(abbreviate_expr(expr), "abs(a - b)");
     }
 
     #[test]
@@ -575,6 +630,6 @@ mod tests {
         });
         let view = ReductionView::from_report(&report).expect("should parse");
         assert_eq!(view.eliminations[0].variable, "z");
-        assert_eq!(view.eliminations[0].display, "a Mul 2");
+        assert_eq!(view.eliminations[0].display, "a * 2");
     }
 }

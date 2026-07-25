@@ -84,11 +84,7 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             if left_parens { out.push(')'); }
 
             let op_str = format!("{op}");
-            if op_str.len() > 1 || matches!(op, OpBinary::And | OpBinary::Or) {
-                out.push(' ');
-                out.push_str(&op_str);
-                out.push(' ');
-            } else if !op_str.is_empty() {
+            if !op_str.is_empty() {
                 out.push(' ');
                 out.push_str(&op_str);
                 out.push(' ');

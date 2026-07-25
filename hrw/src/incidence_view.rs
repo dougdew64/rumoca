@@ -128,31 +128,32 @@ impl IncidenceMatrix {
                 .to_owned();
             equation_names.push(eq_name);
             equation_texts.push(eq_text);
-            let cols: Vec<usize> = r
+            let mut cols: Vec<usize> = r
                 .get("unknowns")
                 .and_then(Value::as_array)
                 .map(|a| a.iter().filter_map(|v| v.as_u64().map(|x| x as usize)).collect())
                 .unwrap_or_default();
+            cols.sort_unstable();
             rows.push(cols);
         }
 
+        // Build name → index lookups (used by both matching + BLT parsing).
+        let eq_index: std::collections::HashMap<&str, usize> = equation_names
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.as_str(), i))
+            .collect();
+        let var_index: std::collections::HashMap<&str, usize> = unknown_names
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.as_str(), i))
+            .collect();
+
         // --- Parse matching overlay ---
-        // The matching array uses string names; resolve to row/col indices.
         let mut matched_col = vec![None; n_eq];
         let mut col_matched = vec![false; n_var];
         let mut n_matched = 0;
         if let Some(matching) = report.get("matching").and_then(Value::as_array) {
-            // Build name → index lookups.
-            let eq_index: std::collections::HashMap<&str, usize> = equation_names
-                .iter()
-                .enumerate()
-                .map(|(i, n)| (n.as_str(), i))
-                .collect();
-            let var_index: std::collections::HashMap<&str, usize> = unknown_names
-                .iter()
-                .enumerate()
-                .map(|(i, n)| (n.as_str(), i))
-                .collect();
             for m in matching {
                 let eq_name = m.get("equation").and_then(Value::as_str).unwrap_or("");
                 let var_name = m.get("unknown").and_then(Value::as_str).unwrap_or("");
@@ -167,16 +168,6 @@ impl IncidenceMatrix {
         // --- Parse BLT block boundaries ---
         let mut blt_blocks = Vec::new();
         if let Some(blocks) = report.get("blocks").and_then(Value::as_array) {
-            let eq_index: std::collections::HashMap<&str, usize> = equation_names
-                .iter()
-                .enumerate()
-                .map(|(i, n)| (n.as_str(), i))
-                .collect();
-            let var_index: std::collections::HashMap<&str, usize> = unknown_names
-                .iter()
-                .enumerate()
-                .map(|(i, n)| (n.as_str(), i))
-                .collect();
             for b in blocks {
                 let coupled = b.get("kind").and_then(Value::as_str) == Some("coupled");
                 let (eq_names, var_names) = if coupled {
@@ -399,44 +390,10 @@ impl IncidenceMatrix {
         // Axis labels — only drawn when zoomed in far enough that they won't
         // overlap (zoom >= 16 means each cell is at least 16px wide).
         if view.zoom() >= 16.0 {
-            let font = egui::FontId::proportional((view.zoom() * 0.35).min(14.0));
-            let label_color = visuals.text_color().gamma_multiply(0.7);
-            // Column (unknown) labels: drawn above the matrix at -45 degrees.
-            // The angle prevents long Modelica names from overlapping each other.
-            // The rotated text extends below the anchor, so the gap must clear
-            // the first character's descent: roughly font_size * sin(45°).
-            let angle = -std::f32::consts::FRAC_PI_4;
-            let font_size = (view.zoom() * 0.35).min(14.0);
-            let col_gap_px = font_size * 1.6;
-            for (col, name) in self.unknown_names.iter().enumerate() {
-                let cell_top = view.to_screen(egui::pos2(col as f32 + 0.5, 0.0));
-                let anchor = egui::pos2(cell_top.x, cell_top.y - col_gap_px);
-                let galley = painter.layout_no_wrap(
-                    truncate_label(name, 20).to_owned(),
-                    font.clone(),
-                    label_color,
-                );
-                let mut shape = egui::epaint::TextShape::new(anchor, galley, label_color);
-                shape.angle = angle;
-                shape.override_text_color = Some(label_color);
-                painter.add(shape);
-            }
-            // Row (equation) labels: drawn to the left of the matrix with a
-            // Use the unclipped UI painter so labels extending left of the
-            // canvas rect are not cut off.
-            let row_gap_px = font_size * 0.5;
-            let unclipped = ui.painter();
-            for (row, text) in self.equation_texts.iter().enumerate() {
-                let cell_left = view.to_screen(egui::pos2(0.0, row as f32 + 0.5));
-                let pos = egui::pos2(cell_left.x - row_gap_px, cell_left.y);
-                unclipped.text(
-                    pos,
-                    egui::Align2::RIGHT_CENTER,
-                    truncate_label(text, 30),
-                    font.clone(),
-                    label_color,
-                );
-            }
+            crate::draw_matrix_axis_labels(
+                ui, &painter, view,
+                &self.unknown_names, &self.equation_texts, 20, 30,
+            );
         }
 
         // Tooltip and click-to-capture. The capture path addresses the equation's
@@ -486,14 +443,6 @@ impl IncidenceMatrix {
 // Truncate a label to at most `max` bytes for display, safely handling
 // multi-byte UTF-8 (falls back to the full string if `max` splits a
 // character boundary).
-fn truncate_label(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        s.get(..max).unwrap_or(s)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -532,21 +481,6 @@ mod tests {
         assert!(mat.cell_at(0, 2));
         assert!(!mat.cell_at(1, 2));
         assert!(mat.cell_at(2, 2));
-    }
-
-    #[test]
-    fn truncate_label_ascii() {
-        assert_eq!(truncate_label("abcde", 3), "abc");
-        assert_eq!(truncate_label("ab", 3), "ab");
-        assert_eq!(truncate_label("abc", 3), "abc");
-    }
-
-    #[test]
-    fn truncate_label_multibyte_does_not_panic() {
-        // U+00E9 (é) is 2 bytes; slicing at byte 1 would split the character.
-        let s = "élan";
-        assert_eq!(truncate_label(s, 1), s); // falls back to full string
-        assert_eq!(truncate_label(s, 2), "é"); // lands on a boundary
     }
 
     #[test]

@@ -56,6 +56,7 @@ use std::path::{Path, PathBuf};
 // `Sender` and `Receiver` are the two halves of a channel; `Sender` is
 // `Clone` (multi-producer) but we only have one of each.
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use eframe::egui;
@@ -579,7 +580,9 @@ impl Worker {
     /// `let _ = ...` ignores send errors (worker thread already exited).
     /// `mpsc::Sender::send()` is non-blocking for unbounded channels.
     pub fn send(&self, req: ToWorker) {
-        let _ = self.tx.send(req);
+        if self.tx.send(req).is_err() {
+            eprintln!("hrw: worker thread has exited — message dropped");
+        }
     }
 }
 
@@ -722,8 +725,11 @@ impl WorkerState {
         let t_stage = Instant::now();
         let source = std::fs::read_to_string(path).map_err(|e| format!("read error: {e}"))?;
         let uri = path.to_string_lossy().to_string();
-        // Update the session's document cache with the (possibly edited) source.
-        // Rumoca API: `update_document` registers/updates a single file in the session.
+        // Remove then re-add the specimen so the session treats it as new —
+        // without this, `update_document` sees identical source text and
+        // short-circuits, returning cached results (armed breakpoints won't
+        // fire and source edits won't take effect on re-simulate).
+        self.session.remove_document(&uri);
         self.session.update_document(&uri, &source);
         // Rumoca API: `qualify_model_name` turns a simple name like "BouncingBall"
         // into a fully-qualified name like "BouncingBall" (for top-level models,
@@ -2662,6 +2668,130 @@ mod tests {
         let unique: std::collections::HashSet<&&str> = names.iter().collect();
         assert_eq!(unique.len(), names.len(), "duplicate stage names in ALL");
     }
+
+    #[test]
+    fn simulate_nonexistent_file_reports_error() {
+        let mut w = WorkerState::new();
+        let path = PathBuf::from("/tmp/hrw_test_sim_nonexistent.mo");
+        let result = w.simulate(&path, "Model", 1.0, &|_: FromWorker| {});
+        assert!(result.is_err(), "simulate of a missing file should return Err");
+    }
+
+    #[test]
+    fn simulate_invalid_syntax_reports_error() {
+        let tmp_dir = PathBuf::from(concat!(
+            "/tmp/claude-1000/-home-dougdew-dev-rumoca/",
+            "0033dab5-98a0-4f7a-8241-a545c97992aa/scratchpad"
+        ));
+        std::fs::create_dir_all(&tmp_dir).expect("create scratchpad dir");
+        let bad_file = tmp_dir.join("sim_bad_syntax.mo");
+        std::fs::write(&bad_file, "not valid modelica {").expect("write temp file");
+        let mut w = WorkerState::new();
+        let result = w.simulate(&bad_file, "Model", 1.0, &|_: FromWorker| {});
+        assert!(result.is_err(), "simulate of invalid syntax should return Err");
+    }
+
+    #[test]
+    fn compile_emits_progress_messages() {
+        let specimen = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/SingleInertia.mo"
+        ));
+        let mut w = WorkerState::new();
+        let progress = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let p = std::sync::Arc::clone(&progress);
+        let _final = w.compile(&specimen, &move |msg: FromWorker| {
+            if let FromWorker::CompileProgress { .. } = &msg {
+                p.lock().unwrap().push(msg);
+            }
+        });
+        let msgs = progress.lock().unwrap();
+        assert!(!msgs.is_empty(), "compile should emit at least one CompileProgress");
+    }
+
+    #[test]
+    fn compile_produces_equation_sheet_for_healthy_specimen() {
+        let specimen = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/SingleInertia.mo"
+        ));
+        let mut w = WorkerState::new();
+        let result = w.compile(&specimen, &|_: FromWorker| {});
+        let FromWorker::Compiled { equation_sheet, .. } = result else {
+            panic!("expected Compiled");
+        };
+        let sheet = equation_sheet.expect("equation_sheet should be Some");
+        assert!(sheet.n_equations > 0, "should have at least one equation");
+    }
+
+    // -- OutputCapture tests --------------------------------------------------
+    //
+    // These tests use raw `libc::write` instead of `print!`/`eprint!` because
+    // cargo test intercepts Rust's print macros at the stdlib level — above
+    // the fd layer — via an internal `set_output_capture` mechanism. Data
+    // written through `print!` goes into cargo's per-test capture buffer and
+    // never reaches fd 1 (the pipe). Since `OutputCapture` operates at the fd
+    // level (`dup2`), its tests must also write at the fd level to exercise
+    // the actual capture path.
+    //
+    // In production this isn't an issue: Rumoca's C-level `printf` and Rust
+    // `tracing` output write directly to fd 1/2, bypassing Rust's BufWriter.
+
+    #[cfg(unix)]
+    unsafe fn write_to_fd(fd: i32, data: &[u8]) {
+        let mut offset = 0;
+        while offset < data.len() {
+            let n = unsafe {
+                libc::write(fd, data[offset..].as_ptr().cast(), data.len() - offset)
+            };
+            if n <= 0 { break; }
+            offset += n as usize;
+        }
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn output_capture_round_trip() {
+        let mut cap = OutputCapture::start().expect("start capture");
+        unsafe {
+            write_to_fd(1, b"hello stdout");
+            write_to_fd(2, b"hello stderr");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let (out, err) = cap.drain();
+        drop(cap);
+        assert!(out.contains("hello stdout"), "stdout missing: {out:?}");
+        assert!(err.contains("hello stderr"), "stderr missing: {err:?}");
+    }
+
+    // Regression test for the pipe-buffer deadlock. Three implementations
+    // existed; this test distinguishes all three:
+    //
+    // 1. Post-hoc drain (original): drain() runs after the API call returns.
+    //    A 128 KB write exceeds the 64 KB pipe buffer, write() blocks waiting
+    //    for a reader, but drain() can't run until write() returns — deadlock.
+    //    This test would hang forever.
+    //
+    // 2. O_NONBLOCK on the write side (partial fix): write() returns EAGAIN
+    //    instead of blocking, preventing the deadlock — but the excess bytes
+    //    are silently dropped, and Rust's println! panics on EAGAIN. This test
+    //    would pass but assert_eq would fail (out.len() < 128 KB).
+    //
+    // 3. Concurrent reader threads (current fix): reader threads continuously
+    //    drain the pipe into a mutex buffer, so the pipe never fills. write()
+    //    stays blocking, all bytes are captured, no data loss.
+    //    This test passes with all 128 KB captured.
+    #[test]
+    #[cfg(unix)]
+    fn output_capture_handles_large_write_without_deadlock() {
+        let mut cap = OutputCapture::start().expect("start capture");
+        let big = vec![b'x'; 128 * 1024];
+        unsafe { write_to_fd(1, &big); }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        let (out, _) = cap.drain();
+        drop(cap);
+        assert_eq!(out.len(), 128 * 1024, "should capture all 128 KB");
+    }
 }
 
 /// Record of what the index-reduction funnel did, step by step.
@@ -2924,10 +3054,12 @@ struct OutputCapture {
     old_stdout: i32,
     /// Saved copy of the original stderr (fd 2), restored on Drop.
     old_stderr: i32,
-    /// Read end of the stdout pipe — `drain()` reads captured output from here.
-    stdout_read: std::fs::File,
-    /// Read end of the stderr pipe — `drain()` reads captured output from here.
-    stderr_read: std::fs::File,
+    /// Accumulated stdout bytes, filled continuously by a reader thread.
+    stdout_buf: Arc<Mutex<Vec<u8>>>,
+    /// Accumulated stderr bytes, filled continuously by a reader thread.
+    stderr_buf: Arc<Mutex<Vec<u8>>>,
+    /// Reader thread handles — joined on Drop to ensure clean shutdown.
+    readers: Option<(thread::JoinHandle<()>, thread::JoinHandle<()>)>,
 }
 
 #[cfg(unix)]
@@ -2935,9 +3067,11 @@ impl OutputCapture {
     /// Set up the pipe/dup2 capture. Returns `None` if any system call fails
     /// (rather than panicking — output capture is best-effort, not critical).
     ///
-    /// `unsafe` is required for all `libc::*` calls (they're C FFI). The
-    /// `FromRawFd` trait converts a raw file descriptor (i32) into a Rust
-    /// `File` object that will close the fd when dropped.
+    /// Spawns two reader threads that continuously drain the pipe read ends
+    /// into shared buffers. This prevents the 64KB pipe-buffer deadlock: no
+    /// matter how much a Rumoca phase writes, the readers keep the buffer
+    /// from filling. The write side stays in normal blocking mode so
+    /// `println!`/`eprintln!` never see `EAGAIN`.
     fn start() -> Option<Self> {
         use std::os::unix::io::FromRawFd;
 
@@ -2974,58 +3108,71 @@ impl OutputCapture {
                 libc::close(err_fds[0]); libc::close(err_fds[1]);
                 return None;
             }
+            // Close the original write ends — fd 1 and fd 2 are the only
+            // writers now (via dup2). The reader threads will see EOF when
+            // Drop restores the original fds and closes the pipe write ends.
             libc::close(out_fds[1]);
             libc::close(err_fds[1]);
+
+            let stdout_buf = Arc::new(Mutex::new(Vec::new()));
+            let stderr_buf = Arc::new(Mutex::new(Vec::new()));
+
+            let out_reader = Self::spawn_reader(
+                std::fs::File::from_raw_fd(out_fds[0]),
+                Arc::clone(&stdout_buf),
+            );
+            let err_reader = Self::spawn_reader(
+                std::fs::File::from_raw_fd(err_fds[0]),
+                Arc::clone(&stderr_buf),
+            );
 
             Some(OutputCapture {
                 old_stdout,
                 old_stderr,
-                stdout_read: std::fs::File::from_raw_fd(out_fds[0]),
-                stderr_read: std::fs::File::from_raw_fd(err_fds[0]),
+                stdout_buf,
+                stderr_buf,
+                readers: Some((out_reader, err_reader)),
             })
         }
     }
 
-    /// Read any output that has accumulated in the pipes since the last drain.
-    /// Returns (stdout_text, stderr_text). Called after each Rumoca API call
-    /// to forward captured output as log entries.
+    fn spawn_reader(mut file: std::fs::File, buf: Arc<Mutex<Vec<u8>>>) -> thread::JoinHandle<()> {
+        thread::Builder::new()
+            .name("output-capture-reader".to_owned())
+            .spawn(move || {
+                use std::io::Read;
+                let mut chunk = [0u8; 4096];
+                loop {
+                    match file.read(&mut chunk) {
+                        Ok(0) => break,
+                        Ok(n) => {
+                            if let Ok(mut locked) = buf.lock() {
+                                locked.extend_from_slice(&chunk[..n]);
+                            }
+                        }
+                        Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                        Err(_) => break,
+                    }
+                }
+            })
+            .expect("spawn output-capture reader")
+    }
+
+    /// Take any output that has accumulated since the last drain.
     fn drain(&mut self) -> (String, String) {
         let _ = std::io::Write::flush(&mut std::io::stdout());
         let _ = std::io::Write::flush(&mut std::io::stderr());
-        (Self::drain_pipe(&mut self.stdout_read), Self::drain_pipe(&mut self.stderr_read))
-    }
-
-    /// Read all available data from one pipe without blocking.
-    ///
-    /// The trick: temporarily set the fd to non-blocking mode (`O_NONBLOCK`),
-    /// read everything available, then restore blocking mode. Without
-    /// `O_NONBLOCK`, `read_to_end()` would block forever waiting for more data
-    /// (the write end of the pipe is still open — it's fd 1 or 2).
-    fn drain_pipe(file: &mut std::fs::File) -> String {
-        use std::io::Read;
-        use std::os::unix::io::AsRawFd;
-        let fd = file.as_raw_fd();
-        unsafe {
-            let flags = libc::fcntl(fd, libc::F_GETFL);
-            libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
-        }
-        let mut buf = Vec::new();
-        let _ = file.read_to_end(&mut buf);
-        unsafe {
-            let flags = libc::fcntl(fd, libc::F_GETFL);
-            libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK);
-        }
-        String::from_utf8_lossy(&buf).into_owned()
+        let take = |buf: &Mutex<Vec<u8>>| -> String {
+            let bytes = std::mem::take(&mut *buf.lock().unwrap());
+            String::from_utf8_lossy(&bytes).into_owned()
+        };
+        (take(&self.stdout_buf), take(&self.stderr_buf))
     }
 }
 
-/// RAII cleanup: when `OutputCapture` is dropped (goes out of scope or is
-/// explicitly dropped), restore the original stdout/stderr file descriptors.
-/// Without this, the process's stdout/stderr would remain redirected to the
-/// (now-closed) pipes, and all subsequent output would be lost.
-///
-/// `Drop` is Rust's equivalent of a C++ destructor or Python's `__del__` —
-/// but unlike Python, it's guaranteed to run (no GC timing issues).
+/// RAII cleanup: restore the original stdout/stderr fds, then join the
+/// reader threads. Restoring the fds closes the pipe write ends (fd 1/2
+/// revert to the saved originals), which makes the reader threads see EOF.
 #[cfg(unix)]
 impl Drop for OutputCapture {
     fn drop(&mut self) {
@@ -3036,6 +3183,10 @@ impl Drop for OutputCapture {
             libc::dup2(self.old_stderr, 2);
             libc::close(self.old_stdout);
             libc::close(self.old_stderr);
+        }
+        if let Some((r1, r2)) = self.readers.take() {
+            let _ = r1.join();
+            let _ = r2.join();
         }
     }
 }

@@ -85,7 +85,7 @@ impl MatchingAnimation {
     /// but before the thread exits — the caller uses this to remove the
     /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
     /// the thread terminates.
-    pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Self {
+    pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Option<Self> {
         let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
         let lt_for_thread = lt.clone();
         let done = Arc::new(Mutex::new(false));
@@ -106,9 +106,9 @@ impl MatchingAnimation {
                 on_complete();
                 *done_for_thread.lock().expect("done lock") = true;
             })
-            .expect("failed to spawn matching-debug thread");
+            .ok()?;
 
-        Self {
+        Some(Self {
             frames: Vec::new(),
             n_eq: mat.n_eq(),
             n_var: mat.n_var(),
@@ -121,7 +121,7 @@ impl MatchingAnimation {
             elapsed: 0.0,
             live: Some(lt),
             live_done: done,
-        }
+        })
     }
 
     /// Whether this animation is in live debug mode.
@@ -188,73 +188,19 @@ impl MatchingAnimation {
         }
 
         // --- Controls ---
-        ui.horizontal(|ui| {
-            if self.is_live() {
-                let done = self.live_finished();
-                let status = if done { "Live (done)" } else { "Live" };
-                ui.label(egui::RichText::new(status).color(
-                    if done { egui::Color32::from_rgb(0x66, 0xBB, 0x6A) }
-                    else { egui::Color32::from_rgb(0xEF, 0x53, 0x50) }
-                ).strong());
-                ui.separator();
-            }
-
-            if !self.is_live() {
-                if self.playing {
-                    if ui.button("\u{23f8} Pause").clicked() {
-                        self.playing = false;
-                    }
-                } else if ui.button("\u{25b6} Play").clicked() {
-                    if self.cursor + 1 >= self.frames.len() {
-                        self.cursor = 0;
-                    }
-                    self.playing = true;
-                    self.elapsed = 0.0;
-                }
-            }
-
-            if ui.button("\u{23ee} Reset").clicked() {
-                self.cursor = 0;
-                self.playing = false;
-            }
-
-            ui.add_enabled_ui(!self.playing, |ui| {
-                if ui
-                    .add_enabled(self.cursor > 0, egui::Button::new("\u{25c0} Back"))
-                    .clicked()
-                {
-                    self.cursor = self.cursor.saturating_sub(1);
-                }
-                if ui
-                    .add_enabled(
-                        self.cursor + 1 < self.frames.len(),
-                        egui::Button::new("Step \u{25b6}"),
-                    )
-                    .clicked()
-                {
-                    self.cursor += 1;
-                }
-            });
-
-            ui.separator();
-            ui.label(format!(
-                "Frame {}/{}",
-                self.cursor + 1,
-                self.frames.len()
-            ));
-
-            if !self.is_live() {
-                ui.separator();
-                ui.label("Speed:");
-                let mut speed_ms = (self.interval * 1000.0) as i32;
-                if ui
-                    .add(egui::Slider::new(&mut speed_ms, 50..=2000).suffix("ms"))
-                    .changed()
-                {
-                    self.interval = speed_ms as f64 / 1000.0;
-                }
-            }
-        });
+        let n_frames = self.frames.len();
+        let is_live = self.is_live();
+        let live_finished = self.live_finished();
+        crate::animation_controls(
+            ui,
+            &mut self.cursor,
+            &mut self.playing,
+            &mut self.elapsed,
+            &mut self.interval,
+            n_frames,
+            is_live,
+            live_finished,
+        );
 
         // --- Step description ---
         if let Some(frame) = self.current_frame() {
@@ -418,39 +364,11 @@ impl MatchingAnimation {
             }
         }
 
-        // Axis labels at sufficient zoom.
         if view.zoom() >= 16.0 {
-            let font = egui::FontId::proportional((view.zoom() * 0.35).min(14.0));
-            let label_color = visuals.text_color().gamma_multiply(0.7);
-            let angle = -std::f32::consts::FRAC_PI_4;
-            let font_size = (view.zoom() * 0.35).min(14.0);
-            let col_gap_px = font_size * 1.6;
-            for (col, name) in self.unknown_names.iter().enumerate() {
-                let cell_top = view.to_screen(egui::pos2(col as f32 + 0.5, 0.0));
-                let anchor = egui::pos2(cell_top.x, cell_top.y - col_gap_px);
-                let galley = painter.layout_no_wrap(
-                    truncate_label(name, 20).to_owned(),
-                    font.clone(),
-                    label_color,
-                );
-                let mut shape = egui::epaint::TextShape::new(anchor, galley, label_color);
-                shape.angle = angle;
-                shape.override_text_color = Some(label_color);
-                painter.add(shape);
-            }
-            let row_gap_px = font_size * 0.5;
-            let unclipped = ui.painter();
-            for (row, name) in self.equation_names.iter().enumerate() {
-                let cell_left = view.to_screen(egui::pos2(0.0, row as f32 + 0.5));
-                let pos = egui::pos2(cell_left.x - row_gap_px, cell_left.y);
-                unclipped.text(
-                    pos,
-                    egui::Align2::RIGHT_CENTER,
-                    truncate_label(name, 20),
-                    font.clone(),
-                    label_color,
-                );
-            }
+            crate::draw_matrix_axis_labels(
+                ui, &painter, view,
+                &self.unknown_names, &self.equation_names, 20, 20,
+            );
         }
 
         // Cell tooltip — shows full equation and variable names on hover.
@@ -541,14 +459,6 @@ fn step_description(
     }
 }
 
-fn truncate_label(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        s.get(..max).unwrap_or(s)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -616,9 +526,7 @@ mod tests {
     #[test]
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim = MatchingAnimation::start_live(&mat, || {});
-        // The algorithm thread runs with a 20ms inter-frame delay, so
-        // wait for it to finish (with a generous timeout).
+        let mut anim = MatchingAnimation::start_live(&mat, || {}).expect("spawn thread");
         for _ in 0..100 {
             if anim.live_finished() { break; }
             std::thread::sleep(std::time::Duration::from_millis(20));
