@@ -1532,6 +1532,7 @@ impl eframe::App for App {
                     egui::ScrollArea::vertical()
                         .id_salt("tour")
                         .show(ui, |ui| {
+                        set_markdown_text_sizes(ui);
                         egui_commonmark::CommonMarkViewer::new()
                             .show(ui, &mut self.commonmark_cache, TOUR_CONTENT);
                     });
@@ -1654,6 +1655,7 @@ impl eframe::App for App {
                         egui::ScrollArea::vertical()
                             .id_salt("narrative")
                             .show(ui, |ui| {
+                            set_markdown_text_sizes(ui);
                             egui_commonmark::CommonMarkViewer::new()
                                 .show(ui, &mut self.commonmark_cache, text);
                         });
@@ -2246,6 +2248,14 @@ fn section_header(ui: &mut egui::Ui, title: &str) {
             ui.set_min_width(ui.available_width());
             ui.label(egui::RichText::new(title).strong().size(13.0).color(text_color));
         });
+}
+
+fn set_markdown_text_sizes(ui: &mut egui::Ui) {
+    let body_size = ui.text_style_height(&egui::TextStyle::Body);
+    ui.style_mut().text_styles.insert(
+        egui::TextStyle::Heading,
+        egui::FontId::proportional(body_size * 1.15),
+    );
 }
 
 const GOLDEN_RATIO: f32 = 0.618_033_99;
