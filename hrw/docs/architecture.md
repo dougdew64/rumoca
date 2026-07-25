@@ -258,7 +258,7 @@ if ui.button("Run").clicked() {
 5. **Navigation** — the "go to definition" stack for browsing library classes
 6. **Bridge** — Claude Code capture state (monotonic `ask_seq` counter)
 7. **View toggles** — Settings, Help, About window visibility
-8. **Field help** — the embedded doc-comment lookup table
+8. **Field help** — the embedded doc-comment lookup table (delivered as tree node tooltips)
 9. **Custom views** — pan/zoom cameras for spy-plot and incidence views
 10. **Log** — timestamped compilation/simulation log entries
 11. **Simulation** — `SimData`, plot flags, sim-in-progress state
@@ -278,7 +278,7 @@ if ui.button("Run").clicked() {
 │  Left    │      Center panel             │    Right panel    │
 │  panel   │                               │                   │
 │          │  Tree inspector / Spy-plot /   │  Specimen info /  │
-│ Specimen │  Incidence / Reduction /       │  Field help /     │
+│ Specimen │  Incidence / Reduction /       │  Stage context /  │
 │ list     │  Simulation plot /            │  Simulation       │
 │          │  Log                           │  controls         │
 │          │                               │                   │
@@ -310,8 +310,12 @@ The right panel has three modes, selected by a state machine:
 2. **Simulation controls** — shown when the Simulation tab is active and no
    navigation is open. Displays plot-control hints and the run button.
 
-3. **Field help** — shown after the user clicks any stage tab. Shows the
-   clicked field's doc-comment and a link to the relevant compiler-phase chapter.
+3. **Stage context** — shown after the user clicks any stage tab. Shows the
+   stage name, a prompt to hover tree fields for quick help, and links to the
+   relevant compiler-phase chapter and specimen narrative. Generic field help
+   (doc-comment text from `field_help.json`) is delivered as **hover tooltips**
+   on tree nodes, not in the panel — the panel is reserved for richer content
+   (planned: guided tours and specimen narratives).
 
 The `stage_clicked` flag transitions from mode 1 to mode 3 — once the user
 clicks a stage tab, they've moved from "browsing the specimen" to "inspecting

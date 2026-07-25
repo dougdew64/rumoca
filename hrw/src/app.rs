@@ -993,38 +993,16 @@ impl App {
         self.narrative_button(ui);
     }
 
-    /// Generic (build-time) field help for the last-clicked tree item — the fast
-    /// tier (no Claude). Shown for every stage whose view is the IR tree.
+    /// Stage-context panel — shows the current stage name and documentation links.
+    /// Generic field help has moved to hover tooltips on tree nodes.
     fn right_panel_field_help(&mut self, ui: &mut egui::Ui) {
-        // Title the pane with the stage on screen (e.g. "Flatten") — "About this
-        // field" was meaningless when nothing was selected. While navigating a
-        // definition the view is Resolve context, so say so.
         let title = if self.nav.is_empty() { self.stage.name() } else { "Resolve" };
         ui.strong(title);
         ui.separator();
-        match &self.selected_field {
-            Some(name) => {
-                ui.label(egui::RichText::new(name).monospace().strong());
-                ui.add_space(4.0);
-                match self.field_help.get(name) {
-                    Some(doc) => {
-                        ui.label(doc);
-                    }
-                    None => {
-                        ui.weak(format!(
-                            "No generic help for “{name}”. Left-click captures it; type \
-                             “explain” in the chat for a specific explanation.",
-                        ));
-                    }
-                }
-            }
-            None => {
-                ui.weak(
-                    "Left-click a tree item to see what it is (generic help). Then type \
-                     “explain” in the chat for the specific story.",
-                );
-            }
-        }
+        ui.weak(
+            "Hover a tree field for quick help. Left-click to capture; \
+             type \"explain\" in the chat for the full story.",
+        );
         ui.add_space(8.0);
         ui.separator();
         self.right_panel_read_links(ui);
@@ -2239,7 +2217,7 @@ impl eframe::App for App {
                             let label = self.model.as_deref().unwrap_or("model");
                             let prev = self.previous_stage_value();
                             egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index);
+                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, &self.field_help);
                             });
                         }
                         None if stage.note.is_none() => {
@@ -2277,7 +2255,7 @@ impl eframe::App for App {
 
                 let entry = self.nav.last().unwrap();
                 egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index);
+                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index, &self.field_help);
                 });
             }
         });

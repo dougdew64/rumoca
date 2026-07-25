@@ -608,3 +608,11 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   **Recompile** to re-run compilation and hit armed breakpoints (the worker calls
   `session.remove_document()` before `update_document()` to bypass the session's
   content-comparison cache).
+
+- **2026-07-25 — Generic field help delivered as tooltips, not the RHS panel.** Tree node
+  field help (doc-comment strings from `field_help.json`) now appears as hover tooltips on
+  tree items — instant, zero-click, at the point of attention. The RHS panel previously
+  displayed this same text on click, consuming an entire panel for a sentence of reference.
+  Tooltips are the better delivery mechanism for this kind of "what is this?" help. The RHS
+  panel is freed for richer content (planned: guided tours and specimen narratives, idea #32).
+  Comprehensive tooltip coverage across other widgets is tracked as idea #33.

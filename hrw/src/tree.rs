@@ -40,7 +40,7 @@
 //! to a real id between Parse and Resolve), it is painted green. This makes
 //! it visually obvious what each compiler phase changed.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use eframe::egui;
 use serde_json::Value;
@@ -81,11 +81,12 @@ pub fn tree_ui(
     nav_to: &mut Option<String>,
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
+    field_help: &HashMap<String, String>,
 ) {
     // Start with an empty path — the root. Each recursive call to `node_ui`
     // pushes/pops one segment as it descends into children.
     let mut path: Vec<Seg> = Vec::new();
-    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index);
+    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index, field_help);
 }
 
 // Render one node of the JSON tree recursively.
@@ -129,6 +130,7 @@ fn node_ui(
     nav_to: &mut Option<String>,
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
+    field_help: &HashMap<String, String>,
 ) {
     ui.push_id(salt, |ui| match value {
         // --- JSON Object: render as a collapsible header with children ---
@@ -145,7 +147,7 @@ fn node_ui(
                     // its value is passed; otherwise None.
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index);
+                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index, field_help);
                         path.pop();
                     }
                 });
@@ -157,6 +159,9 @@ fn node_ui(
                 *ask = Some(path.to_vec());
             }
             row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
+            if let Some(doc) = field_help.get(key) {
+                resp.header_response.clone().on_hover_text(doc);
+            }
         }
         // --- JSON Array: same pattern as Object, but indexed by position ---
         Value::Array(arr) => {
@@ -166,7 +171,7 @@ fn node_ui(
                 .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index);
+                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index, field_help);
                         path.pop();
                     }
                 });
@@ -189,6 +194,9 @@ fn node_ui(
                 *ask = Some(path.to_vec());
             }
             row_menu(&resp, path, ask, &copy_text, nav_target(key, scalar, def_index), nav_to, debug);
+            if let Some(doc) = field_help.get(key) {
+                resp.clone().on_hover_text(doc);
+            }
         }
     });
 }

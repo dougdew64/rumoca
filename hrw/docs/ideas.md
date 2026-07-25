@@ -48,6 +48,7 @@ tour take priority over unlinked items of the same severity.
 | #30 Live solver stepping (LiveTrace) | Simulation |
 | #31 Revisit all simulator functionality | Simulation |
 | #32 In-app tour view | (all tours) |
+| #33 Comprehensive tooltips | (all tours) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -1019,3 +1020,38 @@ worked on the first implementation.
 
 **Relates to:** #24 (guided tours as HRW-driven walkthroughs), #9 (animated
 algorithm stepping — the tour could embed step controls).
+
+## 33. Comprehensive tooltips — surface contextual help across all HRW widgets
+
+**Tours:** all tours
+
+**Problem:** Generic field help was delivered exclusively through the RHS panel,
+which consumed an entire panel for a sentence or two of reference text and required
+a click to trigger. This has been partially addressed: tree node field help now
+appears as hover tooltips (the generic doc strings from `field_help.json`). But
+tooltips are only on tree items — many other HRW widgets would benefit from the
+same treatment.
+
+**Idea:** Extend tooltip coverage comprehensively across HRW:
+- **Stage tabs** — tooltip explaining what each compiler phase does (one-liner from
+  `docs/compiler-phases/` summaries).
+- **Spy plot cells/blocks** — tooltip showing the BLT block type, equation/variable
+  names, and whether the block is scalar or coupled.
+- **Incidence matrix cells** — tooltip showing which equation depends on which
+  variable and the nature of the dependence.
+- **Equation sheet rows** — tooltip showing the original Modelica source line that
+  produced each equation.
+- **Simulation plot curves** — tooltip showing variable metadata (state vs output,
+  initial value, units).
+- **Toolbar buttons and menu items** — tooltip explaining what each action does,
+  especially capture/debug actions that have non-obvious workflows.
+- **Specimen list entries** — tooltip showing the full `// purpose:` comment and
+  model description string.
+
+**Principle:** Tooltips are the "fast tier" of help — instant, contextual, zero-click.
+They complement the "explain" chat shortcut (deep, specimen-specific, multi-paragraph)
+without replacing it. A tooltip answers "what is this?"; the chat shortcut answers
+"why does this have this value in this specimen?"
+
+**Relates to:** #32 (the RHS panel freed by moving field help to tooltips becomes
+available for the tour/narrative view).
