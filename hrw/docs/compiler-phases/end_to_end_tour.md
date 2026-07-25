@@ -1,17 +1,25 @@
 # End-to-End Guided Tour: From Modelica Model to Running Simulation
 
-*The spine of the HRW curriculum — a readable walk-through of what a Modelica
-compiler must do and why, grounded in the GearWithBrake specimen.*
+*The spine of the HRW curriculum — an interactive walk-through of what a Modelica
+compiler must do and why, grounded in the GearWithBrake specimen and driven by
+HRW's stage views.*
 
 **Specimen:** [`GearWithBrake.mo`](../../specimens/GearWithBrake.mo)
 — a geared oscillator with an automatic speed-limiting brake (MSL rotational
 components, index > 1, discrete events, stiff dynamics).
 
-**Prerequisite reading:** This tour complements the textbooks listed in
+**Prerequisites:** HRW built and running (`cargo run -p hrw` from the workspace
+root). Load `GearWithBrake` from the specimen list — it compiles through all
+stages automatically. This tour complements the textbooks listed in
 [`vision.md`](../vision.md). It references specific chapters and sections;
 consult the originals for proofs and formal development. This tour provides
 what the books cannot: a concrete specimen and a real compiler to ground
 the theory.
+
+**Note on simulation (2026-07-24):** Rumoca's simulator is not yet reliable
+enough for production use. The compiler pipeline (Stops 1–11) is solid; the
+Simulation stop (12) shows what the solver *attempts*, but for ground-truth
+trajectories, simulate specimens in Wolfram System Modeler.
 
 ---
 
@@ -26,7 +34,12 @@ By the end of this tour, you should be able to:
 4. **Distinguish structural from numerical** analysis.
 5. **Explain what a solver needs** to start and to advance.
 6. **Recognize these transformations as universal** — not Rumoca-specific.
-7. **Know where to go deeper** — which phase tour to read next.
+7. **Read the equations** the solver actually sees (not JSON) and trace them
+   back to their Modelica source lines.
+8. **Use HRW's stage views** to inspect the IR at each stop — navigate the
+   JSON tree, read the equation sheet, click through source-to-equation
+   links, and interpret the structural analysis visualizations.
+9. **Know where to go deeper** — which phase tour to read next.
 
 ---
 
@@ -114,6 +127,12 @@ typed, but it knows nothing about what the names mean. `rotor.flange_b`
 could be anything — a variable, a class, an error. The type system hasn't
 been consulted; no equation has been expanded; nothing has been checked.
 
+**In HRW:** Click the **Parse** tab. The JSON tree shows the raw AST — expand
+`classes` → `GearWithBrake` → `body` → `equations` to find the 7 `connect`
+nodes and the `when` clause. Click any node to inspect it; notice that
+identifiers like `Modelica.Mechanics.Rotational.Components.Inertia` are plain
+strings with no `def_id` — resolution hasn't happened yet.
+
 > **Phase tour:** [Parsing and AST](phase1_parsing_and_ast/parsing_and_ast.md)
 
 ---
@@ -145,6 +164,13 @@ expanded what that means — what variables it declares, what equations it
 contributes, what parameter values it carries. The model is still a
 hierarchical description, not a flat system of equations.
 
+**In HRW:** Click the **Resolve** tab. The tree now has `def_id` and
+`type_def_id` annotations on every identifier — hover one to see the resolved
+class name (e.g. `type_def_id: 27586 → model Modelica.Mechanics.Rotational
+.Components.Inertia`). Right-click a `type_def_id` → **"↪ Go to Inertia"** to
+navigate into the MSL class and read its internal structure. Use **← Back** to
+return.
+
 > **Phase tour:** [Resolve and Scope](phase2_resolve_and_scope/resolve_and_scope.md)
 
 ---
@@ -175,6 +201,11 @@ top-level `Inertia rotor(J = 0.01)` declaration) overrides the MSL default.
 **The mathematical form:** Still no equations in usable form — but the raw
 material is now all present. Every variable that will eventually appear in
 the equation system is now declared somewhere in the instance tree.
+
+**In HRW:** Click the **Instantiate** tab. The tree is much larger — expand
+`components` to see the fully instantiated component hierarchy. Each MSL
+component has been expanded with its internal variables, equations, and
+parameter modifications applied.
 
 **What's insufficient:** The instance tree is still hierarchical. Variables
 have local names (`phi`, `w`) within their containing class. Equations
@@ -213,6 +244,10 @@ within their usage context).
 system. But the semantic contract is now verified — every expression is
 well-typed, every array dimension is resolved, every variability constraint
 is satisfied.
+
+**In HRW:** Click the **Typecheck** tab. The tree is structurally similar to
+Instantiate, but every expression now carries resolved type information. Look
+for `type_specifier` fields on variable declarations.
 
 **What's insufficient:** Type-checked variables still live inside a class
 hierarchy with local names. No flat equation system exists. The seven
@@ -270,6 +305,27 @@ over a flat variable set:
 This is the first point at which we have something recognizable as
 *mathematics* — a system of equations. But it is not yet in any standard
 form that a textbook would recognize.
+
+**In HRW:** Click the **Flatten** tab. You have three sub-views:
+
+1. **Equations** — the equation sheet. This is the single biggest upgrade over
+   the JSON tree: all 44 equations rendered in readable mathematical notation,
+   grouped by origin (component equations, connect-generated equalities,
+   connect-generated flow sums, initial equations). Read them as a mathematician
+   would — these are the equations the solver will actually see. The variable
+   classification table at the top lists every variable with its role (state,
+   algebraic, parameter), start value, and unit.
+
+2. **Source Map** — the source-to-equation traceability view. The left pane shows
+   `GearWithBrake.mo` source code; the right pane shows the equation sheet.
+   **Click a source line** (e.g. line 50, `connect(load.flange_b,
+   spring.flange_a)`) → the equations it generated highlight in the right pane.
+   **Click an equation** → the source line(s) that produced it highlight in the
+   left pane. This is the bridge between the OO world the engineer wrote and the
+   flat equation world the compiler produced.
+
+3. **Tree** — the raw JSON tree (the original view, still available for deep
+   inspection).
 
 **What's insufficient:** The flat system is correct but unstructured. We have
 a soup of 44 equations and 60+ variables. We don't know which variables are
@@ -338,6 +394,13 @@ detector.
 This is the form that Cellier, Hairer & Wanner, and Brenan, Campbell &
 Petzold analyze. For the first time, the system is in a standard notation
 that a textbook reader would recognize.
+
+**In HRW:** Click the **DAE** tab. The equation sheet now shows the classified
+system — equations grouped into the four MLS Appendix B partitions (continuous
+f_x, discrete real f_z, discrete-valued f_m, conditions f_c). The variable
+table shows the partition column (state, algebraic, parameter, discrete).
+Compare this with the Flatten tab's equation sheet: the equations are the same,
+but now classified.
 
 **What's insufficient:** The DAE is in standard form, but its **differential
 index may be greater than 1**. The ideal gear constraint (`phi_a = ratio *
@@ -416,6 +479,13 @@ torques (`motor.flange.tau`, `gear.flange_a.tau`, `gear.flange_b.tau`,
 `load.flange_a.tau`, `rotor.flange_b.tau`), the braking torque
 (`brakeTorque.tau`), the angular acceleration (`spring.a_rel`), load speed
 (`load.w`), and a boundary position (`spring.flange_b.phi`).
+
+**In HRW:** Click the **Index Reduction** tab. The reduction report shows the
+10-step pipeline: constrained dummy derivative demotion (5 states demoted),
+trivial eliminations (33 variables removed), and the final equation count
+(11 equations, 11 unknowns). The equation sheet here shows the *reduced*
+system — compare it with the DAE tab to see which equations and variables
+were eliminated.
 
 **What's insufficient:** We have 11 equations and 11 unknowns. But in what
 order do we evaluate them? Some equations depend on the results of others.
@@ -527,6 +597,34 @@ perfect matching in a bipartite graph). The BLT ordering is topological
 sorting of the condensation DAG. None of this requires evaluating a single
 floating-point number.
 
+**In HRW:** Click the **Structural** tab — this is HRW's richest view. Four
+sub-views:
+
+1. **Incidence** — the 11×11 incidence matrix with the matching overlay (green
+   circles on matched cells). Hover a cell to see the equation↔unknown pair.
+   Zoom in (scroll wheel, zoom ≥ 16) for full labels. Click an equation row →
+   the corresponding equation highlights in the Flatten tab's equation sheet.
+
+2. **Matching ▶** — an animated replay of Kuhn's augmenting-path algorithm
+   finding the maximum matching, step by step. Use Play/Pause/Step to watch
+   each augmenting path discovered. This is the
+   [three-tier progression](phase7_structural_analysis/guided-tour.md): static
+   snapshot (the matching overlay), recorded replay (this animation), and
+   live-stepped execution (set a breakpoint in the Rust code via the Debug
+   shortcut).
+
+3. **BLT ▶** — an animated replay of Tarjan's SCC algorithm discovering the
+   7-block BLT decomposition. Watch the DFS stack, the low-link updates, and
+   the SCC pops. The spy-plot view shows the final block structure.
+
+4. **Spy Plot** — the BLT spy plot: the block-diagonal structure of the sorted
+   system. The one coupled block (size 5) is visible as a filled square on the
+   diagonal.
+
+For the full interactive experience, see the
+[Structural Analysis guided tour](phase7_structural_analysis/guided-tour.md)
+— a five-lesson walkthrough with the three-tier progression.
+
 **What's insufficient:** We have a solution order for the continuous-time
 equations. But at t = 0, the solver hasn't taken a step yet — it has no
 "previous state" to feed into the equations. We need consistent initial
@@ -590,6 +688,12 @@ variables). This is a known Rumoca limitation, not a fundamental problem. The
 model still simulates because the solver falls back to a relaxed IC solve.
 This failure is itself educational: it shows that initialization is a hard
 problem in practice, not just in theory.
+
+**In HRW:** Click the **Initialization** tab. The determinacy view shows
+the IC plan's matching result — how many of the initialization unknowns were
+matched (33/37 for GearWithBrake). The unmatched variables are the ones
+causing the structural singularity. For a simpler example, load `RcCircuit`
+to see a fully matched IC plan with ScalarDirect and TornBlock assignments.
 
 **The mathematical form:** A nonlinear system F(y) = 0 at t = 0, where
 the states x(0) are fixed and the algebraics y(0) are the unknowns.
@@ -661,6 +765,11 @@ between events, with discrete transitions triggered by zero-crossings of
 guard functions. The MLS Appendix B formalization captures this as the
 interplay of f_x (continuous), f_m (discrete updates), and f_c (conditions).
 
+**In HRW:** Click the **Events** tab. The event listing shows the 4 conditions
+and the discrete-valued update for `braking`. For contrast, load `SingleInertia`
+(a smooth model) — the Events tab shows "no events," confirming that the event
+structure is specific to hybrid models.
+
 **What's insufficient:** The DAE is index-1, structurally decomposed,
 initialized, and event-aware. But it is still a *mathematical description*.
 A runtime solver needs a *computational artifact* — a compiled residual
@@ -709,6 +818,12 @@ compute graph rather than symbolic expression trees. The SolveProblem is
 schema-versioned and serializable — it can cross process boundaries (JSON,
 binary) for codegen targets.
 
+**In HRW:** Click the **Solve Lowering** tab. The JSON tree shows the
+SolveProblem: expand `variable_layout` to see the flat slot assignments
+(Y[0] through Y[48]), `compute_blocks` for the compiled residual operations,
+and `jacobian` for the symbolically-derived ∂F/∂y. This is the last
+compiler output — the next stop is execution.
+
 **What's insufficient:** We have an execution-ready artifact. Now we
 actually have to *run* it — choose a solver, feed it the residual and
 Jacobian, step forward in time, handle events, and produce output.
@@ -754,6 +869,26 @@ stiff systems like GearWithBrake) with event detection.
 
 **Result:** 49 variable trajectories over 501 time points (t = 0 to 2.0),
 with discontinuity segments at the braking events.
+
+**In HRW:** Click the **Simulation** tab and press **▶ Run**. Two plots appear:
+
+1. **Trajectory plot** — state variables vs time. Look for the limit cycle:
+   the load accelerates, the brake engages (velocity drops), the brake
+   releases, the load re-accelerates. Discontinuity segments (vertical
+   breaks in the line) mark the braking events.
+
+2. **Solver diagnostics** (below the trajectory) — step size h(t) and BDF
+   order k(t) vs time, with a synchronized time axis. Look for step-size
+   shrinkage at braking events (the solver tightens its steps near
+   discontinuities) and order changes (the BDF order drops back to 1 after
+   a restart and climbs as the solver gains confidence in the smooth
+   inter-event interval).
+
+**Caveat (2026-07-24):** Rumoca's simulator is not yet reliable — the
+trajectory may differ from the true solution. For ground-truth results,
+simulate GearWithBrake in Wolfram System Modeler with identical solver
+tolerances and initial conditions. The diagnostics plot remains valuable
+for studying what the solver *does*, even when the results are imperfect.
 
 **The mathematical form:** Numerical integration of the index-1 DAE with
 event handling. The BDF method is an implicit multistep method — at each
@@ -929,8 +1064,10 @@ specific chapters; here is the high-level mapping:
 
 ---
 
-*This is a first draft — a reading tour. The interactive version, using
-HRW's stage views and the GearWithBrake trace data, will ground each stop
-in visual evidence: incidence matrices with matching highlighted, BLT spy
-plots showing the block structure, simulation plots showing the limit cycle
-and braking events.*
+*This tour is interactive: every stop has an "In HRW" block telling you
+exactly what to click, what to look for, and what to compare. For the
+deepest interactive experience, see the
+[Structural Analysis guided tour](phase7_structural_analysis/guided-tour.md)
+— a five-lesson walkthrough with animated algorithm replays and live-stepped
+debugging. That tour is the model for how individual phase tours will evolve
+as HRW's visualization capabilities grow.*

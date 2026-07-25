@@ -129,11 +129,14 @@ trajectory.
 
 Upgrade the end-to-end tour document from reading tour to interactive tour.
 
-- [ ] Rewrite each stop to reference the new views: "click Flatten →
-  Equations" instead of "examine the JSON"
-- [ ] Add the three-tier structure from the Structural Analysis tour
-  (snapshot → replay → live-stepped) where applicable
-- [ ] Update learning goals to include the new visual capabilities
+- [x] Rewrite each stop to reference the new views: "In HRW:" blocks at
+  every stop (1–12) with specific click instructions
+- [x] Add the three-tier structure from the Structural Analysis tour
+  (snapshot → replay → live-stepped) — referenced at Stop 8 with link to
+  the guided tour; applied where applicable
+- [x] Update learning goals to include the new visual capabilities
+  (goals 7–8: read equations, use HRW stage views)
+- [x] Add simulator caveat note at top and at Stop 12
 - [ ] Verify every stop works with a fresh GearWithBrake load in HRW
 
 **Milestone:** a learner can follow the tour document with HRW open and
