@@ -17,6 +17,7 @@ libc = "0.2"
 [dependencies]
 anyhow = "1.0.103"
 eframe = "0.35.0"
+egui_commonmark = { version = "0.24", default-features = false }  # Markdown rendering for tour/narrative panels
 egui_plot = "0.36"  # Arc 7: plot sim trajectories (0.36 targets egui 0.35; egui_plot versions are offset)
 # Rumoca, in-workspace via PATH deps (HRW now lives in the Rumoca fork as a
 # workspace member — `hrw/`). Path deps track the checked-out tree, enabling

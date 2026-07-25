@@ -43,9 +43,9 @@ fn main() -> eframe::Result<()> {
     run_app()
 }
 
-/// Half the screen width, full screen height — sized for side-by-side use with
-/// VS Code on a single monitor. Falls back to 960×700 if the screen size can't
-/// be queried.
+/// Half the screen width, full screen height — used with `--half` for
+/// side-by-side Debug mode with VS Code. Falls back to 960×700 if the screen
+/// size can't be queried.
 fn initial_window_geometry() -> (eframe::egui::Vec2, Option<eframe::egui::Pos2>) {
     if let Some((w, h)) = query_screen_dimensions() {
         let size = eframe::egui::Vec2::new(w as f32 / 2.0, h as f32 * 0.85);
@@ -87,12 +87,17 @@ fn query_screen_dimensions() -> Option<(u32, u32)> {
 // The factory returns a boxed `App` that eframe will call `update()` on each
 // frame for the lifetime of the application.
 fn run_app() -> eframe::Result<()> {
-    let (size, position) = initial_window_geometry();
+    let half_screen = std::env::args().any(|a| a == "--half");
     let mut viewport = eframe::egui::ViewportBuilder::default()
-        .with_title(APP_NAME)
-        .with_inner_size(size);
-    if let Some(pos) = position {
-        viewport = viewport.with_position(pos);
+        .with_title(APP_NAME);
+    if half_screen {
+        let (size, position) = initial_window_geometry();
+        viewport = viewport.with_inner_size(size);
+        if let Some(pos) = position {
+            viewport = viewport.with_position(pos);
+        }
+    } else {
+        viewport = viewport.with_maximized(true);
     }
     let options = eframe::NativeOptions {
         viewport,

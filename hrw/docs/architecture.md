@@ -333,34 +333,58 @@ if ui.button("Run").clicked() {
     between Structural/IndexReduction (tracked by `cached_report_stage`)
 14. **Live debug spawn** — deferred algorithm thread spawn with breakpoint ack handshake
 
-### Panel layout
+### Panel layout and UI modes
 
+HRW has three UI modes (`UiMode` enum), selectable from the **View** menu.
+All three share the same app state — the mode controls the left panel content:
+
+| Mode       | Left panel                              | Right (center) panel |
+|------------|----------------------------------------|----------------------|
+| **Tour**   | End-to-end tour (rendered markdown)     | Stage tabs           |
+| **Specimen** | Specimen list (top ⅓) + narrative (bottom ⅔) | Stage tabs   |
+| **Debug**  | Hidden (VS Code alongside)             | Stage tabs           |
+
+**Tour mode** (fullscreen, no VS Code):
+```
+┌───────────────────────┬──────────────────────────────────┐
+│  Tour guide           │  [Specimen ▾] Log│Parse│...│Sim   │
+│  (rendered markdown)  ├──────────────────────────────────┤
+│                       │  Stage views                     │
+│                       │                                  │
+└───────────────────────┴──────────────────────────────────┘
+```
+
+**Specimen mode** (fullscreen, default):
+```
+┌───────────────────────┬──────────────────────────────────┐
+│  Specimens            │  [Specimen ▾] Log│Parse│...│Sim   │
+│  BouncingBall         ├──────────────────────────────────┤
+│  Drivetrain  ◄───┐    │  Stage views                     │
+│  ...              │    │                                  │
+│───────────────────│────│                                  │
+│  Narrative        │    │                                  │
+│  (rendered md)    │    │                                  │
+└───────────────────────┴──────────────────────────────────┘
+```
+
+**Debug mode** (HRW on right half, VS Code on left):
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                        Top panel                          │
-│  Tab bar: Parse│Resolve│...│Simulation  [▶Play] [⚙Settings]│
-├──────────┬─────────────────────────────────────────────────┤
-│  Left    │      Center panel                               │
-│  panel   │                                                 │
-│          │  Tree inspector / Spy-plot / Incidence /         │
-│ Specimen │  Reduction / Equation sheet / Source map /       │
-│ list     │  Simulation plot / Log                          │
-│          │                                                 │
-├──────────┴─────────────────────────────────────────────────┤
-│                       Bottom panel                         │
-│  Status line: compiling… / bridge status / error messages   │
+│  [Specimen ▾] Log│Parse│Resolve│...│Simulation  [▶Play]   │
+├──────────────────────────────────────────────────────────┤
+│  Stage views (full width)                                 │
+│                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
 
 Panels are added in **top → bottom → left → center** order. In egui,
 each panel claims space from what remains, so order determines layout.
+The `CentralPanel` automatically fills whatever space the left panel
+doesn't claim.
 
-**Panel visibility toggle.** The left panel can be hidden via the **View**
-menu (checkbox for "Specimens panel"). When hidden, the `CentralPanel`
-reclaims the space — useful during live debug sessions where the animation
-view benefits from full width. The bool `show_left_panel` (default `true`)
-gates whether the `Panel::left` call runs; egui's `CentralPanel` automatically
-fills whatever space the side panel doesn't claim.
+A **specimen-switcher dropdown** (combo box) is embedded in the stage
+tab bar header, visible in all modes. In Debug mode, where the specimen
+list is hidden, this is the only way to switch specimens.
 
 ### Field help (tooltips)
 

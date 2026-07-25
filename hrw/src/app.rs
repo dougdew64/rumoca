@@ -115,6 +115,19 @@ struct NavEntry {
     def_index: BTreeMap<u64, DefInfo>,
 }
 
+/// Which left-panel content is active. Determines both what occupies the LHS
+/// of the window and whether the LHS is visible at all.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum UiMode {
+    /// Guided tour: LHS shows the tour document, RHS shows stage tabs.
+    #[default]
+    Tour,
+    /// Specimen exploration: LHS shows specimen list + narrative, RHS shows stage tabs.
+    Specimen,
+    /// Debugger-assisted: LHS hidden, stage tabs fill the window. VS Code alongside.
+    Debug,
+}
+
 /// The entire application state. In immediate-mode UI, this struct IS the
 /// application — every frame, `ui()` reads and writes these fields to decide
 /// what to render and how to react. Fields are grouped by concern:
@@ -194,10 +207,7 @@ pub struct App {
     bridge_status: Option<String>,
 
     // ---- 7. Panels and windows toggled from the menu bar ----
-    // `show_left_panel` controls whether the specimen list panel is rendered —
-    // hiding it gives the center stage view full width, which is especially
-    // useful during live debug sessions.
-    show_left_panel: bool,
+    ui_mode: UiMode,
     // egui's `Window::open(&mut bool)` pattern: the bool controls visibility,
     // and the window's close button flips it back to false.
     show_settings: bool,
@@ -264,7 +274,14 @@ pub struct App {
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     tarjan_anim_canvas: Canvas,
 
-    // ---- 15. Deferred live debug spawn (ack handshake) ----
+    // ---- 15. Markdown rendering ----
+    // Caches parsed markdown for `egui_commonmark`. Shared across tour and
+    // narrative rendering so heading IDs and image state persist across frames.
+    commonmark_cache: egui_commonmark::CommonMarkCache,
+    // Specimen narratives loaded on demand from docs/specimen-notebook/<Model>/narrative.md.
+    cached_narratives: HashMap<PathBuf, Option<String>>,
+
+    // ---- 16. Deferred live debug spawn (ack handshake) ----
     // When the Debug button is clicked, `arm_live_trace_breakpoint` writes a
     // breakpoint request to `.hrw-bridge/breakpoint-request.json`. The algorithm
     // thread is NOT spawned immediately — the VS Code extension must process the
@@ -409,7 +426,7 @@ impl App {
             nav_error: None,
             ask_seq: 0,
             bridge_status: None,
-            show_left_panel: true,
+            ui_mode: UiMode::Tour,
             show_settings: false,
             show_help: false,
             show_about: false,
@@ -438,6 +455,8 @@ impl App {
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            commonmark_cache: egui_commonmark::CommonMarkCache::default(),
+            cached_narratives: HashMap::new(),
             pending_live_debug: None,
             live_breakpoint_armed: false,
         };
@@ -447,6 +466,10 @@ impl App {
         app.rescan();
         app.load_libraries();
         app
+    }
+
+    pub fn set_mode(&mut self, mode: UiMode) {
+        self.ui_mode = mode;
     }
 
     /// Parse the multi-line library text field into a list of paths, one per
@@ -1454,7 +1477,18 @@ impl eframe::App for App {
                     }
                 });
                 ui.menu_button("View", |ui| {
-                    ui.checkbox(&mut self.show_left_panel, "Specimens panel");
+                    if ui.selectable_label(self.ui_mode == UiMode::Tour, "Tour").clicked() {
+                        self.ui_mode = UiMode::Tour;
+                        ui.close();
+                    }
+                    if ui.selectable_label(self.ui_mode == UiMode::Specimen, "Specimen").clicked() {
+                        self.ui_mode = UiMode::Specimen;
+                        ui.close();
+                    }
+                    if ui.selectable_label(self.ui_mode == UiMode::Debug, "Debug").clicked() {
+                        self.ui_mode = UiMode::Debug;
+                        ui.close();
+                    }
                 });
                 ui.menu_button("Help", |ui| {
                     if ui.button("Using HRW…").clicked() {
@@ -1484,136 +1518,152 @@ impl eframe::App for App {
             ui.add_space(1.0);
         });
 
-        // ---- Left panel: specimen file list ----
-        // Auto-size the panel width to fit the longest specimen filename, with
-        // padding for spacing, margins, and the scrollbar. The text is measured
-        // using egui's layout engine (`layout_no_wrap`) so the width adapts to
-        // the actual font/zoom level.
-        if self.show_left_panel {
-        let specimen_width = *self.cached_specimen_width.get_or_insert_with(|| {
-            let longest = self.files.iter()
-                .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
-                .max_by_key(|n| n.len())
-                .unwrap_or("");
-            let galley = ui.painter().layout_no_wrap(
-                longest.to_owned(),
-                egui::TextStyle::Body.resolve(ui.style()),
-                egui::Color32::WHITE,
-            );
-            let spacing = ui.style().spacing.item_spacing.x;
-            let margin = ui.style().spacing.window_margin.sum().x;
-            let scrollbar = 16.0;
-            (galley.size().x + spacing * 2.0 + margin + scrollbar).max(120.0)
-        });
-        // `Panel::left` claims a resizable strip on the left side. The
-        // specimen list scrolls vertically if there are more files than fit.
-        egui::Panel::left("file_list")
-            .resizable(true)
-            .default_size(specimen_width)
-            .min_size(120.0)
+        // ---- Left panel: content depends on UI mode ----
+        // Tour and Specimen modes show a left panel (tour text or specimen list
+        // + narrative). Debug mode hides it so the stage tabs fill HRW's window
+        // (VS Code occupies the left half of the screen).
+        if self.ui_mode == UiMode::Tour {
+            const TOUR_CONTENT: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
+            let panel_width = ui.available_width() * 0.4;
+            egui::Panel::left("tour_panel")
+                .exact_size(panel_width)
+                .show(ui, |ui| {
+                    ui.strong("End-to-End Tour");
+                    ui.separator();
+                    egui::ScrollArea::vertical()
+                        .id_salt("tour")
+                        .show(ui, |ui| {
+                        egui_commonmark::CommonMarkViewer::new()
+                            .show(ui, &mut self.commonmark_cache, TOUR_CONTENT);
+                    });
+                });
+        }
+        if self.ui_mode == UiMode::Specimen {
+        let panel_width = ui.available_width() * 0.4;
+        egui::Panel::left("specimen_panel")
+            .exact_size(panel_width)
             .show(ui, |ui| {
-                ui.strong("Specimens");
-                // `ui.separator()` draws a horizontal line — a visual divider
-                // between the heading and the list content.
-                ui.separator();
+                let panel_height = ui.available_height();
+                let list_height = panel_height / 3.0;
 
-                if let Some(err) = &self.scan_error {
-                    // `colored_label` draws text in a specific color.
-                    // `visuals().error_fg_color` is the theme's standard error
-                    // color (red in both light and dark themes).
-                    ui.colored_label(ui.visuals().error_fg_color, err);
-                    return;
-                }
-                if self.files.is_empty() {
-                    // `ui.weak(…)` renders text in the theme's "weak" (dimmed) color,
-                    // for secondary/placeholder text.
-                    ui.weak("(no .mo specimens found)");
-                    return;
-                }
+                // -- Top third: specimen list --
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), list_height),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        ui.strong("Specimens");
+                        ui.separator();
 
-                // `ScrollArea::vertical()` wraps its content in a scrollable
-                // region. The `.show()` closure provides the scrollable content.
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    // "Deferred action" pattern again: we can't call
-                    // `self.open()` inside this closure (it borrows `self`
-                    // through `self.files`), so we collect the path to open
-                    // and act after the closure.
-                    let mut to_open = None;
-                    let mut recompile = None;
-                    let mut capture_specimen = false;
-                    for path in &self.files {
-                        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
-                        let selected = self.selected.as_deref() == Some(path.as_path());
-                        // Whole-specimen capture is offered only once this specimen is
-                        // the loaded, done-compiling one — so it captures real IR, and we
-                        // compile exactly once (the left-click load), never again just to
-                        // capture.
-                        let can_capture = selected && !self.compiling && self.model.is_some();
-                        let can_recompile = selected && !self.compiling;
-                        let purpose = self.specimen_purposes.get(path);
-                        // `selectable_label` renders a label that highlights when
-                        // `selected` is true and responds to clicks. It returns a
-                        // `Response` that we can query for `.clicked()`, add hover
-                        // text to, or attach a context menu to.
-                        let mut resp = ui.selectable_label(selected, name);
-                        // `.on_hover_text()` adds a tooltip shown when the mouse
-                        // hovers over this widget. Returns the same Response so
-                        // calls can be chained.
-                        if let Some(hint) = purpose {
-                            resp = resp.on_hover_text(hint);
+                        if let Some(err) = &self.scan_error {
+                            ui.colored_label(ui.visuals().error_fg_color, err);
+                            return;
                         }
-                        // `.context_menu()` attaches a right-click popup menu to
-                        // this widget. The closure builds the menu content, and
-                        // `ui.close()` dismisses it after an action.
-                        resp.context_menu(|ui| {
-                            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                            let btn = ui.add_enabled(can_recompile, egui::Button::new("🔄 Recompile"));
-                            let btn = if can_recompile {
-                                btn.on_hover_text(
-                                    "Re-run the compiler on this specimen (e.g. to hit an armed breakpoint).",
-                                )
-                            } else {
-                                btn.on_disabled_hover_text(
-                                    "Left-click to load this specimen first.",
-                                )
-                            };
-                            if btn.clicked() {
-                                recompile = Some(path.clone());
-                                ui.close();
+                        if self.files.is_empty() {
+                            ui.weak("(no .mo specimens found)");
+                            return;
+                        }
+
+                        egui::ScrollArea::vertical()
+                            .id_salt("specimen_list")
+                            .show(ui, |ui| {
+                            let mut to_open = None;
+                            let mut recompile = None;
+                            let mut capture_specimen = false;
+                            for path in &self.files {
+                                let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
+                                let selected = self.selected.as_deref() == Some(path.as_path());
+                                let can_capture = selected && !self.compiling && self.model.is_some();
+                                let can_recompile = selected && !self.compiling;
+                                let purpose = self.specimen_purposes.get(path);
+                                let mut resp = ui.selectable_label(selected, name);
+                                if let Some(hint) = purpose {
+                                    resp = resp.on_hover_text(hint);
+                                }
+                                resp.context_menu(|ui| {
+                                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                    let btn = ui.add_enabled(can_recompile, egui::Button::new("🔄 Recompile"));
+                                    let btn = if can_recompile {
+                                        btn.on_hover_text(
+                                            "Re-run the compiler on this specimen (e.g. to hit an armed breakpoint).",
+                                        )
+                                    } else {
+                                        btn.on_disabled_hover_text(
+                                            "Left-click to load this specimen first.",
+                                        )
+                                    };
+                                    if btn.clicked() {
+                                        recompile = Some(path.clone());
+                                        ui.close();
+                                    }
+                                    ui.separator();
+                                    let btn = ui.add_enabled(can_capture, egui::Button::new("🔎 Capture"));
+                                    let btn = if can_capture {
+                                        btn.on_hover_text(
+                                            "Capture the whole specimen, then ask Claude about it in the chat.",
+                                        )
+                                    } else {
+                                        btn.on_disabled_hover_text(
+                                            "Left-click to load & compile this specimen first, then Capture.",
+                                        )
+                                    };
+                                    if btn.clicked() {
+                                        capture_specimen = true;
+                                        ui.close();
+                                    }
+                                });
+                                if resp.clicked() {
+                                    to_open = Some(path.clone());
+                                }
                             }
-                            ui.separator();
-                            let btn = ui.add_enabled(can_capture, egui::Button::new("🔎 Capture"));
-                            let btn = if can_capture {
-                                btn.on_hover_text(
-                                    "Capture the whole specimen, then ask Claude about it in the chat.",
-                                )
-                            } else {
-                                btn.on_disabled_hover_text(
-                                    "Left-click to load & compile this specimen first, then Capture.",
-                                )
-                            };
-                            if btn.clicked() {
-                                capture_specimen = true;
-                                ui.close();
+                            if let Some(path) = recompile {
+                                self.open(path);
+                            } else if let Some(path) = to_open {
+                                if self.selected.as_ref() == Some(&path) {
+                                    self.viewing_log = false;
+                                } else {
+                                    self.open(path);
+                                }
+                            }
+                            if capture_specimen {
+                                self.emit_focus(Focus::Specimen);
                             }
                         });
-                        if resp.clicked() {
-                            to_open = Some(path.clone());
-                        }
-                    }
-                    if let Some(path) = recompile {
-                        self.open(path);
-                    } else if let Some(path) = to_open {
-                        if self.selected.as_ref() == Some(&path) {
-                            self.viewing_log = false;
-                        } else {
-                            self.open(path);
-                        }
-                    }
-                    if capture_specimen {
-                        self.emit_focus(Focus::Specimen);
-                    }
+                    },
+                );
+
+                ui.separator();
+
+                // -- Bottom two-thirds: specimen narrative --
+                let model_name = self.model.as_deref();
+                let narrative = model_name.and_then(|name| {
+                    let key = PathBuf::from(name);
+                    let cached = self.cached_narratives.entry(key).or_insert_with(|| {
+                        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                        let path = manifest
+                            .join("docs/specimen-notebook")
+                            .join(name)
+                            .join("narrative.md");
+                        std::fs::read_to_string(path).ok()
+                    });
+                    cached.as_deref()
                 });
+
+                match narrative {
+                    Some(text) => {
+                        egui::ScrollArea::vertical()
+                            .id_salt("narrative")
+                            .show(ui, |ui| {
+                            egui_commonmark::CommonMarkViewer::new()
+                                .show(ui, &mut self.commonmark_cache, text);
+                        });
+                    }
+                    None if model_name.is_some() => {
+                        ui.weak("(no narrative for this specimen)");
+                    }
+                    None => {
+                        ui.weak("Select a specimen to see its narrative.");
+                    }
+                }
             });
         }
 
@@ -1678,6 +1728,31 @@ impl eframe::App for App {
                     // - Red if the stage errored (so you see pipeline failures at a glance)
                     // - Green if the stage produced IR (success)
                     // - Default color if not yet reached or still compiling
+                    // Specimen switcher — a compact dropdown showing the
+                    // currently loaded specimen. Essential in Debug mode
+                    // (no specimen list visible) but available in all modes.
+                    let current_name = self.selected.as_ref()
+                        .and_then(|p| p.file_stem())
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("(none)");
+                    let combo = egui::ComboBox::from_id_salt("specimen_switcher")
+                        .selected_text(current_name)
+                        .width(120.0);
+                    let mut switch_to = None;
+                    combo.show_ui(ui, |ui| {
+                        for path in &self.files {
+                            let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
+                            let is_selected = self.selected.as_deref() == Some(path.as_path());
+                            if ui.selectable_label(is_selected, name).clicked() {
+                                switch_to = Some(path.clone());
+                            }
+                        }
+                    });
+                    if let Some(path) = switch_to {
+                        self.open(path);
+                    }
+                    ui.separator();
+
                     if ui.selectable_label(self.viewing_log, "Log").clicked() {
                         self.viewing_log = true;
                     }
@@ -2223,7 +2298,7 @@ impl App {
             nav_error: None,
             ask_seq: 0,
             bridge_status: None,
-            show_left_panel: true,
+            ui_mode: UiMode::Tour,
             show_settings: false,
             show_help: false,
             show_about: false,
@@ -2252,6 +2327,8 @@ impl App {
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            commonmark_cache: egui_commonmark::CommonMarkCache::default(),
+            cached_narratives: HashMap::new(),
             pending_live_debug: None,
             live_breakpoint_armed: false,
         };

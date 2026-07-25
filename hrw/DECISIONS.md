@@ -628,3 +628,10 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   more space. Net -341 lines across 4 files. The two-tier help model is now: fast
   tier = tooltips (field_help.json), specific tier = Claude bridge capture + "explain"
   chat shortcut.
+- **2026-07-25 — Three UI modes: Tour / Specimen / Debug.** Replaced `show_left_panel: bool` with
+  `UiMode` enum. Tour mode: 50/50 split, tour guide on left. Specimen mode: 50/50 split, specimen
+  list (top third) + narrative (bottom two-thirds) on left. Debug mode: left panel hidden (VS Code
+  alongside). Mode selector in View menu. See `docs/ui-modes-design.md`.
+- **2026-07-25 — Dependency added: `egui_commonmark 0.24`.** Renders markdown (tour content,
+  specimen narratives) inside egui. No-default-features (image loading disabled — we embed no
+  images). Used by both tour mode and specimen mode left panels.
