@@ -36,9 +36,9 @@ the freshly generated trace. On a Rumoca pin bump, regenerate every entry's trac
 and re-read its narrative against the diff — see
 [`docs/updating-rumoca.md`](../updating-rumoca.md) step 5.
 
-In the app, the right-hand panel's **"Read: specimen narrative"** button opens the
-current specimen's `narrative.md` (shown only when one exists) — the visual channel
-pointing straight at the durable story.
+Specimen narratives can be read alongside HRW — open a specimen's
+`narrative.md` in VS Code while viewing that specimen's pipeline in the
+observatory.
 
 ## Entries
 

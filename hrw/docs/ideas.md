@@ -317,8 +317,8 @@ scrolls to / expands / highlights where that identifier's information appears.
   is about finding it efficiently within a single view. Both share the need for an
   identifier-aware index of each view's content, but the UX is different: #10 is a
   persistent multi-view filter, this is a transient find-and-jump.
-- **Sketch:** a Ctrl+F-style search bar (or a text field in the tab bar / right
-  panel) that fuzzy-matches against qualified names in the current view — tree node
+- **Sketch:** a Ctrl+F-style search bar (or a text field in the tab bar) that
+  fuzzy-matches against qualified names in the current view — tree node
   keys, variable names in the flat model, equation labels, spy-plot row/column
   headers. Matching nodes auto-expand and scroll into view; matching matrix
   rows/columns highlight.
@@ -1025,12 +1025,10 @@ algorithm stepping — the tour could embed step controls).
 
 **Tours:** all tours
 
-**Problem:** Generic field help was delivered exclusively through the RHS panel,
-which consumed an entire panel for a sentence or two of reference text and required
-a click to trigger. This has been partially addressed: tree node field help now
-appears as hover tooltips (the generic doc strings from `field_help.json`). But
-tooltips are only on tree items — many other HRW widgets would benefit from the
-same treatment.
+**Problem:** Generic field help is currently delivered as hover tooltips on tree
+nodes (the doc strings from `field_help.json`) — instant, zero-click, at the point
+of attention. But tooltips are only on tree items — many other HRW widgets would
+benefit from the same treatment.
 
 **Idea:** Extend tooltip coverage comprehensively across HRW:
 - **Stage tabs** — tooltip explaining what each compiler phase does (one-liner from
@@ -1053,5 +1051,5 @@ They complement the "explain" chat shortcut (deep, specimen-specific, multi-para
 without replacing it. A tooltip answers "what is this?"; the chat shortcut answers
 "why does this have this value in this specimen?"
 
-**Relates to:** #32 (the RHS panel freed by moving field help to tooltips becomes
-available for the tour/narrative view).
+**Relates to:** #32 (in-app tour view — tooltips handle generic field help, freeing
+the UI for richer content like guided tours).

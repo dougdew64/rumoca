@@ -69,7 +69,7 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
 
 ## 8. Smoke-test the app
 - `cargo run`; load a specimen; confirm each stage renders, and the bridge capture / field-help
-  panel / "Go to" navigation / debugger arming / "Read: specimen narrative" still work.
+  tooltips / "Go to" navigation / debugger arming still work.
 
 ## 9. Confirm the version/commit readout
 - **Help → About auto-updates** — `build.rs` reads `rumoca-compile`'s version from `Cargo.lock` and

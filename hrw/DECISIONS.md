@@ -613,6 +613,18 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   field help (doc-comment strings from `field_help.json`) now appears as hover tooltips on
   tree items — instant, zero-click, at the point of attention. The RHS panel previously
   displayed this same text on click, consuming an entire panel for a sentence of reference.
-  Tooltips are the better delivery mechanism for this kind of "what is this?" help. The RHS
-  panel is freed for richer content (planned: guided tours and specimen narratives, idea #32).
+  Tooltips are the better delivery mechanism for this kind of "what is this?" help. With
+  field help removed, the RHS panel had no remaining purpose and was removed entirely (below).
   Comprehensive tooltip coverage across other widgets is tracked as idea #33.
+
+- **2026-07-25 — Right panel removed entirely; two-column layout.** With field help
+  delivered as tooltips, the right panel had no remaining content — the "Read: phase
+  chapter" and "Read: specimen narrative" buttons were its only other occupants, and
+  their content is more naturally accessed in VS Code alongside HRW. Removed: the
+  entire `right_panel` / `right_panel_field_help` / `right_panel_simulation` /
+  `right_panel_read_links` rendering path, `show_right_panel` toggle, View menu
+  checkbox, and `narrative_exists` field. The panel layout simplified from three
+  columns (left + center + right) to two (left + center), giving the center panel
+  more space. Net -341 lines across 4 files. The two-tier help model is now: fast
+  tier = tooltips (field_help.json), specific tier = Claude bridge capture + "explain"
+  chat shortcut.

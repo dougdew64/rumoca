@@ -103,7 +103,7 @@ implementation of the compilation pipeline.
 
 ## 4. The worker thread
 
-**File:** `worker.rs` (~3000 lines, the largest module)
+**File:** `worker.rs` (~3200 lines, the largest module)
 
 ### Why a separate thread?
 
@@ -230,7 +230,7 @@ lets the generic tree inspector render any stage without knowing its Rust type.
 
 ## 5. The UI shell
 
-**File:** `app.rs` (~2000 lines)
+**File:** `app.rs` (~2400 lines)
 
 ### Immediate-mode UI
 
@@ -247,7 +247,7 @@ if ui.button("Run").clicked() {
 
 ### The `App` struct
 
-`App` holds all application state, organized into 13 field groups:
+`App` holds all application state, organized into 14 field groups:
 
 1. **Worker** — the `Worker` handle (send/receive channels)
 2. **Library config** — MSL source-root paths, load status
@@ -255,15 +255,17 @@ if ui.button("Run").clicked() {
 4. **Compilation results** — a `StageBundle` (all 10 pipeline stages in one struct), model name, def_index
 5. **Navigation** — the "go to definition" stack for browsing library classes
 6. **Bridge** — Claude Code capture state (monotonic `ask_seq` counter)
-7. **View toggles** — Settings, Help, About window visibility
+7. **View toggles** — panel visibility, Settings, Help, About window visibility
 8. **Field help** — the embedded doc-comment lookup table (delivered as tree node tooltips)
 9. **Custom views** — pan/zoom cameras for spy-plot and incidence views
 10. **Log** — timestamped compilation/simulation log entries
 11. **Simulation** — `SimData`, plot flags, sim-in-progress state
 12. **Cached layout** — `cached_specimen_width` avoids per-frame `layout_no_wrap`
-13. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`
+13. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`,
+    `cached_equation_sheet`, `cached_matching_anim`, `cached_tarjan_anim`
     (`Option<Option<T>>` — outer = cache state, inner = parse result) avoid per-frame
     re-parsing of structural report JSON; invalidated on `Compiled`
+14. **Live debug spawn** — deferred algorithm thread spawn with breakpoint ack handshake
 
 ### Panel layout
 
@@ -323,7 +325,7 @@ It dispatches `ToWorker::Simulate` and sets `simulating = true`.
 
 ## 6. The generic tree inspector
 
-**File:** `tree.rs` (~350 lines)
+**File:** `tree.rs` (~360 lines)
 
 The charter mandates **one generic serde-value tree inspector** for all pipeline
 stages — not per-stage bespoke widgets. This is implemented as a recursive
@@ -361,7 +363,7 @@ the target class in the same generic tree.
 
 Three views use egui's low-level `Painter` API instead of the generic tree.
 
-### Canvas scaffold (`canvas.rs`, ~380 lines)
+### Canvas scaffold (`canvas.rs`, ~410 lines)
 
 A reusable pan/zoom camera shared by the spy-plot and incidence views. It maintains
 a persistent transform (offset + zoom) and handles:
@@ -383,7 +385,7 @@ n_rows)` resolves the hover pointer to a cell index (shared by spy-plot and inci
 and `View::draw_grid(painter, n_cols, n_rows, color)` draws grid lines with a built-in
 zoom guard.
 
-### BLT spy-plot (`spyplot.rs`, ~350 lines)
+### BLT spy-plot (`spyplot.rs`, ~380 lines)
 
 Visualizes the Block Lower Triangular (BLT) decomposition of the structural
 analysis. Each diagonal block is a group of equations that must be solved together:
@@ -397,7 +399,7 @@ Blocks are laid out consecutively along the diagonal. Colors distinguish block t
 (blue for scalar, orange for coupled with tearing). Hover shows the block's equations
 and tearing report; click captures the block into the bridge.
 
-### Incidence matrix (`incidence_view.rs`, ~400 lines)
+### Incidence matrix (`incidence_view.rs`, ~740 lines)
 
 Visualizes the equation × unknown adjacency matrix — the bipartite graph that
 maximum matching runs on. Equations are rows, unknowns are columns; a filled cell
@@ -497,17 +499,17 @@ boundaries — you'd get a compiler error, not a runtime bug. In C++ or Java, th
 equivalent code would work identically, but the safety guarantees would be
 conventions enforced by code review, not by the type system.
 
-**Matching animation** (`matching_anim.rs`, ~600 lines): replays Kuhn's
+**Matching animation** (`matching_anim.rs`, ~630 lines): replays Kuhn's
 augmenting-path algorithm on the incidence matrix. Each frame highlights the
 current equation, explored edges, found/failed paths, and confirmed matches
 with step-by-step descriptions using readable equation text.
 
-**Tarjan SCC animation** (`tarjan_anim.rs`, ~530 lines): replays Tarjan's
+**Tarjan SCC animation** (`tarjan_anim.rs`, ~610 lines): replays Tarjan's
 strongly connected component algorithm on the dependency graph (derived from
 the matching result). Nodes are colored by DFS state (on stack, in discovered
 SCC) and edges are classified as tree/back edges.
 
-### Index reduction summary (`reduction_view.rs`, ~500 lines)
+### Index reduction summary (`reduction_view.rs`, ~580 lines)
 
 A scrollable panel (not a canvas) summarizing what the Pantelides / dummy-derivative
 funnel did: which states were demoted, which equations were differentiated, which
@@ -516,7 +518,7 @@ states → differentiated equations → trivial eliminations. Color-coded: green
 successful steps, red for stopped, neutral for no-ops.
 
 
-### Equation sheet (`equation_sheet.rs`, ~280 lines)
+### Equation sheet (`equation_sheet.rs`, ~600 lines)
 
 A readable view of the flat DAE as math, replacing the raw JSON tree for the
 Flatten stage. Built from the typed `Dae` in the worker thread (where the typed IR
@@ -565,7 +567,7 @@ entries (reverse mapping from source lines to equation indices), built by
 
 ## 8. The Claude bridge
 
-**File:** `bridge.rs` (~800 lines)
+**File:** `bridge.rs` (~1150 lines)
 
 ### Architecture: thin emitter, thick reasoner
 
@@ -690,7 +692,7 @@ A two-tier help system:
 - **Specific tier (the bridge):** "Why did THIS particular field get this value?" —
   requires Claude to reason about the specimen, the IR, and the phase code.
 
-### Expression pretty-printer (`expr_format.rs`, ~250 lines)
+### Expression pretty-printer (`expr_format.rs`, ~550 lines)
 
 Renders `rumoca_core::Expression` trees as readable Modelica-like text — e.g.
 `der(w) - tau / J` instead of `f_x[0]`. The printer is **precedence-aware**: it
@@ -717,7 +719,7 @@ Used by:
 - **`incidence_view.rs`** — axis labels and tooltips show equation text
 - **`matching_anim.rs`** / **`tarjan_anim.rs`** — step descriptions use equation text
 
-### Colors (`colors.rs`, ~90 lines)
+### Colors (`colors.rs`, ~110 lines)
 
 Shared color constants used across multiple view modules. Contains:
 - `OK_GREEN` — the fixed dark-mode success green, used in canvas painters
@@ -732,7 +734,7 @@ Centralizes what was previously inline `Color32::from_rgb(...)` and `if dark_mod
 blocks duplicated across `app.rs`, `spyplot.rs`, `incidence_view.rs`, `reduction_view.rs`,
 `log_view.rs`, and `tree.rs`.
 
-### Log view (`log_view.rs`, ~130 lines)
+### Log view (`log_view.rs`, ~190 lines)
 
 Renders timestamped compilation and simulation log entries in a scrollable panel
 with stick-to-bottom behavior. Each entry is color-coded by level (green for Info,
@@ -767,7 +769,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (149 tests) guards against silent
+their call sites. The regression test suite (182 tests) guards against silent
 regressions during a rebase.
 
 

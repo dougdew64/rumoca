@@ -29,6 +29,7 @@
 //! - **`reduction_view`** — index reduction process summary (the Pantelides funnel).
 //! - **`equation_sheet`** — readable equation sheet from the flat DAE (grouped by origin).
 //! - **`log_view`** — timestamped compilation/simulation log panel.
+//! - **`colors`** — shared color constants used across canvas and view modules.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
 pub mod app;
