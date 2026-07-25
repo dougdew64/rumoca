@@ -76,6 +76,9 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge")
 /// evaluated). This avoids bloating the focus file with all stages' IR.
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
 
+/// The VS Code extension writes navigate requests here; HRW polls each frame.
+const NAVIGATE_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/navigate-request.json");
+
 /// HRW writes breakpoint requests here; the VS Code extension watches it.
 const BREAKPOINT_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-request.json");
 /// The extension writes this ack file after processing a request, confirming
@@ -298,6 +301,23 @@ pub fn check_breakpoint_ack() -> bool {
     } else {
         false
     }
+}
+
+/// A navigation request from a tour deep link (written by the VS Code extension).
+#[derive(serde::Deserialize)]
+pub struct NavigateRequest {
+    pub stage: String,
+    pub path: Vec<String>,
+}
+
+/// Poll for a navigate request. Returns the parsed request and deletes the
+/// file. Returns `None` if the file doesn't exist or can't be parsed.
+pub fn read_navigate_request() -> Option<NavigateRequest> {
+    let p = std::path::Path::new(NAVIGATE_REQUEST_FILE);
+    if !p.exists() { return None; }
+    let content = fs::read_to_string(p).ok()?;
+    let _ = fs::remove_file(p);
+    serde_json::from_str(&content).ok()
 }
 
 /// Locate `pub fn live_trace_breakpoint(` in the source and return its

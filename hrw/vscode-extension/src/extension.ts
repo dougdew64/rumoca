@@ -24,6 +24,8 @@ const BRIDGE_DIR_NAME = '.hrw-bridge';
 const REQUEST_FILE = 'breakpoint-request.json';
 /** Written by this extension after processing a request, consumed by HRW. */
 const ACK_FILE = 'breakpoint-ack.json';
+/** Written by this extension when the user clicks an hrw:// deep link. */
+const NAVIGATE_REQUEST_FILE = 'navigate-request.json';
 
 interface BreakpointEntry {
     path: string;
@@ -126,7 +128,57 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('hrw.navigate', (args: { stage: string; path: string[] }) => {
+            if (!args?.stage) {
+                output.appendLine('hrw.navigate: missing stage argument');
+                return;
+            }
+            const navPath = path.join(bridgeDir, NAVIGATE_REQUEST_FILE);
+            const request = JSON.stringify({
+                stage: args.stage,
+                path: args.path ?? [],
+            }) + '\n';
+            fs.writeFileSync(navPath, request);
+            output.appendLine(`Navigate: ${args.stage} / ${(args.path ?? []).join('/')}`);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.languages.registerDocumentLinkProvider(
+            { language: 'markdown', scheme: 'file' },
+            new HrwLinkProvider()
+        )
+    );
+
     context.subscriptions.push(output);
+}
+
+/**
+ * Detect `hrw://Stage/path/segments` URIs in markdown files and turn them
+ * into clickable links that invoke `hrw.navigate`.
+ */
+class HrwLinkProvider implements vscode.DocumentLinkProvider {
+    provideDocumentLinks(doc: vscode.TextDocument): vscode.DocumentLink[] {
+        const links: vscode.DocumentLink[] = [];
+        const re = /hrw:\/\/([A-Za-z_]+)(\/[A-Za-z0-9_./[\]]*)?/g;
+        for (let i = 0; i < doc.lineCount; i++) {
+            const line = doc.lineAt(i).text;
+            let match: RegExpExecArray | null;
+            while ((match = re.exec(line)) !== null) {
+                const start = new vscode.Position(i, match.index);
+                const end = new vscode.Position(i, match.index + match[0].length);
+                const range = new vscode.Range(start, end);
+                const stage = match[1];
+                const pathStr = (match[2] ?? '').replace(/^\//, '');
+                const pathSegs = pathStr ? pathStr.split('/') : [];
+                const args = encodeURIComponent(JSON.stringify({ stage, path: pathSegs }));
+                const target = vscode.Uri.parse(`command:hrw.navigate?${args}`);
+                links.push(new vscode.DocumentLink(range, target));
+            }
+        }
+        return links;
+    }
 }
 
 /** Add breakpoints from the request. Accumulates per specimen; clears on specimen change. */

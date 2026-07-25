@@ -19,6 +19,10 @@
       {
         "command": "hrw.clearArmedBreakpoints",
         "title": "HRW: Clear Armed Breakpoints"
+      },
+      {
+        "command": "hrw.navigate",
+        "title": "HRW: Navigate to Stage/Path"
       }
     ]
   },

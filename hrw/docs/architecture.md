@@ -30,7 +30,7 @@ hrw/
 │   ├── main.rs         # Binary entry point (eframe launcher + WSLg workaround)
 │   ├── app.rs          # The eframe::App — UI layout, tab bar, panel routing
 │   ├── worker.rs       # Background-thread compilation & simulation
-│   ├── bridge.rs       # Claude Code integration — JSON focus-file emitter
+│   ├── bridge.rs       # Claude Code integration — focus-file emitter + navigation receiver
 │   ├── colors.rs       # Shared color constants (theme-aware palette)
 │   ├── expr_format.rs  # Modelica expression pretty-printer (precedence-aware)
 │   ├── tree.rs         # Generic serde-value tree inspector widget
@@ -644,9 +644,10 @@ The bridge supports two bare-keyword shortcuts in the Claude Code chat:
 **Directory:** `vscode-extension/`
 
 A standalone VS Code extension (`hrw-debugger-bridge`) that bridges the
-file-based `.hrw-bridge/` protocol to VS Code's debug API. It activates on
-startup, finds the `.hrw-bridge/` directory, and watches for
-`breakpoint-request.json` files.
+file-based `.hrw-bridge/` protocol to VS Code's debug API and navigation
+system. It activates on startup, finds the `.hrw-bridge/` directory, watches
+for `breakpoint-request.json` files, and provides `hrw://` deep link support
+in markdown documents (see "Tour deep links" above).
 
 **Protocol:** Claude writes a JSON file:
 
@@ -676,6 +677,41 @@ before adding the new ones. The status bar item doubles as a manual clear button
 branch would create rebase conflicts on every upstream sync. A separate extension
 keeps HRW-specific features isolated, preserves the upstream contribution path,
 and has its own release cycle.
+
+### Tour deep links (`hrw://` URIs)
+
+The end-to-end tour document (`docs/compiler-phases/end_to_end_tour.md`) contains
+clickable `hrw://Stage/path/segments` links that navigate HRW directly to the
+referenced item — e.g. `hrw://Parse/classes/GearWithBrake/equations` switches to the
+Parse tab and forces open the tree path `classes → GearWithBrake → equations`.
+
+**Protocol:** The same `.hrw-bridge/` directory used by breakpoint requests carries
+a `navigate-request.json` file:
+
+```json
+{
+  "stage": "Parse",
+  "path": ["classes", "GearWithBrake", "equations"]
+}
+```
+
+**VS Code side** (`vscode-extension/`): A `DocumentLinkProvider` detects `hrw://`
+URIs in markdown files and converts them to `command:hrw.navigate` URIs. The
+`hrw.navigate` command writes the navigate-request file to the bridge directory.
+
+**HRW side:** `App::drain_navigate_requests()` polls for the file each frame (after
+`drain_worker()`). When found, it:
+
+1. Parses the stage name via `StageKind::from_name()` (case-insensitive, accepts
+   underscored forms like `solve_lowering`)
+2. Switches to the target stage tab
+3. Stores the path segments in `pending_nav_path: Option<Vec<Seg>>`
+
+The tree inspector (`tree.rs`) receives `open_path` from the pending nav path.
+`should_force_open(path, open_path)` returns true when the current node's path is a
+**strict prefix** of the target — those nodes get `CollapsingHeader::open(Some(true))`
+to force them open regardless of stored UI state. The pending path is consumed (set to
+`None`) at the end of the frame — it's a one-shot navigation pulse.
 
 ### Recompile
 
