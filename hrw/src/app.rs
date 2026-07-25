@@ -257,7 +257,7 @@ pub struct App {
     // Invalidated on rescan (when `files` changes).
     cached_specimen_width: Option<f32>,
 
-    // ---- 14. Cached structural views ----
+    // ---- 13. Cached structural views ----
     // Avoids re-parsing `from_report` JSON every frame. Invalidated when
     // `stages` changes (in `drain_worker` on `Compiled`) or when the
     // active stage switches between Structural and IndexReduction (each
@@ -274,12 +274,19 @@ pub struct App {
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     tarjan_anim_canvas: Canvas,
 
-    // ---- 15. Markdown rendering ----
+    // ---- 14. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
     // narrative rendering so heading IDs and image state persist across frames.
     commonmark_cache: egui_commonmark::CommonMarkCache,
     // Specimen narratives loaded on demand from docs/specimen-notebook/<Model>/narrative.md.
     cached_narratives: HashMap<PathBuf, Option<String>>,
+
+    // ---- 15. Pending stage from hrw:// link ----
+    // When an hrw://load/Specimen/Stage link fires, the stage can't be applied
+    // immediately — compilation is async and drain_worker will auto-select the
+    // last successful stage. This field defers the stage switch until the
+    // Compiled message arrives.
+    pending_stage: Option<StageKind>,
 
     // ---- 16. Deferred live debug spawn (ack handshake) ----
     // When the Debug button is clicked, `arm_live_trace_breakpoint` writes a
@@ -457,6 +464,7 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
+            pending_stage: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
         };
@@ -468,6 +476,7 @@ impl App {
         app
     }
 
+    /// Switch the active UI mode (Tour / Specimen / Debug).
     pub fn set_mode(&mut self, mode: UiMode) {
         self.ui_mode = mode;
     }
@@ -520,8 +529,16 @@ impl App {
         self.cached_specimen_width = None;
     }
 
+    /// Find a specimen by model name (e.g. "BouncingBall" → `specimens/BouncingBall.mo`).
+    fn find_specimen(&self, name: &str) -> Option<PathBuf> {
+        let with_ext = format!("{name}.mo");
+        self.files.iter().find(|p| {
+            p.file_name().and_then(|f| f.to_str()) == Some(with_ext.as_str())
+        }).cloned()
+    }
+
     /// Open (compile) a specimen. Called when the user clicks a file in the
-    /// left panel.
+    /// left panel or follows an `hrw://load/` link.
     ///
     /// **Why everything resets:** each specimen is an independent compilation.
     /// Leftover stage data from the previous specimen would be confusing (e.g.
@@ -534,13 +551,6 @@ impl App {
     /// messages, timing) instead of staring at "compiling..." text. Once
     /// compilation finishes and the user clicks a stage tab, `viewing_log`
     /// flips to false.
-    fn find_specimen(&self, name: &str) -> Option<PathBuf> {
-        let with_ext = format!("{name}.mo");
-        self.files.iter().find(|p| {
-            p.file_name().and_then(|f| f.to_str()) == Some(with_ext.as_str())
-        }).cloned()
-    }
-
     fn open(&mut self, path: PathBuf) {
         // Mark as compiling — this disables stage tab highlighting and shows a
         // spinner.
@@ -567,6 +577,10 @@ impl App {
         }
         self.live_breakpoint_armed = false;
         self.pending_live_debug = None;
+        // Clear any stale pending_stage — a plain LoadSpecimen link should not
+        // carry over a stage override from a previous LoadAndSwitch click.
+        // LoadAndSwitch sets pending_stage BEFORE calling open().
+        self.pending_stage = None;
         // Start with the log view so the user sees compilation progress.
         self.log_entries.clear();
         self.viewing_log = true;
@@ -656,8 +670,12 @@ impl App {
                     self.incidence_canvas.request_fit();
                     self.matching_anim_canvas.request_fit();
                     self.tarjan_anim_canvas.request_fit();
-                    // Land on the furthest stage that completed cleanly.
-                    self.stage = self.last_successful_stage();
+                    // Land on the furthest stage that completed cleanly,
+                    // unless a pending_stage was requested via an hrw://load/…/Stage link.
+                    self.stage = self.pending_stage.take().unwrap_or_else(|| {
+                        self.last_successful_stage()
+                    });
+                    self.viewing_log = false;
                     // Publish every stage's full IR so Claude can diff any pair.
                     if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
                         self.bridge_status = Some(format!("write_stages failed: {e}"));
@@ -1693,6 +1711,8 @@ impl eframe::App for App {
                 HrwLink::LoadSpecimen(name) => {
                     if let Some(path) = self.find_specimen(&name) {
                         self.open(path);
+                    } else {
+                        self.bridge_status = Some(format!("specimen not found: {name}"));
                     }
                 }
                 HrwLink::SwitchStage(kind) => {
@@ -1702,9 +1722,10 @@ impl eframe::App for App {
                 HrwLink::LoadAndSwitch(name, kind) => {
                     if let Some(path) = self.find_specimen(&name) {
                         self.open(path);
+                        self.pending_stage = Some(kind);
+                    } else {
+                        self.bridge_status = Some(format!("specimen not found: {name}"));
                     }
-                    self.stage = kind;
-                    self.viewing_log = false;
                 }
             }
         }
@@ -2253,19 +2274,9 @@ fn read_purpose(path: &Path) -> Option<String> {
     })
 }
 
-/// The colour for simulation series `i` — egui_plot's own auto-colour palette
-/// (golden-ratio hue, `Hsva`), replicated so we can pin it explicitly. We must:
-/// a variable plotted as several segments (broken at discontinuities) would else
-/// take a different auto-colour per segment. Keyed on the variable index, this
-/// equals the colour egui_plot picked when each variable was a single line.
-///
-/// The **golden-ratio hue trick**: multiplying the series index by the golden
-/// ratio (0.618...) and using the fractional part as a hue angle produces
-/// colors that are maximally spread around the color wheel. Each new series
-/// lands as far as possible from all previous ones in hue space, giving
-/// visually distinct colors without a hand-picked palette. `Hsva` constructs
-/// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
-/// automatically.
+/// A blue-tinted header bar for left-panel sections (Tour, Specimens, Narrative).
+/// Uses a navy background with light-blue text in dark mode, matching the RHS
+/// stage-tab palette for visual consistency.
 fn section_header(ui: &mut egui::Ui, title: &str) {
     let dark = ui.visuals().dark_mode;
     let bg = if dark {
@@ -2289,12 +2300,17 @@ fn section_header(ui: &mut egui::Ui, title: &str) {
         });
 }
 
+/// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
 enum HrwLink {
+    /// `hrw://load/<Specimen>` — load and compile a specimen by name.
     LoadSpecimen(String),
+    /// `hrw://stage/<Stage>` — switch to a stage tab (specimen already loaded).
     SwitchStage(StageKind),
+    /// `hrw://load/<Specimen>/<Stage>` — load a specimen and switch to a stage.
     LoadAndSwitch(String, StageKind),
 }
 
+/// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
 fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     let path = url.strip_prefix("hrw://")?;
     let parts: Vec<&str> = path.splitn(3, '/').collect();
@@ -2312,6 +2328,7 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     }
 }
 
+/// Scan markdown text for all unique `hrw://` URLs (for hook registration).
 fn extract_hrw_links(text: &str) -> Vec<String> {
     let mut links = Vec::new();
     for cap in text.match_indices("hrw://") {
@@ -2327,6 +2344,7 @@ fn extract_hrw_links(text: &str) -> Vec<String> {
     links
 }
 
+/// Register link hooks so `egui_commonmark` reports clicks on `hrw://` links.
 fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String]) {
     for link in links {
         if cache.get_link_hook(link).is_none() {
@@ -2335,6 +2353,7 @@ fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[Str
     }
 }
 
+/// Check registered hooks for a click and return the first triggered action.
 fn drain_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String]) -> Option<HrwLink> {
     for link in links {
         if cache.get_link_hook(link) == Some(true) {
@@ -2344,6 +2363,7 @@ fn drain_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String
     None
 }
 
+/// Cap markdown heading size to 1.15x body so rendered tour/narrative text stays compact.
 fn set_markdown_text_sizes(ui: &mut egui::Ui) {
     let body_size = ui.text_style_height(&egui::TextStyle::Body);
     ui.style_mut().text_styles.insert(
@@ -2354,6 +2374,19 @@ fn set_markdown_text_sizes(ui: &mut egui::Ui) {
 
 const GOLDEN_RATIO: f32 = 0.618_033_99;
 
+/// The colour for simulation series `i` — egui_plot's own auto-colour palette
+/// (golden-ratio hue, `Hsva`), replicated so we can pin it explicitly. We must:
+/// a variable plotted as several segments (broken at discontinuities) would else
+/// take a different auto-colour per segment. Keyed on the variable index, this
+/// equals the colour egui_plot picked when each variable was a single line.
+///
+/// The **golden-ratio hue trick**: multiplying the series index by the golden
+/// ratio (0.618...) and using the fractional part as a hue angle produces
+/// colors that are maximally spread around the color wheel. Each new series
+/// lands as far as possible from all previous ones in hue space, giving
+/// visually distinct colors without a hand-picked palette. `Hsva` constructs
+/// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
+/// automatically.
 fn series_color(i: usize) -> egui::Color32 {
     egui::ecolor::Hsva::new(i as f32 * GOLDEN_RATIO, 0.85, 0.5, 1.0).into()
 }
@@ -2459,6 +2492,7 @@ impl App {
             cached_narratives: HashMap::new(),
             pending_live_debug: None,
             live_breakpoint_armed: false,
+            pending_stage: None,
         };
         (app, from_tx)
     }
@@ -2779,6 +2813,60 @@ mod tests {
     }
 
     #[test]
+    fn drain_worker_compiled_applies_pending_stage() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        app.compiling = true;
+        app.pending_stage = Some(StageKind::Flatten);
+
+        let stages = {
+            let mut b = StageBundle::default();
+            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.resolve = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b
+        };
+        tx.send(FromWorker::Compiled {
+            path,
+            model: Some("TestModel".into()),
+            stages,
+            def_index: BTreeMap::new(),
+            equation_sheet: None,
+        }).unwrap();
+        app.drain_worker();
+
+        assert_eq!(app.stage, StageKind::Flatten, "pending_stage should override last_successful_stage");
+        assert!(app.pending_stage.is_none(), "pending_stage should be consumed");
+        assert!(!app.viewing_log, "viewing_log should be cleared after compilation");
+    }
+
+    #[test]
+    fn drain_worker_compiled_falls_back_without_pending_stage() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        app.compiling = true;
+        app.pending_stage = None;
+
+        let stages = {
+            let mut b = StageBundle::default();
+            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.resolve = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b
+        };
+        tx.send(FromWorker::Compiled {
+            path,
+            model: Some("TestModel".into()),
+            stages,
+            def_index: BTreeMap::new(),
+            equation_sheet: None,
+        }).unwrap();
+        app.drain_worker();
+
+        assert_eq!(app.stage, StageKind::Resolve, "should fall back to last_successful_stage");
+    }
+
+    #[test]
     fn drain_worker_simulated_ok_stores_data() {
         let (mut app, tx) = App::test_with_sender();
         let path = PathBuf::from("/test/specimen.mo");
@@ -2897,12 +2985,62 @@ mod tests {
     }
 
     #[test]
+    fn find_specimen_matches_by_filename() {
+        let mut app = App::test_default();
+        app.files = vec![
+            PathBuf::from("/specimens/BouncingBall.mo"),
+            PathBuf::from("/specimens/Drivetrain.mo"),
+        ];
+        assert_eq!(
+            app.find_specimen("BouncingBall"),
+            Some(PathBuf::from("/specimens/BouncingBall.mo"))
+        );
+    }
+
+    #[test]
+    fn find_specimen_returns_none_for_missing() {
+        let mut app = App::test_default();
+        app.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
+        assert!(app.find_specimen("NonExistent").is_none());
+    }
+
+    #[test]
+    fn find_specimen_does_not_match_substring() {
+        let mut app = App::test_default();
+        app.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
+        assert!(app.find_specimen("Bouncing").is_none());
+    }
+
+    #[test]
     fn tour_document_hrw_links_are_valid() {
         const TOUR: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
         let links = extract_hrw_links(TOUR);
         assert!(!links.is_empty(), "tour should contain hrw:// links");
         for link in &links {
             assert!(parse_hrw_link(link).is_some(), "invalid hrw link in tour: {link}");
+        }
+    }
+
+    #[test]
+    fn narrative_hrw_links_are_valid() {
+        let notebook_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/specimen-notebook");
+        if !notebook_dir.exists() {
+            return;
+        }
+        for entry in std::fs::read_dir(&notebook_dir).unwrap() {
+            let narrative = entry.unwrap().path().join("narrative.md");
+            if !narrative.exists() {
+                continue;
+            }
+            let text = std::fs::read_to_string(&narrative).unwrap();
+            for link in extract_hrw_links(&text) {
+                assert!(
+                    parse_hrw_link(&link).is_some(),
+                    "invalid hrw link in {}: {link}",
+                    narrative.display()
+                );
+            }
         }
     }
 }

@@ -295,7 +295,7 @@ lets the generic tree inspector render any stage without knowing its Rust type.
 
 ## 5. The UI shell
 
-**File:** `app.rs` (~2400 lines)
+**File:** `app.rs` (~3000 lines)
 
 ### Immediate-mode UI
 
@@ -312,7 +312,7 @@ if ui.button("Run").clicked() {
 
 ### The `App` struct
 
-`App` holds all application state, organized into 14 field groups:
+`App` holds all application state, organized into 16 field groups:
 
 1. **Worker** — the `Worker` handle (send/receive channels)
 2. **Library config** — MSL source-root paths, load status
@@ -320,9 +320,9 @@ if ui.button("Run").clicked() {
 4. **Compilation results** — a `StageBundle` (all 10 pipeline stages in one struct), model name, def_index
 5. **Navigation** — the "go to definition" stack for browsing library classes
 6. **Bridge** — Claude Code capture state (monotonic `ask_seq` counter)
-7. **View toggles** — panel visibility, Settings, Help, About window visibility
+7. **View toggles** — UI mode (Tour/Specimen/Debug), Settings, Help, About window visibility
 8. **Field help** — the embedded doc-comment lookup table (delivered as tree node tooltips)
-9. **Custom views** — pan/zoom cameras for spy-plot and incidence views
+9. **Custom views** — sub-view selectors and pan/zoom cameras for spy-plot, incidence, matching, and Tarjan views
 10. **Log** — timestamped compilation/simulation log entries
 11. **Simulation** — `SimData`, plot flags, sim-in-progress state
 12. **Cached layout** — `cached_specimen_width` avoids per-frame `layout_no_wrap`
@@ -331,7 +331,9 @@ if ui.button("Run").clicked() {
     (`Option<Option<T>>` — outer = cache state, inner = parse result) avoid per-frame
     re-parsing of structural report JSON; invalidated on `Compiled` and when switching
     between Structural/IndexReduction (tracked by `cached_report_stage`)
-14. **Live debug spawn** — deferred algorithm thread spawn with breakpoint ack handshake
+14. **Markdown rendering** — `egui_commonmark` cache and per-specimen narrative cache
+15. **Pending stage** — deferred stage switch for `hrw://load/Specimen/Stage` links
+16. **Live debug spawn** — deferred algorithm thread spawn with breakpoint ack handshake
 
 ### Panel layout and UI modes
 
@@ -385,6 +387,25 @@ doesn't claim.
 A **specimen-switcher dropdown** (combo box) is embedded in the stage
 tab bar header, visible in all modes. In Debug mode, where the specimen
 list is hidden, this is the only way to switch specimens.
+
+### Navigation links (`hrw://`)
+
+Tour and narrative markdown can contain `hrw://` links that trigger in-app
+navigation when clicked. The link scheme:
+
+- `hrw://load/<Specimen>` — load and compile a specimen by name
+- `hrw://stage/<Stage>` — switch to a stage tab (PascalCase slug)
+- `hrw://load/<Specimen>/<Stage>` — load a specimen and switch to a stage
+
+Link handling uses `egui_commonmark`'s `add_link_hook` / `get_link_hook` API.
+Before rendering markdown, `register_hrw_hooks` registers all `hrw://` URLs
+found in the text as link hooks. After rendering, `drain_hrw_hooks` checks
+which hooks were clicked and returns the first triggered `HrwLink` action.
+The dispatch code then calls `open()`, sets the stage, or both.
+
+For `LoadAndSwitch` links, the stage switch is deferred via `pending_stage`
+because `open()` starts an async compilation — the stage can only be applied
+after the `Compiled` message arrives in `drain_worker`.
 
 ### Field help (tooltips)
 
@@ -859,7 +880,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (215 tests) guards against silent
+their call sites. The regression test suite (221 tests) guards against silent
 regressions during a rebase.
 
 

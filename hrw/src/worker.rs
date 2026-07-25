@@ -291,6 +291,7 @@ impl StageKind {
         }
     }
 
+    /// Parse a PascalCase slug (as used in `hrw://stage/<Slug>` URLs) into a stage kind.
     pub fn from_slug(s: &str) -> Option<Self> {
         match s {
             "Parse" => Some(Self::Parse),
