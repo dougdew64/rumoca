@@ -1,8 +1,8 @@
 use rumoca_ir_solve as solve;
 
 use crate::{
-    SimResult, SimTermination, SimVariableMeta, runtime::pre_params::write_pre_params_from_sources,
-    timeline,
+    SimResult, SimTermination, SimVariableMeta, SolverStepRecord,
+    runtime::pre_params::write_pre_params_from_sources, timeline,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -236,6 +236,7 @@ pub fn build_sim_result_from_solve_model(
     recorded_times: Vec<f64>,
     data: Vec<Vec<f64>>,
     termination: Option<SimTermination>,
+    solver_steps: Vec<SolverStepRecord>,
 ) -> SimResult {
     SimResult {
         times: recorded_times,
@@ -244,6 +245,7 @@ pub fn build_sim_result_from_solve_model(
         n_states: model.state_scalar_count(),
         variable_meta: convert_variable_meta(&model.variable_meta),
         termination,
+        solver_steps,
     }
 }
 

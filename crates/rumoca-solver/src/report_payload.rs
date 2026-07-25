@@ -143,6 +143,7 @@ mod tests {
                 fixed: None,
                 description: None,
             }],
+            solver_steps: vec![],
         }
     }
 

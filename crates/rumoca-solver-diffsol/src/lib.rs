@@ -39,7 +39,8 @@ use rumoca_eval_solve::{
 use rumoca_ir_solve as solve;
 use rumoca_solver::{
     DiffsolMethod, RuntimeEventBoundary, RuntimeEventBoundaryHandler, RuntimeEventStop, SimOptions,
-    SimResult, SimTermination, SolveStopSchedule, build_sim_result_from_solve_model,
+    SimResult, SimTermination, SolverStepRecord, SolveStopSchedule,
+    build_sim_result_from_solve_model,
     commit_pre_params_after_event, process_runtime_event_boundary, push_visible_values,
     replace_last_visible_values, runtime_event_horizon, runtime_root_event_application_time,
     timeline::sample_time_match_with_tol,
@@ -250,6 +251,7 @@ fn simulate_with_states(
         current_y: &current_y,
         params: &params,
     })?;
+    let mut solver_steps = Vec::new();
     let result = simulate_state_targets(
         model,
         opts,
@@ -264,6 +266,7 @@ fn simulate_with_states(
             current_y: &mut current_y,
             runtime,
             runtime_state: &equilibrium_model.runtime_state,
+            solver_steps: &mut solver_steps,
         },
     )
     .map_err(SimError::from);
@@ -279,6 +282,7 @@ fn simulate_with_states(
             data,
             recorded_times,
             current_y,
+            solver_steps,
         },
     )
 }
@@ -382,6 +386,7 @@ struct StateSimFinalize<'a> {
     data: Vec<Vec<f64>>,
     recorded_times: Vec<f64>,
     current_y: Vec<f64>,
+    solver_steps: Vec<SolverStepRecord>,
 }
 
 fn finalize_state_simulation(
@@ -394,6 +399,7 @@ fn finalize_state_simulation(
             fin.recorded_times,
             fin.data,
             None,
+            fin.solver_steps,
         )),
         Err(SimError::Terminated { time, message }) => {
             fin.runtime.refresh_observation_discrete_rows(
@@ -423,6 +429,7 @@ fn finalize_state_simulation(
                 fin.recorded_times,
                 fin.data,
                 Some(SimTermination { time, message }),
+                fin.solver_steps,
             ))
         }
         Err(error) => Err(error),
@@ -500,6 +507,7 @@ fn simulate_state_only_bdf(
     // Drive the reduced state-only solver through the *same* backend-neutral
     // output / event / root loop as the general path; `DiffsolMode::StateOnly`
     // (inside the backend) projects the reduced state to the full solver_y.
+    let mut solver_steps = Vec::new();
     let result = simulate_state_targets(
         model,
         opts,
@@ -514,6 +522,7 @@ fn simulate_state_only_bdf(
             current_y: &mut current_y,
             runtime,
             runtime_state: &equilibrium_model.runtime_state,
+            solver_steps: &mut solver_steps,
         },
     )
     .map_err(SimError::from);
@@ -531,6 +540,7 @@ fn simulate_state_only_bdf(
             data,
             recorded_times,
             current_y,
+            solver_steps,
         },
     )
 }
@@ -834,6 +844,14 @@ where
             .map(|_| ())
             .map_err(SimError::from)
             .map_err(sim_to_driver)
+    }
+
+    fn step_size(&self) -> Option<f64> {
+        Some(self.solver.state().h)
+    }
+
+    fn solver_order(&self) -> Option<usize> {
+        Some(self.solver.order())
     }
 
     fn trace_step_failure(

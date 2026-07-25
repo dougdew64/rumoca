@@ -189,6 +189,7 @@ pub(crate) fn simulate_no_state_solve_ir(
         runtime.recorded_times,
         runtime.data,
         None,
+        vec![],
     ))
 }
 

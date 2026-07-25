@@ -62,5 +62,5 @@ pub use runtime::timeout::{
 };
 pub use solver::{
     BackendState, DiffsolMethod, SimBackend, SimOptions, SimPacingMode, SimResult, SimSolverMode,
-    SimTermination, SimVariableMeta, SimulationBackend, StepUntilOutcome,
+    SimTermination, SimVariableMeta, SimulationBackend, SolverStepRecord, StepUntilOutcome,
 };

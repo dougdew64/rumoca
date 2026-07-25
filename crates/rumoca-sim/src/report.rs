@@ -163,6 +163,7 @@ mod tests {
                 fixed: None,
                 description: None,
             }],
+            solver_steps: vec![],
         };
         let request = SimulationRequestSummary {
             solver: "rk4".to_string(),
@@ -189,6 +190,7 @@ mod tests {
             n_states: 1,
             termination: None,
             variable_meta: Vec::new(),
+            solver_steps: vec![],
         };
         let dir = std::env::temp_dir().join(format!("rumoca-csv-test-{}", std::process::id()));
         fs::create_dir_all(&dir).expect("temp dir");
@@ -211,6 +213,7 @@ mod tests {
             n_states: 1,
             termination: None,
             variable_meta: Vec::new(),
+            solver_steps: vec![],
         };
         let dir = std::env::temp_dir().join(format!("rumoca-csv-trunc-{}", std::process::id()));
         fs::create_dir_all(&dir).expect("temp dir");

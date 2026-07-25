@@ -524,6 +524,7 @@ pub fn simulate(model: &solve::SolveModel, opts: &SimOptions) -> Result<SimResul
         n_states: model.state_count,
         variable_meta: convert_variable_meta(&model.model.variable_meta),
         termination: backend.termination,
+        solver_steps: vec![],
     })
 }
 

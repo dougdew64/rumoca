@@ -140,6 +140,23 @@ pub trait SolverAdvanceBackend {
         t: f64,
     ) -> Result<(), SimDriverError>;
 
+    // --- solver diagnostics (optional; backends that support it override) ---
+    fn step_size(&self) -> Option<f64> {
+        None
+    }
+    fn solver_order(&self) -> Option<usize> {
+        None
+    }
+    fn record_step(&self, steps: &mut Vec<rumoca_solver::SolverStepRecord>) {
+        if let (Some(h), Some(order)) = (self.step_size(), self.solver_order()) {
+            steps.push(rumoca_solver::SolverStepRecord {
+                t: self.time(),
+                h,
+                order,
+            });
+        }
+    }
+
     // --- debug trace hooks (no-op unless tracing is enabled) ---
     fn trace_step_failure(
         &self,
@@ -188,6 +205,8 @@ pub struct StateTrajectory<'a> {
     pub current_y: &'a mut Vec<f64>,
     pub runtime: &'a SolveRuntime,
     pub runtime_state: &'a SimulationRuntimeState,
+    /// Accumulator for per-step solver diagnostics.
+    pub solver_steps: &'a mut Vec<rumoca_solver::SolverStepRecord>,
 }
 
 /// Write the full solver_y for `native` at `t` into `current_y`.
@@ -273,6 +292,7 @@ pub fn simulate_state_targets<St: SolverAdvanceBackend + ?Sized>(
                 event_stop,
                 backend,
                 &mut deferred_root,
+                state.solver_steps,
             )?;
             if let Some(prt) = deferred_root {
                 pending_root_t = Some(prt);
@@ -643,11 +663,12 @@ fn advance_to_target_once<St: SolverAdvanceBackend + ?Sized>(
     event_stop: Option<RuntimeEventStop>,
     backend: &mut St,
     deferred_root: &mut Option<f64>,
+    solver_steps: &mut Vec<rumoca_solver::SolverStepRecord>,
 ) -> Result<bool, SimDriverError> {
     if event_stop.is_some() {
-        return advance_to_scheduled_stop(ctx, state, target, backend);
+        return advance_to_scheduled_stop(ctx, state, target, backend, solver_steps);
     }
-    advance_output_interval(ctx, state, target, backend, deferred_root)
+    advance_output_interval(ctx, state, target, backend, deferred_root, solver_steps)
 }
 
 fn advance_to_scheduled_stop<St: SolverAdvanceBackend + ?Sized>(
@@ -655,6 +676,7 @@ fn advance_to_scheduled_stop<St: SolverAdvanceBackend + ?Sized>(
     state: AdvanceState<'_>,
     target: f64,
     backend: &mut St,
+    solver_steps: &mut Vec<rumoca_solver::SolverStepRecord>,
 ) -> Result<bool, SimDriverError> {
     if backend.time() > target {
         backend.state_mut_back(target)?;
@@ -683,6 +705,7 @@ fn advance_to_scheduled_stop<St: SolverAdvanceBackend + ?Sized>(
                 return Err(e);
             }
         };
+        backend.record_step(solver_steps);
         match outcome {
             StepOutcome::Stop => {
                 let stop_t = backend.time();
@@ -709,13 +732,10 @@ fn advance_output_interval<St: SolverAdvanceBackend + ?Sized>(
     target: f64,
     backend: &mut St,
     deferred_root: &mut Option<f64>,
+    solver_steps: &mut Vec<rumoca_solver::SolverStepRecord>,
 ) -> Result<bool, SimDriverError> {
-    // Backends whose interpolation re-projects algebraics (reduced-state) ask to
-    // land exactly on each output point near discontinuities; otherwise we keep
-    // free dense-output stepping so a multi-step controller is not starved by a
-    // fine output grid.
     if backend.prefer_exact_output_steps() {
-        return advance_output_interval_clamped(ctx, state, target, backend);
+        return advance_output_interval_clamped(ctx, state, target, backend, solver_steps);
     }
     loop {
         if backend.time() >= target {
@@ -740,6 +760,7 @@ fn advance_output_interval<St: SolverAdvanceBackend + ?Sized>(
                 return Err(e);
             }
         };
+        backend.record_step(solver_steps);
         match outcome {
             StepOutcome::Stop | StepOutcome::Internal => {}
             StepOutcome::Root { t_root } => {
@@ -767,6 +788,7 @@ fn advance_output_interval_clamped<St: SolverAdvanceBackend + ?Sized>(
     state: AdvanceState<'_>,
     target: f64,
     backend: &mut St,
+    solver_steps: &mut Vec<rumoca_solver::SolverStepRecord>,
 ) -> Result<bool, SimDriverError> {
     if backend.time() >= target {
         let y_at_target = backend.interpolate(target)?;
@@ -792,6 +814,7 @@ fn advance_output_interval_clamped<St: SolverAdvanceBackend + ?Sized>(
                 return Err(e);
             }
         };
+        backend.record_step(solver_steps);
         match outcome {
             StepOutcome::Stop => {
                 let stop_t = backend.time();

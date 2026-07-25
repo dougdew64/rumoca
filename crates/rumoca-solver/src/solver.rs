@@ -191,6 +191,17 @@ pub struct SimTermination {
     pub message: String,
 }
 
+/// Per-step solver diagnostic record, captured during integration.
+#[derive(Debug, Clone, Copy)]
+pub struct SolverStepRecord {
+    /// Solver time after the step.
+    pub t: f64,
+    /// Step size used.
+    pub h: f64,
+    /// Method order (BDF order 1–5; fixed for explicit methods).
+    pub order: usize,
+}
+
 #[derive(Debug, Clone)]
 pub struct SimResult {
     pub times: Vec<f64>,
@@ -199,6 +210,8 @@ pub struct SimResult {
     pub n_states: usize,
     pub variable_meta: Vec<SimVariableMeta>,
     pub termination: Option<SimTermination>,
+    /// Per-step solver diagnostics (empty if the backend does not record them).
+    pub solver_steps: Vec<SolverStepRecord>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
