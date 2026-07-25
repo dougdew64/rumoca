@@ -136,7 +136,7 @@ conversations alongside Cellier reading, not front-loaded.
 ### Step 4: Debug mode — specimen-switcher dropdown ✅
 
 - Add a compact specimen dropdown (combo box) to the stage tabs header bar.
-- Visible in all modes but essential in debug mode (no specimen list visible).
+- Visible only in debug mode (where the specimen list is hidden).
 - Selecting a specimen from the dropdown loads and compiles it, same as
   clicking in the specimen list.
 

@@ -1792,29 +1792,31 @@ impl eframe::App for App {
                     // - Green if the stage produced IR (success)
                     // - Default color if not yet reached or still compiling
                     // Specimen switcher — a compact dropdown showing the
-                    // currently loaded specimen. Essential in Debug mode
-                    // (no specimen list visible) but available in all modes.
-                    let current_name = self.selected.as_ref()
-                        .and_then(|p| p.file_stem())
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("(none)");
-                    let combo = egui::ComboBox::from_id_salt("specimen_switcher")
-                        .selected_text(current_name)
-                        .width(120.0);
-                    let mut switch_to = None;
-                    combo.show_ui(ui, |ui| {
-                        for path in &self.files {
-                            let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
-                            let is_selected = self.selected.as_deref() == Some(path.as_path());
-                            if ui.selectable_label(is_selected, name).clicked() {
-                                switch_to = Some(path.clone());
+                    // Specimen switcher dropdown — only in Debug mode, where
+                    // the specimen list is hidden.
+                    if self.ui_mode == UiMode::Debug {
+                        let current_name = self.selected.as_ref()
+                            .and_then(|p| p.file_stem())
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("(none)");
+                        let combo = egui::ComboBox::from_id_salt("specimen_switcher")
+                            .selected_text(current_name)
+                            .width(120.0);
+                        let mut switch_to = None;
+                        combo.show_ui(ui, |ui| {
+                            for path in &self.files {
+                                let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
+                                let is_selected = self.selected.as_deref() == Some(path.as_path());
+                                if ui.selectable_label(is_selected, name).clicked() {
+                                    switch_to = Some(path.clone());
+                                }
                             }
+                        });
+                        if let Some(path) = switch_to {
+                            self.open(path);
                         }
-                    });
-                    if let Some(path) = switch_to {
-                        self.open(path);
+                        ui.separator();
                     }
-                    ui.separator();
 
                     if ui.selectable_label(self.viewing_log, "Log").clicked() {
                         self.viewing_log = true;

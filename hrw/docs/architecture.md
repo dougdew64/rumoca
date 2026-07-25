@@ -385,8 +385,8 @@ The `CentralPanel` automatically fills whatever space the left panel
 doesn't claim.
 
 A **specimen-switcher dropdown** (combo box) is embedded in the stage
-tab bar header, visible in all modes. In Debug mode, where the specimen
-list is hidden, this is the only way to switch specimens.
+tab bar header, visible only in Debug mode — where the specimen list is
+hidden, this is the only way to switch specimens.
 
 ### Navigation links (`hrw://`)
 
