@@ -81,7 +81,10 @@ impl IdentifierIndex {
                 description: var.description.clone(),
             };
 
-            self.line_to_variables.entry(line).or_default().push(name.clone());
+            let names = self.line_to_variables.entry(line).or_default();
+            if !names.contains(&name) {
+                names.push(name.clone());
+            }
             self.variables.insert(name, entry);
         }
     }
@@ -106,7 +109,11 @@ impl IdentifierIndex {
             return Vec::new();
         }
         let mut spans = Vec::new();
+        let mut seen = std::collections::HashSet::new();
         for var in &vars {
+            if !seen.insert(&var.name) {
+                continue;
+            }
             let leaf = var.name.rsplit('.').next().unwrap_or(&var.name);
             if let Some(pos) = find_whole_identifier(line_text, leaf) {
                 spans.push((pos, pos + leaf.len(), var.name.clone()));
@@ -204,5 +211,22 @@ mod tests {
         assert_eq!(spans.len(), 1);
         assert_eq!(spans[0].2, "inertia.J");
         assert_eq!(&"  parameter Real J = 1;"[spans[0].0..spans[0].1], "J");
+    }
+
+    #[test]
+    fn duplicate_line_to_variables_entry_produces_single_span() {
+        let mut idx = IdentifierIndex::default();
+        idx.variables.insert("h".to_string(), IndexedVariable {
+            name: "h".to_string(),
+            kind: "state",
+            source_byte_range: (0, 10),
+            source_line: 2,
+            def_id: None,
+            description: None,
+        });
+        idx.line_to_variables.entry(2).or_default().push("h".to_string());
+        idx.line_to_variables.entry(2).or_default().push("h".to_string());
+        let spans = idx.clickable_spans(2, "  Real h(start = 1.0) \"height\";");
+        assert_eq!(spans.len(), 1, "duplicate line_to_variables entry must not duplicate the span");
     }
 }
