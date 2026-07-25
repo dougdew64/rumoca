@@ -47,7 +47,6 @@ tour take priority over unlinked items of the same severity.
 | #29 Solver stepping visualization | Simulation |
 | #30 Live solver stepping (LiveTrace) | Simulation |
 | #31 Revisit all simulator functionality | Simulation |
-| #32 Tour deep links into HRW | (all tours) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -983,28 +982,3 @@ simulation-related features can deliver their full value.
   tracker and release notes.
 - **Relates to:** #29 (solver stepping), #30 (live stepping), #1 (convergence
   narratives), #17 (Jacobian), #18 (BDF), #22 (events).
-
-## 32. Tour deep links into HRW
-
-Captured 2026-07-24 (Doug). The end-to-end tour and phase tour documents
-reference specific identifiers, equations, and tree nodes by name — but the
-reader has to hunt for them manually in HRW. It would be much more effective
-if references in the tour were clickable links that select and highlight the
-corresponding item in HRW.
-
-- **Why it matters:** the tour's value is in connecting prose explanation to
-  live IR. Every time the reader has to search HRW for a named item, the
-  learning flow breaks. Deep links would make the tour feel like an
-  integrated notebook rather than a separate document.
-- **Sketch:** define a URI scheme (e.g. `hrw://stage/Parse/classes/
-  GearWithBrake/equations/0`) that encodes a stage + JSON path. Links in
-  the tour markdown use this scheme. HRW registers a handler (or the VS Code
-  bridge watches for link activations) that navigates to the stage tab,
-  expands the tree to the target node, and highlights it. For equation sheet
-  items, the URI could reference an equation index or variable name.
-- **Implementation options:** (a) VS Code extension handles `hrw://` URIs
-  and writes a navigation request via the bridge file; (b) HRW watches a
-  request file directly; (c) a command-line flag (`--navigate-to`) for
-  one-shot use.
-- **Relates to:** #26 (VS Code integration), #10 (cross-stage identifier
-  tracking — deep links across stages would compose with this).

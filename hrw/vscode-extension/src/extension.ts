@@ -24,8 +24,6 @@ const BRIDGE_DIR_NAME = '.hrw-bridge';
 const REQUEST_FILE = 'breakpoint-request.json';
 /** Written by this extension after processing a request, consumed by HRW. */
 const ACK_FILE = 'breakpoint-ack.json';
-/** Written by this extension when the user clicks an hrw:// deep link. */
-const NAVIGATE_REQUEST_FILE = 'navigate-request.json';
 
 interface BreakpointEntry {
     path: string;
@@ -63,45 +61,11 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // Register the link provider and navigate command unconditionally —
-    // these must work even before HRW creates the .hrw-bridge directory.
-    context.subscriptions.push(
-        vscode.languages.registerDocumentLinkProvider(
-            { language: 'markdown', scheme: 'file' },
-            new HrwLinkProvider()
-        )
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('hrw.navigate', (args: { specimen?: string; stage?: string; path?: string[] }) => {
-            if (!args?.stage && !args?.specimen) {
-                output.appendLine('hrw.navigate: missing stage or specimen argument');
-                return;
-            }
-            const dir = findBridgeDir();
-            if (!dir) {
-                vscode.window.showWarningMessage(
-                    'HRW: No .hrw-bridge directory found — is HRW running?'
-                );
-                return;
-            }
-            const navPath = path.join(dir, NAVIGATE_REQUEST_FILE);
-            const request: Record<string, unknown> = {};
-            if (args.specimen) { request.specimen = args.specimen; }
-            if (args.stage) { request.stage = args.stage; }
-            request.path = args.path ?? [];
-            fs.writeFileSync(navPath, JSON.stringify(request) + '\n');
-            const label = args.specimen ? `load ${args.specimen}` : `${args.stage} / ${(args.path ?? []).join('/')}`;
-            output.appendLine(`Navigate: ${label}`);
-        })
-    );
-
     const bridgeDir = findBridgeDir();
     if (!bridgeDir) {
         output.appendLine(
-            'No .hrw-bridge directory found — breakpoint bridge inactive (deep links still work)'
+            'No .hrw-bridge directory found — will retry when workspace changes'
         );
-        context.subscriptions.push(output);
         return;
     }
 
@@ -135,6 +99,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
             fs.unlinkSync(requestPath);
 
+            // Write the ack file so HRW knows the breakpoint is registered
+            // and can safely spawn the algorithm thread. HRW polls for this
+            // file via `bridge::check_breakpoint_ack()`.
             const ackPath = path.join(bridgeDir, ACK_FILE);
             fs.writeFileSync(ackPath, JSON.stringify({ acked: true }) + '\n');
         } catch (err) {
@@ -160,46 +127,6 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(output);
-}
-
-/**
- * Detect `hrw://Stage/path/segments` and `hrw://load/Specimen` URIs in
- * markdown files and turn them into clickable links that invoke `hrw.navigate`.
- */
-class HrwLinkProvider implements vscode.DocumentLinkProvider {
-    provideDocumentLinks(doc: vscode.TextDocument): vscode.DocumentLink[] {
-        const links: vscode.DocumentLink[] = [];
-        const re = /hrw:\/\/([A-Za-z_]+)(\/[A-Za-z0-9_.[\]-]*(?:\/[A-Za-z0-9_.[\]-]*)*)?/g;
-        for (let i = 0; i < doc.lineCount; i++) {
-            const line = doc.lineAt(i).text;
-            let match: RegExpExecArray | null;
-            while ((match = re.exec(line)) !== null) {
-                const start = new vscode.Position(i, match.index);
-                const end = new vscode.Position(i, match.index + match[0].length);
-                const range = new vscode.Range(start, end);
-                const first = match[1];
-                const pathStr = (match[2] ?? '').replace(/^\//, '');
-                const pathSegs = pathStr ? pathStr.split('/') : [];
-                let navArgs: Record<string, unknown>;
-                let tooltip: string;
-                if (first.toLowerCase() === 'load' && pathSegs.length > 0) {
-                    navArgs = { specimen: pathSegs[0] };
-                    tooltip = `Open ${pathSegs[0]} in HRW`;
-                } else {
-                    navArgs = { stage: first, path: pathSegs };
-                    tooltip = pathSegs.length > 0
-                        ? `Navigate to ${first} / ${pathSegs.join('/')}`
-                        : `Switch to ${first} tab`;
-                }
-                const args = encodeURIComponent(JSON.stringify([navArgs]));
-                const target = vscode.Uri.parse(`command:hrw.navigate?${args}`);
-                const link = new vscode.DocumentLink(range, target);
-                link.tooltip = tooltip;
-                links.push(link);
-            }
-        }
-        return links;
-    }
 }
 
 /** Add breakpoints from the request. Accumulates per specimen; clears on specimen change. */

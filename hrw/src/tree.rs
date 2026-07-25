@@ -81,12 +81,11 @@ pub fn tree_ui(
     nav_to: &mut Option<String>,
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
-    open_path: Option<&[Seg]>,
 ) {
     // Start with an empty path — the root. Each recursive call to `node_ui`
     // pushes/pops one segment as it descends into children.
     let mut path: Vec<Seg> = Vec::new();
-    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index, open_path);
+    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index);
 }
 
 // Render one node of the JSON tree recursively.
@@ -118,20 +117,6 @@ pub fn tree_ui(
 // For Objects/Arrays, the CollapsingHeader already senses clicks (it's the
 // clickable header). For scalars, `leaf_ui` creates a sensed Label. Neither
 // caller adds a second `.interact()` call.
-
-/// True when this node's current `path` is a strict prefix of `open_path`
-/// (i.e. the node is an ancestor of the navigation target and should be
-/// forced open so the target becomes visible).
-fn should_force_open(path: &[Seg], open_path: Option<&[Seg]>) -> bool {
-    let Some(target) = open_path else { return false };
-    if path.len() >= target.len() { return false; }
-    path.iter().zip(target.iter()).all(|(a, b)| match (a, b) {
-        (Seg::Key(ka), Seg::Key(kb)) => ka == kb,
-        (Seg::Index(ia), Seg::Index(ib)) => ia == ib,
-        _ => false,
-    })
-}
-
 #[allow(clippy::too_many_arguments)]
 fn node_ui(
     ui: &mut egui::Ui,
@@ -144,40 +129,44 @@ fn node_ui(
     nav_to: &mut Option<String>,
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
-    open_path: Option<&[Seg]>,
 ) {
-    let force_open = should_force_open(path, open_path);
     ui.push_id(salt, |ui| match value {
+        // --- JSON Object: render as a collapsible header with children ---
         Value::Object(map) => {
+            // Show "key  {N}" as the header, where N = number of fields.
             let hint = format!("{{{}}}", map.len());
-            let mut ch = egui::CollapsingHeader::new(header(key, &hint))
-                .default_open(false);
-            if force_open {
-                ch = ch.open(Some(true));
-            }
-            let resp = ch.show(ui, |ui| {
+            let resp = egui::CollapsingHeader::new(header(key, &hint))
+                .default_open(false)
+                .show(ui, |ui| {
+                    // Recurse into each field. `enumerate` gives us the sibling
+                    // index for id-salting. `prev.and_then(|p| p.get(k))`
+                    // threads the previous stage's corresponding subtree down
+                    // to each child — if the previous stage had this same key,
+                    // its value is passed; otherwise None.
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index, open_path);
+                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index);
                         path.pop();
                     }
                 });
+            // The header response already senses clicks (it IS the clickable
+            // header) — do NOT re-interact it (that double-registers its id and
+            // muddies its own click handling). Left-click captures the container
+            // too, in addition to the header's built-in expand/collapse.
             if resp.header_response.clicked() {
                 *ask = Some(path.to_vec());
             }
             row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
         }
+        // --- JSON Array: same pattern as Object, but indexed by position ---
         Value::Array(arr) => {
             let hint = format!("[{}]", arr.len());
-            let mut ch = egui::CollapsingHeader::new(header(key, &hint))
-                .default_open(false);
-            if force_open {
-                ch = ch.open(Some(true));
-            }
-            let resp = ch.show(ui, |ui| {
+            let resp = egui::CollapsingHeader::new(header(key, &hint))
+                .default_open(false)
+                .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index, open_path);
+                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index);
                         path.pop();
                     }
                 });
@@ -362,66 +351,4 @@ fn def_annotation(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>)
 // is a size indicator like "{5}" for objects or "[3]" for arrays.
 fn header(key: &str, hint: &str) -> egui::RichText {
     egui::RichText::new(format!("{key}  {hint}")).monospace()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::bridge::Seg;
-
-    fn k(s: &str) -> Seg {
-        Seg::Key(s.to_string())
-    }
-
-    fn i(n: usize) -> Seg {
-        Seg::Index(n)
-    }
-
-    #[test]
-    fn force_open_none_target() {
-        assert!(!should_force_open(&[k("a")], None));
-    }
-
-    #[test]
-    fn force_open_empty_path_is_prefix() {
-        assert!(should_force_open(&[], Some(&[k("classes"), k("Gear")])));
-    }
-
-    #[test]
-    fn force_open_strict_prefix() {
-        let target = [k("classes"), k("Gear"), k("equations")];
-        assert!(should_force_open(&[k("classes")], Some(&target)));
-        assert!(should_force_open(&[k("classes"), k("Gear")], Some(&target)));
-    }
-
-    #[test]
-    fn force_open_exact_match_is_not_prefix() {
-        let target = [k("classes"), k("Gear")];
-        assert!(!should_force_open(&[k("classes"), k("Gear")], Some(&target)));
-    }
-
-    #[test]
-    fn force_open_longer_path_is_not_prefix() {
-        let target = [k("classes")];
-        assert!(!should_force_open(&[k("classes"), k("Gear")], Some(&target)));
-    }
-
-    #[test]
-    fn force_open_mismatch() {
-        let target = [k("classes"), k("Gear")];
-        assert!(!should_force_open(&[k("components")], Some(&target)));
-    }
-
-    #[test]
-    fn force_open_index_segments() {
-        let target = [k("equations"), i(2)];
-        assert!(should_force_open(&[k("equations")], Some(&target)));
-        assert!(!should_force_open(&[k("equations"), i(0)], Some(&target)));
-    }
-
-    #[test]
-    fn force_open_mixed_seg_types_never_match() {
-        let target = [k("0")];
-        assert!(!should_force_open(&[i(0)], Some(&target)));
-    }
 }

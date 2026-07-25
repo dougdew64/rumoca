@@ -289,25 +289,6 @@ impl StageKind {
             StageKind::Simulation => "Simulation",
         }
     }
-
-    /// Parse a stage name (case-insensitive, accepts both tab labels and URI
-    /// slug forms like "index_reduction" or "solve_lowering").
-    pub fn from_name(s: &str) -> Option<Self> {
-        match s.to_ascii_lowercase().replace(' ', "_").as_str() {
-            "parse" => Some(Self::Parse),
-            "resolve" => Some(Self::Resolve),
-            "instantiate" => Some(Self::Instantiate),
-            "typecheck" => Some(Self::Typecheck),
-            "flatten" => Some(Self::Flatten),
-            "structural" => Some(Self::Structural),
-            "index_reduction" => Some(Self::IndexReduction),
-            "initialization" => Some(Self::Initialization),
-            "events" => Some(Self::Events),
-            "solve_lowering" => Some(Self::SolveLowering),
-            "simulation" => Some(Self::Simulation),
-            _ => None,
-        }
-    }
 }
 
 /// The ten pipeline-stage results as one bundle, used for progressive streaming.
@@ -2680,17 +2661,6 @@ mod tests {
         }
         let unique: std::collections::HashSet<&&str> = names.iter().collect();
         assert_eq!(unique.len(), names.len(), "duplicate stage names in ALL");
-    }
-
-    #[test]
-    fn stage_kind_from_name_round_trips() {
-        for &stage in StageKind::ALL {
-            let name = stage.name();
-            assert_eq!(StageKind::from_name(name), Some(stage), "round-trip failed for {name}");
-        }
-        assert_eq!(StageKind::from_name("index_reduction"), Some(StageKind::IndexReduction));
-        assert_eq!(StageKind::from_name("PARSE"), Some(StageKind::Parse));
-        assert_eq!(StageKind::from_name("nonexistent"), None);
     }
 }
 

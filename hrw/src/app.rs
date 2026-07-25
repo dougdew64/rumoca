@@ -197,9 +197,6 @@ pub struct App {
     // the bottom status bar.
     ask_seq: u64,
     bridge_status: Option<String>,
-    /// When set, the tree inspector forces open all nodes along this path
-    /// (deep link navigation from tour documents). Cleared after one frame.
-    pending_nav_path: Option<Vec<Seg>>,
 
     // ---- 7. Panels and windows toggled from the menu bar ----
     // `show_left_panel` / `show_right_panel` control whether the side panels
@@ -370,7 +367,6 @@ impl App {
             nav_error: None,
             ask_seq: 0,
             bridge_status: None,
-            pending_nav_path: None,
             show_left_panel: true,
             show_right_panel: true,
             show_settings: false,
@@ -538,41 +534,6 @@ impl App {
     ///   carries partial results so the tab colors update incrementally (you
     ///   see Parse go green, then Resolve, etc.) while compilation continues.
     ///   We must NOT touch `compiling` or `stage` here — the pipeline isn't done.
-    /// Poll for a navigate request from a tour deep link (written by the VS
-    /// Code extension when the user clicks an `hrw://` link in a markdown doc).
-    /// Switches to the requested stage tab and stores the JSON path so the tree
-    /// inspector forces those nodes open this frame.
-    fn drain_navigate_requests(&mut self) {
-        if let Some(req) = bridge::read_navigate_request() {
-            if let Some(name) = &req.specimen {
-                let target = format!("{name}.mo");
-                if let Some(path) = self.files.iter().find(|p| {
-                    p.file_name().and_then(|f| f.to_str()) == Some(&target)
-                }) {
-                    let already_loaded = self.selected.as_ref() == Some(path);
-                    if !already_loaded {
-                        let path = path.clone();
-                        self.open(path);
-                    }
-                }
-            }
-            if let Some(stage) = req.stage.as_deref().and_then(StageKind::from_name) {
-                self.stage = stage;
-                self.stage_clicked = true;
-                self.viewing_log = false;
-                self.nav.clear();
-                let segs: Vec<Seg> = req.path.iter().map(|s| {
-                    if let Ok(i) = s.parse::<usize>() {
-                        Seg::Index(i)
-                    } else {
-                        Seg::Key(s.clone())
-                    }
-                }).collect();
-                self.pending_nav_path = if segs.is_empty() { None } else { Some(segs) };
-            }
-        }
-    }
-
     /// - **`Compiled`**: sent once when the full pipeline finishes. This is
     ///   where we clear `compiling`, set `stage` to the furthest clean result,
     ///   publish all IRs to the bridge, and fit the custom-view cameras.
@@ -1590,10 +1551,8 @@ impl eframe::App for App {
     /// then left/right, and `CentralPanel` fills whatever remains. This is
     /// why the panels appear in this specific order in the code.
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // First thing every frame: check for results from the worker thread
-        // and for navigate requests from tour deep links.
+        // First thing every frame: check for results from the worker thread.
         self.drain_worker();
-        self.drain_navigate_requests();
 
         // ---- Top menu bar ----
         // `Panel::top` claims a strip at the top of the window. Its string ID
@@ -2279,9 +2238,8 @@ impl eframe::App for App {
                         Some(value) => {
                             let label = self.model.as_deref().unwrap_or("model");
                             let prev = self.previous_stage_value();
-                            let op = self.pending_nav_path.as_deref();
                             egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, op);
+                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index);
                             });
                         }
                         None if stage.note.is_none() => {
@@ -2319,7 +2277,7 @@ impl eframe::App for App {
 
                 let entry = self.nav.last().unwrap();
                 egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index, None);
+                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index);
                 });
             }
         });
@@ -2357,10 +2315,6 @@ impl eframe::App for App {
         } else if want_stage_ask {
             self.emit_focus(Focus::Stage);
         }
-
-        // Deep-link paths are one-shot: force the tree open this frame, then
-        // clear so subsequent frames don't keep overriding user interaction.
-        self.pending_nav_path = None;
     }
 }
 
@@ -2488,7 +2442,6 @@ impl App {
             nav_error: None,
             ask_seq: 0,
             bridge_status: None,
-            pending_nav_path: None,
             show_left_panel: true,
             show_right_panel: true,
             show_settings: false,
