@@ -965,6 +965,7 @@ impl App {
                         .link_cursor(link_group, [true, false])
                         .height(ui.available_height() * 0.65);
                 }
+                let tracked = self.tracked_identifier.as_deref();
                 trajectory_plot.show(ui, |plot_ui| {
                     for (i, (name, series)) in data.names.iter().zip(&data.data).enumerate() {
                         let segments = if data.has_discontinuities {
@@ -972,14 +973,20 @@ impl App {
                         } else {
                             std::iter::once(0..series.len()).collect()
                         };
-                        let color = series_color(i);
+                        let is_tracked = tracked == Some(name.as_str());
+                        let color = if is_tracked {
+                            egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)
+                        } else {
+                            series_color(i)
+                        };
+                        let width = if is_tracked { 3.0 } else { 1.0 };
                         for seg in segments {
                             let pts: PlotPoints = data.times[seg.clone()]
                                 .iter()
                                 .zip(&series[seg])
                                 .map(|(&t, &y)| [t, y])
                                 .collect();
-                            plot_ui.line(Line::new(name.clone(), pts).color(color));
+                            plot_ui.line(Line::new(name.clone(), pts).color(color).width(width));
                         }
                     }
                 });
@@ -1208,6 +1215,7 @@ impl App {
 
                 ui.add_space(8.0);
 
+                let tracked = self.tracked_identifier.as_deref();
                 for (cat, eqs) in &sheet.groups {
                     ui.add_space(6.0);
                     ui.label(egui::RichText::new(format!("{} ({})", cat.label(), eqs.len())).strong());
@@ -1215,7 +1223,14 @@ impl App {
                     ui.add_space(2.0);
                     for eq in eqs {
                         let selected = self.highlighted_eq_row == Some(eq.index);
-                        let text = egui::RichText::new(&eq.text).monospace();
+                        let eq_has_tracked = tracked
+                            .is_some_and(|t| eq.text.contains(t));
+                        let mut text = egui::RichText::new(&eq.text).monospace();
+                        if eq_has_tracked {
+                            text = text.background_color(egui::Color32::from_rgba_premultiplied(
+                                0xFF, 0xD5, 0x4F, 0x40,
+                            ));
+                        }
                         if has_incidence {
                             let resp = ui.selectable_label(selected, text);
                             if resp.clicked() {
@@ -1246,7 +1261,17 @@ impl App {
                         ui.end_row();
 
                         for v in &sheet.variables {
-                            ui.label(egui::RichText::new(&v.name).monospace());
+                            let is_tracked = tracked == Some(v.name.as_str());
+                            let highlight = if is_tracked {
+                                egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40)
+                            } else {
+                                egui::Color32::TRANSPARENT
+                            };
+                            let mut name_rt = egui::RichText::new(&v.name).monospace();
+                            if is_tracked {
+                                name_rt = name_rt.strong().background_color(highlight);
+                            }
+                            ui.label(name_rt);
                             ui.label(v.kind);
                             ui.label(v.start.as_deref().unwrap_or("—"));
                             ui.label(v.unit.as_deref().unwrap_or(""));
@@ -1276,6 +1301,10 @@ impl App {
 
         let highlighted_line = self.highlighted_source_line;
         let highlighted_eq = self.highlighted_eq_row;
+        let tracked_line = self.tracked_identifier.as_deref()
+            .and_then(|name| self.identifier_index.as_ref()
+                .and_then(|idx| idx.variables.get(name))
+                .map(|v| v.source_line));
 
         // Collect equation indices associated with the highlighted source line.
         let line_eq_indices: Vec<usize> = highlighted_line
@@ -1327,6 +1356,7 @@ impl App {
                 for sl in &sheet.source_lines {
                     let is_selected = highlighted_line == Some(sl.line_number);
                     let is_eq_linked = eq_source_lines.contains(&sl.line_number);
+                    let is_tracked = tracked_line == Some(sl.line_number);
                     let has_equations = !sl.equation_indices.is_empty();
 
                     let line_num = format!("{:>4} ", sl.line_number);
@@ -1334,7 +1364,11 @@ impl App {
                         format!("{}{}", line_num, &sl.text),
                     ).monospace();
 
-                    if is_eq_linked {
+                    if is_tracked {
+                        text = text.background_color(
+                            egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                        );
+                    } else if is_eq_linked {
                         text = text.background_color(
                             egui::Color32::from_rgba_premultiplied(100, 180, 255, 40),
                         );
@@ -2134,6 +2168,26 @@ impl eframe::App for App {
                     ui.separator();
                 }
 
+                // Tracking indicator: shows which identifier is being tracked.
+                if self.tracked_identifier.is_some() {
+                    let name = self.tracked_identifier.clone().unwrap();
+                    let mut clear = false;
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new(format!("Tracking: {name}"))
+                                .monospace()
+                                .color(egui::Color32::from_rgb(0xFF, 0xD5, 0x4F))
+                        );
+                        if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
+                            clear = true;
+                        }
+                    });
+                    if clear {
+                        self.tracked_identifier = None;
+                    }
+                    ui.separator();
+                }
+
                 // The report stages (Structural + Index reduction) offer a custom
                 // BLT spy-plot alongside the generic tree; every other stage is
                 // tree-only.
@@ -2181,7 +2235,7 @@ impl eframe::App for App {
                     });
                     if let Some(plot) = cached {
                         ui.weak(plot.caption());
-                        plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture);
+                        plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(the structural report has no BLT blocks to plot)");
                     }
@@ -2191,7 +2245,9 @@ impl eframe::App for App {
                     });
                     if let Some(mat) = cached {
                         ui.weak(mat.caption());
-                        mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture, self.highlighted_eq_row);
+                        let tracked_col = self.tracked_identifier.as_deref()
+                            .and_then(|name| mat.column_index(name));
+                        mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture, self.highlighted_eq_row, tracked_col);
                     } else {
                         ui.weak("(no incidence data in this report)");
                     }
@@ -2280,7 +2336,7 @@ impl eframe::App for App {
                         self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
                     });
                     if let Some(view) = cached {
-                        view.ui(ui);
+                        view.ui(ui, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(no reduction data in this report)");
                     }

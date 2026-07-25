@@ -171,9 +171,7 @@ impl ReductionView {
     /// 3. Demoted states — which variables were demoted (if any)
     /// 4. Differentiated equations — manufactured equations (if any)
     /// 5. Trivial eliminations — substituted-away variables (if any)
-    pub fn ui(&self, ui: &mut egui::Ui) {
-        // `ScrollArea::both()` enables both vertical and horizontal scrolling.
-        // `auto_shrink(false)` fills the available panel space.
+    pub fn ui(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
         egui::ScrollArea::both()
             .id_salt("reduction_view")
             .auto_shrink(false)
@@ -181,20 +179,17 @@ impl ReductionView {
                 self.summary(ui);
                 ui.add_space(8.0);
                 self.funnel_steps(ui);
-                // Conditional sections — only shown when there is data to display.
-                // An index-1 model might have no demotions, no differentiations,
-                // and no eliminations.
                 if !self.demoted_states.is_empty() {
                     ui.add_space(8.0);
-                    self.demoted_section(ui);
+                    self.demoted_section(ui, tracked);
                 }
                 if !self.differentiated_rows.is_empty() {
                     ui.add_space(8.0);
-                    self.differentiated_section(ui);
+                    self.differentiated_section(ui, tracked);
                 }
                 if !self.eliminations.is_empty() {
                     ui.add_space(8.0);
-                    self.elimination_section(ui);
+                    self.elimination_section(ui, tracked);
                 }
             });
     }
@@ -279,7 +274,7 @@ impl ReductionView {
 
     // List of demoted state variables — these were differential variables in the
     // original DAE but were reclassified as algebraic by the reduction funnel.
-    fn demoted_section(&self, ui: &mut egui::Ui) {
+    fn demoted_section(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
         ui.strong(format!("Demoted states ({})", self.demoted_states.len()));
         ui.add_space(2.0);
         ui.label(
@@ -291,12 +286,19 @@ impl ReductionView {
         );
         ui.add_space(2.0);
         for name in &self.demoted_states {
+            let is_tracked = tracked == Some(name.as_str());
             ui.horizontal(|ui| {
                 ui.label(
                     egui::RichText::new("\u{2022}")
                         .color(ui.visuals().warn_fg_color),
                 );
-                ui.label(egui::RichText::new(name).monospace());
+                let mut rt = egui::RichText::new(name).monospace();
+                if is_tracked {
+                    rt = rt.strong().background_color(
+                        egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                    );
+                }
+                ui.label(rt);
             });
         }
     }
@@ -305,7 +307,7 @@ impl ReductionView {
     // constraints. When a state variable's original derivative equation is
     // disrupted by demotion, the compiler differentiates a constraint to
     // produce a replacement.
-    fn differentiated_section(&self, ui: &mut egui::Ui) {
+    fn differentiated_section(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
         ui.strong(format!(
             "Differentiated equations ({})",
             self.differentiated_rows.len()
@@ -327,7 +329,14 @@ impl ReductionView {
                 ui.label(egui::RichText::new("equation origin").weak());
                 ui.end_row();
                 for row in &self.differentiated_rows {
-                    ui.label(egui::RichText::new(&row.for_state).monospace());
+                    let is_tracked = tracked == Some(row.for_state.as_str());
+                    let mut rt = egui::RichText::new(&row.for_state).monospace();
+                    if is_tracked {
+                        rt = rt.strong().background_color(
+                            egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                        );
+                    }
+                    ui.label(rt);
                     ui.label(egui::RichText::new(&row.equation_origin).monospace().weak());
                     ui.end_row();
                 }
@@ -337,7 +346,7 @@ impl ReductionView {
     // Table of trivially eliminated variables. When the system contains
     // equations like `z = y` (a single-unknown row or an alias), the variable
     // `z` can be replaced everywhere by `y`, reducing the system size.
-    fn elimination_section(&self, ui: &mut egui::Ui) {
+    fn elimination_section(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
         ui.strong(format!(
             "Trivial eliminations ({})",
             self.eliminations.len()
@@ -358,7 +367,14 @@ impl ReductionView {
                 ui.label(egui::RichText::new("replaced by").weak());
                 ui.end_row();
                 for elim in &self.eliminations {
-                    ui.label(egui::RichText::new(&elim.variable).monospace());
+                    let is_tracked = tracked == Some(elim.variable.as_str());
+                    let mut rt = egui::RichText::new(&elim.variable).monospace();
+                    if is_tracked {
+                        rt = rt.strong().background_color(
+                            egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                        );
+                    }
+                    ui.label(rt);
                     ui.label(egui::RichText::new(&elim.display).monospace().weak());
                     ui.end_row();
                 }

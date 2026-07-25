@@ -250,12 +250,17 @@ impl IncidenceMatrix {
     /// - Always: filled cells (the actual incidence entries)
     /// - zoom >= 6: grid lines between cells
     /// - zoom >= 16: axis labels (equation names on left, unknown names on top)
+    pub fn column_index(&self, name: &str) -> Option<usize> {
+        self.unknown_names.iter().position(|n| n == name)
+    }
+
     pub fn ui(
         &self,
         ui: &mut egui::Ui,
         canvas: &mut Canvas,
         capture: &mut Option<Vec<Seg>>,
         highlighted_row: Option<usize>,
+        highlighted_col: Option<usize>,
     ) {
         // Bounds include the label anchor region above the matrix (labels sit
         // at y = -0.6). The fit_vertical_bias (0.1) reserves 10% of the view
@@ -312,6 +317,18 @@ impl IncidenceMatrix {
                     egui::vec2(self.n_var as f32, 1.0),
                 );
                 let highlight_color = crate::colors::INCIDENCE_HOVER.gamma_multiply(0.25);
+                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
+            }
+        }
+
+        // --- Persistent column highlight from tracked identifier ---
+        if let Some(hc) = highlighted_col {
+            if hc < self.n_var {
+                let band = egui::Rect::from_min_size(
+                    egui::pos2(hc as f32, 0.0),
+                    egui::vec2(1.0, self.n_eq as f32),
+                );
+                let highlight_color = egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30);
                 painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
             }
         }

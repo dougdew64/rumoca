@@ -82,23 +82,24 @@ Hover shows the full qualified flat name. Active tracking uses gold highlight.
 **Files:** `identifier_index.rs` (`clickable_spans`, `find_whole_identifier`),
 `app.rs` (`tracked_identifier` field, source view rendering)
 
-### Step 4: Wire highlighting — one stage at a time
+### Step 4: Wire highlighting — one stage at a time ✓ (6 of 11)
 
-Each sub-step is a separate commit.
+Gold highlight (rgba `0xFF, 0xD5, 0x4F`) used consistently across all views.
+A tracking indicator bar ("Tracking: name ✕") appears above the stage content.
 
-| Order | Stage view | Highlight mechanism |
-|-------|-----------|-------------------|
-| 4a | Equation Sheet | Highlight equations containing the variable; highlight its row in the classification table |
-| 4b | Incidence Matrix | Highlight the column for the matched unknown |
-| 4c | Simulation plot | Bold/select the matching time series |
-| 4d | Spy plot | Highlight the BLT block containing the variable |
-| 4e | Source Map (Flatten) | Highlight the source line and equations (existing cross-link, adapted) |
-| 4f | Tree inspector (Parse) | Expand and highlight nodes whose `def_id` matches |
-| 4g | Tree inspector (Resolve) | Same — highlight the resolved `def_id` node |
-| 4h | Tree inspector (Instantiate) | Highlight the instance node |
-| 4i | Tree inspector (Typecheck) | Highlight the typed node |
-| 4j | Reduction view | Highlight if the variable was differentiated or demoted |
-| 4k | Remaining views (Init, Events, Solve Lowering) | Highlight relevant entries |
+| Order | Stage view | Highlight mechanism | Status |
+|-------|-----------|-------------------|--------|
+| 4a | Equation Sheet | Background-highlight equations containing the variable; bold+highlight its row in the classification grid | ✓ |
+| 4b | Incidence Matrix | Persistent gold column band for the matched unknown (via `column_index` + `highlighted_col`) | ✓ |
+| 4c | Simulation plot | Gold color + 3× line width for the matching time series | ✓ |
+| 4d | Spy plot | Gold outline stroke around the BLT block containing the variable | ✓ |
+| 4e | Source Map (Flatten) | Gold background on the source line declaring the tracked variable | ✓ |
+| 4f | Tree inspector (Parse) | Deferred — tree-walk highlighting requires threading `def_id` through recursive renderer |  |
+| 4g | Tree inspector (Resolve) | Deferred (same as 4f) |  |
+| 4h | Tree inspector (Instantiate) | Deferred (same as 4f) |  |
+| 4i | Tree inspector (Typecheck) | Deferred (same as 4f) |  |
+| 4j | Reduction view | Gold background on demoted states, differentiated-equation rows, and eliminated variables | ✓ |
+| 4k | Remaining views (Init, Events, Solve Lowering) | Deferred — low data density for identifier tracking |  |
 
 ### Step 5: Bidirectional highlighting
 

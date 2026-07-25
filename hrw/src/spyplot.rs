@@ -164,7 +164,7 @@ impl Plot {
     ///
     /// Sets `capture` to a bridge key-path (`blocks[i]`) when the user clicks
     /// a block, enabling the bridge to write a focus file for that block.
-    pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>) {
+    pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>, tracked: Option<&str>) {
         // World bounds: an n x n grid starting at origin.
         let n = self.n as f32;
         let bounds = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(n, n));
@@ -224,6 +224,25 @@ impl Plot {
                     egui::Stroke::new(2.0, matched_color),
                     egui::StrokeKind::Outside,
                 );
+            }
+        }
+
+        // --- Tracked identifier block highlight ---
+        if let Some(name) = tracked {
+            for block in &self.blocks {
+                if block.unknowns.iter().any(|u| u == name) {
+                    let block_world = egui::Rect::from_min_size(
+                        egui::pos2(block.start as f32, block.start as f32),
+                        egui::vec2(block.size as f32, block.size as f32),
+                    );
+                    let block_screen = view.to_screen_rect(block_world);
+                    painter.rect_stroke(
+                        block_screen,
+                        egui::CornerRadius::ZERO,
+                        egui::Stroke::new(2.5, egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)),
+                        egui::StrokeKind::Outside,
+                    );
+                }
             }
         }
 
