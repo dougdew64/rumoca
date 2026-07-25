@@ -530,12 +530,43 @@ lives), using the precedence-aware `expr_format` pretty-printer. Equations are
 grouped by origin category (component, connection, flow conservation, binding,
 event) with counts and descriptions. Below the equations, a striped grid shows the
 variable classification: name, kind (state/algebraic/parameter/...), start value,
-and unit. The Flatten tab gains sub-tabs: "Equations" (this sheet) and "Tree" (the
+and unit. The Flatten tab gains three sub-tabs: "Equations" (the sheet),
+"Source Map" (bidirectional source ↔ equation traceability), and "Tree" (the
 generic serde-value inspector). Clicking an equation highlights its row in the
 incidence matrix and auto-switches to the Structural / Incidence view (cross-link
-via `App::highlighted_eq_row`). Data model: `EquationSheet` struct with
-`FormattedEquation` entries and `ClassifiedVariable` entries, built by
-`equation_sheet::build(&dae)`.
+via `App::highlighted_eq_row`).
+
+**Source-to-equation traceability** (#28): when the specimen source is available,
+each equation is linked to its originating source line(s) via a three-layer
+matching strategy:
+
+1. **Span-based** (`SourceId` + byte offset): direct specimen equations whose
+   `span` points to the specimen file (not an MSL library file).
+2. **Origin-based** (connect matching): connection/flow equations are matched to
+   their `connect()` statements by parsing the origin string and comparing
+   connector paths against `scan_connect_statements()` results.
+3. **Text search**: component equations matched to declaration lines, bindings
+   matched to variable declarations.
+
+An equation can map to **multiple source lines** when it arises from the
+interaction of several `connect()` statements. Modelica `connect` creates
+equivalence classes: when `connect(A, B)` and `connect(C, A)` share a node, the
+compiler generates a transitive equality `B.phi = C.phi` and a multi-connector
+flow sum `A.tau + B.tau + C.tau = 0` — both are consequences of *both* connect
+statements, and the source map links them to both lines. Direct equalities
+(both connectors from one connect) map to a single line.
+
+The "Source Map" sub-tab shows a split pane: Modelica source on the left (with
+category color bars in the gutter for lines that produced equations) and the flat
+equations on the right. Clicking a source line filters equations to those it
+produced; clicking an equation highlights its source line(s). Category colors
+(component=blue, connection=orange, flow=red, binding=green, event=purple)
+visually distinguish equation origins in both panes.
+
+Data model: `EquationSheet` struct with `FormattedEquation` entries (each carrying
+a `source_lines: Vec<u32>`), `ClassifiedVariable` entries, and `SourceLine`
+entries (reverse mapping from source lines to equation indices), built by
+`equation_sheet::build(&dae, source_info)`.
 
 
 ## 8. The Claude bridge

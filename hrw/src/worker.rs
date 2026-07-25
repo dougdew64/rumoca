@@ -1122,7 +1122,10 @@ impl WorkerState {
 
                 let eq_sheet = match result {
                     Some(PhaseResult::Success(cr)) => {
-                        Some(crate::equation_sheet::build(&cr.dae))
+                        Some(crate::equation_sheet::build(
+                            &cr.dae,
+                            Some((&uri, &source)),
+                        ))
                     }
                     _ => None,
                 };

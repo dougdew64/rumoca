@@ -87,11 +87,12 @@ enum StructuralView {
     Tree,
 }
 
-/// Sub-tab selector for the Flatten stage: readable equation sheet or the
-/// generic serde tree.
+/// Sub-tab selector for the Flatten stage: readable equation sheet, source
+/// traceability map, or the generic serde tree.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum FlattenView {
     Equations,
+    SourceMap,
     Tree,
 }
 
@@ -224,6 +225,7 @@ pub struct App {
     // (pan/zoom camera state).
     flatten_view: FlattenView,
     highlighted_eq_row: Option<usize>,
+    highlighted_source_line: Option<u32>,
     structural_view: StructuralView,
     spy_canvas: Canvas,
     incidence_canvas: Canvas,
@@ -374,6 +376,7 @@ impl App {
             selected_field: None,
             flatten_view: FlattenView::Equations,
             highlighted_eq_row: None,
+            highlighted_source_line: None,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
@@ -483,6 +486,7 @@ impl App {
         self.def_index = BTreeMap::new();
         self.cached_equation_sheet = None;
         self.highlighted_eq_row = None;
+        self.highlighted_source_line = None;
         // Reset the "user has clicked a stage" flag so the right panel starts
         // with specimen info, not stage-specific help.
         self.stage_clicked = false;
@@ -1287,6 +1291,228 @@ impl App {
             }
         }
     }
+
+    fn source_map_ui(&mut self, ui: &mut egui::Ui) {
+        let Some(sheet) = &self.cached_equation_sheet else {
+            ui.weak("(no equation sheet)");
+            return;
+        };
+        if sheet.source_lines.is_empty() {
+            ui.weak("(no source mapping available)");
+            return;
+        }
+
+        let highlighted_line = self.highlighted_source_line;
+        let highlighted_eq = self.highlighted_eq_row;
+
+        // Collect equation indices associated with the highlighted source line.
+        let line_eq_indices: Vec<usize> = highlighted_line
+            .and_then(|ln| sheet.source_lines.get(ln as usize - 1))
+            .map(|sl| sl.equation_indices.clone())
+            .unwrap_or_default();
+
+        // Collect source lines associated with the highlighted equation.
+        let eq_source_lines: Vec<u32> = if let Some(eq_idx) = highlighted_eq {
+            sheet.groups.iter()
+                .flat_map(|(_, eqs)| eqs)
+                .find(|eq| eq.index == eq_idx)
+                .map(|eq| eq.source_lines.clone())
+                .unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+
+        let mut clicked_line = None;
+        let mut clicked_eq = None;
+
+        let avail = ui.available_size();
+        let left_width = (avail.x * 0.45).max(200.0);
+
+        // Use StripBuilder-style layout: a left child_ui for source, a
+        // separator, then the remaining space for equations. Both children
+        // get the full available height.
+        let full_rect = ui.available_rect_before_wrap();
+        let left_rect = egui::Rect::from_min_size(
+            full_rect.min,
+            egui::vec2(left_width, full_rect.height()),
+        );
+        let sep_x = left_rect.max.x;
+        let right_rect = egui::Rect::from_min_max(
+            egui::pos2(sep_x + 6.0, full_rect.min.y),
+            full_rect.max,
+        );
+
+        // ---- Left pane: source code ----
+        let mut left_ui = ui.new_child(egui::UiBuilder::new().max_rect(left_rect));
+        left_ui.label(egui::RichText::new("Modelica source").strong());
+        left_ui.weak("Click a line to see which equations it produced.");
+        left_ui.add_space(4.0);
+
+        egui::ScrollArea::both()
+            .id_salt("source_map_source")
+            .auto_shrink(false)
+            .show(&mut left_ui, |ui| {
+                for sl in &sheet.source_lines {
+                    let is_selected = highlighted_line == Some(sl.line_number);
+                    let is_eq_linked = eq_source_lines.contains(&sl.line_number);
+                    let has_equations = !sl.equation_indices.is_empty();
+
+                    let line_num = format!("{:>4} ", sl.line_number);
+                    let mut text = egui::RichText::new(
+                        format!("{}{}", line_num, &sl.text),
+                    ).monospace();
+
+                    if is_eq_linked {
+                        text = text.background_color(
+                            egui::Color32::from_rgba_premultiplied(100, 180, 255, 40),
+                        );
+                    }
+
+                    if has_equations {
+                        if let Some(cat) = sl.category {
+                            let color = cat.color().gamma_multiply(0.7);
+                            let bar_rect = ui.horizontal(|ui| {
+                                let resp = ui.selectable_label(is_selected, text);
+                                if resp.clicked() {
+                                    clicked_line = Some(if is_selected {
+                                        None
+                                    } else {
+                                        Some(sl.line_number)
+                                    });
+                                }
+                                resp.rect
+                            }).inner;
+                            let painter = ui.painter();
+                            let bar = egui::Rect::from_min_size(
+                                bar_rect.left_top(),
+                                egui::vec2(3.0, bar_rect.height()),
+                            );
+                            painter.rect_filled(bar, egui::CornerRadius::ZERO, color);
+                        } else {
+                            let resp = ui.selectable_label(is_selected, text);
+                            if resp.clicked() {
+                                clicked_line = Some(if is_selected {
+                                    None
+                                } else {
+                                    Some(sl.line_number)
+                                });
+                            }
+                        }
+                    } else {
+                        ui.label(text);
+                    }
+                }
+            });
+
+        // Separator line between the two panes.
+        ui.painter().vline(
+            sep_x + 2.0,
+            full_rect.y_range(),
+            ui.visuals().widgets.noninteractive.bg_stroke,
+        );
+
+        // ---- Right pane: equations linked to the selected source line ----
+        let mut right_ui = ui.new_child(egui::UiBuilder::new().max_rect(right_rect));
+        right_ui.label(egui::RichText::new("Flat equations").strong());
+        if let Some(ln) = highlighted_line {
+            let count = line_eq_indices.len();
+            if count > 0 {
+                right_ui.weak(format!(
+                    "{count} equation{} from line {ln}",
+                    if count == 1 { "" } else { "s" },
+                ));
+            } else {
+                right_ui.weak(format!("Line {ln} — no equations"));
+            }
+        } else {
+            right_ui.weak("Click a source line to see its equations.");
+        }
+        right_ui.add_space(4.0);
+
+        egui::ScrollArea::both()
+            .id_salt("source_map_equations")
+            .auto_shrink(false)
+            .show(&mut right_ui, |ui| {
+                for (cat, eqs) in &sheet.groups {
+                    let visible_eqs: Vec<_> = if line_eq_indices.is_empty() {
+                        eqs.iter().collect()
+                    } else {
+                        eqs.iter()
+                            .filter(|eq| line_eq_indices.contains(&eq.index))
+                            .collect()
+                    };
+                    if visible_eqs.is_empty() {
+                        continue;
+                    }
+
+                    ui.add_space(4.0);
+                    ui.label(
+                        egui::RichText::new(format!("{} ({})", cat.label(), visible_eqs.len()))
+                            .strong()
+                            .color(cat.color()),
+                    );
+                    ui.add_space(2.0);
+
+                    for eq in visible_eqs {
+                        let is_selected = highlighted_eq == Some(eq.index);
+                        let is_line_linked = !line_eq_indices.is_empty()
+                            && line_eq_indices.contains(&eq.index);
+
+                        let mut text = egui::RichText::new(&eq.text).monospace();
+                        if is_line_linked {
+                            text = text.color(cat.color());
+                        }
+
+                        let resp = ui.selectable_label(is_selected, text);
+                        if resp.clicked() {
+                            clicked_eq = Some(if is_selected {
+                                None
+                            } else {
+                                Some(eq.index)
+                            });
+                        }
+                        if eq.source_lines.is_empty() {
+                            resp.on_hover_text(format!(
+                                "f_x[{}] — {} (library)",
+                                eq.index, &eq.origin,
+                            ));
+                        } else if eq.source_lines.len() == 1 {
+                            resp.on_hover_text(format!(
+                                "f_x[{}] — {} (line {})",
+                                eq.index, &eq.origin, eq.source_lines[0],
+                            ));
+                        } else {
+                            let lines_str: Vec<String> = eq.source_lines.iter()
+                                .map(|ln| ln.to_string())
+                                .collect();
+                            resp.on_hover_text(format!(
+                                "f_x[{}] — {} (lines {})",
+                                eq.index, &eq.origin, lines_str.join(", "),
+                            ));
+                        }
+                    }
+                }
+            });
+
+        // Consume the full rect so the parent layout knows this space is used.
+        ui.allocate_rect(full_rect, egui::Sense::hover());
+
+        if let Some(new_val) = clicked_line {
+            self.highlighted_source_line = new_val;
+            self.highlighted_eq_row = None;
+        }
+        if let Some(new_val) = clicked_eq {
+            self.highlighted_eq_row = new_val;
+            if let Some(eq_idx) = new_val {
+                let sheet = self.cached_equation_sheet.as_ref().unwrap();
+                let line = sheet.groups.iter()
+                    .flat_map(|(_, eqs)| eqs)
+                    .find(|eq| eq.index == eq_idx)
+                    .and_then(|eq| eq.source_lines.first().copied());
+                self.highlighted_source_line = line;
+            }
+        }
+    }
 }
 
 impl eframe::App for App {
@@ -1755,9 +1981,14 @@ impl eframe::App for App {
                 // The Flatten stage offers an equation sheet alongside the tree.
                 let flatten_ready =
                     self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
+                let has_source_map = flatten_ready
+                    && self.cached_equation_sheet.as_ref().is_some_and(|s| !s.source_lines.is_empty());
                 if flatten_ready {
                     ui.horizontal(|ui| {
                         ui.selectable_value(&mut self.flatten_view, FlattenView::Equations, "Equations");
+                        if has_source_map {
+                            ui.selectable_value(&mut self.flatten_view, FlattenView::SourceMap, "Source Map");
+                        }
                         ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
                     });
                     ui.separator();
@@ -1978,6 +2209,8 @@ impl eframe::App for App {
                     }
                 } else if flatten_ready && self.flatten_view == FlattenView::Equations {
                     self.equation_sheet_ui(ui);
+                } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
+                    self.source_map_ui(ui);
                 } else {
                     let stage = self.current_stage();
                     match &stage.value {
@@ -2197,6 +2430,7 @@ impl App {
             selected_field: None,
             flatten_view: FlattenView::Equations,
             highlighted_eq_row: None,
+            highlighted_source_line: None,
             structural_view: StructuralView::SpyPlot,
             spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),

@@ -98,13 +98,14 @@ equations in readable math instead of JSON.
 Bridges the OO/flat divide — the conceptual crux of the tour.
 Depends on Phase 1 (needs readable equations to link to).
 
-- [ ] Use Rumoca's `location` spans to trace each flattened equation back
-  to its Modelica source line(s)
-- [ ] Add a split-pane or linked view: Modelica source ↔ equation sheet
-- [ ] Click a source line → highlight equations it generated; click an
+- [x] Use Rumoca's `span` byte offsets to trace each flattened equation
+  back to its Modelica source line
+- [x] Add a split-pane linked view: Modelica source ↔ equation sheet
+  ("Source Map" sub-tab on Flatten)
+- [x] Click a source line → highlight equations it generated; click an
   equation → highlight source line(s)
-- [ ] Color-code by origin type: `connect` equations, component equations,
-  parameter bindings
+- [x] Color-code by origin type: `connect` equations, component equations,
+  parameter bindings (category colors on group headers and source gutter)
 
 **Milestone:** click `connect(gear.flange_b, load.flange_a)` in the source
 pane → see the two conservation equations it generated highlighted in the
