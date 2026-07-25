@@ -99,12 +99,12 @@ specimens without leaving debug mode.
 
 ## Implementation plan
 
-Work is ordered so that each step produces a buildable, testable intermediate.
-The structural changes (steps 1–4) come first; tour content and interactivity
-(steps 5–6) follow. After step 6, the end-to-end tour is usable inside HRW
-and phase 4 can be completed.
+**All six steps completed 2026-07-25.** Steps 1–5 delivered the full structural
+and interactive UI. Step 6 (content walkthrough) is deferred to when Doug begins
+the learning effort — tour and narrative content will evolve through Q&A
+conversations alongside Cellier reading, not front-loaded.
 
-### Step 1: Add the mode enum and left-panel routing
+### Step 1: Add the mode enum and left-panel routing ✅
 
 - Add `UiMode` enum: `Tour`, `Specimen`, `Debug`.
 - Add `ui_mode: UiMode` field to `App` (default: `Specimen`).
@@ -114,7 +114,7 @@ and phase 4 can be completed.
   Specimen / Debug).
 - No new dependencies. No visual change yet in Tour mode (left panel is empty).
 
-### Step 2: Specimen mode — narrative pane
+### Step 2: Specimen mode — narrative pane ✅
 
 - Split the left panel into top third (existing specimen list) and bottom
   two-thirds (narrative display).
@@ -125,7 +125,7 @@ and phase 4 can be completed.
   list stays pinned at the top.
 - Tour mode left panel still empty (placeholder text).
 
-### Step 3: Tour mode — render the tour document
+### Step 3: Tour mode — render the tour document ✅
 
 - Embed the end-to-end tour via `include_str!`.
 - Render it in the left panel when `ui_mode == Tour`.
@@ -133,14 +133,14 @@ and phase 4 can be completed.
 - At this point all three modes are structurally complete: tour text on the
   left, specimen list + narrative on the left, or nothing on the left.
 
-### Step 4: Debug mode — specimen-switcher dropdown
+### Step 4: Debug mode — specimen-switcher dropdown ✅
 
 - Add a compact specimen dropdown (combo box) to the stage tabs header bar.
 - Visible in all modes but essential in debug mode (no specimen list visible).
 - Selecting a specimen from the dropdown loads and compiles it, same as
   clicking in the specimen list.
 
-### Step 5: Navigation links — make tour and narrative clickable
+### Step 5: Navigation links — make tour and narrative clickable ✅
 
 - Define a simple link scheme: `hrw://load/<Specimen>`,
   `hrw://stage/<StageName>`, `hrw://load/<Specimen>/<StageName>` (combined).
@@ -150,11 +150,13 @@ and phase 4 can be completed.
   things like "click the Parse tab" or "load BouncingBall".
 - Same link scheme works in specimen narratives.
 
-### Step 6: Tour polish and completion
+### Step 6: Tour polish and completion (deferred)
 
 - Walk through the end-to-end tour in tour mode. Fix any rendering issues,
   missing links, or navigation gaps discovered during the walkthrough.
-- This is the phase 4 close-out gate: Doug completes the full tour inside HRW.
+- **Deferred:** content walkthrough will happen alongside Doug's Cellier reading.
+  Tour and narrative content will evolve through Q&A conversations — they are
+  living documents, not deliverables to front-load.
 
 ---
 

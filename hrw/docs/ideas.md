@@ -47,7 +47,9 @@ tour take priority over unlinked items of the same severity.
 | #29 Solver stepping visualization | Simulation |
 | #30 Live solver stepping (LiveTrace) | Simulation |
 | #31 Revisit all simulator functionality | Simulation |
-| #32 In-app tour view | (all tours) |
+| #32 ~~In-app tour view~~ ✅ | (all tours) |
+| #34 Sub-view / tree-node links | (all tours) |
+| #35 Multiple tour documents + progress | (all tours) |
 | #33 Comprehensive tooltips | (all tours) |
 | #1, #4, #13, #23 | generic |
 
@@ -987,7 +989,16 @@ simulation-related features can deliver their full value.
 
 ## 32. In-app tour view — render guided tours inside HRW with clickable navigation
 
-**Tours:** all tours
+**✅ Implemented 2026-07-25.** Three UI modes (Tour/Specimen/Debug) with
+`egui_commonmark` rendering markdown in the left panel. Tour mode renders the
+end-to-end tour document with clickable `hrw://` navigation links that load
+specimens and switch stage tabs. Specimen mode shows the specimen list (top ⅓)
+and narrative (bottom ⅔). Debug mode hides the left panel for side-by-side with
+VS Code. The `hrw://` link scheme (`hrw://load/<Specimen>`,
+`hrw://stage/<StageName>`, `hrw://load/<Specimen>/<StageName>`) works in both
+tour and narrative documents via `egui_commonmark`'s link hooks API. Styled with
+blue section headers consistent with the RHS palette. Window launches maximized
+by default; `--half` flag for debug layout. Original idea below.
 
 **Problem:** The end-to-end guided tour (`docs/compiler-phases/end_to_end_tour.md`)
 lives in a markdown file that the user reads in VS Code. The tour references HRW
@@ -997,26 +1008,14 @@ VS Code's markdown preview failed (DocumentLinkProvider, editor decorations,
 `vscode://` URI handler, `command:` URIs) — the VS Code extension environment in
 Remote WSL proved too opaque to debug effectively. See commit `100dab9f` (revert).
 
-**Idea:** Host the tour content in a panel *inside HRW itself*, where clickable
-navigation links can directly call `self.stage = StageKind::Parse` and
-`self.pending_nav_path = Some(...)` — no file-based bridge, no extension, no OS
-round-trip. The tour `.md` files remain the source of truth; HRW renders them
-with an egui markdown renderer and intercepts link clicks.
-
-**Implementation sketch:**
-- Add `egui_commonmark` (or similar) as a dependency for markdown rendering in egui.
-- New module `tour_view.rs`: renders tour content in a side panel or overlay.
-- Custom link handler: intercepts clicks on tour navigation links and calls HRW's
-  existing stage/specimen navigation directly (the Rust-side navigation code from
-  the reverted deep-link feature — `StageKind::from_name`, `should_force_open`,
-  `pending_nav_path` — was tested and working; only the VS Code trigger path failed).
-- Tour content loaded from `docs/compiler-phases/` markdown files at build time
-  (via `include_str!`) or at runtime (file read).
-
-**Why this is better:** HRW has full control over rendering and interaction.
-Navigation is a direct Rust function call, not a multi-hop protocol through VS Code,
-the OS, and a file-based bridge. Every prior HRW feature built in Rust/egui has
-worked on the first implementation.
+**Remaining extensions:**
+- **Sub-view links:** `hrw://view/SpyPlot`, `hrw://view/Incidence` — switch to a
+  specific sub-view within a stage (e.g. Structural → SpyPlot vs Incidence vs Tree).
+- **Tree-node links:** `hrw://node/<path>` — expand the tree to a specific node and
+  scroll to it. Useful for tour steps like "expand equations → GearWithBrake → body."
+- **Multiple tour documents:** currently only the end-to-end tour; future phase-specific
+  tours could be selectable from a dropdown.
+- **Tour progress tracking:** checkmarks, "you are here" indicator, bookmarks.
 
 **Relates to:** #24 (guided tours as HRW-driven walkthroughs), #9 (animated
 algorithm stepping — the tour could embed step controls).
@@ -1053,3 +1052,47 @@ without replacing it. A tooltip answers "what is this?"; the chat shortcut answe
 
 **Relates to:** #32 (in-app tour view — tooltips handle generic field help, freeing
 the UI for richer content like guided tours).
+
+## 34. Sub-view and tree-node navigation links
+
+Captured 2026-07-25. Extend the `hrw://` link scheme with finer-grained navigation:
+
+- `hrw://view/<ViewName>` — switch to a specific sub-view within a stage. For
+  example, `hrw://view/SpyPlot` on the Structural tab switches from Tree to SpyPlot.
+  Useful for tour steps like "now look at the spy plot to see the BLT blocks."
+- `hrw://node/<path>` — expand the JSON tree to a specific node path and scroll to
+  it. For example, `hrw://node/classes/GearWithBrake/body/equations` would expand
+  and scroll to the equations list. Enables tour steps like "expand equations and
+  find the connect nodes."
+
+**Why it matters:** the current `hrw://stage/X` links get the user to the right tab,
+but the tour text still says "expand this, scroll to that." Finer-grained links would
+make the entire walkthrough clickable — every "look at X" becomes a link that takes
+you there.
+
+**Relates to:** #32 (extends the link scheme), #33 (tooltips could use the same
+node-path addressing).
+
+## 35. Multiple tour documents and progress tracking
+
+Captured 2026-07-25. Currently HRW embeds a single tour document (the end-to-end
+tour). Extensions:
+
+- **Multiple tours:** a tour selector (dropdown or list) to choose between the
+  end-to-end tour and per-phase deep-dive tours (e.g. "Structural Analysis Tour",
+  "Index Reduction Tour"). Tour documents live in `docs/compiler-phases/` as they
+  do now; HRW discovers them by convention or a manifest.
+- **Progress tracking:** persistent checkmarks on tour stops the user has visited,
+  a "you are here" marker, and bookmarks. Stored per-user (e.g. in a local file
+  or egui persistence). Helps the learner resume a partially-completed tour.
+- **Tour table of contents:** a clickable outline of the current tour's stops,
+  visible at the top of the tour panel. Clicking a stop scrolls to it (using
+  `egui_commonmark`'s heading scroll-to feature).
+
+**Why it matters:** as the curriculum grows, a single monolithic tour won't scale.
+Phase-specific tours are natural complements to the end-to-end overview. Progress
+tracking helps with multi-session learning — Doug may work through the Structural
+tour over several days.
+
+**Relates to:** #24 (guided tours as HRW-driven walkthroughs), #32 (the
+infrastructure this extends).

@@ -859,7 +859,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (204 tests) guards against silent
+their call sites. The regression test suite (215 tests) guards against silent
 regressions during a rebase.
 
 
