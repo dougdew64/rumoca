@@ -2373,4 +2373,56 @@ mod tests {
             assert!(!name.is_empty(), "{kind:?} has an empty name");
         }
     }
+
+    #[test]
+    fn parse_library_paths_splits_lines() {
+        let mut app = App::test_default();
+        app.libraries_text = "/path/one\n/path/two\n".to_owned();
+        let paths = app.parse_library_paths();
+        assert_eq!(paths, vec![PathBuf::from("/path/one"), PathBuf::from("/path/two")]);
+    }
+
+    #[test]
+    fn parse_library_paths_trims_whitespace() {
+        let mut app = App::test_default();
+        app.libraries_text = "  /trimmed  \n".to_owned();
+        let paths = app.parse_library_paths();
+        assert_eq!(paths, vec![PathBuf::from("/trimmed")]);
+    }
+
+    #[test]
+    fn parse_library_paths_skips_blank_lines() {
+        let mut app = App::test_default();
+        app.libraries_text = "/first\n\n  \n/last\n".to_owned();
+        let paths = app.parse_library_paths();
+        assert_eq!(paths, vec![PathBuf::from("/first"), PathBuf::from("/last")]);
+    }
+
+    #[test]
+    fn parse_library_paths_empty_text() {
+        let app = App::test_default();
+        assert!(app.parse_library_paths().is_empty());
+    }
+
+    #[test]
+    fn status_line_success_explain() {
+        let msg = status_line(1, "equations.3.lhs", "explain", Ok(PathBuf::from("/tmp/focus.json")));
+        assert!(msg.contains("captured"), "should say 'captured': {msg}");
+        assert!(msg.contains("equations.3.lhs"), "should contain target: {msg}");
+        assert!(msg.contains("focus #1"), "should contain seq: {msg}");
+    }
+
+    #[test]
+    fn status_line_success_debug() {
+        let msg = status_line(2, "def_id", "debug-where-set", Ok(PathBuf::from("/tmp/f.json")));
+        assert!(msg.contains("debugger"), "debug request should mention debugger: {msg}");
+        assert!(msg.contains("focus #2"), "should contain seq: {msg}");
+    }
+
+    #[test]
+    fn status_line_error() {
+        let err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
+        let msg = status_line(1, "x", "explain", Err(err));
+        assert!(msg.contains("bridge write failed"), "should report error: {msg}");
+    }
 }

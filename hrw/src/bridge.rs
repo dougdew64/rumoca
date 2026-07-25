@@ -1090,4 +1090,57 @@ mod tests {
 
         let _ = fs::remove_file(BREAKPOINT_REQUEST_FILE);
     }
+
+    #[test]
+    fn write_stages_creates_and_removes_files() {
+        let val = json!({"equations": [1, 2, 3]});
+        let stages: Vec<(&str, Option<&Value>)> = vec![
+            ("test_alpha", Some(&val)),
+            ("test_beta", None),
+        ];
+        write_stages(&stages).expect("write_stages");
+        let alpha_path = Path::new(STAGES_DIR).join("test_alpha.json");
+        assert!(alpha_path.exists(), "stage file should be created");
+        let content: Value = serde_json::from_str(
+            &fs::read_to_string(&alpha_path).unwrap()
+        ).unwrap();
+        assert_eq!(content["equations"], json!([1, 2, 3]));
+
+        let beta_path = Path::new(STAGES_DIR).join("test_beta.json");
+        assert!(!beta_path.exists(), "None stage should not create a file");
+
+        // A second call with None removes a previously written file.
+        let stages_remove: Vec<(&str, Option<&Value>)> = vec![
+            ("test_alpha", None),
+        ];
+        write_stages(&stages_remove).expect("cleanup write");
+        assert!(!alpha_path.exists(), "stage file should be removed when None");
+    }
+
+    #[test]
+    fn write_creates_focus_json() {
+        let val = json!({"name": "test_write_model"});
+        let ask = Ask {
+            seq: 99,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("TestWriteModel"),
+            stage: None,
+            libraries: Vec::new(),
+            def_index: &std::collections::BTreeMap::new(),
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Node {
+                key_path: vec![Seg::Key("name".to_owned())],
+                stage_value: &val,
+            },
+        };
+        let path = write(&ask).expect("write focus");
+        assert!(path.exists(), "focus.json should exist");
+        let content: Value = serde_json::from_str(
+            &fs::read_to_string(&path).unwrap()
+        ).unwrap();
+        assert_eq!(content["seq"], json!(99));
+        assert_eq!(content["model"], json!("TestWriteModel"));
+    }
 }

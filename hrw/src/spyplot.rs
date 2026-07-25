@@ -308,4 +308,71 @@ mod tests {
         assert!(Plot::from_report(&json!({ "blocks": [] })).is_none());
         assert!(Plot::from_report(&json!({})).is_none());
     }
+
+    #[test]
+    fn caption_summarizes_structure() {
+        let report = json!({
+            "blocks": [
+                { "kind": "scalar", "equation": "e0", "unknown": "u0" },
+                { "kind": "coupled", "equations": ["e1", "e2"], "unknowns": ["u1", "u2"] },
+                { "kind": "scalar", "equation": "e3", "unknown": "u3" },
+            ]
+        });
+        let plot = Plot::from_report(&report).unwrap();
+        let c = plot.caption();
+        assert!(c.contains("3 block(s)"), "should report 3 blocks: {c}");
+        assert!(c.contains("1 coupled"), "should report 1 coupled: {c}");
+        assert!(c.contains("4×4"), "should report 4×4 matched: {c}");
+    }
+
+    #[test]
+    fn caption_pluralizes_coupled() {
+        let report = json!({
+            "blocks": [
+                { "kind": "coupled", "equations": ["e0", "e1"], "unknowns": ["u0", "u1"] },
+                { "kind": "coupled", "equations": ["e2", "e3"], "unknowns": ["u2", "u3"] },
+            ]
+        });
+        let plot = Plot::from_report(&report).unwrap();
+        let c = plot.caption();
+        assert!(c.contains("2 coupled"), "should report 2 coupled: {c}");
+        assert!(c.contains("loops"), "should pluralize 'loops': {c}");
+    }
+
+    #[test]
+    fn caption_no_coupled_blocks() {
+        let report = json!({
+            "blocks": [
+                { "kind": "scalar", "equation": "e0", "unknown": "u0" },
+                { "kind": "scalar", "equation": "e1", "unknown": "u1" },
+            ]
+        });
+        let plot = Plot::from_report(&report).unwrap();
+        let c = plot.caption();
+        assert!(c.contains("0 coupled"), "should report 0 coupled: {c}");
+        assert!(c.contains("2×2"), "should report 2×2: {c}");
+    }
+
+    #[test]
+    fn tearing_info_parsed() {
+        let report = json!({
+            "blocks": [
+                {
+                    "kind": "coupled",
+                    "equations": ["e0", "e1", "e2"],
+                    "unknowns": ["u0", "u1", "u2"],
+                    "tearing": {
+                        "tear_vars": ["u0"],
+                        "residual_equations": ["e0"]
+                    }
+                }
+            ]
+        });
+        let plot = Plot::from_report(&report).unwrap();
+        let block = plot.block_at(0, 0).expect("block at origin");
+        assert!(block.coupled);
+        let (tear_vars, residuals) = block.tearing.as_ref().expect("should have tearing");
+        assert_eq!(tear_vars, &["u0"]);
+        assert_eq!(residuals, &["e0"]);
+    }
 }

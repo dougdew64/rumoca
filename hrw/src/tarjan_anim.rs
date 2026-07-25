@@ -530,4 +530,80 @@ mod tests {
         assert!(anim.is_live());
         assert!(anim.live_finished());
     }
+
+    #[test]
+    fn build_dep_graph_constructs_adjacency() {
+        // 3 equations, 3 unknowns:
+        //   eq0 references vars {0, 1}, matched to var 0
+        //   eq1 references vars {1, 2}, matched to var 1
+        //   eq2 references vars {0, 2}, matched to var 2
+        //
+        // Matching: eq0→var0, eq1→var1, eq2→var2
+        //
+        // Dependencies (off-diagonal references through matching):
+        //   eq0 refs var1 (not its match) → var1 owned by eq1 → eq0 depends on eq1
+        //   eq1 refs var2 (not its match) → var2 owned by eq2 → eq1 depends on eq2
+        //   eq2 refs var0 (not its match) → var0 owned by eq0 → eq2 depends on eq0
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        let match_eq = vec![Some(0), Some(1), Some(2)];
+        let match_var = vec![Some(0), Some(1), Some(2)];
+
+        let adj = build_dep_graph(&mat, &match_eq, &match_var);
+        assert_eq!(adj.len(), 3);
+        assert_eq!(adj[0], vec![1], "eq0 should depend on eq1");
+        assert_eq!(adj[1], vec![2], "eq1 should depend on eq2");
+        assert_eq!(adj[2], vec![0], "eq2 should depend on eq0");
+    }
+
+    #[test]
+    fn build_dep_graph_no_self_loops() {
+        // An equation that references its own matched variable should not
+        // produce a self-loop in the dependency graph.
+        let report = json!({
+            "matching": [
+                { "equation": "e0", "unknown": "u0" },
+            ],
+            "blocks": [],
+            "incidence": {
+                "n_eq": 1,
+                "n_var": 1,
+                "unknown_names": ["u0"],
+                "rows": [
+                    { "equation": "e0", "unknowns": [0] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        let match_eq = vec![Some(0)];
+        let match_var = vec![Some(0)];
+
+        let adj = build_dep_graph(&mat, &match_eq, &match_var);
+        assert!(adj[0].is_empty(), "self-reference through match should not create a dependency");
+    }
+
+    #[test]
+    fn build_dep_graph_unmatched_var_ignored() {
+        // A variable that isn't matched to any equation should not create
+        // dependencies (it has no owner equation to point to).
+        let report = json!({
+            "matching": [
+                { "equation": "e0", "unknown": "u0" },
+            ],
+            "blocks": [],
+            "incidence": {
+                "n_eq": 1,
+                "n_var": 2,
+                "unknown_names": ["u0", "u1"],
+                "rows": [
+                    { "equation": "e0", "unknowns": [0, 1] },
+                ],
+            }
+        });
+        let mat = IncidenceMatrix::from_report(&report).unwrap();
+        let match_eq = vec![Some(0)];
+        let match_var = vec![Some(0), None];
+
+        let adj = build_dep_graph(&mat, &match_eq, &match_var);
+        assert!(adj[0].is_empty(), "unmatched variable should not create a dependency");
+    }
 }

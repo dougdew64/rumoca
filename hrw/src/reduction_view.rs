@@ -489,4 +489,92 @@ mod tests {
         let expr = r#"{"VarRef":{"name":"omega","subscripts":[],"span":{"lo":0,"hi":0}}}"#;
         assert_eq!(abbreviate_expr(expr), "omega");
     }
+
+    #[test]
+    fn abbreviate_renders_literal_real() {
+        let expr = r#"{"Literal":{"value":{"Real":3.14}}}"#;
+        assert_eq!(abbreviate_expr(expr), "3.14");
+    }
+
+    #[test]
+    fn abbreviate_renders_literal_integer() {
+        let expr = r#"{"Literal":{"value":{"Integer":42}}}"#;
+        assert_eq!(abbreviate_expr(expr), "42");
+    }
+
+    #[test]
+    fn abbreviate_renders_literal_bool() {
+        let expr = r#"{"Literal":{"value":{"Bool":true}}}"#;
+        assert_eq!(abbreviate_expr(expr), "true");
+    }
+
+    #[test]
+    fn abbreviate_renders_literal_string() {
+        let expr = r#"{"Literal":{"value":{"String":"hello"}}}"#;
+        assert_eq!(abbreviate_expr(expr), "\"hello\"");
+    }
+
+    #[test]
+    fn abbreviate_renders_binary() {
+        let expr = r#"{"Binary":{"op":"Add","lhs":{"VarRef":{"name":"x"}},"rhs":{"VarRef":{"name":"y"}}}}"#;
+        assert_eq!(abbreviate_expr(expr), "x Add y");
+    }
+
+    #[test]
+    fn abbreviate_renders_unary() {
+        let expr = r#"{"Unary":{"op":"Negate","rhs":{"VarRef":{"name":"x"}}}}"#;
+        assert_eq!(abbreviate_expr(expr), "Negatex");
+    }
+
+    #[test]
+    fn abbreviate_renders_builtin_call() {
+        let expr = r#"{"BuiltinCall":{"function":"sin","args":[{"VarRef":{"name":"theta"}}]}}"#;
+        assert_eq!(abbreviate_expr(expr), "sin(theta)");
+    }
+
+    #[test]
+    fn abbreviate_renders_builtin_call_multiple_args() {
+        let expr = r#"{"BuiltinCall":{"function":"atan2","args":[{"VarRef":{"name":"y"}},{"VarRef":{"name":"x"}}]}}"#;
+        assert_eq!(abbreviate_expr(expr), "atan2(y, x)");
+    }
+
+    #[test]
+    fn abbreviate_nested_binary_in_builtin() {
+        let expr = r#"{"BuiltinCall":{"function":"abs","args":[{"Binary":{"op":"Sub","lhs":{"VarRef":{"name":"a"}},"rhs":{"VarRef":{"name":"b"}}}}]}}"#;
+        assert_eq!(abbreviate_expr(expr), "abs(a Sub b)");
+    }
+
+    #[test]
+    fn abbreviate_unknown_variant_falls_back() {
+        let expr = r#"{"FunctionCall":{"name":"custom","args":[]}}"#;
+        assert_eq!(abbreviate_expr(expr), "(expr)");
+    }
+
+    #[test]
+    fn abbreviate_invalid_json_returns_raw() {
+        assert_eq!(abbreviate_expr("not json"), "not json");
+    }
+
+    #[test]
+    fn elimination_display_uses_abbreviate() {
+        let report = json!({
+            "reduction": {
+                "funnel_completed": true,
+                "n_states_before": 2,
+                "n_states_after": 1,
+                "demoted_states": ["z"],
+                "steps": [],
+                "differentiated_rows": [],
+                "eliminations": [
+                    {
+                        "variable": "z",
+                        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":\"a\"}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":2.0}}}}}"
+                    }
+                ],
+            }
+        });
+        let view = ReductionView::from_report(&report).expect("should parse");
+        assert_eq!(view.eliminations[0].variable, "z");
+        assert_eq!(view.eliminations[0].display, "a Mul 2");
+    }
 }
