@@ -169,7 +169,7 @@ export function activate(context: vscode.ExtensionContext): void {
 class HrwLinkProvider implements vscode.DocumentLinkProvider {
     provideDocumentLinks(doc: vscode.TextDocument): vscode.DocumentLink[] {
         const links: vscode.DocumentLink[] = [];
-        const re = /hrw:\/\/([A-Za-z_]+)(\/[A-Za-z0-9_./[\]]*)?/g;
+        const re = /hrw:\/\/([A-Za-z_]+)(\/[A-Za-z0-9_.[\]-]*(?:\/[A-Za-z0-9_.[\]-]*)*)?/g;
         for (let i = 0; i < doc.lineCount; i++) {
             const line = doc.lineAt(i).text;
             let match: RegExpExecArray | null;
@@ -181,14 +181,21 @@ class HrwLinkProvider implements vscode.DocumentLinkProvider {
                 const pathStr = (match[2] ?? '').replace(/^\//, '');
                 const pathSegs = pathStr ? pathStr.split('/') : [];
                 let navArgs: Record<string, unknown>;
+                let tooltip: string;
                 if (first.toLowerCase() === 'load' && pathSegs.length > 0) {
                     navArgs = { specimen: pathSegs[0] };
+                    tooltip = `Open ${pathSegs[0]} in HRW`;
                 } else {
                     navArgs = { stage: first, path: pathSegs };
+                    tooltip = pathSegs.length > 0
+                        ? `Navigate to ${first} / ${pathSegs.join('/')}`
+                        : `Switch to ${first} tab`;
                 }
-                const args = encodeURIComponent(JSON.stringify(navArgs));
+                const args = encodeURIComponent(JSON.stringify([navArgs]));
                 const target = vscode.Uri.parse(`command:hrw.navigate?${args}`);
-                links.push(new vscode.DocumentLink(range, target));
+                const link = new vscode.DocumentLink(range, target);
+                link.tooltip = tooltip;
+                links.push(link);
             }
         }
         return links;
