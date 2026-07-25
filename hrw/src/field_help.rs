@@ -1,4 +1,4 @@
-//! Generic (build-time) field help — the **fast tier** of the two-tier help system.
+//! Generic (build-time) field help — delivered as hover tooltips on tree nodes.
 //!
 //! ## Two-tier help architecture
 //!
@@ -7,10 +7,10 @@
 //! 1. **Fast tier (this module):** instant, offline, generic. The `///` doc
 //!    comments that Rumoca's authors wrote on `rumoca-ir-ast` IR struct fields
 //!    are extracted at build time and embedded as `field_help.json`. When you
-//!    click a field in the tree inspector, its doc comment appears immediately
-//!    in the right-hand panel — no network call, no latency. The help is
-//!    *generic* (it describes what `def_id` means in general, not why *this
-//!    particular* `def_id` has *this particular* value).
+//!    hover a field in the tree inspector, its doc comment appears as a tooltip
+//!    — no network call, no latency. The help is *generic* (it describes what
+//!    `def_id` means in general, not why *this particular* `def_id` has *this
+//!    particular* value).
 //!
 //! 2. **Specific tier (the Claude bridge):** contextual, on-demand, slow. When
 //!    the user captures a node and asks in the chat, Claude reasons about *why*
@@ -24,13 +24,6 @@
 //! and writes `src/field_help.json`. This file is checked into the repo and
 //! baked into the binary via `include_str!`. Regenerate after a Rumoca update
 //! with `cargo run -p hrw --example gen_field_help`.
-//!
-//! ## Chapter mapping
-//!
-//! `chapter_for_stage` maps each pipeline stage name to its corresponding
-//! chapter in `docs/compiler-phases/` — Doug's hand-written phase theory
-//! documents. These are linked from the UI as "Read more" buttons, providing
-//! a deeper conceptual explanation beyond what the field docs offer.
 
 use std::collections::HashMap;
 
@@ -47,69 +40,6 @@ const FIELD_HELP_JSON: &str = include_str!("field_help.json");
 /// appears in multiple IR structs.
 pub fn load() -> HashMap<String, String> {
     serde_json::from_str(FIELD_HELP_JSON).unwrap_or_default()
-}
-
-/// Map a pipeline stage name to its `docs/compiler-phases` chapter.
-///
-/// Returns `(human_label, repo_relative_path)`. The label is shown in the UI
-/// button text; the path is used to open the file. Unknown stages fall back to
-/// the high-level overview — this is defensive against future stages being added
-/// before their chapter exists.
-///
-/// These paths are repo-relative (not absolute) because HRW lives inside the
-/// Rumoca workspace and `docs/` is a sibling directory.
-pub fn chapter_for_stage(stage: &str) -> (&'static str, &'static str) {
-    match stage {
-        "Parse" => (
-            "Phase 1 · Parsing & AST",
-            "docs/compiler-phases/phase1_parsing_and_ast/parsing_and_ast.md",
-        ),
-        "Resolve" => (
-            "Phase 2 · Resolve & Scope",
-            "docs/compiler-phases/phase2_resolve_and_scope/resolve_and_scope.md",
-        ),
-        "Typecheck" => (
-            "Phase 3 · Typecheck & Dimensions",
-            "docs/compiler-phases/phase3_typecheck_and_dims/typecheck_and_dims.md",
-        ),
-        "Instantiate" => (
-            "Phase 4 · Instantiate",
-            "docs/compiler-phases/phase4_instantiate/instantiate.md",
-        ),
-        "Flatten" => (
-            "Phase 5 · Flatten",
-            "docs/compiler-phases/phase5_flatten/flatten.md",
-        ),
-        "Structural" => (
-            "Phase 7 · Structural Analysis",
-            "docs/compiler-phases/phase7_structural_analysis/structural_analysis.md",
-        ),
-        "Index reduction" => (
-            "Index reduction (Pantelides / dummy derivatives)",
-            "docs/compiler-phases/phase6_dae_construction/index_reduction.md",
-        ),
-        "Initialization" => (
-            "Initialization · IC planning",
-            "docs/compiler-phases/phase7_structural_analysis/ic_plan.md",
-        ),
-        "Events" => (
-            "DAE construction · events & hybrid structure",
-            "docs/compiler-phases/phase6_dae_construction/dae_construction.md",
-        ),
-        "Solve lowering" => (
-            "Phase 8 · Solve lowering",
-            "docs/compiler-phases/phase8_solve_lowering/solve_lowering.md",
-        ),
-        "Simulation" => (
-            "Phase 9 · Simulation",
-            "docs/compiler-phases/phase9_simulation/simulation.md",
-        ),
-        // Fallback: unknown or future stages get the high-level overview.
-        _ => (
-            "Understanding · Overview",
-            "docs/compiler-phases/high_level_overview.md",
-        ),
-    }
 }
 
 #[cfg(test)]
@@ -130,32 +60,5 @@ mod tests {
         for key in ["def_id", "classes", "components", "equations", "name"] {
             assert!(help.contains_key(key), "field_help missing expected key: {key}");
         }
-    }
-
-    /// Every known stage maps to a chapter file that exists on disk.
-    #[test]
-    fn chapter_for_stage_files_exist() {
-        let stages = [
-            "Parse", "Resolve", "Typecheck", "Instantiate", "Flatten",
-            "Structural", "Index reduction", "Initialization", "Events",
-            "Solve lowering", "Simulation",
-        ];
-        let root = env!("CARGO_MANIFEST_DIR");
-        for stage in stages {
-            let (label, rel) = chapter_for_stage(stage);
-            assert!(!label.is_empty(), "{stage}: empty label");
-            let abs = format!("{root}/{rel}");
-            assert!(
-                std::path::Path::new(&abs).exists(),
-                "{stage}: chapter file not found: {rel}"
-            );
-        }
-    }
-
-    /// An unknown stage falls back to the overview.
-    #[test]
-    fn chapter_for_unknown_stage_falls_back() {
-        let (label, _) = chapter_for_stage("Nonexistent");
-        assert!(label.contains("Overview"));
     }
 }

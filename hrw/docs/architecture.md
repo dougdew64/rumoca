@@ -92,10 +92,8 @@ implementation of the compilation pipeline.
                          │          center panel:           │
                          │            tree / spy-plot /     │
                          │            incidence / reduction │
-                         │            / plot / log          │
-                         │          right panel:            │
-                         │            field help / specimen │
-                         │            info / sim controls   │
+                         │            / eq sheet / plot /   │
+                         │            log                   │
                          │                                  │
                          │  click ──► bridge::emit_focus()  │
                          │            writes focus.json     │
@@ -262,64 +260,47 @@ if ui.button("Run").clicked() {
 9. **Custom views** — pan/zoom cameras for spy-plot and incidence views
 10. **Log** — timestamped compilation/simulation log entries
 11. **Simulation** — `SimData`, plot flags, sim-in-progress state
-12. **Cached path checks** — `narrative_exists` avoids per-frame `Path::exists()`
-13. **Cached layout** — `cached_specimen_width` avoids per-frame `layout_no_wrap`
-14. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`
+12. **Cached layout** — `cached_specimen_width` avoids per-frame `layout_no_wrap`
+13. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`
     (`Option<Option<T>>` — outer = cache state, inner = parse result) avoid per-frame
     re-parsing of structural report JSON; invalidated on `Compiled`
 
 ### Panel layout
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        Top panel                             │
-│  Tab bar: Parse│Resolve│...│Simulation  [▶Play] [⚙Settings]  │
-├──────────┬───────────────────────────────┬───────────────────┤
-│  Left    │      Center panel             │    Right panel    │
-│  panel   │                               │                   │
-│          │  Tree inspector / Spy-plot /   │  Specimen info /  │
-│ Specimen │  Incidence / Reduction /       │  Stage context /  │
-│ list     │  Simulation plot /            │  Simulation       │
-│          │  Log                           │  controls         │
-│          │                               │                   │
-├──────────┴───────────────────────────────┴───────────────────┤
-│                       Bottom panel                           │
-│  Status line: compiling… / bridge status / error messages     │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                        Top panel                          │
+│  Tab bar: Parse│Resolve│...│Simulation  [▶Play] [⚙Settings]│
+├──────────┬─────────────────────────────────────────────────┤
+│  Left    │      Center panel                               │
+│  panel   │                                                 │
+│          │  Tree inspector / Spy-plot / Incidence /         │
+│ Specimen │  Reduction / Equation sheet / Source map /       │
+│ list     │  Simulation plot / Log                          │
+│          │                                                 │
+├──────────┴─────────────────────────────────────────────────┤
+│                       Bottom panel                         │
+│  Status line: compiling… / bridge status / error messages   │
+└──────────────────────────────────────────────────────────┘
 ```
 
-Panels are added in **top → bottom → left → right → center** order. In egui,
+Panels are added in **top → bottom → left → center** order. In egui,
 each panel claims space from what remains, so order determines layout.
 
-**Panel visibility toggles.** Both side panels can be hidden via the **View**
-menu (checkboxes for "Specimens panel" and "Help panel"). When hidden, the
-`CentralPanel` reclaims the space — useful during live debug sessions where the
-animation view benefits from full width. The bools `show_left_panel` /
-`show_right_panel` (both default to `true`) gate whether the `Panel::left` /
-`Panel::right` calls run at all; egui's `CentralPanel` automatically fills
-whatever space the side panels don't claim.
+**Panel visibility toggle.** The left panel can be hidden via the **View**
+menu (checkbox for "Specimens panel"). When hidden, the `CentralPanel`
+reclaims the space — useful during live debug sessions where the animation
+view benefits from full width. The bool `show_left_panel` (default `true`)
+gates whether the `Panel::left` call runs; egui's `CentralPanel` automatically
+fills whatever space the side panel doesn't claim.
 
-### Right panel routing
+### Field help (tooltips)
 
-The right panel has three modes, selected by a state machine:
-
-1. **Specimen info** — shown when the user hasn't clicked any stage tab yet
-   (`!stage_clicked && nav.is_empty()`). Displays the specimen's name, model
-   name, purpose, and a link to read the specimen narrative.
-
-2. **Simulation controls** — shown when the Simulation tab is active and no
-   navigation is open. Displays plot-control hints and the run button.
-
-3. **Stage context** — shown after the user clicks any stage tab. Shows the
-   stage name, a prompt to hover tree fields for quick help, and links to the
-   relevant compiler-phase chapter and specimen narrative. Generic field help
-   (doc-comment text from `field_help.json`) is delivered as **hover tooltips**
-   on tree nodes, not in the panel — the panel is reserved for richer content
-   (planned: guided tours and specimen narratives).
-
-The `stage_clicked` flag transitions from mode 1 to mode 3 — once the user
-clicks a stage tab, they've moved from "browsing the specimen" to "inspecting
-the IR," and the right panel shifts accordingly.
+Generic field help (doc-comment text from `field_help.json`) is delivered as
+**hover tooltips** on tree nodes. Hovering any IR field in the tree inspector
+shows its doc comment instantly — no panel navigation needed. For deeper,
+specimen-specific explanations, the Claude bridge capture + "explain" chat
+shortcut remains available.
 
 ### Tab bar mechanics
 
@@ -697,20 +678,17 @@ compilation that hits armed breakpoints.
 
 ## 9. Supporting modules
 
-### Field help (`field_help.rs`, ~160 lines)
+### Field help (`field_help.rs`, ~60 lines)
 
 A two-tier help system:
 
 - **Fast tier (this module):** The `///` doc comments that Rumoca's authors wrote
   on IR fields, extracted at build time into `field_help.json` and embedded via
-  `include_str!`. Keyed by field name, shown instantly in the right panel on click.
+  `include_str!`. Keyed by field name, shown as hover tooltips on tree nodes.
   No AI, no latency.
 
 - **Specific tier (the bridge):** "Why did THIS particular field get this value?" —
   requires Claude to reason about the specimen, the IR, and the phase code.
-
-The module also maps each stage to its `docs/compiler-phases` chapter, providing
-the "Read: Phase N" button in the right panel.
 
 ### Expression pretty-printer (`expr_format.rs`, ~250 lines)
 

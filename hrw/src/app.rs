@@ -173,11 +173,6 @@ pub struct App {
     /// shows). Updated when the user clicks a tab or after compilation finishes
     /// (auto-selects the furthest successful stage).
     stage: StageKind,
-    /// True once the user explicitly clicks a stage tab; false on specimen open.
-    /// While false the RHS panel shows specimen info, not stage-specific help.
-    /// This two-phase UX lets the right panel start with a specimen overview,
-    /// then transition to field-level help once the user dives into a stage.
-    stage_clicked: bool,
     // Resolved identity of every DefId referenced in the current model's IR.
     // Shared across all stages; populated by the final `Compiled` message.
     def_index: BTreeMap<u64, DefInfo>,
@@ -199,11 +194,10 @@ pub struct App {
     bridge_status: Option<String>,
 
     // ---- 7. Panels and windows toggled from the menu bar ----
-    // `show_left_panel` / `show_right_panel` control whether the side panels
-    // are rendered at all — hiding them gives the center stage view full width,
-    // which is especially useful during live debug sessions.
+    // `show_left_panel` controls whether the specimen list panel is rendered —
+    // hiding it gives the center stage view full width, which is especially
+    // useful during live debug sessions.
     show_left_panel: bool,
-    show_right_panel: bool,
     // egui's `Window::open(&mut bool)` pattern: the bool controls visibility,
     // and the window's close button flips it back to false.
     show_settings: bool,
@@ -212,12 +206,8 @@ pub struct App {
 
     // ---- 8. Generic field help ----
     // `field_help` is a compile-time HashMap<field_name, explanation> loaded
-    // from a generated help table. `selected_field` tracks the last
-    // left-clicked tree node so the right panel can show its documentation.
-    // This is the "fast tier" (instant, no AI); the "specific tier" is the
-    // bridge capture + Claude chat.
+    // from a generated help table, delivered as hover tooltips on tree nodes.
     field_help: HashMap<String, String>,
-    selected_field: Option<String>,
 
     // ---- 9. Custom views for Structural/Index-reduction stages ----
     // These stages have a spy-plot and incidence-matrix visualization in
@@ -252,12 +242,7 @@ pub struct App {
     sim_error: Option<String>,
     sim_t_end: f64,
 
-    // ---- 12. Cached path checks ----
-    // Avoids calling `Path::exists()` every frame for the narrative button.
-    // Invalidated on specimen change (set in `drain_worker` when `Compiled` lands).
-    narrative_exists: bool,
-
-    // ---- 13. Cached layout ----
+    // ---- 12. Cached layout ----
     // Avoids running `layout_no_wrap` on the longest filename every frame.
     // Invalidated on rescan (when `files` changes).
     cached_specimen_width: Option<f32>,
@@ -360,7 +345,6 @@ impl App {
             model: None,
             stages: StageBundle::default(),
             stage: StageKind::Resolve,
-            stage_clicked: false,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
             nav_loading: None,
@@ -368,12 +352,10 @@ impl App {
             ask_seq: 0,
             bridge_status: None,
             show_left_panel: true,
-            show_right_panel: true,
             show_settings: false,
             show_help: false,
             show_about: false,
             field_help: field_help::load(),
-            selected_field: None,
             flatten_view: FlattenView::Equations,
             highlighted_eq_row: None,
             highlighted_source_line: None,
@@ -388,7 +370,6 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
-            narrative_exists: false,
             cached_specimen_width: None,
             cached_spy_plot: None,
             cached_incidence: None,
@@ -478,7 +459,6 @@ impl App {
         // Clear all previous results. Every field that could hold stale data
         // from the last specimen is reset to its default.
         self.model = None;
-        self.narrative_exists = false;
         self.stages = StageBundle::default();
         self.sim_data = None;
         self.sim_error = None;
@@ -487,13 +467,9 @@ impl App {
         self.cached_equation_sheet = None;
         self.highlighted_eq_row = None;
         self.highlighted_source_line = None;
-        // Reset the "user has clicked a stage" flag so the right panel starts
-        // with specimen info, not stage-specific help.
-        self.stage_clicked = false;
         self.nav.clear();
         self.nav_loading = None;
         self.nav_error = None;
-        self.selected_field = None;
         // Clean up any in-flight or active live debug session. Without this,
         // switching specimens while arming or running leaves the breakpoint
         // armed on the old specimen and the polling state dangling.
@@ -572,10 +548,6 @@ impl App {
                         continue; // stale result
                     }
                     self.compiling = false;
-                    self.narrative_exists = model.as_ref().is_some_and(|m| {
-                        let p = format!("{}/docs/specimen-notebook/{m}/narrative.md", env!("CARGO_MANIFEST_DIR"));
-                        std::path::Path::new(&p).exists()
-                    });
                     self.model = model;
                     self.stages = stages;
                     self.def_index = def_index;
@@ -809,34 +781,6 @@ impl App {
         self.bridge_status = Some(status);
     }
 
-    fn narrative_button(&mut self, ui: &mut egui::Ui) {
-        if !self.narrative_exists {
-            return;
-        }
-        let Some(model) = &self.model else { return };
-        let rel = format!("docs/specimen-notebook/{model}/narrative.md");
-        ui.add_space(8.0);
-        ui.separator();
-        if ui
-            .button("Read: specimen narrative")
-            .on_hover_text(&rel)
-            .clicked()
-        {
-            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-            self.open_in_editor(&abs);
-        }
-    }
-
-    fn open_in_editor(&mut self, path: impl AsRef<std::ffi::OsStr>) {
-        let editor = std::env::var("EDITOR").unwrap_or_else(|_| "code".to_owned());
-        match std::process::Command::new(&editor).arg(path).spawn() {
-            Ok(_) => {}
-            Err(e) => {
-                self.bridge_status = Some(format!("{editor}: launch failed: {e}"));
-            }
-        }
-    }
-
     fn start_simulation(&mut self) {
         if let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone()) {
             self.sim_running = true;
@@ -944,108 +888,6 @@ impl App {
         }
     }
 
-    /// The right-hand context panel. Routes to one of three sub-panels based
-    /// on the current state.
-    ///
-    /// The routing implements a **specimen -> stage transition**: when a
-    /// specimen is first opened, `stage_clicked` is false, so the right panel
-    /// shows specimen-level info (name, model, purpose, narrative link). Once
-    /// the user clicks any stage tab, `stage_clicked` flips to true and the
-    /// panel switches to stage-specific content — either the Simulation help
-    /// panel or the generic field-help panel (which shows documentation for
-    /// the last-clicked IR tree node). This two-phase UX avoids showing an
-    /// empty "no field selected" message before the user has engaged with a
-    /// stage.
-    fn right_panel(&mut self, ui: &mut egui::Ui) {
-        if !self.stage_clicked && self.nav.is_empty() {
-            self.right_panel_specimen(ui);
-        } else if self.nav.is_empty() && self.stage == StageKind::Simulation {
-            self.right_panel_simulation(ui);
-        } else {
-            self.right_panel_field_help(ui);
-        }
-    }
-
-    /// Specimen-level info shown in the RHS before the user clicks any stage tab.
-    fn right_panel_specimen(&mut self, ui: &mut egui::Ui) {
-        let Some(path) = &self.selected else {
-            ui.weak("Select a specimen to begin.");
-            return;
-        };
-        let name = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("<?>");
-        ui.strong(name);
-        ui.separator();
-        if let Some(m) = &self.model {
-            ui.horizontal(|ui| {
-                ui.label("Model:");
-                ui.label(egui::RichText::new(m).monospace());
-            });
-        } else if self.compiling {
-            ui.weak("Compiling…");
-        }
-        if let Some(purpose) = self.specimen_purposes.get(path) {
-            ui.add_space(4.0);
-            ui.label(purpose);
-        }
-        self.narrative_button(ui);
-    }
-
-    /// Stage-context panel — shows the current stage name and documentation links.
-    /// Generic field help has moved to hover tooltips on tree nodes.
-    fn right_panel_field_help(&mut self, ui: &mut egui::Ui) {
-        let title = if self.nav.is_empty() { self.stage.name() } else { "Resolve" };
-        ui.strong(title);
-        ui.separator();
-        ui.weak(
-            "Hover a tree field for quick help. Left-click to capture; \
-             type \"explain\" in the chat for the full story.",
-        );
-        ui.add_space(8.0);
-        ui.separator();
-        self.right_panel_read_links(ui);
-    }
-
-    /// The Simulation view's right-hand panel — about the *run*, not a tree field.
-    /// PLANNED: this is where a plot-question view will live (capture a curve or a
-    /// time window → ask Claude about the trajectory, the events, the stiffness).
-    /// For now it explains the plot controls and points questions at the chat.
-    fn right_panel_simulation(&mut self, ui: &mut egui::Ui) {
-        ui.strong("Simulation");
-        ui.separator();
-        ui.label("Press ▶ Run to integrate the model; each state/output is plotted vs time.");
-        ui.add_space(4.0);
-        ui.weak("Drag to pan, scroll to zoom, double-click to reset; toggle a series in the legend.");
-        ui.add_space(8.0);
-        // Plan-ahead placeholder for the bigger simulation work: a view that
-        // captures a plotted curve / time window as question context for Claude.
-        ui.weak("Coming soon: capture a curve or a time window to ask Claude about the run.");
-        ui.add_space(8.0);
-        ui.separator();
-        self.right_panel_read_links(ui);
-    }
-
-    /// The two "Read: …" doc links shared by both right-hand panels: the phase's
-    /// generic `docs/compiler-phases` chapter, and this specimen's notebook narrative.
-    fn right_panel_read_links(&mut self, ui: &mut egui::Ui) {
-        // Concept-level link: the docs/compiler-phases chapter for the phase whose
-        // view is on screen (Resolve while navigating a definition).
-        let stage_ctx = if self.nav.is_empty() { self.stage.name() } else { "Resolve" };
-        let (label, rel) = field_help::chapter_for_stage(stage_ctx);
-        if ui
-            .button(format!("Read: {label}"))
-            .on_hover_text("Open this docs/compiler-phases chapter (generic phase theory) in your editor")
-            .clicked()
-        {
-            let abs = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), rel);
-            self.open_in_editor(abs);
-        }
-        if self.nav.is_empty() {
-            self.narrative_button(ui);
-        }
-    }
 }
 
 /// One-line status for a completed bridge write, tailored to the request kind.
@@ -1286,7 +1128,6 @@ impl App {
             if new_val.is_some() {
                 self.stage = StageKind::Structural;
                 self.structural_view = StructuralView::Incidence;
-                self.stage_clicked = true;
             }
         }
     }
@@ -1555,7 +1396,6 @@ impl eframe::App for App {
                 });
                 ui.menu_button("View", |ui| {
                     ui.checkbox(&mut self.show_left_panel, "Specimens panel");
-                    ui.checkbox(&mut self.show_right_panel, "Help panel");
                 });
                 ui.menu_button("Help", |ui| {
                     if ui.button("Using HRW…").clicked() {
@@ -1706,7 +1546,6 @@ impl eframe::App for App {
                         self.open(path);
                     } else if let Some(path) = to_open {
                         if self.selected.as_ref() == Some(&path) {
-                            self.stage_clicked = false;
                             self.viewing_log = false;
                         } else {
                             self.open(path);
@@ -1717,19 +1556,6 @@ impl eframe::App for App {
                     }
                 });
             });
-        }
-
-        // ---- Right panel: context help ----
-        // `Panel::right` claims a strip on the right. It shows generic
-        // (build-time) field help for the last-clicked tree item — the FAST
-        // tier (no Claude). The specific tier ("why did THIS one happen") is
-        // the bridge + chat, via "explain".
-        if self.show_right_panel {
-            egui::Panel::right("field_help")
-                .resizable(true)
-                .default_size(380.0)
-                .min_size(220.0)
-                .show(ui, |ui| self.right_panel(ui));
         }
 
         // ---- Center panel: stage tabs + main content ----
@@ -1783,8 +1609,7 @@ impl eframe::App for App {
                     //
                     // Each stage tab checks `.clicked()` and sets the same
                     // `stage_tab_clicked` flag. After the tab row, a single block
-                    // acts on that flag to: set `stage_clicked = true` (transition
-                    // the right panel), turn off `viewing_log`, and emit a stage
+                    // acts on that flag to turn off `viewing_log` and emit a stage
                     // capture for the bridge. This avoids duplicating that logic
                     // in every tab's click handler.
                     //
@@ -1921,11 +1746,9 @@ impl eframe::App for App {
                         .clicked()
                     {
                         self.stage = StageKind::Simulation;
-                        self.stage_clicked = true;
                         self.viewing_log = false;
                     }
                     if stage_tab_clicked {
-                        self.stage_clicked = true;
                         self.viewing_log = false;
                         if self.selected.is_some() {
                             want_stage_ask = true;
@@ -2279,11 +2102,6 @@ impl eframe::App for App {
         if canvas_capture.is_some() {
             node_ask = canvas_capture;
         }
-        // Update the right-panel field help to match whichever node was clicked
-        // (debug or explain — both select the same field for documentation).
-        if let Some(kp) = debug_ask.as_ref().or(node_ask.as_ref()) {
-            self.selected_field = field_name_from_path(kp);
-        }
         // Priority: debugger capture > explain capture > stage capture.
         // Only one bridge write per frame.
         if let Some(key_path) = debug_ask {
@@ -2379,20 +2197,6 @@ fn tab_label(
 /// - `Seg::Index(usize)` — an array index (e.g. the `3` in `equations[3]`)
 ///
 /// When the user clicks a tree node, the tree inspector produces a path like
-/// `[Key("equations"), Index(3), Key("lhs")]`. To look up field help, we want
-/// the deepest *named* field — here, "lhs". If the path ends with an array
-/// index (e.g. `[Key("equations"), Index(3)]`), we skip the index and use the
-/// enclosing field name ("equations") instead, since the help table is keyed
-/// on field names, not array positions.
-fn field_name_from_path(path: &[Seg]) -> Option<String> {
-    // Walk the path backwards (`.rev()`) and return the first `Key` segment.
-    // `find_map` combines `find` + `map`: it stops at the first `Some` return.
-    path.iter().rev().find_map(|seg| match seg {
-        Seg::Key(k) => Some(k.clone()),
-        Seg::Index(_) => None,
-    })
-}
-
 #[cfg(test)]
 impl App {
     #[cfg(test)]
@@ -2413,7 +2217,6 @@ impl App {
             model: None,
             stages: StageBundle::default(),
             stage: StageKind::Parse,
-            stage_clicked: false,
             def_index: BTreeMap::new(),
             nav: Vec::new(),
             nav_loading: None,
@@ -2421,12 +2224,10 @@ impl App {
             ask_seq: 0,
             bridge_status: None,
             show_left_panel: true,
-            show_right_panel: true,
             show_settings: false,
             show_help: false,
             show_about: false,
             field_help: HashMap::new(),
-            selected_field: None,
             flatten_view: FlattenView::Equations,
             highlighted_eq_row: None,
             highlighted_source_line: None,
@@ -2441,7 +2242,6 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
-            narrative_exists: false,
             cached_specimen_width: None,
             cached_spy_plot: None,
             cached_incidence: None,
@@ -2495,27 +2295,6 @@ mod tests {
                 "specimen {name} is missing a // purpose: comment"
             );
         }
-    }
-
-    #[test]
-    fn field_name_from_path_extracts_key() {
-        assert_eq!(
-            field_name_from_path(&[Seg::Key("classes".to_owned()), Seg::Key("name".to_owned())]),
-            Some("name".to_owned())
-        );
-    }
-
-    #[test]
-    fn field_name_from_path_skips_trailing_index() {
-        assert_eq!(
-            field_name_from_path(&[Seg::Key("equations".to_owned()), Seg::Index(3)]),
-            Some("equations".to_owned())
-        );
-    }
-
-    #[test]
-    fn field_name_from_path_empty() {
-        assert_eq!(field_name_from_path(&[]), None);
     }
 
     fn make_app_with_stages(ok_through: StageKind) -> App {

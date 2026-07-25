@@ -69,11 +69,10 @@ not hard blockers (see `docs/ideas.md` #4).
 rev + specimen hash, produced by `cargo run --example gen_trace -- <Model>`) with a Claude-written
 **`narrative.md`** — the grounded story of *that specimen's* trip through the pipeline, foregrounding
 the phenomenon the specimen was designed to trigger, citing specific trace locations, and linking to
-`docs/compiler-phases` chapters + external math references. The app's right panel has a **"Read:
-specimen narrative"** button beside the generic-chapter button (visual channel → durable narrative).
-`ProportionalLoop` is the pilot entry; regenerate traces + review narratives on a pin bump (see
-`docs/updating-rumoca.md` step 5). The notebook is *specimen-specific* (Claude's synthesis); it is
-distinct from `docs/compiler-phases` (Doug's *generic* phase theory).
+`docs/compiler-phases` chapters + external math references. `ProportionalLoop` is the pilot entry;
+regenerate traces + review narratives on a pin bump (see `docs/updating-rumoca.md` step 5). The
+notebook is *specimen-specific* (Claude's synthesis); it is distinct from `docs/compiler-phases`
+(Doug's *generic* phase theory).
 
 **Deferred — revisit after Doug's consideration:** the Arc-1/2 close-out differential tests
 (round-tripping specimens through System Modeler vs Rumoca). Doug is deliberately thinking through the
