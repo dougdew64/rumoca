@@ -544,7 +544,19 @@ impl App {
     /// inspector forces those nodes open this frame.
     fn drain_navigate_requests(&mut self) {
         if let Some(req) = bridge::read_navigate_request() {
-            if let Some(stage) = StageKind::from_name(&req.stage) {
+            if let Some(name) = &req.specimen {
+                let target = format!("{name}.mo");
+                if let Some(path) = self.files.iter().find(|p| {
+                    p.file_name().and_then(|f| f.to_str()) == Some(&target)
+                }) {
+                    let already_loaded = self.selected.as_ref() == Some(path);
+                    if !already_loaded {
+                        let path = path.clone();
+                        self.open(path);
+                    }
+                }
+            }
+            if let Some(stage) = req.stage.as_deref().and_then(StageKind::from_name) {
                 self.stage = stage;
                 self.stage_clicked = true;
                 self.viewing_log = false;

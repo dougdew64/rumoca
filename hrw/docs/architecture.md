@@ -681,9 +681,13 @@ and has its own release cycle.
 ### Tour deep links (`hrw://` URIs)
 
 The end-to-end tour document (`docs/compiler-phases/end_to_end_tour.md`) contains
-clickable `hrw://Stage/path/segments` links that navigate HRW directly to the
-referenced item — e.g. `hrw://Parse/classes/GearWithBrake/equations` switches to the
-Parse tab and forces open the tree path `classes → GearWithBrake → equations`.
+clickable `hrw://` links that drive HRW from VS Code. Two URI forms:
+
+- **`hrw://Stage/path/segments`** — navigate to a tree path (e.g.
+  `hrw://Parse/classes/GearWithBrake/equations` switches to Parse and forces open
+  `classes → GearWithBrake → equations`)
+- **`hrw://load/SpecimenName`** — load a specimen (e.g. `hrw://load/GearWithBrake`
+  opens and compiles `GearWithBrake.mo`; no-op if already loaded)
 
 **Protocol:** The same `.hrw-bridge/` directory used by breakpoint requests carries
 a `navigate-request.json` file:

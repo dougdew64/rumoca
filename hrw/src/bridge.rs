@@ -304,9 +304,14 @@ pub fn check_breakpoint_ack() -> bool {
 }
 
 /// A navigation request from a tour deep link (written by the VS Code extension).
+/// Either `specimen` (load a specimen) or `stage` (navigate to a tree path) or both.
 #[derive(serde::Deserialize)]
 pub struct NavigateRequest {
-    pub stage: String,
+    #[serde(default)]
+    pub specimen: Option<String>,
+    #[serde(default)]
+    pub stage: Option<String>,
+    #[serde(default)]
     pub path: Vec<String>,
 }
 

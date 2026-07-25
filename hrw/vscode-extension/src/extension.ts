@@ -129,18 +129,19 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('hrw.navigate', (args: { stage: string; path: string[] }) => {
-            if (!args?.stage) {
-                output.appendLine('hrw.navigate: missing stage argument');
+        vscode.commands.registerCommand('hrw.navigate', (args: { specimen?: string; stage?: string; path?: string[] }) => {
+            if (!args?.stage && !args?.specimen) {
+                output.appendLine('hrw.navigate: missing stage or specimen argument');
                 return;
             }
             const navPath = path.join(bridgeDir, NAVIGATE_REQUEST_FILE);
-            const request = JSON.stringify({
-                stage: args.stage,
-                path: args.path ?? [],
-            }) + '\n';
-            fs.writeFileSync(navPath, request);
-            output.appendLine(`Navigate: ${args.stage} / ${(args.path ?? []).join('/')}`);
+            const request: Record<string, unknown> = {};
+            if (args.specimen) { request.specimen = args.specimen; }
+            if (args.stage) { request.stage = args.stage; }
+            request.path = args.path ?? [];
+            fs.writeFileSync(navPath, JSON.stringify(request) + '\n');
+            const label = args.specimen ? `load ${args.specimen}` : `${args.stage} / ${(args.path ?? []).join('/')}`;
+            output.appendLine(`Navigate: ${label}`);
         })
     );
 
@@ -155,8 +156,8 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 /**
- * Detect `hrw://Stage/path/segments` URIs in markdown files and turn them
- * into clickable links that invoke `hrw.navigate`.
+ * Detect `hrw://Stage/path/segments` and `hrw://load/Specimen` URIs in
+ * markdown files and turn them into clickable links that invoke `hrw.navigate`.
  */
 class HrwLinkProvider implements vscode.DocumentLinkProvider {
     provideDocumentLinks(doc: vscode.TextDocument): vscode.DocumentLink[] {
@@ -169,10 +170,16 @@ class HrwLinkProvider implements vscode.DocumentLinkProvider {
                 const start = new vscode.Position(i, match.index);
                 const end = new vscode.Position(i, match.index + match[0].length);
                 const range = new vscode.Range(start, end);
-                const stage = match[1];
+                const first = match[1];
                 const pathStr = (match[2] ?? '').replace(/^\//, '');
                 const pathSegs = pathStr ? pathStr.split('/') : [];
-                const args = encodeURIComponent(JSON.stringify({ stage, path: pathSegs }));
+                let navArgs: Record<string, unknown>;
+                if (first.toLowerCase() === 'load' && pathSegs.length > 0) {
+                    navArgs = { specimen: pathSegs[0] };
+                } else {
+                    navArgs = { stage: first, path: pathSegs };
+                }
+                const args = encodeURIComponent(JSON.stringify(navArgs));
                 const target = vscode.Uri.parse(`command:hrw.navigate?${args}`);
                 links.push(new vscode.DocumentLink(range, target));
             }

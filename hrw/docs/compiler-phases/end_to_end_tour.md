@@ -4,13 +4,14 @@
 compiler must do and why, grounded in the GearWithBrake specimen and driven by
 HRW's stage views.*
 
-**Specimen:** [`GearWithBrake.mo`](../../specimens/GearWithBrake.mo)
+**Specimen:** [`GearWithBrake.mo`](hrw://load/GearWithBrake)
+([source](../../specimens/GearWithBrake.mo))
 — a geared oscillator with an automatic speed-limiting brake (MSL rotational
 components, index > 1, discrete events, stiff dynamics).
 
 **Prerequisites:** HRW built and running (`cargo run -p hrw` from the workspace
-root). Load `GearWithBrake` from the specimen list — it compiles through all
-stages automatically. This tour complements the textbooks listed in
+root). Click the specimen link above to load `GearWithBrake` — it compiles
+through all stages automatically. This tour complements the textbooks listed in
 [`vision.md`](../vision.md). It references specific chapters and sections;
 consult the originals for proofs and formal development. This tour provides
 what the books cannot: a concrete specimen and a real compiler to ground
