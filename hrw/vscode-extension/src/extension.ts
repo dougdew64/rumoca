@@ -63,11 +63,45 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
+    // Register the link provider and navigate command unconditionally —
+    // these must work even before HRW creates the .hrw-bridge directory.
+    context.subscriptions.push(
+        vscode.languages.registerDocumentLinkProvider(
+            { language: 'markdown', scheme: 'file' },
+            new HrwLinkProvider()
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('hrw.navigate', (args: { specimen?: string; stage?: string; path?: string[] }) => {
+            if (!args?.stage && !args?.specimen) {
+                output.appendLine('hrw.navigate: missing stage or specimen argument');
+                return;
+            }
+            const dir = findBridgeDir();
+            if (!dir) {
+                vscode.window.showWarningMessage(
+                    'HRW: No .hrw-bridge directory found — is HRW running?'
+                );
+                return;
+            }
+            const navPath = path.join(dir, NAVIGATE_REQUEST_FILE);
+            const request: Record<string, unknown> = {};
+            if (args.specimen) { request.specimen = args.specimen; }
+            if (args.stage) { request.stage = args.stage; }
+            request.path = args.path ?? [];
+            fs.writeFileSync(navPath, JSON.stringify(request) + '\n');
+            const label = args.specimen ? `load ${args.specimen}` : `${args.stage} / ${(args.path ?? []).join('/')}`;
+            output.appendLine(`Navigate: ${label}`);
+        })
+    );
+
     const bridgeDir = findBridgeDir();
     if (!bridgeDir) {
         output.appendLine(
-            'No .hrw-bridge directory found — will retry when workspace changes'
+            'No .hrw-bridge directory found — breakpoint bridge inactive (deep links still work)'
         );
+        context.subscriptions.push(output);
         return;
     }
 
@@ -101,9 +135,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
             fs.unlinkSync(requestPath);
 
-            // Write the ack file so HRW knows the breakpoint is registered
-            // and can safely spawn the algorithm thread. HRW polls for this
-            // file via `bridge::check_breakpoint_ack()`.
             const ackPath = path.join(bridgeDir, ACK_FILE);
             fs.writeFileSync(ackPath, JSON.stringify({ acked: true }) + '\n');
         } catch (err) {
@@ -126,30 +157,6 @@ export function activate(context: vscode.ExtensionContext): void {
                 'HRW: Cleared armed breakpoints'
             );
         })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('hrw.navigate', (args: { specimen?: string; stage?: string; path?: string[] }) => {
-            if (!args?.stage && !args?.specimen) {
-                output.appendLine('hrw.navigate: missing stage or specimen argument');
-                return;
-            }
-            const navPath = path.join(bridgeDir, NAVIGATE_REQUEST_FILE);
-            const request: Record<string, unknown> = {};
-            if (args.specimen) { request.specimen = args.specimen; }
-            if (args.stage) { request.stage = args.stage; }
-            request.path = args.path ?? [];
-            fs.writeFileSync(navPath, JSON.stringify(request) + '\n');
-            const label = args.specimen ? `load ${args.specimen}` : `${args.stage} / ${(args.path ?? []).join('/')}`;
-            output.appendLine(`Navigate: ${label}`);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.languages.registerDocumentLinkProvider(
-            { language: 'markdown', scheme: 'file' },
-            new HrwLinkProvider()
-        )
     );
 
     context.subscriptions.push(output);
