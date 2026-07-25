@@ -4,12 +4,12 @@
 compiler must do and why, grounded in the GearWithBrake specimen and driven by
 HRW's stage views.*
 
-**Specimen:** [`GearWithBrake.mo`](../../specimens/GearWithBrake.mo)
+**Specimen:** [Load GearWithBrake](hrw://load/GearWithBrake)
 — a geared oscillator with an automatic speed-limiting brake (MSL rotational
 components, index > 1, discrete events, stiff dynamics).
 
 **Prerequisites:** HRW built and running (`cargo run -p hrw` from the workspace
-root). Load `GearWithBrake` from the specimen list — it compiles through all
+root). [Load GearWithBrake](hrw://load/GearWithBrake) — it compiles through all
 stages automatically. This tour complements the textbooks listed in
 [`vision.md`](../vision.md). It references specific chapters and sections;
 consult the originals for proofs and formal development. This tour provides
@@ -127,7 +127,7 @@ typed, but it knows nothing about what the names mean. `rotor.flange_b`
 could be anything — a variable, a class, an error. The type system hasn't
 been consulted; no equation has been expanded; nothing has been checked.
 
-**In HRW:** Click the **Parse** tab. The JSON tree shows the raw AST — expand
+**In HRW:** [Open the Parse tab](hrw://stage/Parse). The JSON tree shows the raw AST — expand
 `classes` → `GearWithBrake` → `body` → `equations` to find the 7 `connect`
 nodes and the `when` clause. Click any node to inspect it; notice that
 identifiers like `Modelica.Mechanics.Rotational.Components.Inertia` are plain
@@ -164,7 +164,7 @@ expanded what that means — what variables it declares, what equations it
 contributes, what parameter values it carries. The model is still a
 hierarchical description, not a flat system of equations.
 
-**In HRW:** Click the **Resolve** tab. The tree now has `def_id` and
+**In HRW:** [Open the Resolve tab](hrw://stage/Resolve). The tree now has `def_id` and
 `type_def_id` annotations on every identifier — hover one to see the resolved
 class name (e.g. `type_def_id: 27586 → model Modelica.Mechanics.Rotational
 .Components.Inertia`). Right-click a `type_def_id` → **"↪ Go to Inertia"** to
@@ -202,7 +202,7 @@ top-level `Inertia rotor(J = 0.01)` declaration) overrides the MSL default.
 material is now all present. Every variable that will eventually appear in
 the equation system is now declared somewhere in the instance tree.
 
-**In HRW:** Click the **Instantiate** tab. The tree is much larger — expand
+**In HRW:** [Open the Instantiate tab](hrw://stage/Instantiate). The tree is much larger — expand
 `components` to see the fully instantiated component hierarchy. Each MSL
 component has been expanded with its internal variables, equations, and
 parameter modifications applied.
@@ -245,7 +245,7 @@ system. But the semantic contract is now verified — every expression is
 well-typed, every array dimension is resolved, every variability constraint
 is satisfied.
 
-**In HRW:** Click the **Typecheck** tab. The tree is structurally similar to
+**In HRW:** [Open the Typecheck tab](hrw://stage/Typecheck). The tree is structurally similar to
 Instantiate, but every expression now carries resolved type information. Look
 for `type_specifier` fields on variable declarations.
 
@@ -306,7 +306,7 @@ This is the first point at which we have something recognizable as
 *mathematics* — a system of equations. But it is not yet in any standard
 form that a textbook would recognize.
 
-**In HRW:** Click the **Flatten** tab. You have three sub-views:
+**In HRW:** [Open the Flatten tab](hrw://stage/Flatten). You have three sub-views:
 
 1. **Equations** — the equation sheet. This is the single biggest upgrade over
    the JSON tree: all 44 equations rendered in readable mathematical notation,
@@ -395,7 +395,7 @@ This is the form that Cellier, Hairer & Wanner, and Brenan, Campbell &
 Petzold analyze. For the first time, the system is in a standard notation
 that a textbook reader would recognize.
 
-**In HRW:** Click the **DAE** tab. The equation sheet now shows the classified
+**In HRW:** [Open the Flatten tab](hrw://stage/Flatten). The equation sheet now shows the classified
 system — equations grouped into the four MLS Appendix B partitions (continuous
 f_x, discrete real f_z, discrete-valued f_m, conditions f_c). The variable
 table shows the partition column (state, algebraic, parameter, discrete).
@@ -480,7 +480,7 @@ torques (`motor.flange.tau`, `gear.flange_a.tau`, `gear.flange_b.tau`,
 (`brakeTorque.tau`), the angular acceleration (`spring.a_rel`), load speed
 (`load.w`), and a boundary position (`spring.flange_b.phi`).
 
-**In HRW:** Click the **Index Reduction** tab. The reduction report shows the
+**In HRW:** [Open the Index Reduction tab](hrw://stage/IndexReduction). The reduction report shows the
 10-step pipeline: constrained dummy derivative demotion (5 states demoted),
 trivial eliminations (33 variables removed), and the final equation count
 (11 equations, 11 unknowns). The equation sheet here shows the *reduced*
@@ -597,7 +597,7 @@ perfect matching in a bipartite graph). The BLT ordering is topological
 sorting of the condensation DAG. None of this requires evaluating a single
 floating-point number.
 
-**In HRW:** Click the **Structural** tab — this is HRW's richest view. Four
+**In HRW:** [Open the Structural tab](hrw://stage/Structural) — this is HRW's richest view. Four
 sub-views:
 
 1. **Incidence** — the 11×11 incidence matrix with the matching overlay (green
@@ -689,7 +689,7 @@ model still simulates because the solver falls back to a relaxed IC solve.
 This failure is itself educational: it shows that initialization is a hard
 problem in practice, not just in theory.
 
-**In HRW:** Click the **Initialization** tab. The determinacy view shows
+**In HRW:** [Open the Initialization tab](hrw://stage/Initialization). The determinacy view shows
 the IC plan's matching result — how many of the initialization unknowns were
 matched (33/37 for GearWithBrake). The unmatched variables are the ones
 causing the structural singularity. For a simpler example, load `RcCircuit`
@@ -765,7 +765,7 @@ between events, with discrete transitions triggered by zero-crossings of
 guard functions. The MLS Appendix B formalization captures this as the
 interplay of f_x (continuous), f_m (discrete updates), and f_c (conditions).
 
-**In HRW:** Click the **Events** tab. The event listing shows the 4 conditions
+**In HRW:** [Open the Events tab](hrw://stage/Events). The event listing shows the 4 conditions
 and the discrete-valued update for `braking`. For contrast, load `SingleInertia`
 (a smooth model) — the Events tab shows "no events," confirming that the event
 structure is specific to hybrid models.
@@ -818,7 +818,7 @@ compute graph rather than symbolic expression trees. The SolveProblem is
 schema-versioned and serializable — it can cross process boundaries (JSON,
 binary) for codegen targets.
 
-**In HRW:** Click the **Solve Lowering** tab. The JSON tree shows the
+**In HRW:** [Open the Solve Lowering tab](hrw://stage/SolveLowering). The JSON tree shows the
 SolveProblem: expand `variable_layout` to see the flat slot assignments
 (Y[0] through Y[48]), `compute_blocks` for the compiled residual operations,
 and `jacobian` for the symbolically-derived ∂F/∂y. This is the last
@@ -870,7 +870,7 @@ stiff systems like GearWithBrake) with event detection.
 **Result:** 49 variable trajectories over 501 time points (t = 0 to 2.0),
 with discontinuity segments at the braking events.
 
-**In HRW:** Click the **Simulation** tab and press **▶ Run**. Two plots appear:
+**In HRW:** [Open the Simulation tab](hrw://stage/Simulation) and press **▶ Run**. Two plots appear:
 
 1. **Trajectory plot** — state variables vs time. Look for the limit cycle:
    the load accelerates, the brake engages (velocity drops), the brake

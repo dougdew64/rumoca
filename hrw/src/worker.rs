@@ -290,6 +290,23 @@ impl StageKind {
             StageKind::Simulation => "Simulation",
         }
     }
+
+    pub fn from_slug(s: &str) -> Option<Self> {
+        match s {
+            "Parse" => Some(Self::Parse),
+            "Resolve" => Some(Self::Resolve),
+            "Instantiate" => Some(Self::Instantiate),
+            "Typecheck" => Some(Self::Typecheck),
+            "Flatten" => Some(Self::Flatten),
+            "Structural" => Some(Self::Structural),
+            "IndexReduction" => Some(Self::IndexReduction),
+            "Initialization" => Some(Self::Initialization),
+            "Events" => Some(Self::Events),
+            "SolveLowering" => Some(Self::SolveLowering),
+            "Simulation" => Some(Self::Simulation),
+            _ => None,
+        }
+    }
 }
 
 /// The ten pipeline-stage results as one bundle, used for progressive streaming.

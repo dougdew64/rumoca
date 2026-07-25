@@ -534,6 +534,13 @@ impl App {
     /// messages, timing) instead of staring at "compiling..." text. Once
     /// compilation finishes and the user clicks a stage tab, `viewing_log`
     /// flips to false.
+    fn find_specimen(&self, name: &str) -> Option<PathBuf> {
+        let with_ext = format!("{name}.mo");
+        self.files.iter().find(|p| {
+            p.file_name().and_then(|f| f.to_str()) == Some(with_ext.as_str())
+        }).cloned()
+    }
+
     fn open(&mut self, path: PathBuf) {
         // Mark as compiling — this disables stage tab highlighting and shows a
         // spinner.
@@ -1522,8 +1529,12 @@ impl eframe::App for App {
         // Tour and Specimen modes show a left panel (tour text or specimen list
         // + narrative). Debug mode hides it so the stage tabs fill HRW's window
         // (VS Code occupies the left half of the screen).
+        let mut hrw_link_action: Option<HrwLink> = None;
+
         if self.ui_mode == UiMode::Tour {
             const TOUR_CONTENT: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
+            let tour_links = extract_hrw_links(TOUR_CONTENT);
+            register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
             let panel_width = ui.available_width() * 0.4;
             egui::Panel::left("tour_panel")
                 .exact_size(panel_width)
@@ -1537,6 +1548,7 @@ impl eframe::App for App {
                             .show(ui, &mut self.commonmark_cache, TOUR_CONTENT);
                     });
                 });
+            hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &tour_links);
         }
         if self.ui_mode == UiMode::Specimen {
         let panel_width = ui.available_width() * 0.4;
@@ -1652,6 +1664,8 @@ impl eframe::App for App {
 
                 match narrative {
                     Some(text) => {
+                        let narrative_links = extract_hrw_links(text);
+                        register_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
                         egui::ScrollArea::vertical()
                             .id_salt("narrative")
                             .show(ui, |ui| {
@@ -1659,6 +1673,9 @@ impl eframe::App for App {
                             egui_commonmark::CommonMarkViewer::new()
                                 .show(ui, &mut self.commonmark_cache, text);
                         });
+                        if hrw_link_action.is_none() {
+                            hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
+                        }
                     }
                     None if model_name.is_some() => {
                         ui.weak("(no narrative for this specimen)");
@@ -1668,6 +1685,28 @@ impl eframe::App for App {
                     }
                 }
             });
+        }
+
+        // ---- Dispatch hrw:// link actions ----
+        if let Some(action) = hrw_link_action {
+            match action {
+                HrwLink::LoadSpecimen(name) => {
+                    if let Some(path) = self.find_specimen(&name) {
+                        self.open(path);
+                    }
+                }
+                HrwLink::SwitchStage(kind) => {
+                    self.stage = kind;
+                    self.viewing_log = false;
+                }
+                HrwLink::LoadAndSwitch(name, kind) => {
+                    if let Some(path) = self.find_specimen(&name) {
+                        self.open(path);
+                    }
+                    self.stage = kind;
+                    self.viewing_log = false;
+                }
+            }
         }
 
         // ---- Center panel: stage tabs + main content ----
@@ -2250,6 +2289,61 @@ fn section_header(ui: &mut egui::Ui, title: &str) {
         });
 }
 
+enum HrwLink {
+    LoadSpecimen(String),
+    SwitchStage(StageKind),
+    LoadAndSwitch(String, StageKind),
+}
+
+fn parse_hrw_link(url: &str) -> Option<HrwLink> {
+    let path = url.strip_prefix("hrw://")?;
+    let parts: Vec<&str> = path.splitn(3, '/').collect();
+    match parts.as_slice() {
+        ["load", specimen, stage] => {
+            let kind = StageKind::from_slug(stage)?;
+            Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind))
+        }
+        ["load", specimen] => Some(HrwLink::LoadSpecimen((*specimen).to_owned())),
+        ["stage", stage] => {
+            let kind = StageKind::from_slug(stage)?;
+            Some(HrwLink::SwitchStage(kind))
+        }
+        _ => None,
+    }
+}
+
+fn extract_hrw_links(text: &str) -> Vec<String> {
+    let mut links = Vec::new();
+    for cap in text.match_indices("hrw://") {
+        let start = cap.0;
+        let rest = &text[start..];
+        let end = rest.find(|c: char| c == ')' || c == ' ' || c == '\n' || c == '"' || c == '>')
+            .unwrap_or(rest.len());
+        let url = &rest[..end];
+        if !links.contains(&url.to_owned()) {
+            links.push(url.to_owned());
+        }
+    }
+    links
+}
+
+fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String]) {
+    for link in links {
+        if cache.get_link_hook(link).is_none() {
+            cache.add_link_hook(link);
+        }
+    }
+}
+
+fn drain_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String]) -> Option<HrwLink> {
+    for link in links {
+        if cache.get_link_hook(link) == Some(true) {
+            return parse_hrw_link(link);
+        }
+    }
+    None
+}
+
 fn set_markdown_text_sizes(ui: &mut egui::Ui) {
     let body_size = ui.text_style_height(&egui::TextStyle::Body);
     ui.style_mut().text_styles.insert(
@@ -2738,5 +2832,77 @@ mod tests {
         app.drain_worker();
         assert_eq!(app.log_entries.len(), 1);
         assert!(app.log_entries[0].message.contains("test log"));
+    }
+
+    #[test]
+    fn parse_hrw_link_load_specimen() {
+        let link = parse_hrw_link("hrw://load/BouncingBall");
+        assert!(matches!(link, Some(HrwLink::LoadSpecimen(ref s)) if s == "BouncingBall"));
+    }
+
+    #[test]
+    fn parse_hrw_link_switch_stage() {
+        let link = parse_hrw_link("hrw://stage/Structural");
+        assert!(matches!(link, Some(HrwLink::SwitchStage(StageKind::Structural))));
+    }
+
+    #[test]
+    fn parse_hrw_link_load_and_switch() {
+        let link = parse_hrw_link("hrw://load/GearWithBrake/Parse");
+        assert!(matches!(link, Some(HrwLink::LoadAndSwitch(ref s, StageKind::Parse)) if s == "GearWithBrake"));
+    }
+
+    #[test]
+    fn parse_hrw_link_invalid_stage() {
+        assert!(parse_hrw_link("hrw://stage/Bogus").is_none());
+    }
+
+    #[test]
+    fn parse_hrw_link_not_hrw_scheme() {
+        assert!(parse_hrw_link("https://example.com").is_none());
+    }
+
+    #[test]
+    fn extract_hrw_links_from_markdown() {
+        let md = "Click [here](hrw://load/Foo) or [there](hrw://stage/Parse) end.";
+        let links = extract_hrw_links(md);
+        assert_eq!(links, vec!["hrw://load/Foo", "hrw://stage/Parse"]);
+    }
+
+    #[test]
+    fn extract_hrw_links_deduplicates() {
+        let md = "[a](hrw://load/X) and [b](hrw://load/X) again.";
+        let links = extract_hrw_links(md);
+        assert_eq!(links.len(), 1);
+    }
+
+    #[test]
+    fn stage_kind_from_slug_round_trips() {
+        for kind in StageKind::ALL {
+            let slug = match kind {
+                StageKind::Parse => "Parse",
+                StageKind::Resolve => "Resolve",
+                StageKind::Instantiate => "Instantiate",
+                StageKind::Typecheck => "Typecheck",
+                StageKind::Flatten => "Flatten",
+                StageKind::Structural => "Structural",
+                StageKind::IndexReduction => "IndexReduction",
+                StageKind::Initialization => "Initialization",
+                StageKind::Events => "Events",
+                StageKind::SolveLowering => "SolveLowering",
+                StageKind::Simulation => "Simulation",
+            };
+            assert_eq!(StageKind::from_slug(slug), Some(*kind));
+        }
+    }
+
+    #[test]
+    fn tour_document_hrw_links_are_valid() {
+        const TOUR: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
+        let links = extract_hrw_links(TOUR);
+        assert!(!links.is_empty(), "tour should contain hrw:// links");
+        for link in &links {
+            assert!(parse_hrw_link(link).is_some(), "invalid hrw link in tour: {link}");
+        }
     }
 }
