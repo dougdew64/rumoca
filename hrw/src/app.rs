@@ -1528,8 +1528,7 @@ impl eframe::App for App {
             egui::Panel::left("tour_panel")
                 .exact_size(panel_width)
                 .show(ui, |ui| {
-                    ui.strong("End-to-End Tour");
-                    ui.separator();
+                    section_header(ui, "End-to-End Tour");
                     egui::ScrollArea::vertical()
                         .id_salt("tour")
                         .show(ui, |ui| {
@@ -1551,8 +1550,8 @@ impl eframe::App for App {
                     egui::vec2(ui.available_width(), list_height),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        ui.strong("Specimens");
-                        ui.separator();
+                        section_header(ui, "Specimens");
+                        ui.add_space(4.0);
 
                         if let Some(err) = &self.scan_error {
                             ui.colored_label(ui.visuals().error_fg_color, err);
@@ -1631,7 +1630,9 @@ impl eframe::App for App {
                     },
                 );
 
-                ui.separator();
+                ui.add_space(10.0);
+                section_header(ui, "Narrative");
+                ui.add_space(4.0);
 
                 // -- Bottom two-thirds: specimen narrative --
                 let model_name = self.model.as_deref();
@@ -2224,6 +2225,29 @@ fn read_purpose(path: &Path) -> Option<String> {
 /// visually distinct colors without a hand-picked palette. `Hsva` constructs
 /// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
 /// automatically.
+fn section_header(ui: &mut egui::Ui, title: &str) {
+    let dark = ui.visuals().dark_mode;
+    let bg = if dark {
+        egui::Color32::from_rgb(0x1A, 0x2A, 0x40)
+    } else {
+        egui::Color32::from_rgb(0xD8, 0xE8, 0xF8)
+    };
+    let text_color = if dark {
+        egui::Color32::from_rgb(0x8A, 0xC4, 0xFF)
+    } else {
+        egui::Color32::from_rgb(0x0A, 0x5C, 0xC4)
+    };
+    let h_margin = ui.spacing().item_spacing.x;
+    egui::Frame::new()
+        .fill(bg)
+        .inner_margin(egui::Margin::symmetric(6, 4))
+        .outer_margin(egui::Margin { left: -h_margin as i8, right: -h_margin as i8, top: 2, bottom: 0 })
+        .show(ui, |ui| {
+            ui.set_min_width(ui.available_width());
+            ui.label(egui::RichText::new(title).strong().size(13.0).color(text_color));
+        });
+}
+
 const GOLDEN_RATIO: f32 = 0.618_033_99;
 
 fn series_color(i: usize) -> egui::Color32 {
