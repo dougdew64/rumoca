@@ -47,6 +47,7 @@ tour take priority over unlinked items of the same severity.
 | #29 Solver stepping visualization | Simulation |
 | #30 Live solver stepping (LiveTrace) | Simulation |
 | #31 Revisit all simulator functionality | Simulation |
+| #32 In-app tour view | (all tours) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -982,3 +983,39 @@ simulation-related features can deliver their full value.
   tracker and release notes.
 - **Relates to:** #29 (solver stepping), #30 (live stepping), #1 (convergence
   narratives), #17 (Jacobian), #18 (BDF), #22 (events).
+
+## 32. In-app tour view — render guided tours inside HRW with clickable navigation
+
+**Tours:** all tours
+
+**Problem:** The end-to-end guided tour (`docs/compiler-phases/end_to_end_tour.md`)
+lives in a markdown file that the user reads in VS Code. The tour references HRW
+stage views ("click the Parse tab", "expand equations") but has no way to actually
+*drive* HRW from those references. Multiple approaches to making deep links work in
+VS Code's markdown preview failed (DocumentLinkProvider, editor decorations,
+`vscode://` URI handler, `command:` URIs) — the VS Code extension environment in
+Remote WSL proved too opaque to debug effectively. See commit `100dab9f` (revert).
+
+**Idea:** Host the tour content in a panel *inside HRW itself*, where clickable
+navigation links can directly call `self.stage = StageKind::Parse` and
+`self.pending_nav_path = Some(...)` — no file-based bridge, no extension, no OS
+round-trip. The tour `.md` files remain the source of truth; HRW renders them
+with an egui markdown renderer and intercepts link clicks.
+
+**Implementation sketch:**
+- Add `egui_commonmark` (or similar) as a dependency for markdown rendering in egui.
+- New module `tour_view.rs`: renders tour content in a side panel or overlay.
+- Custom link handler: intercepts clicks on tour navigation links and calls HRW's
+  existing stage/specimen navigation directly (the Rust-side navigation code from
+  the reverted deep-link feature — `StageKind::from_name`, `should_force_open`,
+  `pending_nav_path` — was tested and working; only the VS Code trigger path failed).
+- Tour content loaded from `docs/compiler-phases/` markdown files at build time
+  (via `include_str!`) or at runtime (file read).
+
+**Why this is better:** HRW has full control over rendering and interaction.
+Navigation is a direct Rust function call, not a multi-hop protocol through VS Code,
+the OS, and a file-based bridge. Every prior HRW feature built in Rust/egui has
+worked on the first implementation.
+
+**Relates to:** #24 (guided tours as HRW-driven walkthroughs), #9 (animated
+algorithm stepping — the tour could embed step controls).
