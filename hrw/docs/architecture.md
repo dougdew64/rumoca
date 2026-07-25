@@ -40,9 +40,10 @@ hrw/
 │   ├── matching_anim.rs   # Animated matching stepper (augmenting-path replay)
 │   ├── tarjan_anim.rs     # Animated Tarjan SCC stepper (BLT discovery replay)
 │   ├── reduction_view.rs  # Index reduction process summary panel
-│   ├── equation_sheet.rs  # Readable equation sheet from the flat DAE
-│   ├── log_view.rs     # Timestamped compilation/simulation log panel
-│   └── field_help.rs   # Build-time-embedded IR field documentation
+│   ├── equation_sheet.rs     # Readable equation sheet from the flat DAE
+│   ├── identifier_index.rs  # Cross-stage identifier index (source → flat names)
+│   ├── log_view.rs          # Timestamped compilation/simulation log panel
+│   └── field_help.rs        # Build-time-embedded IR field documentation
 ├── specimens/          # Modelica source files (the inputs)
 ├── examples/
 │   ├── gen_trace.rs    # Headless: writes a specimen's durable compilation trace
@@ -295,7 +296,7 @@ lets the generic tree inspector render any stage without knowing its Rust type.
 
 ## 5. The UI shell
 
-**File:** `app.rs` (~3000 lines)
+**File:** `app.rs` (~3200 lines)
 
 ### Immediate-mode UI
 
@@ -880,7 +881,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (221 tests) guards against silent
+their call sites. The regression test suite (231 tests) guards against silent
 regressions during a rebase.
 
 

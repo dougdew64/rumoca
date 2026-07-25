@@ -1096,3 +1096,22 @@ tour over several days.
 
 **Relates to:** #24 (guided tours as HRW-driven walkthroughs), #32 (the
 infrastructure this extends).
+
+## 36. Modelica syntax highlighting in the Specimen source view
+
+Captured 2026-07-25. The Specimen mode LHS source view renders the specimen's
+Modelica source as plain monospace text with line numbers. Adding syntax
+highlighting (keywords, types, strings, comments, numbers in distinct colors)
+would improve readability and match the visual quality of the rest of HRW.
+
+- **Approach:** a simple Modelica tokenizer that classifies tokens into
+  categories (keyword, type, identifier, number, string, comment, operator),
+  rendered via `egui::LayoutJob` with per-token color. No full parser needed —
+  lexical-level highlighting is sufficient.
+- **Theme-aware:** colors should respect dark/light mode, consistent with
+  HRW's existing palette.
+- **When:** after identifier clicking (#10 step 3) is implemented — the
+  tokenizer built for clickable identifiers can be extended to carry color
+  information, so the two features share infrastructure.
+
+**Relates to:** #10 (cross-stage identifier tracking — the tokenizer is shared).

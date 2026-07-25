@@ -506,6 +506,7 @@ pub enum FromWorker {
         def_index: BTreeMap<u64, DefInfo>,
         /// Pre-formatted equation sheet built from the typed DAE.
         equation_sheet: Option<crate::equation_sheet::EquationSheet>,
+        identifier_index: Option<crate::identifier_index::IdentifierIndex>,
     },
     /// A class opened by navigation: its qualified name and (on success) its
     /// resolved IR plus the DefIds it references, so navigation can continue.
@@ -996,6 +997,7 @@ impl WorkerState {
                     },
                     def_index: BTreeMap::new(),
                     equation_sheet: None,
+                    identifier_index: None,
                 };
             }
         };
@@ -1130,10 +1132,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet) = match &model {
+        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None)
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None)
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -1152,6 +1154,15 @@ impl WorkerState {
                         Some(crate::equation_sheet::build(
                             &cr.dae,
                             Some((&uri, &source)),
+                        ))
+                    }
+                    _ => None,
+                };
+
+                let id_index = match result {
+                    Some(PhaseResult::Success(cr)) => {
+                        Some(crate::identifier_index::IdentifierIndex::build(
+                            &cr.dae, &uri, &source,
                         ))
                     }
                     _ => None,
@@ -1195,7 +1206,7 @@ impl WorkerState {
 
                 log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
 
-                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet)
+                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index)
             }
         };
 
@@ -1225,6 +1236,7 @@ impl WorkerState {
             },
             def_index,
             equation_sheet,
+            identifier_index,
         }
     }
 }
@@ -2740,6 +2752,23 @@ mod tests {
         };
         let sheet = equation_sheet.expect("equation_sheet should be Some");
         assert!(sheet.n_equations > 0, "should have at least one equation");
+    }
+
+    #[test]
+    fn compile_produces_identifier_index_for_healthy_specimen() {
+        let specimen = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/SingleInertia.mo"
+        ));
+        let mut w = WorkerState::new();
+        let result = w.compile(&specimen, &|_: FromWorker| {});
+        let FromWorker::Compiled { identifier_index, .. } = result else {
+            panic!("expected Compiled");
+        };
+        let idx = identifier_index.expect("identifier_index should be Some");
+        assert!(!idx.variables.is_empty(), "should have indexed at least one variable");
+        let has_state = idx.variables.values().any(|v| v.kind == "state");
+        assert!(has_state, "SingleInertia should have at least one state variable");
     }
 
     // -- OutputCapture tests --------------------------------------------------

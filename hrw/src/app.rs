@@ -36,6 +36,7 @@ use std::collections::{BTreeMap, HashMap};
 // Claude reads to understand what the user is looking at.
 use crate::bridge::{self, Ask, Focus, Seg};
 use crate::equation_sheet;
+use crate::identifier_index;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::canvas::Canvas;
@@ -94,6 +95,16 @@ enum FlattenView {
     Equations,
     SourceMap,
     Tree,
+}
+
+/// What the bottom two-thirds of the Specimen mode LHS shows.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+enum SpecimenDetail {
+    /// The specimen's Modelica source text.
+    #[default]
+    Source,
+    /// The specimen narrative from `docs/specimen-notebook/<Model>/narrative.md`.
+    Narrative,
 }
 
 /// One level of "go to definition" navigation: a class extracted from the
@@ -208,6 +219,7 @@ pub struct App {
 
     // ---- 7. Panels and windows toggled from the menu bar ----
     ui_mode: UiMode,
+    specimen_detail: SpecimenDetail,
     // egui's `Window::open(&mut bool)` pattern: the bool controls visibility,
     // and the window's close button flips it back to false.
     show_settings: bool,
@@ -269,6 +281,8 @@ pub struct App {
     cached_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
     cached_reduction: Option<Option<reduction_view::ReductionView>>,
     cached_equation_sheet: Option<equation_sheet::EquationSheet>,
+    identifier_index: Option<identifier_index::IdentifierIndex>,
+    tracked_identifier: Option<String>,
     cached_matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
     matching_anim_canvas: Canvas,
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
@@ -280,6 +294,8 @@ pub struct App {
     commonmark_cache: egui_commonmark::CommonMarkCache,
     // Specimen narratives loaded on demand from docs/specimen-notebook/<Model>/narrative.md.
     cached_narratives: HashMap<PathBuf, Option<String>>,
+    // The selected specimen's Modelica source text, loaded on demand.
+    cached_source: Option<String>,
 
     // ---- 15. Pending stage from hrw:// link ----
     // When an hrw://load/Specimen/Stage link fires, the stage can't be applied
@@ -434,6 +450,7 @@ impl App {
             ask_seq: 0,
             bridge_status: None,
             ui_mode: UiMode::Tour,
+            specimen_detail: SpecimenDetail::default(),
             show_settings: false,
             show_help: false,
             show_about: false,
@@ -458,12 +475,15 @@ impl App {
             cached_incidence: None,
             cached_reduction: None,
             cached_equation_sheet: None,
+            identifier_index: None,
+            tracked_identifier: None,
             cached_matching_anim: None,
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
+            cached_source: None,
             pending_stage: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
@@ -564,6 +584,9 @@ impl App {
         self.sim_running = false;
         self.def_index = BTreeMap::new();
         self.cached_equation_sheet = None;
+        self.identifier_index = None;
+        self.tracked_identifier = None;
+        self.cached_source = None;
         self.highlighted_eq_row = None;
         self.highlighted_source_line = None;
         self.nav.clear();
@@ -646,6 +669,7 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
+                    identifier_index,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -655,6 +679,7 @@ impl App {
                     self.stages = stages;
                     self.def_index = def_index;
                     self.cached_equation_sheet = equation_sheet;
+                    self.identifier_index = identifier_index;
                     self.cached_report_stage = None;
                     self.cached_spy_plot = None;
                     self.cached_incidence = None;
@@ -1662,44 +1687,138 @@ impl eframe::App for App {
                 );
 
                 ui.add_space(10.0);
-                section_header(ui, "Narrative");
+                section_header_toggle(
+                    ui,
+                    &mut self.specimen_detail,
+                    &[
+                        (SpecimenDetail::Source, "Source"),
+                        (SpecimenDetail::Narrative, "Narrative"),
+                    ],
+                );
                 ui.add_space(4.0);
 
-                // -- Bottom two-thirds: specimen narrative --
-                let model_name = self.model.as_deref();
-                let narrative = model_name.and_then(|name| {
-                    let key = PathBuf::from(name);
-                    let cached = self.cached_narratives.entry(key).or_insert_with(|| {
-                        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                        let path = manifest
-                            .join("docs/specimen-notebook")
-                            .join(name)
-                            .join("narrative.md");
-                        std::fs::read_to_string(path).ok()
-                    });
-                    cached.as_deref()
-                });
-
-                match narrative {
-                    Some(text) => {
-                        let narrative_links = extract_hrw_links(text);
-                        register_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
-                        egui::ScrollArea::vertical()
-                            .id_salt("narrative")
-                            .show(ui, |ui| {
-                            set_markdown_text_sizes(ui);
-                            egui_commonmark::CommonMarkViewer::new()
-                                .show(ui, &mut self.commonmark_cache, text);
+                // -- Bottom two-thirds: source or narrative --
+                match self.specimen_detail {
+                    SpecimenDetail::Source => {
+                        let source = self.selected.as_ref().map(|path| {
+                            self.cached_source.get_or_insert_with(|| {
+                                std::fs::read_to_string(path).unwrap_or_default()
+                            }).as_str()
                         });
-                        if hrw_link_action.is_none() {
-                            hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
+                        let mut clicked_id: Option<String> = None;
+                        match source {
+                            Some(text) if !text.is_empty() => {
+                                egui::ScrollArea::both()
+                                    .id_salt("specimen_source")
+                                    .auto_shrink(false)
+                                    .show(ui, |ui| {
+                                    let tracked = self.tracked_identifier.as_deref();
+                                    for (i, line) in text.lines().enumerate() {
+                                        let line_1 = (i + 1) as u32;
+                                        let spans = self.identifier_index.as_ref()
+                                            .map(|idx| idx.clickable_spans(line_1, line))
+                                            .unwrap_or_default();
+                                        if spans.is_empty() {
+                                            let line_num = format!("{:>4} ", line_1);
+                                            ui.label(
+                                                egui::RichText::new(format!("{line_num}{line}"))
+                                                    .monospace()
+                                            );
+                                        } else {
+                                            ui.horizontal(|ui| {
+                                                ui.spacing_mut().item_spacing.x = 0.0;
+                                                ui.label(
+                                                    egui::RichText::new(format!("{:>4} ", line_1))
+                                                        .monospace()
+                                                );
+                                                let mut pos = 0;
+                                                for (start, end, name) in &spans {
+                                                    if *start > pos {
+                                                        ui.label(
+                                                            egui::RichText::new(&line[pos..*start])
+                                                                .monospace()
+                                                        );
+                                                    }
+                                                    let ident_text = &line[*start..*end];
+                                                    let is_tracked = tracked == Some(name.as_str());
+                                                    let color = if is_tracked {
+                                                        egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)
+                                                    } else {
+                                                        egui::Color32::from_rgb(0x64, 0xB5, 0xF6)
+                                                    };
+                                                    let label = egui::Label::new(
+                                                        egui::RichText::new(ident_text)
+                                                            .monospace()
+                                                            .color(color)
+                                                            .underline()
+                                                    ).sense(egui::Sense::click());
+                                                    let resp = ui.add(label)
+                                                        .on_hover_text(name);
+                                                    if resp.clicked() {
+                                                        clicked_id = Some(name.clone());
+                                                    }
+                                                    pos = *end;
+                                                }
+                                                if pos < line.len() {
+                                                    ui.label(
+                                                        egui::RichText::new(&line[pos..])
+                                                            .monospace()
+                                                    );
+                                                }
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                            _ => {
+                                ui.weak("Select a specimen to view its source.");
+                            }
+                        }
+                        if let Some(name) = clicked_id {
+                            if self.tracked_identifier.as_deref() == Some(&name) {
+                                self.tracked_identifier = None;
+                            } else {
+                                self.tracked_identifier = Some(name);
+                            }
                         }
                     }
-                    None if model_name.is_some() => {
-                        ui.weak("(no narrative for this specimen)");
-                    }
-                    None => {
-                        ui.weak("Select a specimen to see its narrative.");
+                    SpecimenDetail::Narrative => {
+                        let model_name = self.model.as_deref();
+                        let narrative = model_name.and_then(|name| {
+                            let key = PathBuf::from(name);
+                            let cached = self.cached_narratives.entry(key).or_insert_with(|| {
+                                let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                                let path = manifest
+                                    .join("docs/specimen-notebook")
+                                    .join(name)
+                                    .join("narrative.md");
+                                std::fs::read_to_string(path).ok()
+                            });
+                            cached.as_deref()
+                        });
+
+                        match narrative {
+                            Some(text) => {
+                                let narrative_links = extract_hrw_links(text);
+                                register_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
+                                egui::ScrollArea::vertical()
+                                    .id_salt("narrative")
+                                    .show(ui, |ui| {
+                                    set_markdown_text_sizes(ui);
+                                    egui_commonmark::CommonMarkViewer::new()
+                                        .show(ui, &mut self.commonmark_cache, text);
+                                });
+                                if hrw_link_action.is_none() {
+                                    hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
+                                }
+                            }
+                            None if model_name.is_some() => {
+                                ui.weak("(no narrative for this specimen)");
+                            }
+                            None => {
+                                ui.weak("Select a specimen to see its narrative.");
+                            }
+                        }
                     }
                 }
             });
@@ -2302,6 +2421,56 @@ fn section_header(ui: &mut egui::Ui, title: &str) {
         });
 }
 
+/// A section header bar with clickable toggle options (e.g. "Source | Narrative").
+/// The active option is shown in bright text; inactive options are dimmed and clickable.
+fn section_header_toggle<T: PartialEq + Copy>(
+    ui: &mut egui::Ui,
+    current: &mut T,
+    options: &[(T, &str)],
+) {
+    let dark = ui.visuals().dark_mode;
+    let bg = if dark {
+        egui::Color32::from_rgb(0x1A, 0x2A, 0x40)
+    } else {
+        egui::Color32::from_rgb(0xD8, 0xE8, 0xF8)
+    };
+    let active_color = if dark {
+        egui::Color32::from_rgb(0x8A, 0xC4, 0xFF)
+    } else {
+        egui::Color32::from_rgb(0x0A, 0x5C, 0xC4)
+    };
+    let inactive_color = if dark {
+        egui::Color32::from_rgb(0x50, 0x70, 0x90)
+    } else {
+        egui::Color32::from_rgb(0x60, 0x90, 0xC0)
+    };
+    let h_margin = ui.spacing().item_spacing.x;
+    egui::Frame::new()
+        .fill(bg)
+        .inner_margin(egui::Margin::symmetric(6, 4))
+        .outer_margin(egui::Margin { left: -h_margin as i8, right: -h_margin as i8, top: 2, bottom: 0 })
+        .show(ui, |ui| {
+            ui.set_min_width(ui.available_width());
+            ui.horizontal(|ui| {
+                for (i, (value, label)) in options.iter().enumerate() {
+                    if i > 0 {
+                        ui.label(egui::RichText::new("|").size(13.0).color(inactive_color));
+                    }
+                    let is_active = *current == *value;
+                    let color = if is_active { active_color } else { inactive_color };
+                    let text = if is_active {
+                        egui::RichText::new(*label).strong().size(13.0).color(color)
+                    } else {
+                        egui::RichText::new(*label).size(13.0).color(color)
+                    };
+                    if ui.add(egui::Label::new(text).sense(egui::Sense::click())).clicked() {
+                        *current = *value;
+                    }
+                }
+            });
+        });
+}
+
 /// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
 enum HrwLink {
     /// `hrw://load/<Specimen>` — load and compile a specimen by name.
@@ -2462,6 +2631,7 @@ impl App {
             ask_seq: 0,
             bridge_status: None,
             ui_mode: UiMode::Tour,
+            specimen_detail: SpecimenDetail::default(),
             show_settings: false,
             show_help: false,
             show_about: false,
@@ -2486,12 +2656,15 @@ impl App {
             cached_incidence: None,
             cached_reduction: None,
             cached_equation_sheet: None,
+            identifier_index: None,
+            tracked_identifier: None,
             cached_matching_anim: None,
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
+            cached_source: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,
@@ -2784,6 +2957,7 @@ mod tests {
             stages,
             def_index: BTreeMap::new(),
             equation_sheet: None,
+            identifier_index: None,
         }).unwrap();
         app.drain_worker();
 
@@ -2807,6 +2981,7 @@ mod tests {
             stages: StageBundle::default(),
             def_index: BTreeMap::new(),
             equation_sheet: None,
+            identifier_index: None,
         }).unwrap();
         app.drain_worker();
 
@@ -2834,6 +3009,7 @@ mod tests {
             stages,
             def_index: BTreeMap::new(),
             equation_sheet: None,
+            identifier_index: None,
         }).unwrap();
         app.drain_worker();
 
@@ -2862,6 +3038,7 @@ mod tests {
             stages,
             def_index: BTreeMap::new(),
             equation_sheet: None,
+            identifier_index: None,
         }).unwrap();
         app.drain_worker();
 

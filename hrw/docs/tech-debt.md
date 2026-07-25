@@ -19,6 +19,18 @@ fixed in the 2026-07-25 cycle. See git history for details.
   smaller functions.
   *File:* `worker.rs` — `compile()` (~lines 921–1205).
 
+## Bugs
+
+- [ ] **Debug mode specimen dropdown only appears after a specimen is loaded.**
+  The dropdown is gated on `self.ui_mode == UiMode::Debug` but the combo box
+  shows the current specimen name (`self.selected`). If HRW starts in Debug
+  mode (or the user switches to Debug before loading a specimen), the dropdown
+  shows "(none)" but the file list is available — the real issue is that the
+  dropdown should work as the primary specimen selector in Debug mode even when
+  nothing is loaded yet. Verify the dropdown is functional for initial specimen
+  selection, not just switching.
+  *File:* `app.rs` — specimen switcher in the tab bar header.
+
 ## Robustness
 
 - [ ] **Bridge test filesystem races under parallel execution.** *(deferred — requires parameterizing bridge dir; mitigated by `--test-threads=1`)*
