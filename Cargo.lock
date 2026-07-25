@@ -3173,6 +3173,7 @@ dependencies = [
  "rumoca-phase-structural",
  "rumoca-phase-typecheck",
  "rumoca-sim",
+ "rumoca-solver",
  "serde",
  "serde_json",
  "tracing",

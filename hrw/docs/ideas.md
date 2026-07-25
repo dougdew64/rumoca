@@ -45,6 +45,8 @@ tour take priority over unlinked items of the same severity.
 | #27 Equation sheet (readable DAE) | Flatten, Structural Analysis |
 | #28 Source-to-equation traceability | Flatten (bridges Parse–Flatten) |
 | #29 Solver stepping visualization | Simulation |
+| #30 Live solver stepping (LiveTrace) | Simulation |
+| #31 Revisit all simulator functionality | Simulation |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -904,3 +906,79 @@ convergence behavior, and (for BDF) order changes.
 - **Textbook link:** Hairer & Wanner, *Solving ODEs II* (BDF step/order control);
   Brenan, Campbell & Petzold, *Numerical Solution of Initial-Value Problems in
   DAEs* (Newton convergence on DAE systems).
+
+## 30. Live solver stepping via LiveTrace — real-time solver animation
+
+Captured 2026-07-24 (Claude, from Phase 3 planning). The Phase 3 solver stepping
+implementation (#29) uses the simpler path: post-hoc data recorded in `SimResult`
+and plotted after simulation completes. This idea captures the **richer alternative**:
+streaming per-step data via the `LiveTrace` pattern (the same `Arc<Mutex<Vec<F>>>`
+buffer used by matching and Tarjan animations) so the solver's progress is visible
+**in real time** as the simulation runs.
+
+- **Why it matters:** the matching and Tarjan animations are HRW's most powerful
+  teaching tools — watching an algorithm step-by-step, seeing each decision as it
+  happens, is qualitatively different from viewing the result after the fact. The
+  same applies to the BDF solver: watching the step size shrink in real time as the
+  solver hits a stiff region, seeing Newton iterations climb step by step, makes the
+  adaptive control theory visceral in a way a post-hoc plot cannot.
+- **What it enables beyond #29:**
+  1. **Real-time animation:** the solver diagnostics plot updates live as the
+     simulation runs, scrolling the time axis forward. For slow simulations
+     (BenchActuator with tight tolerances), the learner watches the solver work.
+  2. **Pause / step / resume:** using the LiveTrace frame-delay mechanism, the
+     simulation can be paused at any step. The learner examines the current state
+     (which BLT block is being solved, what the Jacobian looks like, what the
+     residual norm is), then advances one step. This is the solver analogue of
+     single-stepping through matching's augmenting paths.
+  3. **Debugger synchronization:** with `live_trace_breakpoint()` called after each
+     solver step, a VS Code breakpoint in the simulation loop would stop at each
+     step while HRW shows the corresponding solver state — the same mechanism
+     that makes the matching animation debugger-driveable.
+  4. **Dual-solver comparison:** run the same model with BDF and RK45 simultaneously,
+     streaming both step-size histories to overlaid live plots. The stiffness
+     story (BDF cruising with large steps while RK45 collapses to tiny ones)
+     unfolds in real time.
+- **Implementation sketch:**
+  1. Define `SolverStepFrame { t, h, order, newton_iters, residual_norm,
+     event_detected, step_accepted }`.
+  2. Add `live: Option<&LiveTrace<SolverStepFrame>>` parameter to
+     `simulate_state_targets()` in `rumoca-eval-solve/src/sim_driver.rs`.
+  3. After each `backend.step()`, push a frame. The frame-delay mechanism
+     throttles the push rate for debugger-friendly stepping.
+  4. In HRW, the worker thread creates a `LiveTrace`, passes it to the
+     simulation, and the UI polls `snapshot()` to update the diagnostics plot
+     each frame — the same pattern as `MatchingAnimation::start_live()`.
+- **Why deferred:** the simpler post-hoc approach (#29 implementation) delivers
+  the core learning value (seeing where the solver struggled) without the
+  threading complexity of LiveTrace integration into the simulation path. The
+  post-hoc plots are the right foundation — once they exist and prove
+  pedagogically valuable, upgrading to live streaming is a well-scoped increment.
+- **Depends on:** #29 (the post-hoc diagnostics data model and plots exist first).
+- **Relates to:** #9 (animated algorithm stepping — this is the simulation-domain
+  instance), #18 (BDF step-size/order — subsumed by #29 + this), #22 (Newton
+  convergence — the per-step detail this provides).
+
+## 31. Revisit all simulator functionality when Rumoca's simulator matures
+
+Captured 2026-07-24 (Doug). Rumoca's simulator (diffsol BDF + RK45) is not yet
+reliable enough for production use. The compiler pipeline is solid and productive
+for learning, but the simulator needs upstream improvement before HRW's
+simulation-related features can deliver their full value.
+
+- **What to revisit:** all simulation-dependent functionality — the trajectory
+  plot, solver diagnostics (#29), solver stepping (#30), convergence narratives
+  (#1), event-time analysis (#22), Jacobian conditioning (#17), and the
+  BDF step-size/order study (#18). The infrastructure is in place (instrumentation
+  committed, diagnostics plot built) but the underlying solver results may not be
+  trustworthy.
+- **Interim discipline:** simulate specimens in Wolfram System Modeler as the
+  ground-truth reference. Use System Modeler results for learning and trajectory
+  comparison. Rumoca's simulation tab remains useful for studying Rumoca's solver
+  *behavior* (what it does, even when wrong), but System Modeler is the
+  authoritative tool until Rumoca catches up.
+- **When:** revisit when upstream Rumoca improves its solver (diffsol upgrade,
+  better event handling, or alternative backends). Monitor the upstream issue
+  tracker and release notes.
+- **Relates to:** #29 (solver stepping), #30 (live stepping), #1 (convergence
+  narratives), #17 (Jacobian), #18 (BDF), #22 (events).

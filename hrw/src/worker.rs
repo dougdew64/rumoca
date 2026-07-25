@@ -125,6 +125,8 @@ pub struct SimData {
     /// does *not* count, and a smooth model's coarse-but-steep transients (a stiff
     /// current spike) must never be mistaken for jumps. See [`discontinuity_segments`].
     pub has_discontinuities: bool,
+    /// Per-step solver diagnostics (t, h, order) from the BDF integrator.
+    pub solver_steps: Vec<rumoca_solver::SolverStepRecord>,
 }
 
 /// Split a plotted trajectory into contiguous segments, breaking it where the
@@ -805,6 +807,7 @@ impl WorkerState {
             data: res.data,
             n_states: res.n_states,
             has_discontinuities,
+            solver_steps: res.solver_steps,
         })
     }
 

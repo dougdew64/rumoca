@@ -211,7 +211,16 @@ log closures from a shared helper, avoiding the identical closure pattern.
 `simulate_solve_model()`. It re-compiles rather than reusing the compilation state
 because `SolveModel` borrows from `CompileResult`, and the borrow semantics don't
 allow storing the intermediate. The result is `SimData` — a plain struct with
-`times`, `names`, and `data[var][t]` that carries no Rumoca types into the UI.
+`times`, `names`, `data[var][t]`, and `solver_steps` (per-step diagnostics from
+the BDF integrator: time `t`, step size `h`, and BDF order `k` at each internal
+solver step). `SimData` carries no Rumoca types into the UI.
+
+The simulation pane renders two linked plots when solver diagnostics are available:
+a **trajectory plot** (state variables vs time) and a **solver diagnostics plot**
+(step size `h(t)` and BDF order `k(t)` vs time). The two plots share a synchronized
+time axis via `egui_plot::Plot::link_axis`, so panning/zooming one updates the other.
+The diagnostics panel only appears for models solved with the BDF integrator (stiff
+models); RK45-solved models show only the trajectory plot.
 
 ### JSON serialization strategy
 

@@ -31,9 +31,9 @@ live-stepped), lesson-structured, with HRW view references.
 | 9 | Initialization | Determinacy view | Adequate |
 | 10 | Events | Event listing | Adequate |
 | 11 | Solve lowering | JSON tree | Tolerable; equation sheet helps |
-| **12** | **Simulation** | **Trajectory plot only** | **Results without solver process** |
+| 12 | Simulation | Trajectory + solver diagnostics | Improved: h(t) and order(t) visible |
 
-Three dead spots: Flatten, the OO-to-flat bridge, Simulation.
+Two dead spots remain: Flatten, the OO-to-flat bridge. Simulation is now covered.
 
 ## Essential features (backlog ideas)
 
@@ -115,11 +115,11 @@ equation sheet.
 
 Completes the Simulation stop. Independent of Phases 1–2; can overlap.
 
-- [ ] Instrument `rumoca-sim` to emit per-step data (t, h, order,
-  newton_iters) via a callback or shared buffer (same pattern as `LiveTrace`)
-- [ ] Add a secondary plot panel below the trajectory plot: step size h(t),
-  Newton iterations, BDF order
-- [ ] Synchronized time axis with the trajectory plot
+- [x] Instrument `rumoca-sim` to emit per-step data (t, h, order) via
+  `SolverStepRecord` in `SimResult` (post-hoc recording in the BDF backend)
+- [x] Add a secondary plot panel below the trajectory plot: step size h(t),
+  BDF order k(t), with synchronized time axis via `link_axis`
+- [x] Synchronized time axis with the trajectory plot
 
 **Milestone:** run GearWithBrake → see step-size shrinkage at brake events
 and Newton iteration spikes at the coupled block, alongside the velocity

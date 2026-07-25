@@ -853,10 +853,6 @@ impl App {
     fn simulation_pane(&mut self, ui: &mut egui::Ui) {
         use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
-        // `run` is a flag set by the button click, acted on AFTER the horizontal
-        // bar is drawn. This is a common egui pattern: the button is inside a
-        // `ui.horizontal()` closure, but the action (sending `ToWorker::Simulate`)
-        // needs to happen outside it, so we collect the intent in a local bool.
         let mut run = false;
         ui.horizontal(|ui| {
             run = ui
@@ -880,41 +876,66 @@ impl App {
         ui.separator();
         match &self.sim_data {
             Some(data) => {
-                Plot::new("sim_plot")
-                    // Top-LEFT so the legend clears the right-hand panel (the
-                    // default top-right corner sits against it).
+                let has_diagnostics = !data.solver_steps.is_empty();
+                let link_group = ui.id().with("sim_time_axis");
+
+                let mut trajectory_plot = Plot::new("sim_plot")
                     .legend(Legend::default().position(Corner::LeftTop))
-                    .x_axis_label("time")
-                    .show(ui, |plot_ui| {
-                        for (i, name) in data.names.iter().enumerate() {
-                            let series = &data.data[i];
-                            // A model with discrete updates can jump a variable at an
-                            // event (BouncingBall's velocity flips at each bounce). Break
-                            // the polyline there so the plot shows a true discontinuity,
-                            // not a sloped line through the jump. Continuous models draw
-                            // as one segment.
-                            let segments = if data.has_discontinuities {
-                                discontinuity_segments(series)
-                            } else {
-                                std::iter::once(0..series.len()).collect()
-                            };
-                            // Pin an explicit colour per VARIABLE. egui_plot's auto-colour
-                            // increments per Line added, so a variable's multiple segments
-                            // would otherwise each get a different hue while the legend
-                            // (grouped by name) shows only one. Keyed on `i`, every segment
-                            // matches the legend and equals the old one-line-per-variable
-                            // colour.
-                            let color = series_color(i);
-                            for seg in segments {
-                                let pts: PlotPoints = data.times[seg.clone()]
-                                    .iter()
-                                    .zip(&series[seg])
-                                    .map(|(&t, &y)| [t, y])
-                                    .collect();
-                                plot_ui.line(Line::new(name.clone(), pts).color(color));
-                            }
+                    .x_axis_label("time");
+                if has_diagnostics {
+                    trajectory_plot = trajectory_plot
+                        .link_axis(link_group, [true, false])
+                        .link_cursor(link_group, [true, false])
+                        .height(ui.available_height() * 0.65);
+                }
+                trajectory_plot.show(ui, |plot_ui| {
+                    for (i, name) in data.names.iter().enumerate() {
+                        let series = &data.data[i];
+                        let segments = if data.has_discontinuities {
+                            discontinuity_segments(series)
+                        } else {
+                            std::iter::once(0..series.len()).collect()
+                        };
+                        let color = series_color(i);
+                        for seg in segments {
+                            let pts: PlotPoints = data.times[seg.clone()]
+                                .iter()
+                                .zip(&series[seg])
+                                .map(|(&t, &y)| [t, y])
+                                .collect();
+                            plot_ui.line(Line::new(name.clone(), pts).color(color));
                         }
-                    });
+                    }
+                });
+
+                if has_diagnostics {
+                    ui.separator();
+                    ui.strong("Solver diagnostics");
+
+                    Plot::new("solver_diagnostics")
+                        .legend(Legend::default().position(Corner::LeftTop))
+                        .link_axis(link_group, [true, false])
+                        .link_cursor(link_group, [true, false])
+                        .x_axis_label("time")
+                        .y_axis_label("step size h  /  BDF order k")
+                        .show(ui, |plot_ui| {
+                            let h_pts: PlotPoints = data.solver_steps.iter()
+                                .map(|s| [s.t, s.h])
+                                .collect();
+                            plot_ui.line(
+                                Line::new("step size h", h_pts)
+                                    .color(egui::Color32::from_rgb(70, 130, 230)),
+                            );
+
+                            let order_pts: PlotPoints = data.solver_steps.iter()
+                                .map(|s| [s.t, s.order as f64])
+                                .collect();
+                            plot_ui.line(
+                                Line::new("BDF order k", order_pts)
+                                    .color(egui::Color32::from_rgb(230, 130, 70)),
+                            );
+                        });
+                }
             }
             None if !self.sim_running => {
                 ui.weak("Press ▶ Run to simulate this specimen and plot its state trajectories.");

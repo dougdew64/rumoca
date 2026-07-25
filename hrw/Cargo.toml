@@ -34,6 +34,7 @@ rumoca-phase-typecheck = { path = "../crates/rumoca-phase-typecheck" }
 rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
 rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # Arc 4: name the DAE type for the index-reduction funnel
 rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # Arc 7: DAE -> SolveModel (solve lowering)
+rumoca-solver = { path = "../crates/rumoca-solver" }  # Phase 3: SolverStepRecord for diagnostics plot
 rumoca-sim = { path = "../crates/rumoca-sim" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
 serde = "1"
 serde_json = "1.0.150"

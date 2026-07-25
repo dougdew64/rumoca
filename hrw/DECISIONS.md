@@ -589,6 +589,14 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   animated stepping (ideas backlog #9), proving the concept for future algorithms (Pantelides, tearing,
   Newton). The instrumentation follows the additive/observation-only/upstreamable discipline.
 
+- **2026-07-24 — Simulate specimens in Wolfram System Modeler until Rumoca's simulator matures.**
+  Rumoca's simulator (diffsol BDF + RK45) is not yet reliable enough for production use as a
+  reference. Until it improves, develop a discipline of simulating each specimen in System Modeler
+  as the ground-truth reference — use those results for learning, trajectory comparison, and
+  validating Rumoca's output when it works. HRW's simulation tab and solver diagnostics (#29)
+  remain in place for studying Rumoca's solver behavior, but System Modeler is the authoritative
+  simulation tool for now.
+
 - **Separate HRW VS Code extension for debugger bridge** (`hrw/vscode-extension/`). The `debug`
   chat shortcut now uses `vscode.debug.addBreakpoints()` via a file-watching bridge instead of
   rewriting `launch.json` `preRunCommands` — breakpoints are set on the running debug session
