@@ -109,14 +109,13 @@ impl IdentifierIndex {
             return Vec::new();
         }
         let mut spans = Vec::new();
-        let mut seen = std::collections::HashSet::new();
+        let mut seen_positions = std::collections::HashSet::new();
         for var in &vars {
-            if !seen.insert(&var.name) {
-                continue;
-            }
             let leaf = var.name.rsplit('.').next().unwrap_or(&var.name);
             if let Some(pos) = find_whole_identifier(line_text, leaf) {
-                spans.push((pos, pos + leaf.len(), var.name.clone()));
+                if seen_positions.insert(pos) {
+                    spans.push((pos, pos + leaf.len(), var.name.clone()));
+                }
             }
         }
         spans.sort_by_key(|s| s.0);
@@ -228,5 +227,22 @@ mod tests {
         idx.line_to_variables.entry(2).or_default().push("h".to_string());
         let spans = idx.clickable_spans(2, "  Real h(start = 1.0) \"height\";");
         assert_eq!(spans.len(), 1, "duplicate line_to_variables entry must not duplicate the span");
+    }
+
+    #[test]
+    fn pre_variable_same_leaf_produces_single_span() {
+        let mut idx = IdentifierIndex::default();
+        let var = |name: &str, kind: &'static str| IndexedVariable {
+            name: name.to_string(), kind,
+            source_byte_range: (0, 10), source_line: 5,
+            def_id: None, description: None,
+        };
+        idx.variables.insert("h".to_string(), var("h", "state"));
+        idx.variables.insert("__pre__.h".to_string(), var("__pre__.h", "parameter"));
+        idx.line_to_variables.entry(5).or_default().push("h".to_string());
+        idx.line_to_variables.entry(5).or_default().push("__pre__.h".to_string());
+        let spans = idx.clickable_spans(5, "  Real h(start = 1.0) \"height\";");
+        assert_eq!(spans.len(), 1, "__pre__ variant must not add a second span at the same position");
+        assert_eq!(spans[0].2, "h", "should prefer the non-prefixed variable");
     }
 }
