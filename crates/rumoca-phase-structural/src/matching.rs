@@ -159,7 +159,7 @@ fn augment_traced(
 /// Returns `(match_eq, match_var)` where:
 /// - `match_eq[i] = Some(j)` means equation `i` is matched to variable `j`
 /// - `match_var[j] = Some(i)` means variable `j` is matched to equation `i`
-pub(crate) fn maximum_matching(
+pub fn maximum_matching(
     n_eq: usize,
     n_var: usize,
     eq_vars: &[HashSet<usize>],
