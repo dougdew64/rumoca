@@ -40,7 +40,7 @@
 //! to a real id between Parse and Resolve), it is painted green. This makes
 //! it visually obvious what each compiler phase changed.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use eframe::egui;
 use serde_json::Value;
@@ -82,11 +82,15 @@ pub fn tree_ui(
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
     field_help: &HashMap<String, String>,
+    tracked: Option<&str>,
 ) {
-    // Start with an empty path — the root. Each recursive call to `node_ui`
-    // pushes/pops one segment as it descends into children.
     let mut path: Vec<Seg> = Vec::new();
-    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index, field_help);
+    let expand = tracked.map(|t| {
+        let mut set = HashSet::new();
+        collect_tracked_ancestors(value, t, &mut set);
+        set
+    });
+    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index, field_help, tracked, expand.as_ref());
 }
 
 // Render one node of the JSON tree recursively.
@@ -131,30 +135,25 @@ fn node_ui(
     debug: &mut Option<Vec<Seg>>,
     def_index: &BTreeMap<u64, DefInfo>,
     field_help: &HashMap<String, String>,
+    tracked: Option<&str>,
+    expand: Option<&HashSet<*const Value>>,
 ) {
+    let should_expand = expand.is_some_and(|set| set.contains(&(value as *const Value)));
     ui.push_id(salt, |ui| match value {
-        // --- JSON Object: render as a collapsible header with children ---
         Value::Object(map) => {
-            // Show "key  {N}" as the header, where N = number of fields.
             let hint = format!("{{{}}}", map.len());
-            let resp = egui::CollapsingHeader::new(header(key, &hint))
-                .default_open(false)
+            let is_tracked = tracked.is_some_and(|t| key == t);
+            let resp = egui::CollapsingHeader::new(
+                if is_tracked { header_tracked(key, &hint) } else { header(key, &hint) }
+            )
+                .default_open(should_expand)
                 .show(ui, |ui| {
-                    // Recurse into each field. `enumerate` gives us the sibling
-                    // index for id-salting. `prev.and_then(|p| p.get(k))`
-                    // threads the previous stage's corresponding subtree down
-                    // to each child — if the previous stage had this same key,
-                    // its value is passed; otherwise None.
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index, field_help);
+                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index, field_help, tracked, expand);
                         path.pop();
                     }
                 });
-            // The header response already senses clicks (it IS the clickable
-            // header) — do NOT re-interact it (that double-registers its id and
-            // muddies its own click handling). Left-click captures the container
-            // too, in addition to the header's built-in expand/collapse.
             if resp.header_response.clicked() {
                 *ask = Some(path.to_vec());
             }
@@ -163,15 +162,14 @@ fn node_ui(
                 resp.header_response.clone().on_hover_text(doc);
             }
         }
-        // --- JSON Array: same pattern as Object, but indexed by position ---
         Value::Array(arr) => {
             let hint = format!("[{}]", arr.len());
             let resp = egui::CollapsingHeader::new(header(key, &hint))
-                .default_open(false)
+                .default_open(should_expand)
                 .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index, field_help);
+                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index, field_help, tracked, expand);
                         path.pop();
                     }
                 });
@@ -180,16 +178,15 @@ fn node_ui(
             }
             row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
         }
-        // --- Scalar (null, bool, number, string): render as a leaf row ---
         scalar => {
-            // A value is "changed" if the previous stage had a *different* value
-            // at the same path. New-to-this-stage paths (prev is None) don't
-            // count — we only highlight deliberate mutations, not new fields.
             let changed = prev.is_some_and(|p| p != scalar);
-            // `leaf_ui` already interacts once; do NOT interact again here.
-            let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed);
-            // Leaves don't expand/collapse, so left-click is a fast path to
-            // capture (no ambiguity with expand/collapse as with headers).
+            let is_tracked = tracked.is_some_and(|t| {
+                match scalar {
+                    Value::String(s) => s == t || crate::identifier_index::matches_tracked(s, t),
+                    _ => false,
+                }
+            });
+            let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed, is_tracked);
             if resp.clicked() {
                 *ask = Some(path.to_vec());
             }
@@ -295,6 +292,7 @@ fn leaf_ui(
     scalar: &Value,
     def_index: &BTreeMap<u64, DefInfo>,
     changed: bool,
+    is_tracked: bool,
 ) -> (egui::Response, String) {
     // Reserve a paint slot up front so the hover highlight draws *behind* the
     // text rather than over it (shapes added later paint on top).
@@ -335,7 +333,11 @@ fn leaf_ui(
 
     let resp = ui.add(egui::Label::new(job).sense(egui::Sense::click()).extend());
 
-    if resp.hovered() {
+    if is_tracked {
+        let fill = egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30);
+        let rect = resp.rect.expand2(egui::vec2(3.0, 1.0));
+        ui.painter().set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
+    } else if resp.hovered() {
         let fill = ui.visuals().widgets.hovered.weak_bg_fill;
         let rect = resp.rect.expand2(egui::vec2(3.0, 1.0));
         ui.painter().set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
@@ -359,4 +361,36 @@ fn def_annotation(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>)
 // is a size indicator like "{5}" for objects or "[3]" for arrays.
 fn header(key: &str, hint: &str) -> egui::RichText {
     egui::RichText::new(format!("{key}  {hint}")).monospace()
+}
+
+// Single O(N) pre-pass: collect pointers to every Value node that is an
+// ancestor of a leaf matching `tracked`. During rendering, nodes in this
+// set get `default_open(true)` so the path to the tracked identifier is
+// fully expanded without re-walking the subtree at every level.
+fn collect_tracked_ancestors<'a>(
+    value: &'a Value,
+    tracked: &str,
+    ancestors: &mut HashSet<*const Value>,
+) -> bool {
+    let dominated = match value {
+        Value::Object(map) => map.iter().any(|(k, v)| {
+            k == tracked || collect_tracked_ancestors(v, tracked, ancestors)
+        }),
+        Value::Array(arr) => arr
+            .iter()
+            .any(|v| collect_tracked_ancestors(v, tracked, ancestors)),
+        Value::String(s) => s == tracked || crate::identifier_index::matches_tracked(s, tracked),
+        _ => false,
+    };
+    if dominated {
+        ancestors.insert(value as *const Value);
+    }
+    dominated
+}
+
+fn header_tracked(key: &str, hint: &str) -> egui::RichText {
+    egui::RichText::new(format!("{key}  {hint}"))
+        .monospace()
+        .color(egui::Color32::from_rgb(0xFF, 0xD5, 0x4F))
+        .strong()
 }

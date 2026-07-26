@@ -82,7 +82,7 @@ Hover shows the full qualified flat name. Active tracking uses gold highlight.
 **Files:** `identifier_index.rs` (`clickable_spans`, `find_whole_identifier`),
 `app.rs` (`tracked_identifier` field, source view rendering)
 
-### Step 4: Wire highlighting — one stage at a time ✓ (6 of 11)
+### Step 4: Wire highlighting — one stage at a time ✓ (10 of 11)
 
 Gold highlight (rgba `0xFF, 0xD5, 0x4F`) used consistently across all views.
 A tracking indicator bar ("Tracking: name ✕") appears above the stage content.
@@ -94,10 +94,10 @@ A tracking indicator bar ("Tracking: name ✕") appears above the stage content.
 | 4c | Simulation plot | Gold color + 3× line width for the matching time series | ✓ |
 | 4d | Spy plot | Gold outline stroke around the BLT block containing the variable | ✓ |
 | 4e | Source Map (Flatten) | Gold background on the source line declaring the tracked variable | ✓ |
-| 4f | Tree inspector (Parse) | Deferred — tree-walk highlighting requires threading `def_id` through recursive renderer |  |
-| 4g | Tree inspector (Resolve) | Deferred (same as 4f) |  |
-| 4h | Tree inspector (Instantiate) | Deferred (same as 4f) |  |
-| 4i | Tree inspector (Typecheck) | Deferred (same as 4f) |  |
+| 4f | Tree inspector (Parse) | Gold-tinted header + auto-expand for key matching tracked name; gold background on leaf values containing tracked name | ✓ |
+| 4g | Tree inspector (Resolve) | Same as 4f (shared generic tree renderer) | ✓ |
+| 4h | Tree inspector (Instantiate) | Same as 4f | ✓ |
+| 4i | Tree inspector (Typecheck) | Same as 4f | ✓ |
 | 4j | Reduction view | Gold background on demoted states, differentiated-equation rows, and eliminated variables | ✓ |
 | 4k | Remaining views (Init, Events, Solve Lowering) | Deferred — low data density for identifier tracking |  |
 

@@ -182,7 +182,7 @@ impl TarjanAnimation {
         *self.live_done.lock().unwrap_or_else(|e| e.into_inner())
     }
 
-    pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas) {
+    pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         self.sync_live();
 
         if self.frames.is_empty() {
@@ -249,10 +249,10 @@ impl TarjanAnimation {
         ui.add_space(4.0);
 
         // --- Dependency graph visualization ---
-        self.draw_graph(ui, canvas);
+        self.draw_graph(ui, canvas, tracked);
     }
 
-    fn draw_graph(&self, ui: &mut egui::Ui, canvas: &mut Canvas) {
+    fn draw_graph(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         // Lay out nodes in a grid arrangement.
         let cols = (self.n_nodes as f32).sqrt().ceil() as usize;
         let grid_rows = (self.n_nodes + cols - 1) / cols;
@@ -341,6 +341,18 @@ impl TarjanAnimation {
                 _ => visuals.widgets.inactive.fg_stroke.color,
             };
             painter.circle(center, node_radius, fill, egui::Stroke::new(1.5, stroke_color));
+            let is_tracked_node = tracked.is_some_and(|t| {
+                self.node_names.get(i).is_some_and(|n| {
+                    n == t || crate::identifier_index::matches_tracked(n, t)
+                })
+            });
+            if is_tracked_node {
+                painter.circle_stroke(
+                    center,
+                    node_radius + 2.0,
+                    egui::Stroke::new(2.5, egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)),
+                );
+            }
             if view.zoom() >= 10.0 {
                 let label = self
                     .node_names
@@ -352,7 +364,11 @@ impl TarjanAnimation {
                     egui::Align2::CENTER_TOP,
                     label,
                     font.clone(),
-                    visuals.text_color().gamma_multiply(0.8),
+                    if is_tracked_node {
+                        egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)
+                    } else {
+                        visuals.text_color().gamma_multiply(0.8)
+                    },
                 );
             }
         }

@@ -156,7 +156,7 @@ impl MatchingAnimation {
     }
 
     /// Render the animation controls and the annotated incidence matrix.
-    pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas) {
+    pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         // In live mode, sync new frames from the shared buffer.
         self.sync_live();
 
@@ -218,10 +218,10 @@ impl MatchingAnimation {
         ui.add_space(4.0);
 
         // --- Animated incidence matrix ---
-        self.draw_matrix(ui, canvas);
+        self.draw_matrix(ui, canvas, tracked);
     }
 
-    fn draw_matrix(&self, ui: &mut egui::Ui, canvas: &mut Canvas) {
+    fn draw_matrix(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         let label_headroom = 1.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
             egui::Pos2::ZERO,
@@ -360,6 +360,23 @@ impl MatchingAnimation {
                     view.to_screen_rect(band),
                     egui::CornerRadius::ZERO,
                     crate::colors::ANIM_FAIL.gamma_multiply(0.2),
+                );
+            }
+        }
+
+        if let Some(name) = tracked {
+            let tracked_col = self.unknown_names.iter().position(|u| {
+                u == name || crate::identifier_index::matches_tracked(u, name)
+            });
+            if let Some(col) = tracked_col {
+                let band = egui::Rect::from_min_size(
+                    egui::pos2(col as f32, 0.0),
+                    egui::vec2(1.0, self.n_eq as f32),
+                );
+                painter.rect_filled(
+                    view.to_screen_rect(band),
+                    egui::CornerRadius::ZERO,
+                    egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30),
                 );
             }
         }

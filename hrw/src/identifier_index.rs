@@ -123,6 +123,31 @@ impl IdentifierIndex {
     }
 }
 
+/// Check whether `haystack` contains `needle` as a whole identifier bounded
+/// by non-alphanumeric, non-underscore, non-dot characters (or string edges).
+/// Treats `.` as a word character so `"gear.h"` does NOT match `"h"`, but
+/// `"der(h)"` does. Used across views for tracked-identifier highlighting.
+pub fn matches_tracked(haystack: &str, needle: &str) -> bool {
+    let mut start = 0;
+    while let Some(pos) = haystack[start..].find(needle) {
+        let abs = start + pos;
+        let before_ok = abs == 0 || {
+            let b = haystack.as_bytes()[abs - 1];
+            !b.is_ascii_alphanumeric() && b != b'_' && b != b'.'
+        };
+        let end = abs + needle.len();
+        let after_ok = end >= haystack.len() || {
+            let b = haystack.as_bytes()[end];
+            !b.is_ascii_alphanumeric() && b != b'_' && b != b'.'
+        };
+        if before_ok && after_ok {
+            return true;
+        }
+        start = abs + 1;
+    }
+    false
+}
+
 fn find_whole_identifier(haystack: &str, needle: &str) -> Option<usize> {
     let mut start = 0;
     while let Some(pos) = haystack[start..].find(needle) {
@@ -244,5 +269,42 @@ mod tests {
         let spans = idx.clickable_spans(5, "  Real h(start = 1.0) \"height\";");
         assert_eq!(spans.len(), 1, "__pre__ variant must not add a second span at the same position");
         assert_eq!(spans[0].2, "h", "should prefer the non-prefixed variable");
+    }
+
+    #[test]
+    fn matches_tracked_exact() {
+        assert!(matches_tracked("h", "h"));
+        assert!(matches_tracked("v", "v"));
+    }
+
+    #[test]
+    fn matches_tracked_in_der() {
+        assert!(matches_tracked("der(h)", "h"));
+        assert!(matches_tracked("der(v)", "v"));
+        assert!(!matches_tracked("der(v)", "h"));
+    }
+
+    #[test]
+    fn matches_tracked_in_equation_text() {
+        assert!(matches_tracked("der(h) - v", "h"));
+        assert!(matches_tracked("der(h) - v", "v"));
+    }
+
+    #[test]
+    fn matches_tracked_rejects_substring() {
+        assert!(!matches_tracked("height", "h"));
+        assert!(!matches_tracked("variable", "v"));
+    }
+
+    #[test]
+    fn matches_tracked_rejects_qualified_segment() {
+        assert!(!matches_tracked("gear.h", "h"));
+        assert!(!matches_tracked("inertia.J", "J"));
+    }
+
+    #[test]
+    fn matches_tracked_qualified_name() {
+        assert!(matches_tracked("gear.flange_b.tau", "gear.flange_b.tau"));
+        assert!(!matches_tracked("gear.flange_b.tau", "tau"));
     }
 }

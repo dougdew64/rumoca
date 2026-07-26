@@ -230,7 +230,9 @@ impl Plot {
         // --- Tracked identifier block highlight ---
         if let Some(name) = tracked {
             for block in &self.blocks {
-                if block.unknowns.iter().any(|u| u == name) {
+                if block.unknowns.iter().any(|u| {
+                    u == name || crate::identifier_index::matches_tracked(u, name)
+                }) {
                     let block_world = egui::Rect::from_min_size(
                         egui::pos2(block.start as f32, block.start as f32),
                         egui::vec2(block.size as f32, block.size as f32),

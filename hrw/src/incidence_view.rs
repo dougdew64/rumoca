@@ -251,7 +251,9 @@ impl IncidenceMatrix {
     /// - zoom >= 6: grid lines between cells
     /// - zoom >= 16: axis labels (equation names on left, unknown names on top)
     pub fn column_index(&self, name: &str) -> Option<usize> {
-        self.unknown_names.iter().position(|n| n == name)
+        self.unknown_names.iter().position(|n| {
+            n == name || crate::identifier_index::matches_tracked(n, name)
+        })
     }
 
     pub fn ui(

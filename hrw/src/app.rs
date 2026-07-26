@@ -2287,7 +2287,7 @@ impl eframe::App for App {
                         );
                     }
                     if let Some(Some(anim)) = &mut self.cached_matching_anim {
-                        anim.ui(ui, &mut self.matching_anim_canvas);
+                        anim.ui(ui, &mut self.matching_anim_canvas, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(no incidence data for matching animation)");
                     }
@@ -2327,7 +2327,7 @@ impl eframe::App for App {
                         );
                     }
                     if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
-                        anim.ui(ui, &mut self.tarjan_anim_canvas);
+                        anim.ui(ui, &mut self.tarjan_anim_canvas, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(no dependency graph for BLT animation)");
                     }
@@ -2351,7 +2351,7 @@ impl eframe::App for App {
                             let label = self.model.as_deref().unwrap_or("model");
                             let prev = self.previous_stage_value();
                             egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, &self.field_help);
+                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, &self.field_help, self.tracked_identifier.as_deref());
                             });
                         }
                         None if stage.note.is_none() => {
@@ -2389,7 +2389,7 @@ impl eframe::App for App {
 
                 let entry = self.nav.last().unwrap();
                 egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index, &self.field_help);
+                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index, &self.field_help, self.tracked_identifier.as_deref());
                 });
             }
         });
