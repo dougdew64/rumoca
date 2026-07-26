@@ -15,10 +15,10 @@ Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
 
 ## Hardcoded values / missing constants
 
-- [ ] **Inline color literals for solver diagnostics, source-map highlight in `app.rs`.**
-  Solver plot colors and source-map highlight remain inline in `app.rs`.
-  (Animation controls, SCC palette, and equation category colors moved to
-  `colors.rs` in the 2026-07-25 sweep.)
+- [x] **Inline color literals for solver diagnostics, source-map highlight in `app.rs`.**
+  Solver plot colors, source-map highlight, clickable identifier color, and a
+  missed tracked gold moved to `colors.rs`. Only theme-dependent section header
+  colors remain inline (already deduplicated in `section_style`).
   *File:* `app.rs`.
 
 ## Code quality / duplication

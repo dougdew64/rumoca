@@ -1020,7 +1020,7 @@ impl App {
                                 .collect();
                             plot_ui.line(
                                 Line::new("step size h", h_pts)
-                                    .color(egui::Color32::from_rgb(70, 130, 230)),
+                                    .color(crate::colors::SOLVER_STEP_SIZE),
                             );
 
                             let order_pts: PlotPoints = data.solver_steps.iter()
@@ -1028,7 +1028,7 @@ impl App {
                                 .collect();
                             plot_ui.line(
                                 Line::new("BDF order k", order_pts)
-                                    .color(egui::Color32::from_rgb(230, 130, 70)),
+                                    .color(crate::colors::SOLVER_BDF_ORDER),
                             );
                         });
                 }
@@ -1240,9 +1240,7 @@ impl App {
                             .is_some_and(|t| eq.text.contains(t));
                         let mut text = egui::RichText::new(&eq.text).monospace();
                         if eq_has_tracked {
-                            text = text.background_color(egui::Color32::from_rgba_premultiplied(
-                                0xFF, 0xD5, 0x4F, 0x40,
-                            ));
+                            text = text.background_color(crate::colors::TRACKED_FILL_MEDIUM);
                         }
                         if has_incidence {
                             let resp = ui.selectable_label(selected, text);
@@ -1383,7 +1381,7 @@ impl App {
                         );
                     } else if is_eq_linked {
                         text = text.background_color(
-                            egui::Color32::from_rgba_premultiplied(100, 180, 255, 40),
+                            crate::colors::SOURCE_MAP_LINK,
                         );
                     }
 
@@ -1791,7 +1789,7 @@ impl eframe::App for App {
                                                     let color = if is_tracked {
                                                         crate::colors::TRACKED_GOLD
                                                     } else {
-                                                        egui::Color32::from_rgb(0x64, 0xB5, 0xF6)
+                                                        crate::colors::CLICKABLE_IDENT
                                                     };
                                                     let label = egui::Label::new(
                                                         egui::RichText::new(ident_text)

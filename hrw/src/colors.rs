@@ -97,6 +97,18 @@ pub const EQ_CAT_FLOW_SUM: Color32 = Color32::from_rgb(255, 120, 80);
 pub const EQ_CAT_BINDING: Color32 = Color32::from_rgb(160, 200, 120);
 pub const EQ_CAT_EVENT: Color32 = Color32::from_rgb(200, 140, 220);
 
+/// Solver diagnostics plot — step size (h) line.
+pub const SOLVER_STEP_SIZE: Color32 = Color32::from_rgb(70, 130, 230);
+
+/// Solver diagnostics plot — BDF order (k) line.
+pub const SOLVER_BDF_ORDER: Color32 = Color32::from_rgb(230, 130, 70);
+
+/// Source-map equation-linked line highlight (light blue tint).
+pub const SOURCE_MAP_LINK: Color32 = Color32::from_rgba_premultiplied(100, 180, 255, 40);
+
+/// Clickable identifier text in the source view (light blue).
+pub const CLICKABLE_IDENT: Color32 = Color32::from_rgb(0x64, 0xB5, 0xF6);
+
 /// Grid line alpha multiplier for canvas matrix views.
 pub const GRID_ALPHA: f32 = 0.3;
 
