@@ -635,3 +635,11 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
 - **2026-07-25 — Dependency added: `egui_commonmark 0.24`.** Renders markdown (tour content,
   specimen narratives) inside egui. No-default-features (image loading disabled — we embed no
   images). Used by both tour mode and specimen mode left panels.
+- **2026-07-26 — Tour specimen changed: GearWithBrake → MotorWithBrake.** GearWithBrake's
+  initialization fails (Rumoca limitation) and simulation produces all-constant trajectories — a
+  spurious equilibrium from the failed IC solve. MotorWithBrake uses BenchActuator's proven EMF
+  structure (which simulates dynamically despite the same IC limitation) plus a `when`/`elsewhen`
+  speed-limit event. It exercises every compiler phase: index reduction (1 EMF demotion), events
+  (2 conditions, 1 discrete update), and stiff dynamics (38/51 variables dynamic). GearWithBrake
+  remains a valid specimen for studying index reduction with IdealGear; it is just no longer the
+  tour specimen.

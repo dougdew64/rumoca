@@ -148,25 +148,29 @@
         "equation": "f_x[0]",
         "unknowns": [
           7
-        ]
+        ],
+        "equation_text": "inertia.phi - inertia.flange_a.phi"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           2
-        ]
+        ],
+        "equation_text": "inertia.phi - inertia.flange_b.phi"
       },
       {
         "equation": "f_x[2]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "inertia.w - der(inertia.phi)"
       },
       {
         "equation": "f_x[3]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "inertia.a - der(inertia.w)"
       },
       {
         "equation": "f_x[4]",
@@ -174,53 +178,61 @@
           3,
           4,
           8
-        ]
+        ],
+        "equation_text": "inertia.J * inertia.a - (inertia.flange_a.tau + inertia.flange_b.tau)"
       },
       {
         "equation": "f_x[5]",
         "unknowns": [
           5
-        ]
+        ],
+        "equation_text": "torque.phi_support - 0"
       },
       {
         "equation": "f_x[6]",
         "unknowns": [
           6,
           10
-        ]
+        ],
+        "equation_text": "torque.flange.tau - -torque.tau"
       },
       {
         "equation": "f_x[7]",
         "unknowns": [
           11
-        ]
+        ],
+        "equation_text": "tau.y - tau.k"
       },
       {
         "equation": "f_x[8]",
         "unknowns": [
           8,
           10
-        ]
+        ],
+        "equation_text": "torque.flange.tau + inertia.flange_a.tau"
       },
       {
         "equation": "f_x[9]",
         "unknowns": [
           6,
           11
-        ]
+        ],
+        "equation_text": "tau.y - torque.tau"
       },
       {
         "equation": "f_x[10]",
         "unknowns": [
           7,
           9
-        ]
+        ],
+        "equation_text": "torque.flange.phi - inertia.flange_a.phi"
       },
       {
         "equation": "f_x[11]",
         "unknowns": [
           3
-        ]
+        ],
+        "equation_text": "inertia.flange_b.tau"
       }
     ]
   }

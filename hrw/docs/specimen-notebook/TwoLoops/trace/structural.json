@@ -89,14 +89,16 @@
         "unknowns": [
           0,
           1
-        ]
+        ],
+        "equation_text": "errorA - (reference - plantA * commandA)"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           0,
           1
-        ]
+        ],
+        "equation_text": "commandA - gainA * errorA"
       },
       {
         "equation": "f_x[2]",
@@ -104,14 +106,16 @@
           1,
           2,
           3
-        ]
+        ],
+        "equation_text": "errorB - (commandA - plantB * commandB)"
       },
       {
         "equation": "f_x[3]",
         "unknowns": [
           2,
           3
-        ]
+        ],
+        "equation_text": "commandB - gainB * errorB"
       }
     ]
   }

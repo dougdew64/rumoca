@@ -50,19 +50,22 @@
         "unknowns": [
           1,
           2
-        ]
+        ],
+        "equation_text": "src.V - -src.n.v - (C.v - -src.n.v) - R.R * (1 + R.alpha * (R.T - R.T_ref)) * R.p.i"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "R.p.i - C.C * der(C.v)"
       },
       {
         "equation": "f_x[2]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "src.n.v"
       }
     ]
   },

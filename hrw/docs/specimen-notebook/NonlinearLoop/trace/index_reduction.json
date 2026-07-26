@@ -27,7 +27,8 @@
         "equation": "f_x[0]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "measurement - plantGain * controllerGain * (reference - measurement) * controllerGain * (reference - measurement)"
       }
     ]
   },

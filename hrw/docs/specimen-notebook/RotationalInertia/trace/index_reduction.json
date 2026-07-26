@@ -71,32 +71,37 @@
         "equation": "f_x[0]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "inertia.w - der(inertia.phi)"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "inertia.a - der(inertia.w)"
       },
       {
         "equation": "f_x[2]",
         "unknowns": [
           2,
           3
-        ]
+        ],
+        "equation_text": "-torque.tau + inertia.J * inertia.a"
       },
       {
         "equation": "f_x[3]",
         "unknowns": [
           3
-        ]
+        ],
+        "equation_text": "tau.k - torque.tau"
       },
       {
         "equation": "f_x[4]",
         "unknowns": [
           4
-        ]
+        ],
+        "equation_text": "torque.flange.phi - inertia.phi"
       }
     ]
   },

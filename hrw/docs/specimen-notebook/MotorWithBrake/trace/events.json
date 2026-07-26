@@ -1,0 +1,853 @@
+{
+  "summary": {
+    "condition_equations": 2,
+    "relations": 2,
+    "discrete_real_updates": 0,
+    "discrete_valued_updates": 1,
+    "zero_crossing_conditions": 1,
+    "scheduled_time_events": 0
+  },
+  "conditions": {
+    "equations_f_c": [
+      {
+        "lhs": {
+          "name": "c[1]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 13584111925557694778,
+              "start": 2881,
+              "end": 2898
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2881,
+                  "end": 2898
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 1,
+                      "span": {
+                        "source": 13584111925557694778,
+                        "start": 2881,
+                        "end": 2898
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Gt",
+            "lhs": {
+              "VarRef": {
+                "name": {
+                  "name": "load.w",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 10383162805277989159,
+                      "start": 530,
+                      "end": 550
+                    },
+                    "parts": [
+                      {
+                        "ident": "load",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      },
+                      {
+                        "ident": "w",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39567
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2881,
+                  "end": 2887
+                }
+              }
+            },
+            "rhs": {
+              "VarRef": {
+                "name": {
+                  "name": "maxSpeed",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2456,
+                      "end": 2469
+                    },
+                    "parts": [
+                      {
+                        "ident": "maxSpeed",
+                        "span": {
+                          "source": 13584111925557694778,
+                          "start": 2456,
+                          "end": 2469
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39569
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2890,
+                  "end": 2898
+                }
+              }
+            },
+            "span": {
+              "source": 13584111925557694778,
+              "start": 2881,
+              "end": 2898
+            }
+          }
+        },
+        "span": {
+          "source": 13584111925557694778,
+          "start": 2881,
+          "end": 2898
+        },
+        "origin": "condition equation from guarded when equation assignment to overSpeed",
+        "scalar_count": 1
+      },
+      {
+        "lhs": {
+          "name": "c[2]",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 13584111925557694778,
+              "start": 2937,
+              "end": 2960
+            },
+            "parts": [
+              {
+                "ident": "c",
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2937,
+                  "end": 2960
+                },
+                "subs": [
+                  {
+                    "Index": {
+                      "value": 2,
+                      "span": {
+                        "source": 13584111925557694778,
+                        "start": 2937,
+                        "end": 2960
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "def_id": null
+          },
+          "generated": true
+        },
+        "rhs": {
+          "Binary": {
+            "op": "Lt",
+            "lhs": {
+              "VarRef": {
+                "name": {
+                  "name": "load.w",
+                  "component_ref": {
+                    "local": false,
+                    "span": {
+                      "source": 10383162805277989159,
+                      "start": 530,
+                      "end": 550
+                    },
+                    "parts": [
+                      {
+                        "ident": "load",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      },
+                      {
+                        "ident": "w",
+                        "span": {
+                          "source": 10383162805277989159,
+                          "start": 530,
+                          "end": 550
+                        },
+                        "subs": []
+                      }
+                    ],
+                    "def_id": 39567
+                  }
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2937,
+                  "end": 2943
+                }
+              }
+            },
+            "rhs": {
+              "Binary": {
+                "op": "Mul",
+                "lhs": {
+                  "VarRef": {
+                    "name": {
+                      "name": "maxSpeed",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 13584111925557694778,
+                          "start": 2456,
+                          "end": 2469
+                        },
+                        "parts": [
+                          {
+                            "ident": "maxSpeed",
+                            "span": {
+                              "source": 13584111925557694778,
+                              "start": 2456,
+                              "end": 2469
+                            },
+                            "subs": []
+                          }
+                        ],
+                        "def_id": 39569
+                      }
+                    },
+                    "subscripts": [],
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2946,
+                      "end": 2954
+                    }
+                  }
+                },
+                "rhs": {
+                  "Literal": {
+                    "value": {
+                      "Real": 0.5
+                    },
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2957,
+                      "end": 2960
+                    }
+                  }
+                },
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2946,
+                  "end": 2960
+                }
+              }
+            },
+            "span": {
+              "source": 13584111925557694778,
+              "start": 2937,
+              "end": 2960
+            }
+          }
+        },
+        "span": {
+          "source": 13584111925557694778,
+          "start": 2937,
+          "end": 2960
+        },
+        "origin": "condition equation from guarded when equation assignment to overSpeed",
+        "scalar_count": 1
+      }
+    ],
+    "relations": [
+      {
+        "Binary": {
+          "op": "Gt",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "load.w",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 530,
+                    "end": 550
+                  },
+                  "parts": [
+                    {
+                      "ident": "load",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "w",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39567
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 13584111925557694778,
+                "start": 2881,
+                "end": 2887
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "maxSpeed",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 13584111925557694778,
+                    "start": 2456,
+                    "end": 2469
+                  },
+                  "parts": [
+                    {
+                      "ident": "maxSpeed",
+                      "span": {
+                        "source": 13584111925557694778,
+                        "start": 2456,
+                        "end": 2469
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39569
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 13584111925557694778,
+                "start": 2890,
+                "end": 2898
+              }
+            }
+          },
+          "span": {
+            "source": 13584111925557694778,
+            "start": 2881,
+            "end": 2898
+          }
+        }
+      },
+      {
+        "Binary": {
+          "op": "Lt",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "load.w",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 530,
+                    "end": 550
+                  },
+                  "parts": [
+                    {
+                      "ident": "load",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    },
+                    {
+                      "ident": "w",
+                      "span": {
+                        "source": 10383162805277989159,
+                        "start": 530,
+                        "end": 550
+                      },
+                      "subs": []
+                    }
+                  ],
+                  "def_id": 39567
+                }
+              },
+              "subscripts": [],
+              "span": {
+                "source": 13584111925557694778,
+                "start": 2937,
+                "end": 2943
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "maxSpeed",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 13584111925557694778,
+                        "start": 2456,
+                        "end": 2469
+                      },
+                      "parts": [
+                        {
+                          "ident": "maxSpeed",
+                          "span": {
+                            "source": 13584111925557694778,
+                            "start": 2456,
+                            "end": 2469
+                          },
+                          "subs": []
+                        }
+                      ],
+                      "def_id": 39569
+                    }
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 13584111925557694778,
+                    "start": 2946,
+                    "end": 2954
+                  }
+                }
+              },
+              "rhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 0.5
+                  },
+                  "span": {
+                    "source": 13584111925557694778,
+                    "start": 2957,
+                    "end": 2960
+                  }
+                }
+              },
+              "span": {
+                "source": 13584111925557694778,
+                "start": 2946,
+                "end": 2960
+              }
+            }
+          },
+          "span": {
+            "source": 13584111925557694778,
+            "start": 2937,
+            "end": 2960
+          }
+        }
+      }
+    ]
+  },
+  "discrete_updates": {
+    "real_updates_f_z": [],
+    "valued_updates_f_m": [
+      {
+        "lhs": {
+          "name": "overSpeed",
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 13584111925557694778,
+              "start": 2506,
+              "end": 2523
+            },
+            "parts": [
+              {
+                "ident": "overSpeed",
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2506,
+                  "end": 2523
+                },
+                "subs": []
+              }
+            ],
+            "def_id": 39570
+          }
+        },
+        "rhs": {
+          "If": {
+            "branches": [
+              [
+                {
+                  "Binary": {
+                    "op": "And",
+                    "lhs": {
+                      "VarRef": {
+                        "name": {
+                          "name": "c",
+                          "generated": true
+                        },
+                        "subscripts": [
+                          {
+                            "Index": {
+                              "value": 1,
+                              "span": {
+                                "source": 13584111925557694778,
+                                "start": 2881,
+                                "end": 2898
+                              }
+                            }
+                          }
+                        ],
+                        "span": {
+                          "source": 13584111925557694778,
+                          "start": 2881,
+                          "end": 2898
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Unary": {
+                        "op": "Not",
+                        "rhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "__pre__.c",
+                              "generated": true
+                            },
+                            "subscripts": [
+                              {
+                                "Index": {
+                                  "value": 1,
+                                  "span": {
+                                    "source": 13584111925557694778,
+                                    "start": 2881,
+                                    "end": 2898
+                                  }
+                                }
+                              }
+                            ],
+                            "span": {
+                              "source": 13584111925557694778,
+                              "start": 2881,
+                              "end": 2898
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 13584111925557694778,
+                          "start": 2881,
+                          "end": 2898
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2881,
+                      "end": 2898
+                    }
+                  }
+                },
+                {
+                  "Literal": {
+                    "value": {
+                      "Boolean": true
+                    },
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2920,
+                      "end": 2924
+                    }
+                  }
+                }
+              ],
+              [
+                {
+                  "Binary": {
+                    "op": "And",
+                    "lhs": {
+                      "VarRef": {
+                        "name": {
+                          "name": "c",
+                          "generated": true
+                        },
+                        "subscripts": [
+                          {
+                            "Index": {
+                              "value": 2,
+                              "span": {
+                                "source": 13584111925557694778,
+                                "start": 2937,
+                                "end": 2960
+                              }
+                            }
+                          }
+                        ],
+                        "span": {
+                          "source": 13584111925557694778,
+                          "start": 2937,
+                          "end": 2960
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Unary": {
+                        "op": "Not",
+                        "rhs": {
+                          "VarRef": {
+                            "name": {
+                              "name": "__pre__.c",
+                              "generated": true
+                            },
+                            "subscripts": [
+                              {
+                                "Index": {
+                                  "value": 2,
+                                  "span": {
+                                    "source": 13584111925557694778,
+                                    "start": 2937,
+                                    "end": 2960
+                                  }
+                                }
+                              }
+                            ],
+                            "span": {
+                              "source": 13584111925557694778,
+                              "start": 2937,
+                              "end": 2960
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 13584111925557694778,
+                          "start": 2937,
+                          "end": 2960
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2937,
+                      "end": 2960
+                    }
+                  }
+                },
+                {
+                  "Literal": {
+                    "value": {
+                      "Boolean": false
+                    },
+                    "span": {
+                      "source": 13584111925557694778,
+                      "start": 2982,
+                      "end": 2987
+                    }
+                  }
+                }
+              ]
+            ],
+            "else_branch": {
+              "VarRef": {
+                "name": {
+                  "name": "__pre__.overSpeed",
+                  "generated": true
+                },
+                "subscripts": [],
+                "span": {
+                  "source": 13584111925557694778,
+                  "start": 2881,
+                  "end": 2885
+                }
+              }
+            },
+            "span": {
+              "source": 13584111925557694778,
+              "start": 2881,
+              "end": 2885
+            }
+          }
+        },
+        "span": {
+          "source": 13584111925557694778,
+          "start": 2881,
+          "end": 2885
+        },
+        "origin": "guarded when equation assignment to overSpeed",
+        "scalar_count": 1
+      }
+    ]
+  },
+  "events": {
+    "zero_crossing_conditions": [
+      {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 1.0
+                  },
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 619,
+                    "end": 620
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "Literal": {
+                      "value": {
+                        "Real": 0.0
+                      },
+                      "span": {
+                        "source": 17867382465268392184,
+                        "start": 623,
+                        "end": 628
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Sub",
+                      "lhs": {
+                        "VarRef": {
+                          "name": {
+                            "name": "R.T_heatPort",
+                            "component_ref": {
+                              "local": false,
+                              "span": {
+                                "source": 16961345721610102190,
+                                "start": 819,
+                                "end": 844
+                              },
+                              "parts": [
+                                {
+                                  "ident": "R",
+                                  "span": {
+                                    "source": 16961345721610102190,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "T_heatPort",
+                                  "span": {
+                                    "source": 16961345721610102190,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                }
+                              ],
+                              "def_id": 39493
+                            }
+                          },
+                          "subscripts": [],
+                          "span": {
+                            "source": 17867382465268392184,
+                            "start": 630,
+                            "end": 640
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Literal": {
+                          "value": {
+                            "Real": 300.15
+                          },
+                          "span": {
+                            "source": 17867382465268392184,
+                            "start": 643,
+                            "end": 648
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17867382465268392184,
+                        "start": 630,
+                        "end": 648
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 623,
+                    "end": 648
+                  }
+                }
+              },
+              "span": {
+                "source": 17867382465268392184,
+                "start": 619,
+                "end": 648
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 2.220446049250313e-16
+              },
+              "span": {
+                "source": 17867382465268392184,
+                "start": 654,
+                "end": 676
+              }
+            }
+          },
+          "span": {
+            "source": 17867382465268392184,
+            "start": 619,
+            "end": 676
+          }
+        }
+      }
+    ],
+    "scheduled_time_events": []
+  }
+}

@@ -251,33 +251,38 @@
         "unknowns": [
           0,
           5
-        ]
+        ],
+        "equation_text": "L.L * der(L.i) - (src.V - -src.n.v - R.R * (1 + R.alpha * (R.T - R.T_ref)) * L.i - (emf.k * -(-1 * -(-1 * shaft.w) * 0.2 / (0.2 * 0.2)) - -src.n.v))"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           3,
           7
-        ]
+        ],
+        "equation_text": "rotor.J * -(-1 * shaft.a) * 0.2 * 0.2 * 0.2 / (0.2 * 0.2 * 0.2 * 0.2) - (emf.k * L.i + rotor.flange_b.tau)"
       },
       {
         "equation": "f_x[2]",
         "unknowns": [
           8,
           9
-        ]
+        ],
+        "equation_text": "-(gear.ratio * gear.flange_a.tau + gear.flange_b.tau)"
       },
       {
         "equation": "f_x[3]",
         "unknowns": [
           4
-        ]
+        ],
+        "equation_text": "shaft.w - -mount.v_rel * 0.005 / (0.005 * 0.005)"
       },
       {
         "equation": "f_x[4]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "shaft.a - der(shaft.w)"
       },
       {
         "equation": "f_x[5]",
@@ -285,14 +290,16 @@
           3,
           10,
           11
-        ]
+        ],
+        "equation_text": "shaft.J * shaft.a - (shaft.flange_a.tau + shaft.flange_b.tau)"
       },
       {
         "equation": "f_x[6]",
         "unknowns": [
           12,
           14
-        ]
+        ],
+        "equation_text": "-(r2t.ratio * r2t.flangeR.tau + r2t.flangeT.f)"
       },
       {
         "equation": "f_x[7]",
@@ -300,85 +307,98 @@
           3,
           4,
           17
-        ]
+        ],
+        "equation_text": "load.m * -(0.005 * shaft.a) * -1 * -1 * -1 / (-1 * -1 * -1 * -1) - (load.flange_a.f + mount.c * (mount.s_rel - mount.s_rel0) + mount.d * mount.v_rel)"
       },
       {
         "equation": "f_x[8]",
         "unknowns": [
           2
-        ]
+        ],
+        "equation_text": "mount.v_rel - der(mount.s_rel)"
       },
       {
         "equation": "f_x[9]",
         "unknowns": [
           7,
           8
-        ]
+        ],
+        "equation_text": "rotor.flange_b.tau + gear.flange_a.tau"
       },
       {
         "equation": "f_x[10]",
         "unknowns": [
           9,
           10
-        ]
+        ],
+        "equation_text": "gear.flange_b.tau + shaft.flange_a.tau"
       },
       {
         "equation": "f_x[11]",
         "unknowns": [
           11,
           12
-        ]
+        ],
+        "equation_text": "shaft.flange_b.tau + r2t.flangeR.tau"
       },
       {
         "equation": "f_x[12]",
         "unknowns": [
           14,
           17
-        ]
+        ],
+        "equation_text": "r2t.flangeT.f + load.flange_a.f"
       },
       {
         "equation": "f_x[13]",
         "unknowns": [
           6
-        ]
+        ],
+        "equation_text": "emf.internalSupport.flange.phi - emf.fixed.phi0"
       },
       {
         "equation": "f_x[14]",
         "unknowns": [
           15
-        ]
+        ],
+        "equation_text": "r2t.internalSupportR.flange.phi - r2t.fixedR.phi0"
       },
       {
         "equation": "f_x[15]",
         "unknowns": [
           16
-        ]
+        ],
+        "equation_text": "r2t.fixedT.s0 - r2t.internalSupportT.flange.s"
       },
       {
         "equation": "f_x[16]",
         "unknowns": [
           5
-        ]
+        ],
+        "equation_text": "src.n.v"
       },
       {
         "equation": "f_x[17]",
         "unknowns": [
           13,
           19
-        ]
+        ],
+        "equation_text": "r2t.flangeT.s - (load.s - load.L / 2)"
       },
       {
         "equation": "f_x[18]",
         "unknowns": [
           18,
           19
-        ]
+        ],
+        "equation_text": "load.s + load.L / 2 - -(mount.s_rel - mount.flange_b.s)"
       },
       {
         "equation": "f_x[19]",
         "unknowns": [
           18
-        ]
+        ],
+        "equation_text": "mount.flange_b.s - wall.s0"
       }
     ]
   },

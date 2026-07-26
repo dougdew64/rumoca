@@ -270,14 +270,16 @@
         "unknowns": [
           7,
           9
-        ]
+        ],
+        "equation_text": "0 - (src.p.i + src.n.i)"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           5,
           7
-        ]
+        ],
+        "equation_text": "src.i - src.p.i"
       },
       {
         "equation": "f_x[2]",
@@ -285,27 +287,31 @@
           1,
           6,
           8
-        ]
+        ],
+        "equation_text": "src.v - (src.p.v - src.n.v)"
       },
       {
         "equation": "f_x[3]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "src.v - src.V"
       },
       {
         "equation": "f_x[4]",
         "unknowns": [
           13,
           15
-        ]
+        ],
+        "equation_text": "0 - (R.p.i + R.n.i)"
       },
       {
         "equation": "f_x[5]",
         "unknowns": [
           10,
           13
-        ]
+        ],
+        "equation_text": "R.i - R.p.i"
       },
       {
         "equation": "f_x[6]",
@@ -313,20 +319,23 @@
           11,
           12,
           14
-        ]
+        ],
+        "equation_text": "R.v - (R.p.v - R.n.v)"
       },
       {
         "equation": "f_x[7]",
         "unknowns": [
           2
-        ]
+        ],
+        "equation_text": "R.T_heatPort - R.T"
       },
       {
         "equation": "f_x[8]",
         "unknowns": [
           2,
           4
-        ]
+        ],
+        "equation_text": "R.R_actual - R.R * (1 + R.alpha * (R.T_heatPort - R.T_ref))"
       },
       {
         "equation": "f_x[9]",
@@ -334,7 +343,8 @@
           4,
           10,
           11
-        ]
+        ],
+        "equation_text": "R.v - R.R_actual * R.i"
       },
       {
         "equation": "f_x[10]",
@@ -342,54 +352,62 @@
           10,
           11,
           16
-        ]
+        ],
+        "equation_text": "R.LossPower - R.v * R.i"
       },
       {
         "equation": "f_x[11]",
         "unknowns": [
           18,
           20
-        ]
+        ],
+        "equation_text": "0 - (C.p.i + C.n.i)"
       },
       {
         "equation": "f_x[12]",
         "unknowns": [
           3,
           18
-        ]
+        ],
+        "equation_text": "C.i - C.p.i"
       },
       {
         "equation": "f_x[13]",
         "unknowns": [
           17,
           19
-        ]
+        ],
+        "equation_text": "C.v - (C.p.v - C.n.v)"
       },
       {
         "equation": "f_x[14]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "C.i - C.C * der(C.v)"
       },
       {
         "equation": "f_x[15]",
         "unknowns": [
           21
-        ]
+        ],
+        "equation_text": "gnd.p.v - 0"
       },
       {
         "equation": "f_x[16]",
         "unknowns": [
           7,
           13
-        ]
+        ],
+        "equation_text": "src.p.i + R.p.i"
       },
       {
         "equation": "f_x[17]",
         "unknowns": [
           15,
           18
-        ]
+        ],
+        "equation_text": "R.n.i + C.p.i"
       },
       {
         "equation": "f_x[18]",
@@ -397,35 +415,40 @@
           9,
           20,
           22
-        ]
+        ],
+        "equation_text": "C.n.i + src.n.i + gnd.p.i"
       },
       {
         "equation": "f_x[19]",
         "unknowns": [
           6,
           12
-        ]
+        ],
+        "equation_text": "src.p.v - R.p.v"
       },
       {
         "equation": "f_x[20]",
         "unknowns": [
           14,
           17
-        ]
+        ],
+        "equation_text": "R.n.v - C.p.v"
       },
       {
         "equation": "f_x[21]",
         "unknowns": [
           8,
           19
-        ]
+        ],
+        "equation_text": "C.n.v - src.n.v"
       },
       {
         "equation": "f_x[22]",
         "unknowns": [
           8,
           21
-        ]
+        ],
+        "equation_text": "src.n.v - gnd.p.v"
       }
     ]
   }

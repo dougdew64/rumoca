@@ -2,7 +2,7 @@
 
 The plan to upgrade the end-to-end guided tour from a reading tour
 (`docs/compiler-phases/end_to_end_tour.md`) to an interactive, HRW-driven
-walkthrough. Grounded in the GearWithBrake specimen.
+walkthrough. Grounded in the MotorWithBrake specimen.
 
 **Principle:** infrastructure features (what to make visible) are built now,
 driven by the tour. Pedagogical narrative (what to teach deeply) is refined
@@ -11,7 +11,7 @@ later, driven by Doug's Cellier reading. The two concerns are orthogonal.
 ## Current state
 
 The existing end-to-end tour is a 13-stop text document — a first draft
-reading tour with learning goals and concrete GearWithBrake data, but no
+reading tour with learning goals and concrete MotorWithBrake data, but no
 interactive HRW integration. The Structural Analysis phase tour
 (`phase7_structural_analysis/guided-tour.md`) is the model for what
 "interactive" looks like: three-tier progression (snapshot, replay,
@@ -90,7 +90,7 @@ The single highest-leverage feature. Transforms the weakest tour stop
 - [x] Click an equation → highlight its incidence matrix row (cross-link
   to Structural tab)
 
-**Milestone:** open GearWithBrake → Flatten → Equations → see all 44
+**Milestone:** open MotorWithBrake → Flatten → Equations → see all 47
 equations in readable math instead of JSON.
 
 ### Phase 2: Source-to-equation traceability (#28)
@@ -107,8 +107,8 @@ Depends on Phase 1 (needs readable equations to link to).
 - [x] Color-code by origin type: `connect` equations, component equations,
   parameter bindings (category colors on group headers and source gutter)
 
-**Milestone:** click `connect(gear.flange_b, load.flange_a)` in the source
-pane → see the two conservation equations it generated highlighted in the
+**Milestone:** click `connect(emf.flange, load.flange_a)` in the source
+pane → see the conservation equations it generated highlighted in the
 equation sheet.
 
 ### Phase 3: Solver stepping (#29)
@@ -121,9 +121,9 @@ Completes the Simulation stop. Independent of Phases 1–2; can overlap.
   BDF order k(t), with synchronized time axis via `link_axis`
 - [x] Synchronized time axis with the trajectory plot
 
-**Milestone:** run GearWithBrake → see step-size shrinkage at brake events
-and Newton iteration spikes at the coupled block, alongside the velocity
-trajectory.
+**Milestone:** run MotorWithBrake → see step-size shrinkage at the speed-
+limit event and BDF order ramp-up on the smooth mechanical dynamics,
+alongside the current and velocity trajectories.
 
 ### Phase 4: Wire into the tour
 
@@ -137,7 +137,7 @@ Upgrade the end-to-end tour document from reading tour to interactive tour.
 - [x] Update learning goals to include the new visual capabilities
   (goals 7–8: read equations, use HRW stage views)
 - [x] Add simulator caveat note at top and at Stop 12
-- [ ] Verify every stop works with a fresh GearWithBrake load in HRW
+- [ ] Verify every stop works with a fresh MotorWithBrake load in HRW
 
 **Milestone:** a learner can follow the tour document with HRW open and
 see meaningful visuals at every stop — no JSON-tree dead spots.

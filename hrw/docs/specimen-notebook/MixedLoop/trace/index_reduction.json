@@ -27,7 +27,8 @@
         "equation": "f_x[0]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "error - (sensorGain * reference - plantGain * controllerGain * error)"
       }
     ]
   },

@@ -1,7 +1,7 @@
 {
-  "model": "BenchActuator",
-  "specimen": "specimens/BenchActuator.mo",
-  "specimen_fnv1a": "716b198fefef781d",
+  "model": "MotorWithBrake",
+  "specimen": "specimens/MotorWithBrake.mo",
+  "specimen_fnv1a": "194e8b7286cf6c67",
   "rumoca_rev": "bbe947fe",
   "rumoca_version": "0.9.20",
   "stages": {
@@ -49,9 +49,9 @@
   "simulation": {
     "simulated": true,
     "t_end": 2.0,
-    "n_variables": 48,
+    "n_variables": 51,
     "n_time_points": 501,
     "n_states": 4,
-    "has_discontinuities": false
+    "has_discontinuities": true
   }
 }

@@ -94,43 +94,50 @@
         "unknowns": [
           0,
           4
-        ]
+        ],
+        "equation_text": "L.L * der(L.i) - (src.V - -src.n.v - R.R * (1 + R.alpha * (R.T - R.T_ref)) * L.i - (emf.k * -(-1 * load.w) - -src.n.v))"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "load.w - der(load.phi)"
       },
       {
         "equation": "f_x[2]",
         "unknowns": [
           2
-        ]
+        ],
+        "equation_text": "load.a - der(load.w)"
       },
       {
         "equation": "f_x[3]",
         "unknowns": [
           3
-        ]
+        ],
+        "equation_text": "load.J * load.a - emf.k * L.i"
       },
       {
         "equation": "f_x[4]",
         "unknowns": [
           6
-        ]
+        ],
+        "equation_text": "emf.internalSupport.flange.phi - emf.fixed.phi0"
       },
       {
         "equation": "f_x[5]",
         "unknowns": [
           4
-        ]
+        ],
+        "equation_text": "src.n.v"
       },
       {
         "equation": "f_x[6]",
         "unknowns": [
           5
-        ]
+        ],
+        "equation_text": "emf.flange.phi - load.phi"
       }
     ]
   },
