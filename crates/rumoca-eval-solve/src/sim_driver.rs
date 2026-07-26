@@ -705,9 +705,9 @@ fn advance_to_scheduled_stop<St: SolverAdvanceBackend + ?Sized>(
                 return Err(e);
             }
         };
-        backend.record_step(solver_steps);
         match outcome {
             StepOutcome::Stop => {
+                backend.record_step(solver_steps);
                 let stop_t = backend.time();
                 *state.current_t = stop_t;
                 state
@@ -717,7 +717,10 @@ fn advance_to_scheduled_stop<St: SolverAdvanceBackend + ?Sized>(
                 write_full_y(backend, &native, stop_t, state.current_y, state.params)?;
                 return Ok(false);
             }
-            StepOutcome::Internal => continue,
+            StepOutcome::Internal => {
+                backend.record_step(solver_steps);
+                continue;
+            }
             StepOutcome::Root { t_root } => {
                 trace_step_event("scheduled-root", backend.time(), Some(t_root));
                 return handle_root_crossing(ctx, state, t_root, target, backend);
@@ -760,9 +763,10 @@ fn advance_output_interval<St: SolverAdvanceBackend + ?Sized>(
                 return Err(e);
             }
         };
-        backend.record_step(solver_steps);
         match outcome {
-            StepOutcome::Stop | StepOutcome::Internal => {}
+            StepOutcome::Stop | StepOutcome::Internal => {
+                backend.record_step(solver_steps);
+            }
             StepOutcome::Root { t_root } => {
                 trace_step_event("output-root", backend.time(), Some(t_root));
                 let root_after_target =
@@ -814,9 +818,9 @@ fn advance_output_interval_clamped<St: SolverAdvanceBackend + ?Sized>(
                 return Err(e);
             }
         };
-        backend.record_step(solver_steps);
         match outcome {
             StepOutcome::Stop => {
+                backend.record_step(solver_steps);
                 let stop_t = backend.time();
                 *state.current_t = stop_t;
                 state
@@ -826,7 +830,10 @@ fn advance_output_interval_clamped<St: SolverAdvanceBackend + ?Sized>(
                 write_full_y(backend, &native, stop_t, state.current_y, state.params)?;
                 return Ok(false);
             }
-            StepOutcome::Internal => continue,
+            StepOutcome::Internal => {
+                backend.record_step(solver_steps);
+                continue;
+            }
             StepOutcome::Root { t_root } => {
                 trace_step_event("output-root-clamped", backend.time(), Some(t_root));
                 return handle_root_crossing(ctx, state, t_root, target, backend);
