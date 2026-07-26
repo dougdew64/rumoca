@@ -5,13 +5,15 @@ theme, ordered by severity within each group. Check off items as they are
 completed; clear completed items at the end of each cycle.
 
 Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 items
-fixed in the 2026-07-25 cycle. See git history for details.
+fixed in the 2026-07-25 cycle, plus 12 quick-fix items completed in the
+2026-07-25 sweep (gold color consolidation, dead code removal, tracking fix,
+stale comments). See git history for details.
 
 ---
 
 ## Bugs / correctness
 
-- [ ] **Reduction view uses exact equality for tracked-identifier matching.**
+- [x] **Reduction view uses exact equality for tracked-identifier matching.**
   The reduction view checks `tracked == Some(name.as_str())` while every other
   view also falls back to `identifier_index::matches_tracked()`, which handles
   derivative wrappers (`der(h)` matching `h`) and equation text. Tracking a
@@ -29,14 +31,14 @@ fixed in the 2026-07-25 cycle. See git history for details.
   selection, not just switching.
   *File:* `app.rs` — specimen switcher in the tab bar header.
 
-- [ ] **Stale user-facing help text says "five stages" when there are ten.**
+- [x] **Stale user-facing help text says "five stages" when there are ten.**
   The help window (line ~1081) says "Every capture publishes all five stages'
   full IR" — written early in development before the full pipeline was wired.
   *File:* `app.rs` — help window text.
 
 ## Hardcoded values / missing constants
 
-- [ ] **Gold tracked-identifier color `(0xFF, 0xD5, 0x4F)` hardcoded in 17+ places.**
+- [x] **Gold tracked-identifier color `(0xFF, 0xD5, 0x4F)` hardcoded in 17+ places.**
   The same RGB triple appears as a raw literal across 8 files (`app.rs`,
   `tree.rs`, `spyplot.rs`, `incidence_view.rs`, `matching_anim.rs`,
   `tarjan_anim.rs`, `reduction_view.rs`, `equation_sheet.rs`) with varying
@@ -124,40 +126,40 @@ fixed in the 2026-07-25 cycle. See git history for details.
 
 ## Dead code / stale comments
 
-- [ ] **Dead field: `cached_specimen_width: Option<f32>` never read.**
+- [x] **Dead field: `cached_specimen_width: Option<f32>` never read.**
   Declared, initialized to `None`, and invalidated in `rescan()`, but never
   read anywhere.
   *File:* `app.rs` — line ~269.
 
-- [ ] **Dead method: `pub fn set_mode()` never called.**
+- [x] **Dead method: `pub fn set_mode()` never called.**
   The View menu sets `self.ui_mode` directly. This method is unreachable.
   *File:* `app.rs` — line ~501.
 
-- [ ] **Stale comment: `open()` ordering description is backwards.**
+- [x] **Stale comment: `open()` ordering description is backwards.**
   Comment says "LoadAndSwitch sets pending_stage BEFORE calling open()" but
   the code does `self.open(path)` first, then sets `pending_stage`.
   *File:* `app.rs` — line ~606.
 
-- [ ] **Orphan doc comment before `#[cfg(test)]` block.**
+- [x] **Orphan doc comment before `#[cfg(test)]` block.**
   A doc comment starting "The field name to look up generic help for..." ends
   mid-sentence and attaches to the test-only `impl App` block.
   *File:* `app.rs` — lines ~2657–2664.
 
-- [ ] **Stale module doc lists nonexistent `format_equation_residual`.**
+- [x] **Stale module doc lists nonexistent `format_equation_residual`.**
   The module doc lists this as an entry point, but no such function exists.
   *File:* `expr_format.rs` — line ~11.
 
-- [ ] **Orphan `truncate_label` comment in incidence_view.**
+- [x] **Orphan `truncate_label` comment in incidence_view.**
   A documentation comment for `truncate_label` (defined in `lib.rs`) sits
   above `#[cfg(test)] mod tests` in the wrong file.
   *File:* `incidence_view.rs` — lines ~462–464.
 
-- [ ] **Misplaced import in tarjan_anim.**
+- [x] **Misplaced import in tarjan_anim.**
   `use crate::truncate_label;` appears after the impl block instead of with
   the other imports at the top.
   *File:* `tarjan_anim.rs` — line ~415.
 
-- [ ] **Redundant `#[cfg(test)]` on `test_default()`.**
+- [x] **Redundant `#[cfg(test)]` on `test_default()`.**
   Already inside a `#[cfg(test)]` impl block.
   *File:* `app.rs` — line ~2667.
 
@@ -204,7 +206,7 @@ fixed in the 2026-07-25 cycle. See git history for details.
 
 ## Minor style / cleanup
 
-- [ ] **Redundant `font_size` computation in `draw_matrix_axis_labels`.**
+- [x] **Redundant `font_size` computation in `draw_matrix_axis_labels`.**
   Computes the same `(view.zoom() * 0.35).min(14.0)` expression twice — once
   for the `FontId` and again as a local `font_size`. Should extract once.
   *File:* `lib.rs` — lines ~154, 157.
@@ -214,7 +216,7 @@ fixed in the 2026-07-25 cycle. See git history for details.
   Called on every expression node during equation-sheet construction.
   *File:* `expr_format.rs` — lines ~86, 98.
 
-- [ ] **`is_some()` + `.clone().unwrap()` instead of `if let`.**
+- [x] **`is_some()` + `.clone().unwrap()` instead of `if let`.**
   One place uses `if self.tracked_identifier.is_some() { ... .clone().unwrap() }`
   instead of the idiomatic `if let Some(name) = ... { }`.
   *File:* `app.rs` — lines ~2178–2179.
