@@ -1356,7 +1356,23 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
                 .insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae.continuous.equations)));
             Stage::ok(json)
         }
-        Err(e) => Stage::err(format!("structural analysis failed: {e}")),
+        Err(e) => {
+            let inc = rumoca_phase_structural::build_incidence(&cr.dae);
+            let (match_eq, _) = rumoca_phase_structural::matching::maximum_matching(
+                inc.n_eq, inc.n_var, &inc.eq_unknowns,
+            );
+            let matching_json = partial_matching_to_json(&inc, &match_eq);
+            let mut json = serde_json::json!({});
+            let obj = json.as_object_mut().unwrap();
+            obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae.continuous.equations)));
+            obj.insert("matching".to_owned(), matching_json);
+            obj.insert("error".to_owned(), structural_error_to_json(&e, &inc));
+            let note = match &e {
+                rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
+                _ => format!("{e}"),
+            };
+            Stage::recovered(json, note)
+        }
     }
 }
 
@@ -1723,6 +1739,53 @@ fn before_report_json(
         "matching": matching,
         "incidence": incidence_to_json(inc, equations),
     })
+}
+
+/// Build a JSON array of matched (equation, unknown) pairs from a partial
+/// matching result — the same shape as the structural report's `"matching"`
+/// array so `IncidenceMatrix::from_report` can parse it.
+fn partial_matching_to_json(
+    inc: &rumoca_phase_structural::Incidence,
+    match_eq: &[Option<usize>],
+) -> serde_json::Value {
+    let pairs: Vec<serde_json::Value> = match_eq
+        .iter()
+        .enumerate()
+        .filter_map(|(eq_idx, var_idx)| {
+            var_idx.map(|v| {
+                serde_json::json!({
+                    "equation": inc.equation_refs[eq_idx].to_string(),
+                    "unknown": inc.unknown_names[v].to_string(),
+                })
+            })
+        })
+        .collect();
+    serde_json::Value::Array(pairs)
+}
+
+/// Convert a `StructuralError` into structured JSON for UI rendering.
+fn structural_error_to_json(
+    e: &rumoca_phase_structural::StructuralError,
+    inc: &rumoca_phase_structural::Incidence,
+) -> serde_json::Value {
+    match e {
+        rumoca_phase_structural::StructuralError::Singular {
+            n_equations, n_unknowns, n_matched,
+            unmatched_equations, unmatched_unknowns, ..
+        } => serde_json::json!({
+            "kind": "singular",
+            "n_equations": n_equations,
+            "n_unknowns": n_unknowns,
+            "n_matched": n_matched,
+            "rank_deficiency": inc.n_eq.max(inc.n_var) - n_matched,
+            "unmatched_equations": unmatched_equations,
+            "unmatched_unknowns": unmatched_unknowns,
+        }),
+        _ => serde_json::json!({
+            "kind": "other",
+            "message": format!("{e}"),
+        }),
+    }
 }
 
 /// Convert a single BLT block to JSON. A "scalar" block is a single
@@ -2186,7 +2249,9 @@ mod tests {
             panic!("expected Compiled");
         };
         assert!(stages.flatten.value.is_some(), "CapacitorLoop should still flatten");
-        assert!(stages.structural.value.is_none() && stages.structural.note_is_error, "expected singular Structural");
+        assert!(stages.structural.note_is_error, "expected singular Structural");
+        assert!(stages.structural.value.as_ref().unwrap().get("error").is_some(),
+            "singular Structural should carry error details");
         assert!(
             stages.index_reduction.value.is_none() && stages.index_reduction.note_is_error,
             "index reduction should NOT rescue a capacitor-across-source loop"
@@ -2400,7 +2465,9 @@ mod tests {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
-        assert!(stages.structural.value.is_none(), "raw Structural should be singular for Drivetrain");
+        assert!(stages.structural.note_is_error, "raw Structural should be singular for Drivetrain");
+        assert!(stages.structural.value.as_ref().unwrap().get("error").is_some(),
+            "singular Structural should carry error details");
         let v = stages.index_reduction.value.unwrap_or_else(|| {
             panic!("index reduction should recover Drivetrain: {:?}", stages.index_reduction.note)
         });
@@ -2410,6 +2477,31 @@ mod tests {
         let steps = red["steps"].as_array().expect("steps array");
         assert!(!steps.is_empty(), "should have logged funnel steps");
         assert!(red["n_states_before"].as_u64().unwrap() > 0);
+    }
+
+    /// A singular Structural stage carries structured error data (equation
+    /// and unknown counts, rank deficiency, unmatched names) plus the
+    /// incidence matrix and partial matching for UI rendering.
+    #[test]
+    fn singular_structural_carries_summary_data() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+        let v = stages.structural.value.as_ref().expect("singular Structural should have a value");
+        let err = &v["error"];
+        assert_eq!(err["kind"].as_str(), Some("singular"));
+        assert!(err["n_equations"].as_u64().unwrap() > 0);
+        assert!(err["n_unknowns"].as_u64().unwrap() > 0);
+        assert!(err["rank_deficiency"].as_u64().unwrap() > 0);
+        assert!(err["unmatched_equations"].as_array().unwrap().len() > 0);
+        assert!(err["unmatched_unknowns"].as_array().unwrap().len() > 0);
+        let inc = &v["incidence"];
+        assert!(inc["n_eq"].as_u64().unwrap() > 0);
+        let matching = v["matching"].as_array().expect("should have partial matching");
+        assert!(!matching.is_empty(), "partial matching should be non-empty");
+        let mat = crate::incidence_view::IncidenceMatrix::from_report(v)
+            .expect("singular structural report should parse as IncidenceMatrix");
+        assert!(mat.n_eq() > 0);
     }
 
     /// Drivetrain's index-reduction trace produces animation frames — the

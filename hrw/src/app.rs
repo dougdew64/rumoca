@@ -1549,6 +1549,80 @@ impl App {
             }
         }
     }
+
+    /// Render a structured summary for a singular Structural stage.
+    fn structural_singular_summary(ui: &mut egui::Ui, stage: &crate::worker::Stage) {
+        let error_json = stage.value.as_ref().and_then(|v| v.get("error"));
+        let Some(err) = error_json else {
+            ui.weak("(no structural error details)");
+            return;
+        };
+
+        if err.get("kind").and_then(|k| k.as_str()) != Some("singular") {
+            if let Some(msg) = err.get("message").and_then(|m| m.as_str()) {
+                ui.colored_label(ui.visuals().error_fg_color, msg);
+            }
+            return;
+        }
+
+        let n_eq = err["n_equations"].as_u64().unwrap_or(0);
+        let n_unk = err["n_unknowns"].as_u64().unwrap_or(0);
+        let n_matched = err["n_matched"].as_u64().unwrap_or(0);
+        let deficiency = err["rank_deficiency"].as_u64().unwrap_or(0);
+
+        ui.heading("Structural singularity");
+        ui.add_space(4.0);
+
+        egui::Grid::new("singular_summary").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
+            ui.strong("Equations");
+            ui.label(format!("{n_eq}"));
+            ui.end_row();
+            ui.strong("Unknowns");
+            ui.label(format!("{n_unk}"));
+            ui.end_row();
+            ui.strong("Matched");
+            ui.label(format!("{n_matched}"));
+            ui.end_row();
+            ui.strong("Rank deficiency");
+            ui.label(egui::RichText::new(format!("{deficiency}"))
+                .color(crate::colors::ANIM_FAIL).strong());
+            ui.end_row();
+        });
+
+        ui.add_space(8.0);
+
+        let unmatched_eqs = err["unmatched_equations"].as_array();
+        let unmatched_unks = err["unmatched_unknowns"].as_array();
+
+        if let Some(eqs) = unmatched_eqs {
+            if !eqs.is_empty() {
+                ui.strong("Unmatched equations");
+                for eq in eqs {
+                    if let Some(name) = eq.as_str() {
+                        ui.label(format!("  {name}"));
+                    }
+                }
+                ui.add_space(4.0);
+            }
+        }
+
+        if let Some(unks) = unmatched_unks {
+            if !unks.is_empty() {
+                ui.strong("Unmatched unknowns");
+                for unk in unks {
+                    if let Some(name) = unk.as_str() {
+                        ui.label(format!("  {name}"));
+                    }
+                }
+                ui.add_space(4.0);
+            }
+        }
+
+        ui.add_space(8.0);
+        ui.weak("The maximum matching could not pair every equation with a unique \
+            unknown. This system requires index reduction before it can be solved \
+            \u{2014} see the Index Reduction tab.");
+    }
 }
 
 impl eframe::App for App {
@@ -2210,16 +2284,23 @@ impl eframe::App for App {
                 // the spy-plot canvas).
                 {
                     let stage = self.current_stage();
+                    // Structural and IndexReduction stages with "singular" notes
+                    // show their own status banner below, so skip the generic note.
+                    let has_custom_banner = matches!(
+                        self.stage, StageKind::Structural | StageKind::IndexReduction
+                    ) && stage.note.as_deref().map_or(false, |n| n.contains("singular") || n.contains("index-1"));
                     if let Some(note) = &stage.note {
-                        let color = if stage.note_is_error {
-                            ui.visuals().error_fg_color
-                        } else {
-                            ui.visuals().weak_text_color()
-                        };
-                        egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
-                            ui.colored_label(color, egui::RichText::new(note).monospace());
-                        });
-                        ui.separator();
+                        if !has_custom_banner {
+                            let color = if stage.note_is_error {
+                                ui.visuals().error_fg_color
+                            } else {
+                                ui.visuals().weak_text_color()
+                            };
+                            egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
+                                ui.colored_label(color, egui::RichText::new(note).monospace());
+                            });
+                            ui.separator();
+                        }
                     }
                 }
 
@@ -2255,9 +2336,11 @@ impl eframe::App for App {
                         self.cached_matching_anim = None;
                         self.cached_tarjan_anim = None;
                         self.cached_before_incidence = None;
-                        // Default sub-view on stage transition: Summary for
-                        // IndexReduction, SpyPlot for Structural.
-                        if self.stage == StageKind::IndexReduction {
+                        // Default sub-view: Summary for IndexReduction and
+                        // singular Structural; SpyPlot otherwise.
+                        let is_singular = self.stages.get(self.stage).note.as_deref()
+                            .map_or(false, |n| n.contains("singular"));
+                        if self.stage == StageKind::IndexReduction || is_singular {
                             self.structural_view = StructuralView::Summary;
                         } else if matches!(self.structural_view,
                             StructuralView::Summary | StructuralView::Animate)
@@ -2267,12 +2350,13 @@ impl eframe::App for App {
                         self.cached_report_stage = Some(self.stage);
                     }
                     let is_index_reduction = self.stage == StageKind::IndexReduction;
+                    let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
+                    let is_singular = note.contains("singular");
+                    let has_summary = is_index_reduction || is_singular;
 
-                    // Status banner for Index Reduction: was reduction needed?
+                    // Status banner
                     if is_index_reduction {
-                        let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
-                        let needed = note.contains("singular");
-                        if needed {
+                        if is_singular {
                             ui.horizontal(|ui| {
                                 ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
                                 ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
@@ -2284,21 +2368,33 @@ impl eframe::App for App {
                             });
                         }
                         ui.add_space(2.0);
+                    } else if is_singular {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
+                            ui.weak("\u{2014} structurally singular; no perfect matching exists (see Index Reduction)");
+                        });
+                        ui.add_space(2.0);
                     }
 
-                    // Sub-tab bar: Summary first (IR only), then structural views, then Tree.
+                    // Sub-tab bar
                     ui.horizontal(|ui| {
-                        if is_index_reduction {
+                        if has_summary {
                             ui.selectable_value(&mut self.structural_view, StructuralView::Summary, "Summary");
                             ui.separator();
-                            if !self.index_reduction_frames.is_empty() {
-                                ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
-                            }
                         }
-                        ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
+                        if is_index_reduction && !self.index_reduction_frames.is_empty() {
+                            ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
+                        }
+                        // Spy-plot, Matching, BLT require a full matching —
+                        // hide them when the Structural stage is singular.
+                        if !is_singular || is_index_reduction {
+                            ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
+                        }
                         ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
-                        ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
-                        ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
+                        if !is_singular || is_index_reduction {
+                            ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
+                            ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
+                        }
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
                     ui.separator();
@@ -2483,13 +2579,17 @@ impl eframe::App for App {
                         ui.weak("(no dependency graph for BLT animation)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::Summary {
-                    let cached = self.cached_reduction.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
-                    });
-                    if let Some(view) = cached {
-                        view.ui(ui, self.tracked_identifier.as_deref());
+                    if self.stage == StageKind::Structural {
+                        Self::structural_singular_summary(ui, &self.stages.structural);
                     } else {
-                        ui.weak("(no reduction data in this report)");
+                        let cached = self.cached_reduction.get_or_insert_with(|| {
+                            self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
+                        });
+                        if let Some(view) = cached {
+                            view.ui(ui, self.tracked_identifier.as_deref());
+                        } else {
+                            ui.weak("(no reduction data in this report)");
+                        }
                     }
                 } else if self.structural_view == StructuralView::Animate {
                     let frames = &self.index_reduction_frames;
