@@ -30,6 +30,7 @@
 //! - **`equation_sheet`** — readable equation sheet from the flat DAE (grouped by origin).
 //! - **`identifier_index`** — cross-stage identifier index (source → flat names).
 //! - **`log_view`** — timestamped compilation/simulation log panel.
+//! - **`reduction_anim`** — index-reduction algorithm animation (step-by-step replay).
 //! - **`colors`** — shared color constants used across canvas and view modules.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
@@ -44,6 +45,7 @@ pub mod identifier_index;
 pub mod incidence_view;
 pub mod matching_anim;
 pub mod log_view;
+pub mod reduction_anim;
 pub mod reduction_view;
 pub mod spyplot;
 pub mod tarjan_anim;

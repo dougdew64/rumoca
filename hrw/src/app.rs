@@ -45,6 +45,7 @@ use crate::incidence_view;
 use crate::matching_anim;
 use crate::tarjan_anim;
 use crate::log_view;
+use crate::reduction_anim;
 use crate::reduction_view;
 use crate::spyplot;
 use crate::tree;
@@ -104,6 +105,7 @@ enum StructuralView {
     MatchingAnim,
     TarjanAnim,
     Reduction,
+    ReductionAnim,
     Tree,
 }
 
@@ -301,6 +303,8 @@ pub struct App {
     matching_anim_canvas: Canvas,
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     tarjan_anim_canvas: Canvas,
+    index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+    cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
 
     // ---- 14. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
@@ -495,6 +499,8 @@ impl App {
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            index_reduction_frames: Vec::new(),
+            cached_reduction_anim: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
             cached_source: None,
@@ -677,7 +683,7 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
-                    identifier_index,
+                    identifier_index, index_reduction_frames,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -688,12 +694,14 @@ impl App {
                     self.def_index = def_index;
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
+                    self.index_reduction_frames = index_reduction_frames;
                     self.cached_report_stage = None;
                     self.cached_spy_plot = None;
                     self.cached_incidence = None;
                     self.cached_reduction = None;
                     self.cached_matching_anim = None;
                     self.cached_tarjan_anim = None;
+                    self.cached_reduction_anim = None;
                     if self.live_breakpoint_armed {
                         let _ = bridge::remove_live_trace_breakpoint();
                     }
@@ -2240,7 +2248,10 @@ impl eframe::App for App {
                     let is_index_reduction = self.stage == StageKind::IndexReduction;
                     // If switching away from IndexReduction while Reduction is
                     // selected, fall back to SpyPlot (Structural has no reduction).
-                    if !is_index_reduction && self.structural_view == StructuralView::Reduction {
+                    if !is_index_reduction
+                        && matches!(self.structural_view,
+                            StructuralView::Reduction | StructuralView::ReductionAnim)
+                    {
                         self.structural_view = StructuralView::SpyPlot;
                     }
                     // Here we DO use `selectable_value` (unlike the stage tabs
@@ -2255,6 +2266,9 @@ impl eframe::App for App {
                         ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
                         if is_index_reduction {
                             ui.selectable_value(&mut self.structural_view, StructuralView::Reduction, "Reduction");
+                            if !self.index_reduction_frames.is_empty() {
+                                ui.selectable_value(&mut self.structural_view, StructuralView::ReductionAnim, "Reduction \u{25b6}");
+                            }
                         }
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
@@ -2371,6 +2385,22 @@ impl eframe::App for App {
                         view.ui(ui, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(no reduction data in this report)");
+                    }
+                } else if self.structural_view == StructuralView::ReductionAnim {
+                    let frames = &self.index_reduction_frames;
+                    let cached = self.cached_reduction_anim.get_or_insert_with(|| {
+                        if frames.is_empty() {
+                            None
+                        } else {
+                            Some(reduction_anim::ReductionAnimation::from_frames(frames.clone()))
+                        }
+                    });
+                    if let Some(anim) = cached {
+                        egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
+                            anim.ui(ui);
+                        });
+                    } else {
+                        ui.weak("(no index-reduction trace for this model)");
                     }
                 } else if flatten_ready && self.flatten_view == FlattenView::Equations {
                     self.equation_sheet_ui(ui);
@@ -2737,6 +2767,8 @@ impl App {
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            index_reduction_frames: Vec::new(),
+            cached_reduction_anim: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
             cached_source: None,
@@ -3033,6 +3065,7 @@ mod tests {
             def_index: BTreeMap::new(),
             equation_sheet: None,
             identifier_index: None,
+            index_reduction_frames: Vec::new(),
         }).unwrap();
         app.drain_worker();
 
@@ -3057,6 +3090,7 @@ mod tests {
             def_index: BTreeMap::new(),
             equation_sheet: None,
             identifier_index: None,
+            index_reduction_frames: Vec::new(),
         }).unwrap();
         app.drain_worker();
 
@@ -3085,6 +3119,7 @@ mod tests {
             def_index: BTreeMap::new(),
             equation_sheet: None,
             identifier_index: None,
+            index_reduction_frames: Vec::new(),
         }).unwrap();
         app.drain_worker();
 
@@ -3114,6 +3149,7 @@ mod tests {
             def_index: BTreeMap::new(),
             equation_sheet: None,
             identifier_index: None,
+            index_reduction_frames: Vec::new(),
         }).unwrap();
         app.drain_worker();
 
@@ -3141,6 +3177,7 @@ mod tests {
             def_index: BTreeMap::new(),
             equation_sheet: None,
             identifier_index: None,
+            index_reduction_frames: Vec::new(),
         }).unwrap();
         app.drain_worker();
 

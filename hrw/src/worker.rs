@@ -507,6 +507,8 @@ pub enum FromWorker {
         /// Pre-formatted equation sheet built from the typed DAE.
         equation_sheet: Option<crate::equation_sheet::EquationSheet>,
         identifier_index: Option<crate::identifier_index::IdentifierIndex>,
+        /// Index-reduction animation frames (empty if no reduction occurred).
+        index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
     },
     /// A class opened by navigation: its qualified name and (on success) its
     /// resolved IR plus the DefIds it references, so navigation can continue.
@@ -1004,6 +1006,7 @@ impl WorkerState {
                     def_index: BTreeMap::new(),
                     equation_sheet: None,
                     identifier_index: None,
+                    index_reduction_frames: Vec::new(),
                 };
             }
         };
@@ -1138,10 +1141,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index) = match &model {
+        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None)
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new())
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -1205,14 +1208,27 @@ impl WorkerState {
 
                 let flatten = run_stage!("Flatten", flatten_stage(result), flatten);
                 let structural = run_stage!("Structural analysis", structural_stage(result), structural);
-                let index_reduction = run_stage!("Index reduction", index_reduction_stage(result), index_reduction);
+                let (index_reduction, ir_frames) = {
+                    log(LogLevel::StageStart, "Index reduction".to_owned());
+                    let t = Instant::now();
+                    let (stage, frames) = index_reduction_stage(result);
+                    drain_traces(&log);
+                    log(LogLevel::StageEnd, format!(
+                        "Index reduction ({:.1}ms)", t.elapsed().as_secs_f64() * 1000.0
+                    ));
+                    bundle.index_reduction = stage.clone();
+                    emit(FromWorker::CompileProgress {
+                        path: path_owned.clone(), stages: bundle.clone(),
+                    });
+                    (stage, frames)
+                };
                 let initialization = run_stage!("Initialization", initialization_stage(result), initialization);
                 let events = run_stage!("Events", events_stage(result), events);
                 let solve_lowering = run_stage!("Solve lowering", solve_lowering_stage(result), solve_lowering);
 
                 log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
 
-                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index)
+                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames)
             }
         };
 
@@ -1243,6 +1259,7 @@ impl WorkerState {
             def_index,
             equation_sheet,
             identifier_index,
+            index_reduction_frames: ir_frames,
         }
     }
 }
@@ -1357,14 +1374,16 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
 ///
 /// `cr.dae.clone()` — we clone the DAE because `index_reduce_for_structural_analysis`
 /// mutates it in place, and we don't want to modify the original.
-fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
+fn index_reduction_stage(
+    result: Option<&PhaseResult>,
+) -> (Stage, Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>) {
     if let Some(stage) = not_reached_stage(result) {
-        return stage;
+        return (stage, Vec::new());
     }
     let cr = unwrap_success(result);
     let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
     let mut reduced = cr.dae.clone();
-    let reduction = index_reduce_for_structural_analysis(&mut reduced);
+    let (reduction, frames) = index_reduce_for_structural_analysis(&mut reduced);
     match rumoca_phase_structural::build_structural_report(&reduced) {
         Ok(rep) => {
             let inc = rumoca_phase_structural::build_incidence(&reduced);
@@ -1377,9 +1396,9 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
             let obj = json.as_object_mut().expect("structural_to_json returns an object");
             obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&reduced.continuous.equations)));
             obj.insert("reduction".to_owned(), reduction.to_json());
-            Stage::ok_with_note(json, note)
+            (Stage::ok_with_note(json, note), frames)
         }
-        Err(e) => Stage::err(format!("still singular after index reduction: {e}")),
+        Err(e) => (Stage::err(format!("still singular after index reduction: {e}")), frames),
     }
 }
 
@@ -2344,6 +2363,38 @@ mod tests {
         assert!(red["n_states_before"].as_u64().unwrap() > 0);
     }
 
+    /// Drivetrain's index-reduction trace produces animation frames — the
+    /// constrained-dummy reduction finds multiple demotions, each emitting
+    /// BeginState, Differentiated, and Demoted frames.
+    #[test]
+    fn drivetrain_index_reduction_produces_trace_frames() {
+        let FromWorker::Compiled { index_reduction_frames, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+        assert!(!index_reduction_frames.is_empty(),
+            "Drivetrain should produce index-reduction animation frames");
+        use rumoca_phase_structural::dae_prepare::IndexReductionStep;
+        let n_demoted = index_reduction_frames.iter()
+            .filter(|f| matches!(&f.step, IndexReductionStep::Demoted { .. }))
+            .count();
+        assert!(n_demoted >= 4, "expected at least 4 demotions, got {n_demoted}");
+        let n_differentiated = index_reduction_frames.iter()
+            .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
+            .count();
+        assert!(n_differentiated >= 4, "expected at least 4 differentiations, got {n_differentiated}");
+    }
+
+    /// MotorWithBrake produces trace frames from the missing-derivative path
+    /// (index_reduce_missing_state_derivatives) — 1 EMF demotion.
+    #[test]
+    fn motor_with_brake_index_reduction_produces_trace_frames() {
+        let FromWorker::Compiled { index_reduction_frames, .. } = compile_specimen_shared("MotorWithBrake") else {
+            panic!("expected Compiled");
+        };
+        assert!(!index_reduction_frames.is_empty(),
+            "MotorWithBrake should produce index-reduction animation frames");
+    }
+
     // -----------------------------------------------------------------------
     // Full-pipeline regression guards: every specimen compiles through ALL
     // expected stages. These are the most rebase-sensitive tests — if an
@@ -2934,18 +2985,18 @@ struct ReductionReport {
 /// All funnel steps come from `rumoca_phase_structural::dae_prepare` (aliased
 /// as `dp`). They mutate the DAE in place (`&mut Dae`) and return either
 /// `Result<usize, Error>` (count of states demoted) or `Result<(), Error>`.
-fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) -> ReductionReport {
+fn index_reduce_for_structural_analysis(
+    dae: &mut rumoca_ir_dae::Dae,
+) -> (ReductionReport, Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>) {
     use rumoca_phase_structural::dae_prepare as dp;
     use rumoca_phase_structural::eliminate;
 
-    // Snapshot the state names before reduction so we can diff them later
-    // (the "demoted_states" in the report are states_before - states_after).
     let states_before: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
     let mut steps: Vec<(&str, String)> = Vec::new();
     let mut stopped_at: Option<&str> = None;
+    let mut ir_frames = Vec::new();
+    let mut demoted_so_far = Vec::new();
 
-    // Wraps a funnel step call: logs its outcome, bails early on error.
-    // `$outcome` formats the Ok value into the step log string.
     macro_rules! run_step {
         ($name:expr, $call:expr, $outcome:expr) => {
             match $call {
@@ -2953,7 +3004,7 @@ fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) -> Reducti
                 Err(e) => {
                     steps.push(($name, format!("stopped: {e}")));
                     stopped_at = Some($name);
-                    return finish_report(dae, states_before, steps, stopped_at);
+                    return (finish_report(dae, states_before, steps, stopped_at), ir_frames);
                 }
             }
         };
@@ -2965,11 +3016,34 @@ fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) -> Reducti
     run_step!("demote_direct_assigned_states",
         dp::demote_direct_assigned_states(dae), |n| format!("{n} demoted"));
 
-    run_step!("reduce_constrained_dummy_derivatives",
-        dp::reduce_constrained_dummy_derivatives(dae), |n| format!("{n} demoted"));
+    match dp::reduce_constrained_dummy_derivatives_with_trace(
+        dae, None, &mut ir_frames, &mut demoted_so_far,
+    ) {
+        Ok(n) => steps.push(("reduce_constrained_dummy_derivatives", format!("{n} demoted"))),
+        Err(e) => {
+            steps.push(("reduce_constrained_dummy_derivatives", format!("stopped: {e}")));
+            stopped_at = Some("reduce_constrained_dummy_derivatives");
+            return (finish_report(dae, states_before, steps, stopped_at), ir_frames);
+        }
+    }
 
-    run_step!("index_reduce_missing_state_derivatives",
-        dp::index_reduce_missing_state_derivatives(dae), |n| format!("{n} demoted"));
+    let round_offset = ir_frames.iter()
+        .filter_map(|f| match &f.step {
+            dp::IndexReductionStep::RoundComplete { round, .. } => Some(*round + 1),
+            _ => None,
+        })
+        .max()
+        .unwrap_or(0);
+    match dp::index_reduce_missing_state_derivatives_with_trace(
+        dae, None, &mut ir_frames, &mut demoted_so_far, round_offset,
+    ) {
+        Ok(n) => steps.push(("index_reduce_missing_state_derivatives", format!("{n} demoted"))),
+        Err(e) => {
+            steps.push(("index_reduce_missing_state_derivatives", format!("stopped: {e}")));
+            stopped_at = Some("index_reduce_missing_state_derivatives");
+            return (finish_report(dae, states_before, steps, stopped_at), ir_frames);
+        }
+    }
 
     let n_unassignable = dp::demote_states_without_assignable_derivative_rows(dae);
     steps.push(("demote_states_without_assignable_derivative_rows", format!("{n_unassignable} demoted")));
@@ -2999,8 +3073,8 @@ fn index_reduce_for_structural_analysis(dae: &mut rumoca_ir_dae::Dae) -> Reducti
         steps.push(("eliminate_trivial", "failed (system may still be singular)".to_owned()));
     }
 
-    finish_report(dae, states_before, steps, stopped_at)
-        .with_eliminations(eliminations)
+    (finish_report(dae, states_before, steps, stopped_at)
+        .with_eliminations(eliminations), ir_frames)
 }
 
 /// Build a `ReductionReport` from the post-reduction DAE state. Called at
