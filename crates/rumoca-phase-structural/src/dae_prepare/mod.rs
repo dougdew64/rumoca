@@ -60,10 +60,13 @@ use direct_demotion::{
     is_connection_equation_origin,
 };
 pub use state_row_reduction::{
+    IndexReductionFrame, IndexReductionStep, IndexReductionTraceResult,
     REGULARIZATION_LEVELS, demote_orphan_states_without_equation_refs,
     demote_states_without_assignable_derivative_rows, demote_states_without_derivative_refs,
     demote_states_without_retained_derivative_rows, der_sign_in_expr,
+    emit_index_reduction_frame,
     index_reduce_missing_state_derivatives, index_reduce_missing_state_derivatives_once,
+    index_reduce_missing_state_derivatives_with_trace,
     normalize_ode_equation_signs, substitute_standalone_state_derivatives_in_non_ode_rows,
 };
 
@@ -1871,6 +1874,105 @@ fn constrained_dummy_derivative_plan(
         state_name: state_name.clone(),
         der_expr,
     })
+}
+
+/// Like [`reduce_constrained_dummy_derivatives`], but records every
+/// algorithmic step for animation replay via [`IndexReductionFrame`].
+pub fn reduce_constrained_dummy_derivatives_with_trace(
+    dae: &mut Dae,
+    live: Option<&crate::LiveTrace<state_row_reduction::IndexReductionFrame>>,
+    frames: &mut Vec<state_row_reduction::IndexReductionFrame>,
+    demoted_so_far: &mut Vec<String>,
+) -> Result<usize, StructuralError> {
+    use state_row_reduction::{
+        IndexReductionFrame, IndexReductionStep, emit_index_reduction_frame,
+    };
+    let mut total_demoted = 0usize;
+    let mut round = 0usize;
+
+    loop {
+        let definitions = constrained_dummy_state_defining_exprs(dae);
+        if definitions.is_empty() {
+            break;
+        }
+
+        let mut demoted_this_round = false;
+        for (candidate, definition) in definitions {
+            let Some((_state_names, state_name_set, _when_assigned_states)) =
+                direct_demotion_round_context(dae)
+            else {
+                return Ok(total_demoted);
+            };
+            let state_name = VarName::new(candidate);
+            if !dae.variables.states.contains_key(&state_name) {
+                continue;
+            }
+
+            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                step: IndexReductionStep::BeginState { state: state_name.to_string() },
+                demoted_so_far: demoted_so_far.clone(),
+                round,
+            });
+
+            let seed_exprs = vec![definition.defining_expr.clone()];
+            let der_map = build_relaxed_derivative_map_for_exprs(dae, &seed_exprs)?;
+            let Some(plan) = constrained_dummy_derivative_plan(
+                dae,
+                &state_name,
+                &definition.defining_expr,
+                &state_name_set,
+                &der_map,
+            ) else {
+                emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                    step: IndexReductionStep::CandidateExhausted {
+                        state: state_name.to_string(),
+                    },
+                    demoted_so_far: demoted_so_far.clone(),
+                    round,
+                });
+                continue;
+            };
+
+            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                step: IndexReductionStep::Differentiated {
+                    state: state_name.to_string(),
+                    before_rhs: definition.defining_expr.clone(),
+                    after_rhs: plan.der_expr.clone(),
+                },
+                demoted_so_far: demoted_so_far.clone(),
+                round,
+            });
+
+            total_demoted += direct_demotion::apply_direct_demotion_plan(dae, &plan);
+            pin_structural_params(dae, &definition.structural_params);
+
+            demoted_so_far.push(state_name.to_string());
+            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                step: IndexReductionStep::Demoted { state: state_name.to_string() },
+                demoted_so_far: demoted_so_far.clone(),
+                round,
+            });
+
+            demoted_this_round = true;
+            break;
+        }
+
+        emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            step: IndexReductionStep::RoundComplete {
+                round,
+                demotions_this_round: if demoted_this_round { 1 } else { 0 },
+            },
+            demoted_so_far: demoted_so_far.clone(),
+            round,
+        });
+
+        if !demoted_this_round {
+            break;
+        }
+        round += 1;
+    }
+
+    Ok(total_demoted)
 }
 
 #[cfg(test)]

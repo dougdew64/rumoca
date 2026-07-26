@@ -645,6 +645,202 @@ pub fn index_reduce_missing_state_derivatives(dae: &mut Dae) -> Result<usize, St
     Ok(total_changed)
 }
 
+/// One step of the index-reduction algorithm, recorded for animation replay.
+#[derive(Debug, Clone)]
+pub enum IndexReductionStep {
+    /// Starting to evaluate a candidate state for reduction.
+    BeginState { state: String },
+    /// A constraint was differentiated — before and after RHS expressions.
+    Differentiated {
+        state: String,
+        before_rhs: Expression,
+        after_rhs: Expression,
+    },
+    /// No suitable constraint found for this state in this round.
+    CandidateExhausted { state: String },
+    /// State demoted from differential to algebraic.
+    Demoted { state: String },
+    /// An outer-loop round completed.
+    RoundComplete { round: usize, demotions_this_round: usize },
+}
+
+/// Snapshot of the index-reduction state at each step, for animation rendering.
+#[derive(Debug, Clone)]
+pub struct IndexReductionFrame {
+    pub step: IndexReductionStep,
+    /// Names of states demoted so far during this reduction pass.
+    pub demoted_so_far: Vec<String>,
+    /// Current outer-loop round (0-based).
+    pub round: usize,
+}
+
+/// Result of the traced index-reduction pass.
+pub struct IndexReductionTraceResult {
+    pub total_demoted: usize,
+    pub frames: Vec<IndexReductionFrame>,
+}
+
+pub fn emit_index_reduction_frame(
+    frames: &mut Vec<IndexReductionFrame>,
+    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    frame: IndexReductionFrame,
+) {
+    if let Some(lt) = live {
+        lt.push(frame.clone());
+    }
+    frames.push(frame);
+}
+
+/// Like [`index_reduce_missing_state_derivatives`], but records every
+/// algorithmic step for animation replay.
+pub fn index_reduce_missing_state_derivatives_with_trace(
+    dae: &mut Dae,
+    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    frames: &mut Vec<IndexReductionFrame>,
+    demoted_so_far: &mut Vec<String>,
+    round_offset: usize,
+) -> Result<usize, StructuralError> {
+    let max_rounds = dae.variables.states.len().clamp(1, 8);
+    let mut total_changed = 0usize;
+    for round in 0..max_rounds {
+        let changed = index_reduce_missing_state_derivatives_once_with_trace(
+            dae, live, frames, demoted_so_far, round_offset + round,
+        )?;
+        emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            step: IndexReductionStep::RoundComplete {
+                round: round_offset + round,
+                demotions_this_round: changed,
+            },
+            demoted_so_far: demoted_so_far.clone(),
+            round: round_offset + round,
+        });
+        if changed == 0 {
+            break;
+        }
+        total_changed += changed;
+    }
+    Ok(total_changed)
+}
+
+fn index_reduce_missing_state_derivatives_once_with_trace(
+    dae: &mut Dae,
+    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    frames: &mut Vec<IndexReductionFrame>,
+    demoted_so_far: &mut Vec<String>,
+    round: usize,
+) -> Result<usize, StructuralError> {
+    let state_names: Vec<VarName> = dae.variables.states.keys().cloned().collect();
+    if state_names.is_empty() {
+        return Ok(0);
+    }
+    let state_name_set: HashSet<String> = state_names
+        .iter()
+        .map(|name| name.as_str().to_string())
+        .collect();
+    let state_derivative_matcher = DerivativeNameMatcher::from_var_names(&state_names);
+
+    let defining_expr_index = collect_residual_defining_expr_index(dae);
+    let mut changed = 0usize;
+    let mut used_eq = HashSet::new();
+
+    for state_name in &state_names {
+        if state_has_standalone_der_equation(dae, state_name, &state_names)? {
+            continue;
+        }
+
+        emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            step: IndexReductionStep::BeginState { state: state_name.to_string() },
+            demoted_so_far: demoted_so_far.clone(),
+            round,
+        });
+
+        let candidate_indices: Vec<usize> = dae
+            .continuous
+            .equations
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, eq)| {
+                if used_eq.contains(&idx) {
+                    return None;
+                }
+                if eq_contains_any_state_der_with_matcher(&eq.rhs, &state_derivative_matcher) {
+                    return None;
+                }
+                if dae
+                    .variables
+                    .algebraics
+                    .keys()
+                    .any(|alg_name| is_unsliced_algebraic_definition(eq, alg_name))
+                {
+                    return None;
+                }
+                if is_indexed_state_component_alias_definition(eq, state_name) {
+                    return None;
+                }
+                Some(idx)
+            })
+            .collect();
+
+        let mut found = false;
+        for idx in candidate_indices {
+            let seed_exprs = vec![dae.continuous.equations[idx].rhs.clone()];
+            let der_map = build_relaxed_derivative_map_for_exprs_with_index(
+                dae,
+                &defining_expr_index,
+                &seed_exprs,
+            )?;
+            let differentiated =
+                symbolic_time_derivative(&dae.continuous.equations[idx].rhs, dae, &der_map);
+            let Some(new_rhs) = differentiated else {
+                continue;
+            };
+            let der_states = derivative_states_in_eq(&new_rhs, &state_names);
+            if !der_states.iter().any(|der_state| der_state == state_name) {
+                continue;
+            }
+            if expr_contains_der_of_non_state(&new_rhs, &state_name_set) {
+                continue;
+            }
+
+            let before_rhs = dae.continuous.equations[idx].rhs.clone();
+            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                step: IndexReductionStep::Differentiated {
+                    state: state_name.to_string(),
+                    before_rhs,
+                    after_rhs: new_rhs.clone(),
+                },
+                demoted_so_far: demoted_so_far.clone(),
+                round,
+            });
+
+            let old_origin = dae.continuous.equations[idx].origin.clone();
+            dae.continuous.equations[idx].rhs = new_rhs;
+            dae.continuous.equations[idx].origin = if old_origin.is_empty() {
+                format!("index_reduction:d_dt_for_{}", state_name.as_str())
+            } else {
+                format!(
+                    "{}|index_reduction:d_dt_for_{}",
+                    old_origin,
+                    state_name.as_str()
+                )
+            };
+            used_eq.insert(idx);
+            changed += 1;
+            found = true;
+            break;
+        }
+        if !found {
+            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                step: IndexReductionStep::CandidateExhausted { state: state_name.to_string() },
+                demoted_so_far: demoted_so_far.clone(),
+                round,
+            });
+        }
+    }
+
+    Ok(changed)
+}
+
 /// Regularisation epsilon levels to try, from most accurate to least.
 ///
 /// The larger fallback values help stiff, switch-heavy MSL examples that can
