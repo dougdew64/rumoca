@@ -50,6 +50,16 @@ pub mod tarjan_anim;
 pub mod tree;
 pub mod worker;
 
+/// Minimum zoom level at which matrix axis labels (equation/unknown names)
+/// are drawn. Below this threshold the labels would overlap and become
+/// unreadable. Used by spyplot, incidence, and matching views.
+pub const LABEL_ZOOM_THRESHOLD: f32 = 16.0;
+
+/// Minimum zoom level at which node labels are drawn in graph views
+/// (e.g. Tarjan SCC). Graph nodes are larger than matrix cells, so
+/// labels remain readable at a lower zoom.
+pub const NODE_LABEL_ZOOM_THRESHOLD: f32 = 10.0;
+
 /// Truncate a label to at most `max` bytes, returning a sub-slice.
 /// Falls back to the full string if the boundary isn't char-aligned.
 pub fn truncate_label(s: &str, max: usize) -> &str {
@@ -77,8 +87,8 @@ pub fn animation_controls(
         if is_live {
             let status = if live_finished { "Live (done)" } else { "Live" };
             ui.label(egui::RichText::new(status).color(
-                if live_finished { egui::Color32::from_rgb(0x66, 0xBB, 0x6A) }
-                else { egui::Color32::from_rgb(0xEF, 0x53, 0x50) }
+                if live_finished { colors::ANIM_PATH_FOUND }
+                else { colors::ANIM_FAIL }
             ).strong());
             ui.separator();
         }

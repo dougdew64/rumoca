@@ -123,48 +123,44 @@ impl IdentifierIndex {
     }
 }
 
-/// Check whether `haystack` contains `needle` as a whole identifier bounded
-/// by non-alphanumeric, non-underscore, non-dot characters (or string edges).
-/// Treats `.` as a word character so `"gear.h"` does NOT match `"h"`, but
-/// `"der(h)"` does. Used across views for tracked-identifier highlighting.
-pub fn matches_tracked(haystack: &str, needle: &str) -> bool {
+/// Internal helper: find the first position where `needle` appears as a whole
+/// identifier in `haystack`. Word-boundary characters are alphanumeric + `_`;
+/// when `dot_is_word_char` is true, `.` is also treated as a word character
+/// (so `"gear.h"` does NOT match `"h"`).
+fn find_whole_identifier_impl(
+    haystack: &str,
+    needle: &str,
+    dot_is_word_char: bool,
+) -> Option<usize> {
+    let is_word_byte = |b: u8| -> bool {
+        b.is_ascii_alphanumeric() || b == b'_' || (dot_is_word_char && b == b'.')
+    };
     let mut start = 0;
     while let Some(pos) = haystack[start..].find(needle) {
         let abs = start + pos;
-        let before_ok = abs == 0 || {
-            let b = haystack.as_bytes()[abs - 1];
-            !b.is_ascii_alphanumeric() && b != b'_' && b != b'.'
-        };
+        let before_ok =
+            abs == 0 || !is_word_byte(haystack.as_bytes()[abs - 1]);
         let end = abs + needle.len();
-        let after_ok = end >= haystack.len() || {
-            let b = haystack.as_bytes()[end];
-            !b.is_ascii_alphanumeric() && b != b'_' && b != b'.'
-        };
-        if before_ok && after_ok {
-            return true;
-        }
-        start = abs + 1;
-    }
-    false
-}
-
-fn find_whole_identifier(haystack: &str, needle: &str) -> Option<usize> {
-    let mut start = 0;
-    while let Some(pos) = haystack[start..].find(needle) {
-        let abs = start + pos;
-        let before_ok = abs == 0
-            || !haystack.as_bytes()[abs - 1].is_ascii_alphanumeric()
-                && haystack.as_bytes()[abs - 1] != b'_';
-        let end = abs + needle.len();
-        let after_ok = end >= haystack.len()
-            || !haystack.as_bytes()[end].is_ascii_alphanumeric()
-                && haystack.as_bytes()[end] != b'_';
+        let after_ok =
+            end >= haystack.len() || !is_word_byte(haystack.as_bytes()[end]);
         if before_ok && after_ok {
             return Some(abs);
         }
         start = abs + 1;
     }
     None
+}
+
+/// Check whether `haystack` contains `needle` as a whole identifier bounded
+/// by non-alphanumeric, non-underscore, non-dot characters (or string edges).
+/// Treats `.` as a word character so `"gear.h"` does NOT match `"h"`, but
+/// `"der(h)"` does. Used across views for tracked-identifier highlighting.
+pub fn matches_tracked(haystack: &str, needle: &str) -> bool {
+    find_whole_identifier_impl(haystack, needle, true).is_some()
+}
+
+fn find_whole_identifier(haystack: &str, needle: &str) -> Option<usize> {
+    find_whole_identifier_impl(haystack, needle, false)
 }
 
 fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
@@ -306,5 +302,112 @@ mod tests {
     fn matches_tracked_qualified_name() {
         assert!(matches_tracked("gear.flange_b.tau", "gear.flange_b.tau"));
         assert!(!matches_tracked("gear.flange_b.tau", "tau"));
+    }
+
+    // --- IdentifierIndex::build ---
+
+    /// Build an index from a minimal Dae with variables across two partitions
+    /// and verify the resulting entries.
+    #[test]
+    fn build_index_from_dae() {
+        use rumoca_core::{BytePos, SourceId, Span};
+
+        // Source text: two declaration lines.
+        let source_uri = "test://specimen.mo";
+        let source_text = "Real h;\nReal v;\nparameter Real g = 9.81;\n";
+        //                  ^0    ^6 ^8   ^14 ^16                   ^40
+        let sid = SourceId::from_source_name(source_uri);
+
+        let mut dae = dae::Dae::default();
+
+        // h is a state on line 1, byte range 0..6.
+        let h_var = dae::Variable {
+            name: "h".into(),
+            source_span: Span::new(sid, BytePos(0), BytePos(6)),
+            ..dae::Variable::empty_with_span(Span::DUMMY)
+        };
+        dae.variables.states.insert("h".into(), h_var);
+
+        // v is algebraic on line 2, byte range 8..14.
+        let v_var = dae::Variable {
+            name: "v".into(),
+            source_span: Span::new(sid, BytePos(8), BytePos(14)),
+            ..dae::Variable::empty_with_span(Span::DUMMY)
+        };
+        dae.variables.algebraics.insert("v".into(), v_var);
+
+        // g is a parameter on line 3, byte range 16..40.
+        let g_var = dae::Variable {
+            name: "g".into(),
+            source_span: Span::new(sid, BytePos(16), BytePos(40)),
+            description: Some("gravitational accel".to_string()),
+            ..dae::Variable::empty_with_span(Span::DUMMY)
+        };
+        dae.variables.parameters.insert("g".into(), g_var);
+
+        let idx = IdentifierIndex::build(&dae, source_uri, source_text);
+
+        // Three variables indexed.
+        assert_eq!(idx.variables.len(), 3, "expected 3 variables");
+
+        // Check kinds.
+        assert_eq!(idx.variables["h"].kind, "state");
+        assert_eq!(idx.variables["v"].kind, "algebraic");
+        assert_eq!(idx.variables["g"].kind, "parameter");
+
+        // Check source lines (1-based).
+        assert_eq!(idx.variables["h"].source_line, 1);
+        assert_eq!(idx.variables["v"].source_line, 2);
+        assert_eq!(idx.variables["g"].source_line, 3);
+
+        // Check description propagation.
+        assert_eq!(idx.variables["g"].description.as_deref(), Some("gravitational accel"));
+        assert!(idx.variables["h"].description.is_none());
+
+        // Check line_to_variables reverse index.
+        assert_eq!(idx.line_to_variables[&1], vec!["h"]);
+        assert_eq!(idx.line_to_variables[&2], vec!["v"]);
+        assert_eq!(idx.line_to_variables[&3], vec!["g"]);
+
+        // variables_on_line returns the right entries.
+        let line1 = idx.variables_on_line(1);
+        assert_eq!(line1.len(), 1);
+        assert_eq!(line1[0].name, "h");
+        assert!(idx.variables_on_line(99).is_empty());
+    }
+
+    /// Variables from a non-matching source URI are excluded from the index.
+    #[test]
+    fn build_index_excludes_foreign_source() {
+        use rumoca_core::{BytePos, SourceId, Span};
+
+        let source_uri = "test://mine.mo";
+        let source_text = "Real x;\n";
+        let my_sid = SourceId::from_source_name(source_uri);
+        let other_sid = SourceId::from_source_name("test://other.mo");
+
+        let mut dae = dae::Dae::default();
+
+        // x from the specimen source — should be indexed.
+        let x_var = dae::Variable {
+            name: "x".into(),
+            source_span: Span::new(my_sid, BytePos(0), BytePos(6)),
+            ..dae::Variable::empty_with_span(Span::DUMMY)
+        };
+        dae.variables.states.insert("x".into(), x_var);
+
+        // y from a different source (e.g. library) — should be excluded.
+        let y_var = dae::Variable {
+            name: "y".into(),
+            source_span: Span::new(other_sid, BytePos(0), BytePos(6)),
+            ..dae::Variable::empty_with_span(Span::DUMMY)
+        };
+        dae.variables.algebraics.insert("y".into(), y_var);
+
+        let idx = IdentifierIndex::build(&dae, source_uri, source_text);
+
+        assert_eq!(idx.variables.len(), 1, "only specimen-source variables should be indexed");
+        assert!(idx.variables.contains_key("x"));
+        assert!(!idx.variables.contains_key("y"));
     }
 }

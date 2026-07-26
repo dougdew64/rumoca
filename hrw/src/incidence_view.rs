@@ -408,7 +408,7 @@ impl IncidenceMatrix {
 
         // Axis labels — only drawn when zoomed in far enough that they won't
         // overlap (zoom >= 16 means each cell is at least 16px wide).
-        if view.zoom() >= 16.0 {
+        if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
             crate::draw_matrix_axis_labels(
                 ui, &painter, view,
                 &self.unknown_names, &self.equation_texts, 20, 30,

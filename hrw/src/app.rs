@@ -75,6 +75,25 @@ const DEFAULT_LIBRARIES: &str = concat!(
     "/vendor/msl/Complex.mo",
 );
 
+// ---- Layout constants ----
+// Named fractions for panel sizes and splits, replacing inline magic numbers.
+
+/// Fraction of available width used by the left panel (tour text or specimen
+/// list) in Tour and Specimen modes.
+const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
+
+/// Fraction of the left panel's height reserved for the specimen file list
+/// (the top third). The remaining two-thirds show source or narrative.
+const SPECIMEN_LIST_HEIGHT_FRACTION: f32 = 1.0 / 3.0;
+
+/// Fraction of available width given to the source column in the
+/// Flatten → SourceMap split view.
+const SOURCE_MAP_SPLIT_FRACTION: f32 = 0.45;
+
+/// Fraction of available height used by the trajectory plot when solver
+/// diagnostics are shown below it on the Simulation tab.
+const TRAJECTORY_PLOT_HEIGHT_FRACTION: f32 = 0.65;
+
 /// How to render the Structural / Index-reduction stages: the custom BLT
 /// spy-plot, the incidence matrix, the reduction process
 /// summary (Index reduction only), or the generic serde tree.
@@ -957,7 +976,7 @@ impl App {
                     trajectory_plot = trajectory_plot
                         .link_axis(link_group, [true, false])
                         .link_cursor(link_group, [true, false])
-                        .height(ui.available_height() * 0.65);
+                        .height(ui.available_height() * TRAJECTORY_PLOT_HEIGHT_FRACTION);
                 }
                 let tracked = self.tracked_identifier.as_deref();
                 trajectory_plot.show(ui, |plot_ui| {
@@ -1321,7 +1340,7 @@ impl App {
         let mut clicked_eq = None;
 
         let avail = ui.available_size();
-        let left_width = (avail.x * 0.45).max(200.0);
+        let left_width = (avail.x * SOURCE_MAP_SPLIT_FRACTION).max(200.0);
 
         // Use StripBuilder-style layout: a left child_ui for source, a
         // separator, then the remaining space for equations. Both children
@@ -1606,7 +1625,7 @@ impl eframe::App for App {
             const TOUR_CONTENT: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
             let tour_links = extract_hrw_links(TOUR_CONTENT);
             register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
-            let panel_width = ui.available_width() * 0.4;
+            let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
             egui::Panel::left("tour_panel")
                 .exact_size(panel_width)
                 .show(ui, |ui| {
@@ -1622,12 +1641,12 @@ impl eframe::App for App {
             hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &tour_links);
         }
         if self.ui_mode == UiMode::Specimen {
-        let panel_width = ui.available_width() * 0.4;
+        let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
         egui::Panel::left("specimen_panel")
             .exact_size(panel_width)
             .show(ui, |ui| {
                 let panel_height = ui.available_height();
-                let list_height = panel_height / 3.0;
+                let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
 
                 // -- Top third: specimen list --
                 ui.allocate_ui_with_layout(
@@ -1898,8 +1917,28 @@ impl eframe::App for App {
                 // ---- Specimen stage view ----
                 // No specimen yet → no stages to show, so don't render the tab
                 // row (a highlighted tab before any compile is misleading).
+                // In Debug mode the specimen list is hidden, so show the
+                // dropdown here so the user can pick their first specimen.
                 if self.selected.is_none() {
-                    ui.weak("Select a specimen to compile.");
+                    if self.ui_mode == UiMode::Debug {
+                        let combo = egui::ComboBox::from_id_salt("specimen_switcher")
+                            .selected_text("(none)")
+                            .width(120.0);
+                        let mut switch_to = None;
+                        combo.show_ui(ui, |ui| {
+                            for path in &self.files {
+                                let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
+                                if ui.selectable_label(false, name).clicked() {
+                                    switch_to = Some(path.clone());
+                                }
+                            }
+                        });
+                        if let Some(path) = switch_to {
+                            self.open(path);
+                        }
+                    } else {
+                        ui.weak("Select a specimen to compile.");
+                    }
                     return;
                 }
                 // `horizontal_wrapped` lays widgets left-to-right, wrapping to a
@@ -2447,36 +2486,13 @@ fn read_purpose(path: &Path) -> Option<String> {
 /// A blue-tinted header bar for left-panel sections (Tour, Specimens, Narrative).
 /// Uses a navy background with light-blue text in dark mode, matching the RHS
 /// stage-tab palette for visual consistency.
-fn section_header(ui: &mut egui::Ui, title: &str) {
-    let dark = ui.visuals().dark_mode;
-    let bg = if dark {
-        egui::Color32::from_rgb(0x1A, 0x2A, 0x40)
-    } else {
-        egui::Color32::from_rgb(0xD8, 0xE8, 0xF8)
-    };
-    let text_color = if dark {
-        egui::Color32::from_rgb(0x8A, 0xC4, 0xFF)
-    } else {
-        egui::Color32::from_rgb(0x0A, 0x5C, 0xC4)
-    };
-    let h_margin = ui.spacing().item_spacing.x;
-    egui::Frame::new()
-        .fill(bg)
-        .inner_margin(egui::Margin::symmetric(6, 4))
-        .outer_margin(egui::Margin { left: -h_margin as i8, right: -h_margin as i8, top: 2, bottom: 0 })
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
-            ui.label(egui::RichText::new(title).strong().size(13.0).color(text_color));
-        });
+struct SectionStyle {
+    active_color: egui::Color32,
+    inactive_color: egui::Color32,
+    frame: egui::Frame,
 }
 
-/// A section header bar with clickable toggle options (e.g. "Source | Narrative").
-/// The active option is shown in bright text; inactive options are dimmed and clickable.
-fn section_header_toggle<T: PartialEq + Copy>(
-    ui: &mut egui::Ui,
-    current: &mut T,
-    options: &[(T, &str)],
-) {
+fn section_style(ui: &egui::Ui) -> SectionStyle {
     let dark = ui.visuals().dark_mode;
     let bg = if dark {
         egui::Color32::from_rgb(0x1A, 0x2A, 0x40)
@@ -2494,30 +2510,49 @@ fn section_header_toggle<T: PartialEq + Copy>(
         egui::Color32::from_rgb(0x60, 0x90, 0xC0)
     };
     let h_margin = ui.spacing().item_spacing.x;
-    egui::Frame::new()
+    let frame = egui::Frame::new()
         .fill(bg)
         .inner_margin(egui::Margin::symmetric(6, 4))
-        .outer_margin(egui::Margin { left: -h_margin as i8, right: -h_margin as i8, top: 2, bottom: 0 })
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
-            ui.horizontal(|ui| {
-                for (i, (value, label)) in options.iter().enumerate() {
-                    if i > 0 {
-                        ui.label(egui::RichText::new("|").size(13.0).color(inactive_color));
-                    }
-                    let is_active = *current == *value;
-                    let color = if is_active { active_color } else { inactive_color };
-                    let text = if is_active {
-                        egui::RichText::new(*label).strong().size(13.0).color(color)
-                    } else {
-                        egui::RichText::new(*label).size(13.0).color(color)
-                    };
-                    if ui.add(egui::Label::new(text).sense(egui::Sense::click())).clicked() {
-                        *current = *value;
-                    }
+        .outer_margin(egui::Margin { left: -h_margin as i8, right: -h_margin as i8, top: 2, bottom: 0 });
+    SectionStyle { active_color, inactive_color, frame }
+}
+
+fn section_header(ui: &mut egui::Ui, title: &str) {
+    let style = section_style(ui);
+    style.frame.show(ui, |ui| {
+        ui.set_min_width(ui.available_width());
+        ui.label(egui::RichText::new(title).strong().size(13.0).color(style.active_color));
+    });
+}
+
+/// A section header bar with clickable toggle options (e.g. "Source | Narrative").
+/// The active option is shown in bright text; inactive options are dimmed and clickable.
+fn section_header_toggle<T: PartialEq + Copy>(
+    ui: &mut egui::Ui,
+    current: &mut T,
+    options: &[(T, &str)],
+) {
+    let style = section_style(ui);
+    style.frame.show(ui, |ui| {
+        ui.set_min_width(ui.available_width());
+        ui.horizontal(|ui| {
+            for (i, (value, label)) in options.iter().enumerate() {
+                if i > 0 {
+                    ui.label(egui::RichText::new("|").size(13.0).color(style.inactive_color));
                 }
-            });
+                let is_active = *current == *value;
+                let color = if is_active { style.active_color } else { style.inactive_color };
+                let text = if is_active {
+                    egui::RichText::new(*label).strong().size(13.0).color(color)
+                } else {
+                    egui::RichText::new(*label).size(13.0).color(color)
+                };
+                if ui.add(egui::Label::new(text).sense(egui::Sense::click())).clicked() {
+                    *current = *value;
+                }
+            }
         });
+    });
 }
 
 /// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
@@ -2651,7 +2686,7 @@ impl App {
         let (tx, _) = std::sync::mpsc::channel();
         let (from_tx, rx) = std::sync::mpsc::channel();
         let app = App {
-            worker: Worker { tx, rx },
+            worker: Worker { tx, rx, send_failed: false },
             libraries_text: String::new(),
             library_status: String::new(),
             libraries_busy: false,
@@ -3289,5 +3324,76 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn open_resets_all_specimen_state() {
+        let mut app = App::test_default();
+        // Populate fields with non-default values to detect missed resets.
+        app.model = Some(String::from("OldModel"));
+        app.sim_data = Some(crate::worker::SimData {
+            times: vec![0.0],
+            names: vec![],
+            data: vec![],
+            n_states: 0,
+            has_discontinuities: false,
+            solver_steps: vec![],
+        });
+        app.sim_error = Some("stale error".into());
+        app.sim_running = true;
+        app.def_index.insert(1, crate::worker::DefInfo {
+            name: "x".into(),
+            kind: crate::worker::DefKind::Definition,
+            class_type: None,
+            file_name: None,
+            line: None,
+        });
+        app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet {
+            groups: vec![],
+            n_equations: 0,
+            variables: vec![],
+            n_states: 0,
+            n_algebraics: 0,
+            n_parameters: 0,
+            n_constants: 0,
+            n_discrete: 0,
+            n_inputs: 0,
+            n_outputs: 0,
+            source_lines: vec![],
+        });
+        app.identifier_index = Some(crate::identifier_index::IdentifierIndex::default());
+        app.tracked_identifier = Some("h".into());
+        app.cached_source = Some("old source".into());
+        app.highlighted_eq_row = Some(0);
+        app.highlighted_source_line = Some(0);
+        app.nav.push(NavEntry {
+            name: "x".into(),
+            value: serde_json::Value::Null,
+            def_index: BTreeMap::new(),
+        });
+        app.nav_loading = Some("y".into());
+        app.nav_error = Some("z".into());
+        app.pending_stage = Some(StageKind::Resolve);
+        app.viewing_log = false;
+
+        app.open(PathBuf::from("specimens/BouncingBall.mo"));
+
+        assert!(app.compiling, "compiling should be true");
+        assert!(app.model.is_none(), "model should be cleared");
+        assert!(app.sim_data.is_none(), "sim_data should be cleared");
+        assert!(app.sim_error.is_none(), "sim_error should be cleared");
+        assert!(!app.sim_running, "sim_running should be false");
+        assert!(app.def_index.is_empty(), "def_index should be cleared");
+        assert!(app.cached_equation_sheet.is_none(), "cached_equation_sheet should be cleared");
+        assert!(app.identifier_index.is_none(), "identifier_index should be cleared");
+        assert!(app.tracked_identifier.is_none(), "tracked_identifier should be cleared");
+        assert!(app.cached_source.is_none(), "cached_source should be cleared");
+        assert!(app.highlighted_eq_row.is_none(), "highlighted_eq_row should be cleared");
+        assert!(app.highlighted_source_line.is_none(), "highlighted_source_line should be cleared");
+        assert!(app.nav.is_empty(), "nav should be cleared");
+        assert!(app.nav_loading.is_none(), "nav_loading should be cleared");
+        assert!(app.nav_error.is_none(), "nav_error should be cleared");
+        assert!(app.pending_stage.is_none(), "pending_stage should be cleared");
+        assert!(app.viewing_log, "viewing_log should be true");
     }
 }

@@ -78,6 +78,25 @@ pub const TRACKED_FILL: Color32 = Color32::from_rgba_premultiplied(0xFF, 0xD5, 0
 /// Tracked-identifier background fill (medium, alpha 0x40).
 pub const TRACKED_FILL_MEDIUM: Color32 = Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40);
 
+/// SCC palette — distinct colors for coloring strongly connected components
+/// in the Tarjan animation graph view.
+pub const SCC_PALETTE: [Color32; 6] = [
+    Color32::from_rgb(0x42, 0xA5, 0xF5), // blue
+    Color32::from_rgb(0xAB, 0x47, 0xBC), // purple
+    Color32::from_rgb(0x26, 0xA6, 0x9A), // teal
+    Color32::from_rgb(0xFF, 0x70, 0x43), // deep orange
+    Color32::from_rgb(0x78, 0x90, 0x9C), // blue-grey
+    Color32::from_rgb(0xEC, 0x40, 0x7A), // pink
+];
+
+/// Equation category colors — used in the equation sheet to distinguish
+/// equation origins (component, connection, flow-sum, binding, event).
+pub const EQ_CAT_COMPONENT: Color32 = Color32::from_rgb(100, 180, 255);
+pub const EQ_CAT_CONNECTION: Color32 = Color32::from_rgb(255, 180, 80);
+pub const EQ_CAT_FLOW_SUM: Color32 = Color32::from_rgb(255, 120, 80);
+pub const EQ_CAT_BINDING: Color32 = Color32::from_rgb(160, 200, 120);
+pub const EQ_CAT_EVENT: Color32 = Color32::from_rgb(200, 140, 220);
+
 /// Grid line alpha multiplier for canvas matrix views.
 pub const GRID_ALPHA: f32 = 0.3;
 

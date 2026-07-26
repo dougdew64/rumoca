@@ -64,11 +64,11 @@ impl EquationCategory {
 
     pub fn color(self) -> egui::Color32 {
         match self {
-            Self::Component => egui::Color32::from_rgb(100, 180, 255),
-            Self::Connection => egui::Color32::from_rgb(255, 180, 80),
-            Self::FlowSum => egui::Color32::from_rgb(255, 120, 80),
-            Self::Binding => egui::Color32::from_rgb(160, 200, 120),
-            Self::Event => egui::Color32::from_rgb(200, 140, 220),
+            Self::Component => crate::colors::EQ_CAT_COMPONENT,
+            Self::Connection => crate::colors::EQ_CAT_CONNECTION,
+            Self::FlowSum => crate::colors::EQ_CAT_FLOW_SUM,
+            Self::Binding => crate::colors::EQ_CAT_BINDING,
+            Self::Event => crate::colors::EQ_CAT_EVENT,
         }
     }
 }
@@ -293,20 +293,9 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
         });
     }
 
-    let display_order = [
-        EquationCategory::Component,
-        EquationCategory::Connection,
-        EquationCategory::FlowSum,
-        EquationCategory::Binding,
-        EquationCategory::Event,
-    ];
-
-    let groups: Vec<_> = display_order
-        .into_iter()
-        .filter_map(|cat| {
-            by_category.remove(&cat).map(|eqs| (cat, eqs))
-        })
-        .collect();
+    // BTreeMap iterates in key order, which uses the Ord impl (cmp_key),
+    // so the display order is derived from the single source of truth.
+    let groups: Vec<_> = by_category.into_iter().collect();
 
     // Build source lines with equation associations.
     let source_lines = if let Some(src) = source_text {

@@ -536,6 +536,10 @@ pub enum FromWorker {
 pub struct Worker {
     pub(crate) tx: Sender<ToWorker>,
     pub(crate) rx: Receiver<FromWorker>,
+    /// Set to `true` when a `send()` fails (the worker thread has exited).
+    /// The UI can check this to show a "worker died" diagnostic instead of
+    /// silently dropping messages.
+    pub send_failed: bool,
 }
 
 impl Worker {
@@ -591,15 +595,17 @@ impl Worker {
             })
             .expect("failed to spawn rumoca-worker thread");
 
-        Worker { tx: tx_req, rx: rx_res }
+        Worker { tx: tx_req, rx: rx_res, send_failed: false }
     }
 
     /// Send a request to the worker. Never blocks.
     ///
-    /// `let _ = ...` ignores send errors (worker thread already exited).
+    /// On failure (worker thread exited), sets `self.send_failed = true` so the
+    /// UI can detect the dead worker and show a diagnostic.
     /// `mpsc::Sender::send()` is non-blocking for unbounded channels.
-    pub fn send(&self, req: ToWorker) {
+    pub fn send(&mut self, req: ToWorker) {
         if self.tx.send(req).is_err() {
+            self.send_failed = true;
             eprintln!("hrw: worker thread has exited — message dropped");
         }
     }
@@ -1828,7 +1834,10 @@ fn build_def_index(
 
     let mut index = BTreeMap::new();
     for id in ids {
-        let Some(name) = name_by_id.get(&(id as u32)) else { continue };
+        // Use try_from to avoid silently truncating u64 → u32; if the id
+        // doesn't fit in a u32, skip it gracefully rather than wrapping.
+        let Some(id32) = u32::try_from(id).ok() else { continue };
+        let Some(name) = name_by_id.get(&id32) else { continue };
         let name = (*name).to_owned();
         // A class DefId resolves to a ClassDef (with a location); anything else
         // in def_map (e.g. a component) resolves to a name only.
@@ -2838,6 +2847,27 @@ mod tests {
         let (out, _) = cap.drain();
         drop(cap);
         assert_eq!(out.len(), 128 * 1024, "should capture all 128 KB");
+    }
+
+    /// `StageBundle::as_stage_pairs` names must stay in sync with
+    /// `bridge::STAGE_FILE_NAMES` — a rename or reorder in one but not the
+    /// other silently breaks stage-file publishing.
+    #[test]
+    fn stage_pairs_names_match_stage_file_names() {
+        use crate::bridge::STAGE_FILE_NAMES;
+
+        let bundle = StageBundle::default();
+        let pair_names: Vec<String> = bundle
+            .as_stage_pairs()
+            .iter()
+            .map(|(name, _)| format!("{name}.json"))
+            .collect();
+        let file_names: Vec<&str> = STAGE_FILE_NAMES.to_vec();
+
+        assert_eq!(
+            pair_names, file_names,
+            "StageBundle::as_stage_pairs() names diverged from STAGE_FILE_NAMES"
+        );
     }
 }
 

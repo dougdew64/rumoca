@@ -381,7 +381,7 @@ impl MatchingAnimation {
             }
         }
 
-        if view.zoom() >= 16.0 {
+        if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
             crate::draw_matrix_axis_labels(
                 ui, &painter, view,
                 &self.unknown_names, &self.equation_names, 20, 20,

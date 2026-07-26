@@ -5,9 +5,11 @@ theme, ordered by severity within each group. Check off items as they are
 completed; clear completed items at the end of each cycle.
 
 Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 items
-fixed in the 2026-07-25 cycle, plus 12 quick-fix items completed in the
-2026-07-25 sweep (gold color consolidation, dead code removal, tracking fix,
-stale comments). See git history for details.
+fixed in the 2026-07-25 cycle, plus 25 items completed in the 2026-07-25
+sweep (gold colors, dead code, tracking fix, stale comments, zoom/layout/color
+constants, section_header dedup, identifier matching dedup, debug dropdown,
+Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
+3 test coverage gaps filled). See git history for details.
 
 ---
 
@@ -21,7 +23,7 @@ stale comments). See git history for details.
   equation-text mentions.
   *File:* `reduction_view.rs` — lines ~289, 332, 370.
 
-- [ ] **Debug mode specimen dropdown only appears after a specimen is loaded.**
+- [x] **Debug mode specimen dropdown only appears after a specimen is loaded.**
   The dropdown is gated on `self.ui_mode == UiMode::Debug` but the combo box
   shows the current specimen name (`self.selected`). If HRW starts in Debug
   mode (or the user switches to Debug before loading a specimen), the dropdown
@@ -46,19 +48,18 @@ stale comments). See git history for details.
   `colors.rs` with alpha helpers.
   *Files:* 8 files, ~17 call sites.
 
-- [ ] **Zoom threshold `16.0` for axis labels hardcoded in 3 matrix views.**
+- [x] **Zoom threshold `16.0` for axis labels hardcoded in 3 matrix views.**
   `spyplot.rs`, `incidence_view.rs`, and `matching_anim.rs` all use `16.0`;
   `tarjan_anim.rs` uses `10.0` without explanation. Should be a shared constant.
   *Files:* `spyplot.rs`, `incidence_view.rs`, `matching_anim.rs`, `tarjan_anim.rs`.
 
-- [ ] **Inline color literals for animation controls, SCC palette, equation categories, solver diagnostics, source-map highlight.**
-  Several color values defined inline that should move to `colors.rs`:
-  `animation_controls` in `lib.rs` duplicates `ANIM_PATH_FOUND`/`ANIM_FAIL`;
-  SCC palette in `tarjan_anim.rs`; equation category colors in
-  `equation_sheet.rs`; solver plot colors and source-map highlight in `app.rs`.
-  *Files:* `lib.rs`, `tarjan_anim.rs`, `equation_sheet.rs`, `app.rs`.
+- [ ] **Inline color literals for solver diagnostics, source-map highlight in `app.rs`.**
+  Solver plot colors and source-map highlight remain inline in `app.rs`.
+  (Animation controls, SCC palette, and equation category colors moved to
+  `colors.rs` in the 2026-07-25 sweep.)
+  *File:* `app.rs`.
 
-- [ ] **Hardcoded layout ratios scattered through `app.rs`.**
+- [x] **Hardcoded layout ratios scattered through `app.rs`.**
   Panel widths (`0.4`), specimen list height (`panel_height / 3.0`), source-map
   split (`0.45`), trajectory plot height (`0.65`) — no named constants.
   *File:* `app.rs` — lines ~1621, 1637, 1642, 1336, 972.
@@ -102,12 +103,12 @@ stale comments). See git history for details.
   `canvas.show_matrix(ui, cols, rows)` helper.
   *Files:* `spyplot.rs`, `incidence_view.rs`, `matching_anim.rs`.
 
-- [ ] **Duplicated `section_header` / `section_header_toggle` styling.**
+- [x] **Duplicated `section_header` / `section_header_toggle` styling.**
   Both functions compute the same four theme-dependent colors, the same
   `h_margin`, and the same `outer_margin`. The shared setup could be extracted.
   *File:* `app.rs` — lines ~2463–2534.
 
-- [ ] **`find_whole_identifier` and `matches_tracked` have near-identical loops.**
+- [x] **`find_whole_identifier` and `matches_tracked` have near-identical loops.**
   Both iterate through a haystack with byte-boundary checks. Only differences:
   dot-as-word-char and return type (position vs bool). Could unify into a
   single parameterized function.
@@ -165,13 +166,13 @@ stale comments). See git history for details.
 
 ## Robustness
 
-- [ ] **`Worker::send` swallows send errors with `eprintln`.**
+- [x] **`Worker::send` swallows send errors with `eprintln`.**
   When the worker thread has exited (e.g., panic), `send` logs to stderr and
   drops the message. Callers have no way to detect this failure — subsequent
   UI actions silently do nothing. Should set a flag the UI can display.
   *File:* `worker.rs` — lines ~601–605.
 
-- [ ] **`build_def_index` silently truncates u64 DefId to u32.**
+- [x] **`build_def_index` silently truncates u64 DefId to u32.**
   `name_by_id.get(&(id as u32))` — safe today because Rumoca's `DefId` is
   internally `u32`, but the cast is implicit and undocumented. A future Rumoca
   change could widen `DefId` without a compile error here.
@@ -185,18 +186,18 @@ stale comments). See git history for details.
 
 ## Test coverage gaps
 
-- [ ] **No test for `open()` field-reset logic.**
+- [x] **No test for `open()` field-reset logic.**
   `open()` resets ~15 fields. No test verifies the reset is complete — a new
   field added to `App` but forgotten in `open()`'s cleanup would go undetected.
   *File:* `app.rs` — line ~575.
 
-- [ ] **No test for `StageBundle::as_stage_pairs` ordering.**
+- [x] **No test for `StageBundle::as_stage_pairs` ordering.**
   Returns a fixed-order array of 10 pairs. No test asserts the names stay in
   sync with `STAGE_FILE_NAMES` in `bridge.rs` — a reorder or rename in one
   but not the other would produce mismatched bridge files.
   *File:* `worker.rs` — lines ~359–372.
 
-- [ ] **No direct unit test for `IdentifierIndex::build`.**
+- [x] **No direct unit test for `IdentifierIndex::build`.**
   The constructor is only exercised via the integration test
   `compile_produces_identifier_index_for_healthy_specimen` in `worker.rs`.
   A focused unit test against a mock `Dae` would catch partition-iteration
@@ -211,7 +212,7 @@ stale comments). See git history for details.
   for the `FontId` and again as a local `font_size`. Should extract once.
   *File:* `lib.rs` — lines ~154, 157.
 
-- [ ] **`format_expr_into` allocates via `format!("{op}")` on a hot path.**
+- [x] **`format_expr_into` allocates via `format!("{op}")` on a hot path.**
   Could use `write!(out, " {op} ")` to avoid intermediate `String` allocation.
   Called on every expression node during equation-sheet construction.
   *File:* `expr_format.rs` — lines ~86, 98.
@@ -221,7 +222,7 @@ stale comments). See git history for details.
   instead of the idiomatic `if let Some(name) = ... { }`.
   *File:* `app.rs` — lines ~2178–2179.
 
-- [ ] **`EquationCategory` has duplicated ordering — `Ord` impl and `display_order` array.**
+- [x] **`EquationCategory` has duplicated ordering — `Ord` impl and `display_order` array.**
   The `cmp_key()` method and the `display_order` array encode the same
   ordering independently. One source of truth would be cleaner.
   *File:* `equation_sheet.rs` — lines ~220, 296, 392–414.

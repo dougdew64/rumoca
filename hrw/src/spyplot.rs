@@ -255,7 +255,7 @@ impl Plot {
         }
 
         // --- Axis labels (equation names on left, unknown names on top) ---
-        if view.zoom() >= 16.0 {
+        if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
             let mut col_labels = Vec::with_capacity(self.n);
             let mut row_labels = Vec::with_capacity(self.n);
             for block in &self.blocks {

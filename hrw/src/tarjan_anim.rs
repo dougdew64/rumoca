@@ -282,14 +282,7 @@ impl TarjanAnimation {
             map
         };
 
-        let scc_colors = [
-            egui::Color32::from_rgb(0x42, 0xA5, 0xF5), // blue
-            egui::Color32::from_rgb(0xAB, 0x47, 0xBC), // purple
-            egui::Color32::from_rgb(0x26, 0xA6, 0x9A), // teal
-            egui::Color32::from_rgb(0xFF, 0x70, 0x43), // deep orange
-            egui::Color32::from_rgb(0x78, 0x90, 0x9C), // blue-grey
-            egui::Color32::from_rgb(0xEC, 0x40, 0x7A), // pink
-        ];
+        let scc_colors = crate::colors::SCC_PALETTE;
 
         let node_pos = |i: usize| -> egui::Pos2 {
             let col = i % cols;
@@ -354,7 +347,7 @@ impl TarjanAnimation {
                     egui::Stroke::new(2.5, crate::colors::TRACKED_GOLD),
                 );
             }
-            if view.zoom() >= 10.0 {
+            if view.zoom() >= crate::NODE_LABEL_ZOOM_THRESHOLD {
                 let label = self
                     .node_names
                     .get(i)

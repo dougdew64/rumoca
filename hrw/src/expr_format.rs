@@ -9,6 +9,8 @@
 //! - `format_expr` — render a single `Expression`
 //! - `format_equation` — render a DAE `Equation` as `lhs = rhs` or `0 = rhs`
 
+use std::fmt::Write as _;
+
 use rumoca_core::{Expression, OpBinary, Subscript};
 use rumoca_ir_dae as dae;
 
@@ -82,10 +84,12 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             format_expr_into(lhs, out);
             if left_parens { out.push(')'); }
 
-            let op_str = format!("{op}");
-            if !op_str.is_empty() {
-                out.push(' ');
-                out.push_str(&op_str);
+            // Write the operator directly into the output buffer to avoid
+            // an intermediate String allocation on this hot path.
+            let before = out.len();
+            let _ = write!(out, "{op}");
+            if out.len() > before {
+                out.insert(before, ' ');
                 out.push(' ');
             }
 
@@ -94,9 +98,8 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             if right_parens { out.push(')'); }
         }
         Expression::Unary { op, rhs, .. } => {
-            let op_str = format!("{op}");
             let need_parens = matches!(rhs.as_ref(), Expression::Binary { .. });
-            out.push_str(&op_str);
+            let _ = write!(out, "{op}");
             if need_parens { out.push('('); }
             format_expr_into(rhs, out);
             if need_parens { out.push(')'); }
