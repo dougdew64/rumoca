@@ -463,6 +463,7 @@ impl App {
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             log_entries: Vec::new(),
             viewing_log: false,
+
             tracing_enabled: false,
             simulation: Stage::default(),
             sim_data: None,
@@ -697,10 +698,15 @@ impl App {
                     self.tarjan_anim_canvas.request_fit();
                     // Land on the furthest stage that completed cleanly,
                     // unless a pending_stage was requested via an hrw://load/…/Stage link.
-                    self.stage = self.pending_stage.take().unwrap_or_else(|| {
-                        self.last_successful_stage()
-                    });
-                    self.viewing_log = false;
+                    // Always update `self.stage` so the correct stage is ready when the
+                    // user clicks away from Log, but don't force `viewing_log = false` —
+                    // if the user is watching the log, let them stay there.
+                    if let Some(pending) = self.pending_stage.take() {
+                        self.stage = pending;
+                        self.viewing_log = false;
+                    } else {
+                        self.stage = self.last_successful_stage();
+                    }
                     // Publish every stage's full IR so Claude can diff any pair.
                     if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
                         self.bridge_status = Some(format!("write_stages failed: {e}"));
@@ -2700,6 +2706,7 @@ impl App {
             incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             log_entries: Vec::new(),
             viewing_log: false,
+
             tracing_enabled: false,
             simulation: Stage::default(),
             sim_data: None,
@@ -3099,6 +3106,34 @@ mod tests {
         app.drain_worker();
 
         assert_eq!(app.stage, StageKind::Resolve, "should fall back to last_successful_stage");
+    }
+
+    #[test]
+    fn drain_worker_compiled_preserves_log_view() {
+        let (mut app, tx) = App::test_with_sender();
+        let path = PathBuf::from("/test/specimen.mo");
+        app.selected = Some(path.clone());
+        app.compiling = true;
+        app.viewing_log = true;
+
+        let stages = {
+            let mut b = StageBundle::default();
+            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.resolve = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b
+        };
+        tx.send(FromWorker::Compiled {
+            path,
+            model: Some("TestModel".into()),
+            stages,
+            def_index: BTreeMap::new(),
+            equation_sheet: None,
+            identifier_index: None,
+        }).unwrap();
+        app.drain_worker();
+
+        assert!(app.viewing_log, "should not yank user off the Log tab");
+        assert_eq!(app.stage, StageKind::Resolve, "stage should still be updated for when user clicks away");
     }
 
     #[test]

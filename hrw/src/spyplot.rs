@@ -165,9 +165,15 @@ impl Plot {
     /// Sets `capture` to a bridge key-path (`blocks[i]`) when the user clicks
     /// a block, enabling the bridge to write a focus file for that block.
     pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>, tracked: Option<&str>) {
-        // World bounds: an n x n grid starting at origin.
+        // World bounds: an n x n grid starting at origin, with headroom above
+        // for angled column labels (visible at zoom >= 16).
         let n = self.n as f32;
-        let bounds = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(n, n));
+        let label_headroom = 1.0_f32;
+        let matrix_rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(n, n));
+        let bounds = egui::Rect::from_min_max(
+            egui::pos2(matrix_rect.min.x, matrix_rect.min.y - label_headroom),
+            matrix_rect.max,
+        );
         // `canvas.show` allocates the drawing area, applies pan/zoom input,
         // and returns the interaction response, coordinate transform, and painter.
         let (response, view, painter) = canvas.show(ui, bounds);
@@ -175,7 +181,7 @@ impl Plot {
         let visuals = ui.visuals();
         // Draw a background rectangle for the entire matrix area, so the plot
         // stands out from the panel background (especially in dark mode).
-        painter.rect_filled(view.to_screen_rect(bounds), egui::CornerRadius::ZERO, visuals.extreme_bg_color);
+        painter.rect_filled(view.to_screen_rect(matrix_rect), egui::CornerRadius::ZERO, visuals.extreme_bg_color);
 
         let hovered: Option<&Block> = view
             .hovered_cell(&response, self.n, self.n)
@@ -246,6 +252,20 @@ impl Plot {
                     );
                 }
             }
+        }
+
+        // --- Axis labels (equation names on left, unknown names on top) ---
+        if view.zoom() >= 16.0 {
+            let mut col_labels = Vec::with_capacity(self.n);
+            let mut row_labels = Vec::with_capacity(self.n);
+            for block in &self.blocks {
+                col_labels.extend(block.unknowns.iter().cloned());
+                row_labels.extend(block.equations.iter().cloned());
+            }
+            crate::draw_matrix_axis_labels(
+                ui, &painter, view,
+                &col_labels, &row_labels, 20, 20,
+            );
         }
 
         // --- Hover tooltip + click-to-capture ---
