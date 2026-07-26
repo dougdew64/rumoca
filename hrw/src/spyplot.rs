@@ -255,7 +255,8 @@ impl Plot {
         }
 
         // --- Axis labels (equation names on left, unknown names on top) ---
-        if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
+        let labels_visible = view.zoom() >= crate::LABEL_ZOOM_THRESHOLD;
+        if labels_visible {
             let mut col_labels = Vec::with_capacity(self.n);
             let mut row_labels = Vec::with_capacity(self.n);
             for block in &self.blocks {
@@ -268,6 +269,8 @@ impl Plot {
             );
         }
 
+        let canvas_rect = response.rect;
+
         // --- Hover tooltip + click-to-capture ---
         // Only active when the pointer is over a diagonal block (not empty space).
         if let Some(block) = hovered {
@@ -279,6 +282,17 @@ impl Plot {
             }
             // `on_hover_ui` shows an egui tooltip near the cursor.
             response.on_hover_ui(|ui| block_tooltip(ui, block));
+        }
+
+        if !labels_visible {
+            let hint_pos = canvas_rect.left_bottom() + egui::vec2(4.0, -18.0);
+            ui.painter().text(
+                hint_pos,
+                egui::Align2::LEFT_BOTTOM,
+                "Zoom in to see row and column labels",
+                egui::FontId::proportional(11.0),
+                ui.visuals().weak_text_color(),
+            );
         }
     }
 }

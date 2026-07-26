@@ -98,14 +98,17 @@ const TRAJECTORY_PLOT_HEIGHT_FRACTION: f32 = 0.65;
 /// How to render the Structural / Index-reduction stages: the custom BLT
 /// spy-plot, the incidence matrix, the reduction process
 /// summary (Index reduction only), or the generic serde tree.
+///
+/// On the Index Reduction tab, comparative views (SpyPlot, Incidence) render
+/// in a Before/After split; Summary, Animate, and Tree are full-width.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum StructuralView {
+    Summary,
     SpyPlot,
     Incidence,
     MatchingAnim,
     TarjanAnim,
-    Reduction,
-    ReductionAnim,
+    Animate,
     Tree,
 }
 
@@ -305,6 +308,10 @@ pub struct App {
     tarjan_anim_canvas: Canvas,
     index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
     cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
+    // "Before" views for the Index Reduction split — parsed from the `"before"`
+    // sub-object of the index reduction report JSON (the raw, pre-reduction DAE).
+    cached_before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
+    before_incidence_canvas: Canvas,
 
     // ---- 14. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
@@ -501,6 +508,8 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             cached_reduction_anim: None,
+            cached_before_incidence: None,
+            before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
             cached_source: None,
@@ -702,6 +711,7 @@ impl App {
                     self.cached_matching_anim = None;
                     self.cached_tarjan_anim = None;
                     self.cached_reduction_anim = None;
+                    self.cached_before_incidence = None;
                     if self.live_breakpoint_armed {
                         let _ = bridge::remove_live_trace_breakpoint();
                     }
@@ -711,6 +721,7 @@ impl App {
                     self.incidence_canvas.request_fit();
                     self.matching_anim_canvas.request_fit();
                     self.tarjan_anim_canvas.request_fit();
+                    self.before_incidence_canvas.request_fit();
                     // Land on the furthest stage that completed cleanly,
                     // unless a pending_stage was requested via an hrw://load/…/Stage link.
                     // Always update `self.stage` so the correct stage is ready when the
@@ -2243,39 +2254,75 @@ impl eframe::App for App {
                         self.cached_reduction = None;
                         self.cached_matching_anim = None;
                         self.cached_tarjan_anim = None;
+                        self.cached_before_incidence = None;
+                        // Default sub-view on stage transition: Summary for
+                        // IndexReduction, SpyPlot for Structural.
+                        if self.stage == StageKind::IndexReduction {
+                            self.structural_view = StructuralView::Summary;
+                        } else if matches!(self.structural_view,
+                            StructuralView::Summary | StructuralView::Animate)
+                        {
+                            self.structural_view = StructuralView::SpyPlot;
+                        }
                         self.cached_report_stage = Some(self.stage);
                     }
                     let is_index_reduction = self.stage == StageKind::IndexReduction;
-                    // If switching away from IndexReduction while Reduction is
-                    // selected, fall back to SpyPlot (Structural has no reduction).
-                    if !is_index_reduction
-                        && matches!(self.structural_view,
-                            StructuralView::Reduction | StructuralView::ReductionAnim)
-                    {
-                        self.structural_view = StructuralView::SpyPlot;
+
+                    // Status banner for Index Reduction: was reduction needed?
+                    if is_index_reduction {
+                        let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
+                        let needed = note.contains("singular");
+                        if needed {
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
+                                ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
+                            });
+                        } else {
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new("Index-1").color(crate::colors::ANIM_PATH_FOUND).strong());
+                                ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
+                            });
+                        }
+                        ui.add_space(2.0);
                     }
-                    // Here we DO use `selectable_value` (unlike the stage tabs
-                    // above) because these sub-view tabs have no conditional
-                    // suppression — one is always selected. `selectable_value`
-                    // acts as a radio button: it highlights when the enum
-                    // matches the given variant, and sets the enum on click.
+
+                    // Sub-tab bar: Summary first (IR only), then structural views, then Tree.
                     ui.horizontal(|ui| {
+                        if is_index_reduction {
+                            ui.selectable_value(&mut self.structural_view, StructuralView::Summary, "Summary");
+                            ui.separator();
+                            if !self.index_reduction_frames.is_empty() {
+                                ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
+                            }
+                        }
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                         ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
                         ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
                         ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
-                        if is_index_reduction {
-                            ui.selectable_value(&mut self.structural_view, StructuralView::Reduction, "Reduction");
-                            if !self.index_reduction_frames.is_empty() {
-                                ui.selectable_value(&mut self.structural_view, StructuralView::ReductionAnim, "Reduction \u{25b6}");
-                            }
-                        }
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
                     ui.separator();
                 }
 
+                // Whether the Index Reduction tab shows a Before/After split for
+                // comparative views. True when index reduction was actually needed
+                // (the note mentions "singular").
+                let ir_split = report_ready
+                    && self.stage == StageKind::IndexReduction
+                    && self.stages.get(self.stage).note.as_deref()
+                        .map_or(false, |n| n.contains("singular"));
+
                 if report_ready && self.structural_view == StructuralView::SpyPlot {
+                    if ir_split {
+                        // No spy-plot for the Before pane (needs full matching),
+                        // show only the After pane.
+                        ui.label(egui::RichText::new("Before (raw DAE)")
+                            .strong().color(crate::colors::ANIM_FAIL));
+                        ui.weak("Spy-plot unavailable (structurally singular \u{2014} no BLT decomposition)");
+                        ui.add_space(12.0);
+                        ui.label(egui::RichText::new("After (reduced)")
+                            .strong().color(crate::colors::ANIM_PATH_FOUND));
+                    }
                     let cached = self.cached_spy_plot.get_or_insert_with(|| {
                         self.stages.get(self.stage).value.as_ref().and_then(spyplot::Plot::from_report)
                     });
@@ -2286,16 +2333,58 @@ impl eframe::App for App {
                         ui.weak("(the structural report has no BLT blocks to plot)");
                     }
                 } else if report_ready && self.structural_view == StructuralView::Incidence {
-                    let cached = self.cached_incidence.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref().and_then(incidence_view::IncidenceMatrix::from_report)
-                    });
-                    if let Some(mat) = cached {
-                        ui.weak(mat.caption());
-                        let tracked_col = self.tracked_identifier.as_deref()
-                            .and_then(|name| mat.column_index(name));
-                        mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture, self.highlighted_eq_row, tracked_col);
+                    if ir_split {
+                        // Before/After split for incidence matrices.
+                        let before_cached = self.cached_before_incidence.get_or_insert_with(|| {
+                            self.stages.get(self.stage).value.as_ref()
+                                .and_then(|v| v.get("before"))
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        });
+                        let after_cached = self.cached_incidence.get_or_insert_with(|| {
+                            self.stages.get(self.stage).value.as_ref()
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        });
+                        ui.columns(2, |cols| {
+                            // Before pane
+                            cols[0].label(egui::RichText::new("Before (raw DAE)")
+                                .strong().color(crate::colors::ANIM_FAIL));
+                            if let Some(mat) = before_cached {
+                                cols[0].weak(mat.caption());
+                                mat.ui(
+                                    &mut cols[0], &mut self.before_incidence_canvas,
+                                    &mut canvas_capture, self.highlighted_eq_row, None,
+                                );
+                            } else {
+                                cols[0].weak("(no before incidence data)");
+                            }
+                            // After pane
+                            cols[1].label(egui::RichText::new("After (reduced)")
+                                .strong().color(crate::colors::ANIM_PATH_FOUND));
+                            if let Some(mat) = after_cached {
+                                cols[1].weak(mat.caption());
+                                let tracked_col = self.tracked_identifier.as_deref()
+                                    .and_then(|name| mat.column_index(name));
+                                mat.ui(
+                                    &mut cols[1], &mut self.incidence_canvas,
+                                    &mut canvas_capture, self.highlighted_eq_row, tracked_col,
+                                );
+                            } else {
+                                cols[1].weak("(no after incidence data)");
+                            }
+                        });
                     } else {
-                        ui.weak("(no incidence data in this report)");
+                        let cached = self.cached_incidence.get_or_insert_with(|| {
+                            self.stages.get(self.stage).value.as_ref()
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        });
+                        if let Some(mat) = cached {
+                            ui.weak(mat.caption());
+                            let tracked_col = self.tracked_identifier.as_deref()
+                                .and_then(|name| mat.column_index(name));
+                            mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture, self.highlighted_eq_row, tracked_col);
+                        } else {
+                            ui.weak("(no incidence data in this report)");
+                        }
                     }
                 } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
                     if self.cached_incidence.is_none() {
@@ -2333,6 +2422,14 @@ impl eframe::App for App {
                         );
                     }
                     if let Some(Some(anim)) = &mut self.cached_matching_anim {
+                        if ir_split {
+                            ui.label(egui::RichText::new("Before (raw DAE)")
+                                .strong().color(crate::colors::ANIM_FAIL));
+                            ui.weak("Matching animation unavailable (structurally singular \u{2014} only a partial matching exists)");
+                            ui.add_space(12.0);
+                            ui.label(egui::RichText::new("After (reduced)")
+                                .strong().color(crate::colors::ANIM_PATH_FOUND));
+                        }
                         anim.ui(ui, &mut self.matching_anim_canvas, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(no incidence data for matching animation)");
@@ -2373,11 +2470,19 @@ impl eframe::App for App {
                         );
                     }
                     if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
+                        if ir_split {
+                            ui.label(egui::RichText::new("Before (raw DAE)")
+                                .strong().color(crate::colors::ANIM_FAIL));
+                            ui.weak("BLT animation unavailable (structurally singular \u{2014} no full matching for block decomposition)");
+                            ui.add_space(12.0);
+                            ui.label(egui::RichText::new("After (reduced)")
+                                .strong().color(crate::colors::ANIM_PATH_FOUND));
+                        }
                         anim.ui(ui, &mut self.tarjan_anim_canvas, self.tracked_identifier.as_deref());
                     } else {
                         ui.weak("(no dependency graph for BLT animation)");
                     }
-                } else if report_ready && self.structural_view == StructuralView::Reduction {
+                } else if report_ready && self.structural_view == StructuralView::Summary {
                     let cached = self.cached_reduction.get_or_insert_with(|| {
                         self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
                     });
@@ -2386,7 +2491,7 @@ impl eframe::App for App {
                     } else {
                         ui.weak("(no reduction data in this report)");
                     }
-                } else if self.structural_view == StructuralView::ReductionAnim {
+                } else if self.structural_view == StructuralView::Animate {
                     let frames = &self.index_reduction_frames;
                     let cached = self.cached_reduction_anim.get_or_insert_with(|| {
                         if frames.is_empty() {
@@ -2769,6 +2874,8 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             cached_reduction_anim: None,
+            cached_before_incidence: None,
+            before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
             cached_source: None,

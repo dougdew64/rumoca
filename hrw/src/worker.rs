@@ -1382,6 +1382,10 @@ fn index_reduction_stage(
     }
     let cr = unwrap_success(result);
     let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
+    let before_inc = rumoca_phase_structural::build_incidence(&cr.dae);
+    let (before_match_eq, _) = rumoca_phase_structural::matching::maximum_matching(
+        before_inc.n_eq, before_inc.n_var, &before_inc.eq_unknowns,
+    );
     let mut reduced = cr.dae.clone();
     let (reduction, frames) = index_reduce_for_structural_analysis(&mut reduced);
     match rumoca_phase_structural::build_structural_report(&reduced) {
@@ -1395,6 +1399,9 @@ fn index_reduction_stage(
             let mut json = structural_to_json(&rep);
             let obj = json.as_object_mut().expect("structural_to_json returns an object");
             obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&reduced.continuous.equations)));
+            obj.insert("before".to_owned(), before_report_json(
+                &before_inc, &before_match_eq, Some(&cr.dae.continuous.equations),
+            ));
             obj.insert("reduction".to_owned(), reduction.to_json());
             (Stage::ok_with_note(json, note), frames)
         }
@@ -1655,8 +1662,16 @@ fn incidence_to_json(
         .map(|(i, cols)| {
             let mut sorted: Vec<usize> = cols.iter().copied().collect();
             sorted.sort_unstable();
+            // Use the same labeled name as `structural_to_json` so matching
+            // lookups in `IncidenceMatrix::from_report` resolve correctly.
+            let eq_name = match equations.and_then(|eqs| eqs.get(inc.equation_refs[i].0)) {
+                Some(eq) if !eq.origin.trim().is_empty() => {
+                    format!("{} ({})", inc.equation_refs[i], eq.origin.trim())
+                }
+                _ => inc.equation_refs[i].to_string(),
+            };
             let mut row = serde_json::json!({
-                "equation": inc.equation_refs[i].to_string(),
+                "equation": eq_name,
                 "unknowns": sorted,
             });
             if let Some(text) = eq_texts.get(i) {
@@ -1673,6 +1688,40 @@ fn incidence_to_json(
         "n_var": inc.n_var,
         "unknown_names": unknown_names,
         "rows": rows,
+    })
+}
+
+/// Build a self-contained "before" report for the raw (pre-reduction) DAE.
+///
+/// The raw system is typically structurally singular (high-index), so there's
+/// no full structural report (no BLT blocks). We include the incidence matrix
+/// and partial matching so the UI can show a Before pane with rank deficiency
+/// highlighted. The returned JSON has the same shape as a structural report
+/// (`"matching"`, `"incidence"`) so `IncidenceMatrix::from_report` can parse it.
+fn before_report_json(
+    inc: &rumoca_phase_structural::Incidence,
+    match_eq: &[Option<usize>],
+    equations: Option<&[rumoca_ir_dae::Equation]>,
+) -> serde_json::Value {
+    let matching: Vec<serde_json::Value> = match_eq
+        .iter()
+        .enumerate()
+        .filter_map(|(eq_idx, var_idx)| {
+            var_idx.map(|v| {
+                serde_json::json!({
+                    "equation": inc.equation_refs[eq_idx].to_string(),
+                    "unknown": inc.unknown_names[v].to_string(),
+                })
+            })
+        })
+        .collect();
+    let n_matched = matching.len();
+    serde_json::json!({
+        "n_equations": inc.n_eq,
+        "n_unknowns": inc.n_var,
+        "n_matched": n_matched,
+        "matching": matching,
+        "incidence": incidence_to_json(inc, equations),
     })
 }
 
@@ -2382,6 +2431,65 @@ mod tests {
             .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
             .count();
         assert!(n_differentiated >= 4, "expected at least 4 differentiations, got {n_differentiated}");
+    }
+
+    /// The index reduction stage embeds a "before" report with the raw
+    /// (pre-reduction) DAE's incidence matrix and partial matching.
+    #[test]
+    fn drivetrain_index_reduction_has_before_report() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+        let v = stages.index_reduction.value.expect("index reduction should succeed");
+        let before = &v["before"];
+        assert!(before.is_object(), "missing 'before' sub-object in index reduction JSON");
+        let inc = &before["incidence"];
+        assert!(inc["n_eq"].as_u64().unwrap() > 0, "before incidence should have equations");
+        assert!(inc["n_var"].as_u64().unwrap() > 0, "before incidence should have unknowns");
+        let matching = before["matching"].as_array().expect("before should have matching");
+        assert!(!matching.is_empty(), "partial matching should be non-empty");
+        let n_eq = inc["n_eq"].as_u64().unwrap() as usize;
+        assert!(matching.len() < n_eq, "partial matching should be incomplete (singular)");
+    }
+
+    /// The "before" report is parseable by `IncidenceMatrix::from_report`,
+    /// enabling the Before/After split view on the Index Reduction tab.
+    #[test]
+    fn drivetrain_before_report_parseable_as_incidence() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+        let v = stages.index_reduction.value.expect("index reduction should succeed");
+        let before = &v["before"];
+        let mat = crate::incidence_view::IncidenceMatrix::from_report(before)
+            .expect("before report should parse into an IncidenceMatrix");
+        assert!(mat.n_eq() > 0);
+        assert!(mat.n_var() > 0);
+        let caption = mat.caption();
+        assert!(caption.contains("rank deficiency"), "singular system should show rank deficiency: {caption}");
+
+        // The after incidence must resolve matching (equation names must
+        // agree between the structural report's matching array and the
+        // incidence rows — both use the labeled form like "f_x[0] (origin)").
+        let after_mat = crate::incidence_view::IncidenceMatrix::from_report(&v)
+            .expect("after report should parse into an IncidenceMatrix");
+        let after_caption = after_mat.caption();
+        assert!(after_caption.contains("full rank"),
+            "reduced system should be full rank: {after_caption}");
+    }
+
+    /// For an already index-1 system, the "before" report still exists (so
+    /// the split view code doesn't crash), but the note says "index-1".
+    #[test]
+    fn single_inertia_index_reduction_note_says_index_1() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
+            panic!("expected Compiled");
+        };
+        let note = stages.index_reduction.note.as_deref().unwrap_or("");
+        assert!(!note.contains("singular"), "SingleInertia should not be singular: {note}");
+        assert!(note.contains("index-1"), "note should mention index-1: {note}");
+        let v = stages.index_reduction.value.expect("index reduction should succeed");
+        assert!(v.get("before").is_some(), "before report should exist even for index-1 systems");
     }
 
     /// MotorWithBrake produces trace frames from the missing-derivative path

@@ -643,3 +643,11 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   (2 conditions, 1 discrete update), and stiff dynamics (38/51 variables dynamic). GearWithBrake
   remains a valid specimen for studying index reduction with IdealGear; it is just no longer the
   tour specimen.
+- **2026-07-26 — Index Reduction tab redesigned: Before/After split view.** The raw (singular) DAE's
+  incidence and partial matching are now computed alongside the reduced system and embedded in a
+  `"before"` sub-object in the stage JSON. The Index Reduction tab shows: (1) a status banner
+  (Singular vs Index-1), (2) a Summary sub-tab (leftmost, full-width — the reduction funnel), (3) a
+  Before/After split for the Incidence view, (4) Spy-plot, Matching, and BLT for the After system
+  only (BLT/full-matching requires non-singularity), (5) Animate and Tree as full-width views.
+  `matching::maximum_matching` widened from `pub(crate)` to `pub` in rumoca-phase-structural (additive,
+  upstreamable). Summary-first tab pattern is a pilot for potential adoption on other phase tabs.

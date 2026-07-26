@@ -408,12 +408,15 @@ impl IncidenceMatrix {
 
         // Axis labels — only drawn when zoomed in far enough that they won't
         // overlap (zoom >= 16 means each cell is at least 16px wide).
-        if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
+        let labels_visible = view.zoom() >= crate::LABEL_ZOOM_THRESHOLD;
+        if labels_visible {
             crate::draw_matrix_axis_labels(
                 ui, &painter, view,
                 &self.unknown_names, &self.equation_texts, 20, 30,
             );
         }
+
+        let canvas_rect = response.rect;
 
         // Tooltip and click-to-capture. The capture path addresses the equation's
         // row in the incidence data: `incidence.rows[<row_index>]`.
@@ -429,6 +432,17 @@ impl IncidenceMatrix {
             response.on_hover_ui(|ui| {
                 self.cell_tooltip(ui, col, row, filled);
             });
+        }
+
+        if !labels_visible {
+            let hint_pos = canvas_rect.left_bottom() + egui::vec2(4.0, -18.0);
+            ui.painter().text(
+                hint_pos,
+                egui::Align2::LEFT_BOTTOM,
+                "Zoom in to see row and column labels",
+                egui::FontId::proportional(11.0),
+                ui.visuals().weak_text_color(),
+            );
         }
     }
 
