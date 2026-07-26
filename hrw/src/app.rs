@@ -2160,6 +2160,27 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
+                // Tracking indicator: shows which identifier is being tracked.
+                // Shown on all panes (log, simulation, stages) so the user
+                // always knows what's tracked and can clear it.
+                if let Some(name) = self.tracked_identifier.clone() {
+                    let mut clear = false;
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new(format!("Tracking: {name}"))
+                                .monospace()
+                                .color(crate::colors::TRACKED_GOLD)
+                        );
+                        if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
+                            clear = true;
+                        }
+                    });
+                    if clear {
+                        self.tracked_identifier = None;
+                    }
+                    ui.separator();
+                }
+
                 if self.viewing_log {
                     if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
                         self.worker.send(ToWorker::SetTracing(self.tracing_enabled));
@@ -2198,25 +2219,6 @@ impl eframe::App for App {
                         }
                         ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
                     });
-                    ui.separator();
-                }
-
-                // Tracking indicator: shows which identifier is being tracked.
-                if let Some(name) = self.tracked_identifier.clone() {
-                    let mut clear = false;
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new(format!("Tracking: {name}"))
-                                .monospace()
-                                .color(crate::colors::TRACKED_GOLD)
-                        );
-                        if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
-                            clear = true;
-                        }
-                    });
-                    if clear {
-                        self.tracked_identifier = None;
-                    }
                     ui.separator();
                 }
 
