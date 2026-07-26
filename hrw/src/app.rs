@@ -1557,71 +1557,210 @@ impl App {
             ui.weak("(no structural error details)");
             return;
         };
+        Self::generic_error_summary(ui, err, StageKind::Structural);
+    }
 
-        if err.get("kind").and_then(|k| k.as_str()) != Some("singular") {
-            if let Some(msg) = err.get("message").and_then(|m| m.as_str()) {
-                ui.colored_label(ui.visuals().error_fg_color, msg);
-            }
-            return;
-        }
+    /// Render a structured error summary for any stage with error data.
+    fn generic_error_summary(
+        ui: &mut egui::Ui,
+        error: &serde_json::Value,
+        stage: StageKind,
+    ) {
+        let kind = error.get("kind").and_then(|k| k.as_str()).unwrap_or("error");
+        let message = error.get("message").and_then(|m| m.as_str()).unwrap_or("(unknown error)");
 
-        let n_eq = err["n_equations"].as_u64().unwrap_or(0);
-        let n_unk = err["n_unknowns"].as_u64().unwrap_or(0);
-        let n_matched = err["n_matched"].as_u64().unwrap_or(0);
-        let deficiency = err["rank_deficiency"].as_u64().unwrap_or(0);
+        let heading = match (kind, stage) {
+            ("singular", StageKind::Structural) => "Structural singularity".to_owned(),
+            ("singular", StageKind::Initialization) => "Initialization singularity".to_owned(),
+            ("singular", StageKind::IndexReduction) => "Still singular after index reduction".to_owned(),
+            ("singular", _) => "Structural singularity".to_owned(),
+            _ => format!("{} error", stage.name()),
+        };
 
-        ui.heading("Structural singularity");
+        ui.heading(heading);
         ui.add_space(4.0);
 
-        egui::Grid::new("singular_summary").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
-            ui.strong("Equations");
-            ui.label(format!("{n_eq}"));
-            ui.end_row();
-            ui.strong("Unknowns");
-            ui.label(format!("{n_unk}"));
-            ui.end_row();
-            ui.strong("Matched");
-            ui.label(format!("{n_matched}"));
-            ui.end_row();
-            ui.strong("Rank deficiency");
-            ui.label(egui::RichText::new(format!("{deficiency}"))
-                .color(crate::colors::ANIM_FAIL).strong());
-            ui.end_row();
-        });
+        // For singular errors the grid below tells the story — skip the raw
+        // error string which is verbose and redundant.
+        if kind != "singular" {
+            ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                ui.label(egui::RichText::new(message).color(ui.visuals().error_fg_color));
+            });
+        }
 
-        ui.add_space(8.0);
+        // Error code (e.g. EI001 from instantiate)
+        if let Some(code) = error.get("error_code").and_then(|c| c.as_str()) {
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                ui.strong("Error code");
+                ui.monospace(code);
+            });
+        }
 
-        let unmatched_eqs = err["unmatched_equations"].as_array();
-        let unmatched_unks = err["unmatched_unknowns"].as_array();
+        // Detail text (a clearer restatement of the error)
+        if let Some(detail) = error.get("detail").and_then(|d| d.as_str()) {
+            ui.add_space(4.0);
+            ui.label(detail);
+        }
 
-        if let Some(eqs) = unmatched_eqs {
-            if !eqs.is_empty() {
-                ui.strong("Unmatched equations");
-                for eq in eqs {
-                    if let Some(name) = eq.as_str() {
-                        ui.label(format!("  {name}"));
-                    }
+        // Mass matrix details (solve lowering)
+        if kind == "mass_matrix" {
+            ui.add_space(8.0);
+            egui::Grid::new("mass_matrix_grid").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
+                if let Some(name) = error.get("state_name").and_then(|n| n.as_str()) {
+                    ui.strong("State variable");
+                    ui.monospace(name);
+                    ui.end_row();
                 }
+                if let Some(row) = error.get("row").and_then(|r| r.as_u64()) {
+                    ui.strong("Matrix row");
+                    ui.label(format!("{row}"));
+                    ui.end_row();
+                }
+                if let Some(reason) = error.get("reason").and_then(|r| r.as_str()) {
+                    ui.strong("Reason");
+                    ui.label(reason);
+                    ui.end_row();
+                }
+            });
+        }
+
+        // Evaluation context (solve lowering)
+        if kind == "evaluation" {
+            if let Some(ctx) = error.get("context").and_then(|c| c.as_str()) {
                 ui.add_space(4.0);
+                ui.horizontal(|ui| {
+                    ui.strong("Context");
+                    ui.label(ctx);
+                });
             }
         }
 
-        if let Some(unks) = unmatched_unks {
-            if !unks.is_empty() {
-                ui.strong("Unmatched unknowns");
-                for unk in unks {
-                    if let Some(name) = unk.as_str() {
-                        ui.label(format!("  {name}"));
+        // Diagnostics list (flatten / typecheck)
+        if let Some(diags) = error.get("diagnostics").and_then(|d| d.as_array()) {
+            if !diags.is_empty() {
+                ui.add_space(8.0);
+                ui.strong(format!("Diagnostics ({})", diags.len()));
+                for d in diags {
+                    let severity = d.get("severity").and_then(|s| s.as_str()).unwrap_or("Error");
+                    let code = d.get("code").and_then(|c| c.as_str());
+                    let msg = d.get("message").and_then(|m| m.as_str()).unwrap_or("");
+                    ui.horizontal(|ui| {
+                        let sev_color = if severity.contains("Error") {
+                            ui.visuals().error_fg_color
+                        } else {
+                            ui.visuals().warn_fg_color
+                        };
+                        ui.label(egui::RichText::new(severity).color(sev_color).strong());
+                        if let Some(c) = code {
+                            ui.monospace(format!("[{c}]"));
+                        }
+                        ui.label(msg);
+                    });
+                    if let Some(notes) = d.get("notes").and_then(|n| n.as_array()) {
+                        for note in notes {
+                            if let Some(text) = note.as_str() {
+                                ui.horizontal(|ui| {
+                                    ui.add_space(16.0);
+                                    ui.weak(format!("note: {text}"));
+                                });
+                            }
+                        }
                     }
                 }
-                ui.add_space(4.0);
             }
         }
 
-        ui.add_space(8.0);
-        ui.weak("The maximum matching could not pair every equation with a unique \
-            unknown. This system requires index reduction before it can be solved \
-            \u{2014} see the Index Reduction tab.");
+        // Singularity details (structural/initialization errors)
+        if kind == "singular" {
+            if let (Some(n_eq), Some(n_unk), Some(n_matched), Some(deficiency)) = (
+                error["n_equations"].as_u64(),
+                error["n_unknowns"].as_u64(),
+                error["n_matched"].as_u64(),
+                error["rank_deficiency"].as_u64(),
+            ) {
+                ui.add_space(8.0);
+                egui::Grid::new("singular_grid").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
+                    ui.strong("Equations");
+                    ui.label(format!("{n_eq}"));
+                    ui.end_row();
+                    ui.strong("Unknowns");
+                    ui.label(format!("{n_unk}"));
+                    ui.end_row();
+                    ui.strong("Matched");
+                    ui.label(format!("{n_matched}"));
+                    ui.end_row();
+                    ui.strong("Rank deficiency");
+                    ui.label(egui::RichText::new(format!("{deficiency}"))
+                        .color(crate::colors::ANIM_FAIL).strong());
+                    ui.end_row();
+                });
+
+                if let Some(eqs) = error["unmatched_equations"].as_array() {
+                    if !eqs.is_empty() {
+                        ui.add_space(4.0);
+                        ui.strong("Unmatched equations");
+                        for eq in eqs {
+                            if let Some(name) = eq.as_str() {
+                                ui.label(format!("  {name}"));
+                            }
+                        }
+                    }
+                }
+                if let Some(unks) = error["unmatched_unknowns"].as_array() {
+                    if !unks.is_empty() {
+                        ui.add_space(4.0);
+                        ui.strong("Unmatched unknowns");
+                        for unk in unks {
+                            if let Some(name) = unk.as_str() {
+                                ui.label(format!("  {name}"));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Determinacy summary (initialization stage)
+        if let Some(det) = error.get("determinacy") {
+            ui.add_space(8.0);
+            ui.strong("Initial condition determinacy");
+            ui.add_space(2.0);
+            egui::Grid::new("determinacy_grid").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
+                if let Some(n) = det["states"].as_u64() {
+                    ui.label("States");
+                    ui.label(format!("{n}"));
+                    ui.end_row();
+                }
+                if let Some(n) = det["initial_equations"].as_u64() {
+                    ui.label("Initial equations");
+                    ui.label(format!("{n}"));
+                    ui.end_row();
+                }
+                if let Some(n) = det["fixed_start_states"].as_u64() {
+                    ui.label("Fixed start states");
+                    ui.label(format!("{n}"));
+                    ui.end_row();
+                }
+                if let Some(n) = det["explicit_initial_conditions"].as_u64() {
+                    ui.label("Explicit initial conditions");
+                    ui.label(format!("{n}"));
+                    ui.end_row();
+                }
+                if let Some(v) = det.get("verdict").and_then(|v| v.as_str()) {
+                    ui.label("Verdict");
+                    ui.label(v);
+                    ui.end_row();
+                }
+            });
+        }
+
+        // Guidance
+        if let Some(guidance) = error.get("guidance").and_then(|g| g.as_str()) {
+            ui.add_space(12.0);
+            ui.weak(guidance);
+        }
     }
 }
 
@@ -2284,13 +2423,16 @@ impl eframe::App for App {
                 // the spy-plot canvas).
                 {
                     let stage = self.current_stage();
-                    // Structural and IndexReduction stages with "singular" notes
-                    // show their own status banner below, so skip the generic note.
+                    // Stages with structured error data show their own summary
+                    // below; Structural/IndexReduction with singular/index-1
+                    // notes show a status banner. Skip the generic note for both.
+                    let has_error_summary = stage.note_is_error
+                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
                     let has_custom_banner = matches!(
                         self.stage, StageKind::Structural | StageKind::IndexReduction
                     ) && stage.note.as_deref().map_or(false, |n| n.contains("singular") || n.contains("index-1"));
                     if let Some(note) = &stage.note {
-                        if !has_custom_banner {
+                        if !has_custom_banner && !has_error_summary {
                             let color = if stage.note_is_error {
                                 ui.visuals().error_fg_color
                             } else {
@@ -2613,18 +2755,27 @@ impl eframe::App for App {
                     self.source_map_ui(ui);
                 } else {
                     let stage = self.current_stage();
-                    match &stage.value {
-                        Some(value) => {
-                            let label = self.model.as_deref().unwrap_or("model");
-                            let prev = self.previous_stage_value();
-                            egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, &self.field_help, self.tracked_identifier.as_deref());
-                            });
+                    let has_error_data = stage.note_is_error
+                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
+                    if has_error_data {
+                        let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
+                        egui::ScrollArea::vertical().id_salt("error_summary").auto_shrink(false).show(ui, |ui| {
+                            Self::generic_error_summary(ui, &error, self.stage);
+                        });
+                    } else {
+                        match &stage.value {
+                            Some(value) => {
+                                let label = self.model.as_deref().unwrap_or("model");
+                                let prev = self.previous_stage_value();
+                                egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
+                                    tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, &self.field_help, self.tracked_identifier.as_deref());
+                                });
+                            }
+                            None if stage.note.is_none() => {
+                                ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
+                            }
+                            None => {}
                         }
-                        None if stage.note.is_none() => {
-                            ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
-                        }
-                        None => {}
                     }
                 }
                 } // end: non-Simulation stage rendering

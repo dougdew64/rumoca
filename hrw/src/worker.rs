@@ -238,6 +238,14 @@ impl Stage {
             Err(e) => Stage::err(format!("serialization failed: {e}")),
         }
     }
+
+    /// Stage failed with structured error data. The error is embedded in the
+    /// value JSON under `"error"` so the UI can render a rich summary, and the
+    /// note carries a short message for the stage tab label.
+    fn err_with_details(error: serde_json::Value, note: impl Into<String>) -> Self {
+        let json = serde_json::json!({ "error": error });
+        Stage::recovered(json, note)
+    }
 }
 
 /// Serialize to JSON, falling back to a descriptive error string instead of
@@ -1029,7 +1037,14 @@ impl WorkerState {
                 let model = ast.classes.keys().next().cloned();
                 (Stage::from_ser(&ast), model)
             }
-            Err(e) => (Stage::err(format!("{e:#}")), None),
+            Err(e) => {
+                let msg = format!("{e:#}");
+                (Stage::err_with_details(serde_json::json!({
+                    "kind": "parse",
+                    "message": msg,
+                    "guidance": "Check the Modelica source for syntax errors.",
+                }), msg), None)
+            }
         };
         // After each Rumoca API call, drain any `tracing` events that were
         // buffered by our `TracingForwarder` subscriber.
@@ -1101,9 +1116,17 @@ impl WorkerState {
                                     def_index = build_def_index(&rt.0, &v);
                                     Stage::recovered(v, note)
                                 }
-                                _ => Stage::err(note),
+                                _ => Stage::err_with_details(serde_json::json!({
+                                    "kind": "resolve",
+                                    "message": note,
+                                    "guidance": "Check that all referenced types, components, and packages exist in the loaded libraries.",
+                                }), note),
                             },
-                            None => Stage::err(note),
+                            None => Stage::err_with_details(serde_json::json!({
+                                "kind": "resolve",
+                                "message": note,
+                                "guidance": "Check that all referenced types, components, and packages exist in the loaded libraries.",
+                            }), note),
                         }
                     }
                 }
@@ -1421,7 +1444,21 @@ fn index_reduction_stage(
             obj.insert("reduction".to_owned(), reduction.to_json());
             (Stage::ok_with_note(json, note), frames)
         }
-        Err(e) => (Stage::err(format!("still singular after index reduction: {e}")), frames),
+        Err(e) => {
+            let msg = format!("{e}");
+            let mut json = serde_json::json!({});
+            let obj = json.as_object_mut().unwrap();
+            obj.insert("incidence".to_owned(), incidence_to_json(
+                &rumoca_phase_structural::build_incidence(&reduced),
+                Some(&reduced.continuous.equations),
+            ));
+            obj.insert("before".to_owned(), before_report_json(
+                &before_inc, &before_match_eq, Some(&cr.dae.continuous.equations),
+            ));
+            obj.insert("reduction".to_owned(), reduction.to_json());
+            obj.insert("error".to_owned(), structural_error_to_json(&e, &before_inc));
+            (Stage::recovered(json, format!("still singular after index reduction: {msg}")), frames)
+        }
     }
 }
 
@@ -1495,7 +1532,39 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
                 Stage::ok(json)
             }
         }
-        Err(e) => Stage::err(format!("IC planning failed: {e}")),
+        Err(e) => {
+            let msg = format!("{e}");
+            let mut error_json = match &e {
+                rumoca_phase_structural::StructuralError::Singular {
+                    n_equations, n_unknowns, n_matched,
+                    unmatched_equations, unmatched_unknowns, ..
+                } => serde_json::json!({
+                    "kind": "singular",
+                    "message": msg,
+                    "n_equations": n_equations,
+                    "n_unknowns": n_unknowns,
+                    "n_matched": n_matched,
+                    "rank_deficiency": (*n_equations).max(*n_unknowns) - n_matched,
+                    "unmatched_equations": unmatched_equations,
+                    "unmatched_unknowns": unmatched_unknowns,
+                    "guidance": "The initialization subsystem is structurally singular: the algebraic \
+                        equations (beyond the state derivatives) cannot be fully matched to unknowns. \
+                        Check for missing or redundant initial equations, and verify that start values \
+                        are specified for the right variables.",
+                }),
+                _ => serde_json::json!({
+                    "kind": "initialization",
+                    "message": msg,
+                    "guidance": "Initialization planning builds the algebraic system that determines \
+                        consistent initial conditions.",
+                }),
+            };
+            error_json.as_object_mut().unwrap()
+                .insert("determinacy".to_owned(), determinacy.clone());
+            let mut json = serde_json::json!({ "error": error_json });
+            json.as_object_mut().unwrap().insert("determinacy".to_owned(), determinacy);
+            Stage::recovered(json, format!("IC planning failed: {msg}"))
+        }
     }
 }
 
@@ -1636,7 +1705,11 @@ fn solve_lowering_stage(result: Option<&PhaseResult>) -> Stage {
             Ok(v) => Stage::ok(v),
             Err(e) => Stage::err(format!("serialize SolveModel: {e}")),
         },
-        Err(e) => Stage::err(format!("solve lowering failed: {e}")),
+        Err(e) => {
+            let msg = format!("{e}");
+            let error_json = solve_lower_error_to_json(&e);
+            Stage::err_with_details(error_json, format!("solve lowering failed: {msg}"))
+        }
     }
 }
 
@@ -1774,17 +1847,136 @@ fn structural_error_to_json(
             unmatched_equations, unmatched_unknowns, ..
         } => serde_json::json!({
             "kind": "singular",
+            "message": format!("{e}"),
             "n_equations": n_equations,
             "n_unknowns": n_unknowns,
             "n_matched": n_matched,
             "rank_deficiency": inc.n_eq.max(inc.n_var) - n_matched,
             "unmatched_equations": unmatched_equations,
             "unmatched_unknowns": unmatched_unknowns,
+            "guidance": "The maximum matching could not pair every equation with a unique \
+                unknown. This system requires index reduction before it can be solved \
+                \u{2014} see the Index Reduction tab.",
         }),
         _ => serde_json::json!({
             "kind": "other",
             "message": format!("{e}"),
+            "guidance": "An unexpected error occurred during structural analysis.",
         }),
+    }
+}
+
+/// Convert an `InstantiateError` into structured JSON for UI rendering.
+fn instantiate_error_to_json(e: &rumoca_phase_instantiate::InstantiateError) -> serde_json::Value {
+    use rumoca_phase_instantiate::InstantiateError;
+    let msg = format!("{e}");
+    let mut json = serde_json::json!({
+        "kind": "instantiate",
+        "message": msg,
+    });
+    let obj = json.as_object_mut().unwrap();
+    match e {
+        InstantiateError::ModelNotFound(name)
+        | InstantiateError::ModelNotFoundWithSpan { name, .. } => {
+            obj.insert("error_code".to_owned(), "EI001".into());
+            obj.insert("detail".to_owned(), format!("Model `{name}` could not be found in the loaded libraries.").into());
+            obj.insert("guidance".to_owned(), "Check that the model name is spelled correctly, the package is loaded, \
+                and the model is exported (not encapsulated).".into());
+        }
+        InstantiateError::TypeNotFound { name, .. } => {
+            obj.insert("error_code".to_owned(), "EI030".into());
+            obj.insert("detail".to_owned(), format!("Type `{name}` is referenced but not defined.").into());
+            obj.insert("guidance".to_owned(), "Check that the type exists in the loaded libraries and is \
+                accessible from the model's scope.".into());
+        }
+        InstantiateError::InvalidModPath { path, .. } => {
+            obj.insert("error_code".to_owned(), "EI002".into());
+            obj.insert("detail".to_owned(), format!("Modification path `{path}` does not correspond to a valid element.").into());
+            obj.insert("guidance".to_owned(), "Check the component path — it may reference a non-existent \
+                sub-component or use an incorrect dotted path.".into());
+        }
+        InstantiateError::ModTypeMismatch { path, expected, found, .. } => {
+            obj.insert("error_code".to_owned(), "EI003".into());
+            obj.insert("detail".to_owned(), format!("Modification for `{path}` expects type `{expected}` but found `{found}`.").into());
+            obj.insert("guidance".to_owned(), "The modification value type must match the component's declared type.".into());
+        }
+        InstantiateError::StructuralParamError { name, msg: param_msg, .. } => {
+            obj.insert("error_code".to_owned(), "EI004".into());
+            obj.insert("detail".to_owned(), format!("Structural parameter `{name}` could not be evaluated: {param_msg}").into());
+            obj.insert("guidance".to_owned(), "Structural parameters (like array sizes) must be evaluable at \
+                compile time. Check that their values are constant expressions.".into());
+        }
+        InstantiateError::ArrayDimMismatch { name, expected, found, .. } => {
+            obj.insert("error_code".to_owned(), "EI005".into());
+            obj.insert("detail".to_owned(), format!("Array `{name}` was declared with dimension {expected} but found {found}.").into());
+            obj.insert("guidance".to_owned(), "Array dimensions must agree between the declaration and the \
+                modification or binding equation.".into());
+        }
+        _ => {
+            obj.insert("guidance".to_owned(), "Instantiation expands a model's class hierarchy into a flat \
+                component tree. Check that all component types are declared and modifications are valid.".into());
+        }
+    }
+    json
+}
+
+/// Convert a `SolveModelLowerError` into structured JSON for UI rendering.
+fn solve_lower_error_to_json(e: &rumoca_phase_solve::SolveModelLowerError) -> serde_json::Value {
+    use rumoca_phase_solve::SolveModelLowerError;
+    let msg = format!("{e}");
+    match e {
+        SolveModelLowerError::Structural { source } => {
+            let mut json = serde_json::json!({
+                "kind": "singular",
+                "message": msg,
+                "guidance": "The BLT decomposition during solve lowering encountered a structural \
+                    singularity. The reduced system may still have unresolvable dependencies.",
+            });
+            if let rumoca_phase_structural::StructuralError::Singular {
+                n_equations, n_unknowns, n_matched,
+                unmatched_equations, unmatched_unknowns, ..
+            } = source {
+                let obj = json.as_object_mut().unwrap();
+                obj.insert("n_equations".to_owned(), (*n_equations).into());
+                obj.insert("n_unknowns".to_owned(), (*n_unknowns).into());
+                obj.insert("n_matched".to_owned(), (*n_matched).into());
+                obj.insert("rank_deficiency".to_owned(), ((*n_equations).max(*n_unknowns) - n_matched).into());
+                obj.insert("unmatched_equations".to_owned(), serde_json::json!(unmatched_equations));
+                obj.insert("unmatched_unknowns".to_owned(), serde_json::json!(unmatched_unknowns));
+            }
+            json
+        }
+        SolveModelLowerError::MassMatrix { row, state_name, reason, .. } => {
+            serde_json::json!({
+                "kind": "mass_matrix",
+                "message": msg,
+                "detail": format!("Mass matrix row {row} for state `{state_name}` could not be derived."),
+                "reason": reason,
+                "state_name": state_name,
+                "row": row,
+                "guidance": "The mass matrix entry for this state variable could not be \
+                    computed. This often indicates a higher-index problem or a \
+                    variable that should not be a state.",
+            })
+        }
+        SolveModelLowerError::Evaluation { context, source, .. } => {
+            serde_json::json!({
+                "kind": "evaluation",
+                "message": msg,
+                "detail": format!("Failed to evaluate {context}: {source}"),
+                "context": context,
+                "guidance": "An expression could not be evaluated during solve lowering. \
+                    Check for division by zero, undefined variables, or unsupported functions.",
+            })
+        }
+        SolveModelLowerError::Lower(lower_err) => {
+            serde_json::json!({
+                "kind": "solve_lowering",
+                "message": msg,
+                "detail": format!("{lower_err}"),
+                "guidance": "Solve lowering transforms the DAE into a solver-ready form.",
+            })
+        }
     }
 }
 
@@ -1847,18 +2039,43 @@ fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) 
             let instantiate = Stage::from_ser(&overlay);
             let typecheck = match rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name) {
                 Ok(()) => Stage::from_ser(&overlay),
-                // Best-effort: still show the (partially) enriched overlay + the note.
-                Err(_diags) => Stage::recovered(
-                    ser_value(&overlay),
-                    "instanced typecheck reported diagnostics",
-                ),
+                Err(diags) => {
+                    let mut json = ser_value(&overlay);
+                    let diag_json: Vec<serde_json::Value> = diags.iter().map(|d| {
+                        let mut dj = serde_json::json!({
+                            "severity": format!("{:?}", d.severity),
+                            "message": d.message,
+                        });
+                        if let Some(code) = &d.code {
+                            dj["code"] = serde_json::Value::String(code.clone());
+                        }
+                        if !d.notes.is_empty() {
+                            dj["notes"] = serde_json::json!(d.notes);
+                        }
+                        dj
+                    }).collect();
+                    let n = diag_json.len();
+                    json.as_object_mut().unwrap().insert("error".to_owned(), serde_json::json!({
+                        "kind": "typecheck",
+                        "message": format!("Typecheck reported {n} diagnostic(s)"),
+                        "diagnostics": diag_json,
+                        "guidance": "Typecheck validates types, dimensions, and units across the \
+                            instantiated model. The overlay above is partial — it reflects work \
+                            completed before the error.",
+                    }));
+                    Stage::recovered(json, format!("typecheck: {n} diagnostic(s)"))
+                }
             };
             (instantiate, typecheck)
         }
-        Err(e) => (
-            Stage::err(format!("instantiate failed: {e}")),
-            Stage::info("not reached (instantiate failed)"),
-        ),
+        Err(e) => {
+            let msg = format!("{e}");
+            let error_json = instantiate_error_to_json(&e);
+            (
+                Stage::err_with_details(error_json, format!("instantiate failed: {msg}")),
+                Stage::info("not reached (instantiate failed)"),
+            )
+        }
     }
 }
 
@@ -1877,14 +2094,34 @@ fn flatten_stage(result: Option<&PhaseResult>) -> Stage {
             Ok(v) => Stage::ok(v),
             Err(e) => Stage::err(format!("serialize flat model: {e}")),
         },
-        Some(PhaseResult::Failed { phase, error, diagnostics, .. }) => {
+        Some(PhaseResult::Failed { phase, error, error_code, diagnostics }) => {
             let msg = if diagnostics.is_empty() {
                 error.clone()
             } else {
                 format!("{error}  ({} diagnostic(s))", diagnostics.len())
             };
             match phase {
-                FailedPhase::Flatten => Stage::err(msg),
+                FailedPhase::Flatten => {
+                    let diag_json: Vec<serde_json::Value> = diagnostics.iter().map(|d| {
+                        let mut dj = serde_json::json!({
+                            "severity": format!("{:?}", d.severity),
+                            "code": d.code,
+                            "message": d.message,
+                        });
+                        if !d.notes.is_empty() {
+                            dj["notes"] = serde_json::json!(d.notes);
+                        }
+                        dj
+                    }).collect();
+                    Stage::err_with_details(serde_json::json!({
+                        "kind": "flatten",
+                        "message": error,
+                        "error_code": error_code,
+                        "diagnostics": diag_json,
+                        "guidance": "Flattening transforms the component hierarchy into flat equations. \
+                            Check for unsupported language features, circular definitions, or type mismatches.",
+                    }), msg)
+                }
                 FailedPhase::ToDae => {
                     Stage::info("flatten succeeded; DAE construction failed (later arc)")
                 }
@@ -2252,10 +2489,10 @@ mod tests {
         assert!(stages.structural.note_is_error, "expected singular Structural");
         assert!(stages.structural.value.as_ref().unwrap().get("error").is_some(),
             "singular Structural should carry error details");
-        assert!(
-            stages.index_reduction.value.is_none() && stages.index_reduction.note_is_error,
-            "index reduction should NOT rescue a capacitor-across-source loop"
-        );
+        assert!(stages.index_reduction.note_is_error,
+            "index reduction should NOT rescue a capacitor-across-source loop");
+        assert!(stages.index_reduction.value.as_ref().unwrap().get("error").is_some(),
+            "irreducible index reduction should carry error details");
     }
 
     /// The Initialization stage plans a consistent initial state for the RC
