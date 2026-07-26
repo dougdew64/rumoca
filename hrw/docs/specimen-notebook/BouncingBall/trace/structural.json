@@ -38,13 +38,15 @@
         "equation": "f_x[0]",
         "unknowns": [
           0
-        ]
+        ],
+        "equation_text": "der(h) - v"
       },
       {
         "equation": "f_x[1]",
         "unknowns": [
           1
-        ]
+        ],
+        "equation_text": "der(v) - -g"
       }
     ]
   }

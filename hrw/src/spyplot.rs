@@ -247,7 +247,7 @@ impl Plot {
                     painter.rect_stroke(
                         block_screen,
                         egui::CornerRadius::ZERO,
-                        egui::Stroke::new(2.5, egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)),
+                        egui::Stroke::new(2.5, crate::colors::TRACKED_GOLD),
                         egui::StrokeKind::Outside,
                     );
                 }

@@ -51,6 +51,7 @@ tour take priority over unlinked items of the same severity.
 | #34 Sub-view / tree-node links | (all tours) |
 | #35 Multiple tour documents + progress | (all tours) |
 | #33 Comprehensive tooltips | (all tours) |
+| #37 Reverse identifier tracking | (all tours) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -1115,3 +1116,32 @@ would improve readability and match the visual quality of the rest of HRW.
   information, so the two features share infrastructure.
 
 **Relates to:** #10 (cross-stage identifier tracking — the tokenizer is shared).
+
+## 37. Reverse identifier tracking — click downstream, highlight source
+
+Captured 2026-07-25 (Doug). The current identifier tracking (#10) flows one
+direction: click an identifier in the Modelica source view → highlight all its
+downstream mentions across stage views. **Reverse tracking** adds the opposite
+direction: click a variable name in *any* downstream view → highlight the
+corresponding identifier in the source view.
+
+- **Why it matters:** when studying a stage view (e.g. the incidence matrix or
+  equation sheet), the natural question is "where did this variable come from in
+  the source?" Today the user must manually scan the source for the declaration.
+  Reverse tracking answers that in one click.
+- **Feasibility:** high. All highlighting is already driven by one field
+  (`tracked_identifier: Option<String>`). Reverse tracking means adding click
+  handlers in downstream views that set the same field. The source view already
+  highlights the tracked identifier with a gold underline, so that direction is
+  free. The `IdentifierIndex` already maps flat names back to source lines.
+- **Wrinkle:** some views use derivative names like `"der(h)"` rather than the
+  base flat name `"h"`. A small `strip_der()` helper would extract the base
+  variable before setting `tracked_identifier`.
+- **Highest-value entry points:** equation sheet (click a variable in an equation
+  or classification row) and incidence matrix (click a column header). Spy plot
+  blocks, tree leaves, and reduction view rows are secondary.
+- **When:** after #10 step 4 is complete (all views wired for forward tracking).
+  This is step 5 in the [cross-stage tracking plan](cross-stage-tracking-plan.md).
+
+**Relates to:** #10 (cross-stage identifier tracking — this is the bidirectional
+extension).

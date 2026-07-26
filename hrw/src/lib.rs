@@ -151,10 +151,10 @@ pub fn draw_matrix_axis_labels(
 ) {
     use eframe::egui;
     let visuals = ui.visuals();
-    let font = egui::FontId::proportional((view.zoom() * 0.35).min(14.0));
+    let font_size = (view.zoom() * 0.35).min(14.0);
+    let font = egui::FontId::proportional(font_size);
     let label_color = visuals.text_color().gamma_multiply(0.7);
     let angle = -std::f32::consts::FRAC_PI_4;
-    let font_size = (view.zoom() * 0.35).min(14.0);
     let col_gap_px = font_size * 1.6;
     for (col, name) in col_labels.iter().enumerate() {
         let cell_top = view.to_screen(egui::pos2(col as f32 + 0.5, 0.0));

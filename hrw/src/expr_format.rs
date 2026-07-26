@@ -8,7 +8,6 @@
 //! Entry points:
 //! - `format_expr` — render a single `Expression`
 //! - `format_equation` — render a DAE `Equation` as `lhs = rhs` or `0 = rhs`
-//! - `format_equation_residual` — render an equation in residual form `lhs - rhs = 0`
 
 use rumoca_core::{Expression, OpBinary, Subscript};
 use rumoca_ir_dae as dae;

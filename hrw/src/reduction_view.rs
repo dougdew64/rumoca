@@ -286,7 +286,9 @@ impl ReductionView {
         );
         ui.add_space(2.0);
         for name in &self.demoted_states {
-            let is_tracked = tracked == Some(name.as_str());
+            let is_tracked = tracked.map_or(false, |t| {
+                name == t || crate::identifier_index::matches_tracked(name, t)
+            });
             ui.horizontal(|ui| {
                 ui.label(
                     egui::RichText::new("\u{2022}")
@@ -295,7 +297,7 @@ impl ReductionView {
                 let mut rt = egui::RichText::new(name).monospace();
                 if is_tracked {
                     rt = rt.strong().background_color(
-                        egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                        crate::colors::TRACKED_FILL_MEDIUM,
                     );
                 }
                 ui.label(rt);
@@ -329,11 +331,13 @@ impl ReductionView {
                 ui.label(egui::RichText::new("equation origin").weak());
                 ui.end_row();
                 for row in &self.differentiated_rows {
-                    let is_tracked = tracked == Some(row.for_state.as_str());
+                    let is_tracked = tracked.map_or(false, |t| {
+                        row.for_state == t || crate::identifier_index::matches_tracked(&row.for_state, t)
+                    });
                     let mut rt = egui::RichText::new(&row.for_state).monospace();
                     if is_tracked {
                         rt = rt.strong().background_color(
-                            egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                            crate::colors::TRACKED_FILL_MEDIUM,
                         );
                     }
                     ui.label(rt);
@@ -367,11 +371,13 @@ impl ReductionView {
                 ui.label(egui::RichText::new("replaced by").weak());
                 ui.end_row();
                 for elim in &self.eliminations {
-                    let is_tracked = tracked == Some(elim.variable.as_str());
+                    let is_tracked = tracked.map_or(false, |t| {
+                        elim.variable == t || crate::identifier_index::matches_tracked(&elim.variable, t)
+                    });
                     let mut rt = egui::RichText::new(&elim.variable).monospace();
                     if is_tracked {
                         rt = rt.strong().background_color(
-                            egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                            crate::colors::TRACKED_FILL_MEDIUM,
                         );
                     }
                     ui.label(rt);

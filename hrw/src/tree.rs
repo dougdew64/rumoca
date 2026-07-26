@@ -334,7 +334,7 @@ fn leaf_ui(
     let resp = ui.add(egui::Label::new(job).sense(egui::Sense::click()).extend());
 
     if is_tracked {
-        let fill = egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30);
+        let fill = crate::colors::TRACKED_FILL;
         let rect = resp.rect.expand2(egui::vec2(3.0, 1.0));
         ui.painter().set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
     } else if resp.hovered() {
@@ -391,6 +391,6 @@ fn collect_tracked_ancestors<'a>(
 fn header_tracked(key: &str, hint: &str) -> egui::RichText {
     egui::RichText::new(format!("{key}  {hint}"))
         .monospace()
-        .color(egui::Color32::from_rgb(0xFF, 0xD5, 0x4F))
+        .color(crate::colors::TRACKED_GOLD)
         .strong()
 }

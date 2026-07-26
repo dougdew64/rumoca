@@ -376,7 +376,7 @@ impl MatchingAnimation {
                 painter.rect_filled(
                     view.to_screen_rect(band),
                     egui::CornerRadius::ZERO,
-                    egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30),
+                    crate::colors::TRACKED_FILL,
                 );
             }
         }

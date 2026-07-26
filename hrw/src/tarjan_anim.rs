@@ -27,6 +27,7 @@ use rumoca_phase_structural::tarjan::{
 
 use crate::canvas::Canvas;
 use crate::incidence_view::IncidenceMatrix;
+use crate::truncate_label;
 
 /// Animation state for Tarjan SCC discovery — supports recorded and live modes.
 pub struct TarjanAnimation {
@@ -350,7 +351,7 @@ impl TarjanAnimation {
                 painter.circle_stroke(
                     center,
                     node_radius + 2.0,
-                    egui::Stroke::new(2.5, egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)),
+                    egui::Stroke::new(2.5, crate::colors::TRACKED_GOLD),
                 );
             }
             if view.zoom() >= 10.0 {
@@ -365,7 +366,7 @@ impl TarjanAnimation {
                     label,
                     font.clone(),
                     if is_tracked_node {
-                        egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)
+                        crate::colors::TRACKED_GOLD
                     } else {
                         visuals.text_color().gamma_multiply(0.8)
                     },
@@ -411,8 +412,6 @@ fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, Strin
         }
     }
 }
-
-use crate::truncate_label;
 
 #[cfg(test)]
 mod tests {

@@ -69,6 +69,15 @@ pub const ANIM_PATH_FOUND: Color32 = Color32::from_rgb(0x66, 0xBB, 0x6A);
 /// Failed exploration — dead-end backtrack.
 pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 
+/// Tracked-identifier highlight — opaque gold for text/strokes.
+pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
+
+/// Tracked-identifier background fill (subtle, alpha 0x30).
+pub const TRACKED_FILL: Color32 = Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30);
+
+/// Tracked-identifier background fill (medium, alpha 0x40).
+pub const TRACKED_FILL_MEDIUM: Color32 = Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40);
+
 /// Grid line alpha multiplier for canvas matrix views.
 pub const GRID_ALPHA: f32 = 0.3;
 

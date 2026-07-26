@@ -264,12 +264,7 @@ pub struct App {
     sim_error: Option<String>,
     sim_t_end: f64,
 
-    // ---- 12. Cached layout ----
-    // Avoids running `layout_no_wrap` on the longest filename every frame.
-    // Invalidated on rescan (when `files` changes).
-    cached_specimen_width: Option<f32>,
-
-    // ---- 13. Cached structural views ----
+    // ---- 12. Cached structural views ----
     // Avoids re-parsing `from_report` JSON every frame. Invalidated when
     // `stages` changes (in `drain_worker` on `Compiled`) or when the
     // active stage switches between Structural and IndexReduction (each
@@ -470,7 +465,6 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
-            cached_specimen_width: None,
             cached_report_stage: None,
             cached_spy_plot: None,
             cached_incidence: None,
@@ -495,11 +489,6 @@ impl App {
         app.rescan();
         app.load_libraries();
         app
-    }
-
-    /// Switch the active UI mode (Tour / Specimen / Debug).
-    pub fn set_mode(&mut self, mode: UiMode) {
-        self.ui_mode = mode;
     }
 
     /// Parse the multi-line library text field into a list of paths, one per
@@ -547,7 +536,6 @@ impl App {
             .iter()
             .filter_map(|p| read_purpose(p).map(|hint| (p.clone(), hint)))
             .collect();
-        self.cached_specimen_width = None;
     }
 
     /// Find a specimen by model name (e.g. "BouncingBall" → `specimens/BouncingBall.mo`).
@@ -603,7 +591,7 @@ impl App {
         self.pending_live_debug = None;
         // Clear any stale pending_stage — a plain LoadSpecimen link should not
         // carry over a stage override from a previous LoadAndSwitch click.
-        // LoadAndSwitch sets pending_stage BEFORE calling open().
+        // LoadAndSwitch calls open() first, then sets pending_stage.
         self.pending_stage = None;
         // Start with the log view so the user sees compilation progress.
         self.log_entries.clear();
@@ -981,7 +969,7 @@ impl App {
                         };
                         let is_tracked = tracked == Some(name.as_str());
                         let color = if is_tracked {
-                            egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)
+                            crate::colors::TRACKED_GOLD
                         } else {
                             series_color(i)
                         };
@@ -1078,7 +1066,7 @@ impl App {
                 ui.add_space(6.0);
                 ui.strong("Diff stages");
                 ui.label(
-                    "Every capture publishes all five stages\u{2019} full IR, so Claude can compare any \
+                    "Every capture publishes all stages\u{2019} full IR, so Claude can compare any \
                      two on request. Capture anything, then ask in the chat — e.g. \u{201c}what did \
                      Typecheck change vs Instantiate?\u{201d} (the resolved type_ids) or \u{201c}diff Parse and \
                      Resolve here\u{201d} (def_ids filled in) — and Claude reads the two stages and reports \
@@ -1269,7 +1257,7 @@ impl App {
                         for v in &sheet.variables {
                             let is_tracked = tracked == Some(v.name.as_str());
                             let highlight = if is_tracked {
-                                egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40)
+                                crate::colors::TRACKED_FILL_MEDIUM
                             } else {
                                 egui::Color32::TRANSPARENT
                             };
@@ -1372,7 +1360,7 @@ impl App {
 
                     if is_tracked {
                         text = text.background_color(
-                            egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40),
+                            crate::colors::TRACKED_FILL_MEDIUM,
                         );
                     } else if is_eq_linked {
                         text = text.background_color(
@@ -1782,7 +1770,7 @@ impl eframe::App for App {
                                                     let ident_text = &line[*start..*end];
                                                     let is_tracked = tracked == Some(name.as_str());
                                                     let color = if is_tracked {
-                                                        egui::Color32::from_rgb(0xFF, 0xD5, 0x4F)
+                                                        crate::colors::TRACKED_GOLD
                                                     } else {
                                                         egui::Color32::from_rgb(0x64, 0xB5, 0xF6)
                                                     };
@@ -2175,14 +2163,13 @@ impl eframe::App for App {
                 }
 
                 // Tracking indicator: shows which identifier is being tracked.
-                if self.tracked_identifier.is_some() {
-                    let name = self.tracked_identifier.clone().unwrap();
+                if let Some(name) = self.tracked_identifier.clone() {
                     let mut clear = false;
                     ui.horizontal(|ui| {
                         ui.label(
                             egui::RichText::new(format!("Tracking: {name}"))
                                 .monospace()
-                                .color(egui::Color32::from_rgb(0xFF, 0xD5, 0x4F))
+                                .color(crate::colors::TRACKED_GOLD)
                         );
                         if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
                             clear = true;
@@ -2654,17 +2641,8 @@ fn tab_label(
     }
 }
 
-/// The field name to look up generic help for = the last object-key segment in
-/// the clicked path (an array-index tail falls back to its enclosing field).
-///
-/// A `Seg` (from the bridge module) represents one segment of a JSON path:
-/// - `Seg::Key(String)` — an object field name (e.g. "equations", "lhs", "type_id")
-/// - `Seg::Index(usize)` — an array index (e.g. the `3` in `equations[3]`)
-///
-/// When the user clicks a tree node, the tree inspector produces a path like
 #[cfg(test)]
 impl App {
-    #[cfg(test)]
     fn test_default() -> Self {
         Self::test_with_sender().0
     }
@@ -2713,7 +2691,6 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
-            cached_specimen_width: None,
             cached_report_stage: None,
             cached_spy_plot: None,
             cached_incidence: None,

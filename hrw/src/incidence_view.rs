@@ -330,7 +330,7 @@ impl IncidenceMatrix {
                     egui::pos2(hc as f32, 0.0),
                     egui::vec2(1.0, self.n_eq as f32),
                 );
-                let highlight_color = egui::Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30);
+                let highlight_color = crate::colors::TRACKED_FILL;
                 painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
             }
         }
@@ -459,9 +459,6 @@ impl IncidenceMatrix {
     }
 }
 
-// Truncate a label to at most `max` bytes for display, safely handling
-// multi-byte UTF-8 (falls back to the full string if `max` splits a
-// character boundary).
 #[cfg(test)]
 mod tests {
     use super::*;
