@@ -130,11 +130,7 @@ fn categorize_origin(origin: &str) -> EquationCategory {
     }
 }
 
-/// Convert a byte offset to a 1-based line number by counting newlines.
-fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
-    let clamped = byte_offset.min(source.len());
-    source[..clamped].bytes().filter(|&b| b == b'\n').count() as u32 + 1
-}
+use crate::byte_offset_to_line;
 
 /// Scan the specimen source for `connect(A, B)` statements. Returns a vec
 /// of `(line_number, component_a, component_b)` where the components are

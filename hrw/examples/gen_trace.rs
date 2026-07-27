@@ -8,7 +8,8 @@
 //! (see `docs/updating-rumoca.md`), then review the narrative against the diff.
 //!
 //! ```text
-//! cargo run --example gen_trace -- ProportionalLoop
+//! cargo run --example gen_trace -- ProportionalLoop   # one specimen
+//! cargo run --example gen_trace -- --all              # all specimens
 //! ```
 //!
 //! Uses `hrw::worker::compile_specimen` and `simulate_specimen` — the exact paths
@@ -38,22 +39,62 @@ fn msl_roots() -> Vec<PathBuf> {
 }
 
 fn main() {
-    let name = std::env::args().nth(1).unwrap_or_else(|| {
+    let arg = std::env::args().nth(1).unwrap_or_else(|| {
         eprintln!("usage: cargo run --example gen_trace -- <SpecimenName>");
+        eprintln!("       cargo run --example gen_trace -- --all");
         std::process::exit(2);
     });
+
+    if arg == "--all" {
+        let root = env!("CARGO_MANIFEST_DIR");
+        let specimens_dir = PathBuf::from(format!("{root}/specimens"));
+        let mut names: Vec<String> = std::fs::read_dir(&specimens_dir)
+            .expect("read specimens dir")
+            .filter_map(|e| {
+                let e = e.ok()?;
+                let name = e.file_name().to_string_lossy().to_string();
+                name.strip_suffix(".mo").map(|n| n.to_owned())
+            })
+            .collect();
+        names.sort();
+        let total = names.len();
+        let mut failed = Vec::new();
+        for (i, name) in names.iter().enumerate() {
+            eprintln!("[{}/{}] {name}", i + 1, total);
+            if let Err(e) = generate_trace(name) {
+                eprintln!("  FAILED: {e}");
+                failed.push(name.clone());
+            }
+        }
+        if failed.is_empty() {
+            eprintln!("\nAll {total} specimens traced successfully.");
+        } else {
+            eprintln!("\n{} of {total} failed: {}", failed.len(), failed.join(", "));
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    let name = &arg;
+    generate_trace(name).unwrap_or_else(|e| {
+        eprintln!("FAILED: {e}");
+        std::process::exit(1);
+    });
+}
+
+fn generate_trace(name: &str) -> Result<(), String> {
     let root = env!("CARGO_MANIFEST_DIR");
     let specimen = PathBuf::from(format!("{root}/specimens/{name}.mo"));
     let source = std::fs::read_to_string(&specimen)
-        .unwrap_or_else(|e| panic!("read {}: {e}", specimen.display()));
+        .map_err(|e| format!("read {}: {e}", specimen.display()))?;
 
     let FromWorker::Compiled {
         model, stages, ..
-    } = compile_specimen(&specimen, msl_roots()).expect("compile specimen")
+    } = compile_specimen(&specimen, msl_roots()).map_err(|e| format!("compile: {e}"))?
     else {
-        panic!("expected a Compiled result");
+        return Err("expected a Compiled result".into());
     };
-    let model = model.unwrap_or_else(|| name.clone());
+    let model = model.unwrap_or_else(|| name.to_owned());
     let by_name: [(&str, &Stage); 10] = [
         ("parse", &stages.parse),
         ("resolve", &stages.resolve),
@@ -68,7 +109,7 @@ fn main() {
     ];
 
     let trace_dir = PathBuf::from(format!("{root}/docs/specimen-notebook/{model}/trace"));
-    std::fs::create_dir_all(&trace_dir).expect("create trace dir");
+    std::fs::create_dir_all(&trace_dir).map_err(|e| format!("create trace dir: {e}"))?;
 
     // --- Compilation trace ---
     let mut manifest_stages = serde_json::Map::new();
@@ -77,7 +118,7 @@ fn main() {
         if let Some(value) = &stage.value {
             let path = trace_dir.join(format!("{stage_name}.json"));
             std::fs::write(&path, format!("{}\n", serde_json::to_string_pretty(value).unwrap()))
-                .expect("write stage IR");
+                .map_err(|e| format!("write {stage_name}: {e}"))?;
         }
         manifest_stages.insert(
             stage_name.to_owned(),
@@ -95,7 +136,7 @@ fn main() {
                     trace_dir.join("simulation.json"),
                     format!("{}\n", serde_json::to_string_pretty(&sim_json).unwrap()),
                 )
-                .expect("write simulation trace");
+                .map_err(|e| format!("write simulation: {e}"))?;
                 eprintln!(
                     "  simulation: {} variables, {} time points, t_end={SIM_T_END}",
                     data.names.len(),
@@ -139,9 +180,10 @@ fn main() {
         trace_dir.join("manifest.json"),
         format!("{}\n", serde_json::to_string_pretty(&manifest).unwrap()),
     )
-    .expect("write manifest");
+    .map_err(|e| format!("write manifest: {e}"))?;
 
-    eprintln!("wrote trace for {model} → {}", trace_dir.display());
+    eprintln!("  wrote trace for {model} → {}", trace_dir.display());
+    Ok(())
 }
 
 /// Build a JSON summary of simulation results: variable names, final values,

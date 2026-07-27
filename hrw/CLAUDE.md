@@ -18,11 +18,10 @@ visibility / adding observation hooks in the `../crates/rumoca-*` crates** — i
 instrumentation, and it must stay **additive, observation-only, and upstreamable** (see
 [`DECISIONS.md`](DECISIONS.md)).
 
-**Current initiative — End-to-end tour upgrade** ([`docs/end-to-end-tour-plan.md`](docs/end-to-end-tour-plan.md)):
-upgrade the reading tour to an interactive HRW-driven walkthrough by building three visualization
-features: (1) equation sheet (#27), (2) source-to-equation traceability (#28, depends on #27),
-(3) solver stepping (#29, independent). Then wire them into the tour document. Infrastructure
-features are medium-independent — build them now; refine the narrative later from Cellier reading.
+**Completed initiative — End-to-end tour upgrade** ([`docs/end-to-end-tour-plan.md`](docs/end-to-end-tour-plan.md)):
+all three visualization features are delivered: (1) equation sheet (#27), (2) source-to-equation
+traceability (#28), (3) solver stepping (#29). The tour document is wired to these views. Only the
+manual verification stop ("verify every stop works with a fresh MotorWithBrake load") remains open.
 
 **Current work — Pass two, in this order:**
 1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than
@@ -55,7 +54,7 @@ instrumented" gap (Doug, 2026-07-20).
 initialization observable (`RcCircuit` IC plan + relaxation; `CapacitorLoop` structural + `OverInitRc`
 init-determinacy blow-ups). **Arc 4 closed:** index reduction on `Drivetrain`; the nonlinear four-bar +
 planar library (`lib/PlanarMechanics.mo`) parked/deferred (`docs/ideas.md` #5). Arc 1–7 done (Parse …
-Simulation + BLT spy-plot + the 12-specimen notebook). **New pipeline stages must be wired into the
+Simulation + BLT spy-plot + the 14-specimen notebook). **New pipeline stages must be wired into the
 stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
 `hrw-stage-diff-highlight-extend` memory).
 

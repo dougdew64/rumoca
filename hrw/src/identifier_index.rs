@@ -163,10 +163,7 @@ fn find_whole_identifier(haystack: &str, needle: &str) -> Option<usize> {
     find_whole_identifier_impl(haystack, needle, false)
 }
 
-fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
-    let clamped = byte_offset.min(source.len());
-    source[..clamped].bytes().filter(|&b| b == b'\n').count() as u32 + 1
-}
+use crate::byte_offset_to_line;
 
 #[cfg(test)]
 mod tests {

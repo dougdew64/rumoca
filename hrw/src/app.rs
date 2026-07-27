@@ -23,7 +23,7 @@
 //! Eframe shell (charter §4.2.1, §4.4): a file picker over the specimen
 //! directory, a library-path (source-root) configuration for dependency
 //! resolution, and the generic serde-value tree inspector showing each stage's
-//! IR for the selected model. Stages present so far: Parse, Resolve.
+//! IR for the selected model.
 
 use std::path::{Path, PathBuf};
 
@@ -314,7 +314,7 @@ pub struct App {
     cached_before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
     before_incidence_canvas: Canvas,
 
-    // ---- 14. Markdown rendering ----
+    // ---- 13. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
     // narrative rendering so heading IDs and image state persist across frames.
     commonmark_cache: egui_commonmark::CommonMarkCache,
@@ -323,14 +323,14 @@ pub struct App {
     // The selected specimen's Modelica source text, loaded on demand.
     cached_source: Option<String>,
 
-    // ---- 15. Pending stage from hrw:// link ----
+    // ---- 14. Pending stage from hrw:// link ----
     // When an hrw://load/Specimen/Stage link fires, the stage can't be applied
     // immediately — compilation is async and drain_worker will auto-select the
     // last successful stage. This field defers the stage switch until the
     // Compiled message arrives.
     pending_stage: Option<StageKind>,
 
-    // ---- 16. Deferred live debug spawn (ack handshake) ----
+    // ---- 15. Deferred live debug spawn (ack handshake) ----
     // When the Debug button is clicked, `arm_live_trace_breakpoint` writes a
     // breakpoint request to `.hrw-bridge/breakpoint-request.json`. The algorithm
     // thread is NOT spawned immediately — the VS Code extension must process the

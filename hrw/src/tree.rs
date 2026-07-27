@@ -394,3 +394,186 @@ fn header_tracked(key: &str, hint: &str) -> egui::RichText {
         .color(crate::colors::TRACKED_GOLD)
         .strong()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    // --- nav_target ---
+
+    #[test]
+    fn nav_target_returns_none_for_non_def_id_key() {
+        let index = BTreeMap::new();
+        assert!(nav_target("name", &json!(42), &index).is_none());
+    }
+
+    #[test]
+    fn nav_target_returns_none_for_missing_id() {
+        let index = BTreeMap::new();
+        assert!(nav_target("type_def_id", &json!(999), &index).is_none());
+    }
+
+    #[test]
+    fn nav_target_returns_none_for_non_class() {
+        let mut index = BTreeMap::new();
+        index.insert(42, DefInfo {
+            name: "someVar".into(),
+            kind: crate::worker::DefKind::Definition,
+            class_type: None,
+            file_name: None,
+            line: None,
+        });
+        assert!(nav_target("def_id", &json!(42), &index).is_none());
+    }
+
+    #[test]
+    fn nav_target_returns_class_name() {
+        let mut index = BTreeMap::new();
+        index.insert(100, DefInfo {
+            name: "Modelica.Mechanics.Rotational.Inertia".into(),
+            kind: crate::worker::DefKind::Class,
+            class_type: Some("model".into()),
+            file_name: None,
+            line: None,
+        });
+        assert_eq!(
+            nav_target("type_def_id", &json!(100), &index).as_deref(),
+            Some("Modelica.Mechanics.Rotational.Inertia"),
+        );
+    }
+
+    #[test]
+    fn nav_target_works_for_base_def_id() {
+        let mut index = BTreeMap::new();
+        index.insert(7, DefInfo {
+            name: "Base.Model".into(),
+            kind: crate::worker::DefKind::Class,
+            class_type: Some("model".into()),
+            file_name: None,
+            line: None,
+        });
+        assert_eq!(nav_target("base_def_id", &json!(7), &index).as_deref(), Some("Base.Model"));
+    }
+
+    #[test]
+    fn nav_target_returns_none_for_non_numeric_value() {
+        let mut index = BTreeMap::new();
+        index.insert(1, DefInfo {
+            name: "X".into(),
+            kind: crate::worker::DefKind::Class,
+            class_type: Some("model".into()),
+            file_name: None,
+            line: None,
+        });
+        assert!(nav_target("def_id", &json!("not a number"), &index).is_none());
+    }
+
+    // --- def_annotation ---
+
+    #[test]
+    fn def_annotation_returns_none_for_non_def_key() {
+        let index = BTreeMap::new();
+        assert!(def_annotation("name", &json!(42), &index).is_none());
+    }
+
+    #[test]
+    fn def_annotation_returns_label_for_class() {
+        let mut index = BTreeMap::new();
+        index.insert(55, DefInfo {
+            name: "Modelica.SIunits.Angle".into(),
+            kind: crate::worker::DefKind::Class,
+            class_type: Some("type".into()),
+            file_name: None,
+            line: None,
+        });
+        assert_eq!(
+            def_annotation("type_def_id", &json!(55), &index).as_deref(),
+            Some("type Modelica.SIunits.Angle"),
+        );
+    }
+
+    #[test]
+    fn def_annotation_returns_label_for_definition() {
+        let mut index = BTreeMap::new();
+        index.insert(10, DefInfo {
+            name: "someComponent".into(),
+            kind: crate::worker::DefKind::Definition,
+            class_type: None,
+            file_name: None,
+            line: None,
+        });
+        assert_eq!(
+            def_annotation("def_id", &json!(10), &index).as_deref(),
+            Some("someComponent"),
+        );
+    }
+
+    // --- collect_tracked_ancestors ---
+
+    #[test]
+    fn collect_tracked_ancestors_finds_string_leaf() {
+        let tree = json!({"a": {"b": "target"}});
+        let mut set = HashSet::new();
+        let found = collect_tracked_ancestors(&tree, "target", &mut set);
+        assert!(found);
+        assert!(set.contains(&(&tree as *const Value)));
+    }
+
+    #[test]
+    fn collect_tracked_ancestors_finds_nested_match() {
+        let inner = json!({"name": "h"});
+        let tree = json!({"components": [inner]});
+        let mut set = HashSet::new();
+        let found = collect_tracked_ancestors(&tree, "h", &mut set);
+        assert!(found);
+        assert!(set.len() >= 2, "root and at least one intermediate should be in the set");
+    }
+
+    #[test]
+    fn collect_tracked_ancestors_returns_false_when_absent() {
+        let tree = json!({"a": 1, "b": "other"});
+        let mut set = HashSet::new();
+        let found = collect_tracked_ancestors(&tree, "missing", &mut set);
+        assert!(!found);
+        assert!(set.is_empty());
+    }
+
+    #[test]
+    fn collect_tracked_ancestors_matches_object_key() {
+        let tree = json!({"h": 42});
+        let mut set = HashSet::new();
+        let found = collect_tracked_ancestors(&tree, "h", &mut set);
+        assert!(found);
+    }
+
+    #[test]
+    fn collect_tracked_ancestors_uses_matches_tracked_for_strings() {
+        let tree = json!({"eq": "der(h) - v"});
+        let mut set = HashSet::new();
+        let found = collect_tracked_ancestors(&tree, "h", &mut set);
+        assert!(found, "should match 'h' inside 'der(h) - v' via matches_tracked");
+    }
+
+    #[test]
+    fn collect_tracked_ancestors_rejects_substring_in_key() {
+        let tree = json!({"height": 1.0});
+        let mut set = HashSet::new();
+        let found = collect_tracked_ancestors(&tree, "h", &mut set);
+        assert!(!found, "key 'height' should not match tracked 'h'");
+    }
+
+    // --- header / header_tracked ---
+
+    #[test]
+    fn header_formats_key_and_hint() {
+        let rt = header("components", "{5}");
+        assert_eq!(rt.text(), "components  {5}");
+    }
+
+    #[test]
+    fn header_tracked_formats_key_and_hint() {
+        let rt = header_tracked("h", "[3]");
+        assert_eq!(rt.text(), "h  [3]");
+    }
+}

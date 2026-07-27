@@ -807,6 +807,9 @@ right-click on a Modelica identifier.
 
 ## 27. Equation sheet — the flat DAE in readable math notation
 
+**✅ Implemented 2026-07-25.** `equation_sheet.rs` renders the flat DAE as readable
+equations with a precedence-aware pretty-printer (`expr_format.rs`).
+
 Captured 2026-07-24 (Doug + Claude). The Flatten tab today shows the flat DAE as a
 JSON tree. Enhancement: render the system of equations in **readable mathematical
 notation** — one equation per line, variables and operators formatted as math, not
@@ -838,6 +841,9 @@ as nested JSON objects.
   with event conditions annotated).
 
 ## 28. Source-to-equation traceability — bridging the OO/flat divide
+
+**✅ Implemented 2026-07-25.** `source_map_ui()` in `app.rs` renders a side-by-side
+source-code / equation view with cross-highlighting.
 
 Captured 2026-07-24 (Doug + Claude). A side-by-side or linked view showing which
 Modelica source lines produced which equations in the flat DAE.
@@ -871,6 +877,9 @@ Modelica source lines produced which equations in the flat DAE.
   a right-click on a `connect` statement.
 
 ## 29. Solver stepping visualization — what the integrator does at each time step
+
+**✅ Implemented 2026-07-25.** Solver diagnostics (step size, Newton iterations,
+convergence) are plotted in `simulation_pane()` alongside trajectory plots.
 
 Captured 2026-07-24 (Doug + Claude). During simulation, visualize the solver's
 internal decisions at each time step: step size adaptation, Newton iteration counts,

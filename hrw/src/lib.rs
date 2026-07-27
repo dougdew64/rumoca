@@ -72,6 +72,12 @@ pub fn truncate_label(s: &str, max: usize) -> &str {
     }
 }
 
+/// Convert a byte offset into a 1-based line number by counting newlines.
+pub fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
+    let clamped = byte_offset.min(source.len());
+    source[..clamped].bytes().filter(|&b| b == b'\n').count() as u32 + 1
+}
+
 /// Shared animation playback controls (play/pause/reset/step/speed slider).
 /// Used by both matching and Tarjan animation views.
 pub fn animation_controls(

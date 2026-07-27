@@ -3,7 +3,7 @@
 //!
 //! Follows the same dual-mode pattern as `matching_anim` and `tarjan_anim`:
 //! - **Recorded**: pre-computed frames from the compilation worker (play/pause/step)
-//! - **Live**: reads frames from a shared `LiveTrace` buffer as a debugger
+//! - **Live**: reads frames from an `mpsc` channel receiver as a debugger
 //!   steps through the algorithm on a worker thread
 
 use std::sync::atomic::{AtomicBool, Ordering};

@@ -31,7 +31,7 @@ use crate::incidence_view::IncidenceMatrix;
 
 /// Animation state machine — supports three modes:
 /// 1. **Recorded**: pre-computed frames from `from_incidence` (play/pause/step)
-/// 2. **Live**: reads frames from a shared `LiveTrace` buffer as a debugger
+/// 2. **Live**: reads frames from an `mpsc` channel receiver as a debugger
 ///    steps through the algorithm on a worker thread
 pub struct MatchingAnimation {
     frames: Vec<MatchingFrame>,
@@ -160,7 +160,7 @@ impl MatchingAnimation {
 
     /// Render the animation controls and the annotated incidence matrix.
     pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
-        // In live mode, sync new frames from the shared buffer.
+        // In live mode, sync new frames from the channel receiver.
         self.sync_live();
 
         if self.frames.is_empty() {
