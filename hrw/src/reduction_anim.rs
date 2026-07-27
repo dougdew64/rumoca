@@ -249,7 +249,15 @@ fn render_step(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
         IndexReductionStep::BeginState { state } => (
             "\u{1f50d}",
             crate::colors::ANIM_EXPLORE,
-            format!("Round {}: searching for a constraint to differentiate for state {state}", frame.round),
+            // Future tense on purpose. `BeginState` is emitted on *entering* the
+            // loop for this state, before any equation is examined — the outcome
+            // arrives in the next frame (Differentiated or CandidateExhausted).
+            // Every other step here reports a result, so this one has to be
+            // visibly the odd one out or it reads as work already done.
+            format!(
+                "Round {}: state {state} \u{2014} about to search for a constraint to differentiate",
+                frame.round,
+            ),
         ),
         IndexReductionStep::Differentiated { state, .. } => (
             "\u{2702}",
