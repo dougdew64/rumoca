@@ -6,66 +6,15 @@ completed; clear completed items at the end of each cycle.
 
 Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 items
 fixed in the 2026-07-25 cycle, plus 25 items completed in the 2026-07-25
-sweep (gold colors, dead code, tracking fix, stale comments, zoom/layout/color
-constants, section_header dedup, identifier matching dedup, debug dropdown,
-Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
-3 test coverage gaps filled). See git history for details.
+sweep, plus 20 items completed in the 2026-07-26 sweep (stale LiveTrace docs,
+architecture.md updates, ideas/CLAUDE.md updates, byte_offset_to_line dedup,
+Tarjan borrow consistency, field group numbering, tree.rs tests, traced
+index-reduction tests, gen_trace --all, GearWithBrake narrative). See git
+history for details.
 
 ---
 
-## Stale comments / docs (from channel-based LiveTrace refactor)
-
-- [x] **Stale module doc in `matching_anim.rs` line 34.**
-  Fixed: now says "from an mpsc channel receiver".
-
-- [x] **Stale comment in `matching_anim.rs` line 163.**
-  Fixed: now says "from the channel receiver".
-
-- [x] **Stale module doc in `reduction_anim.rs` line 6.**
-  Fixed: now says "from an mpsc channel receiver".
-
-- [x] **Stale doc comment in `matching.rs` line 46.**
-  Fixed: now says `live_trace_breakpoint`.
-
-- [x] **Stale module doc in `app.rs` lines 23–26.**
-  Fixed: removed "Stages present so far: Parse, Resolve".
-
-## Stale docs (architecture.md line counts and structure)
-
-- [x] **Line counts in `architecture.md` are stale.**
-  Fixed: updated all file line counts.
-
-- [x] **Test count in `architecture.md` section 10.**
-  Fixed: updated to current count.
-
-- [x] **Crate structure tree in `architecture.md` section 2 omits `reduction_anim.rs`.**
-  Fixed: added to tree listing.
-
-- [x] **App struct field group numbering skips 13 (12→14).**
-  Fixed in both `app.rs` and `architecture.md`: renumbered 14→13, 15→14, 16→15.
-
-## Stale docs (ideas.md, CLAUDE.md)
-
-- [x] **`ideas.md` #27, #28, #29 not marked done.**
-  Fixed: added "Implemented" banners.
-
-- [x] **`CLAUDE.md` says "12-specimen notebook".**
-  Fixed: updated to 14.
-
-- [x] **`CLAUDE.md` "Current initiative" describes delivered features as current work.**
-  Fixed: updated to "Completed initiative".
-
 ## Test gaps
-
-- [x] **`tree.rs` has zero unit tests.**
-  Fixed: 17 tests covering `nav_target`, `def_annotation`,
-  `collect_tracked_ancestors`, `header`, and `header_tracked`.
-
-- [x] **No tests for traced index-reduction paths.**
-  Fixed: added `emit_index_reduction_frame_pushes_to_both_vec_and_live_trace`
-  and `emit_index_reduction_frame_works_without_live_trace` at the crate level,
-  paralleling matching/tarjan `live_trace_receives_same_frames_as_returned`.
-  HRW-level traced-reduction tests already existed (`drivetrain_index_reduction_produces_trace_frames`).
 
 - [ ] **Flaky `output_capture_handles_large_write_without_deadlock` test.**
   Captures 0 bytes instead of 128KB. Pre-existing failure unrelated to recent
@@ -75,15 +24,9 @@ Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
 
 ## Code quality / duplication
 
-- [x] **Duplicated `byte_offset_to_line()` function.**
-  Fixed: extracted to `lib.rs`, both call sites now use `crate::byte_offset_to_line`.
-
 - [ ] **`generic_error_summary()` is 217 lines.**
   Dispatches on 6 error kinds with inline UI. Each branch could be a helper.
   *File:* `app.rs` lines ~1573–1789.
-
-- [x] **Tarjan `TracedTarjanState` owns `LiveTrace` (cloned), inconsistent with matching/reduction (borrow-based).**
-  Fixed: `TracedTarjanState` now borrows `&'a LiveTrace` like matching and reduction.
 
 - [ ] **`ui()` is ~887 lines.** *(deferred — large structural refactor)*
   *File:* `app.rs`.
@@ -112,9 +55,6 @@ Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
 
 ## Build process / specimen notebook
 
-- [x] **No batch trace regeneration.**
-  Fixed: `gen_trace` now supports `--all` flag.
-
 - [ ] **No batch narrative regeneration.**
   Narratives are written one at a time by Claude. After a Rumoca rebase or
   trace regeneration, all 14 narratives may need review/refresh — no script
@@ -122,8 +62,17 @@ Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
   specimens and invokes Claude for each narrative, or at minimum a checklist
   in `docs/updating-rumoca.md`).
 
-- [x] **GearWithBrake has a trace but no `narrative.md`.**
-  Fixed: narrative written covering all 10 pipeline stages.
+## Debugging
+
+- [ ] **LLDB step-over deadlocks during live-trace debugging.**
+  Stepping over (`F10`) in VS Code's CodeLLDB debugger deadlocks when a
+  breakpoint is inside a Rumoca algorithm that pushes to a LiveTrace channel
+  (e.g. `live_trace_breakpoint` in matching). Continue (`F5`) between
+  breakpoints works; only step-over hangs. Tested with
+  `thread step-over -m all-threads` — same deadlock. Hypothesised to be a
+  WSL2 ptrace issue, but not yet confirmed on native Windows. Migrating to
+  native Windows (where CodeLLDB uses Windows debug APIs instead of ptrace)
+  is the planned next diagnostic step.
 
 ## Robustness
 
