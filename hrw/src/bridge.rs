@@ -61,6 +61,14 @@ use serde_json::{json, Value};
 
 use crate::worker::{DefInfo, StageKind};
 
+/// Strip the `\\?\` extended-length prefix that `std::fs::canonicalize` adds on Windows.
+#[cfg(windows)]
+fn strip_windows_prefix(p: &Path) -> PathBuf {
+    p.to_str()
+        .and_then(|s| s.strip_prefix(r"\\?\"))
+        .map_or_else(|| p.to_path_buf(), PathBuf::from)
+}
+
 /// Path to the bridge directory, resolved at compile time via `CARGO_MANIFEST_DIR`.
 ///
 /// Using `CARGO_MANIFEST_DIR` (the directory containing `Cargo.toml`) makes
@@ -304,6 +312,10 @@ pub fn check_breakpoint_ack() -> bool {
 /// canonical path and 1-based line number.
 fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
     let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
+    // On Windows, canonicalize produces \\?\C:\... extended-length paths.
+    // LLDB doesn't recognize that prefix, so strip it for breakpoint matching.
+    #[cfg(windows)]
+    let file = strip_windows_prefix(&file);
     let source = fs::read_to_string(&file)?;
     let line = source
         .lines()
