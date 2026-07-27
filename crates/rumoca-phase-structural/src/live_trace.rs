@@ -1,23 +1,28 @@
-//! Shared trace buffer for live-stepped algorithm observation.
+//! Channel-based trace buffer for live-stepped algorithm observation.
 //!
-//! A `LiveTrace<F>` wraps an `Arc<Mutex<Vec<F>>>` that the traced algorithm
-//! pushes frames into while a separate thread (typically a UI) reads them.
+//! A `LiveTrace<F>` sends frames through an `mpsc` channel that the UI thread
+//! drains without contention. The producer (`Sender`) and consumer (`Receiver`)
+//! share no application-level lock — `push()` never blocks on the UI thread.
+//!
 //! The key debugging technique: set a breakpoint on [`live_trace_breakpoint`] —
 //! each time the debugger pauses there, the UI thread can read the latest
 //! frame and render the algorithm's current state.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc};
 use std::time::Duration;
 
-/// A thread-safe trace buffer shared between an algorithm producer and a
-/// UI consumer. Clone the `LiveTrace` to share it across threads (cloning
-/// shares the same underlying buffer via `Arc`).
+/// Producer half of the live trace channel.
+///
+/// The algorithm thread owns this and calls [`push`](Self::push) to send frames.
+/// No lock is shared with the UI thread — `Sender::send()` takes `&self` and
+/// uses internal synchronization, so no `Mutex` wrapper is needed.
 ///
 /// Generic over the frame type `F` — works with `MatchingFrame`,
-/// `TarjanFrame`, or any future traced-algorithm frame type.
+/// `TarjanFrame`, `IndexReductionFrame`, or any future traced-algorithm type.
 pub struct LiveTrace<F> {
-    frames: Arc<Mutex<Vec<F>>>,
+    tx: mpsc::Sender<F>,
+    len: Arc<AtomicUsize>,
     /// When set, `push` sleeps for this duration after each frame, giving a
     /// UI thread time to poll and render before the debugger pauses all
     /// threads at the [`live_trace_breakpoint`] call.
@@ -27,16 +32,27 @@ pub struct LiveTrace<F> {
 impl<F> Clone for LiveTrace<F> {
     fn clone(&self) -> Self {
         LiveTrace {
-            frames: Arc::clone(&self.frames),
+            tx: self.tx.clone(),
+            len: Arc::clone(&self.len),
             frame_delay: self.frame_delay,
         }
     }
 }
 
-impl<F: Clone> LiveTrace<F> {
-    /// Create a new empty live trace buffer (no inter-frame delay).
-    pub fn new() -> Self {
-        LiveTrace { frames: Arc::new(Mutex::new(Vec::new())), frame_delay: None }
+impl<F: Send + 'static> LiveTrace<F> {
+    /// Create a new live trace channel pair.
+    ///
+    /// Returns the producer (for the algorithm thread) and the receiver (for
+    /// the UI/animation struct). The producer is `Send + Clone`; the receiver
+    /// is `Send` but not `Clone` — exactly one consumer.
+    pub fn new() -> (Self, mpsc::Receiver<F>) {
+        let (tx, rx) = mpsc::channel();
+        let lt = LiveTrace {
+            tx,
+            len: Arc::new(AtomicUsize::new(0)),
+            frame_delay: None,
+        };
+        (lt, rx)
     }
 
     /// Builder: add an inter-frame delay so a UI thread can render each
@@ -47,17 +63,28 @@ impl<F: Clone> LiveTrace<F> {
         self
     }
 
-    /// Push a frame into the shared buffer.
+    /// Block until the debugger is attached by hitting `live_trace_breakpoint`
+    /// before the algorithm produces any frames. Call this at the top of the
+    /// live-debug thread — the debugger pauses here on the first Continue (F5),
+    /// so no algorithm steps are missed.
+    ///
+    /// The sleep covers the gap between the bridge ack (which fires after
+    /// `vscode.debug.addBreakpoints` is *called*) and LLDB actually installing
+    /// the breakpoint (async). Without it, the thread can race past the
+    /// breakpoint before LLDB has finished setting it up.
+    pub fn wait_for_debugger(&self) {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        live_trace_breakpoint(usize::MAX);
+    }
+
+    /// Send a frame to the consumer.
     ///
     /// When a `frame_delay` is set (see [`with_frame_delay`]), this method
-    /// sleeps after the push and then calls [`live_trace_breakpoint`] —
+    /// sleeps after the send and then calls [`live_trace_breakpoint`] —
     /// **set your debugger breakpoint on that function**, not here.
     pub fn push(&self, frame: F) {
-        let index = {
-            let mut buf = self.frames.lock().expect("live trace lock poisoned");
-            buf.push(frame);
-            buf.len() - 1
-        };
+        let index = self.len.fetch_add(1, Ordering::Release);
+        let _ = self.tx.send(frame);
         if let Some(delay) = self.frame_delay {
             std::thread::sleep(delay);
             // ---- DEBUGGER: set breakpoint on the next line ----
@@ -65,31 +92,14 @@ impl<F: Clone> LiveTrace<F> {
         }
     }
 
-    /// Number of frames recorded so far.
+    /// Number of frames sent so far.
     pub fn len(&self) -> usize {
-        self.frames.lock().expect("live trace lock poisoned").len()
+        self.len.load(Ordering::Acquire)
     }
 
-    /// Whether the buffer is empty.
+    /// Whether any frames have been sent.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    /// Clone all frames out of the buffer. Used by the UI to get the
-    /// full trace when the algorithm completes.
-    pub fn snapshot(&self) -> Vec<F> {
-        self.frames.lock().expect("live trace lock poisoned").clone()
-    }
-
-    /// Clone a single frame by index, if it exists.
-    pub fn get(&self, index: usize) -> Option<F> {
-        self.frames.lock().expect("live trace lock poisoned").get(index).cloned()
-    }
-}
-
-impl<F: Clone> Default for LiveTrace<F> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -103,6 +113,7 @@ impl<F: Clone> Default for LiveTrace<F> {
 ///
 /// `frame_index` is the 0-based index of the frame just pushed — inspect
 /// it in the debugger to know which algorithmic step you're on.
+/// `usize::MAX` indicates the startup gate (before any algorithm work).
 static LAST_FRAME_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 #[inline(never)]
@@ -115,53 +126,59 @@ mod tests {
     use super::*;
 
     #[test]
-    fn push_and_snapshot() {
-        let lt = LiveTrace::new();
+    fn push_and_recv() {
+        let (lt, rx) = LiveTrace::new();
         lt.push(1);
         lt.push(2);
         lt.push(3);
         assert_eq!(lt.len(), 3);
-        assert_eq!(lt.snapshot(), vec![1, 2, 3]);
+        let frames: Vec<_> = rx.try_iter().collect();
+        assert_eq!(frames, vec![1, 2, 3]);
     }
 
     #[test]
-    fn get_returns_cloned_frame() {
-        let lt = LiveTrace::new();
+    fn recv_returns_frame() {
+        let (lt, rx) = LiveTrace::new();
         lt.push("hello".to_string());
-        assert_eq!(lt.get(0), Some("hello".to_string()));
-        assert_eq!(lt.get(1), None);
+        assert_eq!(rx.try_recv().ok(), Some("hello".to_string()));
+        assert!(rx.try_recv().is_err());
     }
 
     #[test]
-    fn clone_shares_buffer() {
-        let lt1 = LiveTrace::new();
+    fn clone_shares_channel() {
+        let (lt1, rx) = LiveTrace::new();
         let lt2 = lt1.clone();
-        lt1.push(42);
-        assert_eq!(lt2.len(), 1);
-        assert_eq!(lt2.get(0), Some(42));
+        lt2.push(42);
+        assert_eq!(lt1.len(), 1);
+        let frames: Vec<_> = rx.try_iter().collect();
+        assert_eq!(frames, vec![42]);
     }
 
     #[test]
     fn empty_initially() {
-        let lt: LiveTrace<i32> = LiveTrace::new();
+        let (lt, _rx) = LiveTrace::<i32>::new();
         assert!(lt.is_empty());
         assert_eq!(lt.len(), 0);
-        assert!(lt.snapshot().is_empty());
     }
 
     #[test]
     fn with_frame_delay_calls_breakpoint() {
-        let lt = LiveTrace::new().with_frame_delay(Duration::from_millis(1));
+        let (lt, rx) = LiveTrace::new();
+        let lt = lt.with_frame_delay(Duration::from_millis(1));
         lt.push(99);
         assert_eq!(lt.len(), 1);
-        assert_eq!(lt.get(0), Some(99));
+        let frames: Vec<_> = rx.try_iter().collect();
+        assert_eq!(frames, vec![99]);
     }
 
     #[test]
     fn frame_delay_propagates_through_clone() {
-        let lt1 = LiveTrace::new().with_frame_delay(Duration::from_millis(1));
+        let (lt1, rx) = LiveTrace::new();
+        let lt1 = lt1.with_frame_delay(Duration::from_millis(1));
         let lt2 = lt1.clone();
         lt2.push(7);
         assert_eq!(lt1.len(), 1);
+        let frames: Vec<_> = rx.try_iter().collect();
+        assert_eq!(frames, vec![7]);
     }
 }

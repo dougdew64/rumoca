@@ -278,9 +278,9 @@ mod tests {
     #[test]
     fn live_trace_receives_same_frames_as_returned() {
         let adj = vec![vec![1], vec![2], vec![0]];
-        let lt = LiveTrace::new();
+        let (lt, rx) = LiveTrace::new();
         let traced = tarjan_scc_with_trace(3, &adj, Some(&lt));
-        let live_frames = lt.snapshot();
+        let live_frames: Vec<_> = rx.try_iter().collect();
         assert_eq!(traced.frames.len(), live_frames.len());
         for (i, (ret, live)) in traced.frames.iter().zip(live_frames.iter()).enumerate() {
             assert_eq!(ret.step, live.step, "frame {i} step mismatch");
