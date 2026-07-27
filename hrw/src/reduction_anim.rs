@@ -135,7 +135,7 @@ impl ReductionAnimation {
         }
 
         let dt = ui.input(|i| i.stable_dt) as f64;
-        if self.playing && !self.is_live() {
+        if self.playing && crate::playback_applies(self.is_live(), self.live_finished()) {
             self.elapsed += dt;
             if self.elapsed >= self.interval {
                 self.elapsed = 0.0;

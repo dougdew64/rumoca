@@ -80,6 +80,20 @@ pub fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
 
 /// Shared animation playback controls (play/pause/reset/step/speed slider).
 /// Used by both matching and Tarjan animation views.
+/// Whether timed playback (Play/Pause and the speed slider) applies.
+///
+/// Suppressed *during* a live debug session: the debugger drives the cursor
+/// one frame per Continue, so a Play button would fight it for control (and
+/// the animations' own `playing && !is_live()` guards make it a no-op anyway).
+///
+/// Restored once the session finishes. The captured frames are then ordinary
+/// recorded frames, and replaying them is exactly what you want after stepping
+/// through the algorithm — previously `live_rx` was never cleared, so the view
+/// stayed in live mode forever and Play never came back without a recompile.
+pub fn playback_applies(is_live: bool, live_finished: bool) -> bool {
+    !is_live || live_finished
+}
+
 pub fn animation_controls(
     ui: &mut eframe::egui::Ui,
     cursor: &mut usize,
@@ -101,7 +115,7 @@ pub fn animation_controls(
             ui.separator();
         }
 
-        if !is_live {
+        if playback_applies(is_live, live_finished) {
             if *playing {
                 if ui.button("\u{23f8} Pause").clicked() {
                     *playing = false;
@@ -141,7 +155,7 @@ pub fn animation_controls(
         ui.separator();
         ui.label(format!("Frame {}/{}", *cursor + 1, n_frames));
 
-        if !is_live {
+        if playback_applies(is_live, live_finished) {
             ui.separator();
             ui.label("Speed:");
             let mut speed_ms = (*interval * 1000.0) as i32;
@@ -210,6 +224,29 @@ pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
     v.and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests_playback {
+    use super::playback_applies;
+
+    /// Play/Pause and the speed slider are hidden only *while* a live debug
+    /// session is running — not after it finishes.
+    ///
+    /// Regression test: `live_rx` is never cleared when a session ends, so
+    /// `is_live()` stays true forever. Gating playback on `!is_live` alone left
+    /// the Play button gone for good once you had used the Debug button, and
+    /// the captured frames could not be replayed without a recompile.
+    #[test]
+    fn playback_hidden_only_during_a_running_live_session() {
+        // Recorded animation: always playable.
+        assert!(playback_applies(false, false));
+        assert!(playback_applies(false, true));
+        // Live session in progress: the debugger owns the cursor.
+        assert!(!playback_applies(true, false));
+        // Live session finished: frames are now ordinary recorded frames.
+        assert!(playback_applies(true, true));
+    }
 }
 
 #[cfg(test)]

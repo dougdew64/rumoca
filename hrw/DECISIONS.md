@@ -697,3 +697,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `isDuplicate` now checks all of `vscode.debug.breakpoints` instead of only the ones it armed, so a
   hand-set breakpoint suppresses the bridge's — and because `handleRemove` only removes what the
   extension added, the user's breakpoint survives the end of the session.
+- **2026-07-27 — Playback controls return when a live session finishes (`playback_applies`).**
+  Play/Pause and the speed slider were gated on `!is_live`, and `live_rx` is never cleared once
+  `start_live` sets it — so `is_live()` stays true for the animation's lifetime and the controls
+  vanished permanently after any use of the Debug button. Since the three-tier design (snapshot →
+  replay → live trace) exists so the tiers reinforce each other, losing replay as the price of live
+  trace was backwards. Playback is now suppressed only *while* a session runs
+  (`playback_applies(is_live, live_finished)`), which had to be applied both to the control row in
+  `lib.rs` and to the `playing && !is_live()` advance guards in all three animations — changing only
+  the former would have rendered a Play button that did nothing. The "Live (done)" badge stays, since
+  it is still true and worth knowing.
