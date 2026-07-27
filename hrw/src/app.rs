@@ -1475,6 +1475,15 @@ impl App {
         }
         if let Some(name) = clicked_variable {
             self.set_tracked_identifier(name);
+            // The whole point of reverse tracking is *seeing* the declaration,
+            // and the specimen source view only renders in Specimen mode — in
+            // Tour or Debug mode the click sets tracking and appears to do
+            // nothing. So reveal the source, the same way clicking an equation
+            // already navigates to the incidence matrix.
+            if self.tracked_identifier.is_some() {
+                self.ui_mode = UiMode::Specimen;
+                self.specimen_detail = SpecimenDetail::Source;
+            }
         }
     }
 

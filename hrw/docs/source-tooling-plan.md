@@ -151,7 +151,16 @@ the scrollbar.
 
 **Goal.** From a tracked identifier, break in the Rumoca phase that determines it.
 
-**Status: needs a design decision before implementation.**
+**Status: design settled 2026-07-27 — see [`tracking-as-capture.md`](tracking-as-capture.md).**
+
+The design question below ("which phase function is the meaningful site?") is
+**dissolved**, not answered. Doug's proposal — give tracking a second meaning, so
+that as well as highlighting it performs a *compound capture* of everywhere it
+highlighted — means HRW emits where the identifier lives at each stage and Claude
+chooses the breakpoint sites per case, with the whole transformation in view.
+Encoding a taxonomy in the app is exactly what the thin-emitter principle exists
+to avoid. The original framing is kept below because the four candidate answers
+are still the right things to reason *about* — they just belong to the reasoner.
 
 The plumbing is already done. The bridge protocol carries arbitrary
 `{ path, line, condition }` entries, the VS Code extension applies them
