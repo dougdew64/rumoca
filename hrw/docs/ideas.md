@@ -51,6 +51,7 @@ tour take priority over unlinked items of the same severity.
 | #34 Sub-view / tree-node links | (all tours) |
 | #35 Multiple tour documents + progress | (all tours) |
 | #33 Comprehensive tooltips | (all tours) |
+| #36 Modelica syntax highlighting | (all tours) |
 | #37 Reverse identifier tracking | (all tours) |
 | #1, #4, #13, #23 | generic |
 
