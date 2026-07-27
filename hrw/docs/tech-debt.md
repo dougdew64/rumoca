@@ -12,15 +12,16 @@ Tarjan borrow consistency, field group numbering, tree.rs tests, traced
 index-reduction tests, gen_trace --all, GearWithBrake narrative). See git
 history for details.
 
+**2026-07-27 reconciliation** (not a sweep — the 07-26 sweep was the day
+before). Two items retired as resolved: the WSL2 LLDB deadlock (development
+moved to native Windows; the deadlock is gone, and the breakpoint failure it
+was entangled with turned out to be linker COMDAT folding of the trace anchor —
+see `architecture.md` § Live trace debugging on Windows) and the unverified
+`output_capture_handles_large_write_without_deadlock` test (now passes in every
+full run on native Windows). Three items added from that day's live-trace and
+UI work, below.
+
 ---
-
-## Test gaps
-
-- [ ] **Intermittent `output_capture_handles_large_write_without_deadlock` test.**
-  Previously flaky on WSL2 (captured 0 bytes instead of 128KB). Now passes
-  consistently after the cross-platform OutputCapture rewrite, but has not
-  yet been verified on native Windows.
-  *File:* `worker.rs`.
 
 ## Code quality / duplication
 
@@ -39,8 +40,31 @@ history for details.
   *File:* `app.rs`.
 
 - [ ] **Duplicated animation state machine in matching/tarjan/reduction views.**
-  `ui()` methods share ~40 lines of identical logic.
+  `ui()` methods share ~40 lines of identical logic. *Grew on 2026-07-27:*
+  `live_state(&self, arming)` is now byte-identical in all three (~14 lines
+  each), as is the "drop timed playback while busy / repaint while busy /
+  return `debug_clicked`" sequence. A shared `LiveAnimation` trait — or a small
+  embedded struct holding `frames`/`cursor`/`playing`/`live_rx`/`live_done` with
+  the common methods on it — would collapse all of it.
   *Files:* `matching_anim.rs`, `tarjan_anim.rs`, `reduction_anim.rs`.
+
+- [ ] **Repeated live-debug wiring at the three `app.rs` call sites.**
+  Each animation view repeats the same six-step sequence: `is_arming` →
+  `live_state` (with an `Idle`/`Arming` fallback when no animation exists) →
+  `has_live_debug_data` → `live_debug_poll` → `anim.ui(.., arming,
+  debug_enabled)` → `if debug_clicked { start_live_debug(..) }`. ~12 lines x 3,
+  differing only in the `PendingLiveDebug` variant and the cached-animation
+  field. Compounds the "duplicated animation rendering" item above; the two
+  should be fixed together.
+  *File:* `app.rs` (~2762, ~2820, ~2885).
+
+- [ ] **`animation_controls` takes 8 positional parameters.**
+  Two are adjacent `bool`s (`live`, `debug_enabled` — plus `&mut bool playing`
+  earlier in the list), so transposing arguments compiles silently. Grouping the
+  cursor/playing/elapsed/interval quartet into an `AnimationPlayback` struct,
+  and passing `live`/`debug_enabled` as one small state struct, would make
+  misuse a type error.
+  *File:* `lib.rs`.
 
 - [ ] **Duplicated matrix canvas boilerplate.**
   Three views repeat the same ~10-line pattern.
@@ -61,18 +85,6 @@ history for details.
   or checklist drives this. Add a batch workflow (script that iterates
   specimens and invokes Claude for each narrative, or at minimum a checklist
   in `docs/updating-rumoca.md`).
-
-## Debugging
-
-- [ ] **LLDB deadlocks during live-trace debugging on WSL2.**
-  Both step-over (`F10`) and continue (`F5`) can deadlock in VS Code's
-  CodeLLDB debugger when a breakpoint is inside a Rumoca algorithm that
-  pushes to a LiveTrace channel. Continue was initially thought to work
-  reliably, but also deadlocks (observed 2026-07-26 in
-  `reduce_constrained_dummy_derivatives_with_trace`). Hypothesised to be
-  a WSL2 ptrace issue, but not yet confirmed on native Windows. Migrating
-  to native Windows (where CodeLLDB uses Windows debug APIs instead of
-  ptrace) is the planned next diagnostic step.
 
 ## Robustness
 
