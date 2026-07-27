@@ -758,3 +758,17 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `arm_live_trace_breakpoint`, the gate for capture actions, the specimen-notebook narrative lookup,
   and the tree root label/breadcrumb. Removing it would silently degrade the bridge. A comment at
   the former label site records this.
+- **2026-07-27 — Index-reduction animation opens on a `Start` frame.** The replay began on the first
+  `BeginState` ("Round 0: searching for a constraint to differentiate for state emf.phi"), which
+  announces an *intention* and so read as though reduction had already happened on opening the pane
+  — and no frame anywhere showed the unreduced system, which is precisely what an animation about
+  what reduction *changed* has to establish. `IndexReductionStep::Start { states, equations }` plus
+  `emit_index_reduction_start` (crate commit 09634b15) record it; HRW emits it at both trace sites
+  (recorded, in `worker.rs`; live, in `reduction_anim.rs` so the first Continue after the startup
+  gate lands on it) and renders it as "Starting point: N states, M equations — nothing reduced yet"
+  with a states table laid out like the "Demoted states" table so before/after read as a pair.
+  Emission is an explicit call rather than something the traced passes do for themselves: the
+  pipeline runs two traced passes back to back and only their combined output is one animation, so
+  self-emission would put a second start mid-replay. The snapshot is the DAE *as tracing begins*,
+  not the raw DAE — `demote_exact_alias_component_states` and `demote_direct_assigned_states` run
+  untraced beforehand — so it is labelled "starting point" rather than "original system".

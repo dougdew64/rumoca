@@ -2760,6 +2760,32 @@ mod tests {
         assert!(n_differentiated >= 4, "expected at least 4 differentiations, got {n_differentiated}");
     }
 
+    /// The trace opens on `Start`, so the animation has a visible "before".
+    ///
+    /// Without it the replay begins on the first `BeginState` — which announces
+    /// an intention and reads as though reduction had already happened — and no
+    /// frame anywhere shows the unreduced system.
+    #[test]
+    fn index_reduction_trace_opens_on_the_starting_system() {
+        let FromWorker::Compiled { index_reduction_frames, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+        use rumoca_phase_structural::dae_prepare::IndexReductionStep;
+        let first = index_reduction_frames.first().expect("frames");
+        let IndexReductionStep::Start { states, equations } = &first.step else {
+            panic!("first frame should be Start, got {:?}", first.step);
+        };
+        assert!(!states.is_empty(), "Drivetrain has states entering reduction");
+        assert!(*equations > 0, "Drivetrain has equations entering reduction");
+        assert!(first.demoted_so_far.is_empty(),
+            "nothing is demoted by the traced passes before they begin");
+        // Exactly one — the two traced passes must not each contribute a start.
+        let n_start = index_reduction_frames.iter()
+            .filter(|f| matches!(&f.step, IndexReductionStep::Start { .. }))
+            .count();
+        assert_eq!(n_start, 1, "expected a single opening frame, got {n_start}");
+    }
+
     /// The index reduction stage embeds a "before" report with the raw
     /// (pre-reduction) DAE's incidence matrix and partial matching.
     #[test]
@@ -3453,6 +3479,11 @@ fn index_reduce_for_structural_analysis(
 
     run_step!("demote_direct_assigned_states",
         dp::demote_direct_assigned_states(dae), |n| format!("{n} demoted"));
+
+    // Opening frame: the system as the traced reduction begins. Note the two
+    // demotion steps above are untraced, so this is the animation's baseline
+    // rather than the raw DAE — `IndexReductionStep::Start` documents that.
+    dp::emit_index_reduction_start(&mut ir_frames, None, dae, &demoted_so_far);
 
     match dp::reduce_constrained_dummy_derivatives_with_trace(
         dae, None, &mut ir_frames, &mut demoted_so_far,

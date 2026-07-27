@@ -65,6 +65,12 @@ impl ReductionAnimation {
                 let mut dae = dae;
                 let mut frames = Vec::new();
                 let mut demoted_so_far = Vec::new();
+                // Opening frame — the first Continue after the startup gate
+                // lands here, on the system before any reduction, rather than
+                // mid-search.
+                rumoca_phase_structural::dae_prepare::emit_index_reduction_start(
+                    &mut frames, Some(&lt), &dae, &demoted_so_far,
+                );
                 let _ = rumoca_phase_structural::dae_prepare
                     ::reduce_constrained_dummy_derivatives_with_trace(
                         &mut dae, Some(&lt), &mut frames, &mut demoted_so_far,
@@ -227,6 +233,17 @@ impl ReductionAnimation {
 /// Render the current step description with an icon.
 fn render_step(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
     let (icon, color, summary) = match &frame.step {
+        IndexReductionStep::Start { states, equations } => (
+            "\u{1f3c1}",
+            crate::colors::ANIM_EXPLORE,
+            format!(
+                "Starting point: {} state{}, {} equation{} \u{2014} nothing reduced yet",
+                states.len(),
+                if states.len() == 1 { "" } else { "s" },
+                equations,
+                if *equations == 1 { "" } else { "s" },
+            ),
+        ),
         IndexReductionStep::BeginState { state } => (
             "\u{1f50d}",
             crate::colors::ANIM_EXPLORE,
@@ -258,6 +275,26 @@ fn render_step(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
         ui.label(egui::RichText::new(icon).size(16.0));
         ui.label(egui::RichText::new(&summary).color(color).strong());
     });
+
+    // List the starting states, laid out like the "Demoted states" table below
+    // so the before/after comparison reads as a pair.
+    if let IndexReductionStep::Start { states, .. } = &frame.step {
+        if !states.is_empty() {
+            ui.add_space(4.0);
+            ui.label(egui::RichText::new("States entering reduction").strong());
+            egui::Grid::new("start_states_grid")
+                .num_columns(2)
+                .spacing([12.0, 2.0])
+                .striped(true)
+                .show(ui, |ui| {
+                    for (i, name) in states.iter().enumerate() {
+                        ui.label(format!("{}.", i + 1));
+                        ui.label(egui::RichText::new(name).monospace());
+                        ui.end_row();
+                    }
+                });
+        }
+    }
 
     if let IndexReductionStep::Differentiated { before_rhs, after_rhs, .. } = &frame.step {
         let before = expr_format::format_expr(before_rhs);
