@@ -545,6 +545,19 @@ All three support two animation modes:
    needed. After each frame push, a 20ms delay lets the UI render, then the
    breakpoint fires. The user steps through the algorithm with Continue (F5).
 
+   All animation controls sit on **one row**, built by `animation_controls`:
+
+   ```text
+   [Play/Pause] [Reset] [Back] [Step] | Frame n/m | Speed: [====] | [Debug]  Live (done)
+   ```
+
+   Playback first, then the frame/speed group, then a divider, then the live
+   debug controls. The Debug button is rendered by `animation_controls` rather
+   than by the caller so the row stays together; it cannot arm a session itself
+   (that needs the bridge, the model name, and `pending_live_debug`), so it
+   returns its click and `app.rs` calls `App::start_live_debug`. The handshake
+   polling moved to `App::live_debug_poll`, which renders nothing.
+
    **Controls are enabled and disabled, never shown and hidden.** A control that
    vanishes gives no clue that the action exists or why it is unavailable, and
    the row reflows under the pointer as it goes. `LiveState` (in `lib.rs`) drives

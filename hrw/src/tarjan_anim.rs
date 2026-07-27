@@ -209,20 +209,24 @@ impl TarjanAnimation {
         }
     }
 
+    /// Returns `true` on the frame the Debug button is clicked — the caller
+    /// owns the bridge state needed to actually arm a session.
+    #[must_use]
     pub fn ui(
         &mut self,
         ui: &mut egui::Ui,
         canvas: &mut Canvas,
         tracked: Option<&str>,
         arming: bool,
-    ) {
+        debug_enabled: bool,
+    ) -> bool {
         self.sync_live();
         let live = self.live_state(arming);
 
         // Nothing to show at all — no recorded frames and no live session.
         if self.frames.is_empty() && !self.is_live() && !arming {
             ui.label("No Tarjan trace available.");
-            return;
+            return false;
         }
 
         // A live session takes the cursor; drop any timed playback that was
@@ -251,7 +255,7 @@ impl TarjanAnimation {
 
         // --- Controls ---
         let n_frames = self.frames.len();
-        crate::animation_controls(
+        let debug_clicked = crate::animation_controls(
             ui,
             &mut self.cursor,
             &mut self.playing,
@@ -259,6 +263,7 @@ impl TarjanAnimation {
             &mut self.interval,
             n_frames,
             live,
+            debug_enabled,
         );
 
         // A session is starting or the debugger is parked at the startup gate,
@@ -268,7 +273,7 @@ impl TarjanAnimation {
             ui.add_space(4.0);
             ui.label("Waiting for first frame from debugger\u{2026}");
             ui.ctx().request_repaint();
-            return;
+            return debug_clicked;
         }
 
         // --- Step description ---
@@ -294,6 +299,8 @@ impl TarjanAnimation {
 
         // --- Dependency graph visualization ---
         self.draw_graph(ui, canvas, tracked);
+
+        debug_clicked
     }
 
     fn draw_graph(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {

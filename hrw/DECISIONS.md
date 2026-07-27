@@ -732,3 +732,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   stays true for the animation's lifetime). `arming` cannot be derived inside an animation — it comes
   from `App::is_arming`, which checks whether `pending_live_debug` names that view's algorithm.
   Starting a session now also clears any timed playback, so it cannot resume when the session ends.
+- **2026-07-27 — Debug button moved onto the animation control row.** Layout is now
+  `[Play/Pause] [Reset] [Back] [Step] | Frame n/m | Speed | [Debug]  <badge>` — playback, then the
+  frame/speed group, then a divider, then the live debug controls, with the status badge moved from
+  the head of the row to the tail. The Debug button is rendered by `animation_controls` rather than
+  by the caller so the row stays together, but it cannot arm a session itself (that needs the
+  bridge, the model name, and `pending_live_debug`), so it returns its click and `app.rs` acts on
+  it. `live_debug_lifecycle` accordingly split into `live_debug_poll` (handshake only, renders
+  nothing) and `start_live_debug` (invoked on the click), plus `has_live_debug_data` for the
+  enablement test. The `ui()` of all three animations and `animation_controls` are `#[must_use] ->
+  bool` so a dropped click is a compile error. Known consequence: when a view has no data at all,
+  there is no control row, so the Debug button is absent rather than present-and-disabled — accepted
+  because the entire animation UI is absent in that state, not just one control.

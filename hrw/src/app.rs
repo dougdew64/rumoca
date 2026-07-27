@@ -451,9 +451,33 @@ impl App {
     ///
     /// Returns `SpawnLive` when the ack handshake completes and the caller
     /// should spawn the algorithm thread.
-    fn live_debug_lifecycle(
+    /// Whether this view has the data its algorithm needs — gates the Debug button.
+    fn has_live_debug_data(&self, variant: PendingLiveDebug) -> bool {
+        match variant {
+            PendingLiveDebug::Reduction => self.cached_dae.is_some(),
+            _ => matches!(&self.cached_incidence, Some(Some(_))),
+        }
+    }
+
+    /// Arm a live debug session.
+    ///
+    /// Called when the Debug button reports a click. That button is rendered by
+    /// `animation_controls`, so it sits on the same row as the playback
+    /// controls; it cannot arm the session itself because that needs app state
+    /// (the bridge, the model name, `pending_live_debug`), so it returns the
+    /// click and the caller lands here.
+    fn start_live_debug(&mut self, variant: PendingLiveDebug) {
+        let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
+        self.pending_live_debug = Some((std::time::Instant::now(), variant));
+    }
+
+    /// Advance the live-debug handshake. Renders nothing.
+    ///
+    /// Returns `SpawnLive` on the frame the ack lands (or the timeout expires),
+    /// at which point the caller should start the algorithm thread.
+    fn live_debug_poll(
         &mut self,
-        ui: &mut egui::Ui,
+        ctx: &egui::Context,
         live: LiveState,
         variant: PendingLiveDebug,
     ) -> LiveDebugAction {
@@ -462,33 +486,6 @@ impl App {
         if self.live_breakpoint_armed && !live.is_busy() {
             let _ = bridge::remove_live_trace_breakpoint();
             self.live_breakpoint_armed = false;
-        }
-
-        let has_data = match variant {
-            PendingLiveDebug::Reduction => self.cached_dae.is_some(),
-            _ => matches!(&self.cached_incidence, Some(Some(_))),
-        };
-
-        // The Debug button is always rendered — disabled, never hidden. A button
-        // that vanishes gives no clue the action exists or why it is
-        // unavailable, and the row reflows under the pointer. It re-enables once
-        // the session finishes, so a re-run is one click away.
-        let enabled = has_data && !live.is_busy();
-        let clicked = ui
-            .add_enabled(enabled, egui::Button::new("Debug"))
-            .on_hover_text(
-                "Start live debug session \u{2014} arms a breakpoint on \
-                 live_trace_breakpoint, then step with Continue (F5)",
-            )
-            .on_disabled_hover_text(if !has_data {
-                "No data for this algorithm yet \u{2014} compile a specimen first"
-            } else {
-                "A live debug session is already in progress"
-            })
-            .clicked();
-        if clicked {
-            let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
-            self.pending_live_debug = Some((std::time::Instant::now(), variant));
         }
 
         if let Some((armed_at, v)) = self.pending_live_debug {
@@ -508,7 +505,7 @@ impl App {
                 }
                 // No status text here — the control row already shows the
                 // "Arming…" badge via `LiveState::badge`.
-                ui.ctx().request_repaint();
+                ctx.request_repaint();
             }
         }
         LiveDebugAction::None
@@ -2770,8 +2767,11 @@ impl eframe::App for App {
                             if arming { LiveState::Arming } else { LiveState::Idle },
                             |a| a.live_state(arming),
                         );
-                    let action = self.live_debug_lifecycle(
-                        ui, live, PendingLiveDebug::Matching,
+                    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Matching)
+                        && !live.is_busy();
+                    let mut debug_clicked = false;
+                    let action = self.live_debug_poll(
+                        ui.ctx(), live, PendingLiveDebug::Matching,
                     );
                     if matches!(action, LiveDebugAction::SpawnLive) {
                         if let Some(Some(mat)) = &self.cached_incidence {
@@ -2801,10 +2801,15 @@ impl eframe::App for App {
                             ui.label(egui::RichText::new("After (reduced)")
                                 .strong().color(crate::colors::ANIM_PATH_FOUND));
                         }
-                        anim.ui(ui, &mut self.matching_anim_canvas, self.tracked_identifier.as_deref(),
-                            arming);
+                        debug_clicked = anim.ui(
+                            ui, &mut self.matching_anim_canvas,
+                            self.tracked_identifier.as_deref(), arming, debug_enabled,
+                        );
                     } else {
                         ui.weak("(no incidence data for matching animation)");
+                    }
+                    if debug_clicked {
+                        self.start_live_debug(PendingLiveDebug::Matching);
                     }
                 } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
                     if self.cached_incidence.is_none() {
@@ -2820,8 +2825,11 @@ impl eframe::App for App {
                             if arming { LiveState::Arming } else { LiveState::Idle },
                             |a| a.live_state(arming),
                         );
-                    let action = self.live_debug_lifecycle(
-                        ui, live, PendingLiveDebug::Tarjan,
+                    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tarjan)
+                        && !live.is_busy();
+                    let mut debug_clicked = false;
+                    let action = self.live_debug_poll(
+                        ui.ctx(), live, PendingLiveDebug::Tarjan,
                     );
                     if matches!(action, LiveDebugAction::SpawnLive) {
                         if let Some(Some(mat)) = &self.cached_incidence {
@@ -2851,10 +2859,15 @@ impl eframe::App for App {
                             ui.label(egui::RichText::new("After (reduced)")
                                 .strong().color(crate::colors::ANIM_PATH_FOUND));
                         }
-                        anim.ui(ui, &mut self.tarjan_anim_canvas, self.tracked_identifier.as_deref(),
-                            arming);
+                        debug_clicked = anim.ui(
+                            ui, &mut self.tarjan_anim_canvas,
+                            self.tracked_identifier.as_deref(), arming, debug_enabled,
+                        );
                     } else {
                         ui.weak("(no dependency graph for BLT animation)");
+                    }
+                    if debug_clicked {
+                        self.start_live_debug(PendingLiveDebug::Tarjan);
                     }
                 } else if report_ready && self.structural_view == StructuralView::Summary {
                     if self.stage == StageKind::Structural {
@@ -2877,8 +2890,11 @@ impl eframe::App for App {
                             if arming { LiveState::Arming } else { LiveState::Idle },
                             |a| a.live_state(arming),
                         );
-                    let action = self.live_debug_lifecycle(
-                        ui, live, PendingLiveDebug::Reduction,
+                    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Reduction)
+                        && !live.is_busy();
+                    let mut debug_clicked = false;
+                    let action = self.live_debug_poll(
+                        ui.ctx(), live, PendingLiveDebug::Reduction,
                     );
                     if matches!(action, LiveDebugAction::SpawnLive) {
                         if let Some(dae) = &self.cached_dae {
@@ -2903,11 +2919,15 @@ impl eframe::App for App {
                         });
                     }
                     if let Some(Some(anim)) = &mut self.cached_reduction_anim {
-                        egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-                            anim.ui(ui, arming);
-                        });
+                        debug_clicked = egui::ScrollArea::vertical()
+                            .auto_shrink(false)
+                            .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                            .inner;
                     } else {
                         ui.weak("(no index-reduction trace for this model)");
+                    }
+                    if debug_clicked {
+                        self.start_live_debug(PendingLiveDebug::Reduction);
                     }
                 } else if flatten_ready && self.flatten_view == FlattenView::Equations {
                     self.equation_sheet_ui(ui);

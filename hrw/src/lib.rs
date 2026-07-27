@@ -143,10 +143,25 @@ pub fn frame_label(cursor: usize, n_frames: usize) -> String {
 
 /// The shared animation control row.
 ///
+/// Layout, left to right:
+///
+/// ```text
+/// [Play/Pause] [Reset] [Back] [Step] | Frame n/m | Speed: [====] | [Debug]  Live (done)
+/// ```
+///
+/// Playback first, then the frame/speed group, then a divider, then the live
+/// debug controls. The Debug button lives here rather than in the caller so
+/// that every animation control sits on one row; it reports its click through
+/// the return value, since arming a session needs app state this function has
+/// no access to.
+///
 /// Every control is always rendered. While a live session is in flight
 /// (`LiveState::is_busy`) the playback controls are *disabled*, not removed —
 /// the debugger owns the cursor, but the user can still see what exists and,
 /// via the disabled-hover text, why it is unavailable.
+///
+/// Returns `true` on the frame the Debug button is clicked.
+#[must_use]
 pub fn animation_controls(
     ui: &mut eframe::egui::Ui,
     cursor: &mut usize,
@@ -155,20 +170,17 @@ pub fn animation_controls(
     interval: &mut f64,
     n_frames: usize,
     live: LiveState,
-) {
+    debug_enabled: bool,
+) -> bool {
     use eframe::egui;
     let busy = live.is_busy();
+    let mut debug_clicked = false;
     // Explains every disabled control in the row.
     const BUSY_HINT: &str =
         "Unavailable during a live debug session \u{2014} the debugger drives the \
          animation. Continue (F5) in VS Code to advance a step.";
 
     ui.horizontal(|ui| {
-        if let Some((text, color)) = live.badge() {
-            ui.label(egui::RichText::new(text).color(color).strong());
-            ui.separator();
-        }
-
         // Play/Pause. Kept in place while busy so the row does not reflow.
         if *playing {
             if ui
@@ -234,7 +246,30 @@ pub fn animation_controls(
                 *interval = speed_ms as f64 / 1000.0;
             }
         });
+
+        // --- Live debug: the Debug button, then the status badge ---
+        ui.separator();
+        debug_clicked = ui
+            .add_enabled(debug_enabled, egui::Button::new("Debug"))
+            .on_hover_text(
+                "Start live debug session \u{2014} arms a breakpoint on \
+                 live_trace_breakpoint, then step with Continue (F5)",
+            )
+            // When it is disabled and not busy, the only remaining reason is
+            // that this algorithm has no data to run against yet.
+            .on_disabled_hover_text(if busy {
+                "A live debug session is already in progress"
+            } else {
+                "No data for this algorithm yet \u{2014} compile a specimen first"
+            })
+            .clicked();
+
+        if let Some((text, color)) = live.badge() {
+            ui.label(egui::RichText::new(text).color(color).strong());
+        }
     });
+
+    debug_clicked
 }
 
 /// Draw column (unknown) labels rotated -45° above the matrix,
