@@ -48,6 +48,7 @@ pub mod log_view;
 pub mod modelica_lex;
 pub mod reduction_anim;
 pub mod reduction_view;
+pub mod source_view;
 pub mod spyplot;
 pub mod tarjan_anim;
 pub mod tree;

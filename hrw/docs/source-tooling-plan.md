@@ -184,7 +184,14 @@ touch code at all until its design question is answered.
       lex as `Identifier`, not `String` (so `'end of travel'` stays a clickable
       name), and tokens tile the input exactly including whitespace, so
       rendering can walk the list and emit every byte once.
-- [ ] Phase 2 — Syntax highlighting (#36)
+- [x] **Phase 2 — Syntax highlighting (#36)** ✅ 2026-07-27.
+      `hrw/src/source_view.rs` (line clipping + segment merge, 8 tests),
+      `colors::syntax_color`, and the render loop in `app.rs`. Identifier
+      linking preserved: colour and click targets now come from **one** pass, so
+      they cannot disagree about where a run begins. Clickable and tracked
+      colours deliberately outrank syntax colour. Note this already did part of
+      Phase 3's job — `segments` is the merge point — so Phase 3 is now only
+      about *which* identifiers `clickable_spans` offers, not about rendering.
 - [ ] Phase 3 — Clickable identifiers re-based on the lexer
 - [ ] Phase 4 — Reverse identifier tracking (#37)
 - [ ] Phase 5 — Forward identifier debugging *(design first)*

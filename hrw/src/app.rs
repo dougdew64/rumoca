@@ -323,6 +323,11 @@ pub struct App {
     cached_narratives: HashMap<PathBuf, Option<String>>,
     // The selected specimen's Modelica source text, loaded on demand.
     cached_source: Option<String>,
+    // Per-line token classification for `cached_source`, built on demand.
+    // Tokenizing is cheap but not free, and the source cannot change while it
+    // is displayed — so it is built once per specimen, not once per frame.
+    // Cleared wherever `cached_source` is, or the two would disagree.
+    cached_highlight: Option<crate::source_view::SourceHighlight>,
 
     // ---- 14. Pending stage from hrw:// link ----
     // When an hrw://load/Specimen/Stage link fires, the stage can't be applied
@@ -634,6 +639,7 @@ impl App {
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
             cached_source: None,
+            cached_highlight: None,
             pending_stage: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
@@ -732,6 +738,7 @@ impl App {
         self.identifier_index = None;
         self.tracked_identifier = None;
         self.cached_source = None;
+        self.cached_highlight = None;
         self.highlighted_eq_row = None;
         self.highlighted_source_line = None;
         self.nav.clear();
@@ -2118,60 +2125,63 @@ impl eframe::App for App {
                                     .auto_shrink(false)
                                     .show(ui, |ui| {
                                     let tracked = self.tracked_identifier.as_deref();
+                                    let dark = ui.visuals().dark_mode;
+                                    // Tokenized once per specimen, not per frame.
+                                    let highlight = self.cached_highlight.get_or_insert_with(
+                                        || crate::source_view::SourceHighlight::new(text)
+                                    );
                                     for (i, line) in text.lines().enumerate() {
                                         let line_1 = (i + 1) as u32;
                                         let spans = self.identifier_index.as_ref()
                                             .map(|idx| idx.clickable_spans(line_1, line))
                                             .unwrap_or_default();
-                                        if spans.is_empty() {
-                                            let line_num = format!("{:>4} ", line_1);
+                                        // One pass produces both colour and click
+                                        // targets, so the two cannot disagree about
+                                        // where a run of text begins and ends.
+                                        let segments = crate::source_view::segments(
+                                            line, highlight.line(i), &spans,
+                                        );
+                                        ui.horizontal(|ui| {
+                                            ui.spacing_mut().item_spacing.x = 0.0;
                                             ui.label(
-                                                egui::RichText::new(format!("{line_num}{line}"))
+                                                egui::RichText::new(format!("{:>4} ", line_1))
                                                     .monospace()
+                                                    .weak()
                                             );
-                                        } else {
-                                            ui.horizontal(|ui| {
-                                                ui.spacing_mut().item_spacing.x = 0.0;
-                                                ui.label(
-                                                    egui::RichText::new(format!("{:>4} ", line_1))
-                                                        .monospace()
-                                                );
-                                                let mut pos = 0;
-                                                for (start, end, name) in &spans {
-                                                    if *start > pos {
-                                                        ui.label(
-                                                            egui::RichText::new(&line[pos..*start])
+                                            for seg in &segments {
+                                                match seg.link {
+                                                    Some(name) => {
+                                                        // Clickable identifiers keep their own
+                                                        // colours, which outrank syntax colour —
+                                                        // interactivity has to win visually.
+                                                        let color = if tracked == Some(name) {
+                                                            crate::colors::TRACKED_GOLD
+                                                        } else {
+                                                            crate::colors::CLICKABLE_IDENT
+                                                        };
+                                                        let label = egui::Label::new(
+                                                            egui::RichText::new(seg.text)
                                                                 .monospace()
-                                                        );
+                                                                .color(color)
+                                                                .underline()
+                                                        ).sense(egui::Sense::click());
+                                                        if ui.add(label).on_hover_text(name).clicked() {
+                                                            clicked_id = Some(name.to_owned());
+                                                        }
                                                     }
-                                                    let ident_text = &line[*start..*end];
-                                                    let is_tracked = tracked == Some(name.as_str());
-                                                    let color = if is_tracked {
-                                                        crate::colors::TRACKED_GOLD
-                                                    } else {
-                                                        crate::colors::CLICKABLE_IDENT
-                                                    };
-                                                    let label = egui::Label::new(
-                                                        egui::RichText::new(ident_text)
-                                                            .monospace()
-                                                            .color(color)
-                                                            .underline()
-                                                    ).sense(egui::Sense::click());
-                                                    let resp = ui.add(label)
-                                                        .on_hover_text(name);
-                                                    if resp.clicked() {
-                                                        clicked_id = Some(name.clone());
+                                                    None => {
+                                                        let mut rt = egui::RichText::new(seg.text)
+                                                            .monospace();
+                                                        if let Some(c) = crate::colors::syntax_color(
+                                                            seg.kind, dark,
+                                                        ) {
+                                                            rt = rt.color(c);
+                                                        }
+                                                        ui.label(rt);
                                                     }
-                                                    pos = *end;
                                                 }
-                                                if pos < line.len() {
-                                                    ui.label(
-                                                        egui::RichText::new(&line[pos..])
-                                                            .monospace()
-                                                    );
-                                                }
-                                            });
-                                        }
+                                            }
+                                        });
                                     }
                                 });
                             }
@@ -3310,6 +3320,7 @@ impl App {
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             cached_narratives: HashMap::new(),
             cached_source: None,
+            cached_highlight: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,

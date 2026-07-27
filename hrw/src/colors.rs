@@ -109,6 +109,33 @@ pub const SOURCE_MAP_LINK: Color32 = Color32::from_rgba_premultiplied(100, 180, 
 /// Clickable identifier text in the source view (light blue).
 pub const CLICKABLE_IDENT: Color32 = Color32::from_rgb(0x64, 0xB5, 0xF6);
 
+/// Syntax colour for a Modelica token, or `None` to use the default text colour.
+///
+/// Deliberately restrained. This is a *reading* surface inside an observatory,
+/// not an editor: the eye needs to find declarations and skip commentary, while
+/// clickable identifiers (`CLICKABLE_IDENT`) and the tracked identifier
+/// (`TRACKED_GOLD`) must still stand out against everything else. So keywords
+/// and types lead, comments recede, literals are marked — and identifiers and
+/// operators stay default, leaving the two interactive colours unrivalled.
+pub fn syntax_color(kind: crate::modelica_lex::TokenKind, dark_mode: bool) -> Option<Color32> {
+    use crate::modelica_lex::TokenKind as K;
+    Some(match (kind, dark_mode) {
+        (K::Keyword, true) => Color32::from_rgb(0xC5, 0x92, 0xE8),
+        (K::Keyword, false) => Color32::from_rgb(0x7B, 0x2C, 0xBF),
+        (K::Type, true) => Color32::from_rgb(0x4E, 0xC9, 0xB0),
+        (K::Type, false) => Color32::from_rgb(0x0E, 0x70, 0x60),
+        (K::Number, true) => Color32::from_rgb(0xD1, 0x9A, 0x66),
+        (K::Number, false) => Color32::from_rgb(0x8A, 0x51, 0x00),
+        (K::String, true) => Color32::from_rgb(0xCE, 0x91, 0x78),
+        (K::String, false) => Color32::from_rgb(0x9B, 0x2C, 0x2C),
+        (K::Comment, true) => Color32::from_rgb(0x6A, 0x9B, 0x6A),
+        (K::Comment, false) => Color32::from_rgb(0x4A, 0x7A, 0x4A),
+        // Identifiers and operators keep the default text colour so the
+        // clickable and tracked highlights remain the loudest thing on screen.
+        (K::Identifier | K::Operator | K::Whitespace, _) => return None,
+    })
+}
+
 /// Grid line alpha multiplier for canvas matrix views.
 pub const GRID_ALPHA: f32 = 0.3;
 
