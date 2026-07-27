@@ -234,7 +234,9 @@ impl ReductionAnimation {
 fn render_step(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
     let (icon, color, summary) = match &frame.step {
         IndexReductionStep::Start { states, equations } => (
-            "\u{1f3c1}",
+            // Clapper board: the start of the take. NOT a checkered flag
+            // (U+1F3C1) — that reads as a finish line at the head of the replay.
+            "\u{1f3ac}",
             crate::colors::ANIM_EXPLORE,
             format!(
                 "Starting point: {} state{}, {} equation{} \u{2014} nothing reduced yet",
