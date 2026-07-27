@@ -16,11 +16,11 @@ history for details.
 
 ## Test gaps
 
-- [ ] **Flaky `output_capture_handles_large_write_without_deadlock` test.**
-  Captures 0 bytes instead of 128KB. Pre-existing failure unrelated to recent
-  changes — the pipe/dup2 stdout redirect is not capturing on this WSL2
-  instance. Will become moot after Windows migration.
-  *File:* `worker.rs` line 3339.
+- [ ] **Intermittent `output_capture_handles_large_write_without_deadlock` test.**
+  Previously flaky on WSL2 (captured 0 bytes instead of 128KB). Now passes
+  consistently after the cross-platform OutputCapture rewrite, but has not
+  yet been verified on native Windows.
+  *File:* `worker.rs`.
 
 ## Code quality / duplication
 
@@ -64,15 +64,15 @@ history for details.
 
 ## Debugging
 
-- [ ] **LLDB step-over deadlocks during live-trace debugging.**
-  Stepping over (`F10`) in VS Code's CodeLLDB debugger deadlocks when a
-  breakpoint is inside a Rumoca algorithm that pushes to a LiveTrace channel
-  (e.g. `live_trace_breakpoint` in matching). Continue (`F5`) between
-  breakpoints works; only step-over hangs. Tested with
-  `thread step-over -m all-threads` — same deadlock. Hypothesised to be a
-  WSL2 ptrace issue, but not yet confirmed on native Windows. Migrating to
-  native Windows (where CodeLLDB uses Windows debug APIs instead of ptrace)
-  is the planned next diagnostic step.
+- [ ] **LLDB deadlocks during live-trace debugging on WSL2.**
+  Both step-over (`F10`) and continue (`F5`) can deadlock in VS Code's
+  CodeLLDB debugger when a breakpoint is inside a Rumoca algorithm that
+  pushes to a LiveTrace channel. Continue was initially thought to work
+  reliably, but also deadlocks (observed 2026-07-26 in
+  `reduce_constrained_dummy_derivatives_with_trace`). Hypothesised to be
+  a WSL2 ptrace issue, but not yet confirmed on native Windows. Migrating
+  to native Windows (where CodeLLDB uses Windows debug APIs instead of
+  ptrace) is the planned next diagnostic step.
 
 ## Robustness
 

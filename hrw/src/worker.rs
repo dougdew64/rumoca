@@ -967,23 +967,17 @@ impl WorkerState {
         let path_owned = path.to_owned();
         let log = make_log(&t0, emit);
 
-        // Start capturing stdout/stderr from Rumoca library calls (unix only).
+        // Start capturing stdout/stderr from Rumoca library calls.
         // Some Rumoca phases print diagnostics via `println!`/`eprintln!` rather
         // than returning them as structured errors. `OutputCapture` intercepts
         // these at the file-descriptor level and forwards them as log entries.
-        // `#[cfg(unix)]` means this line is only compiled on unix — the struct
-        // uses unix-specific `dup2()` / `pipe()` system calls.
-        #[cfg(unix)]
         let mut output_capture = OutputCapture::start();
 
         // `drain_output` pulls captured stdout/stderr and forwards each line
-        // as a log entry. The `#[allow(unused)]` on `capture` suppresses a
-        // warning on non-unix platforms where the `#[cfg(unix)]` body is absent.
-        // `&dyn Fn(...)` is a *trait object* (dynamic dispatch) — unlike
-        // `&impl Fn(...)` (static dispatch), it works across the closure
-        // boundary here where the concrete type isn't known.
-        let drain_output = |#[allow(unused)] capture: &mut Option<OutputCapture>, log_fn: &dyn Fn(LogLevel, String)| {
-            #[cfg(unix)]
+        // as a log entry. `&dyn Fn(...)` is a *trait object* (dynamic dispatch)
+        // — unlike `&impl Fn(...)` (static dispatch), it works across the
+        // closure boundary here where the concrete type isn't known.
+        let drain_output = |capture: &mut Option<OutputCapture>, log_fn: &dyn Fn(LogLevel, String)| {
             if let Some(cap) = capture.as_mut() {
                 let (stdout, stderr) = cap.drain();
                 for line in stdout.lines() {
@@ -1004,7 +998,6 @@ impl WorkerState {
         let source = match std::fs::read_to_string(path) {
             Ok(s) => s,
             Err(e) => {
-                #[cfg(unix)]
                 drop(output_capture.take());
                 return FromWorker::Compiled {
                     path: path_owned.clone(),
@@ -1052,7 +1045,6 @@ impl WorkerState {
         // After each Rumoca API call, drain any `tracing` events that were
         // buffered by our `TracingForwarder` subscriber.
         drain_traces(&log);
-        #[cfg(unix)]
         drain_output(&mut output_capture, &log);
         log(LogLevel::StageEnd, format!("Parse ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         // Stream the first progress snapshot: Parse is done, everything else
@@ -1137,7 +1129,6 @@ impl WorkerState {
         };
 
         drain_traces(&log);
-        #[cfg(unix)]
         drain_output(&mut output_capture, &log);
         log(LogLevel::StageEnd, format!("Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         emit(FromWorker::CompileProgress {
@@ -1179,7 +1170,6 @@ impl WorkerState {
                 let t_pipeline = Instant::now();
                 let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
                 drain_traces(&log);
-                #[cfg(unix)]
                 drain_output(&mut output_capture, &log);
 
                 let result = report.requested_result.as_ref();
@@ -1263,11 +1253,10 @@ impl WorkerState {
             }
         };
 
-        // Restore stdout/stderr by dropping the OutputCapture (unix only).
+        // Restore stdout/stderr by dropping the OutputCapture.
         // `output_capture.take()` moves the value out of the `Option`,
         // returning `Some(capture)`, and `drop()` runs its `Drop` impl
         // which restores the original file descriptors via `dup2`.
-        #[cfg(unix)]
         drop(output_capture.take());
         log(LogLevel::Info, format!("done ({:.1}ms total)", t0.elapsed().as_secs_f64() * 1000.0));
 
@@ -3290,12 +3279,17 @@ mod tests {
     // In production this isn't an issue: Rumoca's C-level `printf` and Rust
     // `tracing` output write directly to fd 1/2, bypassing Rust's BufWriter.
 
-    #[cfg(unix)]
     unsafe fn write_to_fd(fd: i32, data: &[u8]) {
         let mut offset = 0;
         while offset < data.len() {
+            let remaining = data.len() - offset;
+            // libc::write count is size_t on unix, c_uint on Windows.
+            #[cfg(unix)]
+            let count = remaining;
+            #[cfg(windows)]
+            let count = remaining as libc::c_uint;
             let n = unsafe {
-                libc::write(fd, data[offset..].as_ptr().cast(), data.len() - offset)
+                libc::write(fd, data[offset..].as_ptr().cast(), count)
             };
             if n <= 0 { break; }
             offset += n as usize;
@@ -3303,7 +3297,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(unix)]
     fn output_capture_round_trip() {
         let mut cap = OutputCapture::start().expect("start capture");
         unsafe {
@@ -3335,7 +3328,6 @@ mod tests {
     //    stays blocking, all bytes are captured, no data loss.
     //    This test passes with all 128 KB captured.
     #[test]
-    #[cfg(unix)]
     fn output_capture_handles_large_write_without_deadlock() {
         let mut cap = OutputCapture::start().expect("start capture");
         let big = vec![b'x'; 128 * 1024];
@@ -3631,13 +3623,14 @@ fn extract_class(tree: &rumoca_ir_ast::ClassTree, qualified_name: &str) -> Stage
 /// 5. Read from the pipe's read end to get the captured output
 /// 6. On `Drop`, restore the original: `dup2(old_stdout, 1)`
 ///
-/// # Why `#[cfg(unix)]`?
+/// # Cross-platform support
 ///
-/// `dup()`, `dup2()`, and `pipe()` are POSIX system calls — they exist on
-/// Linux and macOS but not Windows. `#[cfg(unix)]` is conditional compilation:
-/// this entire struct and its `impl` blocks are only compiled on unix targets.
-/// On Windows, stdout/stderr capture is simply skipped (the `#[cfg(unix)]`
-/// guards at the call sites compile to nothing).
+/// `dup`, `dup2`, and `close` have identical signatures on unix and Windows
+/// (libc maps the Windows CRT `_dup`/`_dup2`/`_close` to the same names).
+/// Two operations differ: `pipe()` takes extra arguments on Windows (buffer
+/// size + binary mode flag), and converting a raw fd to a `std::fs::File`
+/// uses `FromRawFd` on unix vs `get_osfhandle` + `FromRawHandle` on Windows.
+/// These are abstracted in `create_pipe()` and `file_from_raw_fd()`.
 ///
 /// # Safety
 ///
@@ -3645,7 +3638,6 @@ fn extract_class(tree: &rumoca_ir_ast::ClassTree, qualified_name: &str) -> Stage
 /// function calls (FFI) that Rust can't verify for memory safety. The
 /// invariants we maintain: we always restore the original fds on Drop, we
 /// close all fds we open, and we never use a closed fd.
-#[cfg(unix)]
 struct OutputCapture {
     /// Saved copy of the original stdout (fd 1), restored on Drop.
     old_stdout: i32,
@@ -3660,6 +3652,31 @@ struct OutputCapture {
 }
 
 #[cfg(unix)]
+unsafe fn create_pipe(fds: &mut [i32; 2]) -> bool {
+    unsafe { libc::pipe(fds.as_mut_ptr()) == 0 }
+}
+
+#[cfg(windows)]
+unsafe fn create_pipe(fds: &mut [i32; 2]) -> bool {
+    // _O_BINARY = 0x8000: no CR/LF translation.
+    unsafe { libc::pipe(fds.as_mut_ptr(), 65536, 0x8000) == 0 }
+}
+
+#[cfg(unix)]
+unsafe fn file_from_raw_fd(fd: i32) -> std::fs::File {
+    use std::os::unix::io::FromRawFd;
+    unsafe { std::fs::File::from_raw_fd(fd) }
+}
+
+#[cfg(windows)]
+unsafe fn file_from_raw_fd(fd: i32) -> std::fs::File {
+    use std::os::windows::io::FromRawHandle;
+    unsafe {
+        let handle = libc::get_osfhandle(fd) as std::os::windows::io::RawHandle;
+        std::fs::File::from_raw_handle(handle)
+    }
+}
+
 impl OutputCapture {
     /// Set up the pipe/dup2 capture. Returns `None` if any system call fails
     /// (rather than panicking — output capture is best-effort, not critical).
@@ -3670,18 +3687,16 @@ impl OutputCapture {
     /// from filling. The write side stays in normal blocking mode so
     /// `println!`/`eprintln!` never see `EAGAIN`.
     fn start() -> Option<Self> {
-        use std::os::unix::io::FromRawFd;
-
         unsafe {
             let _ = std::io::Write::flush(&mut std::io::stdout());
             let _ = std::io::Write::flush(&mut std::io::stderr());
 
             let mut out_fds = [0i32; 2];
             let mut err_fds = [0i32; 2];
-            if libc::pipe(out_fds.as_mut_ptr()) != 0 {
+            if !create_pipe(&mut out_fds) {
                 return None;
             }
-            if libc::pipe(err_fds.as_mut_ptr()) != 0 {
+            if !create_pipe(&mut err_fds) {
                 libc::close(out_fds[0]);
                 libc::close(out_fds[1]);
                 return None;
@@ -3715,11 +3730,11 @@ impl OutputCapture {
             let stderr_buf = Arc::new(Mutex::new(Vec::new()));
 
             let out_reader = Self::spawn_reader(
-                std::fs::File::from_raw_fd(out_fds[0]),
+                file_from_raw_fd(out_fds[0]),
                 Arc::clone(&stdout_buf),
             );
             let err_reader = Self::spawn_reader(
-                std::fs::File::from_raw_fd(err_fds[0]),
+                file_from_raw_fd(err_fds[0]),
                 Arc::clone(&stderr_buf),
             );
 
@@ -3770,7 +3785,6 @@ impl OutputCapture {
 /// RAII cleanup: restore the original stdout/stderr fds, then join the
 /// reader threads. Restoring the fds closes the pipe write ends (fd 1/2
 /// revert to the saved originals), which makes the reader threads see EOF.
-#[cfg(unix)]
 impl Drop for OutputCapture {
     fn drop(&mut self) {
         unsafe {
