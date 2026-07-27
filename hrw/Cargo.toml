@@ -11,10 +11,8 @@ edition = "2024"
 excessive_nesting = "allow"
 too_many_arguments = "allow"
 
-[target.'cfg(unix)'.dependencies]
-libc = "0.2"
-
 [dependencies]
+libc = "0.2"
 anyhow = "1.0.103"
 eframe = "0.35.0"
 egui_commonmark = { version = "0.24", default-features = false }  # Markdown rendering for tour/narrative panels
