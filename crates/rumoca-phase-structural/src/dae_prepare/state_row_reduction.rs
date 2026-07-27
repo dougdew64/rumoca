@@ -1039,6 +1039,42 @@ mod tests {
     }
 
     #[test]
+    fn emit_index_reduction_frame_pushes_to_both_vec_and_live_trace() {
+        let (lt, rx) = crate::LiveTrace::new();
+        let mut frames = Vec::new();
+        let frame = IndexReductionFrame {
+            step: IndexReductionStep::BeginState { state: "x".into() },
+            demoted_so_far: vec![],
+            round: 0,
+        };
+        emit_index_reduction_frame(&mut frames, Some(&lt), frame);
+        let frame2 = IndexReductionFrame {
+            step: IndexReductionStep::Demoted { state: "x".into() },
+            demoted_so_far: vec!["x".into()],
+            round: 0,
+        };
+        emit_index_reduction_frame(&mut frames, Some(&lt), frame2);
+
+        assert_eq!(frames.len(), 2);
+        let live_frames: Vec<_> = rx.try_iter().collect();
+        assert_eq!(live_frames.len(), 2);
+        assert_eq!(frames[0].demoted_so_far, live_frames[0].demoted_so_far);
+        assert_eq!(frames[1].demoted_so_far, live_frames[1].demoted_so_far);
+    }
+
+    #[test]
+    fn emit_index_reduction_frame_works_without_live_trace() {
+        let mut frames = Vec::new();
+        let frame = IndexReductionFrame {
+            step: IndexReductionStep::RoundComplete { round: 0, demotions_this_round: 1 },
+            demoted_so_far: vec!["y".into()],
+            round: 0,
+        };
+        emit_index_reduction_frame(&mut frames, None, frame);
+        assert_eq!(frames.len(), 1);
+    }
+
+    #[test]
     fn normalize_ode_equation_sign_uses_equation_span() {
         let span = test_span();
         let mut dae = Dae::new();

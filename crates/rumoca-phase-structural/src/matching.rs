@@ -42,10 +42,10 @@ pub struct MatchingTraceResult {
 
 /// Like `maximum_matching`, but records every algorithmic step for animation.
 ///
-/// When `live` is `Some`, each frame is also pushed to the shared
-/// [`LiveTrace`] buffer — set a debugger breakpoint on [`LiveTrace::push`]
-/// to single-step through the algorithm while a UI thread renders each
-/// frame as it arrives.
+/// When `live` is `Some`, each frame is also sent through the
+/// [`LiveTrace`] channel — set a debugger breakpoint on
+/// [`live_trace_breakpoint`] to single-step through the algorithm while
+/// a UI thread renders each frame as it arrives.
 pub fn maximum_matching_with_trace(
     n_eq: usize,
     n_var: usize,

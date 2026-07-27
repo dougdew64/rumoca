@@ -44,7 +44,7 @@ pub fn tarjan_scc_with_trace(
     adj: &[Vec<usize>],
     live: Option<&LiveTrace<TarjanFrame>>,
 ) -> TarjanTraceResult {
-    let mut state = TracedTarjanState::new(n, live.cloned());
+    let mut state = TracedTarjanState::new(n, live);
     for v in 0..n {
         if state.index[v].is_none() {
             state.strongconnect(v, adj);
@@ -130,7 +130,7 @@ impl TarjanState {
     }
 }
 
-struct TracedTarjanState {
+struct TracedTarjanState<'a> {
     index_counter: usize,
     stack: Vec<usize>,
     on_stack: Vec<bool>,
@@ -138,11 +138,11 @@ struct TracedTarjanState {
     lowlink: Vec<usize>,
     sccs: Vec<Vec<usize>>,
     frames: Vec<TarjanFrame>,
-    live: Option<LiveTrace<TarjanFrame>>,
+    live: Option<&'a LiveTrace<TarjanFrame>>,
 }
 
-impl TracedTarjanState {
-    fn new(n: usize, live: Option<LiveTrace<TarjanFrame>>) -> Self {
+impl<'a> TracedTarjanState<'a> {
+    fn new(n: usize, live: Option<&'a LiveTrace<TarjanFrame>>) -> Self {
         Self {
             index_counter: 0,
             stack: Vec::new(),
