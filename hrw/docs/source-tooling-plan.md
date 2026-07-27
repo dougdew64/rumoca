@@ -179,7 +179,11 @@ touch code at all until its design question is answered.
 
 ## Progress
 
-- [ ] Phase 1 — Modelica lexer
+- [x] **Phase 1 — Modelica lexer** ✅ 2026-07-27. `hrw/src/modelica_lex.rs`,
+      13 tests. Two decisions worth knowing before Phase 2: quoted identifiers
+      lex as `Identifier`, not `String` (so `'end of travel'` stays a clickable
+      name), and tokens tile the input exactly including whitespace, so
+      rendering can walk the list and emit every byte once.
 - [ ] Phase 2 — Syntax highlighting (#36)
 - [ ] Phase 3 — Clickable identifiers re-based on the lexer
 - [ ] Phase 4 — Reverse identifier tracking (#37)
