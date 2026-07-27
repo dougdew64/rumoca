@@ -74,7 +74,14 @@ impl MatchingAnimation {
             interval: 0.4,
             elapsed: 0.0,
             live_rx: None,
-            live_done: Arc::new(AtomicBool::new(false)),
+            // `true`, not `false`: for a recorded animation the honest answer to
+            // "is a live session still running?" is no. `live_debug_lifecycle`
+            // uses this as its breakpoint-cleanup safety net — if a breakpoint is
+            // armed while the view is showing a recorded animation, no live
+            // session is coming and the breakpoint must be released. With `false`
+            // that net was inert and an armed breakpoint could leak. Matches
+            // `ReductionAnimation::from_frames`.
+            live_done: Arc::new(AtomicBool::new(true)),
         }
     }
 
@@ -163,13 +170,9 @@ impl MatchingAnimation {
         // In live mode, sync new frames from the channel receiver.
         self.sync_live();
 
-        if self.frames.is_empty() {
-            if self.is_live() {
-                ui.label("Waiting for first frame from debugger...");
-                ui.ctx().request_repaint();
-            } else {
-                ui.label("No matching trace available.");
-            }
+        // Nothing to show at all — no recorded frames and no live session.
+        if self.frames.is_empty() && !self.is_live() {
+            ui.label("No matching trace available.");
             return;
         }
 
@@ -204,6 +207,17 @@ impl MatchingAnimation {
             is_live,
             live_finished,
         );
+
+        // Live session armed, but the debugger is still paused at the startup
+        // gate so no frames have arrived. The controls above stay rendered —
+        // notably Reset — instead of the whole row vanishing until the first
+        // Continue.
+        if self.frames.is_empty() {
+            ui.add_space(4.0);
+            ui.label("Waiting for first frame from debugger\u{2026}");
+            ui.ctx().request_repaint();
+            return;
+        }
 
         // --- Step description ---
         if let Some(frame) = self.current_frame() {
@@ -511,6 +525,20 @@ mod tests {
         let anim = MatchingAnimation::from_incidence(&mat);
         assert!(!anim.is_empty());
         assert!(anim.frames.len() > 3); // at least TryEquation + Explore + Assign per eq
+    }
+
+    /// A recorded animation must report that no live session is running.
+    ///
+    /// `live_debug_lifecycle` uses `live_finished()` as its breakpoint-cleanup
+    /// safety net: an armed breakpoint with no live session coming has to be
+    /// released. This was `false` here, which made that net inert. Mirrors
+    /// `ReductionAnimation::from_frames`' `from_empty_frames` test.
+    #[test]
+    fn recorded_animation_reports_no_live_session() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        let anim = MatchingAnimation::from_incidence(&mat);
+        assert!(!anim.is_live());
+        assert!(anim.live_finished(), "a recorded animation has no live session running");
     }
 
     #[test]

@@ -707,3 +707,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `lib.rs` and to the `playing && !is_live()` advance guards in all three animations — changing only
   the former would have rendered a Play button that did nothing. The "Live (done)" badge stays, since
   it is still true and worth knowing.
+- **2026-07-27 — Animation controls survive the empty-frames state; `live_done` normalized to
+  `true` for recorded animations.** Two loose ends from the playback fix. (1) All three animations
+  early-returned when `frames` was empty, *before* rendering the control row — so while a live
+  session sat at the startup gate waiting for the first Continue, the entire row vanished, Reset
+  included, leaving no way to back out. The controls now render first and the empty case returns
+  after them; `frame_label` shows "No frames yet" rather than "Frame 1/0". Everything downstream was
+  already guarded by `if let Some(frame) = self.current_frame()`, so no other code had to change.
+  (2) `MatchingAnimation`/`TarjanAnimation` initialized recorded animations with `live_done: false`
+  while `ReductionAnimation` used `true`. `true` is correct — for a recorded animation the honest
+  answer to "is a live session still running?" is no — and `live_debug_lifecycle` relies on it as a
+  breakpoint-cleanup safety net, releasing an armed breakpoint when no live session is coming. With
+  `false` that net was inert for two of the three views, so a stray armed breakpoint could leak.

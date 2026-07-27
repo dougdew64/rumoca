@@ -40,6 +40,9 @@ impl ReductionAnimation {
             interval: 0.6,
             elapsed: 0.0,
             live_rx: None,
+            // `true`: a recorded animation has no live session running. See the
+            // note in `MatchingAnimation::from_incidence` — `live_debug_lifecycle`
+            // uses this to release a stray armed breakpoint.
             live_done: Arc::new(AtomicBool::new(true)),
         }
     }
@@ -124,13 +127,9 @@ impl ReductionAnimation {
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         self.sync_live();
 
-        if self.frames.is_empty() {
-            if self.is_live() {
-                ui.label("Waiting for first frame from debugger...");
-                ui.ctx().request_repaint();
-            } else {
-                ui.label("No index-reduction trace available.");
-            }
+        // Nothing to show at all — no recorded frames and no live session.
+        if self.frames.is_empty() && !self.is_live() {
+            ui.label("No index-reduction trace available.");
             return;
         }
 
@@ -164,6 +163,17 @@ impl ReductionAnimation {
             is_live,
             live_finished,
         );
+
+        // Live session armed, but the debugger is still paused at the startup
+        // gate so no frames have arrived. The controls above stay rendered —
+        // notably Reset — instead of the whole row vanishing until the first
+        // Continue.
+        if self.frames.is_empty() {
+            ui.add_space(4.0);
+            ui.label("Waiting for first frame from debugger\u{2026}");
+            ui.ctx().request_repaint();
+            return;
+        }
 
         if let Some(frame) = self.current_frame() {
             ui.add_space(4.0);

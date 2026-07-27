@@ -102,7 +102,11 @@ impl TarjanAnimation {
             interval: 0.5,
             elapsed: 0.0,
             live_rx: None,
-            live_done: Arc::new(AtomicBool::new(false)),
+            // `true`, not `false` — see the note in `MatchingAnimation::from_incidence`:
+            // a recorded animation has no live session running, and
+            // `live_debug_lifecycle` relies on that to release a stray armed
+            // breakpoint.
+            live_done: Arc::new(AtomicBool::new(true)),
         })
     }
 
@@ -188,13 +192,9 @@ impl TarjanAnimation {
     pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         self.sync_live();
 
-        if self.frames.is_empty() {
-            if self.is_live() {
-                ui.label("Waiting for first frame from debugger...");
-                ui.ctx().request_repaint();
-            } else {
-                ui.label("No Tarjan trace available.");
-            }
+        // Nothing to show at all — no recorded frames and no live session.
+        if self.frames.is_empty() && !self.is_live() {
+            ui.label("No Tarjan trace available.");
             return;
         }
 
@@ -229,6 +229,17 @@ impl TarjanAnimation {
             is_live,
             live_finished,
         );
+
+        // Live session armed, but the debugger is still paused at the startup
+        // gate so no frames have arrived. The controls above stay rendered —
+        // notably Reset — instead of the whole row vanishing until the first
+        // Continue.
+        if self.frames.is_empty() {
+            ui.add_space(4.0);
+            ui.label("Waiting for first frame from debugger\u{2026}");
+            ui.ctx().request_repaint();
+            return;
+        }
 
         // --- Step description ---
         if let Some(frame) = self.current_frame() {
@@ -439,6 +450,17 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = TarjanAnimation::from_incidence(&mat).unwrap();
         assert!(!anim.is_empty());
+    }
+
+    /// A recorded animation must report that no live session is running — see
+    /// `recorded_animation_reports_no_live_session` in `matching_anim` for why
+    /// `live_debug_lifecycle` depends on this.
+    #[test]
+    fn recorded_animation_reports_no_live_session() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        let anim = TarjanAnimation::from_incidence(&mat).unwrap();
+        assert!(!anim.is_live());
+        assert!(anim.live_finished(), "a recorded animation has no live session running");
     }
 
     #[test]

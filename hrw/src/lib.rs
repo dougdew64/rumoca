@@ -94,6 +94,19 @@ pub fn playback_applies(is_live: bool, live_finished: bool) -> bool {
     !is_live || live_finished
 }
 
+/// Label for the frame counter.
+///
+/// `n_frames` is zero while a live session is armed but the debugger is still
+/// paused at the startup gate — the controls render in that state so Reset
+/// stays reachable, and "Frame 1/0" would be nonsense.
+pub fn frame_label(cursor: usize, n_frames: usize) -> String {
+    if n_frames == 0 {
+        "No frames yet".to_owned()
+    } else {
+        format!("Frame {}/{}", cursor + 1, n_frames)
+    }
+}
+
 pub fn animation_controls(
     ui: &mut eframe::egui::Ui,
     cursor: &mut usize,
@@ -153,7 +166,7 @@ pub fn animation_controls(
         });
 
         ui.separator();
-        ui.label(format!("Frame {}/{}", *cursor + 1, n_frames));
+        ui.label(frame_label(*cursor, n_frames));
 
         if playback_applies(is_live, live_finished) {
             ui.separator();
@@ -229,6 +242,16 @@ pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
 #[cfg(test)]
 mod tests_playback {
     use super::playback_applies;
+
+    /// The frame counter must stay sensible with zero frames — the controls
+    /// now render while a live session waits at the startup gate, so that
+    /// state is reachable rather than hypothetical.
+    #[test]
+    fn frame_label_handles_the_empty_live_case() {
+        assert_eq!(super::frame_label(0, 0), "No frames yet");
+        assert_eq!(super::frame_label(0, 1), "Frame 1/1");
+        assert_eq!(super::frame_label(3, 10), "Frame 4/10");
+    }
 
     /// Play/Pause and the speed slider are hidden only *while* a live debug
     /// session is running — not after it finishes.
