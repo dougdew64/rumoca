@@ -111,19 +111,79 @@ impl<F: Send + 'static> LiveTrace<F> {
 /// — unlike generic functions (`black_box<T>`, `Vec::push`) that may share
 /// monomorphized code at higher opt-levels.
 ///
+/// The most recent value passed to [`live_trace_breakpoint`]. Readable via
+/// [`last_frame_index`] — that reader is what keeps the store *observable*,
+/// see the note on the function below.
+static LAST_FRAME_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+/// The frame index most recently passed to [`live_trace_breakpoint`].
+///
+/// Exists so the store in `live_trace_breakpoint` has a real consumer. A
+/// write-only static is dead state that the optimizer is free to delete.
+pub fn last_frame_index() -> usize {
+    LAST_FRAME_INDEX.load(Ordering::Acquire)
+}
+
 /// `frame_index` is the 0-based index of the frame just pushed — inspect
 /// it in the debugger to know which algorithmic step you're on.
 /// `usize::MAX` indicates the startup gate (before any algorithm work).
-static LAST_FRAME_INDEX: AtomicUsize = AtomicUsize::new(0);
-
+///
+/// ## Why the body looks over-engineered for one store
+///
+/// This function must **never compile to an empty body**, or breakpoints set
+/// on it land somewhere else entirely. The failure chain (diagnosed on Windows
+/// 2026-07-27, see `hrw/docs/windows-migration.md`):
+///
+/// 1. `LAST_FRAME_INDEX` was written here and read nowhere, so at any
+///    optimization level above zero LLVM may dead-store-eliminate the write.
+/// 2. With its only statement gone, this function becomes a bare `ret`.
+/// 3. The MSVC linker's identical COMDAT folding (`/OPT:ICF`, on by default)
+///    merges byte-identical functions — so this collapses onto *every other*
+///    empty function in the binary, e.g. eframe's `App::raw_input_hook`.
+/// 4. A breakpoint here then resolves to that shared address and fires from
+///    unrelated code — in practice, eframe's per-frame render loop.
+///
+/// `#[inline(never)]` does not prevent this. It keeps the *function* from
+/// being inlined; it says nothing about whether the *body* survives. Two
+/// independent defenses keep the body non-empty and unfoldable: the store has
+/// a genuine reader ([`last_frame_index`]), and `black_box` makes the value
+/// opaque to the optimizer so the round-trip cannot be reasoned away.
 #[inline(never)]
 pub fn live_trace_breakpoint(frame_index: usize) {
-    LAST_FRAME_INDEX.store(frame_index, Ordering::Relaxed);
+    LAST_FRAME_INDEX.store(frame_index, Ordering::Release);
+    std::hint::black_box(LAST_FRAME_INDEX.load(Ordering::Acquire));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Serializes the tests that touch `LAST_FRAME_INDEX`. Cargo runs tests on
+    /// parallel threads, and the anchor static is process-global — any test that
+    /// pushes with a frame delay writes it, so reads would otherwise race.
+    static ANCHOR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    /// Take the anchor lock, ignoring poisoning (a panic in another test says
+    /// nothing about whether this static is usable).
+    fn lock_anchor() -> std::sync::MutexGuard<'static, ()> {
+        ANCHOR_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// The store in `live_trace_breakpoint` must remain **observable**.
+    ///
+    /// This is a regression test for a debugger failure, not a behavioural one:
+    /// if the store can be dead-store-eliminated, the function body empties, the
+    /// linker folds it onto other empty functions, and breakpoints set on it fire
+    /// from unrelated code. See the note on `live_trace_breakpoint`.
+    #[test]
+    fn breakpoint_anchor_store_is_observable() {
+        let _guard = lock_anchor();
+        live_trace_breakpoint(42);
+        assert_eq!(last_frame_index(), 42, "the anchor must record its argument");
+        // The startup-gate sentinel must round-trip like any other value.
+        live_trace_breakpoint(usize::MAX);
+        assert_eq!(last_frame_index(), usize::MAX, "startup gate value");
+    }
 
     #[test]
     fn push_and_recv() {
@@ -163,6 +223,8 @@ mod tests {
 
     #[test]
     fn with_frame_delay_calls_breakpoint() {
+        // Pushing with a delay calls the anchor, writing LAST_FRAME_INDEX.
+        let _guard = lock_anchor();
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(Duration::from_millis(1));
         lt.push(99);
@@ -173,6 +235,8 @@ mod tests {
 
     #[test]
     fn frame_delay_propagates_through_clone() {
+        // Pushing with a delay calls the anchor, writing LAST_FRAME_INDEX.
+        let _guard = lock_anchor();
         let (lt1, rx) = LiveTrace::new();
         let lt1 = lt1.with_frame_delay(Duration::from_millis(1));
         let lt2 = lt1.clone();
