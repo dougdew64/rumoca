@@ -2415,7 +2415,7 @@ impl eframe::App for App {
                         (StageKind::Parse, "Parse", &self.stages.parse, None),
                         (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
                         (StageKind::Instantiate, "Instantiate", &self.stages.instantiate, None),
-                        (StageKind::Typecheck, "Typecheck (instanced)", &self.stages.typecheck, Some(
+                        (StageKind::Typecheck, "Typecheck", &self.stages.typecheck, Some(
                             "The model-scoped instanced typecheck: it types the instantiated \
                              overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
                              Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
@@ -2497,13 +2497,12 @@ impl eframe::App for App {
                             want_stage_ask = true;
                         }
                     }
-                    ui.separator();
-                    // The compiled-model identity (first class in the AST — not the
-                    // filename, and None until parse succeeds). Whole-specimen capture
-                    // now lives on the specimen list's right-click menu, not here.
-                    if let Some(m) = &self.model {
-                        ui.label(egui::RichText::new(m).monospace().strong());
-                    }
+                    // The compiled-model name is deliberately NOT shown here — the
+                    // stage tab row is short on horizontal space, and the same
+                    // identity is already visible in the specimen list and the
+                    // tree breadcrumb. `self.model` itself is still maintained;
+                    // it feeds the Claude bridge focus file, live-debug arming,
+                    // capture gating, and the narrative lookup.
                     if self.compiling {
                         ui.spinner();
                     }

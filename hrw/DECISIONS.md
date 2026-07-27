@@ -744,3 +744,17 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   bool` so a dropped click is a compile error. Known consequence: when a view has no data at all,
   there is no control row, so the Debug button is absent rather than present-and-disabled — accepted
   because the entire animation UI is absent in that state, not just one control.
+- **2026-07-27 — Stage tab renamed "Typecheck (instanced)" → "Typecheck".** The parenthetical made
+  the tab the widest in the bar for a distinction almost no reading of the tab needs. The nuance it
+  carried is unchanged and still one hover away: the tooltip continues to explain that this is the
+  model-scoped instanced typecheck, running *after* Instantiate rather than in Rumoca's nominal
+  phase-3 slot. Amends the label choice in the 2026-07-19 pipeline-order entry above; the ordering
+  decision itself is unchanged.
+- **2026-07-27 — Compiled-model name removed from the stage tab row.** The row was short on
+  horizontal space and the same identity is already visible in the specimen list and the tree
+  breadcrumb, so the label and its leading separator are gone. **`self.model` itself is unchanged
+  and must stay** — it is compilation state that the label happened to display, not display state:
+  it supplies `model` in the Claude bridge's `focus.json`, the specimen key for
+  `arm_live_trace_breakpoint`, the gate for capture actions, the specimen-notebook narrative lookup,
+  and the tree root label/breadcrumb. Removing it would silently degrade the bridge. A comment at
+  the former label site records this.
