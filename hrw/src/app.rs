@@ -2365,10 +2365,11 @@ impl eframe::App for App {
         // `self` through the panel, so we can't call methods like
         // `emit_node_focus` inside it. Instead, the closure sets these flags
         // and the actual method calls happen after the closure, below.
-        let mut node_ask: Option<Vec<Seg>> = None;   // left-click capture (explain)
-        let mut debug_ask: Option<Vec<Seg>> = None;  // right-click debugger capture
+        let mut tree_actions = tree::TreeActions::default();
+        let node_ask: Option<Vec<Seg>> = None;       // left-click capture (explain)
+        let debug_ask: Option<Vec<Seg>> = None;      // right-click debugger capture
         let mut canvas_capture: Option<Vec<Seg>> = None; // spy-plot block click
-        let mut nav_to: Option<String> = None;       // "Go to definition" target
+        let nav_to: Option<String> = None;           // "Go to definition" target
         let mut want_stage_ask = false;              // stage tab was clicked
         let mut go_back = false;                     // navigation "Back" button
         let mut go_home = false;                     // navigation "Specimen" button
@@ -2627,12 +2628,37 @@ impl eframe::App for App {
                 // always knows what's tracked and can clear it.
                 if let Some(name) = self.tracked_identifier.clone() {
                     let mut clear = false;
+                    // Where the declaration is — or, just as informative, that
+                    // there isn't one. `IdentifierIndex` only holds variables
+                    // whose span belongs to the specimen, so a miss means the
+                    // name came from a library or was created by a compiler
+                    // phase. Saying so beats the previous behaviour, where
+                    // reverse tracking simply did nothing and looked broken.
+                    let declared_at = self.identifier_index.as_ref()
+                        .and_then(|idx| idx.variables.get(&name))
+                        .map(|v| v.source_line);
                     ui.horizontal(|ui| {
                         ui.label(
                             egui::RichText::new(format!("Tracking: {name}"))
                                 .monospace()
                                 .color(crate::colors::TRACKED_GOLD)
                         );
+                        match declared_at {
+                            Some(line) => {
+                                ui.weak(format!("\u{2014} declared at line {line}"));
+                            }
+                            None => {
+                                ui.weak("\u{2014} not declared in this specimen")
+                                    .on_hover_text(
+                                        "This name is not declared in the specimen \
+                                         source, so there is no line to jump to. It \
+                                         comes from a library, or a compiler phase \
+                                         created it \u{2014} an index-reduction dummy \
+                                         derivative or an alias, for example. Capture \
+                                         it and ask Claude to trace where it came from.",
+                                    );
+                            }
+                        }
                         if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
                             clear = true;
                         }
@@ -3052,7 +3078,7 @@ impl eframe::App for App {
                                 let label = self.model.as_deref().unwrap_or("model");
                                 let prev = self.previous_stage_value();
                                 egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                    tree::tree_ui(ui, label, value, prev, &mut node_ask, &mut nav_to, &mut debug_ask, &self.def_index, &self.field_help, self.tracked_identifier.as_deref());
+                                    tree::tree_ui(ui, label, value, prev, &mut tree_actions, &self.def_index, &self.field_help, self.tracked_identifier.as_deref());
                                 });
                             }
                             None if stage.note.is_none() => {
@@ -3091,7 +3117,7 @@ impl eframe::App for App {
 
                 let entry = self.nav.last().unwrap();
                 egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut node_ask, &mut nav_to, &mut debug_ask, &entry.def_index, &self.field_help, self.tracked_identifier.as_deref());
+                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut tree_actions, &entry.def_index, &self.field_help, self.tracked_identifier.as_deref());
                 });
             }
         });
@@ -3107,8 +3133,22 @@ impl eframe::App for App {
         } else if go_back {
             self.nav.pop();
         }
+        // Fold the tree's actions in alongside the ones other views produce.
+        let nav_to = nav_to.or(tree_actions.nav_to);
+        let debug_ask = debug_ask.or(tree_actions.debug);
+        let mut node_ask = node_ask.or(tree_actions.capture);
         if let Some(name) = nav_to {
             self.navigate_to(name);
+        }
+        // Reverse tracking from any stage (idea #37). Reveals the source, the
+        // same as tracking from the equation sheet — the point is seeing where
+        // the identifier came from.
+        if let Some(name) = tree_actions.track {
+            self.set_tracked_identifier(name);
+            if self.tracked_identifier.is_some() {
+                self.ui_mode = UiMode::Specimen;
+                self.specimen_detail = SpecimenDetail::Source;
+            }
         }
         // A spy-plot block click is treated identically to a tree-node click
         // for capture purposes.

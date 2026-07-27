@@ -213,11 +213,15 @@ touch code at all until its design question is answered.
       anticipated); and same-leaf names on one line (`a.phi` vs `b.phi`) link to
       the right variable via longest-dotted-path matching. Dropped the plan's
       "hover explaining the name did not survive flattening" idea — see below.
-- [~] **Phase 4 — Reverse identifier tracking (#37)** — first increment landed
-      2026-07-27: scroll-to-line in the source view (armed on *change* only, via
-      `scrolled_source_for`), `strip_der`, a single `set_tracked_identifier`
-      entry point that toggles, and the equation sheet's variable-classification
-      grid as the first click target. **Remaining entry points:** incidence
-      column headers, spy-plot blocks, reduction-view rows, tree leaves — each
-      is now just a click handler calling `set_tracked_identifier`.
+- [~] **Phase 4 — Reverse identifier tracking (#37)** — 2026-07-27: scroll-to-line
+      in the source view (armed on *change* only, via `scrolled_source_for`),
+      `strip_der`, a single `set_tracked_identifier` entry point that toggles and
+      reveals the source, and two entry points — the equation sheet's
+      variable-classification grid, and "Track" in the IR tree's row menu. The
+      tree is on every stage tab, so the gesture is now near-ambient rather than
+      per-view. Tracking never answers with silence: the tracking bar states the
+      declaring line, or says the name is not declared in this specimen.
+      **Remaining:** incidence column headers, spy-plot blocks, reduction-view
+      rows — all canvas-painted, so they need hit-testing rather than a widget
+      response.
 - [ ] Phase 5 — Forward identifier debugging *(design first)*

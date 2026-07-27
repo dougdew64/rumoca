@@ -54,6 +54,24 @@ use crate::worker::{is_def_id_key, DefInfo};
 // in both light and dark themes.
 const CHANGED_COLOR: egui::Color32 = crate::colors::OK_GREEN;
 
+/// What the user asked the tree to do this frame.
+///
+/// Bundled rather than passed as four separate `&mut Option<_>` out-parameters:
+/// `tree_ui` was already at ten arguments and `node_ui` at thirteen, both under
+/// `#[allow(clippy::too_many_arguments)]`, and adding `track` would have made a
+/// transposable signature worse. Each field is `None` unless the user acted.
+#[derive(Default)]
+pub struct TreeActions {
+    /// Left-click capture — the key-path of a node to explain.
+    pub capture: Option<Vec<Seg>>,
+    /// "Go to definition" — a class name to navigate to.
+    pub nav_to: Option<String>,
+    /// "Show this being set" — the key-path to arm a breakpoint for.
+    pub debug: Option<Vec<Seg>>,
+    /// "Track this identifier" — reverse tracking (idea #37) from any stage.
+    pub track: Option<String>,
+}
+
 /// Render a `serde_json::Value` as a collapsible tree widget.
 ///
 /// This is the top-level entry point. It creates an empty key-path and begins
@@ -66,9 +84,7 @@ const CHANGED_COLOR: egui::Color32 = crate::colors::OK_GREEN;
 /// * `value` — the IR to render, as a generic JSON value
 /// * `prev` — the previous stage's IR for diff highlighting (`None` if no
 ///   previous stage exists, e.g., for Parse which is the first stage)
-/// * `ask` — output: set to a `Vec<Seg>` key-path when the user captures a node
-/// * `nav_to` — output: set to a class name when the user clicks "Go to definition"
-/// * `debug` — output: set when the user wants to arm a debugger breakpoint
+/// * `actions` — output: what the user asked for this frame (see [`TreeActions`])
 /// * `def_index` — lookup table mapping numeric DefIds to their resolved names,
 ///   so `type_def_id: 27579` renders with an inline annotation like
 ///   `-> model Modelica.Mechanics.Rotational.Inertia`
@@ -77,9 +93,7 @@ pub fn tree_ui(
     root_label: &str,
     value: &Value,
     prev: Option<&Value>,
-    ask: &mut Option<Vec<Seg>>,
-    nav_to: &mut Option<String>,
-    debug: &mut Option<Vec<Seg>>,
+    actions: &mut TreeActions,
     def_index: &BTreeMap<u64, DefInfo>,
     field_help: &HashMap<String, String>,
     tracked: Option<&str>,
@@ -90,7 +104,7 @@ pub fn tree_ui(
         collect_tracked_ancestors(value, t, &mut set);
         set
     });
-    node_ui(ui, 0, root_label, value, prev, &mut path, ask, nav_to, debug, def_index, field_help, tracked, expand.as_ref());
+    node_ui(ui, 0, root_label, value, prev, &mut path, actions, def_index, field_help, tracked, expand.as_ref());
 }
 
 // Render one node of the JSON tree recursively.
@@ -130,9 +144,7 @@ fn node_ui(
     value: &Value,
     prev: Option<&Value>,
     path: &mut Vec<Seg>,
-    ask: &mut Option<Vec<Seg>>,
-    nav_to: &mut Option<String>,
-    debug: &mut Option<Vec<Seg>>,
+    actions: &mut TreeActions,
     def_index: &BTreeMap<u64, DefInfo>,
     field_help: &HashMap<String, String>,
     tracked: Option<&str>,
@@ -150,14 +162,14 @@ fn node_ui(
                 .show(ui, |ui| {
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, ask, nav_to, debug, def_index, field_help, tracked, expand);
+                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, actions, def_index, field_help, tracked, expand);
                         path.pop();
                     }
                 });
             if resp.header_response.clicked() {
-                *ask = Some(path.to_vec());
+                actions.capture = Some(path.to_vec());
             }
-            row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
+            row_menu(&resp.header_response, path, actions, &format!("{key} {hint}"), None, None);
             if let Some(doc) = field_help.get(key) {
                 resp.header_response.clone().on_hover_text(doc);
             }
@@ -169,14 +181,14 @@ fn node_ui(
                 .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, ask, nav_to, debug, def_index, field_help, tracked, expand);
+                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, actions, def_index, field_help, tracked, expand);
                         path.pop();
                     }
                 });
             if resp.header_response.clicked() {
-                *ask = Some(path.to_vec());
+                actions.capture = Some(path.to_vec());
             }
-            row_menu(&resp.header_response, path, ask, &format!("{key} {hint}"), None, nav_to, debug);
+            row_menu(&resp.header_response, path, actions, &format!("{key} {hint}"), None, None);
         }
         scalar => {
             let changed = prev.is_some_and(|p| p != scalar);
@@ -192,9 +204,9 @@ fn node_ui(
             });
             let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed, is_tracked);
             if resp.clicked() {
-                *ask = Some(path.to_vec());
+                actions.capture = Some(path.to_vec());
             }
-            row_menu(&resp, path, ask, &copy_text, nav_target(key, scalar, def_index), nav_to, debug);
+            row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index), trackable_name(key, scalar));
             if let Some(doc) = field_help.get(key) {
                 resp.clone().on_hover_text(doc);
             }
@@ -234,18 +246,33 @@ fn nav_target(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>) -> 
 fn row_menu(
     resp: &egui::Response,
     path: &[Seg],
-    ask: &mut Option<Vec<Seg>>,
+    actions: &mut TreeActions,
     copy_text: &str,
     nav: Option<String>,
-    nav_to: &mut Option<String>,
-    debug: &mut Option<Vec<Seg>>,
+    track: Option<String>,
 ) {
     resp.context_menu(|ui| {
         // Don't wrap menu labels — widen the menu to fit long "Go to <name>"
         // items (fully-qualified Modelica type names get long).
         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
         if ui.button("🔎 Capture").clicked() {
-            *ask = Some(path.to_vec());
+            actions.capture = Some(path.to_vec());
+            ui.close();
+        }
+        // Reverse tracking (idea #37) from any stage. The tree is the one view
+        // present on every stage tab, so offering it here is what makes
+        // "where did this come from?" an ambient gesture rather than a
+        // per-view feature.
+        if let Some(name) = &track
+            && ui
+                .button(format!("\u{25ce} Track {name}"))
+                .on_hover_text(
+                    "Highlight this identifier across every stage, and show \
+                     where it is declared in the specimen source.",
+                )
+                .clicked()
+        {
+            actions.track = Some(name.clone());
             ui.close();
         }
         if ui
@@ -253,13 +280,13 @@ fn row_menu(
             .on_hover_text("Capture this field so Claude can arm a breakpoint at where Rumoca sets it.")
             .clicked()
         {
-            *debug = Some(path.to_vec());
+            actions.debug = Some(path.to_vec());
             ui.close();
         }
         if let Some(name) = &nav
             && ui.button(format!("↪ Go to {name}")).clicked()
         {
-            *nav_to = Some(name.clone());
+            actions.nav_to = Some(name.clone());
             ui.close();
         }
         if ui.button("📋 Copy text").clicked() {
@@ -267,6 +294,34 @@ fn row_menu(
             ui.close();
         }
     });
+}
+
+/// The identifier a leaf names, if it names one.
+///
+/// Offered as "Track …" in the row menu. Deliberately conservative: the tree
+/// renders every string in the IR, most of which are not variable names, and a
+/// Track action on a description or a file path would be noise that tracks
+/// nothing.
+///
+/// Accepts a flat variable name — dot-separated identifier components, possibly
+/// wrapped in `der(…)` — and nothing else. Prose fields are excluded for the
+/// same reason they are excluded from tracked highlighting (see
+/// [`is_prose_field`]).
+fn trackable_name(key: &str, value: &Value) -> Option<String> {
+    if is_prose_field(key) {
+        return None;
+    }
+    let Value::String(s) = value else { return None };
+    let bare = s.strip_prefix("der(").and_then(|r| r.strip_suffix(')')).unwrap_or(s);
+    if bare.is_empty() {
+        return None;
+    }
+    let is_name = bare.split('.').all(|part| {
+        !part.is_empty()
+            && part.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
+            && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    });
+    is_name.then(|| s.clone())
 }
 
 // Render a single leaf (scalar) row: "key: value", with per-type coloring.
@@ -608,6 +663,32 @@ mod tests {
             assert!(!found, "{field} is prose; a name inside it is not a mention");
             assert!(set.is_empty(), "{field} must not drag its ancestors open");
         }
+    }
+
+    /// The Track action is offered on names, not on every string the tree
+    /// renders — a Track item on a description or a file path would track
+    /// nothing and be pure noise.
+    #[test]
+    fn trackable_name_accepts_only_variable_names() {
+        let s = |v: &str| json!(v);
+        assert_eq!(trackable_name("name", &s("h")).as_deref(), Some("h"));
+        assert_eq!(
+            trackable_name("name", &s("gear.flange_a.tau")).as_deref(),
+            Some("gear.flange_a.tau")
+        );
+        // Derivatives are names too — `strip_der` reduces them when tracking.
+        assert_eq!(trackable_name("name", &s("der(h)")).as_deref(), Some("der(h)"));
+
+        // Prose is excluded for the same reason it is excluded from matching.
+        assert!(trackable_name("description", &s("height")).is_none());
+        // Not names.
+        assert!(trackable_name("text", &s("der(h) - v")).is_none());
+        assert!(trackable_name("text", &s("height of h")).is_none());
+        assert!(trackable_name("text", &s("")).is_none());
+        assert!(trackable_name("text", &s("9lives")).is_none());
+        assert!(trackable_name("text", &s("a..b")).is_none());
+        // Non-strings offer nothing to track.
+        assert!(trackable_name("count", &json!(42)).is_none());
     }
 
     /// The exclusion is by field, not by content — code-bearing strings must
