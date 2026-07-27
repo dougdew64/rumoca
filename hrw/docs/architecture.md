@@ -531,12 +531,13 @@ matching/BLT overlay lookups, which cross-reference by name.
 
 ### Algorithm animation steppers
 
-Two animated views replay structural analysis algorithms frame by frame, built
+Three animated views replay structural analysis algorithms frame by frame, built
 from trace data recorded by instrumented variants of the Rumoca phase functions.
-Both support two animation modes:
+All three support two animation modes:
 
-1. **Recorded** (default): pre-computed frames from `from_incidence` — standard
-   play/pause/step/reset controls with a speed slider.
+1. **Recorded** (default): pre-computed frames from `from_incidence` (matching,
+   tarjan) or `from_frames` (reduction) — standard play/pause/step/reset
+   controls with a speed slider.
 2. **Live debug**: frames arrive from a shared `LiveTrace<Frame>` buffer as a
    separate algorithm thread runs. Clicking the "Debug" button automatically
    arms a breakpoint on `live_trace_breakpoint` via the HRW Debugger Bridge
@@ -551,7 +552,30 @@ Both support two animation modes:
    acknowledgment file (`breakpoint-ack.json`) that the extension writes after
    processing. The thread is spawned only after the ack arrives (or after a
    3-second timeout if the extension isn't running). This guarantees the
-   breakpoint is active before the first frame is pushed.
+   breakpoint is registered before the thread starts.
+
+   **Startup gate**: the ack handshake guarantees that
+   `vscode.debug.addBreakpoints()` has been *called*, but that VS Code API is
+   asynchronous — LLDB may not have finished installing the breakpoint by the
+   time HRW sees the ack and spawns the thread. To close this gap, every
+   `start_live` thread calls `LiveTrace::wait_for_debugger()` as its very
+   first action, *before* any algorithm work begins. This sleeps 500ms (giving
+   LLDB time to finish breakpoint installation), then calls
+   `live_trace_breakpoint(usize::MAX)` with a sentinel index, so the debugger
+   pauses the thread at a point where zero frames have been pushed. The user's
+   first Continue (F5) releases the gate and the algorithm starts from step
+   zero — no steps are missed. The three layers — ack handshake, startup
+   sleep, sentinel breakpoint call — are all necessary: the ack prevents
+   spawning before the request is sent; the sleep covers the async LLDB
+   installation; the sentinel call provides the actual pause point.
+
+   **Known limitation — step-over deadlocks on WSL2**: LLDB's step-over
+   mechanism (`thread step-over`, F10) deadlocks on multi-threaded Rust
+   programs under WSL2. The symptom is a spinning "Local variables"
+   indicator that never resolves. This is a WSL2 ptrace issue, not a
+   bug in HRW or Rumoca code — Continue (F5) between breakpoints works
+   correctly. The fix is to run HRW on native Windows, where the debugger
+   uses Windows debug APIs instead of ptrace.
 
    **Breakpoint cleanup**: when the algorithm finishes, the thread's
    `on_complete` callback removes the `live_trace_breakpoint` breakpoint via
@@ -560,19 +584,29 @@ Both support two animation modes:
    with the breakpoint still armed. A UI-side `live_just_finished` check acts
    as a safety-net fallback.
 
-The `LiveTrace<F>` type (in `rumoca-phase-structural/src/live_trace.rs`) wraps an
-`Arc<Mutex<Vec<F>>>` shared between the algorithm producer and UI consumer. The
-traced algorithms (`maximum_matching_with_trace`, `tarjan_scc_with_trace`) accept
-an optional `&LiveTrace<Frame>` — when present, each frame is pushed to both the
-local vec (returned in the result) and the shared buffer (read by the UI).
-Live mode uses `LiveTrace::new().with_frame_delay(20ms)`, which adds a sleep
-after each push (so the UI thread can render before the debugger pauses all
-threads) and calls `live_trace_breakpoint` — a dedicated `#[inline(never)]`
+The `LiveTrace<F>` type (in `rumoca-phase-structural/src/live_trace.rs`) is the
+producer half of an `mpsc` channel. `LiveTrace::new()` returns
+`(LiveTrace<F>, mpsc::Receiver<F>)` — the producer moves into the algorithm
+thread, the receiver stays in the animation struct. The producer stores a bare
+`mpsc::Sender<F>` (no `Mutex` wrapper — `send()` takes `&self`) and the UI
+reads from the `Receiver` via `try_iter()`. The animation structs use
+`Arc<AtomicBool>` for the `live_done` flag instead of `Arc<Mutex<bool>>`.
+This design eliminates all explicit locks from the live debug path — the only
+synchronization is atomics and the `mpsc` channel's internal state.
+
+The traced algorithms (`maximum_matching_with_trace`, `tarjan_scc_with_trace`,
+`reduce_constrained_dummy_derivatives_with_trace`,
+`index_reduce_missing_state_derivatives_with_trace`) accept an optional
+`&LiveTrace<Frame>` — when present, each frame is pushed to both the local vec
+(returned in the result) and the channel (drained by the UI).
+Live mode uses `LiveTrace::new()` + `.with_frame_delay(20ms)`, which adds a
+sleep after each push (so the UI thread can render before the debugger pauses
+all threads) and calls `live_trace_breakpoint` — a dedicated `#[inline(never)]`
 function that the debugger resolves unambiguously. This is the upstreamable
 observability API.
 
 **Why re-running the algorithm (clicking Debug again) is safe — a Rust ownership lesson.**
-The Debug button spawns a new algorithm thread that re-runs matching or Tarjan.
+The Debug button spawns a new algorithm thread that re-runs the algorithm.
 This is safe because the algorithm runs on private copies of the data and writes
 only to its own `LiveTrace` buffer — no shared mutable state is touched. Several
 Rust ownership mechanisms work together to guarantee this at compile time:
@@ -590,12 +624,12 @@ Rust ownership mechanisms work together to guarantee this at compile time:
   across threads a compile-time error.
 
 - **`Send` and `Sync` traits**: checked automatically by the compiler.
-  `Arc<Mutex<Vec<MatchingFrame>>>` is `Send` (safe to transfer to another
-  thread) because `Mutex<Vec<MatchingFrame>>` is `Sync` (safe to share). If
-  `MatchingFrame` contained a `Rc` or a raw pointer, the compiler would refuse
-  to let it cross the thread boundary. You never have to reason about whether
-  `LiveTrace` is thread-safe — the compiler verifies it structurally from its
-  fields.
+  `LiveTrace<MatchingFrame>` is `Send` because its `Sender<F>` and
+  `Arc<AtomicUsize>` are both `Send`. The `Receiver<F>` held by the UI is
+  also `Send`. If `MatchingFrame` contained a `Rc` or a raw pointer, the
+  compiler would refuse to let it cross the thread boundary. You never have to
+  reason about whether `LiveTrace` is thread-safe — the compiler verifies it
+  structurally from its fields.
 
 - **RAII and `Drop`**: when clicking Debug replaces the old animation
   (`self.cached_matching_anim = Some(Some(new_anim))`), the old
@@ -620,6 +654,14 @@ with step-by-step descriptions using readable equation text.
 strongly connected component algorithm on the dependency graph (derived from
 the matching result). Nodes are colored by DFS state (on stack, in discovered
 SCC) and edges are classified as tree/back edges.
+
+**Reduction animation** (`reduction_anim.rs`, ~300 lines): replays the
+constrained-dummy-derivative and missing-state-derivative index reduction
+algorithms. Each frame shows the current step (begin state search, differentiate
+constraint, demote state, round complete) with before/after equation text and a
+running table of demoted states. Live mode receives the raw `Dae` (cloned from the
+worker's compilation result and stored in `App::cached_dae`) and spawns a thread
+running both reduction passes with a shared `LiveTrace<IndexReductionFrame>`.
 
 ### Index reduction summary (`reduction_view.rs`, ~580 lines)
 
@@ -976,9 +1018,10 @@ and defensive programming against data races. In Rust, the compiler enforces it:
 
 - The algorithm thread receives its inputs as *copies* (`move` closure) or
   immutable borrows (`&IncidenceMatrix`), so it cannot corrupt the source data.
-- The `LiveTrace` buffer is `Arc<Mutex<Vec<F>>>` — the `Arc` makes sharing
-  explicit, the `Mutex` makes access exclusive, and `Send + Sync` trait bounds
-  are checked at compile time. A data race is a compile error, not a runtime bug.
+- The `LiveTrace` uses a channel (`Sender<F>` on the producer,
+  `Receiver<F>` on the consumer) — no explicit locks, only atomics and
+  the channel's internal synchronization. `Send` trait bounds are checked
+  at compile time. A data race is a compile error, not a runtime bug.
 - When the algorithm thread finishes, Rust's RAII/`Drop` cleans up automatically.
   No leaked threads, no forgotten locks.
 - Re-running an algorithm is safe because `start_live` copies all data into the

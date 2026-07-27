@@ -14,7 +14,8 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, mpsc};
 use std::thread;
 
 use eframe::egui;
@@ -39,8 +40,8 @@ pub struct TarjanAnimation {
     playing: bool,
     interval: f64,
     elapsed: f64,
-    live: Option<LiveTrace<TarjanFrame>>,
-    live_done: Arc<Mutex<bool>>,
+    live_rx: Option<mpsc::Receiver<TarjanFrame>>,
+    live_done: Arc<AtomicBool>,
 }
 
 /// Build the equation dependency graph from a matching result.
@@ -100,14 +101,14 @@ impl TarjanAnimation {
             playing: false,
             interval: 0.5,
             elapsed: 0.0,
-            live: None,
-            live_done: Arc::new(Mutex::new(false)),
+            live_rx: None,
+            live_done: Arc::new(AtomicBool::new(false)),
         })
     }
 
     /// Start a live debug session for Tarjan's algorithm. Runs matching
     /// first (non-live) to build the dependency graph, then spawns a thread
-    /// for Tarjan's SCC with a shared `LiveTrace`.
+    /// for Tarjan's SCC with a `LiveTrace` producer.
     ///
     /// `on_complete` runs inside the algorithm thread after the last frame
     /// but before the thread exits — the caller uses this to remove the
@@ -128,18 +129,19 @@ impl TarjanAnimation {
         let trace = maximum_matching_with_trace(n_eq, n_var, &eq_vars, None);
         let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
 
-        let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
-        let lt_for_thread = lt.clone();
-        let done = Arc::new(Mutex::new(false));
+        let (lt, rx) = LiveTrace::new();
+        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
         let adj_for_thread = adj.clone();
 
         thread::Builder::new()
             .name("tarjan-debug".to_owned())
             .spawn(move || {
-                tarjan_scc_with_trace(n_eq, &adj_for_thread, Some(&lt_for_thread));
+                lt.wait_for_debugger();
+                tarjan_scc_with_trace(n_eq, &adj_for_thread, Some(&lt));
                 on_complete();
-                *done_for_thread.lock().expect("done lock") = true;
+                done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;
 
@@ -152,17 +154,17 @@ impl TarjanAnimation {
             playing: false,
             interval: 0.5,
             elapsed: 0.0,
-            live: Some(lt),
+            live_rx: Some(rx),
             live_done: done,
         })
     }
 
     pub fn is_live(&self) -> bool {
-        self.live.is_some()
+        self.live_rx.is_some()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty() && self.live.is_none()
+        self.frames.is_empty() && self.live_rx.is_none()
     }
 
     fn current_frame(&self) -> Option<&TarjanFrame> {
@@ -170,17 +172,17 @@ impl TarjanAnimation {
     }
 
     fn sync_live(&mut self) {
-        if let Some(lt) = &self.live {
-            let live_len = lt.len();
-            if live_len > self.frames.len() {
-                self.frames = lt.snapshot();
+        if let Some(rx) = &self.live_rx {
+            let before = self.frames.len();
+            self.frames.extend(rx.try_iter());
+            if self.frames.len() > before {
                 self.cursor = self.frames.len().saturating_sub(1);
             }
         }
     }
 
     pub fn live_finished(&self) -> bool {
-        *self.live_done.lock().unwrap_or_else(|e| e.into_inner())
+        self.live_done.load(Ordering::Acquire)
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {

@@ -308,6 +308,7 @@ pub struct App {
     tarjan_anim_canvas: Canvas,
     index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
     cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
+    cached_dae: Option<rumoca_ir_dae::Dae>,
     // "Before" views for the Index Reduction split — parsed from the `"before"`
     // sub-object of the index reduction report JSON (the raw, pre-reduction DAE).
     cached_before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
@@ -351,6 +352,7 @@ pub struct App {
 enum PendingLiveDebug {
     Matching,
     Tarjan,
+    Reduction,
 }
 
 enum LiveDebugAction {
@@ -359,7 +361,7 @@ enum LiveDebugAction {
 }
 
 impl App {
-    /// Three-phase live-debug lifecycle shared by Matching and Tarjan views.
+    /// Three-phase live-debug lifecycle shared by Matching, Tarjan, and Reduction views.
     ///
     /// Returns `SpawnLive` when the ack handshake completes and the caller
     /// should spawn the algorithm thread.
@@ -375,7 +377,11 @@ impl App {
             self.live_breakpoint_armed = false;
         }
         if !anim_is_live && self.pending_live_debug.is_none() {
-            if let Some(Some(_)) = &self.cached_incidence {
+            let has_data = match variant {
+                PendingLiveDebug::Reduction => self.cached_dae.is_some(),
+                _ => matches!(&self.cached_incidence, Some(Some(_))),
+            };
+            if has_data {
                 if ui.button("Debug").on_hover_text(
                     "Start live debug session \u{2014} arms a breakpoint on \
                      live_trace_breakpoint, then step with Continue (F5)"
@@ -393,6 +399,7 @@ impl App {
                 (v, variant),
                 (PendingLiveDebug::Matching, PendingLiveDebug::Matching)
                 | (PendingLiveDebug::Tarjan, PendingLiveDebug::Tarjan)
+                | (PendingLiveDebug::Reduction, PendingLiveDebug::Reduction)
             );
             if matches_variant {
                 let acked = bridge::check_breakpoint_ack();
@@ -508,6 +515,7 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             cached_reduction_anim: None,
+            cached_dae: None,
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
@@ -692,7 +700,7 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
-                    identifier_index, index_reduction_frames,
+                    identifier_index, index_reduction_frames, dae,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -704,6 +712,7 @@ impl App {
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
                     self.index_reduction_frames = index_reduction_frames;
+                    self.cached_dae = dae;
                     self.cached_report_stage = None;
                     self.cached_spy_plot = None;
                     self.cached_incidence = None;
@@ -2477,6 +2486,7 @@ impl eframe::App for App {
                         self.cached_reduction = None;
                         self.cached_matching_anim = None;
                         self.cached_tarjan_anim = None;
+                        self.cached_reduction_anim = None;
                         self.cached_before_incidence = None;
                         // Default sub-view: Summary for IndexReduction and
                         // singular Structural; SpyPlot otherwise.
@@ -2734,15 +2744,38 @@ impl eframe::App for App {
                         }
                     }
                 } else if self.structural_view == StructuralView::Animate {
-                    let frames = &self.index_reduction_frames;
-                    let cached = self.cached_reduction_anim.get_or_insert_with(|| {
-                        if frames.is_empty() {
+                    let is_live = self.cached_reduction_anim.as_ref()
+                        .and_then(|o| o.as_ref())
+                        .map_or(false, |a| a.is_live() && !a.live_finished());
+                    let finished = self.cached_reduction_anim.as_ref()
+                        .and_then(|o| o.as_ref())
+                        .map_or(false, |a| a.is_live() && a.live_finished());
+                    let action = self.live_debug_lifecycle(
+                        ui, is_live, finished, PendingLiveDebug::Reduction,
+                    );
+                    if matches!(action, LiveDebugAction::SpawnLive) {
+                        if let Some(dae) = &self.cached_dae {
+                            let live = reduction_anim::ReductionAnimation::start_live(
+                                dae.clone(), || {
+                                    let _ = bridge::remove_live_trace_breakpoint();
+                                },
+                            );
+                            if live.is_none() {
+                                let _ = bridge::remove_live_trace_breakpoint();
+                                self.live_breakpoint_armed = false;
+                            }
+                            self.cached_reduction_anim = Some(live);
+                        }
+                    }
+                    if self.cached_reduction_anim.is_none() {
+                        let frames = &self.index_reduction_frames;
+                        self.cached_reduction_anim = Some(if frames.is_empty() {
                             None
                         } else {
                             Some(reduction_anim::ReductionAnimation::from_frames(frames.clone()))
-                        }
-                    });
-                    if let Some(anim) = cached {
+                        });
+                    }
+                    if let Some(Some(anim)) = &mut self.cached_reduction_anim {
                         egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
                             anim.ui(ui);
                         });
@@ -3125,6 +3158,7 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             cached_reduction_anim: None,
+            cached_dae: None,
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
@@ -3424,6 +3458,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            dae: None,
         }).unwrap();
         app.drain_worker();
 
@@ -3449,6 +3484,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            dae: None,
         }).unwrap();
         app.drain_worker();
 
@@ -3478,6 +3514,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            dae: None,
         }).unwrap();
         app.drain_worker();
 
@@ -3508,6 +3545,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            dae: None,
         }).unwrap();
         app.drain_worker();
 
@@ -3536,6 +3574,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            dae: None,
         }).unwrap();
         app.drain_worker();
 

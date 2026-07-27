@@ -39,19 +39,18 @@ Worker::send/DefId robustness, EquationCategory ordering, format_expr alloc,
   smaller functions.
   *File:* `worker.rs` — `compile()` (~lines 921–1205).
 
-- [ ] **Duplicated matching/tarjan animation rendering in `app.rs`.**
-  Lines ~2260–2298 (matching) and ~2300–2338 (tarjan) are structurally
-  near-identical (~80 lines): lazy-init `cached_incidence`, compute
-  `is_live`/`finished`, call `live_debug_lifecycle`, handle `SpawnLive`,
+- [ ] **Duplicated matching/tarjan/reduction animation rendering in `app.rs`.**
+  Three structurally near-identical blocks (~80 lines each): lazy-init data,
+  compute `is_live`/`finished`, call `live_debug_lifecycle`, handle `SpawnLive`,
   lazy-init the cached animation, call `.ui()`. A bug fix in one block could
-  miss the other.
+  miss the others.
   *File:* `app.rs`.
 
-- [ ] **Duplicated animation state machine in matching/tarjan views.**
-  The `ui()` methods of `MatchingAnimation` and `TarjanAnimation` share ~40
-  lines of identical logic: `sync_live`, empty-state handling, elapsed-time
-  auto-advance, repaint requests, delegation to `animation_controls()`. Could
-  extract into a shared `AnimationState` struct.
+- [ ] **Duplicated animation state machine in matching/tarjan/reduction views.**
+  The `ui()` methods of `MatchingAnimation`, `TarjanAnimation`, and
+  `ReductionAnimation` share ~40 lines of identical logic: `sync_live`,
+  empty-state handling, elapsed-time auto-advance, repaint requests, delegation
+  to `animation_controls()`. Could extract into a shared `AnimationState` struct.
   *Files:* `matching_anim.rs` (~lines 159–204), `tarjan_anim.rs` (~lines 185–228).
 
 - [ ] **Duplicated matrix canvas boilerplate.**

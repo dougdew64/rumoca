@@ -15,7 +15,8 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, mpsc};
 use std::thread;
 
 use eframe::egui;
@@ -44,11 +45,12 @@ pub struct MatchingAnimation {
     /// Seconds between auto-advance frames.
     interval: f64,
     elapsed: f64,
-    /// Live trace buffer — when `Some`, the animation polls for new frames
-    /// from a debugger-paused algorithm thread instead of replaying recorded ones.
-    live: Option<LiveTrace<MatchingFrame>>,
-    /// Whether the live algorithm thread has finished.
-    live_done: Arc<Mutex<bool>>,
+    /// Receiver end of the live trace channel — the animation drains new
+    /// frames from it without contending on the producer's lock.
+    live_rx: Option<mpsc::Receiver<MatchingFrame>>,
+    /// Whether the live algorithm thread has finished (atomic — no lock
+    /// contention with LLDB's post-step variable evaluation).
+    live_done: Arc<AtomicBool>,
 }
 
 impl MatchingAnimation {
@@ -71,24 +73,25 @@ impl MatchingAnimation {
             playing: false,
             interval: 0.4,
             elapsed: 0.0,
-            live: None,
-            live_done: Arc::new(Mutex::new(false)),
+            live_rx: None,
+            live_done: Arc::new(AtomicBool::new(false)),
         }
     }
 
     /// Start a live debug session: spawn a thread that runs the matching
-    /// algorithm with a shared `LiveTrace`, then return an animation that
-    /// reads from it. The debugger breakpoint on `live_trace_breakpoint`
-    /// pauses the thread after each frame push; the user steps with F5.
+    /// algorithm with a `LiveTrace` producer, then return an animation that
+    /// drains frames from the channel receiver. The debugger breakpoint on
+    /// `live_trace_breakpoint` pauses the thread after each frame push;
+    /// the user steps with F5.
     ///
     /// `on_complete` runs inside the algorithm thread after the last frame
     /// but before the thread exits — the caller uses this to remove the
     /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
     /// the thread terminates.
     pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Option<Self> {
-        let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
-        let lt_for_thread = lt.clone();
-        let done = Arc::new(Mutex::new(false));
+        let (lt, rx) = LiveTrace::new();
+        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
 
         let eq_vars: Vec<HashSet<usize>> = mat
@@ -102,9 +105,10 @@ impl MatchingAnimation {
         thread::Builder::new()
             .name("matching-debug".to_owned())
             .spawn(move || {
-                maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&lt_for_thread));
+                lt.wait_for_debugger();
+                maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&lt));
                 on_complete();
-                *done_for_thread.lock().expect("done lock") = true;
+                done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;
 
@@ -119,32 +123,31 @@ impl MatchingAnimation {
             playing: false,
             interval: 0.4,
             elapsed: 0.0,
-            live: Some(lt),
+            live_rx: Some(rx),
             live_done: done,
         })
     }
 
     /// Whether this animation is in live debug mode.
     pub fn is_live(&self) -> bool {
-        self.live.is_some()
+        self.live_rx.is_some()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty() && self.live.is_none()
+        self.frames.is_empty() && self.live_rx.is_none()
     }
 
     fn current_frame(&self) -> Option<&MatchingFrame> {
         self.frames.get(self.cursor)
     }
 
-    /// In live mode, pull any new frames from the shared buffer and
+    /// In live mode, drain any new frames from the channel receiver and
     /// auto-advance the cursor to the latest one.
     fn sync_live(&mut self) {
-        if let Some(lt) = &self.live {
-            let live_len = lt.len();
-            if live_len > self.frames.len() {
-                let snapshot = lt.snapshot();
-                self.frames = snapshot;
+        if let Some(rx) = &self.live_rx {
+            let before = self.frames.len();
+            self.frames.extend(rx.try_iter());
+            if self.frames.len() > before {
                 self.cursor = self.frames.len().saturating_sub(1);
             }
         }
@@ -152,7 +155,7 @@ impl MatchingAnimation {
 
     /// Whether the live algorithm thread has finished running.
     pub fn live_finished(&self) -> bool {
-        *self.live_done.lock().unwrap_or_else(|e| e.into_inner())
+        self.live_done.load(Ordering::Acquire)
     }
 
     /// Render the animation controls and the annotated incidence matrix.

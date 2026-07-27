@@ -117,28 +117,35 @@ animation view updates in lockstep, showing each algorithmic decision as it happ
 
 ### Architecture
 
-Each traced algorithm (`maximum_matching_with_trace`, `tarjan_scc_with_trace`) accepts an optional
-`LiveTrace<Frame>` — a shared `Arc<Mutex<Vec<Frame>>>` buffer. When present, every frame push also
-writes to the shared buffer. The animation view polls this buffer each UI frame and auto-advances
-the cursor to the latest frame.
+Each traced algorithm (`maximum_matching_with_trace`, `tarjan_scc_with_trace`,
+`reduce_constrained_dummy_derivatives_with_trace`,
+`index_reduce_missing_state_derivatives_with_trace`) accepts an optional
+`&LiveTrace<Frame>` — the producer half of an `mpsc` channel. When present, every frame
+push sends through the channel. The animation struct holds the `Receiver<Frame>` and
+drains it via `try_iter()` each UI frame, auto-advancing the cursor to the latest frame.
 
-When the debugger pauses the algorithm thread at the `LiveTrace::push` call, the UI shows the
-current state. When the user resumes/steps, the next frame is pushed and the UI updates.
+The producer and consumer share no application-level lock — the `Sender` and `Receiver`
+use the channel's internal synchronization only.
+
+When the debugger pauses the algorithm thread at `live_trace_breakpoint`, the UI shows the
+current state. When the user continues (F5), the next frame is pushed and the UI updates.
 
 ### How to use it
 
 1. **Launch HRW under the debugger** (F5).
 2. **Load a specimen** in HRW (select it from the specimen list).
-3. **Navigate to the Structural or Index Reduction tab**, then select the **Matching** or **BLT**
-   animation sub-tab.
+3. **Navigate to the Structural or Index Reduction tab**, then select the **Matching**,
+   **BLT**, or **Reduction** animation sub-tab.
 4. **Click the "Debug" button** — this automatically arms a breakpoint on
    `live_trace_breakpoint` via the HRW Debugger Bridge extension, then spawns a dedicated
-   algorithm thread. After each frame is pushed, a 20ms delay lets the HRW UI render, then the
-   breakpoint fires. Each time you Continue (F5) in the debugger, the next frame appears in the
-   HRW animation.
-5. **Inspect locals**: at the breakpoint, `frame_index` tells you which step you're on. Step up
-   one frame to reach the algorithm code (`augment_traced` or `strongconnect`) where the full
-   local state (match_eq, match_var, visited, eq, var, etc.) is in scope.
+   algorithm thread. The thread first calls `wait_for_debugger()` which hits the breakpoint
+   *before* any algorithm work begins — your first Continue (F5) starts the algorithm from
+   step zero, so no steps are missed. After each frame is pushed, a 20ms delay lets the HRW
+   UI render, then the breakpoint fires again. Each subsequent Continue (F5) advances one step.
+5. **Inspect locals**: at the breakpoint, `frame_index` tells you which step you're on
+   (`usize::MAX` on the startup gate, then 0, 1, 2, …). Step up one frame to reach the
+   algorithm code (`augment_traced`, `strongconnect`, or
+   `reduce_constrained_dummy_derivatives_with_trace`) where the full local state is in scope.
 6. **Re-run**: after the session finishes, the Debug button reappears — click it to start a new
    live session.
 
@@ -146,27 +153,37 @@ current state. When the user resumes/steps, the next frame is pushed and the UI 
 
 | Algorithm | File | Function | Line to break on |
 |---|---|---|---|
-| **All** (recommended) | `crates/rumoca-phase-structural/src/live_trace.rs` | `live_trace_breakpoint` | the `black_box` line |
+| **All** (recommended) | `crates/rumoca-phase-structural/src/live_trace.rs` | `live_trace_breakpoint` | the `LAST_FRAME_INDEX.store` line |
 | **Matching** (per-frame) | `crates/rumoca-phase-structural/src/matching.rs` | `emit_matching_frame` | `frames.push(frame)` (after the `lt.push` call) |
 | **Tarjan** (SCC discovery) | `crates/rumoca-phase-structural/src/tarjan.rs` | `TracedTarjanState::record` | `self.frames.push(frame)` (after the `lt.push` call) |
+| **Reduction** (per-step) | `crates/rumoca-phase-structural/src/dae_prepare.rs` | reduction trace call sites | after each `lt.push` call |
 
 The recommended site is `live_trace_breakpoint` — it is `#[inline(never)]` and non-generic, so the
 debugger resolves it to a single unambiguous address (unlike `Vec::push` calls that can share
-monomorphized code at higher opt-levels). It fires for both matching and Tarjan. The `frame_index`
-parameter tells you which step you're on.
+monomorphized code at higher opt-levels). It fires for all three algorithms (matching, Tarjan, and
+reduction). The `frame_index` parameter tells you which step you're on — `usize::MAX` on the
+startup gate (before the algorithm starts), then 0, 1, 2, … for real frames.
 
 ### Thread model
 
 ```
-UI thread                     Algorithm thread (matching-debug / tarjan-debug)
-──────────                    ────────────────────────────────────────────────
-clicks "Debug"  ──►           spawns thread running maximum_matching_with_trace
-                               with LiveTrace<MatchingFrame>
-polls LiveTrace  ◄──          pushes frames to shared buffer
-  each UI frame               ◄── debugger pauses here ──►
+UI thread                     Algorithm thread (matching-debug / tarjan-debug / reduction-debug)
+──────────                    ─────────────────────────────────────────────────────────────────
+clicks "Debug"  ──►           spawns thread with LiveTrace producer (owns Sender)
+                               calls wait_for_debugger() → breakpoint fires
+drains Receiver  ◄── channel ── pushes frames via Sender
+  each UI frame               ◄── debugger pauses at live_trace_breakpoint ──►
 shows current frame
 ```
 
-The UI thread never blocks — it polls the `LiveTrace` via `Mutex::lock` (uncontended when the
-algorithm thread is paused at a breakpoint). The algorithm thread is the only writer; the UI thread
-is the only reader.
+The UI thread never blocks — it drains the `mpsc::Receiver` via `try_iter()` (non-blocking,
+no shared lock with the producer). The algorithm thread sends frames through the channel;
+the two sides share no explicit mutex, so debugger step-over cannot deadlock on HRW code.
+
+**Known limitation — step-over deadlocks on WSL2**: LLDB's step-over mechanism
+(`thread step-over`, F10) deadlocks on multi-threaded Rust programs under WSL2. The symptom
+is a spinning "Local variables" indicator that never resolves. This affects both single-thread
+mode (default) and all-threads mode (`-m all-threads`). Continue (F5) between breakpoints
+works correctly — only the step-over mechanism is affected. The root cause is WSL2's ptrace
+implementation, not HRW or Rumoca code. The fix is to run HRW on native Windows, where the
+debugger uses Windows debug APIs instead of ptrace.

@@ -6,7 +6,8 @@
 //! - **Live**: reads frames from a shared `LiveTrace` buffer as a debugger
 //!   steps through the algorithm on a worker thread
 
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, mpsc};
 use std::thread;
 
 use eframe::egui;
@@ -25,8 +26,8 @@ pub struct ReductionAnimation {
     playing: bool,
     interval: f64,
     elapsed: f64,
-    live: Option<LiveTrace<IndexReductionFrame>>,
-    live_done: Arc<Mutex<bool>>,
+    live_rx: Option<mpsc::Receiver<IndexReductionFrame>>,
+    live_done: Arc<AtomicBool>,
 }
 
 impl ReductionAnimation {
@@ -38,31 +39,32 @@ impl ReductionAnimation {
             playing: false,
             interval: 0.6,
             elapsed: 0.0,
-            live: None,
-            live_done: Arc::new(Mutex::new(true)),
+            live_rx: None,
+            live_done: Arc::new(AtomicBool::new(true)),
         }
     }
 
     /// Start a live debug session: spawn a thread that runs the index
-    /// reduction algorithm with a shared `LiveTrace`.
+    /// reduction algorithm with a `LiveTrace` producer.
     pub fn start_live(
         dae: rumoca_ir_dae::Dae,
         on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
-        let lt = LiveTrace::new().with_frame_delay(std::time::Duration::from_millis(20));
-        let lt_for_thread = lt.clone();
-        let done = Arc::new(Mutex::new(false));
+        let (lt, rx) = LiveTrace::new();
+        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
 
         thread::Builder::new()
             .name("reduction-debug".to_owned())
             .spawn(move || {
+                lt.wait_for_debugger();
                 let mut dae = dae;
                 let mut frames = Vec::new();
                 let mut demoted_so_far = Vec::new();
                 let _ = rumoca_phase_structural::dae_prepare
                     ::reduce_constrained_dummy_derivatives_with_trace(
-                        &mut dae, Some(&lt_for_thread), &mut frames, &mut demoted_so_far,
+                        &mut dae, Some(&lt), &mut frames, &mut demoted_so_far,
                     );
                 let round_offset = frames.iter()
                     .filter_map(|f| match &f.step {
@@ -73,11 +75,11 @@ impl ReductionAnimation {
                     .unwrap_or(0);
                 let _ = rumoca_phase_structural::dae_prepare
                     ::index_reduce_missing_state_derivatives_with_trace(
-                        &mut dae, Some(&lt_for_thread), &mut frames, &mut demoted_so_far,
+                        &mut dae, Some(&lt), &mut frames, &mut demoted_so_far,
                         round_offset,
                     );
                 on_complete();
-                *done_for_thread.lock().expect("done lock") = true;
+                done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;
 
@@ -87,17 +89,17 @@ impl ReductionAnimation {
             playing: false,
             interval: 0.6,
             elapsed: 0.0,
-            live: Some(lt),
+            live_rx: Some(rx),
             live_done: done,
         })
     }
 
     pub fn is_live(&self) -> bool {
-        self.live.is_some()
+        self.live_rx.is_some()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty() && self.live.is_none()
+        self.frames.is_empty() && self.live_rx.is_none()
     }
 
     fn current_frame(&self) -> Option<&IndexReductionFrame> {
@@ -105,17 +107,17 @@ impl ReductionAnimation {
     }
 
     fn sync_live(&mut self) {
-        if let Some(lt) = &self.live {
-            let live_len = lt.len();
-            if live_len > self.frames.len() {
-                self.frames = lt.snapshot();
+        if let Some(rx) = &self.live_rx {
+            let before = self.frames.len();
+            self.frames.extend(rx.try_iter());
+            if self.frames.len() > before {
                 self.cursor = self.frames.len().saturating_sub(1);
             }
         }
     }
 
     pub fn live_finished(&self) -> bool {
-        *self.live_done.lock().unwrap_or_else(|e| e.into_inner())
+        self.live_done.load(Ordering::Acquire)
     }
 
     /// Render the animation controls and the step display.

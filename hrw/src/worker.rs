@@ -517,6 +517,8 @@ pub enum FromWorker {
         identifier_index: Option<crate::identifier_index::IdentifierIndex>,
         /// Index-reduction animation frames (empty if no reduction occurred).
         index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+        /// The raw DAE for live-debug replay of index reduction.
+        dae: Option<rumoca_ir_dae::Dae>,
     },
     /// A class opened by navigation: its qualified name and (on success) its
     /// resolved IR plus the DefIds it references, so navigation can continue.
@@ -1015,6 +1017,7 @@ impl WorkerState {
                     equation_sheet: None,
                     identifier_index: None,
                     index_reduction_frames: Vec::new(),
+                    dae: None,
                 };
             }
         };
@@ -1164,10 +1167,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames) = match &model {
+        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new())
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None)
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -1251,7 +1254,12 @@ impl WorkerState {
 
                 log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
 
-                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames)
+                let dae = match result {
+                    Some(PhaseResult::Success(cr)) => Some(cr.dae.clone()),
+                    _ => None,
+                };
+
+                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae)
             }
         };
 
@@ -1283,6 +1291,7 @@ impl WorkerState {
             equation_sheet,
             identifier_index,
             index_reduction_frames: ir_frames,
+            dae: compiled_dae,
         }
     }
 }
