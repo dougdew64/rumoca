@@ -799,3 +799,19 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   about to reach six positional parameters including two adjacent colours, exactly the transposable
   signature logged as tech debt for `animation_controls` earlier the same day. Line-number gutters
   go through `append_plain` so they are never coloured as if they were code.
+- **2026-07-27 — Highlight tints were premultiplied wrongly; and a relationship cue must actually
+  vary.** Two corrections found by testing the source map. (1) `TRACKED_FILL`,
+  `TRACKED_FILL_MEDIUM`, and `SOURCE_MAP_LINK` used `Color32::from_rgba_premultiplied` with
+  full-strength RGB and a low alpha. Premultiplied form requires every channel to be **≤ alpha**, so
+  these rendered as near-opaque additive washes rather than the faint tints their alphas implied.
+  Harmless while the text underneath was uncoloured; the moment syntax colouring landed the wash
+  buried it and no syntax colour was distinguishable. Fixed with a `const fn tint()` doing the
+  premultiplication (`from_rgba_unmultiplied` is not `const` in this egui version). This makes every
+  tracked highlight across the app genuinely translucent — the alphas now mean what they say.
+  (2) The source map's flat-equations column carried a "linked to the selected line" cue — first as
+  `cat.color()` foreground, then, in the Option A change, as a background. It never conveyed
+  anything: that list is already *filtered* to the selected line's equations, so the cue was true of
+  every visible row and false of none. Removed. The filter and the "N equations from line X" header
+  are the signal. The source-lines column keeps its highlight because it is *unfiltered*, so there
+  its cue genuinely picks out a subset. Sharpens the colour rule: background carries relationship,
+  **and a relationship cue is only worth a channel when it varies across what is on screen**.

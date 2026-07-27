@@ -72,11 +72,33 @@ pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 /// Tracked-identifier highlight — opaque gold for text/strokes.
 pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 
-/// Tracked-identifier background fill (subtle, alpha 0x30).
-pub const TRACKED_FILL: Color32 = Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x30);
+/// A translucent tint: a normal RGB colour at `alpha`, premultiplied correctly.
+///
+/// `Color32::from_rgba_premultiplied` requires every channel to be **less than
+/// or equal to** the alpha; passing full-strength RGB with a low alpha does not
+/// produce a faint tint but a near-opaque additive wash. Three constants below
+/// did exactly that until 2026-07-27. It went unnoticed while the text
+/// underneath was uncoloured — once syntax colouring landed, the wash buried it
+/// completely and no syntax colour was distinguishable.
+///
+/// `from_rgba_unmultiplied` does this conversion but is not `const` in this egui
+/// version, hence doing it here so the call sites stay readable as
+/// "this colour, this faint".
+const fn tint(r: u8, g: u8, b: u8, alpha: u8) -> Color32 {
+    let a = alpha as u32;
+    Color32::from_rgba_premultiplied(
+        ((r as u32 * a) / 255) as u8,
+        ((g as u32 * a) / 255) as u8,
+        ((b as u32 * a) / 255) as u8,
+        alpha,
+    )
+}
 
-/// Tracked-identifier background fill (medium, alpha 0x40).
-pub const TRACKED_FILL_MEDIUM: Color32 = Color32::from_rgba_premultiplied(0xFF, 0xD5, 0x4F, 0x40);
+/// Tracked-identifier background fill (subtle, alpha 0x30 ≈ 19%).
+pub const TRACKED_FILL: Color32 = tint(0xFF, 0xD5, 0x4F, 0x30);
+
+/// Tracked-identifier background fill (medium, alpha 0x40 ≈ 25%).
+pub const TRACKED_FILL_MEDIUM: Color32 = tint(0xFF, 0xD5, 0x4F, 0x40);
 
 /// SCC palette — distinct colors for coloring strongly connected components
 /// in the Tarjan animation graph view.
@@ -103,8 +125,11 @@ pub const SOLVER_STEP_SIZE: Color32 = Color32::from_rgb(70, 130, 230);
 /// Solver diagnostics plot — BDF order (k) line.
 pub const SOLVER_BDF_ORDER: Color32 = Color32::from_rgb(230, 130, 70);
 
-/// Source-map equation-linked line highlight (light blue tint).
-pub const SOURCE_MAP_LINK: Color32 = Color32::from_rgba_premultiplied(100, 180, 255, 40);
+/// Source-map equation-linked line highlight (light blue, alpha 40 ≈ 16%).
+///
+/// Sits behind syntax-coloured Modelica text, so it must shift the surface
+/// without competing with the glyphs — see [`tint`].
+pub const SOURCE_MAP_LINK: Color32 = tint(100, 180, 255, 40);
 
 /// Clickable identifier text in the source view (light blue).
 pub const CLICKABLE_IDENT: Color32 = Color32::from_rgb(0x64, 0xB5, 0xF6);

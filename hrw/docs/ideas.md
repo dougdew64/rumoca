@@ -53,6 +53,7 @@ tour take priority over unlinked items of the same severity.
 | #33 Comprehensive tooltips | (all tours) |
 | #36 Modelica syntax highlighting | (all tours) |
 | #37 Reverse identifier tracking | (all tours) |
+| #38 Syntax highlighting for canvas axis labels | (all tours) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -1161,3 +1162,31 @@ corresponding identifier in the source view.
 
 **Relates to:** #10 (cross-stage identifier tracking — this is the bidirectional
 extension).
+
+## 38. Syntax highlighting for canvas-painted axis labels
+
+Captured 2026-07-27 (Doug). HRW now renders Modelica text under one rule —
+foreground carries syntax, background carries relationship — in the specimen
+source view, the equation sheet, and both columns of the Flatten source map
+(`source_view::ModelicaText`). Two places still render Modelica as flat,
+uncoloured text and so break that rule:
+
+- **Incidence / spy-plot row labels** — equation texts drawn as matrix axis
+  labels (`draw_matrix_axis_labels` in `lib.rs`).
+- **Tarjan node labels** — equation texts drawn on graph nodes
+  (`tarjan_anim::draw_graph`).
+
+- **Why it is not a quick change:** these are `painter.text` calls on a canvas,
+  not egui widgets. Per-token colour means laying out each run, measuring it,
+  and placing the pieces at computed x-offsets by hand — inside code that
+  already handles zoom thresholds, label truncation, and (for column labels)
+  -45° rotation. A `Painter::galley` built from a `LayoutJob` gets the colours
+  for free and would probably be the way in, since a galley can be positioned
+  and rotated as a unit.
+- **Worth weighing first:** these labels are small and often truncated at low
+  zoom. Colour may add less here than in the full-width views, and truncated
+  fragments are exactly where syntax colouring is least meaningful. Consider
+  applying it only above the existing label zoom threshold.
+
+**Relates to:** the colour rule recorded in `DECISIONS.md` (2026-07-27) and
+[`source-tooling-plan.md`](source-tooling-plan.md).

@@ -1631,20 +1631,20 @@ impl App {
 
                     for eq in visible_eqs {
                         let is_selected = highlighted_eq == Some(eq.index);
-                        let is_line_linked = !line_eq_indices.is_empty()
-                            && line_eq_indices.contains(&eq.index);
 
-                        // Line-linkage moved from foreground to background.
-                        // It used to set `cat.color()` on the text, which would
-                        // collide head-on with syntax colouring — one channel
-                        // carrying both "keyword" and "selected". The same
-                        // background the source-lines column uses for linkage
-                        // now says it here too, so the cue reads identically on
-                        // both sides. The category is still shown by the
-                        // group header above, coloured `cat.color()`.
+                        // No line-linked cue here, deliberately. This list is
+                        // already *filtered* to the selected line's equations
+                        // (see `visible_eqs` above), so such a cue would be true
+                        // of every visible row and false of none — it cannot
+                        // mark a subset when the subset is the whole list. The
+                        // filter, plus the "N equations from line X" header, is
+                        // the signal. The source-lines column is different: it
+                        // is unfiltered, so its highlight does pick out a subset.
+                        //
+                        // Only per-equation facts get colour: the tracked
+                        // identifier, and selectable_label's own selection state.
                         let text = crate::source_view::ModelicaText::new(ui)
                             .tracked(tracked.map(|t| (t, crate::colors::TRACKED_FILL_MEDIUM)))
-                            .background(is_line_linked.then_some(crate::colors::SOURCE_MAP_LINK))
                             .job(&eq.text);
 
                         let resp = ui.selectable_label(is_selected, text);
