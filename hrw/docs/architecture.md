@@ -772,9 +772,21 @@ Two launch configurations exist, and both work now that the anchor is fixed:
   is worth keeping as a cross-check: it reports moved breakpoints honestly,
   where CodeLLDB silently kept a stale entry.
 
-Note that LLDB skips a function's prologue, so a breakpoint requested on the
+Note that debuggers skip a function's prologue, so a breakpoint requested on a
 `pub fn` signature line resolves to the first statement line (`exact_match = 0`
-in `breakpoint list`). That is correct behavior, not a fault.
+in LLDB's `breakpoint list`). That is correct behavior, not a fault — but it
+used to produce a phantom duplicate: the bridge asked for the signature line
+while the debugger placed the breakpoint one line lower, so a bridge-armed
+breakpoint and a hand-set one at the same place looked like two locations.
+
+Two changes remove it. `bridge::find_live_trace_line` now targets the anchor's
+first body *statement* — located structurally (signature → opening brace →
+first non-blank, non-comment line) rather than by a hard-coded offset, so it
+survives edits to the anchor. And the extension's `isDuplicate` checks all of
+`vscode.debug.breakpoints` rather than only the ones it armed, so a breakpoint
+you set by hand suppresses the bridge's. That is also safer on the way out:
+`handleRemove` only removes breakpoints the extension added, so a hand-set
+breakpoint survives the end of the live session.
 
 #### 6. Diagnostic commands
 

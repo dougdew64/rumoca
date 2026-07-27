@@ -308,8 +308,25 @@ pub fn check_breakpoint_ack() -> bool {
     }
 }
 
-/// Locate `pub fn live_trace_breakpoint(` in the source and return its
-/// canonical path and 1-based line number.
+/// Locate the breakpoint target inside `live_trace_breakpoint` and return the
+/// source file's canonical path plus a 1-based line number.
+///
+/// ## Why this targets the body, not the signature
+///
+/// Debuggers skip a function's prologue: ask for a breakpoint on the `pub fn`
+/// line and it resolves to the first *statement* instead (`exact_match = 0` in
+/// LLDB's `breakpoint list`). That is correct behavior, but it means the bridge
+/// and the debugger disagree about which line the breakpoint is on — so a
+/// bridge-armed breakpoint and a hand-set one at the same place appear as two
+/// separate entries in VS Code's breakpoint list, and the extension's duplicate
+/// check does not recognize them as the same location.
+///
+/// Asking for the line the debugger will actually use removes the discrepancy.
+///
+/// The scan is deliberately structural rather than a hard-coded offset: find
+/// the signature, advance to the line opening the body (which may be a later
+/// line if the signature ever wraps), then take the first line that is neither
+/// blank nor a comment.
 fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
     let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
     // On Windows, canonicalize produces \\?\C:\... extended-length paths.
@@ -317,16 +334,41 @@ fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
     #[cfg(windows)]
     let file = strip_windows_prefix(&file);
     let source = fs::read_to_string(&file)?;
-    let line = source
-        .lines()
-        .enumerate()
-        .find(|(_, l)| l.contains("pub fn live_trace_breakpoint("))
-        .map(|(i, _)| i + 1)
-        .ok_or_else(|| std::io::Error::new(
+    let lines: Vec<&str> = source.lines().collect();
+
+    let not_found = |what: &str| {
+        std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "live_trace_breakpoint signature not found in source",
-        ))?;
-    Ok((file, line))
+            format!("live_trace_breakpoint: {what} not found in source"),
+        )
+    };
+
+    let sig = lines
+        .iter()
+        .position(|l| l.contains("pub fn live_trace_breakpoint("))
+        .ok_or_else(|| not_found("signature"))?;
+
+    // The body opens on the signature line in the normal case; scanning forward
+    // keeps this correct if the parameter list is ever wrapped across lines.
+    let open = lines[sig..]
+        .iter()
+        .position(|l| l.contains('{'))
+        .map(|offset| sig + offset)
+        .ok_or_else(|| not_found("opening brace"))?;
+
+    // First real statement after the brace. An empty body would fall through to
+    // the closing `}` — which cannot happen, because an empty body is exactly
+    // the bug `breakpoint_anchor_store_is_observable` exists to prevent.
+    let stmt = lines[open + 1..]
+        .iter()
+        .position(|l| {
+            let t = l.trim();
+            !t.is_empty() && !t.starts_with("//")
+        })
+        .map(|offset| open + 1 + offset)
+        .ok_or_else(|| not_found("body statement"))?;
+
+    Ok((file, stmt + 1))
 }
 
 /// Arm a breakpoint on `live_trace_breakpoint` for live algorithm stepping.
@@ -1067,14 +1109,41 @@ mod tests {
         assert_eq!(doc["stage"], json!("(navigated definition)"));
     }
 
+    /// The bridge must target the anchor's first *statement*, not its signature.
+    ///
+    /// Debuggers skip the prologue, so a signature-line request silently
+    /// resolves one line lower — and the bridge-armed breakpoint then looks
+    /// like a different location from a hand-set one, producing a phantom
+    /// duplicate in VS Code's breakpoint list. See `find_live_trace_line`.
     #[test]
-    fn find_live_trace_line_locates_function() {
+    fn find_live_trace_line_targets_first_body_statement() {
         let (path, line) = find_live_trace_line().expect("find_live_trace_line");
         let source = fs::read_to_string(&path).unwrap();
-        let found_line = source.lines().nth(line - 1).unwrap();
+        let lines: Vec<&str> = source.lines().collect();
+        let found = lines[line - 1];
+        let sig = lines
+            .iter()
+            .position(|l| l.contains("pub fn live_trace_breakpoint("))
+            .expect("anchor signature");
+
         assert!(
-            found_line.contains("pub fn live_trace_breakpoint("),
-            "line {line} should contain the function signature, got: {found_line}"
+            line - 1 > sig,
+            "target should be after the signature (line {}), got line {line}",
+            sig + 1
+        );
+        let trimmed = found.trim();
+        assert!(!trimmed.is_empty(), "target should not be a blank line");
+        assert!(!trimmed.starts_with("//"), "target should not be a comment: {found}");
+        assert!(
+            !trimmed.contains("pub fn"),
+            "target should not be the signature line: {found}"
+        );
+        // The anchor's first statement records the frame index. If this fails,
+        // the anchor body changed — check that it is still non-empty (see
+        // `breakpoint_anchor_store_is_observable` in the structural crate).
+        assert!(
+            trimmed.contains("LAST_FRAME_INDEX"),
+            "expected the anchor's first statement, got: {found}"
         );
     }
 

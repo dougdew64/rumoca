@@ -211,11 +211,26 @@ function matchesAnyEntry(bp: vscode.Breakpoint, entries: BreakpointEntry[]): boo
     });
 }
 
-/** Prevent duplicate breakpoints: true if an armed breakpoint already covers this entry. */
+/**
+ * Prevent duplicate breakpoints: true if *any* breakpoint already covers this entry.
+ *
+ * This checks all of `vscode.debug.breakpoints`, not just the ones this
+ * extension armed. The anchor is a documented breakpoint site, so the user may
+ * well have set one there by hand; adding a second at the same location leaves
+ * two indistinguishable entries in the Breakpoints list.
+ *
+ * Skipping is also the safer behavior on the way out. `handleRemove` only ever
+ * removes breakpoints this extension added, so a hand-set breakpoint survives
+ * the end of the live session — which is what the user meant by setting it.
+ *
+ * The condition is still part of the comparison: a conditional request at a
+ * line that already has an unconditional breakpoint is genuinely different, and
+ * must not be silently dropped.
+ */
 function isDuplicate(entry: BreakpointEntry): boolean {
     const entryUri = vscode.Uri.file(entry.path).toString();
     const entryLine = entry.line - 1;
-    return armedBreakpoints.some(bp => {
+    return vscode.debug.breakpoints.some(bp => {
         if (!(bp instanceof vscode.SourceBreakpoint)) { return false; }
         return bp.location.uri.toString() === entryUri
             && bp.location.range.start.line === entryLine

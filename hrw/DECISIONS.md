@@ -687,3 +687,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   Windows machine: toolchain, the gitignored MSL vendor staging step, the gitignored VS Code
   extension build step, required launch settings, and a failure-signature table. Supersedes the
   setup checklist in `docs/windows-migration.md`, which is retained as the migration record.
+- **2026-07-27 — Bridge targets the anchor's body statement, not its signature.** Debuggers skip a
+  function prologue, so a breakpoint requested on the `pub fn` line resolves one line lower. The
+  bridge and the debugger therefore disagreed about the location, and a bridge-armed breakpoint sat
+  alongside a hand-set one as a second entry in VS Code's Breakpoints list. `find_live_trace_line`
+  now walks signature → opening brace → first non-blank, non-comment line, structurally rather than
+  by a fixed offset, so it survives edits to the anchor (guarded by
+  `find_live_trace_line_targets_first_body_statement`). Complementary change in the extension:
+  `isDuplicate` now checks all of `vscode.debug.breakpoints` instead of only the ones it armed, so a
+  hand-set breakpoint suppresses the bridge's — and because `handleRemove` only removes what the
+  extension added, the user's breakpoint survives the end of the session.
