@@ -323,6 +323,14 @@ pub struct App {
     cached_narratives: HashMap<PathBuf, Option<String>>,
     // The selected specimen's Modelica source text, loaded on demand.
     cached_source: Option<String>,
+    // Which tracked identifier the source view has already scrolled to.
+    //
+    // Reverse tracking (idea #37) scrolls the source to a variable's
+    // declaration when it becomes tracked from a downstream view. Scrolling
+    // must happen on *change* only — repeating it every frame while the same
+    // identifier stays tracked would pin the view and make the scrollbar
+    // unusable. Comparing against this field is what makes it a one-shot.
+    scrolled_source_for: Option<String>,
     // Per-line token classification for `cached_source`, built on demand.
     // Tokenizing is cheap but not free, and the source cannot change while it
     // is displayed — so it is built once per specimen, not once per frame.
@@ -640,6 +648,7 @@ impl App {
             cached_narratives: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
+            scrolled_source_for: None,
             pending_stage: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
@@ -1349,6 +1358,7 @@ impl App {
             || self.stages.get(StageKind::Structural).value.is_some();
 
         let mut clicked_row = None;
+        let mut clicked_variable: Option<String> = None;
 
         egui::ScrollArea::both()
             .id_salt("equation_sheet")
@@ -1425,16 +1435,29 @@ impl App {
 
                         for v in &sheet.variables {
                             let is_tracked = tracked == Some(v.name.as_str());
-                            let highlight = if is_tracked {
-                                crate::colors::TRACKED_FILL_MEDIUM
-                            } else {
-                                egui::Color32::TRANSPARENT
-                            };
                             let mut name_rt = egui::RichText::new(&v.name).monospace();
                             if is_tracked {
-                                name_rt = name_rt.strong().background_color(highlight);
+                                name_rt = name_rt
+                                    .strong()
+                                    .background_color(crate::colors::TRACKED_FILL_MEDIUM);
                             }
-                            ui.label(name_rt);
+                            // Reverse tracking (#37): clicking a variable here
+                            // tracks it, and the source view scrolls to its
+                            // declaration. Clicking the tracked one again clears
+                            // it, matching the source view's toggle behaviour.
+                            let resp = ui.add(
+                                egui::Label::new(name_rt).sense(egui::Sense::click()),
+                            );
+                            if resp.clicked() {
+                                clicked_variable = Some(v.name.clone());
+                            }
+                            resp.on_hover_text(if is_tracked {
+                                "Click to stop tracking"
+                            } else {
+                                "Click to track \u{2014} highlights this variable \
+                                 across the pipeline and scrolls the source to its \
+                                 declaration"
+                            });
                             ui.label(v.kind);
                             ui.label(v.start.as_deref().unwrap_or("—"));
                             ui.label(v.unit.as_deref().unwrap_or(""));
@@ -1449,6 +1472,25 @@ impl App {
                 self.stage = StageKind::Structural;
                 self.structural_view = StructuralView::Incidence;
             }
+        }
+        if let Some(name) = clicked_variable {
+            self.set_tracked_identifier(name);
+        }
+    }
+
+    /// Toggle the tracked identifier — the single entry point for tracking,
+    /// whichever view the click came from.
+    ///
+    /// Clicking the already-tracked name clears it, so every view untracks the
+    /// same way the source view does. Derivative mentions like `der(h)` are
+    /// reduced to the base variable, since that is what `IdentifierIndex` and
+    /// the source declaration are keyed by (idea #37's "wrinkle").
+    fn set_tracked_identifier(&mut self, name: String) {
+        let name = strip_der(&name).to_owned();
+        if self.tracked_identifier.as_deref() == Some(name.as_str()) {
+            self.tracked_identifier = None;
+        } else {
+            self.tracked_identifier = Some(name);
         }
     }
 
@@ -2144,6 +2186,26 @@ impl eframe::App for App {
                                     .show(ui, |ui| {
                                     let tracked = self.tracked_identifier.as_deref();
                                     let dark = ui.visuals().dark_mode;
+                                    // Reverse tracking: when the tracked
+                                    // identifier changes — typically from a click
+                                    // in a downstream view — bring its
+                                    // declaration into view. Gated on *change*,
+                                    // not on the value: scrolling every frame
+                                    // while an identifier stays tracked would peg
+                                    // the view and fight the scrollbar.
+                                    let scroll_to = (self.tracked_identifier
+                                        != self.scrolled_source_for)
+                                        .then(|| {
+                                            self.tracked_identifier.as_deref().and_then(|name| {
+                                                self.identifier_index.as_ref()
+                                                    .and_then(|idx| idx.variables.get(name))
+                                                    .map(|v| v.source_line)
+                                            })
+                                        })
+                                        .flatten();
+                                    if scroll_to.is_some() || self.tracked_identifier.is_none() {
+                                        self.scrolled_source_for = self.tracked_identifier.clone();
+                                    }
                                     // Tokenized once per specimen, not per frame.
                                     let highlight = self.cached_highlight.get_or_insert_with(
                                         || crate::source_view::SourceHighlight::new(text)
@@ -2160,7 +2222,7 @@ impl eframe::App for App {
                                         let segments = crate::source_view::segments(
                                             line, line_tokens, &spans,
                                         );
-                                        ui.horizontal(|ui| {
+                                        let row = ui.horizontal(|ui| {
                                             ui.spacing_mut().item_spacing.x = 0.0;
                                             ui.label(
                                                 egui::RichText::new(format!("{:>4} ", line_1))
@@ -2201,6 +2263,11 @@ impl eframe::App for App {
                                                 }
                                             }
                                         });
+                                        if scroll_to == Some(line_1) {
+                                            row.response.scroll_to_me(
+                                                Some(egui::Align::Center),
+                                            );
+                                        }
                                     }
                                 });
                             }
@@ -3236,6 +3303,48 @@ const GOLDEN_RATIO: f32 = 0.618_033_99;
 /// visually distinct colors without a hand-picked palette. `Hsva` constructs
 /// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
 /// automatically.
+/// Reduce a derivative mention to the variable it differentiates.
+///
+/// Downstream views name things as the DAE does, so an incidence column or an
+/// equation may read `der(h)` where the source declares `h`. Tracking must key
+/// on the base name: that is what `IdentifierIndex` maps to a source line, and
+/// what the source view can highlight. Idea #37 calls this out as the wrinkle.
+///
+/// Only a fully-wrapping `der(...)` is stripped, and only one layer — `der(der(h))`
+/// yields `der(h)`, which is itself a DAE variable in a reduced system, not `h`.
+fn strip_der(name: &str) -> &str {
+    let Some(rest) = name.strip_prefix("der(") else { return name };
+    let Some(inner) = rest.strip_suffix(')') else { return name };
+
+    // The `der(` must be closed by that final `)`, or this is an expression
+    // that merely begins and ends the right way — `der(a) + der(b)` does. So
+    // walk the inner text: the depth must never go negative (which would mean
+    // the opening paren closed early) and must end balanced. A top-level comma
+    // rules out `der(a, b)`, which is not one variable's derivative.
+    //
+    // Checking for parens at all, rather than balance, was the first attempt.
+    // It wrongly rejected `der(der(h))`, whose inner text legitimately contains
+    // them.
+    let mut depth = 0i32;
+    for c in inner.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth < 0 {
+                    return name;
+                }
+            }
+            ',' if depth == 0 => return name,
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return name;
+    }
+    inner.trim()
+}
+
 fn series_color(i: usize) -> egui::Color32 {
     egui::ecolor::Hsva::new(i as f32 * GOLDEN_RATIO, 0.85, 0.5, 1.0).into()
 }
@@ -3340,6 +3449,7 @@ impl App {
             cached_narratives: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
+            scrolled_source_for: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,
@@ -3406,6 +3516,72 @@ mod tests {
         );
 
         let _ = std::fs::remove_file(ack);
+    }
+
+    /// Downstream views name derivatives as the DAE does; tracking has to key
+    /// on the base variable, which is what the index maps to a source line.
+    #[test]
+    fn strip_der_reduces_a_derivative_to_its_variable() {
+        assert_eq!(strip_der("der(h)"), "h");
+        assert_eq!(strip_der("der(gear.phi)"), "gear.phi");
+        // Not a derivative at all.
+        assert_eq!(strip_der("h"), "h");
+        assert_eq!(strip_der("order"), "order");
+        // One layer only: der(der(h)) is itself a DAE variable in a reduced
+        // system, so reducing it all the way to `h` would track the wrong thing.
+        assert_eq!(strip_der("der(der(h))"), "der(h)");
+        // Looks like der(...) but is an expression, not a single derivative:
+        // the leading `der(` is closed before the end.
+        assert_eq!(strip_der("der(a) + der(b)"), "der(a) + der(b)");
+        // A top-level comma is not one variable's derivative either.
+        assert_eq!(strip_der("der(a, b)"), "der(a, b)");
+        // Unbalanced input must be returned untouched rather than mangled.
+        assert_eq!(strip_der("der(h"), "der(h");
+        assert_eq!(strip_der("der((h)"), "der((h)");
+        assert_eq!(strip_der("der( h )"), "h", "surrounding space is trimmed");
+    }
+
+    /// Tracking is a toggle from every view, and derivative mentions resolve to
+    /// the base variable before being stored.
+    #[test]
+    fn set_tracked_identifier_toggles_and_strips_der() {
+        let (mut app, _tx) = App::test_with_sender();
+
+        app.set_tracked_identifier("h".to_owned());
+        assert_eq!(app.tracked_identifier.as_deref(), Some("h"));
+
+        // Clicking the same name again clears it.
+        app.set_tracked_identifier("h".to_owned());
+        assert_eq!(app.tracked_identifier, None);
+
+        // A derivative mention tracks the variable it differentiates...
+        app.set_tracked_identifier("der(h)".to_owned());
+        assert_eq!(app.tracked_identifier.as_deref(), Some("h"));
+        // ...and so clicking `h` elsewhere is recognised as the same thing.
+        app.set_tracked_identifier("h".to_owned());
+        assert_eq!(app.tracked_identifier, None, "der(h) and h are one target");
+    }
+
+    /// The source view scrolls on *change* only. Without this the view would be
+    /// re-centred every frame while an identifier stayed tracked, pinning it and
+    /// making the scrollbar unusable.
+    #[test]
+    fn source_scroll_is_armed_only_when_the_tracked_identifier_changes() {
+        let (mut app, _tx) = App::test_with_sender();
+        assert_eq!(app.scrolled_source_for, None);
+
+        app.set_tracked_identifier("h".to_owned());
+        assert_ne!(
+            app.tracked_identifier, app.scrolled_source_for,
+            "a newly tracked identifier must still be pending a scroll"
+        );
+
+        // Simulate the source view having scrolled to it.
+        app.scrolled_source_for = app.tracked_identifier.clone();
+        assert_eq!(
+            app.tracked_identifier, app.scrolled_source_for,
+            "once scrolled, no further scroll is armed for the same identifier"
+        );
     }
 
     #[test]
