@@ -2132,14 +2132,15 @@ impl eframe::App for App {
                                     );
                                     for (i, line) in text.lines().enumerate() {
                                         let line_1 = (i + 1) as u32;
+                                        let line_tokens = highlight.line(i);
                                         let spans = self.identifier_index.as_ref()
-                                            .map(|idx| idx.clickable_spans(line_1, line))
+                                            .map(|idx| idx.clickable_spans(line_1, line, line_tokens))
                                             .unwrap_or_default();
                                         // One pass produces both colour and click
                                         // targets, so the two cannot disagree about
                                         // where a run of text begins and ends.
                                         let segments = crate::source_view::segments(
-                                            line, highlight.line(i), &spans,
+                                            line, line_tokens, &spans,
                                         );
                                         ui.horizontal(|ui| {
                                             ui.spacing_mut().item_spacing.x = 0.0;

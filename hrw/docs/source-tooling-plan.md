@@ -106,10 +106,14 @@ ask `IdentifierIndex` which resolve to DAE variables.
 **Design notes.**
 
 - Fixes both limitations listed above.
-- Decide what to do with identifiers that lex as names but have no DAE variable
-  — most usefully, render them normally but not clickable, and consider a hover
-  explaining that the name did not survive flattening. That absence is itself
-  worth seeing.
+- Identifiers that lex as names but have no DAE variable render normally and are
+  not clickable. **The proposed "did not survive flattening" hover was dropped**:
+  most such identifiers were never variables at all — class names, function
+  names, modifier names like `start`, enumeration literals — and the index
+  cannot distinguish those from a genuinely dropped variable. The hover would
+  have been confidently wrong on the majority of what it labelled. Surfacing
+  dropped variables is a real idea, but it needs a source of truth about what
+  *was* a variable, which is a different piece of work.
 - The existing `matches_tracked` whole-identifier logic stays; it is used by
   other views and is orthogonal.
 
@@ -192,6 +196,13 @@ touch code at all until its design question is answered.
       colours deliberately outrank syntax colour. Note this already did part of
       Phase 3's job — `segments` is the merge point — so Phase 3 is now only
       about *which* identifiers `clickable_spans` offers, not about rendering.
-- [ ] Phase 3 — Clickable identifiers re-based on the lexer
+- [x] **Phase 3 — Clickable identifiers re-based on the lexer** ✅ 2026-07-27.
+      `clickable_spans` now takes the line's tokens and scans them instead of
+      searching the text. Fixed three things, not the two planned: every
+      occurrence is clickable; identifiers in **comments and strings** no longer
+      are (a text search cannot tell code from commentary — this one was not
+      anticipated); and same-leaf names on one line (`a.phi` vs `b.phi`) link to
+      the right variable via longest-dotted-path matching. Dropped the plan's
+      "hover explaining the name did not survive flattening" idea — see below.
 - [ ] Phase 4 — Reverse identifier tracking (#37)
 - [ ] Phase 5 — Forward identifier debugging *(design first)*

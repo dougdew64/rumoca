@@ -10,6 +10,9 @@ use std::collections::HashMap;
 use rumoca_core::{SourceId, VarName};
 use rumoca_ir_dae as dae;
 
+use crate::modelica_lex::TokenKind;
+use crate::source_view::LineToken;
+
 /// A single variable's cross-stage identity.
 #[derive(Debug, Clone)]
 pub struct IndexedVariable {
@@ -100,27 +103,104 @@ impl IdentifierIndex {
 
     /// Find clickable identifier spans within a source line.
     ///
-    /// Returns a list of `(byte_start, byte_end, qualified_name)` tuples
-    /// marking where leaf identifier names appear in the line text.
-    /// Only matches whole identifiers (not substrings of longer names).
-    pub fn clickable_spans(&self, line: u32, line_text: &str) -> Vec<(usize, usize, String)> {
+    /// Returns `(byte_start, byte_end, qualified_name)` tuples, in order,
+    /// marking every place a DAE variable is named on this line.
+    ///
+    /// ## Driven by the lexer, not by searching
+    ///
+    /// `tokens` are the line's tokens from `SourceHighlight::line`. Scanning
+    /// them instead of searching the raw text for each variable's leaf name
+    /// fixes three things the previous approach got wrong:
+    ///
+    /// - **Every occurrence is found.** Searching returned only the first
+    ///   position of each name, so `J = J + 1` had one clickable `J`.
+    /// - **Comments and strings are excluded.** A variable named `h` made the
+    ///   `h` in `// height of h` clickable, because a text search cannot tell
+    ///   code from commentary. The lexer can.
+    /// - **Qualified names disambiguate.** With `a.phi` and `b.phi` both on a
+    ///   line, leaf matching linked both to whichever came first. The dotted
+    ///   path ending at each identifier is matched longest-first, so each links
+    ///   to its own variable.
+    ///
+    /// Identifiers with no matching variable are simply absent from the result
+    /// — they may be class names, function names, modifier names, or names that
+    /// never reached the DAE, and this index cannot tell those apart.
+    pub fn clickable_spans(
+        &self,
+        line: u32,
+        line_text: &str,
+        tokens: &[LineToken],
+    ) -> Vec<(usize, usize, String)> {
         let vars = self.variables_on_line(line);
         if vars.is_empty() {
             return Vec::new();
         }
         let mut spans = Vec::new();
-        let mut seen_positions = std::collections::HashSet::new();
-        for var in &vars {
-            let leaf = var.name.rsplit('.').next().unwrap_or(&var.name);
-            if let Some(pos) = find_whole_identifier(line_text, leaf) {
-                if seen_positions.insert(pos) {
-                    spans.push((pos, pos + leaf.len(), var.name.clone()));
-                }
+        for (i, tok) in tokens.iter().enumerate() {
+            if tok.kind != TokenKind::Identifier {
+                continue;
+            }
+            let path = dotted_path_ending_at(line_text, tokens, i);
+            if let Some(var) = best_match(&vars, &path) {
+                spans.push((tok.start, tok.end, var.name.clone()));
             }
         }
-        spans.sort_by_key(|s| s.0);
         spans
     }
+}
+
+/// Reconstruct the dotted component path ending at token `i`.
+///
+/// For `phi` in `b.phi` this yields `"b.phi"`; for a bare `x` it yields `"x"`.
+/// Walking backwards over `Identifier ('.' Identifier)*` is what lets two
+/// same-leaf variables on one line be told apart.
+fn dotted_path_ending_at(line_text: &str, tokens: &[LineToken], i: usize) -> String {
+    let mut parts = vec![&line_text[tokens[i].start..tokens[i].end]];
+    let mut j = i;
+    loop {
+        // Step back over a dot, then over the identifier before it, skipping
+        // whitespace in case the source is written `b . phi`.
+        let Some(dot) = prev_significant(tokens, j) else { break };
+        if tokens[dot].kind != TokenKind::Operator
+            || &line_text[tokens[dot].start..tokens[dot].end] != "."
+        {
+            break;
+        }
+        let Some(ident) = prev_significant(tokens, dot) else { break };
+        if tokens[ident].kind != TokenKind::Identifier {
+            break;
+        }
+        parts.push(&line_text[tokens[ident].start..tokens[ident].end]);
+        j = ident;
+    }
+    parts.reverse();
+    parts.join(".")
+}
+
+/// Index of the nearest non-whitespace token before `i`.
+fn prev_significant(tokens: &[LineToken], i: usize) -> Option<usize> {
+    tokens[..i]
+        .iter()
+        .rposition(|t| t.kind != TokenKind::Whitespace)
+}
+
+/// Pick the variable a dotted path refers to, preferring the longest match.
+///
+/// `b.phi` is tried before `phi`, so a line mentioning both `a.phi` and `b.phi`
+/// links each to its own variable rather than both to the first one found.
+fn best_match<'a>(vars: &[&'a IndexedVariable], path: &str) -> Option<&'a IndexedVariable> {
+    let parts: Vec<&str> = path.split('.').collect();
+    for start in 0..parts.len() {
+        let candidate = parts[start..].join(".");
+        let suffix = format!(".{candidate}");
+        if let Some(v) = vars
+            .iter()
+            .find(|v| v.name == candidate || v.name.ends_with(&suffix))
+        {
+            return Some(v);
+        }
+    }
+    None
 }
 
 /// Internal helper: find the first position where `needle` appears as a whole
@@ -159,10 +239,6 @@ pub fn matches_tracked(haystack: &str, needle: &str) -> bool {
     find_whole_identifier_impl(haystack, needle, true).is_some()
 }
 
-fn find_whole_identifier(haystack: &str, needle: &str) -> Option<usize> {
-    find_whole_identifier_impl(haystack, needle, false)
-}
-
 use crate::byte_offset_to_line;
 
 #[cfg(test)]
@@ -186,52 +262,86 @@ mod tests {
         assert_eq!(byte_offset_to_line("abc", 999), 1);
     }
 
-    #[test]
-    fn find_whole_identifier_basic() {
-        assert_eq!(find_whole_identifier("  Real J;", "J"), Some(7));
+    /// Build an index with the given `(qualified_name, kind)` variables all
+    /// declared on `line`, and return the spans found in `text`.
+    fn spans_for(line: u32, text: &str, vars: &[(&str, &'static str)]) -> Vec<(usize, usize, String)> {
+        let mut idx = IdentifierIndex::default();
+        for (name, kind) in vars {
+            idx.variables.insert((*name).to_string(), IndexedVariable {
+                name: (*name).to_string(),
+                kind,
+                source_byte_range: (0, 10),
+                source_line: line,
+                def_id: None,
+                description: None,
+            });
+            idx.line_to_variables.entry(line).or_default().push((*name).to_string());
+        }
+        let hl = crate::source_view::SourceHighlight::new(text);
+        idx.clickable_spans(line, text, hl.line(0))
     }
 
-    #[test]
-    fn find_whole_identifier_rejects_substring() {
-        assert_eq!(find_whole_identifier("  Real JJ;", "J"), None);
-    }
-
-    #[test]
-    fn find_whole_identifier_at_start() {
-        assert_eq!(find_whole_identifier("J = 1;", "J"), Some(0));
-    }
-
-    #[test]
-    fn find_whole_identifier_at_end() {
-        assert_eq!(find_whole_identifier("x + J", "J"), Some(4));
+    /// The span texts, for assertions that care about what was linked rather
+    /// than where.
+    fn span_texts<'a>(text: &'a str, spans: &[(usize, usize, String)]) -> Vec<(&'a str, String)> {
+        spans.iter().map(|(s, e, n)| (&text[*s..*e], n.clone())).collect()
     }
 
     #[test]
     fn clickable_spans_returns_empty_for_no_vars() {
         let idx = IdentifierIndex::default();
-        assert!(idx.clickable_spans(1, "model Foo").is_empty());
+        let hl = crate::source_view::SourceHighlight::new("model Foo");
+        assert!(idx.clickable_spans(1, "model Foo", hl.line(0)).is_empty());
     }
 
     #[test]
     fn clickable_spans_finds_leaf_name() {
-        let mut idx = IdentifierIndex::default();
-        idx.variables.insert("inertia.J".to_string(), IndexedVariable {
-            name: "inertia.J".to_string(),
-            kind: "parameter",
-            source_byte_range: (0, 10),
-            source_line: 3,
-            def_id: None,
-            description: None,
-        });
-        idx.line_to_variables.entry(3).or_default().push("inertia.J".to_string());
-        let spans = idx.clickable_spans(3, "  parameter Real J = 1;");
-        assert_eq!(spans.len(), 1);
-        assert_eq!(spans[0].2, "inertia.J");
-        assert_eq!(&"  parameter Real J = 1;"[spans[0].0..spans[0].1], "J");
+        let text = "  parameter Real J = 1;";
+        let spans = spans_for(3, text, &[("inertia.J", "parameter")]);
+        assert_eq!(span_texts(text, &spans), vec![("J", "inertia.J".to_string())]);
+    }
+
+    /// Regression: the search-based implementation returned only the first
+    /// position of each name, so later mentions were not clickable.
+    #[test]
+    fn every_occurrence_is_clickable() {
+        let text = "  J = J + J;";
+        let spans = spans_for(3, text, &[("inertia.J", "parameter")]);
+        assert_eq!(spans.len(), 3, "all three mentions of J should be clickable");
+        assert!(spans.iter().all(|s| s.2 == "inertia.J"));
+    }
+
+    /// Regression: a text search cannot tell code from commentary, so a
+    /// variable named `h` made the `h` in a comment clickable.
+    #[test]
+    fn identifiers_in_comments_and_strings_are_not_clickable() {
+        let text = "  Real h; // height of h";
+        let spans = spans_for(2, text, &[("h", "state")]);
+        assert_eq!(spans.len(), 1, "only the declaration, not the comment");
+        assert!(spans[0].0 < text.find("//").unwrap());
+
+        let text = "  Real h = 1 \"h in metres\";";
+        let spans = spans_for(2, text, &[("h", "state")]);
+        assert_eq!(spans.len(), 1, "the h inside the description string is not code");
+    }
+
+    /// Regression: leaf matching linked both mentions to whichever variable
+    /// came first. The dotted path ending at each identifier disambiguates.
+    #[test]
+    fn same_leaf_on_one_line_links_to_the_right_variable() {
+        let text = "  a.phi = b.phi;";
+        let spans = spans_for(4, text, &[("m.a.phi", "state"), ("m.b.phi", "state")]);
+        let linked: Vec<_> = span_texts(text, &spans)
+            .into_iter()
+            .filter(|(t, _)| *t == "phi")
+            .map(|(_, n)| n)
+            .collect();
+        assert_eq!(linked, vec!["m.a.phi".to_string(), "m.b.phi".to_string()]);
     }
 
     #[test]
     fn duplicate_line_to_variables_entry_produces_single_span() {
+        let text = "  Real h(start = 1.0) \"height\";";
         let mut idx = IdentifierIndex::default();
         idx.variables.insert("h".to_string(), IndexedVariable {
             name: "h".to_string(),
@@ -243,25 +353,26 @@ mod tests {
         });
         idx.line_to_variables.entry(2).or_default().push("h".to_string());
         idx.line_to_variables.entry(2).or_default().push("h".to_string());
-        let spans = idx.clickable_spans(2, "  Real h(start = 1.0) \"height\";");
+        let hl = crate::source_view::SourceHighlight::new(text);
+        let spans = idx.clickable_spans(2, text, hl.line(0));
         assert_eq!(spans.len(), 1, "duplicate line_to_variables entry must not duplicate the span");
     }
 
     #[test]
     fn pre_variable_same_leaf_produces_single_span() {
-        let mut idx = IdentifierIndex::default();
-        let var = |name: &str, kind: &'static str| IndexedVariable {
-            name: name.to_string(), kind,
-            source_byte_range: (0, 10), source_line: 5,
-            def_id: None, description: None,
-        };
-        idx.variables.insert("h".to_string(), var("h", "state"));
-        idx.variables.insert("__pre__.h".to_string(), var("__pre__.h", "parameter"));
-        idx.line_to_variables.entry(5).or_default().push("h".to_string());
-        idx.line_to_variables.entry(5).or_default().push("__pre__.h".to_string());
-        let spans = idx.clickable_spans(5, "  Real h(start = 1.0) \"height\";");
+        let text = "  Real h(start = 1.0) \"height\";";
+        let spans = spans_for(5, text, &[("h", "state"), ("__pre__.h", "parameter")]);
         assert_eq!(spans.len(), 1, "__pre__ variant must not add a second span at the same position");
         assert_eq!(spans[0].2, "h", "should prefer the non-prefixed variable");
+    }
+
+    /// Names that are not DAE variables — class names, function names, the
+    /// modifier `start` — are simply not offered.
+    #[test]
+    fn non_variable_identifiers_are_not_linked() {
+        let text = "  Real h(start = 1.0);";
+        let spans = spans_for(2, text, &[("h", "state")]);
+        assert_eq!(span_texts(text, &spans), vec![("h", "h".to_string())]);
     }
 
     #[test]
