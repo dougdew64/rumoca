@@ -1121,11 +1121,17 @@ would improve readability and match the visual quality of the rest of HRW.
   lexical-level highlighting is sufficient.
 - **Theme-aware:** colors should respect dark/light mode, consistent with
   HRW's existing palette.
-- **When:** after identifier clicking (#10 step 3) is implemented — the
-  tokenizer built for clickable identifiers can be extended to carry color
-  information, so the two features share infrastructure.
+- **When:** *(corrected 2026-07-27)* this entry originally said to do it after
+  identifier clicking, assuming the tokenizer built for clickable identifiers
+  could be extended to carry colour. **No such tokenizer exists.**
+  `identifier_index::clickable_spans` is index-driven, not lexical — it searches
+  each line for the leaf names of the DAE variables believed to be on it. The
+  dependency runs the other way: the lexer comes *first*, and improves
+  identifier clicking (which today finds only the first occurrence of a name per
+  line, and only names that survived into the DAE).
 
-**Relates to:** #10 (cross-stage identifier tracking — the tokenizer is shared).
+**Relates to:** #10 and #37 — sequenced with them as one thread of work in
+[`source-tooling-plan.md`](source-tooling-plan.md).
 
 ## 37. Reverse identifier tracking — click downstream, highlight source
 
