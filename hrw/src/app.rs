@@ -346,6 +346,12 @@ pub struct App {
     // primary path — prevents SIGSTOP/SIGCHLD from LLDB on thread termination);
     // (2) the UI's `live_just_finished` check acts as a safety-net fallback.
     live_breakpoint_armed: bool,
+
+    // ---- 16. Breakpoint pre-warm ----
+    // See `Prewarm` and `tick_prewarm`. Runs once, early, so the debugger's
+    // first (slow) resolution of live_trace.rs does not happen on the critical
+    // path of the first Debug click.
+    prewarm: Prewarm,
 }
 
 #[derive(Clone, Copy)]
@@ -360,7 +366,86 @@ enum LiveDebugAction {
     SpawnLive,
 }
 
+/// State of the one-shot breakpoint pre-warm.
+///
+/// ## The problem this solves
+///
+/// The first time a debugger is asked for a breakpoint in a given source file,
+/// it must resolve that file to a compilation unit and load its line table.
+/// For `hrw.exe` — a 21 MB `.text` section with a correspondingly large PDB —
+/// that first resolution takes well over a second. Every later breakpoint in
+/// the same file is fast, because the module is already warm.
+///
+/// That cold cost lands in exactly the wrong place. The Debug button's
+/// handshake gives the debugger only ~500 ms (`LiveTrace::wait_for_debugger`)
+/// between the extension's ack and the algorithm thread reaching the anchor,
+/// and the ack means "VS Code has been told", not "the debugger has installed
+/// it". So the *first* Debug click of a session missed its breakpoint and the
+/// algorithm ran to completion; the second click worked, and every one after.
+///
+/// Rather than lengthen the wait — a guess that would be paid on every live
+/// debug start forever — this moves the cold resolution off the critical path:
+/// arm the anchor once at startup, wait for the ack, then remove it. Nothing is
+/// left armed, but the debugger has loaded the line table by the time the user
+/// clicks Debug, so the existing 500 ms is ample.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Prewarm {
+    /// Nothing sent yet. The arm request goes out on the first UI frame.
+    NotStarted,
+    /// Arm request written; waiting for the extension's ack before removing it.
+    /// The `Instant` bounds the wait for the case where no extension is running
+    /// (HRW launched outside VS Code, or the bridge extension disabled).
+    Awaiting(std::time::Instant),
+    /// Finished — either warmed, timed out, or deliberately abandoned.
+    Done,
+}
+
 impl App {
+    /// Advance the one-shot breakpoint pre-warm. Called once per UI frame.
+    ///
+    /// See [`Prewarm`] for why this exists. The sequence is arm → await ack →
+    /// remove, and it must be a sequence rather than an arm/remove pair: both
+    /// requests are written to the *same* file
+    /// (`.hrw-bridge/breakpoint-request.json`), so removing before the extension
+    /// has read the arm request would simply overwrite it.
+    fn tick_prewarm(&mut self, ctx: &egui::Context) {
+        match self.prewarm {
+            Prewarm::NotStarted => {
+                // No specimen is loaded yet, so pass no model name — this arms
+                // the anchor purely to force line-table resolution.
+                if bridge::arm_live_trace_breakpoint(None).is_ok() {
+                    self.prewarm = Prewarm::Awaiting(std::time::Instant::now());
+                    ctx.request_repaint();
+                } else {
+                    // No bridge directory (or it is not writable). Live debug
+                    // will not work either way; nothing to warm.
+                    self.prewarm = Prewarm::Done;
+                }
+            }
+            Prewarm::Awaiting(started) => {
+                // A Debug click owns the handshake from here on. Abandon rather
+                // than consume the ack it is waiting for — `check_breakpoint_ack`
+                // deletes the file it reads, so polling here would make the
+                // Debug click miss its own ack and fall back to its 3s timeout.
+                if self.pending_live_debug.is_some() || self.live_breakpoint_armed {
+                    self.prewarm = Prewarm::Done;
+                    return;
+                }
+                let acked = bridge::check_breakpoint_ack();
+                let timed_out = started.elapsed() >= std::time::Duration::from_secs(3);
+                if acked || timed_out {
+                    // Remove it again: pre-warming must not leave a breakpoint
+                    // armed. Resolution stays cached in the debugger regardless.
+                    let _ = bridge::remove_live_trace_breakpoint();
+                    self.prewarm = Prewarm::Done;
+                } else {
+                    ctx.request_repaint();
+                }
+            }
+            Prewarm::Done => {}
+        }
+    }
+
     /// Three-phase live-debug lifecycle shared by Matching, Tarjan, and Reduction views.
     ///
     /// Returns `SpawnLive` when the ack handshake completes and the caller
@@ -524,6 +609,7 @@ impl App {
             pending_stage: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
+            prewarm: Prewarm::NotStarted,
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -1790,6 +1876,11 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // First thing every frame: check for results from the worker thread.
         self.drain_worker();
+
+        // One-shot: force the debugger to resolve live_trace.rs early, so the
+        // first Debug click does not pay for it. No-op after the first few
+        // frames. See `Prewarm`.
+        self.tick_prewarm(ui.ctx());
 
         // ---- Top menu bar ----
         // `Panel::top` claims a strip at the top of the window. Its string ID
@@ -3167,6 +3258,8 @@ impl App {
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,
+            // Tests drive `tick_prewarm` explicitly; nothing is armed for them.
+            prewarm: Prewarm::NotStarted,
         };
         (app, from_tx)
     }
@@ -3175,6 +3268,60 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The pre-warm state machine: arm → await ack → remove, and — critically —
+    /// abandon *without consuming the ack* if a Debug click takes over.
+    ///
+    /// Both paths live in one test because they share the single
+    /// `.hrw-bridge/breakpoint-{request,ack}.json` pair; as separate tests they
+    /// would race each other (the same reason `bridge`'s arm/remove/ack test is
+    /// combined).
+    #[test]
+    fn prewarm_arms_awaits_ack_then_removes() {
+        let ctx = egui::Context::default();
+        let (mut app, _tx) = App::test_with_sender();
+        let ack = std::path::Path::new(bridge::BREAKPOINT_ACK_FILE);
+        let _ = std::fs::remove_file(ack);
+
+        assert_eq!(app.prewarm, Prewarm::NotStarted);
+
+        // First tick writes the arm request and begins waiting for the ack.
+        app.tick_prewarm(&ctx);
+        assert!(
+            matches!(app.prewarm, Prewarm::Awaiting(_)),
+            "first tick should arm and wait, got {:?}", app.prewarm
+        );
+
+        // Without an ack it keeps waiting (the 3s timeout has not elapsed).
+        app.tick_prewarm(&ctx);
+        assert!(matches!(app.prewarm, Prewarm::Awaiting(_)), "should still be waiting");
+
+        // The extension acks; the next tick removes the breakpoint and finishes.
+        std::fs::write(ack, r#"{"acked":true}"#).unwrap();
+        app.tick_prewarm(&ctx);
+        assert_eq!(app.prewarm, Prewarm::Done, "ack should complete the pre-warm");
+        assert!(!ack.exists(), "pre-warm consumes its own ack");
+
+        // --- Abandon path: a Debug click owns the handshake mid-pre-warm. ---
+        app.prewarm = Prewarm::NotStarted;
+        app.tick_prewarm(&ctx);
+        assert!(matches!(app.prewarm, Prewarm::Awaiting(_)));
+
+        std::fs::write(ack, r#"{"acked":true}"#).unwrap();
+        app.pending_live_debug = Some((
+            std::time::Instant::now(),
+            PendingLiveDebug::Reduction,
+        ));
+        app.tick_prewarm(&ctx);
+
+        assert_eq!(app.prewarm, Prewarm::Done, "should abandon, not keep polling");
+        assert!(
+            ack.exists(),
+            "abandoning must NOT consume the ack — the Debug click is waiting for it"
+        );
+
+        let _ = std::fs::remove_file(ack);
+    }
 
     #[test]
     fn read_purpose_extracts_hint() {

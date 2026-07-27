@@ -89,7 +89,7 @@ const BREAKPOINT_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw
 /// The extension writes this ack file after processing a request, confirming
 /// the breakpoint is registered with LLDB. HRW polls for it before spawning
 /// the algorithm thread (see `check_breakpoint_ack`).
-const BREAKPOINT_ACK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-ack.json");
+pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-ack.json");
 
 /// Absolute path to `live_trace_breakpoint` in the structural crate, resolved
 /// at compile time so the VS Code extension can set breakpoints without path

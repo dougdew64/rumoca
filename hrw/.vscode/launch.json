@@ -1,8 +1,18 @@
 {
+  // Used only when `hrw/` itself is the opened VS Code folder.
+  //
+  // The AUTHORITATIVE config is ../../.vscode/launch.json at the repository
+  // root, which is the folder README.md tells you to open. This file mirrors it
+  // with paths adjusted. Keep the two in sync — they silently diverged once
+  // before (this one kept a Linux-only SIGCHLD preRunCommand and lacked
+  // _NO_DEBUG_HEAP), which cost real debugging time.
+  //
   // Debug stack per charter Decision 6 / CLAUDE.md: rust-analyzer + CodeLLDB.
-  // Requires the CodeLLDB extension (vadimcn.vscode-lldb). CodeLLDB's Rust-aware
-  // formatters are what make inspecting Rumoca IR values while single-stepping a
-  // phase legible — the whole point of the observatory.
+  // CodeLLDB's Rust-aware formatters are what make inspecting Rumoca IR values
+  // while single-stepping a phase legible — the whole point of the observatory.
+  //
+  // Every setting below is explained in docs/architecture.md § Live trace
+  // debugging on Windows. Do not drop one without reading it.
   "version": "0.2.0",
   "configurations": [
     {
@@ -15,12 +25,46 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}",
-      // Suppress SIGCHLD: egui/winit's Linux backend emits SIGCHLD during
-      // startup (child-process lifecycle). Without suppression, CodeLLDB
-      // stops on it and shows a spurious signal in the debug console.
-      "preRunCommands": [
-        "process handle SIGCHLD -s false -n false"
-      ]
+      // All-threads stepping aliases for live trace. VS Code's F10/F11 step only
+      // the selected thread, which freezes the egui UI thread and leaves the
+      // animation stale. Type these in the Debug Console instead:
+      //   ns = step over    si = step in    so = step out
+      "initCommands": [
+        "command alias ns thread step-over -m all-threads",
+        "command alias si thread step-in -m all-threads",
+        "command alias so thread step-out -m all-threads"
+      ],
+      "env": {
+        // Windows switches the CRT to the validating debug heap under a
+        // debugger, making sessions ~100x slower.
+        "_NO_DEBUG_HEAP": "1",
+        // Panic output goes to the debuggee's stderr — the integrated terminal
+        // under CodeLLDB, NOT the Debug Console.
+        "RUST_BACKTRACE": "1",
+        // A D3D12 device does not survive the long pauses live trace depends on;
+        // the next paint then fails and egui-wgpu panics on the main thread
+        // (exit code 101). Scoped to debugging — normal runs keep the default
+        // backend.
+        "WGPU_BACKEND": "gl"
+      }
+    },
+    {
+      // Microsoft's Visual Studio debugger (requires ms-vscode.cpptools).
+      // Secondary/cross-check adapter — it reads PDB natively and reports moved
+      // breakpoints honestly. No Cargo integration, hence the explicit program
+      // path and the preLaunchTask.
+      "type": "cppvsdbg",
+      "request": "launch",
+      "name": "Debug HRW Observatory (cppvsdbg)",
+      "program": "${workspaceFolder}/../target/debug/hrw.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/..",
+      "environment": [
+        { "name": "_NO_DEBUG_HEAP", "value": "1" },
+        { "name": "RUST_BACKTRACE", "value": "1" },
+        { "name": "WGPU_BACKEND", "value": "gl" }
+      ],
+      "preLaunchTask": "cargo build -p hrw"
     },
     {
       "type": "lldb",
@@ -31,7 +75,10 @@
         "filter": { "name": "hrw", "kind": "bin" }
       },
       "args": [],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "_NO_DEBUG_HEAP": "1"
+      }
     }
   ]
 }

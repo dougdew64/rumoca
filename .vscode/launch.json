@@ -1,0 +1,94 @@
+{
+  // Workspace-root debug config (open the Rumoca repo root as the folder).
+  // Kept in sync with hrw/.vscode/launch.json, which serves the same purpose
+  // when hrw/ itself is the opened folder.
+  //
+  // Debug stack per charter Decision 6 / CLAUDE.md: rust-analyzer + CodeLLDB.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug HRW Observatory",
+      "cargo": {
+        "args": ["build", "--bin=hrw"],
+        "filter": { "name": "hrw", "kind": "bin" }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      // All-threads stepping aliases, for live trace debugging.
+      //
+      // VS Code's F10/F11 step buttons step the *selected thread*. That is wrong
+      // for live trace: HRW's visuals are painted by the egui UI thread, so if
+      // only the algorithm thread advances, the animation never updates and live
+      // trace degrades into replay. These aliases step with every thread running,
+      // which lets the UI thread reach the `sleep(frame_delay)` render window in
+      // LiveTrace::push and repaint between steps.
+      //
+      // Type them in the Debug Console instead of pressing F10/F11:
+      //   ns = step over    si = step in    so = step out
+      //
+      // These previously lived in a user-level ~/.lldbinit on the Linux machine
+      // and were lost in the move to Windows. They live in version control now
+      // so the next platform move carries them along.
+      "initCommands": [
+        "command alias ns thread step-over -m all-threads",
+        "command alias si thread step-in -m all-threads",
+        "command alias so thread step-out -m all-threads"
+      ],
+      // Disable the MSVC debug heap. When a process is launched under a
+      // debugger on Windows, the CRT switches to the debug heap, which
+      // validates every allocation — making a debugger session ~100x slower.
+      // Setting _NO_DEBUG_HEAP=1 keeps the normal heap. This is the real fix
+      // for debugger performance (the per-crate opt-level overrides tried
+      // first were reverted). See hrw/docs/windows-migration.md.
+      "env": {
+        "_NO_DEBUG_HEAP": "1",
+        // Panic backtraces. HRW is a console-subsystem binary, so panic output
+        // goes to the debuggee's stderr — the integrated terminal under
+        // CodeLLDB, NOT the Debug Console.
+        "RUST_BACKTRACE": "1",
+        // EXPERIMENT (2026-07-27): force wgpu's OpenGL backend.
+        //
+        // Live trace freezes the whole process at a breakpoint, often for
+        // minutes. A D3D12 device does not always survive that — on resume the
+        // next paint fails and egui-wgpu panics in the egui event loop (the
+        // MAIN thread), so HRW exits with code 101:
+        //   "Failed to create staging buffer for index data" (renderer.rs:981)
+        // The reported buffer was 14x larger than required, so this is device
+        // loss rather than a sizing bug. The GL backend may tolerate long
+        // suspensions better. Remove this if it makes no difference.
+        "WGPU_BACKEND": "gl"
+      }
+    },
+    {
+      // Microsoft's Visual Studio debugger (requires the ms-vscode.cpptools
+      // extension). Added 2026-07-27 because CodeLLDB's PDB reader produces a
+      // CORRUPT symbol/line mapping for this binary on windows-msvc: a
+      // breakpoint in a path-dep crate (crates/rumoca-*) binds to an unrelated
+      // address, and `image lookup -r -n live_trace_breakpoint` returns a
+      // symbol by that name whose address resolves to hashbrown code at
+      // eframe's epi.rs:273. Breakpoints in the `hrw` package itself resolve
+      // fine. cppvsdbg reads PDB natively instead of reimplementing it.
+      // See hrw/docs/windows-migration.md.
+      //
+      // Unlike the lldb config above, cppvsdbg has no Cargo integration — hence
+      // the explicit `program` path and the preLaunchTask in tasks.json.
+      "type": "cppvsdbg",
+      "request": "launch",
+      "name": "Debug HRW Observatory (cppvsdbg)",
+      "program": "${workspaceFolder}/target/debug/hrw.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      // cppvsdbg takes name/value pairs, not the object form `lldb` uses.
+      "environment": [
+        { "name": "_NO_DEBUG_HEAP", "value": "1" },
+        { "name": "RUST_BACKTRACE", "value": "1" },
+        // Same GPU device-loss experiment as the lldb config above — the
+        // egui-wgpu panic after long debugger pauses hit both adapters.
+        { "name": "WGPU_BACKEND", "value": "gl" }
+      ],
+      "preLaunchTask": "cargo build -p hrw"
+    }
+  ]
+}

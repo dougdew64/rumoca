@@ -180,10 +180,19 @@ The UI thread never blocks — it drains the `mpsc::Receiver` via `try_iter()` (
 no shared lock with the producer). The algorithm thread sends frames through the channel;
 the two sides share no explicit mutex, so debugger step-over cannot deadlock on HRW code.
 
-**Known limitation — step-over deadlocks on WSL2**: LLDB's step-over mechanism
-(`thread step-over`, F10) deadlocks on multi-threaded Rust programs under WSL2. The symptom
-is a spinning "Local variables" indicator that never resolves. This affects both single-thread
-mode (default) and all-threads mode (`-m all-threads`). Continue (F5) between breakpoints
-works correctly — only the step-over mechanism is affected. The root cause is WSL2's ptrace
-implementation, not HRW or Rumoca code. The fix is to run HRW on native Windows, where the
-debugger uses Windows debug APIs instead of ptrace.
+**Historical — step-over deadlocks on WSL2 (no longer applicable).** Under WSL2, LLDB's
+step-over deadlocked on multi-threaded Rust programs (symptom: a spinning "Local variables"
+indicator), in both single-thread and all-threads mode. The root cause was WSL2's ptrace
+implementation. Development moved to native Windows, where the debugger uses Windows debug
+APIs and the deadlock does not occur.
+
+**Stepping on Windows.** VS Code's F10/F11 step only the *selected* thread, which freezes the
+egui UI thread and leaves the animation stale — live trace then gives you nothing that replay
+does not. Use the all-threads aliases from `.vscode/launch.json`, typed in the Debug Console:
+`ns` (step over), `si` (step in), `so` (step out). Continue (F5) already runs all threads,
+which is why it advances the animation.
+
+Live trace on Windows has several other environmental requirements — a linker-folding hazard
+in the anchor itself, the build profile, and the GPU backend. See
+[`architecture.md` § Live trace debugging on Windows](architecture.md#live-trace-debugging-on-windows)
+and [`../README.md`](../README.md).

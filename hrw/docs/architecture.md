@@ -564,18 +564,33 @@ All three support two animation modes:
    `live_trace_breakpoint(usize::MAX)` with a sentinel index, so the debugger
    pauses the thread at a point where zero frames have been pushed. The user's
    first Continue (F5) releases the gate and the algorithm starts from step
-   zero — no steps are missed. The three layers — ack handshake, startup
-   sleep, sentinel breakpoint call — are all necessary: the ack prevents
-   spawning before the request is sent; the sleep covers the async LLDB
-   installation; the sentinel call provides the actual pause point.
+   zero — no steps are missed.
 
-   **Known limitation — step-over deadlocks on WSL2**: LLDB's step-over
-   mechanism (`thread step-over`, F10) deadlocks on multi-threaded Rust
-   programs under WSL2. The symptom is a spinning "Local variables"
-   indicator that never resolves. This is a WSL2 ptrace issue, not a
-   bug in HRW or Rumoca code — Continue (F5) between breakpoints works
-   correctly. The fix is to run HRW on native Windows, where the debugger
-   uses Windows debug APIs instead of ptrace.
+   **Breakpoint pre-warm** (`App::tick_prewarm`, `Prewarm` in `app.rs`): the
+   *first* breakpoint requested in a given source file costs far more than
+   later ones, because the debugger must resolve that file to a compilation
+   unit and load its line table. For `hrw.exe` — a 21 MB `.text` section with a
+   correspondingly large PDB — that cold resolution takes well over a second,
+   comfortably longer than the 500 ms startup gate. The observable symptom was
+   sharp: the first Debug click of a session missed its breakpoint entirely and
+   the algorithm ran to completion, while the second click and every one after
+   worked. Rather than lengthen the wait — a guess paid on every live debug
+   start forever — HRW arms and immediately removes the anchor once on the first
+   UI frame, moving the cold resolution off the critical path. Nothing is left
+   armed; the debugger keeps the line table cached regardless. The arm/remove
+   pair must be sequenced through the ack (not issued back-to-back) because both
+   requests write the *same* file, so an immediate remove would overwrite the
+   arm before the extension ever read it. If a Debug click arrives mid-pre-warm,
+   the pre-warm abandons rather than consuming the ack that click is waiting for.
+
+   The four layers — pre-warm, ack handshake, startup sleep, sentinel breakpoint
+   call — are all necessary: the pre-warm removes the cold-resolution cost; the
+   ack prevents spawning before the request is processed; the sleep covers the
+   asynchronous breakpoint installation; the sentinel call provides the actual
+   pause point.
+
+   See [Live trace debugging on Windows](#live-trace-debugging-on-windows) for
+   the environment this depends on — it is not self-contained in the code.
 
    **Breakpoint cleanup**: when the algorithm finishes, the thread's
    `on_complete` callback removes the `live_trace_breakpoint` breakpoint via
@@ -604,6 +619,184 @@ sleep after each push (so the UI thread can render before the debugger pauses
 all threads) and calls `live_trace_breakpoint` — a dedicated `#[inline(never)]`
 function that the debugger resolves unambiguously. This is the upstreamable
 observability API.
+
+### Live trace debugging on Windows
+
+Live trace is the only one of the three animation tiers (recorded snapshot →
+recorded replay → live trace) that runs the *real* algorithm under the *real*
+debugger. That makes it uniquely sensitive to the toolchain: it depends on the
+compiled binary, the linker, the debug adapter, the GPU backend, and the build
+profile all cooperating. Most of that is invisible from the source, so it is
+written down here.
+
+Everything below was diagnosed on 2026-07-27 while porting from WSL2 to native
+Windows. The setup lives in `.vscode/launch.json`, `.vscode/tasks.json`, and the
+workspace `Cargo.toml`; `hrw/README.md` is the step-by-step version for a fresh
+clone.
+
+#### 1. The anchor must never compile to an empty body
+
+This is the subtle one, and it silently breaks everything downstream.
+
+`live_trace_breakpoint` originally stored to a static and did nothing else:
+
+```rust
+static LAST_FRAME_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+#[inline(never)]
+pub fn live_trace_breakpoint(frame_index: usize) {
+    LAST_FRAME_INDEX.store(frame_index, Ordering::Relaxed);
+}
+```
+
+Nothing ever *read* `LAST_FRAME_INDEX`. A write-only static is dead state, so at
+`opt-level = 1` LLVM is free to dead-store-eliminate the store. With its only
+statement gone, the function becomes a bare `ret` — and the MSVC linker's
+identical COMDAT folding (`/OPT:ICF`, on by default) merges byte-identical
+functions, collapsing the anchor onto *every other empty function in the
+binary*, including eframe's `App::raw_input_hook`.
+
+`#[inline(never)]` does not prevent this. It keeps the *function* from being
+inlined; it says nothing about whether the *body* survives.
+
+The consequences were baffling until the mechanism was understood. A breakpoint
+on the anchor resolved to a shared address reached from eframe's per-frame
+render loop, so the debugger paused during startup, in an unrelated crate,
+reporting "Paused on breakpoint" — which was literally true. `image lookup` gave
+the diagnosis outright:
+
+```
+(before) 0x1400027a0  <hashbrown::raw::RawTableInner>::drop_elements::<…>  at epi.rs:273
+(after)  0x141441380  rumoca_phase_structural::live_trace::live_trace_breakpoint  at live_trace.rs:152
+```
+
+Three unrelated symbols sharing one address is exactly what folding produces.
+Note also that breakpoints in the `hrw` package itself always worked — those are
+substantial functions with nothing to fold into — which is why the fault looked
+like a path-resolution bug in path-dependency crates for some time.
+
+The fix is two independent defenses, both in `live_trace.rs`:
+
+```rust
+pub fn last_frame_index() -> usize { LAST_FRAME_INDEX.load(Ordering::Acquire) }
+
+#[inline(never)]
+pub fn live_trace_breakpoint(frame_index: usize) {
+    LAST_FRAME_INDEX.store(frame_index, Ordering::Release);
+    std::hint::black_box(LAST_FRAME_INDEX.load(Ordering::Acquire));
+}
+```
+
+`last_frame_index` gives the store a genuine consumer, so it is no longer dead;
+`black_box` makes the round-trip opaque, so it cannot be reasoned away even in
+principle. `breakpoint_anchor_store_is_observable` guards the property. **Do not
+"simplify" this function** — an empty body reintroduces the bug, and the failure
+presents as a breakpoint in someone else's crate rather than as anything
+recognizable.
+
+#### 2. Optimization level
+
+The workspace sets `[profile.dev] opt-level = 1` (upstream Rumoca's choice,
+for parser throughput), which applies to every crate. At that level LLVM drops
+line-table entries and reports locals as `<optimized out>` — so even once a
+breakpoint binds, `frame_index` is unreadable and stepping teaches nothing.
+
+`[profile.dev.package.rumoca-phase-structural] opt-level = 0` overrides it for
+the crate under study. Note this *lowers* opt-level for debuggability, opposite
+in purpose to the four overrides above it, which *raise* it for speed. Extend
+this to any crate whose algorithms are being live-traced.
+
+#### 3. The GPU backend and long pauses
+
+A debugger freezes **every** thread, including the egui UI thread, and live
+trace pauses are long by design — the whole point is to sit and study. A D3D12
+device does not reliably survive that. On resume the next paint fails and
+egui-wgpu panics on the main thread, killing HRW with exit code 101:
+
+```
+egui-wgpu-0.35.0/src/renderer.rs:981
+Failed to create staging buffer for index data.
+Index count: 8508. Required index buffer size: 34032.
+Actual size 480024 and capacity: 480024 (bytes)
+```
+
+The reported buffer is ~14x larger than required, so this is device loss, not a
+sizing bug. Because the panic is on the main thread, the process exits rather
+than losing a worker — which is why the symptom was "visuals froze, then HRW
+died", not a stack trace in HRW code.
+
+The launch configs set `WGPU_BACKEND=gl`, which resolves it. The scope is
+deliberate: the hazard exists only under a debugger, so normal `cargo run -p hrw`
+keeps the faster default backend. Note that rust-analyzer's "Debug" CodeLens
+builds its own configuration and will **not** pick this up — launch live trace
+sessions from the launch-configuration dropdown.
+
+Panic output goes to the debuggee's stderr, which under CodeLLDB is the
+integrated terminal, **not** the Debug Console. Looking in the wrong pane makes
+these crashes appear silent.
+
+#### 4. All-threads stepping
+
+VS Code's F10/F11 step the *selected thread*. That is wrong for live trace: the
+visuals are painted by the UI thread, so stepping only the algorithm thread
+leaves the animation stale, and live trace degrades into replay with extra
+steps. The render window is the `sleep(frame_delay)` in `LiveTrace::push` —
+Continue (F5) crosses it with every thread running, which is why Continue
+updates the animation.
+
+The lldb launch config defines aliases, typed in the Debug Console:
+
+| Alias | Command |
+|-------|---------|
+| `ns`  | `thread step-over -m all-threads` |
+| `si`  | `thread step-in -m all-threads` |
+| `so`  | `thread step-out -m all-threads` |
+
+These previously lived in a user-level `~/.lldbinit` on the Linux machine and
+were lost in the platform move; they are in version control now. LLDB also
+offers `while-stepping`, which runs other threads only during single-stepping
+portions — `all-threads` is the mode that gives the UI thread real wall-clock
+time. **Status: implemented but not yet verified end to end.**
+
+#### 5. Debug adapter
+
+Two launch configurations exist, and both work now that the anchor is fixed:
+
+- **CodeLLDB** (`type: lldb`, extension `vadimcn.vscode-lldb`) — the primary.
+  Has Rust-aware formatters and the thread-run-mode control the aliases need.
+  Cargo integration is built in, so no separate build task.
+- **cppvsdbg** (extension `ms-vscode.cpptools`) — Microsoft's debugger, added
+  while CodeLLDB was suspected of misreading PDB. It reads PDB natively and
+  proved the fault was in the *binary*, not either reader. No Cargo integration,
+  hence the explicit `program` path and the `preLaunchTask` in `tasks.json`. It
+  is worth keeping as a cross-check: it reports moved breakpoints honestly,
+  where CodeLLDB silently kept a stale entry.
+
+Note that LLDB skips a function's prologue, so a breakpoint requested on the
+`pub fn` signature line resolves to the first statement line (`exact_match = 0`
+in `breakpoint list`). That is correct behavior, not a fault.
+
+#### 6. Diagnostic commands
+
+In the CodeLLDB Debug Console:
+
+| Command | What it answers |
+|---------|-----------------|
+| `image lookup -r -n live_trace_breakpoint` | Is the anchor at its own address with its own file:line, or folded onto another function? |
+| `breakpoint list` | Did the breakpoint resolve, and to which address and line? |
+| `thread list` | Which thread is stopped, and what is `frame_index`? |
+| `help thread step-out` | Confirms which run-mode flags a step command accepts |
+
+#### 7. Failure signatures
+
+| Symptom | Cause |
+|---------|-------|
+| Pause in an unrelated crate during startup, "Paused on breakpoint" | Anchor folded onto another empty function (§1) |
+| Breakpoint never verifies; no gutter dot while the session is live | Same — the adapter cannot bind it meaningfully |
+| Locals show `<optimized out>` | `opt-level` above 0 for the crate (§2) |
+| Visuals freeze, then exit code 101, nothing in the Debug Console | GPU device loss after a long pause (§3); look in the terminal |
+| First Debug click misses, second works | Cold line-table resolution — fixed by the pre-warm |
+| Stepping works but the animation does not advance | Single-thread stepping; use `ns`/`si`/`so` (§4) |
 
 **Why re-running the algorithm (clicking Debug again) is safe — a Rust ownership lesson.**
 The Debug button spawns a new algorithm thread that re-runs the algorithm.

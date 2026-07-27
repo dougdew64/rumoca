@@ -20,40 +20,54 @@ across the platform change.
   watching `.hrw-bridge/` for breakpoint requests
 - **MSL vendor:** manually copied from WSL2 (gitignored, not in clone)
 
-### Broken: Debug button bridge breakpoint not hit
+### RESOLVED (2026-07-27): Debug button bridge breakpoint not hit
 
-The Debug button (matching/tarjan/reduction animation views) completes the
-full handshake — the extension arms the breakpoint and writes the ack, HRW
-spawns the algorithm thread — but LLDB does not stop at the breakpoint.
-The algorithm runs to completion and the `on_complete` callback removes it.
+**The bridge was never broken.** The breakpoint anchor was being folded onto
+other functions by the linker, so breakpoints on it resolved to an unrelated
+address. Full explanation, with the failure chain and the diagnostic commands,
+is in [`architecture.md` § Live trace debugging on Windows](architecture.md#live-trace-debugging-on-windows).
+Setup instructions for a fresh clone are in [`../README.md`](../README.md).
 
-**Diagnosis so far:**
+Summary of the chain: `LAST_FRAME_INDEX` was written by `live_trace_breakpoint`
+and read nowhere, so at `[profile.dev] opt-level = 1` the store was
+dead-store-eliminated; the function became a bare `ret`; the MSVC linker's
+`/OPT:ICF` merged it with every other empty function in the binary (notably
+eframe's `App::raw_input_hook`). A breakpoint on the anchor therefore fired from
+eframe's render loop, reported — correctly — as "Paused on breakpoint" at
+`epi.rs:273`. `#[inline(never)]` does not prevent this; it protects the function,
+not the body.
 
-1. Extension wasn't installed (fixed: `npm install && npm run build` in
-   `hrw/vscode-extension/`, since `out/` is gitignored)
-2. `std::fs::canonicalize` on Windows produces `\\?\C:\...` extended-length
-   paths (fixed in commit 0ffb28d8: `strip_windows_prefix` in `bridge.rs`)
-3. Despite the prefix fix, the breakpoint is still not hit. The extension
-   log shows `Armed: live_trace.rs:120` then `Removed: live_trace.rs:120`
-   (no pause in between).
+**Hypotheses pursued and discarded along the way** (recorded so they are not
+re-tried): the `\\?\` path prefix; ack-handshake timing; CodeLLDB's PDB reader
+(cppvsdbg reproduced it identically, which is what proved the fault was in the
+binary); source-file identity confusion; a `FunctionBreakpoint` rewrite (dead on
+arrival — symbol resolution pointed at the folded address too).
 
-**Next diagnostic steps:**
+**Fixes applied:**
 
-- Add the full path to the extension's log output (`handleAdd` in
-  `vscode-extension/src/extension.ts`) to verify the path the extension
-  passes to `vscode.debug.addBreakpoints`
-- Check whether the breakpoint appears in VS Code's Breakpoints panel
-  when the Debug button is clicked (it should appear briefly)
-- Manually set a breakpoint on `live_trace_breakpoint` in `live_trace.rs:120`
-  and verify LLDB hits it (isolates whether the issue is path-matching vs
-  dynamic breakpoint addition)
-- Check CodeLLDB's LLDB output for breakpoint resolution messages
-- The `wait_for_debugger` 500ms sleep may be insufficient on Windows;
-  try increasing it
+1. `live_trace_breakpoint` given a body that survives optimization — a real
+   reader (`last_frame_index`) plus `black_box`. Regression test:
+   `breakpoint_anchor_store_is_observable`.
+2. `[profile.dev.package.rumoca-phase-structural] opt-level = 0` — restores
+   dense line tables and readable locals (`frame_index` had been `<optimized out>`).
+3. `WGPU_BACKEND=gl` in both launch configs — a D3D12 device does not survive
+   the long pauses live trace depends on; the loss surfaced as an `egui-wgpu`
+   staging-buffer panic on the main thread and exit code 101.
+4. Breakpoint pre-warm (`App::tick_prewarm`) — the first breakpoint in a source
+   file costs a cold line-table load, longer than the 500 ms startup gate, so the
+   first Debug click of a session missed. HRW now arms and removes the anchor
+   once at startup, moving that cost off the critical path.
+5. All-threads stepping aliases (`ns`/`si`/`so`) committed to `.vscode/launch.json`.
+   These previously lived in an untracked `~/.lldbinit` on the Linux machine.
+   **Not yet verified end to end.**
 
-**Workaround:** manually set a breakpoint on `live_trace_breakpoint`
-(`crates/rumoca-phase-structural/src/live_trace.rs:120`) before clicking
-Debug, or use Recompile with a pre-set breakpoint.
+### Note: `.vscode/` is gitignored at the repo root
+
+`.gitignore:18` excludes `.vscode/`, so `launch.json`, `tasks.json`, and
+`settings.json` there were invisible to git and would not survive a clone. They
+are now tracked via `git add -f` — the same way `hrw/.vscode/` is tracked. This
+avoids modifying upstream's `.gitignore`, which keeps the rebase workflow clean.
+**Any new file under a `.vscode/` directory needs `git add -f`.**
 
 ### Platform-specific code
 
@@ -62,6 +76,12 @@ Debug, or use Recompile with a pre-set breakpoint.
 - **`hrw/src/bridge.rs`:** `strip_windows_prefix` (`#[cfg(windows)]`) strips
   `\\?\` from canonicalized paths
 - **`hrw/Cargo.toml`:** `libc` is unconditional (needed for both platforms)
+- **`launch.json` (both `.vscode/` and `hrw/.vscode/`):** carry `"env": {"_NO_DEBUG_HEAP": "1"}`
+  on the "Debug HRW Observatory" config. The WSL2-era `preRunCommands` entry
+  (`process handle SIGCHLD -s false -n false`) was **removed** — SIGCHLD is a
+  UNIX signal with no meaning on a Windows target, and a failing
+  `preRunCommands` entry aborts a CodeLLDB launch. The two files are duplicates
+  serving different opened-folder choices (repo root vs `hrw/`); keep them in sync.
 - **Workspace `Cargo.toml`:** per-crate opt-level overrides are back to the
   original four only (parse=3, compile=2, parol_runtime=3, scnr2=3) — the
   pipeline crate overrides were reverted because `_NO_DEBUG_HEAP=1` was the
@@ -76,6 +96,9 @@ Debug, or use Recompile with a pre-set breakpoint.
 
 ## Setup checklist for a fresh Windows clone
 
+> **Superseded by [`../README.md`](../README.md)**, which is maintained as the
+> setup guide. The list below is kept as the historical migration record.
+
 1. Install Rust (MSVC toolchain): `winget install Rustlang.Rustup`
 2. Clone and checkout: `git clone ... && git checkout hrw`
 3. Copy MSL vendor directory (gitignored):
@@ -86,5 +109,7 @@ Debug, or use Recompile with a pre-set breakpoint.
 6. Build VS Code extension:
    `cd hrw\vscode-extension && npm install && npm run build`
 7. Install extension: `code --install-extension hrw\vscode-extension`
-8. Add to `.vscode/launch.json`: `"env": {"_NO_DEBUG_HEAP": "1"}`
-9. Restart VS Code to pick up extension + PATH changes
+8. Restart VS Code to pick up extension + PATH changes
+
+`_NO_DEBUG_HEAP=1` is already committed in both `launch.json` files — no manual
+step needed.

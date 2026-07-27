@@ -1,0 +1,21 @@
+{
+  // Mirrors ../../.vscode/tasks.json for the case where `hrw/` is the opened
+  // folder. Backs the cppvsdbg launch config, which — unlike CodeLLDB — has no
+  // Cargo integration and needs an explicit build step.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cargo build -p hrw",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "-p", "hrw", "--bin", "hrw"],
+      "options": { "cwd": "${workspaceFolder}/.." },
+      "group": "build",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    }
+  ]
+}

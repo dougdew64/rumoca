@@ -651,3 +651,39 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   only (BLT/full-matching requires non-singularity), (5) Animate and Tree as full-width views.
   `matching::maximum_matching` widened from `pub(crate)` to `pub` in rumoca-phase-structural (additive,
   upstreamable). Summary-first tab pattern is a pilot for potential adoption on other phase tabs.
+- **2026-07-27 — Live trace debugging repaired on Windows; five coordinated changes.** The Debug
+  button's breakpoint never fired after the WSL2→Windows move. Root cause was not the bridge but
+  the anchor itself: `LAST_FRAME_INDEX` was written by `live_trace_breakpoint` and read nowhere,
+  so at the workspace's `[profile.dev] opt-level = 1` the store was dead-store-eliminated, the
+  function became a bare `ret`, and the MSVC linker's `/OPT:ICF` folded it onto every other empty
+  function in the binary (notably eframe's `App::raw_input_hook`). Breakpoints on the anchor
+  therefore fired from eframe's render loop — reported, correctly, as "Paused on breakpoint" in an
+  unrelated crate. `#[inline(never)]` does not prevent this: it protects the function, not the body.
+  Fixes: (1) the anchor now has a body that survives optimization — a real reader
+  (`last_frame_index`) plus `black_box`, guarded by `breakpoint_anchor_store_is_observable`;
+  (2) `[profile.dev.package.rumoca-phase-structural] opt-level = 0`, which *lowers* opt-level for
+  debuggability (opposite in purpose to the four speed overrides above it) and restores readable
+  locals; (3) `WGPU_BACKEND=gl` in the launch configs — a D3D12 device does not survive the long
+  pauses live trace depends on, and the loss surfaced as an `egui-wgpu` staging-buffer panic on the
+  main thread with exit code 101; (4) a breakpoint pre-warm (`App::tick_prewarm`) that arms and
+  removes the anchor once at startup, so the first Debug click does not pay for the cold line-table
+  load — previously the first click of every session missed and the second worked; (5) all-threads
+  stepping aliases (`ns`/`si`/`so`) committed to `.vscode/launch.json`, having previously lived in
+  an untracked `~/.lldbinit`. Full write-up in `docs/architecture.md` § Live trace debugging on
+  Windows; setup in `README.md`.
+- **2026-07-27 — `ms-vscode.cpptools` / `cppvsdbg` kept as a secondary debug adapter.** Added while
+  CodeLLDB was (wrongly) suspected of misreading PDB debug info. It reproduced the fault
+  identically, which is what proved the problem lay in the binary rather than in either reader.
+  Retained because it reads PDB natively and reports moved breakpoints honestly, where CodeLLDB
+  silently kept a stale entry — a useful cross-check. CodeLLDB remains primary: it has the
+  Rust-aware formatters and the thread run-mode control that all-threads stepping requires, so
+  charter Decision 6 and the `CLAUDE.md` debug stack are unchanged.
+- **2026-07-27 — Root `.vscode/` configs force-added.** `.gitignore:18` excludes `.vscode/`, so the
+  launch/tasks/settings files that live trace depends on were untracked and would not have survived
+  a clone. Tracked via `git add -f`, the same mechanism by which `hrw/.vscode/` is already tracked,
+  rather than editing upstream's `.gitignore` — which keeps the upstream rebase workflow clean. Any
+  new file under a `.vscode/` directory needs `git add -f`.
+- **2026-07-27 — `hrw/README.md` added.** Setup guide for reproducing the environment on a fresh
+  Windows machine: toolchain, the gitignored MSL vendor staging step, the gitignored VS Code
+  extension build step, required launch settings, and a failure-signature table. Supersedes the
+  setup checklist in `docs/windows-migration.md`, which is retained as the migration record.

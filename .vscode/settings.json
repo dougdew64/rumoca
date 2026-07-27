@@ -1,0 +1,16 @@
+{
+  // Force rust-analyzer's "Debug" CodeLens to use CodeLLDB rather than silently
+  // falling back to the cpptools/GDB engine.
+  //
+  // NOTE: the CodeLens builds its own debug configuration and does NOT read
+  // launch.json — so it gets neither WGPU_BACKEND=gl nor the all-threads
+  // stepping aliases. Launch live trace sessions from the launch-configuration
+  // dropdown instead. See hrw/docs/architecture.md.
+  "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
+
+  // Set to true to make CodeLLDB log its full DAP protocol trace to the "LLDB"
+  // output channel. Invaluable when a debug session misbehaves — it is how the
+  // adapter's exit code 3221225477 (0xC0000005) was caught during the Windows
+  // migration. Left off because it is noisy.
+  "lldb.verboseLogging": false
+}
