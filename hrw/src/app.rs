@@ -1383,14 +1383,24 @@ impl App {
                     ui.label(egui::RichText::new(format!("{} ({})", cat.label(), eqs.len())).strong());
                     ui.weak(cat.description());
                     ui.add_space(2.0);
+                    // Equations are Modelica-shaped text, so they get the same
+                    // syntax colouring as the specimen source view. The tracked
+                    // identifier is highlighted per token rather than by tinting
+                    // the whole row — `eq.text.contains(t)` used to match
+                    // `height` when tracking `h`, and then shade the entire
+                    // equation rather than the mention within it.
+                    let font = egui::TextStyle::Monospace.resolve(ui.style());
+                    let dark = ui.visuals().dark_mode;
+                    let default_color = ui.visuals().text_color();
                     for eq in eqs {
                         let selected = self.highlighted_eq_row == Some(eq.index);
-                        let eq_has_tracked = tracked
-                            .is_some_and(|t| eq.text.contains(t));
-                        let mut text = egui::RichText::new(&eq.text).monospace();
-                        if eq_has_tracked {
-                            text = text.background_color(crate::colors::TRACKED_FILL_MEDIUM);
-                        }
+                        let text = crate::source_view::modelica_job(
+                            &eq.text,
+                            font.clone(),
+                            dark,
+                            default_color,
+                            tracked.map(|t| (t, crate::colors::TRACKED_FILL_MEDIUM)),
+                        );
                         if has_incidence {
                             let resp = ui.selectable_label(selected, text);
                             if resp.clicked() {

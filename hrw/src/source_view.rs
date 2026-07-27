@@ -177,6 +177,53 @@ pub fn segments<'a>(
     out
 }
 
+/// Lay out a run of Modelica text with syntax colouring.
+///
+/// The specimen source view is not the only place HRW shows Modelica: the
+/// equation sheet renders `expr_format` output, which is Modelica-shaped too.
+/// Routing both through this gives the app one visual language, so a keyword or
+/// a literal looks the same wherever it appears.
+///
+/// `tracked` optionally supplies `(identifier, background)`. The background is
+/// applied **per identifier token**, not to the whole run — a text search over
+/// the string would highlight `height` when tracking `h`, and would tint the
+/// entire equation rather than the mention inside it.
+pub fn modelica_job(
+    text: &str,
+    font: eframe::egui::FontId,
+    dark: bool,
+    default_color: eframe::egui::Color32,
+    tracked: Option<(&str, eframe::egui::Color32)>,
+) -> eframe::egui::text::LayoutJob {
+    use eframe::egui::{TextFormat, text::LayoutJob};
+
+    let mut job = LayoutJob::default();
+    for token in tokenize(text) {
+        let slice = &text[token.start..token.end];
+        let mut format = TextFormat {
+            font_id: font.clone(),
+            color: crate::colors::syntax_color(token.kind, dark).unwrap_or(default_color),
+            ..Default::default()
+        };
+        if let Some((needle, background)) = tracked {
+            if token.kind == TokenKind::Identifier && identifier_is(slice, needle) {
+                format.background = background;
+            }
+        }
+        job.append(slice, 0.0, format);
+    }
+    job
+}
+
+/// Whether an identifier token names the tracked variable.
+///
+/// Matches the bare name, and the last component of a qualified one, so
+/// tracking `gear.phi` highlights the `phi` in `gear.phi` without also
+/// highlighting an unrelated `phi`… which it would if only leaves were compared.
+pub(crate) fn identifier_is(token: &str, tracked: &str) -> bool {
+    token == tracked || tracked.ends_with(&format!(".{token}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -296,5 +343,24 @@ mod tests {
     #[test]
     fn empty_line_produces_no_segments() {
         assert!(segments("", &[], &[]).is_empty());
+    }
+
+    /// Regression for the equation sheet, which used `text.contains(tracked)`:
+    /// tracking `h` shaded every equation mentioning `height`.
+    #[test]
+    fn tracked_identifier_matching_is_whole_token() {
+        assert!(identifier_is("h", "h"));
+        assert!(!identifier_is("height", "h"), "substring is not a mention");
+        assert!(!identifier_is("h", "height"));
+    }
+
+    /// Tracking a qualified name highlights its final component, which is how
+    /// the name appears inside an equation.
+    #[test]
+    fn tracked_qualified_name_matches_its_leaf() {
+        assert!(identifier_is("phi", "gear.phi"));
+        assert!(identifier_is("gear.phi", "gear.phi"));
+        // But not an unrelated leaf that merely ends the same way.
+        assert!(!identifier_is("hi", "gear.phi"));
     }
 }

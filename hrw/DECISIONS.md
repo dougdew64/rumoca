@@ -772,3 +772,18 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   self-emission would put a second start mid-replay. The snapshot is the DAE *as tracing begins*,
   not the raw DAE — `demote_exact_alias_component_states` and `demote_direct_assigned_states` run
   untraced beforehand — so it is labelled "starting point" rather than "original system".
+- **2026-07-27 — Tracked-identifier matching excludes prose fields; Modelica text shares one visual
+  language.** Two fixes in the same family as the lexer work. (1) `tree.rs` matched the tracked
+  identifier against every `Value::String` in the IR, including `description` — so `Real h "height
+  of h"` highlighted the description and expanded the path to it when tracking `h`, claiming a use
+  where the variable is only talked about. Fixed by field, not by content: `PROSE_FIELDS`
+  (`description`, `comment`, `file_name`) are excluded. Lexing would be the wrong tool here — those
+  strings are not Modelica, so tokenizing them would be a category error; what matters is which
+  field the string came from. The list is deliberately short because listing a field wrongly hides
+  real matches, the worse failure. (2) The equation sheet rendered equations as plain monospace and
+  tested `eq.text.contains(tracked)` — a raw substring match that shaded whole equations containing
+  `height` when tracking `h`. Equations are `expr_format` output and therefore Modelica-shaped, so
+  they now route through `source_view::modelica_job`, sharing the source view's syntax colouring,
+  with the tracked identifier highlighted per token rather than by tinting the row. Canvas-painted
+  axis labels (incidence rows, Tarjan nodes) still render unstyled — per-token colour there means
+  measuring and placing runs by hand, which is a larger change.

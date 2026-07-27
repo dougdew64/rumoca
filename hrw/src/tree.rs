@@ -182,7 +182,11 @@ fn node_ui(
             let changed = prev.is_some_and(|p| p != scalar);
             let is_tracked = tracked.is_some_and(|t| {
                 match scalar {
-                    Value::String(s) => s == t || crate::identifier_index::matches_tracked(s, t),
+                    // Prose fields are excluded: a tracked name occurring inside
+                    // human-written text is a coincidence, not a mention.
+                    Value::String(s) if !is_prose_field(key) => {
+                        s == t || crate::identifier_index::matches_tracked(s, t)
+                    }
                     _ => false,
                 }
             });
@@ -374,7 +378,16 @@ fn collect_tracked_ancestors<'a>(
 ) -> bool {
     let dominated = match value {
         Value::Object(map) => map.iter().any(|(k, v)| {
-            k == tracked || collect_tracked_ancestors(v, tracked, ancestors)
+            if k == tracked {
+                return true;
+            }
+            // A prose field's string is human text, not code — see
+            // `is_prose_field`. Its contents must not drag the whole subtree
+            // open as though the identifier were mentioned there.
+            if is_prose_field(k) && matches!(v, Value::String(_)) {
+                return false;
+            }
+            collect_tracked_ancestors(v, tracked, ancestors)
         }),
         Value::Array(arr) => arr
             .iter()
@@ -386,6 +399,33 @@ fn collect_tracked_ancestors<'a>(
         ancestors.insert(value as *const Value);
     }
     dominated
+}
+
+/// IR fields whose string values are prose written for a human, not code.
+///
+/// Tracked-identifier matching is a whole-word text search, which cannot tell a
+/// mention from a coincidence. In code-bearing strings — equation text, variable
+/// names — an occurrence *is* a mention. In prose it is not:
+///
+/// ```modelica
+/// Real h "height of h";
+/// ```
+///
+/// Tracking `h` used to highlight that description and expand the path to it,
+/// claiming the variable is used somewhere it is only talked about. This is the
+/// same false positive the lexer removed from the source view, but the fix here
+/// is different: these strings are not Modelica, so tokenizing them would be a
+/// category error. What matters is which *field* the string came from.
+///
+/// Deliberately short. Listing a field wrongly hides real matches, which is the
+/// worse failure — so a field is added only when its contents are certainly
+/// prose. `unit` and `quantity` are omitted on purpose: they hold code-like
+/// values (`"N.m"`), and `matches_tracked` already treats `.` as a word
+/// character, so they do not produce false positives.
+const PROSE_FIELDS: &[&str] = &["description", "comment", "file_name"];
+
+fn is_prose_field(key: &str) -> bool {
+    PROSE_FIELDS.contains(&key)
 }
 
 fn header_tracked(key: &str, hint: &str) -> egui::RichText {
@@ -553,6 +593,33 @@ mod tests {
         let mut set = HashSet::new();
         let found = collect_tracked_ancestors(&tree, "h", &mut set);
         assert!(found, "should match 'h' inside 'der(h) - v' via matches_tracked");
+    }
+
+    /// `Real h "height of h"` must not read as a use of `h`.
+    ///
+    /// The description is prose about the variable, not code referring to it,
+    /// so tracking `h` must neither highlight it nor expand the path to it.
+    #[test]
+    fn collect_tracked_ancestors_ignores_prose_fields() {
+        for field in PROSE_FIELDS {
+            let tree = json!({ *field: "height of h" });
+            let mut set = HashSet::new();
+            let found = collect_tracked_ancestors(&tree, "h", &mut set);
+            assert!(!found, "{field} is prose; a name inside it is not a mention");
+            assert!(set.is_empty(), "{field} must not drag its ancestors open");
+        }
+    }
+
+    /// The exclusion is by field, not by content — code-bearing strings must
+    /// still match, or tracking stops working where it matters most.
+    #[test]
+    fn collect_tracked_ancestors_still_matches_code_fields() {
+        let tree = json!({ "equation": "der(h) - v", "description": "height of h" });
+        let mut set = HashSet::new();
+        assert!(
+            collect_tracked_ancestors(&tree, "h", &mut set),
+            "the equation still mentions h even though the description is ignored"
+        );
     }
 
     #[test]
