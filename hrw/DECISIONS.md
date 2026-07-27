@@ -787,3 +787,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   with the tracked identifier highlighted per token rather than by tinting the row. Canvas-painted
   axis labels (incidence rows, Tarjan nodes) still render unstyled — per-token colour there means
   measuring and placing runs by hand, which is a larger change.
+- **2026-07-27 — Colour rule: foreground carries syntax, background carries relationship.** Applying
+  syntax highlighting to the Flatten source map exposed a channel conflict rather than an oversight:
+  its equation column used *foreground* colour (`cat.color()`) to mark equations linked to the
+  selected source line, so syntax colouring would have put "this is a keyword" and "this is
+  selected" on the same channel, with the selection cue losing. Settled it as a rule instead of a
+  workaround — relationship cues (selected, line-linked, tracked) move to background; foreground
+  means syntax everywhere. The source-lines column already worked this way, so the linked cue now
+  reads identically on both sides of the view, and the category is still carried by the group header
+  above each block. `modelica_job` became the `ModelicaText` builder in the same change: it was
+  about to reach six positional parameters including two adjacent colours, exactly the transposable
+  signature logged as tech debt for `animation_controls` earlier the same day. Line-number gutters
+  go through `append_plain` so they are never coloured as if they were code.

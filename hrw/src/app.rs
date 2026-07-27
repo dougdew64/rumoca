@@ -1389,18 +1389,11 @@ impl App {
                     // the whole row — `eq.text.contains(t)` used to match
                     // `height` when tracking `h`, and then shade the entire
                     // equation rather than the mention within it.
-                    let font = egui::TextStyle::Monospace.resolve(ui.style());
-                    let dark = ui.visuals().dark_mode;
-                    let default_color = ui.visuals().text_color();
+                    let modelica = crate::source_view::ModelicaText::new(ui)
+                        .tracked(tracked.map(|t| (t, crate::colors::TRACKED_FILL_MEDIUM)));
                     for eq in eqs {
                         let selected = self.highlighted_eq_row == Some(eq.index);
-                        let text = crate::source_view::modelica_job(
-                            &eq.text,
-                            font.clone(),
-                            dark,
-                            default_color,
-                            tracked.map(|t| (t, crate::colors::TRACKED_FILL_MEDIUM)),
-                        );
+                        let text = modelica.job(&eq.text);
                         if has_incidence {
                             let resp = ui.selectable_label(selected, text);
                             if resp.clicked() {
@@ -1471,6 +1464,7 @@ impl App {
 
         let highlighted_line = self.highlighted_source_line;
         let highlighted_eq = self.highlighted_eq_row;
+        let tracked = self.tracked_identifier.as_deref();
         let tracked_line = self.tracked_identifier.as_deref()
             .and_then(|name| self.identifier_index.as_ref()
                 .and_then(|idx| idx.variables.get(name))
@@ -1529,20 +1523,26 @@ impl App {
                     let is_tracked = tracked_line == Some(sl.line_number);
                     let has_equations = !sl.equation_indices.is_empty();
 
-                    let line_num = format!("{:>4} ", sl.line_number);
-                    let mut text = egui::RichText::new(
-                        format!("{}{}", line_num, &sl.text),
-                    ).monospace();
-
-                    if is_tracked {
-                        text = text.background_color(
-                            crate::colors::TRACKED_FILL_MEDIUM,
-                        );
+                    // Foreground = syntax, background = relationship. The line
+                    // number is not Modelica, so it is appended plainly rather
+                    // than being run through the lexer.
+                    let background = if is_tracked {
+                        Some(crate::colors::TRACKED_FILL_MEDIUM)
                     } else if is_eq_linked {
-                        text = text.background_color(
-                            crate::colors::SOURCE_MAP_LINK,
-                        );
-                    }
+                        Some(crate::colors::SOURCE_MAP_LINK)
+                    } else {
+                        None
+                    };
+                    let modelica = crate::source_view::ModelicaText::new(ui)
+                        .background(background);
+                    let mut job = egui::text::LayoutJob::default();
+                    modelica.append_plain(
+                        &mut job,
+                        &format!("{:>4} ", sl.line_number),
+                        ui.visuals().weak_text_color(),
+                    );
+                    modelica.append(&mut job, &sl.text);
+                    let text = job;
 
                     if has_equations {
                         if let Some(cat) = sl.category {
@@ -1634,10 +1634,18 @@ impl App {
                         let is_line_linked = !line_eq_indices.is_empty()
                             && line_eq_indices.contains(&eq.index);
 
-                        let mut text = egui::RichText::new(&eq.text).monospace();
-                        if is_line_linked {
-                            text = text.color(cat.color());
-                        }
+                        // Line-linkage moved from foreground to background.
+                        // It used to set `cat.color()` on the text, which would
+                        // collide head-on with syntax colouring — one channel
+                        // carrying both "keyword" and "selected". The same
+                        // background the source-lines column uses for linkage
+                        // now says it here too, so the cue reads identically on
+                        // both sides. The category is still shown by the
+                        // group header above, coloured `cat.color()`.
+                        let text = crate::source_view::ModelicaText::new(ui)
+                            .tracked(tracked.map(|t| (t, crate::colors::TRACKED_FILL_MEDIUM)))
+                            .background(is_line_linked.then_some(crate::colors::SOURCE_MAP_LINK))
+                            .job(&eq.text);
 
                         let resp = ui.selectable_label(is_selected, text);
                         if resp.clicked() {

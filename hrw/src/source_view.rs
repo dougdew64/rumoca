@@ -177,42 +177,110 @@ pub fn segments<'a>(
     out
 }
 
-/// Lay out a run of Modelica text with syntax colouring.
+/// Lays out Modelica text with syntax colouring, wherever HRW shows it.
 ///
-/// The specimen source view is not the only place HRW shows Modelica: the
-/// equation sheet renders `expr_format` output, which is Modelica-shaped too.
-/// Routing both through this gives the app one visual language, so a keyword or
-/// a literal looks the same wherever it appears.
+/// The specimen source view is not the only place: the equation sheet and the
+/// Flatten source map both render `expr_format` output, which is
+/// Modelica-shaped too. Routing them all through this gives the app one visual
+/// language, so a keyword or a literal looks the same everywhere.
 ///
-/// `tracked` optionally supplies `(identifier, background)`. The background is
-/// applied **per identifier token**, not to the whole run — a text search over
-/// the string would highlight `height` when tracking `h`, and would tint the
-/// entire equation rather than the mention inside it.
-pub fn modelica_job(
-    text: &str,
+/// ## The colour rule this enforces
+///
+/// **Foreground carries syntax; background carries relationship.** Views that
+/// need to say "this belongs to your selection" or "this is the tracked
+/// identifier" do it with a background tint, leaving the foreground channel to
+/// mean one thing consistently. Before this, the source map's equation column
+/// used *foreground* colour for line-linkage, which would have collided
+/// head-on with syntax colouring — the same channel carrying both "keyword" and
+/// "selected", with the selection signal losing.
+///
+/// A builder rather than a function with six positional parameters, two of them
+/// adjacent colours that a caller could transpose silently.
+pub struct ModelicaText<'a> {
     font: eframe::egui::FontId,
     dark: bool,
     default_color: eframe::egui::Color32,
-    tracked: Option<(&str, eframe::egui::Color32)>,
-) -> eframe::egui::text::LayoutJob {
-    use eframe::egui::{TextFormat, text::LayoutJob};
+    tracked: Option<(&'a str, eframe::egui::Color32)>,
+    background: Option<eframe::egui::Color32>,
+}
 
-    let mut job = LayoutJob::default();
-    for token in tokenize(text) {
-        let slice = &text[token.start..token.end];
-        let mut format = TextFormat {
-            font_id: font.clone(),
-            color: crate::colors::syntax_color(token.kind, dark).unwrap_or(default_color),
-            ..Default::default()
-        };
-        if let Some((needle, background)) = tracked {
-            if token.kind == TokenKind::Identifier && identifier_is(slice, needle) {
+impl<'a> ModelicaText<'a> {
+    /// Take font, theme, and default text colour from the current style.
+    pub fn new(ui: &eframe::egui::Ui) -> Self {
+        Self {
+            font: eframe::egui::TextStyle::Monospace.resolve(ui.style()),
+            dark: ui.visuals().dark_mode,
+            default_color: ui.visuals().text_color(),
+            tracked: None,
+            background: None,
+        }
+    }
+
+    /// Highlight the tracked identifier, **per identifier token**.
+    ///
+    /// Not by searching the string: `contains("h")` matches `height`, and tints
+    /// the whole run rather than the mention inside it.
+    pub fn tracked(mut self, tracked: Option<(&'a str, eframe::egui::Color32)>) -> Self {
+        self.tracked = tracked;
+        self
+    }
+
+    /// Tint the whole run — the relationship channel (selected, line-linked).
+    pub fn background(mut self, background: Option<eframe::egui::Color32>) -> Self {
+        self.background = background;
+        self
+    }
+
+    /// Lay out `text` as Modelica.
+    pub fn job(&self, text: &str) -> eframe::egui::text::LayoutJob {
+        let mut job = eframe::egui::text::LayoutJob::default();
+        self.append(&mut job, text);
+        job
+    }
+
+    /// Append Modelica `text` to an existing job, for runs that follow
+    /// non-Modelica content such as a line-number gutter.
+    pub fn append(&self, job: &mut eframe::egui::text::LayoutJob, text: &str) {
+        for token in tokenize(text) {
+            let slice = &text[token.start..token.end];
+            let mut format = eframe::egui::TextFormat {
+                font_id: self.font.clone(),
+                color: crate::colors::syntax_color(token.kind, self.dark)
+                    .unwrap_or(self.default_color),
+                ..Default::default()
+            };
+            if let Some(background) = self.background {
                 format.background = background;
             }
+            // The tracked highlight outranks a whole-run tint: it is the more
+            // specific statement about this particular token.
+            if let Some((needle, background)) = self.tracked {
+                if token.kind == TokenKind::Identifier && identifier_is(slice, needle) {
+                    format.background = background;
+                }
+            }
+            job.append(slice, 0.0, format);
         }
-        job.append(slice, 0.0, format);
     }
-    job
+
+    /// Append text that is *not* Modelica — a line-number gutter — so it is
+    /// never coloured as though it were code.
+    pub fn append_plain(
+        &self,
+        job: &mut eframe::egui::text::LayoutJob,
+        text: &str,
+        color: eframe::egui::Color32,
+    ) {
+        let mut format = eframe::egui::TextFormat {
+            font_id: self.font.clone(),
+            color,
+            ..Default::default()
+        };
+        if let Some(background) = self.background {
+            format.background = background;
+        }
+        job.append(text, 0.0, format);
+    }
 }
 
 /// Whether an identifier token names the tracked variable.
