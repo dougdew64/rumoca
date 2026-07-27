@@ -648,6 +648,21 @@ pub fn index_reduce_missing_state_derivatives(dae: &mut Dae) -> Result<usize, St
 /// One step of the index-reduction algorithm, recorded for animation replay.
 #[derive(Debug, Clone)]
 pub enum IndexReductionStep {
+    /// The system as tracing begins, before any traced work.
+    ///
+    /// Emitted once by [`emit_index_reduction_start`]. Without it a replay opens
+    /// on the first `BeginState`, which announces an *intention* ("searching for
+    /// a constraint…") and so reads as though work has already happened — with
+    /// no frame anywhere showing the system before reduction. An animation whose
+    /// purpose is to show what reduction changed needs a visible "before".
+    ///
+    /// `states` and `equations` describe the DAE at the moment tracing starts,
+    /// which is not necessarily the raw DAE: callers may have run untraced
+    /// demotion steps first (`demote_exact_alias_component_states` and
+    /// `demote_direct_assigned_states` both run before the traced passes in the
+    /// standard pipeline). This is the baseline for the *animation*, and is
+    /// labelled as such rather than as the original system.
+    Start { states: Vec<String>, equations: usize },
     /// Starting to evaluate a candidate state for reduction.
     BeginState { state: String },
     /// A constraint was differentiated — before and after RHS expressions.
@@ -689,6 +704,40 @@ pub fn emit_index_reduction_frame(
         lt.push(frame.clone());
     }
     frames.push(frame);
+}
+
+/// Emit the opening [`IndexReductionStep::Start`] frame.
+///
+/// Call once, immediately before the first traced reduction pass. It is a
+/// separate call rather than something the passes do for themselves because the
+/// standard pipeline runs *two* traced passes back to back
+/// (`reduce_constrained_dummy_derivatives_with_trace` then
+/// `index_reduce_missing_state_derivatives_with_trace`) and only their combined
+/// output is one animation — self-emission would produce two "start" frames in
+/// the middle of a single replay.
+///
+/// The snapshot describes the DAE at this instant, which may already differ from
+/// the raw DAE if the caller ran untraced demotion steps first. See
+/// [`IndexReductionStep::Start`].
+pub fn emit_index_reduction_start(
+    frames: &mut Vec<IndexReductionFrame>,
+    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    dae: &Dae,
+    demoted_so_far: &[String],
+) {
+    emit_index_reduction_frame(frames, live, IndexReductionFrame {
+        step: IndexReductionStep::Start {
+            states: dae
+                .variables
+                .states
+                .keys()
+                .map(|name| name.as_str().to_string())
+                .collect(),
+            equations: dae.continuous.equations.len(),
+        },
+        demoted_so_far: demoted_so_far.to_vec(),
+        round: 0,
+    });
 }
 
 /// Like [`index_reduce_missing_state_derivatives`], but records every
@@ -1072,6 +1121,45 @@ mod tests {
         };
         emit_index_reduction_frame(&mut frames, None, frame);
         assert_eq!(frames.len(), 1);
+    }
+
+    /// The opening frame must describe the system as tracing begins, so a
+    /// replay has a visible "before" rather than starting on the first
+    /// `BeginState` — which announces an intention and reads as though work
+    /// has already happened.
+    #[test]
+    fn emit_index_reduction_start_snapshots_states_and_equations() {
+        let span = test_span();
+        let mut dae = Dae::new();
+        for name in ["s", "t"] {
+            dae.variables.states.insert(
+                VarName::new(name),
+                Variable::new(VarName::new(name), span),
+            );
+        }
+        dae.continuous.equations.push(Equation::residual(
+            var_ref("v", span), span, "test",
+        ));
+
+        let (lt, rx) = crate::LiveTrace::new();
+        let mut frames = Vec::new();
+        emit_index_reduction_start(&mut frames, Some(&lt), &dae, &["earlier".to_owned()]);
+
+        assert_eq!(frames.len(), 1, "exactly one opening frame");
+        let IndexReductionStep::Start { states, equations } = &frames[0].step else {
+            panic!("expected a Start step, got {:?}", frames[0].step);
+        };
+        assert_eq!(equations, &1);
+        let mut states = states.clone();
+        states.sort();
+        assert_eq!(states, vec!["s".to_owned(), "t".to_owned()]);
+        // Carries whatever was already demoted, rather than assuming nothing was.
+        assert_eq!(frames[0].demoted_so_far, vec!["earlier".to_owned()]);
+        assert_eq!(frames[0].round, 0);
+
+        // The live consumer sees it too, so a debug session opens on it.
+        let live: Vec<_> = rx.try_iter().collect();
+        assert_eq!(live.len(), 1, "the opening frame must reach the live trace");
     }
 
     #[test]
