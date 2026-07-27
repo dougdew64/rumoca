@@ -40,6 +40,7 @@ use crate::identifier_index;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::canvas::Canvas;
+use crate::LiveState;
 use crate::field_help;
 use crate::incidence_view;
 use crate::matching_anim;
@@ -453,32 +454,43 @@ impl App {
     fn live_debug_lifecycle(
         &mut self,
         ui: &mut egui::Ui,
-        anim_is_live: bool,
-        anim_live_finished: bool,
+        live: LiveState,
         variant: PendingLiveDebug,
     ) -> LiveDebugAction {
-        if self.live_breakpoint_armed && anim_live_finished {
+        // Safety net: an armed breakpoint with no live session in flight has
+        // nothing left to stop for, so release it.
+        if self.live_breakpoint_armed && !live.is_busy() {
             let _ = bridge::remove_live_trace_breakpoint();
             self.live_breakpoint_armed = false;
         }
-        if !anim_is_live && self.pending_live_debug.is_none() {
-            let has_data = match variant {
-                PendingLiveDebug::Reduction => self.cached_dae.is_some(),
-                _ => matches!(&self.cached_incidence, Some(Some(_))),
-            };
-            if has_data {
-                if ui.button("Debug").on_hover_text(
-                    "Start live debug session \u{2014} arms a breakpoint on \
-                     live_trace_breakpoint, then step with Continue (F5)"
-                ).clicked() {
-                    let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
-                    self.pending_live_debug = Some((
-                        std::time::Instant::now(),
-                        variant,
-                    ));
-                }
-            }
+
+        let has_data = match variant {
+            PendingLiveDebug::Reduction => self.cached_dae.is_some(),
+            _ => matches!(&self.cached_incidence, Some(Some(_))),
+        };
+
+        // The Debug button is always rendered — disabled, never hidden. A button
+        // that vanishes gives no clue the action exists or why it is
+        // unavailable, and the row reflows under the pointer. It re-enables once
+        // the session finishes, so a re-run is one click away.
+        let enabled = has_data && !live.is_busy();
+        let clicked = ui
+            .add_enabled(enabled, egui::Button::new("Debug"))
+            .on_hover_text(
+                "Start live debug session \u{2014} arms a breakpoint on \
+                 live_trace_breakpoint, then step with Continue (F5)",
+            )
+            .on_disabled_hover_text(if !has_data {
+                "No data for this algorithm yet \u{2014} compile a specimen first"
+            } else {
+                "A live debug session is already in progress"
+            })
+            .clicked();
+        if clicked {
+            let _ = bridge::arm_live_trace_breakpoint(self.model.as_deref());
+            self.pending_live_debug = Some((std::time::Instant::now(), variant));
         }
+
         if let Some((armed_at, v)) = self.pending_live_debug {
             let matches_variant = matches!(
                 (v, variant),
@@ -494,11 +506,30 @@ impl App {
                     self.live_breakpoint_armed = true;
                     return LiveDebugAction::SpawnLive;
                 }
-                ui.weak("Arming breakpoint\u{2026}");
+                // No status text here — the control row already shows the
+                // "Arming…" badge via `LiveState::badge`.
                 ui.ctx().request_repaint();
             }
         }
         LiveDebugAction::None
+    }
+
+    /// Whether a live debug session is being armed for this particular view.
+    ///
+    /// The animations cannot work this out themselves: during the handshake the
+    /// view still holds the *recorded* animation, so its own `is_live()` is
+    /// false. Without this, the controls stayed enabled for the several frames
+    /// between the Debug click and the algorithm thread spawning.
+    fn is_arming(&self, variant: PendingLiveDebug) -> bool {
+        matches!(
+            self.pending_live_debug.map(|(_, v)| v),
+            Some(v) if matches!(
+                (v, variant),
+                (PendingLiveDebug::Matching, PendingLiveDebug::Matching)
+                    | (PendingLiveDebug::Tarjan, PendingLiveDebug::Tarjan)
+                    | (PendingLiveDebug::Reduction, PendingLiveDebug::Reduction)
+            )
+        )
     }
 
     /// Create the application. Called once by eframe at startup.
@@ -2732,14 +2763,15 @@ impl eframe::App for App {
                                 .and_then(incidence_view::IncidenceMatrix::from_report)
                         );
                     }
-                    let is_live = self.cached_matching_anim.as_ref()
+                    let arming = self.is_arming(PendingLiveDebug::Matching);
+                    let live = self.cached_matching_anim.as_ref()
                         .and_then(|o| o.as_ref())
-                        .map_or(false, |a| a.is_live() && !a.live_finished());
-                    let finished = self.cached_matching_anim.as_ref()
-                        .and_then(|o| o.as_ref())
-                        .map_or(false, |a| a.is_live() && a.live_finished());
+                        .map_or(
+                            if arming { LiveState::Arming } else { LiveState::Idle },
+                            |a| a.live_state(arming),
+                        );
                     let action = self.live_debug_lifecycle(
-                        ui, is_live, finished, PendingLiveDebug::Matching,
+                        ui, live, PendingLiveDebug::Matching,
                     );
                     if matches!(action, LiveDebugAction::SpawnLive) {
                         if let Some(Some(mat)) = &self.cached_incidence {
@@ -2769,7 +2801,8 @@ impl eframe::App for App {
                             ui.label(egui::RichText::new("After (reduced)")
                                 .strong().color(crate::colors::ANIM_PATH_FOUND));
                         }
-                        anim.ui(ui, &mut self.matching_anim_canvas, self.tracked_identifier.as_deref());
+                        anim.ui(ui, &mut self.matching_anim_canvas, self.tracked_identifier.as_deref(),
+                            arming);
                     } else {
                         ui.weak("(no incidence data for matching animation)");
                     }
@@ -2780,14 +2813,15 @@ impl eframe::App for App {
                                 .and_then(incidence_view::IncidenceMatrix::from_report)
                         );
                     }
-                    let is_live = self.cached_tarjan_anim.as_ref()
+                    let arming = self.is_arming(PendingLiveDebug::Tarjan);
+                    let live = self.cached_tarjan_anim.as_ref()
                         .and_then(|o| o.as_ref())
-                        .map_or(false, |a| a.is_live() && !a.live_finished());
-                    let finished = self.cached_tarjan_anim.as_ref()
-                        .and_then(|o| o.as_ref())
-                        .map_or(false, |a| a.is_live() && a.live_finished());
+                        .map_or(
+                            if arming { LiveState::Arming } else { LiveState::Idle },
+                            |a| a.live_state(arming),
+                        );
                     let action = self.live_debug_lifecycle(
-                        ui, is_live, finished, PendingLiveDebug::Tarjan,
+                        ui, live, PendingLiveDebug::Tarjan,
                     );
                     if matches!(action, LiveDebugAction::SpawnLive) {
                         if let Some(Some(mat)) = &self.cached_incidence {
@@ -2817,7 +2851,8 @@ impl eframe::App for App {
                             ui.label(egui::RichText::new("After (reduced)")
                                 .strong().color(crate::colors::ANIM_PATH_FOUND));
                         }
-                        anim.ui(ui, &mut self.tarjan_anim_canvas, self.tracked_identifier.as_deref());
+                        anim.ui(ui, &mut self.tarjan_anim_canvas, self.tracked_identifier.as_deref(),
+                            arming);
                     } else {
                         ui.weak("(no dependency graph for BLT animation)");
                     }
@@ -2835,14 +2870,15 @@ impl eframe::App for App {
                         }
                     }
                 } else if self.structural_view == StructuralView::Animate {
-                    let is_live = self.cached_reduction_anim.as_ref()
+                    let arming = self.is_arming(PendingLiveDebug::Reduction);
+                    let live = self.cached_reduction_anim.as_ref()
                         .and_then(|o| o.as_ref())
-                        .map_or(false, |a| a.is_live() && !a.live_finished());
-                    let finished = self.cached_reduction_anim.as_ref()
-                        .and_then(|o| o.as_ref())
-                        .map_or(false, |a| a.is_live() && a.live_finished());
+                        .map_or(
+                            if arming { LiveState::Arming } else { LiveState::Idle },
+                            |a| a.live_state(arming),
+                        );
                     let action = self.live_debug_lifecycle(
-                        ui, is_live, finished, PendingLiveDebug::Reduction,
+                        ui, live, PendingLiveDebug::Reduction,
                     );
                     if matches!(action, LiveDebugAction::SpawnLive) {
                         if let Some(dae) = &self.cached_dae {
@@ -2868,7 +2904,7 @@ impl eframe::App for App {
                     }
                     if let Some(Some(anim)) = &mut self.cached_reduction_anim {
                         egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-                            anim.ui(ui);
+                            anim.ui(ui, arming);
                         });
                     } else {
                         ui.weak("(no index-reduction trace for this model)");

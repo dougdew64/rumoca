@@ -78,20 +78,54 @@ pub fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
     source[..clamped].bytes().filter(|&b| b == b'\n').count() as u32 + 1
 }
 
-/// Shared animation playback controls (play/pause/reset/step/speed slider).
-/// Used by both matching and Tarjan animation views.
-/// Whether timed playback (Play/Pause and the speed slider) applies.
+/// Where an animation view is in the live-debug lifecycle.
 ///
-/// Suppressed *during* a live debug session: the debugger drives the cursor
-/// one frame per Continue, so a Play button would fight it for control (and
-/// the animations' own `playing && !is_live()` guards make it a no-op anyway).
+/// Replaces the `is_live` / `live_finished` boolean pair. Four states, not
+/// three: `Arming` is distinct from `Running` because the Debug button's
+/// breakpoint handshake takes several frames, during which the view is still
+/// showing the *recorded* animation — so neither boolean could express "a live
+/// session is starting" and the controls stayed live-looking until the
+/// algorithm thread actually spawned.
 ///
-/// Restored once the session finishes. The captured frames are then ordinary
-/// recorded frames, and replaying them is exactly what you want after stepping
-/// through the algorithm — previously `live_rx` was never cleared, so the view
-/// stayed in live mode forever and Play never came back without a recompile.
-pub fn playback_applies(is_live: bool, live_finished: bool) -> bool {
-    !is_live || live_finished
+/// ## UI rule
+///
+/// **Controls are enabled and disabled, never shown and hidden.** A button that
+/// vanishes gives no clue that the action exists or why it is unavailable, and
+/// the row reflows under the pointer. Everything stays in place; only
+/// interactivity changes.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum LiveState {
+    /// No live session. Ordinary recorded playback.
+    Idle,
+    /// Debug clicked; waiting for the breakpoint handshake and thread spawn.
+    Arming,
+    /// Live session running — the debugger owns the cursor, one frame per Continue.
+    Running,
+    /// Live session finished. The captured frames are now ordinary recorded
+    /// frames, so playback and a fresh Debug run both become available again.
+    Finished,
+}
+
+impl LiveState {
+    /// True while a live session owns the cursor — from the Debug click until
+    /// the algorithm thread finishes.
+    ///
+    /// Gates both the playback controls (the debugger is driving, so Play would
+    /// fight it) and the Debug button itself (no second session on top of a
+    /// running one).
+    pub fn is_busy(self) -> bool {
+        matches!(self, LiveState::Arming | LiveState::Running)
+    }
+
+    /// Status badge text and colour, or `None` when there is nothing to say.
+    pub fn badge(self) -> Option<(&'static str, eframe::egui::Color32)> {
+        match self {
+            LiveState::Idle => None,
+            LiveState::Arming => Some(("Arming\u{2026}", colors::ANIM_EXPLORE)),
+            LiveState::Running => Some(("Live", colors::ANIM_FAIL)),
+            LiveState::Finished => Some(("Live (done)", colors::ANIM_PATH_FOUND)),
+        }
+    }
 }
 
 /// Label for the frame counter.
@@ -107,6 +141,12 @@ pub fn frame_label(cursor: usize, n_frames: usize) -> String {
     }
 }
 
+/// The shared animation control row.
+///
+/// Every control is always rendered. While a live session is in flight
+/// (`LiveState::is_busy`) the playback controls are *disabled*, not removed —
+/// the debugger owns the cursor, but the user can still see what exists and,
+/// via the disabled-hover text, why it is unavailable.
 pub fn animation_controls(
     ui: &mut eframe::egui::Ui,
     cursor: &mut usize,
@@ -114,62 +154,77 @@ pub fn animation_controls(
     elapsed: &mut f64,
     interval: &mut f64,
     n_frames: usize,
-    is_live: bool,
-    live_finished: bool,
+    live: LiveState,
 ) {
     use eframe::egui;
+    let busy = live.is_busy();
+    // Explains every disabled control in the row.
+    const BUSY_HINT: &str =
+        "Unavailable during a live debug session \u{2014} the debugger drives the \
+         animation. Continue (F5) in VS Code to advance a step.";
+
     ui.horizontal(|ui| {
-        if is_live {
-            let status = if live_finished { "Live (done)" } else { "Live" };
-            ui.label(egui::RichText::new(status).color(
-                if live_finished { colors::ANIM_PATH_FOUND }
-                else { colors::ANIM_FAIL }
-            ).strong());
+        if let Some((text, color)) = live.badge() {
+            ui.label(egui::RichText::new(text).color(color).strong());
             ui.separator();
         }
 
-        if playback_applies(is_live, live_finished) {
-            if *playing {
-                if ui.button("\u{23f8} Pause").clicked() {
-                    *playing = false;
-                }
-            } else if ui.button("\u{25b6} Play").clicked() {
-                if *cursor + 1 >= n_frames {
-                    *cursor = 0;
-                }
-                *playing = true;
-                *elapsed = 0.0;
+        // Play/Pause. Kept in place while busy so the row does not reflow.
+        if *playing {
+            if ui
+                .add_enabled(!busy, egui::Button::new("\u{23f8} Pause"))
+                .on_disabled_hover_text(BUSY_HINT)
+                .clicked()
+            {
+                *playing = false;
             }
+        } else if ui
+            .add_enabled(!busy, egui::Button::new("\u{25b6} Play"))
+            .on_disabled_hover_text(BUSY_HINT)
+            .clicked()
+        {
+            if *cursor + 1 >= n_frames {
+                *cursor = 0;
+            }
+            *playing = true;
+            *elapsed = 0.0;
         }
 
-        if ui.button("\u{23ee} Reset").clicked() {
+        if ui
+            .add_enabled(!busy, egui::Button::new("\u{23ee} Reset"))
+            .on_disabled_hover_text(BUSY_HINT)
+            .clicked()
+        {
             *cursor = 0;
             *playing = false;
         }
 
-        ui.add_enabled_ui(!*playing, |ui| {
-            if ui
-                .add_enabled(*cursor > 0, egui::Button::new("\u{25c0} Back"))
-                .clicked()
-            {
-                *cursor = cursor.saturating_sub(1);
-            }
-            if ui
-                .add_enabled(
-                    *cursor + 1 < n_frames,
-                    egui::Button::new("Step \u{25b6}"),
-                )
-                .clicked()
-            {
-                *cursor += 1;
-            }
-        });
+        // Back/Step are additionally bounded by the cursor position, and are
+        // disabled during timed playback so the two cannot fight over the cursor.
+        let stepping_enabled = !busy && !*playing;
+        if ui
+            .add_enabled(stepping_enabled && *cursor > 0, egui::Button::new("\u{25c0} Back"))
+            .on_disabled_hover_text(if busy { BUSY_HINT } else { "Already at the first frame" })
+            .clicked()
+        {
+            *cursor = cursor.saturating_sub(1);
+        }
+        if ui
+            .add_enabled(
+                stepping_enabled && *cursor + 1 < n_frames,
+                egui::Button::new("Step \u{25b6}"),
+            )
+            .on_disabled_hover_text(if busy { BUSY_HINT } else { "Already at the last frame" })
+            .clicked()
+        {
+            *cursor += 1;
+        }
 
         ui.separator();
         ui.label(frame_label(*cursor, n_frames));
 
-        if playback_applies(is_live, live_finished) {
-            ui.separator();
+        ui.separator();
+        ui.add_enabled_ui(!busy, |ui| {
             ui.label("Speed:");
             let mut speed_ms = (*interval * 1000.0) as i32;
             if ui
@@ -178,7 +233,7 @@ pub fn animation_controls(
             {
                 *interval = speed_ms as f64 / 1000.0;
             }
-        }
+        });
     });
 }
 
@@ -241,7 +296,7 @@ pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
 
 #[cfg(test)]
 mod tests_playback {
-    use super::playback_applies;
+    use super::LiveState;
 
     /// The frame counter must stay sensible with zero frames — the controls
     /// now render while a live session waits at the startup gate, so that
@@ -253,22 +308,33 @@ mod tests_playback {
         assert_eq!(super::frame_label(3, 10), "Frame 4/10");
     }
 
-    /// Play/Pause and the speed slider are hidden only *while* a live debug
-    /// session is running — not after it finishes.
+    /// Controls are disabled only *while* a live session owns the cursor — from
+    /// the Debug click through to the algorithm thread finishing.
     ///
-    /// Regression test: `live_rx` is never cleared when a session ends, so
-    /// `is_live()` stays true forever. Gating playback on `!is_live` alone left
-    /// the Play button gone for good once you had used the Debug button, and
-    /// the captured frames could not be replayed without a recompile.
+    /// Two regressions are pinned here. `live_rx` is never cleared when a
+    /// session ends, so `is_live()` stays true forever; gating on that alone
+    /// left playback dead for good once the Debug button had been used. And
+    /// `Arming` must count as busy: the handshake takes several frames during
+    /// which the view still shows the *recorded* animation, so a boolean
+    /// `is_live` left the controls live right after the click.
     #[test]
-    fn playback_hidden_only_during_a_running_live_session() {
-        // Recorded animation: always playable.
-        assert!(playback_applies(false, false));
-        assert!(playback_applies(false, true));
-        // Live session in progress: the debugger owns the cursor.
-        assert!(!playback_applies(true, false));
-        // Live session finished: frames are now ordinary recorded frames.
-        assert!(playback_applies(true, true));
+    fn controls_disabled_only_while_a_live_session_is_in_flight() {
+        assert!(!LiveState::Idle.is_busy(), "recorded playback is always available");
+        assert!(LiveState::Arming.is_busy(), "the Debug click must disable immediately");
+        assert!(LiveState::Running.is_busy(), "the debugger owns the cursor");
+        assert!(
+            !LiveState::Finished.is_busy(),
+            "after a session the frames are ordinary recorded frames"
+        );
+    }
+
+    /// Idle is the only state with nothing to report; the rest are labelled.
+    #[test]
+    fn badge_present_except_when_idle() {
+        assert!(LiveState::Idle.badge().is_none());
+        for state in [LiveState::Arming, LiveState::Running, LiveState::Finished] {
+            assert!(state.badge().is_some(), "{state:?} should carry a badge");
+        }
     }
 }
 

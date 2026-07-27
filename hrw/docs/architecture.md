@@ -543,8 +543,32 @@ All three support two animation modes:
    arms a breakpoint on `live_trace_breakpoint` via the HRW Debugger Bridge
    extension, then spawns the algorithm thread — no manual breakpoint setup
    needed. After each frame push, a 20ms delay lets the UI render, then the
-   breakpoint fires. The user steps through the algorithm with Continue (F5);
-   the button reappears after the session finishes for re-runs.
+   breakpoint fires. The user steps through the algorithm with Continue (F5).
+
+   **Controls are enabled and disabled, never shown and hidden.** A control that
+   vanishes gives no clue that the action exists or why it is unavailable, and
+   the row reflows under the pointer as it goes. `LiveState` (in `lib.rs`) drives
+   this for both the Debug button and the playback row, and has four states
+   rather than the two booleans it replaced:
+
+   | State | Meaning | Debug | Play / Reset / Back / Step / Speed |
+   |-------|---------|-------|-----------------------------------|
+   | `Idle` | Recorded playback | enabled | enabled |
+   | `Arming` | Debug clicked; handshake in flight | disabled | disabled |
+   | `Running` | Debugger owns the cursor | disabled | disabled |
+   | `Finished` | Session over; frames are now recorded | enabled (re-run) | enabled |
+
+   `Arming` is the state the booleans could not express. The breakpoint
+   handshake takes several frames, and throughout them the view still holds the
+   *recorded* animation — so `is_live()` is false and the controls stayed live
+   right after the click. The animations cannot detect it themselves; `arming`
+   is passed in from `App::is_arming`, which checks whether `pending_live_debug`
+   names this view's algorithm.
+
+   `Finished` matters because `live_rx` is never cleared once `start_live` sets
+   it — `is_live()` stays true for the animation's lifetime. Gating on that
+   alone left playback and the Debug button dead for good after a single
+   session. Disabled controls carry hover text explaining why.
 
    **Ack handshake**: HRW does not spawn the algorithm thread immediately
    after writing the breakpoint request — the extension needs time to process

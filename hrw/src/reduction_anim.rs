@@ -123,18 +123,46 @@ impl ReductionAnimation {
         self.live_done.load(Ordering::Acquire)
     }
 
+    /// Map the raw live-session flags onto the shared [`crate::LiveState`].
+    ///
+    /// `arming` comes from the app: the Debug button's breakpoint handshake
+    /// takes several frames, and throughout them this view is still showing the
+    /// *recorded* animation — so the animation alone cannot tell that a session
+    /// is starting, and its controls would stay enabled after the click.
+    pub fn live_state(&self, arming: bool) -> crate::LiveState {
+        if self.is_live() {
+            if self.live_finished() {
+                crate::LiveState::Finished
+            } else {
+                crate::LiveState::Running
+            }
+        } else if arming {
+            crate::LiveState::Arming
+        } else {
+            crate::LiveState::Idle
+        }
+    }
+
     /// Render the animation controls and the step display.
-    pub fn ui(&mut self, ui: &mut egui::Ui) {
+    pub fn ui(&mut self, ui: &mut egui::Ui, arming: bool) {
         self.sync_live();
+        let live = self.live_state(arming);
 
         // Nothing to show at all — no recorded frames and no live session.
-        if self.frames.is_empty() && !self.is_live() {
+        if self.frames.is_empty() && !self.is_live() && !arming {
             ui.label("No index-reduction trace available.");
             return;
         }
 
+        // A live session takes the cursor; drop any timed playback that was
+        // running when the user clicked Debug, so it cannot resume when the
+        // session finishes and re-enables the controls.
+        if live.is_busy() {
+            self.playing = false;
+        }
+
         let dt = ui.input(|i| i.stable_dt) as f64;
-        if self.playing && crate::playback_applies(self.is_live(), self.live_finished()) {
+        if self.playing && !live.is_busy() {
             self.elapsed += dt;
             if self.elapsed >= self.interval {
                 self.elapsed = 0.0;
@@ -146,13 +174,11 @@ impl ReductionAnimation {
             }
             ui.ctx().request_repaint();
         }
-        if self.is_live() && !self.live_finished() {
+        if live.is_busy() {
             ui.ctx().request_repaint();
         }
 
         let n_frames = self.frames.len();
-        let is_live = self.is_live();
-        let live_finished = self.live_finished();
         crate::animation_controls(
             ui,
             &mut self.cursor,
@@ -160,14 +186,12 @@ impl ReductionAnimation {
             &mut self.elapsed,
             &mut self.interval,
             n_frames,
-            is_live,
-            live_finished,
+            live,
         );
 
-        // Live session armed, but the debugger is still paused at the startup
-        // gate so no frames have arrived. The controls above stay rendered —
-        // notably Reset — instead of the whole row vanishing until the first
-        // Continue.
+        // A session is starting or the debugger is parked at the startup gate,
+        // so no frames have arrived. The controls above stay rendered (disabled)
+        // rather than the whole row vanishing until the first Continue.
         if self.frames.is_empty() {
             ui.add_space(4.0);
             ui.label("Waiting for first frame from debugger\u{2026}");

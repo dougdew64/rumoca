@@ -719,3 +719,16 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   answer to "is a live session still running?" is no — and `live_debug_lifecycle` relies on it as a
   breakpoint-cleanup safety net, releasing an armed breakpoint when no live session is coming. With
   `false` that net was inert for two of the three views, so a stray armed breakpoint could leak.
+- **2026-07-27 — UI rule: controls are enabled/disabled, never shown/hidden (`LiveState`).** Doug:
+  "Buttons should not be disappearing. Instead, buttons should be disabled (or enabled as
+  appropriate)." A control that vanishes gives no clue the action exists or why it is unavailable,
+  and the row reflows under the pointer as it goes. The Debug button and the whole playback row now
+  render unconditionally, with `add_enabled` and `on_disabled_hover_text` explaining the state.
+  Driven by a new `LiveState` enum (`Idle` / `Arming` / `Running` / `Finished`) replacing the
+  `is_live` + `live_finished` boolean pair, which could not express two of the four states: `Arming`
+  (the breakpoint handshake takes several frames during which the view still holds the *recorded*
+  animation, so `is_live()` is false and controls stayed enabled right after the click) and the
+  distinction that makes `Finished` re-enable everything (`live_rx` is never cleared, so `is_live()`
+  stays true for the animation's lifetime). `arming` cannot be derived inside an animation — it comes
+  from `App::is_arming`, which checks whether `pending_live_debug` names that view's algorithm.
+  Starting a session now also clears any timed playback, so it cannot resume when the session ends.
