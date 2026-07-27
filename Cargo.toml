@@ -236,3 +236,27 @@ opt-level = 2
 opt-level = 3
 [profile.dev.package.scnr2]
 opt-level = 3
+# Pipeline phases that dominate specimen-loading time under the debugger.
+# opt-level = 2 preserves debug info while eliminating the worst overhead.
+[profile.dev.package.rumoca-phase-resolve]
+opt-level = 2
+[profile.dev.package.rumoca-phase-instantiate]
+opt-level = 2
+[profile.dev.package.rumoca-phase-typecheck]
+opt-level = 2
+[profile.dev.package.rumoca-phase-flatten]
+opt-level = 2
+[profile.dev.package.rumoca-phase-structural]
+opt-level = 2
+[profile.dev.package.rumoca-phase-dae]
+opt-level = 2
+[profile.dev.package.rumoca-phase-solve]
+opt-level = 2
+[profile.dev.package.rumoca-sim]
+opt-level = 2
+[profile.dev.package.rumoca-solver]
+opt-level = 2
+[profile.dev.package.rumoca-solver-diffsol]
+opt-level = 2
+[profile.dev.package.rumoca-solver-rk45]
+opt-level = 2
