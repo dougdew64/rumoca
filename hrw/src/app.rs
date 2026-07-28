@@ -4295,6 +4295,76 @@ impl App {
 mod tests {
     use super::*;
 
+    /// Every combination of the two primitives must be reachable, and the
+    /// emitted file must describe each one honestly.
+    ///
+    /// Doug asked directly ("So there is now support for all combinations of
+    /// context?") after the point became clearable. Reading the code says yes;
+    /// this says yes and keeps saying it. Four states, and the two that used to
+    /// be wrong are the ones with no point: **follow-only** emitted
+    /// `kind: "stage"`, attributing a subject the user never chose, and
+    /// **neither** was unreachable at all because the point could not be cleared.
+    ///
+    /// Reads `.hrw-bridge/focus.json` because the file is the artifact that
+    /// matters — asserting on app fields would pass even if emission were broken,
+    /// which is precisely the bar/file disagreement this design keeps hitting.
+    #[test]
+    fn every_point_and_follow_combination_emits_honestly() {
+        fn emitted() -> Value {
+            let path = std::path::Path::new(bridge::BRIDGE_DIR).join("focus.json");
+            let text = std::fs::read_to_string(path).expect("focus.json should exist");
+            serde_json::from_str(&text).expect("focus.json should be valid JSON")
+        }
+        fn a_point() -> PointedAt {
+            PointedAt {
+                seq: 1,
+                target: "components.src.V".to_owned(),
+                kind: PointKind::Stage,
+                stage: StageKind::Flatten,
+                request: bridge::AskRequest::Explain,
+            }
+        }
+
+        let (mut app, _tx) = App::test_with_sender();
+
+        // 1. Neither. Nothing is claimed at all.
+        app.emit_context();
+        let doc = emitted();
+        assert_eq!(doc["kind"], serde_json::json!("none"), "no point must not become a stage");
+        assert!(doc.get("tracking").is_none(), "nothing is being followed");
+
+        // 2. Follow only — the state Doug wanted and could not reach.
+        app.set_tracked_identifier("h".to_owned());
+        let doc = emitted();
+        assert_eq!(doc["kind"], serde_json::json!("none"));
+        assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
+
+        // 3. Both, independent of each other.
+        app.pointed_at = Some(a_point());
+        app.emit_context();
+        let doc = emitted();
+        assert_eq!(doc["kind"], serde_json::json!("stage"));
+        assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
+
+        // 4. Point only — reached by dropping the follow, which must not
+        //    disturb the point.
+        app.set_tracked_identifier("h".to_owned()); // toggles it off
+        assert!(app.tracked_identifier.is_none(), "clicking the followed name again clears it");
+        let doc = emitted();
+        assert_eq!(doc["kind"], serde_json::json!("stage"));
+        assert!(doc.get("tracking").is_none());
+        assert!(app.pointed_at.is_some(), "dropping the follow must not drop the point");
+
+        // ...and back to neither, by clearing the point.
+        app.pointed_at = None;
+        app.point_error = None;
+        app.context_seq = app.next_seq();
+        app.emit_context();
+        let doc = emitted();
+        assert_eq!(doc["kind"], serde_json::json!("none"));
+        assert!(doc.get("tracking").is_none());
+    }
+
     /// Following is context, so changing it must re-emit — and must not destroy
     /// the point. That independence is the property the Context Bar's honesty
     /// rests on.
