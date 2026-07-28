@@ -1013,3 +1013,22 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   in `bindings.__pre__.overSpeed` it does. `examples/capture_probe.rs` prints the capture for a real
   specimen, because whether it carries what a reader would hunt for is answered by *reading the
   emitted value*, not by a shape assertion.
+- **2026-07-28 — "Point at" and "Follow" everywhere; the status bar loses its bridge role.** The
+  menus said "Capture" and "Track" while the Context Bar said "Pointing at" and "Following" — two
+  vocabularies for one concept, and the bar's were the better ones (see `context-assembly.md`).
+  Renamed in **UI labels, hover text, help, and docs**; the wire format and internal identifiers
+  (`focus.json`, `Focus`, `AskRequest`, `TreeActions::capture`/`track`) deliberately stay, because
+  renaming a protocol Claude already reads buys nothing and breaks continuity with recorded
+  sessions. The `instructions` string inside `focus.json` *is* updated, so a reader of that file
+  does not meet a third vocabulary. Glyphs: only codepoints HRW already renders (U+2715 was a tofu
+  box here once), so 🎯 goes to "Point at" and 🔎 to "Follow" — and the magnifier fits *better* on
+  Follow, since following is a search across every stage in which absence counts as much as
+  presence. **The status bar's confirmation is gone**: `status_line` returns `Option<String>` and a
+  successful point returns `None`. It was not merely redundant with the bar — it stated the point
+  once and then went stale, so two surfaces claiming to describe what Claude has could disagree,
+  which is the failure this whole design keeps meeting. Two exceptions survive because the bar
+  cannot express them: an emission **failure** (silence would leave the bar describing context that
+  was never written) and the **debugger** request (it asks the user to do something next, and an
+  instruction is not a confirmation). `bridge_status` is renamed `notice`, its remaining traffic
+  being genuinely transient — "specimen not found", "diagnostic written to …", a stage-file write
+  failure.

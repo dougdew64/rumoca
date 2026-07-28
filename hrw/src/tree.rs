@@ -22,9 +22,9 @@
 //! into a bridge focus file (see `bridge.rs`), and the user asks their actual
 //! question in the Claude Code chat.
 //!
-//! - **Left-click** a row to capture it — recording the node's *key-path*, its
+//! - **Left-click** a row to point at it — recording the node's *key-path*, its
 //!   address from the stage root, like `components.inertia.type_def_id`.
-//! - **Right-click** opens a context menu: Capture, Track (for names the model
+//! - **Right-click** opens a context menu: Point at, Follow (for names the model
 //!   knows), Show-in-debugger, Go-to-definition (for DefId fields *and* for
 //!   variable names, via `TreeOptions::declaring_classes`), and Copy-text.
 //!
@@ -32,10 +32,11 @@
 //! to expand — arrive as [`TreeOptions`]. Both are bundles rather than long
 //! parameter lists; see their docs for why.
 //!
-//! **Vocabulary note:** Phase 5 of `docs/source-tooling-plan.md` renames the
-//! user-facing verbs to "Point at" and "Follow". The code's nouns (`capture`,
-//! `track`, `focus.json`) deliberately stay, since they are also the wire
-//! format Claude reads.
+//! **Vocabulary note:** the user-facing verbs are "Point at" and "Follow"
+//! (renamed 2026-07-28). The code's nouns — `TreeActions::capture`,
+//! `TreeActions::track`, `focus.json` — deliberately stay, because they are
+//! also the wire format Claude reads, and renaming a protocol buys nothing.
+//! Expect the two vocabularies to differ here; that is intended, not drift.
 //!
 //! The key-path is accumulated as the recursive walk descends: each level
 //! pushes its segment (`Seg::Key` or `Seg::Index`) onto a `Vec<Seg>` path,
@@ -77,7 +78,7 @@ pub struct TreeActions {
     pub nav_to: Option<String>,
     /// "Show this being set" — the key-path to arm a breakpoint for.
     pub debug: Option<Vec<Seg>>,
-    /// "Track this identifier" — reverse tracking (idea #37) from any stage.
+    /// "Follow this identifier" — reverse tracking (idea #37) from any stage.
     pub track: Option<String>,
 }
 
@@ -356,8 +357,8 @@ fn nav_target(
 
 // Right-click context menu for any tree row.
 //
-// This provides the "Capture", "Show in debugger", "Go to definition", and
-// "Copy text" actions. It is attached to the row's Response via
+// This provides the "Point at", "Follow", "Show in debugger", "Go to
+// definition", and "Copy text" actions. It is attached to the row's Response via
 // `resp.context_menu(...)`, which egui shows on right-click.
 //
 // `resp` must already sense clicks (interacted exactly once by the caller).
@@ -377,7 +378,19 @@ fn row_menu(
         // Don't wrap menu labels — widen the menu to fit long "Go to <name>"
         // items (fully-qualified Modelica type names get long).
         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-        if ui.button("🔎 Capture").clicked() {
+        // "Point at", not "Capture". The user-facing verbs name the two ways a
+        // question's subject gets assembled — pointing at one node, following
+        // one identifier — rather than naming what the app does to a file. See
+        // `docs/context-assembly.md`. The internal names (`actions.capture`,
+        // `Focus`, the wire format) are deliberately unchanged: renaming those
+        // would churn the emitted contract for a vocabulary change.
+        if ui
+            .button("\u{1f3af} Point at")
+            .on_hover_text(
+                "Make this node the subject of your next question, then ask in the chat.",
+            )
+            .clicked()
+        {
             actions.capture = Some(path.to_vec());
             ui.close();
         }
@@ -387,14 +400,17 @@ fn row_menu(
         // per-view feature.
         if let Some(name) = &track
             && ui
-                // U+1F3AF, already rendered elsewhere in this app. Sticking to
-                // glyphs the bundled fonts are known to cover avoids the tofu
-                // box that U+2715 produced in the tracking bar — egui ships far
-                // less than the whole of Unicode. Deliberately not a magnifier:
-                // 🔎 Capture sits directly above this in the same menu.
-                .button(format!("\u{1f3af} Track {name}"))
+                // Both glyphs in this menu are ones the app already renders.
+                // egui ships far less than the whole of Unicode, and an
+                // unproven codepoint shows as a tofu box — which U+2715 did in
+                // the bar this menu feeds. The magnifier sits with "Follow"
+                // because following *is* a search: the identifier is sought in
+                // every stage, and where it is absent is as much the point as
+                // where it is found.
+                .button(format!("\u{1f50e} Follow {name}"))
                 .on_hover_text(
-                    "Highlight this identifier across every stage, and show \
+                    "Follow this identifier through every stage: highlight it \
+                     wherever it appears, count where it does not, and show \
                      where it is declared in the specimen source.",
                 )
                 .clicked()
@@ -404,7 +420,9 @@ fn row_menu(
         }
         if ui
             .button("🐞 Show this being set (debugger)")
-            .on_hover_text("Capture this field so Claude can arm a breakpoint at where Rumoca sets it.")
+            .on_hover_text(
+                "Point at this field so Claude can arm a breakpoint where Rumoca sets it.",
+            )
             .clicked()
         {
             actions.debug = Some(path.to_vec());
@@ -425,7 +443,7 @@ fn row_menu(
 
 /// The identifier a leaf names, if it names one.
 ///
-/// Offered as "Track …" in the row menu. Deliberately conservative: the tree
+/// Offered as "Follow …" in the row menu. Deliberately conservative: the tree
 /// renders every string in the IR, most of which are not variable names, and a
 /// Track action on a description or a file path would be noise that tracks
 /// nothing.

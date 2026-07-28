@@ -213,7 +213,17 @@ exist because of what Phase 4 turned up.
 
 ---
 
-## Phase 5 — The Context Bar (and forward identifier debugging)
+## Phase 5 — The Context Bar (and forward identifier debugging) — ✅ DELIVERED
+
+**Delivered 2026-07-28.** The bar renders both halves of the assembled context;
+the capture carries the IR *around* each address, what was on screen, and where
+the phase code lives; the user-facing verbs are "Point at" and "Follow"; and the
+status bar no longer duplicates the bar's job. See `DECISIONS.md` for the five
+capture changes and why each was measured rather than guessed. **Open by
+design:** whether the two composition primitives are the right ones is now a
+question for testing, not for more design — Doug will form opinions by using it
+before any move to multiple `follow` items.
+
 
 **Goal.** Make the thin-emitter / thick-reasoner split visible: tracking emits a
 compound capture, and a Context Bar renders what Claude will actually receive.

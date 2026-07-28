@@ -469,7 +469,7 @@ impl IncidenceMatrix {
             .monospace(),
         );
         ui.add_space(4.0);
-        ui.weak("click to capture this equation\u{2019}s incidence for \u{201c}explain\u{201d}");
+        ui.weak("click to point at this equation\u{2019}s incidence, then ask in the chat");
     }
 }
 

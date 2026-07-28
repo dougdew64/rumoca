@@ -199,9 +199,12 @@ Context   MotorWithBrake · Flatten
 
 ### Vocabulary: point at, follow
 
-The menu says "Capture" and "Track"; the bar would say "Pointing at" and
-"Following". Two vocabularies for one concept. Doug's call (2026-07-27) is that
-the bar's verbs are the better ones and should win everywhere:
+**Delivered 2026-07-28.** The menus now read "Point at" and "Follow …"; the bar
+already read "Pointing at" and "Following". One vocabulary throughout.
+
+The menu used to say "Capture" and "Track" while the bar said "Pointing at" and
+"Following" — two vocabularies for one concept. Doug's call (2026-07-27) was
+that the bar's verbs are the better ones and should win everywhere:
 
 - **"Capture" describes what the app does** — writes a file. **"Point at"
   describes what the user does.** The bridge's own architecture note already
@@ -214,22 +217,45 @@ the bar's verbs are the better ones and should win everywhere:
 
 Renaming covers the **UI labels, the Context Bar, and the docs**. The wire
 format and internal identifiers (`focus.json`, `emit_node_focus`, `AskRequest`,
-`Focus`) stay: renaming a protocol Claude already reads buys nothing and breaks
-continuity with recorded sessions. The self-describing `instructions` string
-inside `focus.json` *is* updated, so someone reading that file while dogfooding
-does not meet a third vocabulary.
+`Focus`, `TreeActions::capture`/`track`) stay: renaming a protocol Claude
+already reads buys nothing and breaks continuity with recorded sessions. The
+self-describing `instructions` string inside `focus.json` *is* updated, so
+someone reading that file while dogfooding does not meet a third vocabulary.
+
+One incidental decision worth recording: the glyphs. Only codepoints HRW already
+renders may be used — egui ships far less than the whole of Unicode, and an
+unproven one shows as a tofu box (U+2715 did exactly that in this bar). So
+"Point at" takes 🎯 and "Follow" takes 🔎, the two already in the menu. The
+magnifier landing on "Follow" is a better fit than it was on "Capture" anyway:
+following *is* a search across every stage, and where the identifier is absent
+counts as much as where it is found.
 
 ### The status bar loses its bridge role
 
-`bridge_status` currently shows a transient line after each capture. The Context
-Bar dominates that: persistent beats transient, and "what is pointed at" beats
-"something was captured a moment ago".
+**Delivered 2026-07-28.** `status_line` now returns `Option<String>` and a
+successful point returns `None`; the field is renamed `bridge_status` →
+`notice`, since what remains is genuinely transient and belongs nowhere else
+("specimen not found", "diagnostic written to …", a stage-file write failure).
 
-**Except for failures.** `bridge::write` returns `io::Result`, and if it fails
-the bar must say so — otherwise it reads "Pointing at X" while Claude is still
-holding the previous focus, which is exactly the confident lie the governing
-rule forbids. Failure therefore moves *into* the bar, not onto a second surface.
-The removal is sequenced after the bar exists, so there is never a window
+`bridge_status` used to show a transient line after each capture. The Context
+Bar dominates that: persistent beats transient, and "what is pointed at" beats
+"something was captured a moment ago". Worse than redundant, in fact — the
+status line stated the point once and then went stale, so two surfaces claiming
+to describe what Claude has could disagree. That is the failure this design
+keeps running into, and the weaker surface is the one to drop.
+
+Two exceptions survive, and both are things the bar *cannot* say:
+
+- **Failures.** `bridge::write` returns `io::Result`, and if it fails the bar
+  must say so — otherwise it reads "Pointing at X" while Claude is still holding
+  the previous focus, which is exactly the confident lie the governing rule
+  forbids. Failure moved *into* the bar (`point_error`), and the status line
+  keeps a second, transient copy for the moment it happens.
+- **The debugger request.** `debug-where-set` still speaks on success, because
+  it asks the user to do something next — say "debug" in the chat. An
+  instruction is not a confirmation.
+
+The removal was sequenced after the bar existed, so there was never a window
 without capture feedback.
 
 ## What this does to Phase 5

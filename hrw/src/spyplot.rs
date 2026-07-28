@@ -323,7 +323,7 @@ fn block_tooltip(ui: &mut egui::Ui, block: &Block) {
         list(ui, "residual equations", residuals);
     }
     ui.add_space(4.0);
-    ui.weak("click to capture this block for “explain”");
+    ui.weak("click to point at this block, then ask in the chat");
 }
 
 #[cfg(test)]

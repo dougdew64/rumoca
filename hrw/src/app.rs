@@ -269,10 +269,18 @@ pub struct App {
     // ---- 6. Claude bridge ----
     // The "capture" system writes JSON files that Claude Code reads to
     // understand what the user is looking at. `context_seq` is a monotonic counter
-    // so each capture gets a unique ID; `bridge_status` shows confirmation in
-    // the bottom status bar.
+    // so each capture gets a unique ID. Confirmation lives in the Context Bar,
+    // not the status bar — see `notice`.
     context_seq: u64,
-    bridge_status: Option<String>,
+    /// A transient one-line notice for the status bar.
+    ///
+    /// **No longer the bridge's confirmation channel.** Renamed from
+    /// `bridge_status` when the Context Bar took that job: the bar names the
+    /// point persistently, so a second, staler description of the same thing
+    /// could only disagree with it. What is left is genuinely transient and
+    /// belongs nowhere else — "specimen not found", "diagnostic written to …",
+    /// a stage-file write failure.
+    notice: Option<String>,
 
     // ---- 7. Panels and windows toggled from the menu bar ----
     ui_mode: UiMode,
@@ -705,7 +713,7 @@ impl App {
             nav_loading: None,
             nav_error: None,
             context_seq: 0,
-            bridge_status: None,
+            notice: None,
             ui_mode: UiMode::Tour,
             specimen_detail: SpecimenDetail::default(),
             show_settings: false,
@@ -1007,7 +1015,7 @@ impl App {
                     }
                     // Publish every stage's full IR so Claude can diff any pair.
                     if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
-                        self.bridge_status = Some(format!("write_stages failed: {e}"));
+                        self.notice = Some(format!("write_stages failed: {e}"));
                     }
                 }
                 FromWorker::Simulated { path, result } => {
@@ -1219,7 +1227,9 @@ impl App {
             request: bridge::AskRequest::Explain,
         });
         self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
-        self.bridge_status = Some(status_line(seq, &target, "explain", result));
+        // `None` on success: the Context Bar already names the point, and it
+        // does so persistently. See `status_line`.
+        self.notice = status_line(seq, &target, "explain", result);
     }
 
     /// What HRW is showing, for the capture.
@@ -1336,7 +1346,7 @@ impl App {
                     "stages_with_mentions": self.tracking_summary.map(|(_, s)| s),
                 })),
                 "last_emission_error": self.point_error,
-                "status_line": self.bridge_status,
+                "status_line": self.notice,
             },
             "animation": anim,
             "live_trace": {
@@ -1460,10 +1470,10 @@ impl App {
                     self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
                     status_line(seq, &target, request_str, result)
                 }
-                None => "(no IR for this stage to point at)".to_owned(),
+                None => Some("(no IR for this stage to point at)".to_owned()),
             }
         };
-        self.bridge_status = Some(status);
+        self.notice = status;
     }
 
     fn start_simulation(&mut self) {
@@ -1581,18 +1591,41 @@ impl App {
 
 }
 
-/// One-line status for a completed bridge write, tailored to the request kind.
-/// Shown in the bottom status bar to confirm what was captured and what the
-/// user should do next (e.g. "captured equations.3.lhs -- now ask me about it
-/// in the chat"). The `seq` number helps the user correlate captures with
-/// Claude's responses.
-fn status_line(seq: u64, target: &str, request: &str, result: std::io::Result<std::path::PathBuf>) -> String {
+/// A notice for the status bar after a bridge write — **only when something
+/// needs saying**.
+///
+/// ## Why success is silent now
+///
+/// The status bar used to confirm every capture ("captured equations.3.lhs —
+/// now ask me about it in the chat"). The Context Bar makes that redundant, and
+/// worse than redundant: the bar states the point *persistently and by name*,
+/// while the status line stated it once and then went stale, so the two could
+/// disagree about what Claude had. Two places claiming to describe the same
+/// thing is exactly the failure this design keeps hitting — a transient
+/// confirmation is the weaker of the two, so it goes.
+///
+/// A failure still returns text, because a failure is precisely the case the
+/// Context Bar cannot show on its own: it renders the point either way, and
+/// silence would leave it describing context that was never written. (The bar
+/// *also* flags it via `point_error`; this is the second, transient channel for
+/// the moment it happens.)
+///
+/// `debug-where-set` still speaks on success, because it asks the user to do
+/// something next — say "debug" in the chat — and an instruction is not a
+/// confirmation.
+fn status_line(
+    seq: u64,
+    target: &str,
+    request: &str,
+    result: std::io::Result<std::path::PathBuf>,
+) -> Option<String> {
     match result {
-        Err(e) => format!("bridge write failed: {e}"),
-        Ok(_) if request == "debug-where-set" => {
-            format!("🐞 captured  {target}  for the debugger — say “debug” in chat and I'll set the breakpoint  (focus #{seq})")
-        }
-        Ok(_) => format!("captured  {target}  — now ask me about it in the chat  (focus #{seq})"),
+        Err(e) => Some(format!("\u{26a0} not emitted \u{2014} {e}")),
+        Ok(_) if request == "debug-where-set" => Some(format!(
+            "🐞 pointing at  {target}  for the debugger \u{2014} say \u{201c}debug\u{201d} \
+             in chat and I'll set the breakpoint  (context #{seq})"
+        )),
+        Ok(_) => None,
     }
 }
 
@@ -1611,21 +1644,24 @@ impl App {
                 ui.strong("Inspect");
                 ui.label("Pick a specimen (left), choose Parse/Resolve, and expand the IR tree.");
                 ui.add_space(6.0);
-                ui.strong("Ask Claude");
+                ui.strong("Assemble context");
                 ui.label(
-                    "Left-click a node to capture it (right-click for more actions), then ask \
-                     your question in the Claude Code chat — Claude reads the capture.",
+                    "Two ways to build the subject of a question, and the Context Bar shows \
+                     both. Point at one node \u{2014} left-click it, or right-click for more \
+                     actions. Follow one identifier \u{2014} right-click a variable name and \
+                     choose Follow, and HRW reports where it appears in every stage, and \
+                     where it does not.",
                 );
                 ui.add_space(2.0);
                 ui.label(
-                    "Shortcut: right after capturing, just type \u{201c}explain\u{201d} in the chat — Claude \
-                     explains what you captured, no need to phrase a question.",
+                    "Then ask in the Claude Code chat \u{2014} Claude reads what you assembled. \
+                     Shortcut: just type \u{201c}explain\u{201d}, with no need to phrase a question.",
                 );
                 ui.add_space(6.0);
                 ui.strong("Diff stages");
                 ui.label(
-                    "Every capture publishes all stages\u{2019} full IR, so Claude can compare any \
-                     two on request. Capture anything, then ask in the chat — e.g. \u{201c}what did \
+                    "Every point publishes all stages\u{2019} full IR, so Claude can compare any \
+                     two on request. Point at anything, then ask in the chat — e.g. \u{201c}what did \
                      Typecheck change vs Instantiate?\u{201d} (the resolved type_ids) or \u{201c}diff Parse and \
                      Resolve here\u{201d} (def_ids filled in) — and Claude reads the two stages and reports \
                      the differences. (A node captured on Parse/Resolve also carries its own \
@@ -2156,7 +2192,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 )
                 .clicked()
             {
-                self.bridge_status = Some(match diagnostics::write_on_demand() {
+                self.notice = Some(match diagnostics::write_on_demand() {
                     Ok(path) => format!("diagnostic written: {}", path.display()),
                     Err(e) => format!("diagnostic FAILED: {e}"),
                 });
@@ -3044,9 +3080,13 @@ impl eframe::App for App {
         // after left/right panels would only fill the remaining center).
         egui::Panel::bottom("status").show(ui, |ui| {
             ui.add_space(1.0);
-            match &self.bridge_status {
+            // Success is silent. The Context Bar states what Claude has; this
+            // line is for things that happen and then are over.
+            match &self.notice {
                 Some(s) => ui.weak(s),
-                None => ui.weak("Left-click a tree node to capture it, then ask about it in the chat (right-click for more actions)."),
+                None => ui.weak(
+                    "Left-click a tree node to point at it, then ask about it in the chat                      (right-click to follow an identifier, or for more actions).",
+                ),
             };
             ui.add_space(1.0);
         });
@@ -3134,14 +3174,14 @@ impl eframe::App for App {
                                         ui.close();
                                     }
                                     ui.separator();
-                                    let btn = ui.add_enabled(can_capture, egui::Button::new("🔎 Capture"));
+                                    let btn = ui.add_enabled(can_capture, egui::Button::new("🎯 Point at"));
                                     let btn = if can_capture {
                                         btn.on_hover_text(
-                                            "Capture the whole specimen, then ask Claude about it in the chat.",
+                                            "Make the whole specimen the subject of your next question, then ask in the chat.",
                                         )
                                     } else {
                                         btn.on_disabled_hover_text(
-                                            "Left-click to load & compile this specimen first, then Capture.",
+                                            "Left-click to load & compile this specimen first, then point at it.",
                                         )
                                     };
                                     if btn.clicked() {
@@ -3232,7 +3272,7 @@ impl eframe::App for App {
                     if let Some(path) = self.find_specimen(&name) {
                         self.open(path);
                     } else {
-                        self.bridge_status = Some(format!("specimen not found: {name}"));
+                        self.notice = Some(format!("specimen not found: {name}"));
                     }
                 }
                 HrwLink::SwitchStage(kind) => {
@@ -3244,7 +3284,7 @@ impl eframe::App for App {
                         self.open(path);
                         self.pending_stage = Some(kind);
                     } else {
-                        self.bridge_status = Some(format!("specimen not found: {name}"));
+                        self.notice = Some(format!("specimen not found: {name}"));
                     }
                 }
             }
@@ -4137,7 +4177,7 @@ impl App {
             nav_loading: None,
             nav_error: None,
             context_seq: 0,
-            bridge_status: None,
+            notice: None,
             ui_mode: UiMode::Tour,
             specimen_detail: SpecimenDetail::default(),
             show_settings: false,
@@ -4595,26 +4635,37 @@ mod tests {
         assert!(app.parse_library_paths().is_empty());
     }
 
+    /// A successful point says nothing in the status bar.
+    ///
+    /// The Context Bar names the point persistently; a second, transient
+    /// description of the same thing could only go stale and disagree with it.
+    /// Two places claiming to describe what Claude has is the failure mode this
+    /// design keeps running into, and the weaker one is the one to drop.
     #[test]
-    fn status_line_success_explain() {
+    fn a_successful_point_is_silent() {
         let msg = status_line(1, "equations.3.lhs", "explain", Ok(PathBuf::from("/tmp/focus.json")));
-        assert!(msg.contains("captured"), "should say 'captured': {msg}");
-        assert!(msg.contains("equations.3.lhs"), "should contain target: {msg}");
-        assert!(msg.contains("focus #1"), "should contain seq: {msg}");
+        assert_eq!(msg, None, "the Context Bar states this; the status bar must not repeat it");
     }
 
+    /// The debugger request still speaks, because it asks for something next.
+    /// An instruction is not a confirmation.
     #[test]
-    fn status_line_success_debug() {
-        let msg = status_line(2, "def_id", "debug-where-set", Ok(PathBuf::from("/tmp/f.json")));
+    fn a_debug_point_still_tells_the_user_what_to_do() {
+        let msg = status_line(2, "def_id", "debug-where-set", Ok(PathBuf::from("/tmp/f.json")))
+            .expect("debug requests carry an instruction");
         assert!(msg.contains("debugger"), "debug request should mention debugger: {msg}");
-        assert!(msg.contains("focus #2"), "should contain seq: {msg}");
+        assert!(msg.contains("context #2"), "should carry the shared counter: {msg}");
     }
 
+    /// A failure must still be stated. This is the one case the Context Bar
+    /// cannot cover alone — it renders the point either way, so silence would
+    /// leave it describing context that was never written.
     #[test]
-    fn status_line_error() {
+    fn a_failed_emission_is_never_silent() {
         let err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
-        let msg = status_line(1, "x", "explain", Err(err));
-        assert!(msg.contains("bridge write failed"), "should report error: {msg}");
+        let msg = status_line(1, "x", "explain", Err(err)).expect("failures are always reported");
+        assert!(msg.contains("not emitted"), "should say it was not emitted: {msg}");
+        assert!(msg.contains("denied"), "should carry the cause: {msg}");
     }
 
     #[test]
