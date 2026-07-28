@@ -31,7 +31,14 @@ use rumoca_transport_zenoh::ZenohTransport;
 use serde::Deserialize;
 use serde_json::{Map as JsonMap, Value as JsonValue};
 
-use crate::scheduled_sim::devices::{self, Devices};
+use crate::scheduled_sim::devices::Devices;
+// The module path itself is only reached from `#[cfg(unix)]` code
+// (`spawn_sigint_handler` and `spawn_cleanup_thread` call
+// `devices::disable_terminal_raw_mode`), so importing it unconditionally warns
+// on Windows. Splitting the import keeps `Devices` available everywhere while
+// the alias follows the code that uses it.
+#[cfg(unix)]
+use crate::scheduled_sim::devices;
 
 use crate::scenario_config::{LockstepConfig, ResetConfig, SimulationConfig};
 
