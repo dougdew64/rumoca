@@ -941,3 +941,19 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `differentiable_candidate_equations`, Tarjan's SCC pop is extracted as `pop_scc`, and the traced
   augmenting path uses `continue` guards. **Standing rule: run `cargo clippy -p <rumoca-crate>`
   after touching an instrumented Rumoca crate** — `cargo test` passes right through these.
+- **2026-07-28 — The lexer scans characters, not bytes, in its catch-all arm.** Clicking `overSpeed`
+  in MotorWithBrake's source crashed HRW instantly. `modelica_lex::tokenize` matches ASCII in every
+  arm, so any non-ASCII character fell to the catch-all, which advanced **one byte** — splitting a
+  3-byte em dash into three tokens with boundaries inside the character. `source[tok.start..tok.end]`
+  then panicked. The trigger was not the specimen: following an identifier lexes every code-bearing
+  string in every stage's IR, and Rumoca's structural note reads *"…before it can be solved — see the
+  Index Reduction tab."* **The lexer is the right place to fix it, not the slicing callers** — a
+  defensive slice at each call site would hide the next such bug, while the guarantee "token
+  boundaries fall between characters" is checkable once and relied on everywhere. It is now stated in
+  the module docs alongside the tiling guarantee and asserted inside `assert_tiles`, so every
+  existing corpus test enforces it too. **Why the tests missed it:** they lex Modelica, and Modelica
+  is ASCII — `non_ascii_inside_comments_and_strings_is_safe` put the accents inside comments and
+  strings, where scanning is delimiter-driven and never reaches the catch-all. Prose written by the
+  *compiler* is the text that carries an em dash, and it only reaches the lexer because Phase 5's
+  following searches IR strings. New tests cover bare non-ASCII directly and cover the whole
+  click path on real IR (`following_an_identifier_walks_every_stage_without_panicking`).

@@ -20,11 +20,14 @@
 //!    strings and comments run to end-of-input; bytes that match nothing become
 //!    [`TokenKind::Operator`]. A view rendering half-typed source must not
 //!    panic or silently drop text.
-//! 2. **Tokens tile the input exactly.** Concatenating every token's byte range
-//!    in order reproduces the source, with no gaps and no overlaps — whitespace
-//!    included, which is why [`TokenKind::Whitespace`] exists. Rendering can
-//!    therefore walk the token list and emit every byte exactly once, rather
-//!    than interleaving tokens with separately-tracked "the rest of the line".
+//! 2. **Tokens tile the input exactly, on character boundaries.** Concatenating
+//!    every token's byte range in order reproduces the source, with no gaps and
+//!    no overlaps — whitespace included, which is why [`TokenKind::Whitespace`]
+//!    exists. Rendering can therefore walk the token list and emit every byte
+//!    exactly once, rather than interleaving tokens with separately-tracked
+//!    "the rest of the line". Every boundary falls between characters, so
+//!    `source[tok.start..tok.end]` is always a legal slice — a caller cannot
+//!    make this panic by handing it text with a non-ASCII character in it.
 //!
 //! Both are enforced by tests over every specimen in `specimens/`.
 //!
@@ -176,9 +179,19 @@ pub fn tokenize(source: &str) -> Vec<Token> {
             _ => {
                 let two = bytes.get(i..i + 2);
                 if two.is_some_and(|t| TWO_BYTE_OPERATORS.iter().any(|op| op.as_slice() == t)) {
+                    // Both bytes are ASCII, so this cannot start mid-character.
                     i += 2;
                 } else {
-                    i += 1;
+                    // A whole character, not a byte. Every arm above matches
+                    // ASCII only, so any non-ASCII character — an em dash in a
+                    // description string, an accented letter in a comment —
+                    // arrives here, and stepping one byte would put a token
+                    // boundary *inside* it. Callers slice
+                    // `source[tok.start..tok.end]`, which panics on such a
+                    // boundary; that is exactly how HRW crashed when a followed
+                    // identifier was searched for in a stage note containing an
+                    // em dash.
+                    i += utf8_char_len(bytes[i]);
                 }
                 TokenKind::Operator
             }
@@ -249,6 +262,22 @@ fn classify_word(word: &str) -> TokenKind {
 
 fn is_whitespace(b: u8) -> bool {
     matches!(b, b' ' | b'\t' | b'\n' | b'\r')
+}
+
+/// Byte length of the UTF-8 character whose leading byte is `lead`.
+///
+/// The input to `tokenize` is a `&str`, so it is valid UTF-8 and the scanner
+/// only ever consults this at a character boundary. A continuation or invalid
+/// byte therefore cannot reach here; 1 is returned for those so the scanner
+/// still terminates and still tiles the input rather than looping or skipping.
+fn utf8_char_len(lead: u8) -> usize {
+    match lead {
+        0x00..=0x7F => 1,
+        0xC0..=0xDF => 2,
+        0xE0..=0xEF => 3,
+        0xF0..=0xF7 => 4,
+        _ => 1,
+    }
 }
 
 fn is_ident_start(b: u8) -> bool {
@@ -396,6 +425,32 @@ mod tests {
         assert_tiles(src, &tokenize(src));
     }
 
+    /// Bare non-ASCII — not inside a comment or a string — reaches the
+    /// catch-all arm, which used to advance **one byte**, putting token
+    /// boundaries inside a character. This is not hypothetical Modelica: the
+    /// lexer also runs over IR strings when deciding whether text mentions a
+    /// followed identifier, and Rumoca's own structural note reads
+    /// "…before it can be solved — see the Index Reduction tab." Slicing that
+    /// em dash crashed HRW on a click.
+    #[test]
+    fn bare_non_ascii_lexes_on_character_boundaries() {
+        for src in [
+            "x — y",
+            "requires index reduction — see the Index Reduction tab.",
+            "α + β",
+            "🎯",
+        ] {
+            let toks = tokenize(src);
+            assert_tiles(src, &toks);
+            // One token per character, not per byte.
+            assert_eq!(
+                toks.iter().filter(|t| t.text(src) == "—").count(),
+                src.matches('—').count(),
+                "each em dash must be exactly one token in {src:?}",
+            );
+        }
+    }
+
     #[test]
     fn empty_source_produces_no_tokens() {
         assert!(tokenize("").is_empty());
@@ -408,6 +463,13 @@ mod tests {
         for t in tokens {
             assert_eq!(t.start, expected_start, "gap or overlap before {t:?} in {source:?}");
             assert!(t.end > t.start, "empty token {t:?} in {source:?}");
+            // Checked explicitly, not left to `t.text()` panicking below: a
+            // boundary inside a character is the failure that reached the app,
+            // and it deserves a message that names itself.
+            assert!(
+                source.is_char_boundary(t.start) && source.is_char_boundary(t.end),
+                "token boundary inside a character: {t:?} in {source:?}",
+            );
             expected_start = t.end;
         }
         assert_eq!(expected_start, source.len(), "tokens end short of input in {source:?}");

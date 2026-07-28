@@ -2856,6 +2856,47 @@ mod tests {
             "MotorWithBrake should produce index-reduction animation frames");
     }
 
+    /// Following an identifier must survive **real** IR, whatever is in it.
+    ///
+    /// Regression for a crash on the simplest possible action: open
+    /// MotorWithBrake, click `overSpeed` in the source. Following walks every
+    /// stage's IR and lexes each code-bearing string, and MotorWithBrake's
+    /// structural note contains an em dash. The lexer stepped one *byte* over
+    /// non-ASCII, so a token boundary landed inside that character and slicing
+    /// it panicked — see `modelica_lex::bare_non_ascii_lexes_on_character_boundaries`.
+    ///
+    /// The synthetic tests could not have caught it: they lex Modelica, which
+    /// is ASCII. Only prose written by the compiler reaches the lexer with an
+    /// em dash in it, and only because following searches IR strings.
+    #[test]
+    fn following_an_identifier_walks_every_stage_without_panicking() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("MotorWithBrake") else {
+            panic!("expected Compiled");
+        };
+        let pairs = stages.as_stage_pairs();
+        for name in ["overSpeed", "__pre__.overSpeed", "emf.phi", "der(emf.phi)"] {
+            let t = crate::bridge::Tracking {
+                seq: 1,
+                name,
+                declared_line: None,
+                declaring_class: None,
+                stage_values: &pairs,
+            };
+            crate::bridge::summarize_tracking(&t);
+        }
+
+        let t = crate::bridge::Tracking {
+            seq: 1,
+            name: "overSpeed",
+            declared_line: None,
+            declaring_class: None,
+            stage_values: &pairs,
+        };
+        let (mentions, stage_count) = crate::bridge::summarize_tracking(&t);
+        assert!(mentions > 0, "overSpeed is declared in MotorWithBrake");
+        assert!(stage_count > 1, "it should survive past a single stage");
+    }
+
     // -----------------------------------------------------------------------
     // Full-pipeline regression guards: every specimen compiles through ALL
     // expected stages. These are the most rebase-sensitive tests — if an
