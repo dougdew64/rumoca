@@ -1,9 +1,10 @@
-# Source Tooling Plan — lexer, highlighting, and identifier tracking
+# Source Tooling Plan — lexer, highlighting, identifier tracking, trees
 
-One thread of work covering four backlog items that turn out to share a single
+One thread of work covering backlog items that turn out to share a single
 foundation: **#36** (Modelica syntax highlighting), **#37** (reverse identifier
-tracking), forward identifier debugging, and the remaining reach of **#10**
-(cross-stage identifier tracking).
+tracking), forward identifier debugging, the remaining reach of **#10**
+(cross-stage identifier tracking), and — added once the earlier phases exposed
+how weak the tree is as an instrument — **#11** (in-view search) as Phase 6.
 
 Created 2026-07-27.
 
@@ -242,11 +243,82 @@ would leave a window with no capture feedback at all.
 
 ---
 
+## Phase 6 — Make the tree a real instrument (#11)
+
+**Goal.** The IR tree is HRW's primary exploration widget and every stage tab
+depends on it, but it is still a raw JSON dump with two ad-hoc affordances
+bolted on. This phase reworks it deliberately rather than by accretion.
+
+**Status: design first. Nothing here should be built before the questions below
+are settled** — that is the lesson of the "Reveal identifiers" checkbox, which
+was added quickly, then needed its trackability definition corrected, then its
+expansion mechanism corrected, and still does not feel right.
+
+### What prompted it
+
+Doug, 2026-07-28: *"Little things don't feel right. For example, why is that
+widget a checkbox instead of a button?"*
+
+That question turns out to be the whole diagnosis. **A checkbox is a mode; a
+button is an action.** "Reveal" was built as a mode, which forces every matching
+node open for as long as it is ticked — and therefore takes the tree out of the
+user's hands at exactly the moment they want to explore what was revealed.
+Untick to regain control and the revealing is lost. If instead "reveal" is an
+*action* that opens those paths once and then steps aside, the conflict
+disappears, and so does the need for `force_open` in `Expansion`.
+
+Three more things that are wrong in the same way:
+
+- **The name over-claims.** "Reveal identifiers" reveals *variables of the
+  compiled model*. With Phase 5's vocabulary it is really "reveal what you can
+  follow". "Identifiers" is the loosest available word and the least true.
+- **The count and the reveal are different magnitudes.** "(38 in this model)"
+  counts distinct variables; the expansion opens a path to every *mention*,
+  which is far more. The label sets an expectation the behaviour overshoots.
+- **Expanding may be the wrong verb entirely.** Filtering *down* to matches
+  shows a short list; expanding *open* shows a large tree held open. For "where
+  is `h`?" the first is better, and it is what #11 describes.
+
+### Candidate scope
+
+Not commitments — the point of a design-first phase is to choose among these.
+
+1. **In-view search (#11).** A find-as-you-type filter over the current tree.
+   Filtering to matches rather than expanding to them, which subsumes "reveal"
+   as one predicate among several.
+2. **Reveal as an action.** A button that expands paths once and lets go.
+3. **Noise suppression.** Real IR is dominated by provenance: every `name` in
+   the Resolve tree carries a `location` with line/column/offsets/file plus
+   `token_number` and `token_type` — roughly ten lines of scaffolding per
+   identifier. A toggle that hides provenance would change readability more
+   than anything else in this list.
+4. **"What changed" filter.** The cross-stage diff already drives the green
+   highlight; collapsing the tree to *only* changed nodes would answer "what did
+   this phase actually do?" in one gesture. That is the core curriculum
+   question, and the data for it already exists.
+5. **Expansion controls.** Collapse-all, expand-one-level — the ordinary
+   affordances of a tree widget, currently absent.
+
+### Questions to settle first
+
+- **Filter or expand?** They are different interactions and probably want
+  different widgets. Deciding this first determines most of the rest.
+- **What is the unit of a match** — a node, a row, a path? A filtered tree still
+  has to show ancestors for context, or matches lose their meaning.
+- **Does noise suppression belong to the tree, or to the emitted context too?**
+  If provenance is hidden from the user, is it still worth sending to Claude?
+  (Probably yes — span-ascent depends on it — but the answer should be
+  deliberate.)
+- **Does any of this change what is emitted?** If a filter narrows what the user
+  is looking at, the Context Bar's rule says the emitted context should say so.
+  Phase 5 and Phase 6 meet here.
+
 ## Sequencing
 
-1 → 2 → 3 → 4 → 5. Each phase ships something usable on its own, and each one's
-output is the next one's input. Phases 1–2 are self-contained and low-risk;
-Phase 3 improves behaviour already in daily use; Phases 4–5 add capability.
+1 → 2 → 3 → 4 → 5 → 6. Each phase ships something usable on its own, and each
+one's output is the next one's input. Phases 1–2 are self-contained and
+low-risk; Phase 3 improves behaviour already in daily use; Phases 4–5 add
+capability; Phase 6 reworks the widget all of them are rendered in.
 
 Phases 1 and 2 can land as a single commit pair (crate-free — all HRW). Phase 3
 touches existing tested behaviour and should be its own commit.
@@ -298,3 +370,7 @@ you use it.
       at"/"Follow" in the UI and docs; and the status bar loses its bridge role,
       with emission *failures* moving into the bar. Design settled — see
       [`context-assembly.md`](context-assembly.md).
+- [ ] **Phase 6 — Make the tree a real instrument (#11)** — design first. In-view
+      search, "reveal" as an action rather than a mode, provenance noise
+      suppression, a "what changed" filter over the existing diff data, and the
+      ordinary expansion controls the tree still lacks.
