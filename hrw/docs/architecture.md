@@ -1121,11 +1121,21 @@ literally the 2026-07-28 debugging session's findings turned into code.
 |------|---------|----------|
 | `crash-<utc>.json` | from the panic hook | panic message, location, thread, backtrace, snapshot, actions, log tail, build |
 | `session.json` | on every recorded user action | everything above except the panic |
+| `previous-session.json` | at startup, by rotation | the prior run's `session.json` — the file to read after a hard death |
 
 `session.json` exists for the deaths that run **no hook at all** — a stack
 overflow, a driver `SIGSEGV`, a hard kill. It survives them because it was
 already on disk. Rust's `exit code 101` *is* a panic, so the egui-wgpu class of
 failure is covered by the hook.
+
+**Startup rotates it to `previous-session.json`.** Without that, the file
+defeats its own purpose: the natural response to a hookless death is to launch
+HRW again, and the restart records `"HRW started"` — rewriting the file and
+erasing the evidence of the death before anyone reads it. **So after a hard
+death, `previous-session.json` describes it and `session.json` describes the
+restart.** One generation is kept rather than a timestamped archive, because the
+interesting file is always the run that just died and a pile of session files
+would bury the crash files that matter.
 
 `Help ▸ Write diagnostic snapshot` produces the same content on demand, for a
 session that is misbehaving without dying. A wrong-looking view needs identical

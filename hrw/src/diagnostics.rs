@@ -43,6 +43,12 @@
 //!    cheap and deliberately not per-frame. A stack overflow, a `SIGSEGV` from a
 //!    graphics driver, or a hard kill runs **no** hook at all and would otherwise
 //!    leave nothing; this file survives them because it was already on disk.
+//!    The previous run's copy is moved to **`previous-session.json`** at startup
+//!    — see [`rotate_previous_session`], and read that before assuming
+//!    `session.json` describes the run you are investigating.
+//!
+//! So after a hard death, `previous-session.json` is the file that describes it
+//! and `session.json` describes the restart.
 //!
 //! `write_on_demand` produces the same content as a crash file for a session
 //! that is misbehaving without dying — Doug asked for "crashes *and other
@@ -164,6 +170,8 @@ pub fn init() {
         return;
     }
 
+    rotate_previous_session();
+
     // Chain rather than replace: whoever would have seen the message on stderr
     // still sees it. `take_hook` returns the default hook the first time.
     let previous = std::panic::take_hook();
@@ -284,6 +292,32 @@ fn write_crash_file(info: &std::panic::PanicHookInfo<'_>) {
 
     if let Some(Some(report)) = report {
         let _ = write_json(&dir().join(format!("crash-{}.json", file_stamp())), &report);
+    }
+}
+
+/// Move the last run's `session.json` aside before this run overwrites it.
+///
+/// Without this the file defeats its own purpose. `session.json` exists for
+/// deaths that run **no** panic hook — a stack overflow, a driver `SIGSEGV`, a
+/// hard kill — and the natural response to one of those is to start HRW again.
+/// That restart records `"HRW started"`, which rewrites the file, destroying
+/// the evidence of the death before anyone reads it. The most likely user
+/// action after the failure is the one thing that erases the record of it.
+///
+/// One generation is kept, not a timestamped archive: the interesting file is
+/// always the run that just died, and an unbounded pile of session files in a
+/// directory Claude is asked to read would bury the crash files that matter.
+/// Renaming rather than copying is deliberate too — it is a single atomic-ish
+/// operation, so there is no window where both files hold the same run.
+///
+/// Failure is ignored on purpose. If there is no previous file, or it cannot be
+/// moved, this run's diagnostics must still work; losing history is a much
+/// smaller loss than refusing to start.
+fn rotate_previous_session() {
+    let dir = dir();
+    let current = dir.join("session.json");
+    if current.exists() {
+        let _ = std::fs::rename(&current, dir.join("previous-session.json"));
     }
 }
 
@@ -427,6 +461,34 @@ mod tests {
         }
         assert!(r["app"].is_null());
         assert!(r["build"]["git_rev"].is_string());
+    }
+
+    /// A restart must not destroy the record of the death that caused it.
+    ///
+    /// This is the whole point of `session.json`: it covers deaths that run no
+    /// panic hook, and the natural response to one is to launch HRW again —
+    /// which records "HRW started" and rewrites the file. Without rotation the
+    /// evidence is erased by the most likely next user action.
+    #[test]
+    fn a_restart_preserves_the_previous_session() {
+        let dir = std::path::PathBuf::from(DIAGNOSTICS_DIR);
+        std::fs::create_dir_all(&dir).expect("diagnostics dir");
+        let (current, previous) = (dir.join("session.json"), dir.join("previous-session.json"));
+
+        // Stand in for a run that died: a session file with a distinctive mark.
+        std::fs::write(&current, br#"{"marker":"the run that died"}"#).expect("seed");
+        std::fs::remove_file(&previous).ok();
+
+        rotate_previous_session();
+
+        assert!(!current.exists(), "the dead run's file must be moved out of the way");
+        let carried = std::fs::read_to_string(&previous).expect("previous-session.json");
+        assert!(carried.contains("the run that died"), "content must survive intact: {carried}");
+
+        // And rotating with nothing to rotate must be harmless — the ordinary
+        // first-ever launch.
+        std::fs::remove_file(&previous).ok();
+        rotate_previous_session();
     }
 
     /// `with_diag` must be a no-op rather than a panic when uninitialised —
