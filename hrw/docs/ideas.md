@@ -1190,3 +1190,75 @@ uncoloured text and so break that rule:
 
 **Relates to:** the colour rule recorded in `DECISIONS.md` (2026-07-27) and
 [`source-tooling-plan.md`](source-tooling-plan.md).
+
+---
+
+## 39. Crash and diagnostic log — make HRW troubleshootable without a live session
+
+Captured 2026-07-28 (Doug), after HRW crashed instantly on left-clicking an
+identifier in the specimen source view:
+
+> So far, you have done an amazing job of troubleshooting problems. But, that
+> might not always be possible. Today's crash … reminded me that we have skipped
+> a step in creating HRW.
+
+**The problem.** When HRW dies, the evidence dies with it. Today's crash was
+diagnosed only because the failing path could be *re-created headlessly* — a
+test compiled `MotorWithBrake` and called `summarize_tracking`, which reproduced
+the panic with its message and location. That worked because the crash lived in
+pure logic reachable from a test. A crash in the paint path, in a drag, in
+frame-timing, or one that depends on GPU or window state would not have been
+reproducible that way, and there would have been nothing to reason from but
+Doug's description of what he clicked.
+
+The gap is structural, not incidental: HRW is a **windowed** app. A Rust panic
+prints to stderr, and when the app is launched from the VS Code debugger or from
+Explorer there is often no stderr anyone reads. HRW has already lost evidence
+twice this way — today's panic, and the earlier `exit code 101` from
+egui-wgpu's staging-buffer failure during long debugger pauses, which took
+several rounds of guessing before Doug happened to capture the message.
+
+**What it should capture.** A panic message and a backtrace are the easy half
+and the less useful half. Location says *where* the process died; it rarely says
+*why the app was there*. The HRW-specific half is the **application state at the
+moment of death**:
+
+- Selected specimen, model name, current stage, current detail view.
+- What was pointed at and what was being followed — the assembled noun
+  (`PointedAt`, `tracked_identifier`, the sequence counters).
+- Live/animation state: which animation, frame index of total, `LiveState`.
+- The tail of the existing `log_entries` buffer (`worker::LogEntry`), which
+  already carries timestamped per-phase detail — the log view's data, persisted.
+- Build identity: git rev, Rumoca rev, `wgpu` backend in use.
+
+Today, every one of those bullets was reconstructed from Doug's sentence
+describing what he did. All of them are already in `HrwApp`.
+
+**Design notes.**
+
+- **Claude is the consumer** (see `DECISIONS.md`, 2026-07-28) — this file is not
+  a user-facing error report. Optimise it for *diagnosis*, not readability, and
+  do not summarise away detail.
+- A `std::panic::set_hook` that writes a timestamped file (say
+  `.hrw-bridge/crashes/<timestamp>.json`) covers panics. Reaching `HrwApp` state
+  from inside the hook is the design problem worth thinking about — likely a
+  small `Mutex`/`ArcSwap` snapshot the app refreshes each frame, so the hook
+  reads a plain value and never touches the app's borrow graph.
+- **Not all deaths are panics.** GPU device loss, an `abort`, or a hard kill
+  leave no hook to run. A rolling "last frame state" written cheaply (or an
+  atomic frame counter plus periodic flush) would still say what HRW was doing.
+- Worth considering: keep a short ring buffer of recent *user actions* (clicks,
+  stage changes, follows) rather than only final state — a crash's cause is
+  usually the action before last, not the state after.
+- Consider surfacing existing crash files in the UI, so Doug can hand one over
+  without hunting for a path.
+
+**Why it is worth doing before it is needed.** The value shows up only on the
+day something is *not* reproducible from a description — and on that day it
+cannot be added retroactively. Cheap to build, and it converts "HRW crashed when
+I clicked something" from a guessing game into a file.
+
+**Relates to:** `log_view` and `worker::LogEntry` (the infrastructure already
+exists; this persists it), the Context Bar's `PointedAt` state, and the
+`architecture.md` § Live trace debugging notes on the egui-wgpu device-loss
+failure.
