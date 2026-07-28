@@ -1195,6 +1195,13 @@ impl App {
     /// without updating `pointed_at`, so a stage-tab click replaced the emitted
     /// context while the Context Bar carried on showing the previous node.
     fn emit_focus(&mut self, focus: Focus) {
+        // `Nothing` is not a capture. It is what the Context Bar emits *after*
+        // the point is cleared, which goes through `emit_context`. Guarded
+        // rather than asserted: a UI path must not abort the app to report a
+        // programming error.
+        if matches!(focus, Focus::Nothing) {
+            return;
+        }
         let seq = self.next_seq();
         diagnostics::record_action("point-at", format!("in {}", self.stage.name()));
         // Name what was captured, so the status confirms the *right* thing was
@@ -1210,12 +1217,16 @@ impl App {
                     .and_then(|n| n.to_str())
                     .unwrap_or("?"),
             ),
+            // Excluded by the guard above. `return` rather than a panic keeps
+            // that safe even if a future caller forgets.
+            Focus::Nothing => return,
         };
         let stage_values = self.stages.as_stage_pairs();
         let kind = match &focus {
             Focus::Node { key_path, .. } => PointKind::Node(key_path.clone()),
             Focus::Stage => PointKind::Stage,
             Focus::Specimen => PointKind::Specimen,
+            Focus::Nothing => return,
         };
         let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
         let result = bridge::write(&ask);
@@ -2356,6 +2367,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             // thread on its own rather than withholding context.
             let ask = Ask {
                 seq: self.context_seq,
+                // NOT `Focus::Stage`. See `Focus::Nothing`.
                 request: bridge::AskRequest::Explain,
                 specimen: self.selected.as_deref(),
                 model: self.model.as_deref(),
@@ -2364,7 +2376,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 def_index: &self.def_index,
                 parse_value: self.stages.parse.value.as_ref(),
                 resolve_value: self.stages.resolve.value.as_ref(),
-                focus: Focus::Stage,
+                focus: Focus::Nothing,
                 tracking,
                 view: self.view_context(),
             };
@@ -2437,6 +2449,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         }
 
         let mut clear_thread = false;
+        let mut clear_point = false;
         let mut go_to_class: Option<String> = None;
 
         ui.horizontal(|ui| {
@@ -2460,10 +2473,26 @@ egui::Panel::top("bar").show(ui, |ui| {
         });
 
         if let Some(point) = &self.pointed_at {
+            let request = point.request.as_str();
+            let target = point.target.clone();
             ui.horizontal(|ui| {
                 ui.weak("   Pointing at  ");
-                ui.label(egui::RichText::new(&point.target).monospace());
-                ui.weak(format!("({})", point.request.as_str()));
+                ui.label(egui::RichText::new(&target).monospace());
+                ui.weak(format!("({request})"));
+                // Symmetric with Following. Without it the point could only be
+                // *replaced*, never removed — so "explain only what I am
+                // following" was unaskable, and the sole escape was reloading
+                // the specimen, which recompiles and discards everything.
+                if ui
+                    .small_button("\u{00d7}")
+                    .on_hover_text(
+                        "Stop pointing at this \u{2014} leaves only what you are \
+                         following in the context Claude has",
+                    )
+                    .clicked()
+                {
+                    clear_point = true;
+                }
             });
         }
 
@@ -2541,6 +2570,19 @@ egui::Panel::top("bar").show(ui, |ui| {
         });
         ui.separator();
 
+        if clear_point {
+            self.pointed_at = None;
+            // A stale failure would otherwise keep warning about an emission
+            // for a point that no longer exists.
+            self.point_error = None;
+            // Clearing is a context change like any other, so it advances the
+            // shared counter and re-emits. Emitting matters more here than
+            // anywhere: the file still holds the old node until it is rewritten,
+            // and a bar showing no point over a file holding one is exactly the
+            // disagreement this design exists to prevent.
+            self.context_seq = self.next_seq();
+            self.emit_context();
+        }
         if clear_thread {
             self.tracked_identifier = None;
             self.track_seq = self.next_seq();
@@ -4463,6 +4505,62 @@ mod tests {
 
     /// Tracking is a toggle from every view, and derivative mentions resolve to
     /// the base variable before being stored.
+    /// The point must be clearable, so "explain only what I am following" is
+    /// askable.
+    ///
+    /// Found by Doug in testing: the Following row had a clear button and the
+    /// Pointing at row did not, so a point could only ever be *replaced*. The
+    /// sole escape was reloading the specimen, which recompiles and discards
+    /// everything.
+    ///
+    /// The emitted `kind` is the load-bearing half. Clearing must NOT fall back
+    /// to `Focus::Stage`: "pointing at the Typecheck stage as a whole" is a
+    /// claim the user makes by clicking a tab, and attributing it to someone who
+    /// pointed at nothing is the confident lie this design exists to prevent.
+    #[test]
+    fn clearing_the_point_emits_nothing_not_the_current_stage() {
+        let empty = BTreeMap::new();
+        let stages: [(&str, Option<&Value>); 0] = [];
+        let ask = Ask {
+            seq: 3,
+            request: bridge::AskRequest::Explain,
+            specimen: None,
+            model: Some("MotorWithBrake"),
+            // A stage is still reported — it is where the user is looking —
+            // but it must not become the subject.
+            stage: Some(StageKind::Typecheck),
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Nothing,
+            tracking: Some(bridge::Tracking {
+                seq: 4,
+                name: "emf.w",
+                declared_line: None,
+                declaring_class: None,
+                stage_values: &stages,
+            }),
+            view: bridge::View {
+                ui_mode: "Specimen",
+                stage_view: None,
+                specimen_detail: None,
+                viewing_log: false,
+                animation: None,
+            },
+        };
+        let doc = bridge::build_for_test(&ask);
+
+        assert_eq!(doc["kind"], serde_json::json!("none"), "absence must be stated, not implied");
+        assert!(doc.get("node").is_none(), "there is no node to describe");
+        assert!(doc.get("cross_stage").is_none());
+        assert_eq!(doc["tracking"]["identifier"], serde_json::json!("emf.w"));
+        assert!(
+            doc["instructions"].as_str().is_some_and(|i| i.contains("kind: \"none\"")),
+            "the file must explain what `none` means to whoever reads it",
+        );
+    }
+
     #[test]
     fn set_tracked_identifier_toggles_and_strips_der() {
         let (mut app, _tx) = App::test_with_sender();

@@ -152,9 +152,14 @@ for `debug-where-set` it wants ONE breakpoint, where that value is set.\n\
   • FOLLOWING — the `tracking` section. One identifier, everywhere it appears \
 across every stage. For `explain` this is the lens; for `debug-where-set` it \
 wants SEVERAL breakpoints along the identifier's trajectory.\n\n\
-Either may be absent. When both are present and the request is ambiguous, \
-compare `seq` with `tracking.seq`: whichever is higher was acted on last and \
-is almost certainly the subject.\n\n\
+Either may be absent, and absence is stated rather than implied. \
+`kind: \"none\"` means the user DELIBERATELY CLEARED the point, so the \
+`tracking` section is the whole subject — do not fall back to describing the \
+current stage, which they did not choose. A missing `tracking` section \
+likewise means nothing is being followed.\n\n\
+When both are present and the request is ambiguous, compare `seq` with \
+`tracking.seq`: whichever is higher was acted on last and is almost certainly \
+the subject.\n\n\
 Three sections exist so you do not have to reconstruct by hand what HRW \
 already knew:\n\
   • `view` — what was ON SCREEN. A point made in a tree and one made paused \
@@ -270,6 +275,21 @@ pub enum Focus<'a> {
     /// Distinct from the `model` field of `Ask`, which names the compiled class
     /// (a `.mo` file can contain multiple classes).
     Specimen,
+    /// **Nothing is pointed at.** The user cleared the point, leaving only what
+    /// they are following.
+    ///
+    /// A distinct variant rather than reusing `Stage`, and rather than
+    /// `Ask { focus: Option<Focus> }`, for one reason each:
+    ///
+    /// - Not `Stage`, because "pointing at the Typecheck stage as a whole" is a
+    ///   *claim the user made* by clicking a tab. Emitting it for someone who
+    ///   pointed at nothing would attribute a subject they never chose — the
+    ///   confident lie this design exists to prevent.
+    /// - Not `Option`, because absence must be **stated, not implied**. An
+    ///   omitted field reads as "unknown"; `kind: "none"` reads as "deliberately
+    ///   empty — the thread is the whole subject". Same reasoning as
+    ///   `mentions: 0` in the tracking section.
+    Nothing,
 }
 
 /// What the user wants Claude to do with the captured focus.
@@ -810,11 +830,22 @@ pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
 //   "cross_stage": { ... }    // only for kind=node
 //   "tracking": { ... }       // only when following an identifier
 // }
+/// Build the focus document without writing it, for tests outside this module.
+///
+/// `app.rs` owns the Context Bar and therefore owns "what happens when the point
+/// is cleared", so that behaviour is tested there — but the assertion worth
+/// making is about the *emitted document*, not the app field. This exposes the
+/// document without the file I/O.
+pub fn build_for_test(ask: &Ask) -> Value {
+    build(ask)
+}
+
 fn build(ask: &Ask) -> Value {
     let kind = match ask.focus {
         Focus::Node { .. } => "node",
         Focus::Stage => "stage",
         Focus::Specimen => "specimen",
+        Focus::Nothing => "none",
     };
     let stage_str = ask.stage.map_or("(navigated definition)", StageKind::name);
     let mut doc = json!({

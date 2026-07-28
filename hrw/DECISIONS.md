@@ -1058,3 +1058,22 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   no-AI tier, and burying a real answer under directions for asking one is a bad trade. The variable
   grid's hover also still read "track" after the rename; routing it through the shared helper fixes
   that and prevents the next drift.
+- **2026-07-28 — The point is clearable, and clearing it emits `kind: "none"` rather than the current
+  stage.** Doug, testing: *"I am currently pointing at something. How do I clear that so that I am
+  pointing at nothing? I'd like to ask for an explanation of only what I'm following."* He could
+  not. The Context Bar's Following row had a `×`; the Pointing at row had none, so a point could only
+  ever be **replaced**, never removed — `pointed_at = None` happened in exactly one place, `open()`,
+  meaning the only escape was reloading the specimen, which recompiles and discards everything
+  including what he was following. A plain asymmetry, invisible from the code and caught in a minute
+  of use.
+  The emitted half is the load-bearing one. The no-point path already existed (following with
+  nothing pointed at is normal) but emitted `Focus::Stage` — which claims *"pointing at the Typecheck
+  stage as a whole"*, a claim the user makes by clicking a tab and **not** one they made by clearing.
+  Attributing it would be the confident lie the whole design exists to prevent, so `Focus::Nothing`
+  was added, emitting `kind: "none"`. Deliberately **not** `Ask { focus: Option<Focus> }`: absence
+  must be *stated, not implied* — an omitted field reads as "unknown", `kind: "none"` reads as
+  "deliberately empty, the thread is the whole subject". Same reasoning as `mentions: 0`. The
+  `instructions` string says so explicitly, including *"do not fall back to describing the current
+  stage"*, since a reader who guesses would guess wrong in the one case the user was most explicit
+  about. `emit_focus` guards against `Nothing` by returning rather than panicking — a UI path must
+  not abort the app to report a programming error.
