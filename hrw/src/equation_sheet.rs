@@ -95,7 +95,7 @@ pub struct SourceLine {
 }
 
 /// The complete equation sheet, ready to render.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EquationSheet {
     /// Equations grouped by category, in display order.
     pub groups: Vec<(EquationCategory, Vec<FormattedEquation>)>,

@@ -90,3 +90,14 @@ UI work, below.
 
 - [ ] **Bridge test filesystem races under parallel execution.** *(deferred — requires parameterizing bridge dir; mitigated by `--test-threads=1`)*
   *File:* `bridge.rs` — test module.
+
+## Interaction
+
+- [ ] **`collect_tracked_ancestors` short-circuits and leaves sibling paths closed.**
+  It uses `map.iter().any(...)` / `arr.iter().any(...)`, so the walk stops at the
+  first child whose subtree contains the tracked identifier. Later siblings are
+  never visited, their ancestors are never recorded, and the tree opens the path
+  to only the *first* mention rather than all of them. Fix is to fold instead of
+  `any`, so every child is visited — `collect_trackable_ancestors`, added
+  2026-07-27 for "Reveal identifiers", already does this and is the model.
+  *File:* `tree.rs`.

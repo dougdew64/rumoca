@@ -72,6 +72,32 @@ pub struct TreeActions {
     pub track: Option<String>,
 }
 
+/// What the tree knows, and how it should present itself.
+///
+/// Bundled for the same reason as [`TreeActions`] — these would otherwise be
+/// three more positional arguments on an already-long signature.
+#[derive(Default, Clone, Copy)]
+pub struct TreeOptions<'a> {
+    /// The identifier being tracked, highlighted wherever it is mentioned.
+    pub tracked: Option<&'a str>,
+    /// Every variable name in the compiled model.
+    ///
+    /// **The ground truth for what is trackable.** The first attempt decided
+    /// syntactically — any string shaped like a dotted identifier — which marked
+    /// `causality: "None"`, `op: "Add"`, and `quantity: "Angle"` as trackable
+    /// and offered to track them. Roughly half the marks were meaningless, and
+    /// when everything is marked nothing is: that over-marking *was* the
+    /// discoverability problem. A name is trackable when the model actually has
+    /// a variable by that name, and nothing else will do.
+    ///
+    /// `None` (no successful compile yet) means nothing is offered — a wrong
+    /// offer is worse than no offer.
+    pub known_variables: Option<&'a HashSet<String>>,
+    /// Expand every path that leads to a trackable name, so they can be found
+    /// without hunting through collapsed nodes.
+    pub expand_trackable: bool,
+}
+
 /// Render a `serde_json::Value` as a collapsible tree widget.
 ///
 /// This is the top-level entry point. It creates an empty key-path and begins
@@ -96,15 +122,68 @@ pub fn tree_ui(
     actions: &mut TreeActions,
     def_index: &BTreeMap<u64, DefInfo>,
     field_help: &HashMap<String, String>,
-    tracked: Option<&str>,
+    opts: TreeOptions<'_>,
 ) {
     let mut path: Vec<Seg> = Vec::new();
-    let expand = tracked.map(|t| {
-        let mut set = HashSet::new();
-        collect_tracked_ancestors(value, t, &mut set);
-        set
-    });
-    node_ui(ui, 0, root_label, value, prev, &mut path, actions, def_index, field_help, tracked, expand.as_ref());
+    let mut expansion = Expansion::default();
+    if let Some(t) = opts.tracked {
+        collect_tracked_ancestors(value, t, &mut expansion.default_open);
+    }
+    if opts.expand_trackable && opts.known_variables.is_some() {
+        collect_trackable_ancestors(value, &opts, &mut expansion.force_open);
+    }
+    node_ui(ui, 0, root_label, value, prev, &mut path, actions, def_index, field_help, opts, &expansion);
+}
+
+/// Which nodes to open, and how firmly.
+///
+/// The distinction is not cosmetic. `CollapsingHeader::default_open` applies
+/// only the **first** time a header is shown; once egui has stored that
+/// header's state — frame one — it is ignored. So a set computed later, such as
+/// when the user ticks "Reveal identifiers", cannot move anything through
+/// `default_open`. Forcing with `open(Some(true))` works, but takes the header
+/// out of the user's hands for as long as it applies.
+///
+/// So: the reveal toggle *forces*, because it is an explicit mode the user
+/// turns off to get control back. Tracking only *suggests*, because it persists
+/// and you must still be able to collapse things while it is on.
+#[derive(Default)]
+struct Expansion {
+    /// Opened if the header has no remembered state — the path to a tracked
+    /// identifier.
+    default_open: HashSet<*const Value>,
+    /// Opened regardless of remembered state — "Reveal identifiers".
+    force_open: HashSet<*const Value>,
+}
+
+/// Mark every node whose subtree contains a trackable name, so those paths can
+/// be opened.
+///
+/// Mirrors [`collect_tracked_ancestors`], but keyed on "is a variable of the
+/// compiled model" rather than on one particular identifier.
+fn collect_trackable_ancestors(
+    value: &Value,
+    opts: &TreeOptions<'_>,
+    ancestors: &mut HashSet<*const Value>,
+) -> bool {
+    let dominated = match value {
+        // `any` would short-circuit and leave later siblings' paths closed, so
+        // fold to visit every child.
+        Value::Object(map) => map.iter().fold(false, |found, (k, v)| {
+            let here = trackable_name(k, v, opts).is_some()
+                || collect_trackable_ancestors(v, opts, ancestors);
+            found || here
+        }),
+        Value::Array(arr) => arr.iter().fold(false, |found, v| {
+            let here = collect_trackable_ancestors(v, opts, ancestors);
+            found || here
+        }),
+        _ => false,
+    };
+    if dominated {
+        ancestors.insert(value as *const Value);
+    }
+    dominated
 }
 
 // Render one node of the JSON tree recursively.
@@ -147,22 +226,25 @@ fn node_ui(
     actions: &mut TreeActions,
     def_index: &BTreeMap<u64, DefInfo>,
     field_help: &HashMap<String, String>,
-    tracked: Option<&str>,
-    expand: Option<&HashSet<*const Value>>,
+    opts: TreeOptions<'_>,
+    expansion: &Expansion,
 ) {
-    let should_expand = expand.is_some_and(|set| set.contains(&(value as *const Value)));
+    let force_open = expansion.force_open.contains(&(value as *const Value));
+    let should_expand = force_open || expansion.default_open.contains(&(value as *const Value));
     ui.push_id(salt, |ui| match value {
         Value::Object(map) => {
             let hint = format!("{{{}}}", map.len());
-            let is_tracked = tracked.is_some_and(|t| key == t);
+            let is_tracked = opts.tracked.is_some_and(|t| key == t);
             let resp = egui::CollapsingHeader::new(
                 if is_tracked { header_tracked(key, &hint) } else { header(key, &hint) }
             )
                 .default_open(should_expand)
+                // `open` overrides remembered state; `default_open` cannot.
+                .open(force_open.then_some(true))
                 .show(ui, |ui| {
                     for (i, (k, v)) in map.iter().enumerate() {
                         path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, actions, def_index, field_help, tracked, expand);
+                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, actions, def_index, field_help, opts, expansion);
                         path.pop();
                     }
                 });
@@ -178,10 +260,11 @@ fn node_ui(
             let hint = format!("[{}]", arr.len());
             let resp = egui::CollapsingHeader::new(header(key, &hint))
                 .default_open(should_expand)
+                .open(force_open.then_some(true))
                 .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, actions, def_index, field_help, tracked, expand);
+                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, actions, def_index, field_help, opts, expansion);
                         path.pop();
                     }
                 });
@@ -192,7 +275,7 @@ fn node_ui(
         }
         scalar => {
             let changed = prev.is_some_and(|p| p != scalar);
-            let is_tracked = tracked.is_some_and(|t| {
+            let is_tracked = opts.tracked.is_some_and(|t| {
                 match scalar {
                     // Prose fields are excluded: a tracked name occurring inside
                     // human-written text is a coincidence, not a mention.
@@ -202,13 +285,25 @@ fn node_ui(
                     _ => false,
                 }
             });
-            let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed, is_tracked);
+            let (resp, copy_text) = leaf_ui(ui, key, scalar, def_index, changed, is_tracked, &opts);
             if resp.clicked() {
                 actions.capture = Some(path.to_vec());
             }
-            row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index), trackable_name(key, scalar));
-            if let Some(doc) = field_help.get(key) {
-                resp.clone().on_hover_text(doc);
+            let trackable = trackable_name(key, scalar, &opts);
+            row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index), trackable.clone());
+            // Explain the underline. Appended to the field's own help rather
+            // than replacing it, so discoverability does not cost the
+            // documentation that is already there.
+            let hint = match (field_help.get(key), &trackable) {
+                (Some(doc), Some(name)) => {
+                    Some(format!("{doc}\n\nRight-click to track {name}."))
+                }
+                (Some(doc), None) => Some(doc.clone()),
+                (None, Some(name)) => Some(format!("Right-click to track {name}.")),
+                (None, None) => None,
+            };
+            if let Some(hint) = hint {
+                resp.clone().on_hover_text(hint);
             }
         }
     });
@@ -307,21 +402,14 @@ fn row_menu(
 /// wrapped in `der(…)` — and nothing else. Prose fields are excluded for the
 /// same reason they are excluded from tracked highlighting (see
 /// [`is_prose_field`]).
-fn trackable_name(key: &str, value: &Value) -> Option<String> {
+fn trackable_name(key: &str, value: &Value, opts: &TreeOptions<'_>) -> Option<String> {
     if is_prose_field(key) {
         return None;
     }
     let Value::String(s) = value else { return None };
+    let known = opts.known_variables?;
     let bare = s.strip_prefix("der(").and_then(|r| r.strip_suffix(')')).unwrap_or(s);
-    if bare.is_empty() {
-        return None;
-    }
-    let is_name = bare.split('.').all(|part| {
-        !part.is_empty()
-            && part.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
-            && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
-    });
-    is_name.then(|| s.clone())
+    (known.contains(bare) || known.contains(s.as_str())).then(|| s.clone())
 }
 
 // Render a single leaf (scalar) row: "key: value", with per-type coloring.
@@ -352,6 +440,7 @@ fn leaf_ui(
     def_index: &BTreeMap<u64, DefInfo>,
     changed: bool,
     is_tracked: bool,
+    opts: &TreeOptions<'_>,
 ) -> (egui::Response, String) {
     // Reserve a paint slot up front so the hover highlight draws *behind* the
     // text rather than over it (shapes added later paint on top).
@@ -385,7 +474,18 @@ fn leaf_ui(
     let fmt = |c| egui::text::TextFormat { font_id: mono.clone(), color: c, ..Default::default() };
     let mut job = egui::text::LayoutJob::default();
     job.append(&format!("{key}: "), 0.0, fmt(key_color));
-    job.append(&value, 0.0, fmt(color));
+
+    // Underline values that name a variable, so the "Track" action in the row
+    // menu is discoverable without hunting for it. Underline rather than colour
+    // because colour in this row is fully committed already — value type, green
+    // for changed, gold fill for tracked — whereas underline is free, and it
+    // already means "clickable identifier" in the specimen source view. Same
+    // vocabulary, no new one to learn.
+    let mut value_fmt = fmt(color);
+    if trackable_name(key, scalar, opts).is_some() {
+        value_fmt.underline = egui::Stroke::new(1.0, color.gamma_multiply(0.6));
+    }
+    job.append(&value, 0.0, value_fmt);
     if let Some(label) = &resolved {
         job.append(&format!("  → {label}"), 0.0, fmt(weak_color));
     }
@@ -668,27 +768,46 @@ mod tests {
     /// The Track action is offered on names, not on every string the tree
     /// renders — a Track item on a description or a file path would track
     /// nothing and be pure noise.
+    /// Trackability is decided by the model, not by the shape of the string.
+    ///
+    /// The first implementation accepted anything that *looked* like a dotted
+    /// identifier, which marked `causality: "None"`, `op: "Add"`, and
+    /// `quantity: "Angle"` as trackable — roughly half the marks in a real IR
+    /// were meaningless, and when everything is marked nothing is.
     #[test]
-    fn trackable_name_accepts_only_variable_names() {
+    fn trackable_name_requires_a_real_variable() {
+        let known: HashSet<String> = ["h", "gear.flange_a.tau"]
+            .iter().map(|s| (*s).to_owned()).collect();
+        let opts = TreeOptions { known_variables: Some(&known), ..Default::default() };
         let s = |v: &str| json!(v);
-        assert_eq!(trackable_name("name", &s("h")).as_deref(), Some("h"));
+
+        assert_eq!(trackable_name("name", &s("h"), &opts).as_deref(), Some("h"));
         assert_eq!(
-            trackable_name("name", &s("gear.flange_a.tau")).as_deref(),
+            trackable_name("name", &s("gear.flange_a.tau"), &opts).as_deref(),
             Some("gear.flange_a.tau")
         );
-        // Derivatives are names too — `strip_der` reduces them when tracking.
-        assert_eq!(trackable_name("name", &s("der(h)")).as_deref(), Some("der(h)"));
+        // A derivative of a known variable is trackable; `strip_der` reduces it.
+        assert_eq!(trackable_name("name", &s("der(h)"), &opts).as_deref(), Some("der(h)"));
 
-        // Prose is excluded for the same reason it is excluded from matching.
-        assert!(trackable_name("description", &s("height")).is_none());
-        // Not names.
-        assert!(trackable_name("text", &s("der(h) - v")).is_none());
-        assert!(trackable_name("text", &s("height of h")).is_none());
-        assert!(trackable_name("text", &s("")).is_none());
-        assert!(trackable_name("text", &s("9lives")).is_none());
-        assert!(trackable_name("text", &s("a..b")).is_none());
+        // Identifier-shaped, but not variables of this model — these are the
+        // ones the syntactic version wrongly offered.
+        assert!(trackable_name("causality", &s("None"), &opts).is_none());
+        assert!(trackable_name("op", &s("Add"), &opts).is_none());
+        assert!(trackable_name("quantity", &s("Angle"), &opts).is_none());
+        assert!(trackable_name("kind", &s("scalar"), &opts).is_none());
+
+        // Prose is excluded even when it happens to name a variable.
+        assert!(trackable_name("description", &s("h"), &opts).is_none());
         // Non-strings offer nothing to track.
-        assert!(trackable_name("count", &json!(42)).is_none());
+        assert!(trackable_name("count", &json!(42), &opts).is_none());
+    }
+
+    /// With no compiled model there is no ground truth, so nothing is offered —
+    /// a wrong offer is worse than no offer.
+    #[test]
+    fn trackable_name_offers_nothing_without_a_model() {
+        let opts = TreeOptions::default();
+        assert!(trackable_name("name", &json!("h"), &opts).is_none());
     }
 
     /// The exclusion is by field, not by content — code-bearing strings must

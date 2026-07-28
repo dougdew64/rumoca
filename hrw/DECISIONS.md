@@ -815,3 +815,21 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   are the signal. The source-lines column keeps its highlight because it is *unfiltered*, so there
   its cue genuinely picks out a subset. Sharpens the colour rule: background carries relationship,
   **and a relationship cue is only worth a channel when it varies across what is on screen**.
+- **2026-07-27 — Trackability by ground truth; "Reveal identifiers"; declaring-class lookup.** Three
+  changes to make "where did this come from?" work from any stage. (1) `trackable_name` first
+  decided *syntactically* — any string shaped like a dotted identifier — which in a real Flatten IR
+  marked `causality: "None"`, `op: "Add"`, and `quantity: "Angle"` as trackable and offered to track
+  them. Roughly half the marks were meaningless, and when everything is marked nothing is: that
+  over-marking *was* the discoverability problem Doug reported. Trackability now asks the model —
+  the set of variable names from `EquationSheet.variables`, which includes library-origin variables
+  that `IdentifierIndex` omits. No compiled model means nothing is offered; a wrong offer is worse
+  than none. (2) A "Reveal identifiers" checkbox expands every path leading to a variable. This
+  needed `CollapsingHeader::open(Some(true))`, not `default_open`, which applies only the first time
+  a header is shown and is ignored once egui has stored its state — so the checkbox initially did
+  nothing. The two reasons to expand are kept distinct in `Expansion`: the reveal toggle *forces*
+  (an explicit mode, untick to regain control), tracking only *suggests* (it persists, so you must
+  still be able to collapse). (3) `build_declaring_classes` resolves a flat name's first path
+  segment against the model's components to the class that declares it, so `src.V` reports
+  "in `Modelica.Electrical.Analog.Sources.ConstantVoltage`" with a Go-to-definition button reusing
+  the existing nav stack, instead of the previous dead end. Only the first segment resolves —
+  deeper names give the containing component's type — so the wording is "in", never "declared in".

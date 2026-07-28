@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 
 use eframe::egui;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 // The bridge module handles communication with Claude Code (the AI assistant
 // running in a terminal alongside this app): we write JSON "focus" files that
@@ -55,7 +55,7 @@ use crate::tree;
 // commands and receive `FromWorker` results. `Stage` holds one pipeline stage's
 // output (its serde_json::Value IR + optional error note).
 use crate::worker::{
-    discontinuity_segments, DefInfo, FromWorker, LogEntry, SimData, Stage, StageBundle, StageKind,
+    discontinuity_segments, DefInfo, DefKind, FromWorker, LogEntry, SimData, Stage, StageBundle, StageKind,
     ToWorker, Worker,
 };
 
@@ -323,6 +323,15 @@ pub struct App {
     cached_narratives: HashMap<PathBuf, Option<String>>,
     // The selected specimen's Modelica source text, loaded on demand.
     cached_source: Option<String>,
+    // Every variable name in the compiled model — ground truth for which tree
+    // leaves name something trackable. Rebuilt per compile alongside the
+    // equation sheet, which is where the full classification lives.
+    known_variables: Option<HashSet<String>>,
+    // Variable name -> the class that declares it, when that is not the
+    // specimen. See `build_declaring_classes`.
+    declaring_classes: HashMap<String, String>,
+    // "Reveal identifiers" — expand every tree path leading to a variable.
+    expand_trackable: bool,
     // Which tracked identifier the source view has already scrolled to.
     //
     // Reverse tracking (idea #37) scrolls the source to a variable's
@@ -648,6 +657,9 @@ impl App {
             cached_narratives: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
+            known_variables: None,
+            declaring_classes: HashMap::new(),
+            expand_trackable: false,
             scrolled_source_for: None,
             pending_stage: None,
             pending_live_debug: None,
@@ -744,6 +756,8 @@ impl App {
         self.sim_running = false;
         self.def_index = BTreeMap::new();
         self.cached_equation_sheet = None;
+        self.known_variables = None;
+        self.declaring_classes.clear();
         self.identifier_index = None;
         self.tracked_identifier = None;
         self.cached_source = None;
@@ -839,6 +853,17 @@ impl App {
                     self.model = model;
                     self.stages = stages;
                     self.def_index = def_index;
+                    // Ground truth for what the tree may offer to track. Built
+                    // from the equation sheet's classification, which lists
+                    // every variable in the compiled model — including
+                    // library-origin ones, which the identifier index omits
+                    // because they have no specimen source line.
+                    self.known_variables = equation_sheet.as_ref().map(|s| {
+                        s.variables.iter().map(|v| v.name.clone()).collect()
+                    });
+                    self.declaring_classes = Self::build_declaring_classes(
+                        &self.stages, &self.def_index, equation_sheet.as_ref(),
+                    );
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
                     self.index_reduction_frames = index_reduction_frames;
@@ -1485,6 +1510,53 @@ impl App {
                 self.specimen_detail = SpecimenDetail::Source;
             }
         }
+    }
+
+    /// For each variable, the class that declares it — when that is not the
+    /// specimen.
+    ///
+    /// A flattened name like `src.V` has no declaration in the specimen source:
+    /// `src` is a component of the model, and `V` is a parameter of *its* type,
+    /// `Modelica.Electrical.Analog.Sources.ConstantVoltage`. Without this, "where
+    /// did this come from?" had no answer for such names — most of a real model,
+    /// since most components are library instances.
+    ///
+    /// ## What this resolves, and what it does not
+    ///
+    /// Only the **first** path segment is resolved, against the model's own
+    /// components in the Resolve IR. For `src.V` that is exact: `V` really is
+    /// declared in `src`'s type. For a deeper name like `gear.flange_a.tau` it
+    /// yields `gear`'s type, which *contains* the declaration rather than being
+    /// it — resolving further would mean walking into library class IRs that are
+    /// only loaded on demand. The UI therefore says "component `src` is a …"
+    /// rather than "`V` is declared in …", which is true in both cases.
+    fn build_declaring_classes(
+        stages: &StageBundle,
+        def_index: &BTreeMap<u64, DefInfo>,
+        sheet: Option<&equation_sheet::EquationSheet>,
+    ) -> HashMap<String, String> {
+        let mut out = HashMap::new();
+        let (Some(resolve), Some(sheet)) = (stages.get(StageKind::Resolve).value.as_ref(), sheet)
+        else {
+            return out;
+        };
+        let Some(components) = resolve.get("components").and_then(|c| c.as_object()) else {
+            return out;
+        };
+        for var in &sheet.variables {
+            let Some((head, _)) = var.name.split_once('.') else { continue };
+            let class = components
+                .get(head)
+                .and_then(|c| c.get("type_def_id"))
+                .and_then(serde_json::Value::as_u64)
+                .and_then(|id| def_index.get(&id))
+                .filter(|info| matches!(info.kind, DefKind::Class))
+                .map(|info| info.name.clone());
+            if let Some(class) = class {
+                out.insert(var.name.clone(), class);
+            }
+        }
+        out
     }
 
     /// Toggle the tracked identifier — the single entry point for tracking,
@@ -2366,6 +2438,9 @@ impl eframe::App for App {
         // `emit_node_focus` inside it. Instead, the closure sets these flags
         // and the actual method calls happen after the closure, below.
         let mut tree_actions = tree::TreeActions::default();
+        // Copied out because the stage-tree block holds an immutable borrow of
+        // self (via `current_stage`); written back with the other deferred actions.
+        let mut expand_trackable = self.expand_trackable;
         let node_ask: Option<Vec<Seg>> = None;       // left-click capture (explain)
         let debug_ask: Option<Vec<Seg>> = None;      // right-click debugger capture
         let mut canvas_capture: Option<Vec<Seg>> = None; // spy-plot block click
@@ -2628,6 +2703,7 @@ impl eframe::App for App {
                 // always knows what's tracked and can clear it.
                 if let Some(name) = self.tracked_identifier.clone() {
                     let mut clear = false;
+                    let mut go_to_class: Option<String> = None;
                     // Where the declaration is — or, just as informative, that
                     // there isn't one. `IdentifierIndex` only holds variables
                     // whose span belongs to the specimen, so a miss means the
@@ -2647,17 +2723,35 @@ impl eframe::App for App {
                             Some(line) => {
                                 ui.weak(format!("\u{2014} declared at line {line}"));
                             }
-                            None => {
-                                ui.weak("\u{2014} not declared in this specimen")
-                                    .on_hover_text(
-                                        "This name is not declared in the specimen \
-                                         source, so there is no line to jump to. It \
-                                         comes from a library, or a compiler phase \
-                                         created it \u{2014} an index-reduction dummy \
-                                         derivative or an alias, for example. Capture \
-                                         it and ask Claude to trace where it came from.",
-                                    );
-                            }
+                            // Not in the specimen — but the component it lives in
+                            // usually names a library class, which is the real
+                            // answer to "where did this come from?".
+                            None => match self.declaring_classes.get(&name) {
+                                Some(class) => {
+                                    ui.weak(format!("\u{2014} in {class}"));
+                                    if ui
+                                        .small_button("\u{21aa} Go to definition")
+                                        .on_hover_text(format!(
+                                            "Open {class} \u{2014} the type of the \
+                                             component this variable belongs to. Use \
+                                             Back to return here.",
+                                        ))
+                                        .clicked()
+                                    {
+                                        go_to_class = Some(class.clone());
+                                    }
+                                }
+                                None => {
+                                    ui.weak("\u{2014} not declared in this specimen")
+                                        .on_hover_text(
+                                            "Neither the specimen nor a component type \
+                                             declares this name, so a compiler phase \
+                                             created it \u{2014} an index-reduction dummy \
+                                             derivative or an alias, for example. Capture \
+                                             it and ask Claude to trace where it came from.",
+                                        );
+                                }
+                            },
                         }
                         if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
                             clear = true;
@@ -2665,6 +2759,9 @@ impl eframe::App for App {
                     });
                     if clear {
                         self.tracked_identifier = None;
+                    }
+                    if let Some(class) = go_to_class {
+                        self.navigate_to(class);
                     }
                     ui.separator();
                 }
@@ -3077,8 +3174,29 @@ impl eframe::App for App {
                             Some(value) => {
                                 let label = self.model.as_deref().unwrap_or("model");
                                 let prev = self.previous_stage_value();
+                                // Finding trackable names in a large IR means
+                                // opening nodes at random. This opens exactly
+                                // the paths that lead to one.
+                                ui.horizontal(|ui| {
+                                    ui.checkbox(
+                                        &mut expand_trackable,
+                                        "Reveal identifiers",
+                                    ).on_hover_text(
+                                        "Expand every path leading to a variable of \
+                                         this model. Underlined values can be \
+                                         right-clicked to track.",
+                                    );
+                                    if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
+                                        ui.weak(format!("({n} in this model)"));
+                                    }
+                                });
+                                let opts = tree::TreeOptions {
+                                    tracked: self.tracked_identifier.as_deref(),
+                                    known_variables: self.known_variables.as_ref(),
+                                    expand_trackable,
+                                };
                                 egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                    tree::tree_ui(ui, label, value, prev, &mut tree_actions, &self.def_index, &self.field_help, self.tracked_identifier.as_deref());
+                                    tree::tree_ui(ui, label, value, prev, &mut tree_actions, &self.def_index, &self.field_help, opts);
                                 });
                             }
                             None if stage.note.is_none() => {
@@ -3117,7 +3235,12 @@ impl eframe::App for App {
 
                 let entry = self.nav.last().unwrap();
                 egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut tree_actions, &entry.def_index, &self.field_help, self.tracked_identifier.as_deref());
+                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut tree_actions, &entry.def_index, &self.field_help,
+                        tree::TreeOptions {
+                            tracked: self.tracked_identifier.as_deref(),
+                            known_variables: self.known_variables.as_ref(),
+                            expand_trackable,
+                        });
                 });
             }
         });
@@ -3133,6 +3256,7 @@ impl eframe::App for App {
         } else if go_back {
             self.nav.pop();
         }
+        self.expand_trackable = expand_trackable;
         // Fold the tree's actions in alongside the ones other views produce.
         let nav_to = nav_to.or(tree_actions.nav_to);
         let debug_ask = debug_ask.or(tree_actions.debug);
@@ -3498,6 +3622,9 @@ impl App {
             cached_narratives: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
+            known_variables: None,
+            declaring_classes: HashMap::new(),
+            expand_trackable: false,
             scrolled_source_for: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
@@ -3565,6 +3692,60 @@ mod tests {
         );
 
         let _ = std::fs::remove_file(ack);
+    }
+
+    /// `src.V` is not declared in the specimen — it is a parameter of `src`'s
+    /// type. Resolving the component gives the class that declares it, which
+    /// turns "not declared in this specimen" into a navigable answer.
+    #[test]
+    fn declaring_classes_resolves_a_component_type() {
+        use crate::equation_sheet::{ClassifiedVariable, EquationSheet};
+
+        let mut stages = StageBundle::default();
+        stages.resolve = Stage {
+            value: Some(serde_json::json!({
+                "components": {
+                    "src": { "type_def_id": 6005 },
+                    "plain": { "type_def_id": 4047 },
+                }
+            })),
+            note: None,
+            note_is_error: false,
+        };
+        let mut def_index = BTreeMap::new();
+        def_index.insert(6005u64, DefInfo {
+            name: "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
+            kind: DefKind::Class,
+            class_type: Some("model".to_owned()),
+            file_name: None,
+            line: None,
+        });
+        // A non-class definition must not be offered as a declaring class.
+        def_index.insert(4047u64, DefInfo {
+            name: "Modelica.Units.SI.Voltage".to_owned(),
+            kind: DefKind::Definition,
+            class_type: None,
+            file_name: None,
+            line: None,
+        });
+
+        let var = |name: &str| ClassifiedVariable {
+            name: name.to_owned(), kind: "parameter",
+            unit: None, description: None, start: None,
+        };
+        let sheet = EquationSheet {
+            variables: vec![var("src.V"), var("plain.x"), var("h"), var("nosuch.y")],
+            ..Default::default()
+        };
+
+        let map = App::build_declaring_classes(&stages, &def_index, Some(&sheet));
+        assert_eq!(
+            map.get("src.V").map(String::as_str),
+            Some("Modelica.Electrical.Analog.Sources.ConstantVoltage")
+        );
+        assert!(!map.contains_key("plain.x"), "a non-class DefId is not a declaring class");
+        assert!(!map.contains_key("h"), "an unqualified name has no component to resolve");
+        assert!(!map.contains_key("nosuch.y"), "unknown components resolve to nothing");
     }
 
     /// Downstream views name derivatives as the DAE does; tracking has to key
