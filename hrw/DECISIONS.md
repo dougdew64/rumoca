@@ -957,3 +957,27 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   *compiler* is the text that carries an em dash, and it only reaches the lexer because Phase 5's
   following searches IR strings. New tests cover bare non-ASCII directly and cover the whole
   click path on real IR (`following_an_identifier_walks_every_stage_without_panicking`).
+- **2026-07-28 — HRW writes a crash and diagnostic log, designed for Claude.** Doug, after the
+  em-dash crash: *"you have done an amazing job of troubleshooting problems. But, that might not
+  always be possible… we have skipped a step in creating HRW."* The gap is not "we lack a log" but
+  **when HRW dies, the evidence dies with it** — it is a windowed app, so a panic's stderr usually
+  goes nowhere, and the crash was diagnosed only because that particular path happened to be
+  re-creatable headlessly. A crash in the paint path or one depending on GPU state would have left
+  nothing. Two design choices are worth recording because both invert the obvious one:
+  (1) **the backtrace is the less useful half.** Location says where the process died; it rarely
+  says why the app was there, and *that* is what costs hours to reconstruct. So the centrepiece is
+  `App::diagnostic_snapshot` — specimen, model, stage tab, detail view, nav stack, the assembled
+  noun, live-trace arming, which animation at which frame, which stage IRs exist. The field list is
+  the 2026-07-28 debugging session's findings turned into code, not a guess.
+  (2) **an action ring buffer, because the cause is usually the action before last.** State alone is
+  a still photograph; the buffer is a reproduction script. Recorded at four choke points, not at
+  every UI site.
+  Two files: `crash-<utc>.json` from the panic hook, and `session.json` rewritten per user action so
+  that deaths running *no* hook (stack overflow, driver `SIGSEGV`, hard kill) still leave something.
+  `Help ▸ Write diagnostic snapshot` covers problems that never kill the app — Doug asked for
+  "crashes *and other problems*". Written for Claude, so nothing is summarised
+  away — same rule as [the emitter principle above]. `build.rs` gained `HRW_GIT_DIRTY`: without it
+  the stamped rev is actively misleading mid-session, naming a commit whose code is not what ran.
+  Date formatting is hand-rolled (Hinnant's `civil_from_days`) rather than taking a date
+  dependency for two format strings. `examples/crash_probe.rs` verifies the panic path, which
+  **cannot** be a unit test — the harness installs its own hook and catches the unwind.

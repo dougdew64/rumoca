@@ -483,6 +483,27 @@ pub enum LogLevel {
     Trace,
 }
 
+impl LogLevel {
+    /// A stable, greppable name for this level.
+    ///
+    /// Used by the crash log (`diagnostics.rs`), which needs a name that will
+    /// not change with the UI's colours or icons. `log_view` renders its own
+    /// display strings from `level_style`; the two are separate on purpose,
+    /// because one is for looking at and one is for searching.
+    pub fn label(self) -> &'static str {
+        match self {
+            LogLevel::Info => "Info",
+            LogLevel::StageStart => "StageStart",
+            LogLevel::StageEnd => "StageEnd",
+            LogLevel::Warn => "Warn",
+            LogLevel::Error => "Error",
+            LogLevel::Stdout => "Stdout",
+            LogLevel::Stderr => "Stderr",
+            LogLevel::Trace => "Trace",
+        }
+    }
+}
+
 /// A result from the worker back to the UI thread.
 ///
 /// Like `ToWorker`, this enum crosses a thread boundary (must be `Send`).

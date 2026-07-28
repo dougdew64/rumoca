@@ -44,6 +44,7 @@ pub mod field_help;
 pub mod identifier_index;
 pub mod incidence_view;
 pub mod matching_anim;
+pub mod diagnostics;
 pub mod log_view;
 pub mod modelica_lex;
 pub mod reduction_anim;

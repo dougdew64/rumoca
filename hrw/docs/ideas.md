@@ -1193,7 +1193,14 @@ uncoloured text and so break that rule:
 
 ---
 
-## 39. Crash and diagnostic log — make HRW troubleshootable without a live session
+## 39. ~~Crash and diagnostic log — make HRW troubleshootable without a live session~~ ✅ DELIVERED
+
+**Delivered 2026-07-28** (`src/diagnostics.rs`, `examples/crash_probe.rs`) — see
+`architecture.md` § 9 *Crash and diagnostic log*. Built essentially as captured:
+panic hook + per-frame app snapshot + action ring buffer + log tail + build
+identity, in `.hrw-bridge/diagnostics/`. The `session.json` half covers deaths
+that run no hook, and `Help ▸ Write diagnostic snapshot` covers problems that do
+not kill the app. The original capture follows.
 
 Captured 2026-07-28 (Doug), after HRW crashed instantly on left-clicking an
 identifier in the specimen source view:

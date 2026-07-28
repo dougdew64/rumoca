@@ -135,6 +135,15 @@ impl MatchingAnimation {
         })
     }
 
+    /// Where playback stands: `(cursor, frame count)`.
+    ///
+    /// Exists for the crash log (`diagnostics.rs`). "Which animation, at which
+    /// frame" is one of the first things worth knowing about a crash in an
+    /// animated view, and both fields are otherwise private.
+    pub fn position(&self) -> (usize, usize) {
+        (self.cursor, self.frames.len())
+    }
+
     /// Whether this animation is in live debug mode.
     pub fn is_live(&self) -> bool {
         self.live_rx.is_some()

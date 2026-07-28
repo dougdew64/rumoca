@@ -17,6 +17,27 @@ fn main() {
     let rev = git_head_short().unwrap_or_else(|| String::from("unknown"));
     println!("cargo:rustc-env=HRW_RUMOCA_VERSION={version}");
     println!("cargo:rustc-env=HRW_RUMOCA_REV={rev}");
+    println!("cargo:rustc-env=HRW_GIT_DIRTY={}", u8::from(working_tree_is_dirty()));
+}
+
+/// Whether the working tree differed from HEAD at build time.
+///
+/// Crash files carry this (see `src/diagnostics.rs`). Without it, `HRW_RUMOCA_REV`
+/// is misleading in exactly the situation crash files matter most: mid-session,
+/// with uncommitted edits, where the rev names code that is *not* what ran.
+///
+/// Best-effort, and may lag by one build — the script reruns on HEAD moves and
+/// lock changes, not on every edit, because rerunning on every source change to
+/// keep one boolean fresh would cost more than the boolean is worth. A stale
+/// `false` is possible; a `true` is always real.
+fn working_tree_is_dirty() -> bool {
+    // `--quiet` makes git exit non-zero when there are differences, so a failed
+    // status is the signal. An error running git at all reads as "not dirty",
+    // consistent with the "unknown" rev fallback.
+    Command::new("git")
+        .args(["diff", "--quiet", "HEAD"])
+        .status()
+        .is_ok_and(|s| !s.success())
 }
 
 /// `rumoca-compile`'s resolved semver version from the workspace-root `Cargo.lock`.

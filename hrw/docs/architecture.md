@@ -1088,6 +1088,80 @@ A two-tier help system:
 - **Specific tier (the bridge):** "Why did THIS particular field get this value?" —
   requires Claude to reason about the specimen, the IR, and the phase code.
 
+### Crash and diagnostic log (`diagnostics.rs`, ~370 lines)
+
+**The problem:** when HRW dies, the evidence dies with it. HRW is a *windowed*
+application — a Rust panic prints to stderr, and launched from the VS Code
+debugger or from Explorer there is frequently no stderr anyone reads. This has
+cost real diagnostic time twice: a panic on clicking an identifier in the
+specimen source view (2026-07-28), and an `exit code 101` from egui-wgpu's
+staging buffer during a long debugger pause. Both were eventually solved, but
+only because each happened to be *re-creatable*. A crash in the paint path, in a
+drag, or one depending on window or GPU state would have left nothing but a
+description of what was clicked.
+
+**Who it is for:** Claude, not the user. These files are not error reports and
+are not tuned for readability or brevity — they exist so a reasoner can diagnose
+a failure it did not witness. Same principle as the bridge's `focus.json`; see
+`DECISIONS.md` (2026-07-28).
+
+**Why the backtrace is the less useful half.** A message and backtrace say
+*where* the process died; they rarely say *why the app was there*. Reconstructing
+that from a sentence describing what the user clicked is the expensive part —
+and every field of it already lives in `App`. `App::diagnostic_snapshot` carries
+the specimen, model, stage tab, detail view, navigation stack, the assembled
+noun (what is pointed at, what is followed, the sequence counters, the last
+emission error), the live-trace arming state, which animation is on screen and
+at which frame, which stage IRs exist, and a few counts. The field list is
+literally the 2026-07-28 debugging session's findings turned into code.
+
+**Two files, because there are two kinds of death:**
+
+| File | Written | Contents |
+|------|---------|----------|
+| `crash-<utc>.json` | from the panic hook | panic message, location, thread, backtrace, snapshot, actions, log tail, build |
+| `session.json` | on every recorded user action | everything above except the panic |
+
+`session.json` exists for the deaths that run **no hook at all** — a stack
+overflow, a driver `SIGSEGV`, a hard kill. It survives them because it was
+already on disk. Rust's `exit code 101` *is* a panic, so the egui-wgpu class of
+failure is covered by the hook.
+
+`Help ▸ Write diagnostic snapshot` produces the same content on demand, for a
+session that is misbehaving without dying. A wrong-looking view needs identical
+evidence to a crash, and writes none of its own.
+
+**The action ring buffer is the part that makes a file actionable.** A crash's
+cause is usually *the action before last*, not the state after. State alone is a
+still photograph; the buffer is a reproduction script — *selected
+MotorWithBrake, switched to Resolve, followed `overSpeed`* can be replayed, and
+a final state cannot. Actions are recorded at four choke points (specimen open,
+stage-tab click, point-at, follow-change) rather than at every UI site, because
+those four are the state changes that reach the compiler and the bridge.
+
+**Design constraints, for anyone editing it:**
+
+- **A panic hook cannot borrow `App`** — it is `'static + Send + Sync` and runs
+  on whichever thread panicked. So `ui()` pushes a snapshot into a global each
+  frame and the hook reads that global. The snapshot is rebuilt every frame,
+  not throttled: its entire value is describing state *at the instant of the
+  crash*, and a stale one misdirects exactly when it matters.
+- **The hook must never panic**, or the process aborts and the file is lost.
+  Every step is fallible-and-ignored: `try_lock` rather than `lock` (a panic
+  while the app holds the lock would otherwise deadlock against itself —
+  `std::sync::Mutex` is not reentrant), poisoned locks are recovered, I/O errors
+  discarded.
+- **The previous hook still runs**, so stderr keeps its normal message.
+- **Log entries are mirrored on arrival**, once per `FromWorker::Log`, never by
+  cloning the log view's `Vec` into a per-frame snapshot.
+- **`examples/crash_probe.rs` verifies the panic path.** It cannot be a unit
+  test: the test harness installs its own panic hook and catches the unwind, so
+  a real process-killing panic is unobservable from inside `cargo test`.
+
+**Build identity** comes from `build.rs`, which already stamped the workspace
+git rev and now also stamps `HRW_GIT_DIRTY`. Without the dirty flag the rev is
+actively misleading mid-session — it names a commit whose code is not what ran.
+
 ### Expression pretty-printer (`expr_format.rs`, ~550 lines)
 
 Renders `rumoca_core::Expression` trees as readable Modelica-like text — e.g.

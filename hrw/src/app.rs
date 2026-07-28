@@ -30,13 +30,14 @@ use std::path::{Path, PathBuf};
 use eframe::egui;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 // The bridge module handles communication with Claude Code (the AI assistant
 // running in a terminal alongside this app): we write JSON "focus" files that
 // Claude reads to understand what the user is looking at.
 use crate::bridge::{self, Ask, Focus, Seg};
 use crate::equation_sheet;
+use crate::diagnostics;
 use crate::identifier_index;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
@@ -124,7 +125,11 @@ enum FlattenView {
 }
 
 /// What the bottom two-thirds of the Specimen mode LHS shows.
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+///
+/// `Debug` so the crash log can name it — the derived variant name is exactly
+/// the right thing to record, and hand-writing a second mapping would let the
+/// two drift.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum SpecimenDetail {
     /// The specimen's Modelica source text.
     #[default]
@@ -626,6 +631,12 @@ impl App {
     ///    to process them — without this, egui would only repaint on user input
     ///    and results could sit unseen in the channel.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        // Before anything else: install the panic hook, so a crash during
+        // startup still writes a file. Everything below this line — font
+        // loading, the worker spawn — can fail, and did once.
+        diagnostics::init();
+        diagnostics::record_action("session", "HRW started");
+
         // Make every bundled font a fallback for BOTH families, so a glyph that
         // lives in only one (e.g. the → and ← arrows are in Hack/monospace but
         // not Ubuntu-Light/proportional) still renders in any label — otherwise
@@ -847,6 +858,9 @@ impl App {
         self.viewing_log = true;
         // Send the compile command to the worker thread. Results will arrive
         // asynchronously via `FromWorker::CompileProgress` and `FromWorker::Compiled`.
+        // Recorded before the state changes, so the ring buffer reads in the
+        // order the user acted. See `diagnostics.rs`.
+        diagnostics::record_action("specimen", path.display().to_string());
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
     }
@@ -893,6 +907,11 @@ impl App {
                     };
                 }
                 FromWorker::Log(entry) => {
+                    // Mirrored into the crash buffer here rather than snapshotted
+                    // per frame: entries arrive one at a time, and cloning the
+                    // whole log 60 times a second to carry it would not be
+                    // affordable. See `diagnostics.rs`.
+                    diagnostics::record_log(entry.level.label(), &entry.message);
                     self.log_entries.push(entry);
                 }
                 FromWorker::CompileProgress { path, stages } => {
@@ -1142,6 +1161,7 @@ impl App {
     /// context while the Context Bar carried on showing the previous node.
     fn emit_focus(&mut self, focus: Focus) {
         let seq = self.next_seq();
+        diagnostics::record_action("point-at", format!("in {}", self.stage.name()));
         // Name what was captured, so the status confirms the *right* thing was
         // written — not just that some focus was.
         let target = match &focus {
@@ -1173,6 +1193,109 @@ impl App {
         });
         self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
         self.bridge_status = Some(status_line(seq, &target, "explain", result));
+    }
+
+    /// The application state a crash file should carry.
+    ///
+    /// Built every frame and handed to [`crate::diagnostics::set_snapshot`], so
+    /// the panic hook — which cannot borrow `App` — still has it. Every field
+    /// here is one I had to reconstruct from Doug's description of what he
+    /// clicked while diagnosing the 2026-07-28 crash; the list is that session's
+    /// findings turned into code rather than a guess at what might be useful.
+    ///
+    /// Deliberately *not* an interpretation. It reports what the state is, not
+    /// what it means — the same rule the bridge follows (`DECISIONS.md`,
+    /// 2026-07-28). `stages` lists which IRs exist rather than judging the
+    /// compile good or bad, because "Flatten produced a note but no value" is a
+    /// fact and "compilation partly failed" is a conclusion.
+    fn diagnostic_snapshot(&self) -> Value {
+        let anim = self.animation_diagnostic();
+        json!({
+            "specimen": self.selected.as_ref().map(|p| p.display().to_string()),
+            "model": self.model,
+            "ui_mode": format!("{:?}", self.ui_mode),
+            "specimen_detail": format!("{:?}", self.specimen_detail),
+            "stage_tab": self.stage.name(),
+            "viewing_log": self.viewing_log,
+            "compiling": self.compiling,
+            // Non-empty means the view is showing a library class, not the
+            // specimen — which changes what every other field refers to.
+            "navigation": self.nav.iter().map(|n| n.name.clone()).collect::<Vec<_>>(),
+            "context": {
+                "seq": self.context_seq,
+                "pointing_at": self.pointed_at.as_ref().map(|p| json!({
+                    "seq": p.seq,
+                    "target": p.target,
+                    "kind": match &p.kind {
+                        PointKind::Node(path) => format!("node {}", bridge::describe_path(path)),
+                        PointKind::Stage => "stage".to_owned(),
+                        PointKind::Specimen => "specimen".to_owned(),
+                    },
+                    "stage": p.stage.name(),
+                    "request": format!("{:?}", p.request),
+                })),
+                "following": self.tracked_identifier.as_ref().map(|name| json!({
+                    "identifier": name,
+                    "seq": self.track_seq,
+                    "mentions": self.tracking_summary.map(|(m, _)| m),
+                    "stages_with_mentions": self.tracking_summary.map(|(_, s)| s),
+                })),
+                "last_emission_error": self.point_error,
+                "status_line": self.bridge_status,
+            },
+            "animation": anim,
+            "live_trace": {
+                "breakpoint_armed": self.live_breakpoint_armed,
+                "awaiting_ack": self.pending_live_debug.is_some(),
+            },
+            "simulation": {
+                "running": self.sim_running,
+                "error": self.sim_error,
+                "has_data": self.sim_data.is_some(),
+                "t_end": self.sim_t_end,
+            },
+            "stages": self.stages.as_stage_pairs().iter()
+                .map(|(name, value)| json!({ "stage": name, "has_ir": value.is_some() }))
+                .collect::<Vec<_>>(),
+            "counts": {
+                "log_entries": self.log_entries.len(),
+                "specimen_files": self.files.len(),
+                "resolved_def_ids": self.def_index.len(),
+                "known_variables": self.known_variables.as_ref().map(HashSet::len),
+            },
+        })
+    }
+
+    /// Which animation is on screen and where its cursor stands.
+    ///
+    /// Reported only for the animation belonging to the *current* stage tab:
+    /// the caches can hold several at once, and listing a stale one would
+    /// suggest the user was looking at something they were not.
+    fn animation_diagnostic(&self) -> Value {
+        let (name, position, live) = match self.stage {
+            StageKind::Structural => match self.structural_view {
+                StructuralView::MatchingAnim => match &self.cached_matching_anim {
+                    Some(Some(a)) => ("matching", Some(a.position()), Some(a.live_state(false))),
+                    _ => ("matching", None, None),
+                },
+                StructuralView::TarjanAnim => match &self.cached_tarjan_anim {
+                    Some(Some(a)) => ("tarjan", Some(a.position()), Some(a.live_state(false))),
+                    _ => ("tarjan", None, None),
+                },
+                _ => return Value::Null,
+            },
+            StageKind::IndexReduction => match &self.cached_reduction_anim {
+                Some(Some(a)) => ("reduction", Some(a.position()), Some(a.live_state(false))),
+                _ => return Value::Null,
+            },
+            _ => return Value::Null,
+        };
+        json!({
+            "which": name,
+            "frame": position.map(|(cursor, _)| cursor),
+            "frame_count": position.map(|(_, n)| n),
+            "live_state": live.map(|s| format!("{s:?}")),
+        })
     }
 
     /// The next stamp from the **shared** context counter.
@@ -1922,6 +2045,27 @@ egui::Panel::top("bar").show(ui, |ui| {
                 self.show_about = true;
                 ui.close();
             }
+            ui.separator();
+            // For problems that do NOT kill the app. A crash writes its own
+            // file; a wrong-looking view or a hang writes nothing, and the
+            // evidence needed to diagnose it is identical. The path goes into
+            // the status bar because a file nobody can find is a file nobody
+            // sends.
+            if ui
+                .button("Write diagnostic snapshot")
+                .on_hover_text(
+                    "Write the current app state, recent actions, and log tail to \
+                     .hrw-bridge/diagnostics/ for Claude to read. Use when something \
+                     looks wrong but HRW has not crashed — crashes write their own file.",
+                )
+                .clicked()
+            {
+                self.bridge_status = Some(match diagnostics::write_on_demand() {
+                    Ok(path) => format!("diagnostic written: {}", path.display()),
+                    Err(e) => format!("diagnostic FAILED: {e}"),
+                });
+                ui.close();
+            }
         });
     });
 });
@@ -2277,6 +2421,17 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// the source declaration are keyed by (idea #37's "wrinkle").
     fn set_tracked_identifier(&mut self, name: String) {
         let name = crate::identifier_index::strip_der(&name).to_owned();
+        // The action most likely to be the last one before a crash: it walks
+        // every stage's IR and lexes every code-bearing string in it, which is
+        // exactly how the 2026-07-28 em-dash panic was reached.
+        diagnostics::record_action(
+            "follow",
+            if self.tracked_identifier.as_deref() == Some(name.as_str()) {
+                format!("stop following {name}")
+            } else {
+                format!("follow {name} (in {})", self.stage.name())
+            },
+        );
         if self.tracked_identifier.as_deref() == Some(name.as_str()) {
             self.tracked_identifier = None;
         } else {
@@ -2770,6 +2925,11 @@ impl eframe::App for App {
         // First thing every frame: check for results from the worker thread.
         self.drain_worker();
 
+        // Publish the state a crash file would need. After `drain_worker`, so a
+        // crash later in this frame reports the state the frame actually
+        // rendered rather than the previous one's. See `diagnostics.rs`.
+        diagnostics::set_snapshot(self.diagnostic_snapshot());
+
         // One-shot: force the debugger to resolve live_trace.rs early, so the
         // first Debug click does not pay for it. No-op after the first few
         // frames. See `Prewarm`.
@@ -3206,6 +3366,7 @@ impl eframe::App for App {
                             resp = resp.on_hover_text(tip);
                         }
                         if resp.clicked() {
+                            diagnostics::record_action("stage-tab", kind.name());
                             self.stage = kind;
                             stage_tab_clicked = true;
                         }
