@@ -1119,3 +1119,22 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   live in a stage IR and a jump with the log showing would look broken. `0 matches` renders as "not
   in <stage>", which is information of the same kind as `mentions: 0`.
   This is half of idea #11 (find-and-jump); the query half remains, and now reuses this plumbing.
+- **2026-07-28 — A synthesized name reports its origin instead of claiming a declaration.** Following
+  `__pre__.overSpeed` emitted `declared_at_line: 41` — where `overSpeed` is declared. The number was
+  real (a generated variable inherits its base's span) but the **field name asserted a declaration
+  that does not exist**, and a reader trusting it would look at line 41 and find a *different*
+  variable. Same species as the phantom `request` and `kind: "stage"` for a cleared point; found in
+  an `explain` and fixed on both surfaces, because the Context Bar told the identical lie
+  ("— declared at line 41") and bar and file must agree *and* both be honest.
+  Now: `tracking.generated` carries `{kind: "pre-slot", base: "overSpeed", note: …}`, the line is
+  retained under `span_inherited_from_base_at_line`, and the bar reads `— generated: pre(overSpeed)`
+  with the explanation on hover. `declared_at_line` / `declared_in_class` are emitted only for names
+  that really are declared.
+  **Recognition goes through `rumoca_core::pre_slot_base`, never a string match.**
+  `crates/rumoca-core/src/ir_primitives/generated_names.rs` is the owning definition of the
+  convention and states the contract outright: *"Consumers must never string-match `\"__pre__\"`
+  directly — construct slot names with `pre_slot_name` and recover structure with `pre_slot_base` /
+  `is_pre_slot`."* Spelling it out here would re-derive a convention that crate owns and would break
+  silently the day it changes. Worth noting how this was found: `phase_source` pointed at
+  `rumoca-ir-dae`, reading from there led to `generated_names.rs`, and the contract came with it —
+  which is exactly what that field was added for.

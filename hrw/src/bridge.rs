@@ -175,6 +175,8 @@ adjacent to the hit. Fields on the enclosing object are often the answer \
 (`generated: true` says a variable was manufactured by a phase, not \
 declared), and adjacency is often the finding (a manufactured companion sits \
 beside the variable it shadows).\n\n\
+A `tracking.generated` section means the followed name was SYNTHESIZED by a compiler phase and is declared nowhere; `declared_at_line` is absent in that case rather than pointing at the base variable's declaration, which would name a different variable.
+
 In `tracking.stages`, `mentions: 0` is information, not a gap — the name is \
 genuinely absent from that stage, which is how a demoted or alias-eliminated \
 variable announces itself. Counts are exact; `paths` and `contexts` are \
@@ -539,16 +541,59 @@ pub fn build_tracking(t: &Tracking) -> Value {
         "identifier": t.name,
         "stages": stages,
     });
-    // Where it came from — a source line, a class, or neither. Neither means a
-    // compiler phase created it; that conclusion is Claude's to draw, so HRW
-    // reports facts and absences rather than a category.
-    if let Some(line) = t.declared_line {
-        out["declared_at_line"] = json!(line);
-    }
-    if let Some(class) = t.declaring_class {
-        out["declared_in_class"] = json!(class);
+    // Where it came from — a source line, a class, or neither.
+    //
+    // A **generated** name gets neither, because it has no declaration to point
+    // at. Emitting `declared_at_line` for one was a real defect: following
+    // `__pre__.overSpeed` reported line 41, which is where `overSpeed` is
+    // declared. The number was real (the generated variable inherits its base's
+    // span) but the *field name asserted a declaration that does not exist* —
+    // the same species as a phantom `request` or a `kind` of "stage" for a
+    // cleared point. A reader trusting the field would look for a declaration on
+    // line 41 and find a different variable.
+    if let Some(generated) = generated_origin(t.name) {
+        out["generated"] = generated;
+        if let Some(line) = t.declared_line {
+            // Kept, renamed. The span is genuine provenance — it is where the
+            // base variable is declared — so it is worth having under a name
+            // that says what it is.
+            out["span_inherited_from_base_at_line"] = json!(line);
+        }
+    } else {
+        if let Some(line) = t.declared_line {
+            out["declared_at_line"] = json!(line);
+        }
+        if let Some(class) = t.declaring_class {
+            out["declared_in_class"] = json!(class);
+        }
     }
     out
+}
+
+/// Whether this name was synthesized by a compiler phase, and by which.
+///
+/// **Uses Rumoca's sanctioned inverses, never a string match.**
+/// `rumoca_core`'s `generated_names` module is the owning definition of these
+/// conventions and says so explicitly: *"Consumers must never string-match
+/// `\"__pre__\"` directly — construct slot names with `pre_slot_name` and
+/// recover structure with `pre_slot_base` / `is_pre_slot`."* Recognising a
+/// generated name by spelling would re-derive a convention this crate owns, and
+/// would break silently the day it changes.
+///
+/// Returns `None` for ordinary names, which is what routes them to
+/// `declared_at_line` / `declared_in_class` instead.
+fn generated_origin(name: &str) -> Option<Value> {
+    let base = rumoca_core::pre_slot_base(name)?;
+    Some(json!({
+        "kind": "pre-slot",
+        "base": base,
+        "note": "synthesized by DAE pre-lowering, which replaces `pre(x)` with a \
+                 generated PARAMETER variable named `__pre__.x` — see \
+                 crates/rumoca-core/src/ir_primitives/generated_names.rs, the owning \
+                 definition of the convention. It is declared nowhere: it exists \
+                 because a `when` equation needs a value to hold when no branch \
+                 fires, and a DAE has no way to say `unchanged`.",
+    }))
 }
 
 /// What HRW is actually showing — the view the user was looking at when they
@@ -1736,6 +1781,63 @@ mod tests {
         let (depth, ctx) = enclosing_context(&big, &path);
         assert_eq!(depth, 1, "the root no longer fits, so its child is returned");
         assert_eq!(ctx, json!({ "lhs": "a", "rhs": "b" }));
+    }
+
+    /// A synthesized name has no declaration, and must not claim one.
+    ///
+    /// Following `__pre__.overSpeed` reported `declared_at_line: 41` — which is
+    /// where `overSpeed` is declared. The number was real (a generated variable
+    /// inherits its base's span) but the field name asserted a declaration that
+    /// does not exist, so a reader would look at line 41 and find a *different*
+    /// variable. Same species as a phantom `request`, or `kind: "stage"` for a
+    /// cleared point.
+    ///
+    /// Recognition goes through `rumoca_core::pre_slot_base`, never a string
+    /// match: `generated_names.rs` is the owning definition of the convention
+    /// and forbids consumers from spelling it out themselves.
+    #[test]
+    fn a_generated_name_reports_its_origin_instead_of_a_declaration() {
+        let stages: [(&str, Option<&Value>); 0] = [];
+        let generated = build_tracking(&Tracking {
+            seq: 1,
+            name: "__pre__.overSpeed",
+            // The app supplies this from the identifier index — the generated
+            // variable really does carry the base's span.
+            declared_line: Some(41),
+            declaring_class: None,
+            stage_values: &stages,
+        });
+
+        assert!(
+            generated.get("declared_at_line").is_none(),
+            "a synthesized variable is declared nowhere: {generated}",
+        );
+        assert_eq!(generated["generated"]["kind"], json!("pre-slot"));
+        assert_eq!(generated["generated"]["base"], json!("overSpeed"));
+        // The span is still worth having — under a name that says what it is.
+        assert_eq!(generated["span_inherited_from_base_at_line"], json!(41));
+
+        // An ordinary name is unaffected: it really is declared where it says.
+        let declared = build_tracking(&Tracking {
+            seq: 1,
+            name: "overSpeed",
+            declared_line: Some(41),
+            declaring_class: Some("MotorWithBrake"),
+            stage_values: &stages,
+        });
+        assert_eq!(declared["declared_at_line"], json!(41));
+        assert_eq!(declared["declared_in_class"], json!("MotorWithBrake"));
+        assert!(declared.get("generated").is_none());
+
+        // Nested slots peel exactly one level, matching `pre_slot_base`.
+        let nested = build_tracking(&Tracking {
+            seq: 1,
+            name: "__pre__.__pre__.x",
+            declared_line: None,
+            declaring_class: None,
+            stage_values: &stages,
+        });
+        assert_eq!(nested["generated"]["base"], json!("__pre__.x"));
     }
 
     /// The jump control and the emitted context must see the same nodes.

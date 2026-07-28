@@ -2658,15 +2658,34 @@ egui::Panel::top("bar").show(ui, |ui| {
                         .monospace()
                         .color(crate::colors::TRACKED_GOLD),
                 );
-                match self
-                    .identifier_index
-                    .as_ref()
-                    .and_then(|idx| idx.variables.get(&name))
-                    .map(|v| v.source_line)
-                {
-                    Some(line) => {
-                        ui.weak(format!("\u{2014} declared at line {line}"));
+                // A synthesized name is checked FIRST, because it also carries a
+                // source line — inherited from the variable it shadows — and
+                // reporting that as "declared at line 41" sends the reader to a
+                // declaration of a *different* variable. The emitted context had
+                // the same defect; the two must agree, and both must be honest.
+                //
+                // Recognition uses Rumoca's own inverse, never a string match:
+                // `generated_names.rs` owns the convention and says consumers
+                // must not spell it out themselves.
+                match rumoca_core::pre_slot_base(&name) {
+                    Some(base) => {
+                        ui.weak(format!("\u{2014} generated: pre({base})"))
+                            .on_hover_text(
+                                "Synthesized by DAE pre-lowering, not declared anywhere. \
+                                 A `when` equation needs a value to hold when no branch \
+                                 fires, and a DAE has no way to say \u{201c}unchanged\u{201d} \
+                                 \u{2014} so the previous value gets a variable of its own.",
+                            );
                     }
+                    None => match self
+                        .identifier_index
+                        .as_ref()
+                        .and_then(|idx| idx.variables.get(&name))
+                        .map(|v| v.source_line)
+                    {
+                        Some(line) => {
+                            ui.weak(format!("\u{2014} declared at line {line}"));
+                        }
                     None => match self.declaring_classes.get(&name) {
                         Some(class) => {
                             ui.weak("\u{2014} in");
@@ -2688,7 +2707,8 @@ egui::Panel::top("bar").show(ui, |ui| {
                                      this name, so a compiler phase created it. Ask \
                                      Claude to trace where it came from.",
                                 );
-                        }
+                            }
+                        },
                     },
                 }
                 // What the question will actually have behind it.
