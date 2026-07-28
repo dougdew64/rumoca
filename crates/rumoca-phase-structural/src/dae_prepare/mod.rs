@@ -1936,8 +1936,8 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
             emit_index_reduction_frame(frames, live, IndexReductionFrame {
                 step: IndexReductionStep::Differentiated {
                     state: state_name.to_string(),
-                    before_rhs: definition.defining_expr.clone(),
-                    after_rhs: plan.der_expr.clone(),
+                    before_rhs: Box::new(definition.defining_expr.clone()),
+                    after_rhs: Box::new(plan.der_expr.clone()),
                 },
                 demoted_so_far: demoted_so_far.clone(),
                 round,

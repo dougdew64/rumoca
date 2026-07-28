@@ -106,50 +106,50 @@ fn augment_traced(
     let mut vars: Vec<usize> = eq_vars[eq].iter().copied().collect();
     vars.sort_unstable();
     for var in vars {
-        if !visited[var] {
-            visited[var] = true;
-            emit_matching_frame(frames, live, MatchingFrame {
-                step: MatchingStep::Explore { eq, var },
-                match_eq: match_eq.to_vec(),
-            });
-            let can_augment = match match_var[var] {
-                None => {
-                    emit_matching_frame(frames, live, MatchingFrame {
-                        step: MatchingStep::FoundFree { eq, var },
-                        match_eq: match_eq.to_vec(),
-                    });
-                    true
-                }
-                Some(holder) => {
-                    emit_matching_frame(frames, live, MatchingFrame {
-                        step: MatchingStep::TryDisplace { eq, var, holder },
-                        match_eq: match_eq.to_vec(),
-                    });
-                    let ok = augment_traced(holder, match_eq, match_var, eq_vars, visited, frames, live);
-                    if ok {
-                        emit_matching_frame(frames, live, MatchingFrame {
-                            step: MatchingStep::DisplaceOk { eq, var },
-                            match_eq: match_eq.to_vec(),
-                        });
-                    } else {
-                        emit_matching_frame(frames, live, MatchingFrame {
-                            step: MatchingStep::DisplaceFail { eq, var },
-                            match_eq: match_eq.to_vec(),
-                        });
-                    }
-                    ok
-                }
-            };
-            if can_augment {
-                match_eq[eq] = Some(var);
-                match_var[var] = Some(eq);
+        if visited[var] {
+            continue;
+        }
+        visited[var] = true;
+        emit_matching_frame(frames, live, MatchingFrame {
+            step: MatchingStep::Explore { eq, var },
+            match_eq: match_eq.to_vec(),
+        });
+        let can_augment = match match_var[var] {
+            None => {
                 emit_matching_frame(frames, live, MatchingFrame {
-                    step: MatchingStep::Assign { eq, var },
+                    step: MatchingStep::FoundFree { eq, var },
                     match_eq: match_eq.to_vec(),
                 });
-                return true;
+                true
             }
+            Some(holder) => {
+                emit_matching_frame(frames, live, MatchingFrame {
+                    step: MatchingStep::TryDisplace { eq, var, holder },
+                    match_eq: match_eq.to_vec(),
+                });
+                let ok =
+                    augment_traced(holder, match_eq, match_var, eq_vars, visited, frames, live);
+                emit_matching_frame(frames, live, MatchingFrame {
+                    step: if ok {
+                        MatchingStep::DisplaceOk { eq, var }
+                    } else {
+                        MatchingStep::DisplaceFail { eq, var }
+                    },
+                    match_eq: match_eq.to_vec(),
+                });
+                ok
+            }
+        };
+        if !can_augment {
+            continue;
         }
+        match_eq[eq] = Some(var);
+        match_var[var] = Some(eq);
+        emit_matching_frame(frames, live, MatchingFrame {
+            step: MatchingStep::Assign { eq, var },
+            match_eq: match_eq.to_vec(),
+        });
+        return true;
     }
     false
 }

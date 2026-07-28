@@ -191,17 +191,25 @@ impl<'a> TracedTarjanState<'a> {
 
         if self.lowlink[v] == self.index[v].expect("tarjan invariant: visited node must have index")
         {
-            let mut scc = Vec::new();
-            loop {
-                let w = self.stack.pop().expect("tarjan invariant: stack must contain SCC root");
-                self.on_stack[w] = false;
-                scc.push(w);
-                if w == v {
-                    break;
-                }
-            }
+            let scc = self.pop_scc(v);
             self.record(TarjanStep::SccFound { root: v, members: scc.clone() });
             self.sccs.push(scc);
+        }
+    }
+
+    /// Pop the stack down to and including `root` — the members of one SCC.
+    ///
+    /// `root` is a root because its lowlink never fell below its own index, so
+    /// everything pushed after it belongs to its component.
+    fn pop_scc(&mut self, root: usize) -> Vec<usize> {
+        let mut scc = Vec::new();
+        loop {
+            let w = self.stack.pop().expect("tarjan invariant: stack must contain SCC root");
+            self.on_stack[w] = false;
+            scc.push(w);
+            if w == root {
+                return scc;
+            }
         }
     }
 }

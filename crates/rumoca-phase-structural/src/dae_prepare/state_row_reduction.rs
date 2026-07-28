@@ -666,10 +666,15 @@ pub enum IndexReductionStep {
     /// Starting to evaluate a candidate state for reduction.
     BeginState { state: String },
     /// A constraint was differentiated — before and after RHS expressions.
+    ///
+    /// The expressions are boxed because an `Expression` is an order of magnitude
+    /// larger than any other variant's payload, and an unboxed one would make
+    /// every frame in a trace — thousands of `BeginState`s and `Demoted`s — pay
+    /// its size.
     Differentiated {
         state: String,
-        before_rhs: Expression,
-        after_rhs: Expression,
+        before_rhs: Box<Expression>,
+        after_rhs: Box<Expression>,
     },
     /// No suitable constraint found for this state in this round.
     CandidateExhausted { state: String },
@@ -742,11 +747,17 @@ pub fn emit_index_reduction_start(
 
 /// Like [`index_reduce_missing_state_derivatives`], but records every
 /// algorithmic step for animation replay.
+///
+/// `demoted_so_far` is read, not extended: this pass differentiates constraints
+/// to supply a missing derivative and never demotes a state. Its sibling traced
+/// pass (`reduce_constrained_dummy_derivatives_with_trace`) does demote, and
+/// takes the accumulator by `&mut`. Both stamp the list onto every frame so a
+/// replay can show what had been demoted at that point.
 pub fn index_reduce_missing_state_derivatives_with_trace(
     dae: &mut Dae,
     live: Option<&crate::LiveTrace<IndexReductionFrame>>,
     frames: &mut Vec<IndexReductionFrame>,
-    demoted_so_far: &mut Vec<String>,
+    demoted_so_far: &[String],
     round_offset: usize,
 ) -> Result<usize, StructuralError> {
     let max_rounds = dae.variables.states.len().clamp(1, 8);
@@ -760,7 +771,7 @@ pub fn index_reduce_missing_state_derivatives_with_trace(
                 round: round_offset + round,
                 demotions_this_round: changed,
             },
-            demoted_so_far: demoted_so_far.clone(),
+            demoted_so_far: demoted_so_far.to_vec(),
             round: round_offset + round,
         });
         if changed == 0 {
@@ -775,7 +786,7 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
     dae: &mut Dae,
     live: Option<&crate::LiveTrace<IndexReductionFrame>>,
     frames: &mut Vec<IndexReductionFrame>,
-    demoted_so_far: &mut Vec<String>,
+    demoted_so_far: &[String],
     round: usize,
 ) -> Result<usize, StructuralError> {
     let state_names: Vec<VarName> = dae.variables.states.keys().cloned().collect();
@@ -799,36 +810,16 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
 
         emit_index_reduction_frame(frames, live, IndexReductionFrame {
             step: IndexReductionStep::BeginState { state: state_name.to_string() },
-            demoted_so_far: demoted_so_far.clone(),
+            demoted_so_far: demoted_so_far.to_vec(),
             round,
         });
 
-        let candidate_indices: Vec<usize> = dae
-            .continuous
-            .equations
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, eq)| {
-                if used_eq.contains(&idx) {
-                    return None;
-                }
-                if eq_contains_any_state_der_with_matcher(&eq.rhs, &state_derivative_matcher) {
-                    return None;
-                }
-                if dae
-                    .variables
-                    .algebraics
-                    .keys()
-                    .any(|alg_name| is_unsliced_algebraic_definition(eq, alg_name))
-                {
-                    return None;
-                }
-                if is_indexed_state_component_alias_definition(eq, state_name) {
-                    return None;
-                }
-                Some(idx)
-            })
-            .collect();
+        let candidate_indices = differentiable_candidate_equations(
+            dae,
+            state_name,
+            &used_eq,
+            &state_derivative_matcher,
+        );
 
         let mut found = false;
         for idx in candidate_indices {
@@ -855,10 +846,10 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             emit_index_reduction_frame(frames, live, IndexReductionFrame {
                 step: IndexReductionStep::Differentiated {
                     state: state_name.to_string(),
-                    before_rhs,
-                    after_rhs: new_rhs.clone(),
+                    before_rhs: Box::new(before_rhs),
+                    after_rhs: Box::new(new_rhs.clone()),
                 },
-                demoted_so_far: demoted_so_far.clone(),
+                demoted_so_far: demoted_so_far.to_vec(),
                 round,
             });
 
@@ -881,13 +872,53 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
         if !found {
             emit_index_reduction_frame(frames, live, IndexReductionFrame {
                 step: IndexReductionStep::CandidateExhausted { state: state_name.to_string() },
-                demoted_so_far: demoted_so_far.clone(),
+                demoted_so_far: demoted_so_far.to_vec(),
                 round,
             });
         }
     }
 
     Ok(changed)
+}
+
+/// Equations that may be differentiated to supply `state_name`'s derivative.
+///
+/// Rejects, in order: equations already consumed this round; equations that
+/// already contain a state derivative (differentiating those would raise the
+/// order rather than supply the missing one); definitions of an unsliced
+/// algebraic (differentiating a definition would destroy it); and indexed
+/// component aliases of the state itself.
+fn differentiable_candidate_equations(
+    dae: &Dae,
+    state_name: &VarName,
+    used_eq: &HashSet<usize>,
+    state_derivative_matcher: &DerivativeNameMatcher,
+) -> Vec<usize> {
+    dae.continuous
+        .equations
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, eq)| {
+            if used_eq.contains(&idx) {
+                return None;
+            }
+            if eq_contains_any_state_der_with_matcher(&eq.rhs, state_derivative_matcher) {
+                return None;
+            }
+            if dae
+                .variables
+                .algebraics
+                .keys()
+                .any(|alg_name| is_unsliced_algebraic_definition(eq, alg_name))
+            {
+                return None;
+            }
+            if is_indexed_state_component_alias_definition(eq, state_name) {
+                return None;
+            }
+            Some(idx)
+        })
+        .collect()
 }
 
 /// Regularisation epsilon levels to try, from most accurate to least.
