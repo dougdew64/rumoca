@@ -1032,3 +1032,29 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   instruction is not a confirmation). `bridge_status` is renamed `notice`, its remaining traffic
   being genuinely transient — "specimen not found", "diagnostic written to …", a stage-file write
   failure.
+- **2026-07-28 — The surface determines the verb; the hover says which, and admits the send.** Doug,
+  testing: left-clicking a source identifier *follows*, left-clicking a stage tab *points at* —
+  "is that merely a leftover of our previous design, or is that intentional?" Both. The rule is
+  coherent — **where every clickable thing is a name, following is the only thing a name affords;
+  where they are nodes, most are not names at all** — and underneath it sits a hard constraint: a
+  source token has no IR address, so "point at" is not even expressible in the source view. But it
+  was never *decided*: the source-view click came from Phase 3/4's reverse tracking, before the two
+  primitives were named. Now written into `context-assembly.md`.
+  Doug then made the sharper point: *"It's as though we are conflating 'point at' with 'select'… a
+  mere point-at doesn't really suggest a side effect."* True — every left-click writes `focus.json`.
+  **"Select" was rejected anyway**, for two reasons. It misdescribes in the other direction
+  (selection is expected to be free, local and private; this is none of those), and taken seriously
+  it is a *behaviour* change rather than a rename: it implies a later explicit **Send**, which costs
+  a click per question and reintroduces the bar/file disagreement this design has already fixed
+  twice. Worth recording *why* the publish is eager: in classic noun-verb, selection can be free
+  because the app sees the verb — here the verb is typed in another process, so HRW never learns a
+  question was asked and must publish speculatively on every change to the noun. **Eager publication
+  is forced by the split that makes the paradigm work.**
+  The fix is therefore neither renaming nor re-architecting: the **gesture announces itself**.
+  `follow_hover` / `POINT_AT_HOVER` live in `lib.rs`, shared so the wording cannot drift across the
+  five surfaces, and they name the verb *and* admit the send. The Context Bar answered "which did I
+  just do?" afterwards; the hover answers it beforehand, which is where the ambiguity lived. Tree
+  hovers **append** to the field's Rumoca doc rather than replacing it — field help is the fast,
+  no-AI tier, and burying a real answer under directions for asking one is a bad trade. The variable
+  grid's hover also still read "track" after the rename; routing it through the shared helper fixes
+  that and prevents the next drift.

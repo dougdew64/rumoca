@@ -120,7 +120,6 @@ impl LiveState {
         matches!(self, LiveState::Arming | LiveState::Running)
     }
 
-    /// Status badge text and colour, or `None` when there is nothing to say.
     /// A stable name, for the capture and the crash log.
     ///
     /// Separate from [`LiveState::badge`] on purpose: the badge is display text
@@ -135,6 +134,7 @@ impl LiveState {
         }
     }
 
+    /// Status badge text and colour, or `None` when there is nothing to say.
     pub fn badge(self) -> Option<(&'static str, eframe::egui::Color32)> {
         match self {
             LiveState::Idle => None,
@@ -144,6 +144,41 @@ impl LiveState {
         }
     }
 }
+
+/// Hover text for a gesture that starts or stops **following** an identifier.
+///
+/// ## Why the hover names the verb, and admits the side effect
+///
+/// Left-click means different things on different surfaces: **follow** where the
+/// clickable thing is a name (the specimen source, the variable grid), **point
+/// at** where it is a node (trees, stage tabs, incidence rows, spy blocks). The
+/// split is not arbitrary — a source token has no IR address, so "point at" is
+/// not even expressible there — but until you have clicked, nothing tells you
+/// which you are about to get. The Context Bar answers that afterwards; this
+/// answers it beforehand.
+///
+/// The wording also admits that the click **sends** something. Doug's
+/// observation (2026-07-28): "point at" reads like a gesture with no
+/// consequence, yet every left-click here writes `focus.json` and changes what
+/// Claude has. Renaming to "select" would misdescribe it in the other
+/// direction — selection is expected to be free, local and private, and this is
+/// none of those. So the verbs stay and the gesture says what it will do. See
+/// `docs/context-assembly.md`.
+pub fn follow_hover(name: &str, following_now: bool) -> String {
+    if following_now {
+        format!("Stop following {name} \u{2014} removes it from the context Claude has")
+    } else {
+        format!("Follow {name} \u{2014} sends it to Claude now, and highlights it in every stage")
+    }
+}
+
+/// Hover text for a gesture that **points at** a node.
+///
+/// Companion to [`follow_hover`] — see its docs for why these say "sends".
+/// A `const` rather than a function because, unlike following, pointing at
+/// names no target: the row under the cursor is the target.
+pub const POINT_AT_HOVER: &str =
+    "Point at this \u{2014} sends it to Claude now as the subject of your next question";
 
 /// Label for the frame counter.
 ///
@@ -392,6 +427,32 @@ mod tests_playback {
 
 #[cfg(test)]
 mod tests {
+    /// A gesture must say what it will do, and admit that it sends something.
+    ///
+    /// Doug, 2026-07-28: left-click means "follow" on some surfaces and
+    /// "point at" on others, and nothing told him which until after he clicked.
+    /// He also noted that "point at" reads like a gesture with no consequence,
+    /// while every left-click here writes `focus.json`. Both fixes live in
+    /// these strings, so both are pinned here.
+    #[test]
+    fn gesture_hovers_name_the_verb_and_admit_the_send() {
+        let start = follow_hover("emf.phi", false);
+        assert!(start.starts_with("Follow emf.phi"), "must lead with the verb: {start}");
+        assert!(start.contains("sends it to Claude"), "must admit the side effect: {start}");
+
+        let stop = follow_hover("emf.phi", true);
+        assert!(stop.starts_with("Stop following"), "the toggle must be legible: {stop}");
+        assert!(stop.contains("removes it"), "must say what it takes away: {stop}");
+
+        assert!(POINT_AT_HOVER.starts_with("Point at"), "{POINT_AT_HOVER}");
+        assert!(POINT_AT_HOVER.contains("sends it to Claude"), "{POINT_AT_HOVER}");
+
+        // The two verbs must stay distinguishable — the whole point is that a
+        // reader can tell which gesture they are about to make.
+        assert_ne!(start, POINT_AT_HOVER);
+        assert!(!POINT_AT_HOVER.contains("Follow"));
+    }
+
     use super::*;
     use serde_json::json;
 

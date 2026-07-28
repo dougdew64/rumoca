@@ -258,6 +258,63 @@ Two exceptions survive, and both are things the bar *cannot* say:
 The removal was sequenced after the bar existed, so there was never a window
 without capture feedback.
 
+### Which verb a left-click carries, and why the hover says so
+
+**Added 2026-07-28**, after Doug met the inconsistency in testing.
+
+Left-click means different things on different surfaces:
+
+| Left-click -> **follow** | Left-click -> **point at** |
+|---|---|
+| Specimen source view (identifiers) | IR tree rows |
+| Equation sheet's variable grid | Stage tabs, incidence rows, spy-plot blocks |
+
+**The rule: the surface determines the verb, because the surface determines what
+is clickable.** Where every clickable thing is a *name*, following is the only
+thing a name affords. Where clickable things are *nodes*, most of them are not
+names at all (`op: "Add"`, `causality: "None"`), so following is not generally
+available. And there is a hard constraint underneath: **a source token has no IR
+address.** The specimen text is not IR, so there is no key-path to emit and
+"point at this token" is not expressible - following really is the only verb the
+source view can offer.
+
+That rule is coherent, but it was **emergent rather than designed** - the
+source-view click came from Phase 3/4's reverse tracking (idea #37), before
+"point at" and "follow" were named as the two primitives, so the vocabulary that
+would have forced the question did not exist yet. It is written down here now.
+
+### Why not rename "point at" to "select"
+
+Doug's observation, same session: *"A mere point-at doesn't really suggest a side
+effect, whereas a select suggests that there might be a side effect. Our left
+clicks always cause side effects."* Correct - every left-click writes
+`focus.json`, which changes what an external process has.
+
+But "select" misdescribes it in the other direction. In every GUI anyone has
+used, selection is **free, local and private**; ours is none of those. A reader
+who learns "select" would be *more* surprised by the publish, not less.
+
+**Why the publish is eager at all is structural, not sloppiness.** In classic
+noun-verb, selection can be free precisely because the app *sees the verb*. Here
+the verb is typed in another process - HRW never learns that a question was
+asked - so the noun must be published speculatively on every change. Eager
+publication is forced by the very split that makes the paradigm work.
+
+Taking "select" seriously would therefore mean *changing the behaviour*, not the
+label: select freely, then press **Send to Claude**. That was rejected - it costs
+a click on every question, and it reintroduces the exact failure this design has
+already fixed twice, where the bar and the file disagree because something was
+selected and never sent. Eager publish makes that impossible by construction.
+
+**So the verbs stay, and the gesture says what it will do.** `follow_hover` and
+`POINT_AT_HOVER` (in `lib.rs`, shared so the wording cannot drift between
+surfaces) name the verb *and* admit the send - "Follow `emf.phi` - sends it to
+Claude now, and highlights it in every stage". The Context Bar already answered
+"which did I just do?" afterwards; the hover answers it beforehand, which is
+where the ambiguity actually lived. Tree hovers **append** to the field's Rumoca
+documentation rather than replacing it: field help is the fast, no-AI tier, and
+burying a real answer under directions for asking one would be a bad trade.
+
 ## What this does to Phase 5
 
 Phase 5 of [`source-tooling-plan.md`](source-tooling-plan.md) was stated as a

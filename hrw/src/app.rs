@@ -1868,13 +1868,11 @@ impl App {
                             if resp.clicked() {
                                 clicked_variable = Some(v.name.clone());
                             }
-                            resp.on_hover_text(if is_tracked {
-                                "Click to stop tracking"
-                            } else {
-                                "Click to track \u{2014} highlights this variable \
-                                 across the pipeline and scrolls the source to its \
-                                 declaration"
-                            });
+                            // One vocabulary with every other follow surface, via
+                            // the shared helper. Two hand-written variants of
+                            // the same sentence drift, and this one still said
+                            // "track" after the rename.
+                            resp.on_hover_text(crate::follow_hover(&v.name, is_tracked));
                             ui.label(v.kind);
                             ui.label(v.start.as_deref().unwrap_or("—"));
                             ui.label(v.unit.as_deref().unwrap_or(""));
@@ -2286,7 +2284,14 @@ egui::Panel::top("bar").show(ui, |ui| {
                                                 .color(color)
                                                 .underline()
                                         ).sense(egui::Sense::click());
-                                        if ui.add(label).on_hover_text(name).clicked() {
+                                        // Say which verb the click carries,
+                                        // before it fires. This used to hover
+                                        // with the bare name, confirming what
+                                        // was under the cursor and nothing
+                                        // about what clicking would do.
+                                        let hover =
+                                            crate::follow_hover(name, tracked == Some(name));
+                                        if ui.add(label).on_hover_text(hover).clicked() {
                                             clicked_id = Some(name.to_owned());
                                         }
                                     }
@@ -3500,9 +3505,16 @@ impl eframe::App for App {
                             stage_selected && self.stage == kind,
                             tab_label(label, stage, ok, err),
                         );
-                        if let Some(tip) = hover {
-                            resp = resp.on_hover_text(tip);
-                        }
+                        // A tab click is a point-at too — at the stage as a
+                        // whole. Appended to the tab's own explanation rather
+                        // than replacing it: what the stage *is* matters more
+                        // than what clicking does, and this is the row where a
+                        // reader is most likely to be learning the pipeline.
+                        let tip = match hover {
+                            Some(t) => format!("{t}\n\n{}", crate::POINT_AT_HOVER),
+                            None => crate::POINT_AT_HOVER.to_owned(),
+                        };
+                        resp = resp.on_hover_text(tip);
                         if resp.clicked() {
                             diagnostics::record_action("stage-tab", kind.name());
                             self.stage = kind;

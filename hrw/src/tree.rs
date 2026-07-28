@@ -309,19 +309,40 @@ fn node_ui(
             // Explain the underline. Appended to the field's own help rather
             // than replacing it, so discoverability does not cost the
             // documentation that is already there.
-            let hint = match (field_help.get(key), &trackable) {
-                (Some(doc), Some(name)) => {
-                    Some(format!("{doc}\n\nRight-click to track {name}."))
-                }
-                (Some(doc), None) => Some(doc.clone()),
-                (None, Some(name)) => Some(format!("Right-click to track {name}.")),
-                (None, None) => None,
-            };
-            if let Some(hint) = hint {
-                resp.clone().on_hover_text(hint);
-            }
+            resp.clone().on_hover_text(row_hover(field_help.get(key), trackable.as_deref()));
         }
     });
+}
+
+/// What a tree row's tooltip should say.
+///
+/// Three things, in decreasing generality, and the order matters: the field's
+/// own Rumoca documentation first (it is what a reader most often wants), then
+/// what a left-click will do, then what a right-click additionally offers.
+///
+/// **Appending rather than replacing** is the point. Discoverability must not
+/// cost the documentation already there — field help is the app's fast, no-AI
+/// tier, and burying it under interaction hints would trade a real answer for a
+/// hint about how to ask for one.
+///
+/// Every row is left-clickable, so the "point at" line is unconditional. Only
+/// rows naming a variable the model actually knows can be followed, so that
+/// line depends on `trackable`.
+fn row_hover(doc: Option<&String>, trackable: Option<&str>) -> String {
+    let mut out = String::new();
+    if let Some(doc) = doc {
+        out.push_str(doc);
+        out.push_str("
+
+");
+    }
+    out.push_str(crate::POINT_AT_HOVER);
+    if let Some(name) = trackable {
+        out.push_str(&format!("
+
+Right-click to follow {name} through every stage."));
+    }
+    out
 }
 
 // Check whether a scalar leaf is a DefId that resolves to a *class* definition.
@@ -624,6 +645,31 @@ fn header_tracked(key: &str, hint: &str) -> egui::RichText {
 
 #[cfg(test)]
 mod tests {
+    /// Interaction hints must never cost the field documentation.
+    ///
+    /// The field help is HRW's fast, no-AI tier — the answer a reader most
+    /// often wants. Replacing it with a hint about how to ask a question would
+    /// trade a real answer for directions to one.
+    #[test]
+    fn row_hover_appends_to_field_help_rather_than_replacing_it() {
+        let doc = "The variable's causality: input, output, or none.".to_owned();
+
+        let with_doc = row_hover(Some(&doc), None);
+        assert!(with_doc.starts_with(&doc), "documentation comes first: {with_doc}");
+        assert!(with_doc.contains("Point at"), "and the gesture is still named: {with_doc}");
+
+        // Every row is left-clickable, so the point-at line is unconditional.
+        let bare = row_hover(None, None);
+        assert!(bare.contains("Point at"), "{bare}");
+        assert!(!bare.contains("Right-click"), "nothing to follow here: {bare}");
+
+        // Only rows naming a known variable offer the second verb.
+        let followable = row_hover(Some(&doc), Some("emf.phi"));
+        assert!(followable.starts_with(&doc));
+        assert!(followable.contains("Point at"));
+        assert!(followable.contains("follow emf.phi"), "{followable}");
+    }
+
     use super::*;
     use serde_json::json;
 
