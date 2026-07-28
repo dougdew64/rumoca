@@ -153,10 +153,13 @@ for `debug-where-set` it wants ONE breakpoint, where that value is set.\n\
 across every stage. For `explain` this is the lens; for `debug-where-set` it \
 wants SEVERAL breakpoints along the identifier's trajectory.\n\n\
 Either may be absent, and absence is stated rather than implied. \
-`kind: \"none\"` means the user DELIBERATELY CLEARED the point, so the \
-`tracking` section is the whole subject — do not fall back to describing the \
-current stage, which they did not choose. A missing `tracking` section \
-likewise means nothing is being followed.\n\n\
+`kind: \"none\"` means the user DELIBERATELY CLEARED the point (or never made \
+one), so the `tracking` section is the whole subject — do not fall back to \
+describing the current stage, which they did not choose. A missing `tracking` \
+section likewise means nothing is being followed. `request` is a property of \
+the point, so it is null whenever `kind` is \"none\". If BOTH are absent, \
+nothing has been assembled: say so rather than answering from `stage` or from \
+whatever was captured before.\n\n\
 When both are present and the request is ambiguous, compare `seq` with \
 `tracking.seq`: whichever is higher was acted on last and is almost certainly \
 the subject.\n\n\
@@ -816,7 +819,7 @@ pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
 // {
 //   "instructions": <self-describing text>,
 //   "seq": <monotonic counter>,
-//   "request": "explain" | "debug-where-set",
+//   "request": "explain" | "debug-where-set" | null  (null: no point, so no request),
 //   "kind": "node" | "stage" | "specimen",
 //   "specimen": <path to .mo file>,
 //   "model": <class name>,
@@ -851,7 +854,15 @@ fn build(ask: &Ask) -> Value {
     let mut doc = json!({
         "instructions": INSTRUCTIONS,
         "seq": ask.seq,
-        "request": ask.request.as_str(),
+        // `request` is a property of the POINT — "explain this node" versus
+        // "show me where this node gets set". With no point there is no request,
+        // and emitting a default `"explain"` would claim an intent the user
+        // never expressed. Null rather than omitted, for the same reason
+        // `kind: "none"` beats a missing `kind`: absence stated, not implied.
+        "request": match ask.focus {
+            Focus::Nothing => Value::Null,
+            _ => Value::String(ask.request.as_str().to_owned()),
+        },
         "kind": kind,
         "specimen": ask.specimen.map(|p| p.to_string_lossy().into_owned()),
         "model": ask.model,

@@ -1077,3 +1077,19 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   stage"*, since a reader who guesses would guess wrong in the one case the user was most explicit
   about. `emit_focus` guards against `Nothing` by returning rather than panicking — a UI path must
   not abort the app to report a programming error.
+- **2026-07-28 — The empty context states itself, and `request` is a property of the point.** Doug:
+  *"What happens if neither a follow nor a point-at are set, and I request 'debug'?"* Nothing bad —
+  no breakpoint can be armed on nothing, since `arm_live_trace_breakpoint` belongs to the animation
+  Debug button and `debug-where-set` can only come from a tree row, which necessarily creates a
+  point. But the question exposed two places still practising **absence by implication**, the thing
+  this design eliminates everywhere else:
+  (1) **The Context Bar vanished when nothing was assembled**, making "I have nothing" indistinguishable
+  from "the bar is not rendering" — and that is precisely the state a user is in just before asking a
+  question that quietly has nothing behind it. It now says so, once a specimen is loaded (before
+  that there is genuinely nothing to say, and the status bar carries the opening hint).
+  (2) **`request` defaulted to `"explain"` with no point**, claiming an intent never expressed. It is
+  a property of the *point* — "explain this node" versus "show me where this node gets set" — so it
+  is now `null` whenever `kind` is `"none"`. Null rather than omitted, for the same reason
+  `kind: "none"` beats a missing `kind`. The `instructions` string says so, and adds the rule that
+  matters most for this state: **if both are absent, say nothing has been assembled rather than
+  answering from `stage` or from whatever was captured before.**

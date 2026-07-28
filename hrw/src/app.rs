@@ -2445,6 +2445,28 @@ egui::Panel::top("bar").show(ui, |ui| {
         let has_point = self.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
         if !has_point && !has_thread {
+            // Say the empty state rather than vanishing.
+            //
+            // Hiding made "nothing is assembled" indistinguishable from "the bar
+            // is not rendering", which is absence by *implication* — the thing
+            // this design eliminates everywhere else (`mentions: 0`,
+            // `kind: "none"`, "not declared in this specimen"). It is also the
+            // state a user is in just before asking a question that quietly has
+            // nothing behind it.
+            //
+            // Only once a specimen is loaded: before that there is genuinely
+            // nothing to say, and the status bar already carries the opening
+            // hint.
+            if self.selected.is_some() {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Context").strong());
+                    ui.weak(
+                        "\u{00b7} nothing assembled \u{2014} left-click a node to point at it, \
+                         or right-click a variable name to follow it",
+                    );
+                });
+                ui.separator();
+            }
             return;
         }
 
@@ -4332,12 +4354,17 @@ mod tests {
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("none"), "no point must not become a stage");
         assert!(doc.get("tracking").is_none(), "nothing is being followed");
+        // `request` belongs to the point. With no point, defaulting it to
+        // "explain" would claim an intent the user never expressed — the same
+        // species of phantom as the `kind: "stage"` this test was written for.
+        assert!(doc["request"].is_null(), "no point means no request: {}", doc["request"]);
 
         // 2. Follow only — the state Doug wanted and could not reach.
         app.set_tracked_identifier("h".to_owned());
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("none"));
         assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
+        assert!(doc["request"].is_null(), "following carries no point-request either");
 
         // 3. Both, independent of each other.
         app.pointed_at = Some(a_point());
@@ -4345,6 +4372,7 @@ mod tests {
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("stage"));
         assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
+        assert_eq!(doc["request"], serde_json::json!("explain"), "a point does carry one");
 
         // 4. Point only — reached by dropping the follow, which must not
         //    disturb the point.
