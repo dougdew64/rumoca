@@ -35,6 +35,14 @@ pub struct TarjanAnimation {
     frames: Vec<TarjanFrame>,
     n_nodes: usize,
     node_names: Vec<String>,
+    /// Which unknown columns each equation touches, and the column names.
+    ///
+    /// Kept so "is this node the tracked variable's equation?" is answered
+    /// structurally. It used to be answered by substring-searching the
+    /// pretty-printed equation text, which is exactly the heuristic
+    /// name-matching `docs/cross-stage-tracking-plan.md` rules out.
+    rows: Vec<Vec<usize>>,
+    unknown_names: Vec<String>,
     adj: Vec<Vec<usize>>,
     cursor: usize,
     playing: bool,
@@ -96,6 +104,8 @@ impl TarjanAnimation {
             frames: result.frames,
             n_nodes: n_eq,
             node_names: mat.equation_texts().to_vec(),
+            rows: mat.rows().to_vec(),
+            unknown_names: mat.unknown_names().to_vec(),
             adj,
             cursor: 0,
             playing: false,
@@ -153,6 +163,8 @@ impl TarjanAnimation {
             frames: Vec::new(),
             n_nodes: n_eq,
             node_names: mat.equation_texts().to_vec(),
+            rows: mat.rows().to_vec(),
+            unknown_names: mat.unknown_names().to_vec(),
             adj,
             cursor: 0,
             playing: false,
@@ -187,6 +199,26 @@ impl TarjanAnimation {
 
     pub fn live_finished(&self) -> bool {
         self.live_done.load(Ordering::Acquire)
+    }
+
+    /// Whether equation `eq` references the tracked variable.
+    ///
+    /// Answered from the incidence matrix — `rows[eq]` holds exactly the
+    /// columns that equation touches, which is the structural fact the
+    /// structural phase computed. Previously this substring-searched the
+    /// pretty-printed equation text, which could match a name occurring inside
+    /// another name, inside a function call, or inside an origin label, and
+    /// which `docs/cross-stage-tracking-plan.md` ruled out from the start.
+    fn equation_mentions(&self, eq: usize, tracked: Option<&str>) -> bool {
+        let Some(tracked) = tracked else { return false };
+        let Some(col) = self
+            .unknown_names
+            .iter()
+            .position(|n| crate::identifier_index::same_variable(n, tracked))
+        else {
+            return false;
+        };
+        self.rows.get(eq).is_some_and(|cols| cols.contains(&col))
     }
 
     /// Map the raw live-session flags onto the shared [`crate::LiveState`].
@@ -385,11 +417,7 @@ impl TarjanAnimation {
                 _ => visuals.widgets.inactive.fg_stroke.color,
             };
             painter.circle(center, node_radius, fill, egui::Stroke::new(1.5, stroke_color));
-            let is_tracked_node = tracked.is_some_and(|t| {
-                self.node_names.get(i).is_some_and(|n| {
-                    n == t || crate::identifier_index::matches_tracked(n, t)
-                })
-            });
+            let is_tracked_node = self.equation_mentions(i, tracked);
             if is_tracked_node {
                 painter.circle_stroke(
                     center,

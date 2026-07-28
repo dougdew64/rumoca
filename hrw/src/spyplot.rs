@@ -237,7 +237,7 @@ impl Plot {
         if let Some(name) = tracked {
             for block in &self.blocks {
                 if block.unknowns.iter().any(|u| {
-                    u == name || crate::identifier_index::matches_tracked(u, name)
+                    crate::identifier_index::same_variable(u, name)
                 }) {
                     let block_world = egui::Rect::from_min_size(
                         egui::pos2(block.start as f32, block.start as f32),

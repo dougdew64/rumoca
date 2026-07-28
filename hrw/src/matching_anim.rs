@@ -421,7 +421,7 @@ impl MatchingAnimation {
 
         if let Some(name) = tracked {
             let tracked_col = self.unknown_names.iter().position(|u| {
-                u == name || crate::identifier_index::matches_tracked(u, name)
+                crate::identifier_index::same_variable(u, name)
             });
             if let Some(col) = tracked_col {
                 let band = egui::Rect::from_min_size(

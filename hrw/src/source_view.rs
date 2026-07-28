@@ -283,6 +283,28 @@ impl<'a> ModelicaText<'a> {
     }
 }
 
+/// Whether a run of Modelica-shaped text *mentions* the tracked variable.
+///
+/// For content questions — "does this equation refer to `h`?" — where the caller
+/// holds rendered text rather than structure. Asks the **lexer**, not a
+/// substring search, which is the difference between a mention and a
+/// coincidence:
+///
+/// - `height` does not mention `h` — it is one identifier token, not two.
+/// - `"h in metres"` does not mention `h` — that is a string literal.
+/// - `// height of h` does not mention `h` — that is a comment.
+/// - `der(h) - v` *does* mention `h`.
+///
+/// Prefer structure where it exists. The incidence matrix already records which
+/// unknowns each equation touches, and that beats re-deriving it from text —
+/// see `tarjan_anim::equation_mentions`. This is for callers that have only the
+/// string.
+pub fn mentions_identifier(text: &str, tracked: &str) -> bool {
+    tokenize(text).iter().any(|t| {
+        t.kind == TokenKind::Identifier && identifier_is(&text[t.start..t.end], tracked)
+    })
+}
+
 /// Whether an identifier token names the tracked variable.
 ///
 /// Matches the bare name, and the last component of a qualified one, so

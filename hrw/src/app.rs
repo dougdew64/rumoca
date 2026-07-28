@@ -2003,7 +2003,7 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// reduced to the base variable, since that is what `IdentifierIndex` and
     /// the source declaration are keyed by (idea #37's "wrinkle").
     fn set_tracked_identifier(&mut self, name: String) {
-        let name = strip_der(&name).to_owned();
+        let name = crate::identifier_index::strip_der(&name).to_owned();
         if self.tracked_identifier.as_deref() == Some(name.as_str()) {
             self.tracked_identifier = None;
         } else {
@@ -3535,48 +3535,6 @@ const GOLDEN_RATIO: f32 = 0.618_033_99;
 /// visually distinct colors without a hand-picked palette. `Hsva` constructs
 /// a color from Hue/Saturation/Value/Alpha; egui wraps hue mod 1.0
 /// automatically.
-/// Reduce a derivative mention to the variable it differentiates.
-///
-/// Downstream views name things as the DAE does, so an incidence column or an
-/// equation may read `der(h)` where the source declares `h`. Tracking must key
-/// on the base name: that is what `IdentifierIndex` maps to a source line, and
-/// what the source view can highlight. Idea #37 calls this out as the wrinkle.
-///
-/// Only a fully-wrapping `der(...)` is stripped, and only one layer — `der(der(h))`
-/// yields `der(h)`, which is itself a DAE variable in a reduced system, not `h`.
-fn strip_der(name: &str) -> &str {
-    let Some(rest) = name.strip_prefix("der(") else { return name };
-    let Some(inner) = rest.strip_suffix(')') else { return name };
-
-    // The `der(` must be closed by that final `)`, or this is an expression
-    // that merely begins and ends the right way — `der(a) + der(b)` does. So
-    // walk the inner text: the depth must never go negative (which would mean
-    // the opening paren closed early) and must end balanced. A top-level comma
-    // rules out `der(a, b)`, which is not one variable's derivative.
-    //
-    // Checking for parens at all, rather than balance, was the first attempt.
-    // It wrongly rejected `der(der(h))`, whose inner text legitimately contains
-    // them.
-    let mut depth = 0i32;
-    for c in inner.chars() {
-        match c {
-            '(' => depth += 1,
-            ')' => {
-                depth -= 1;
-                if depth < 0 {
-                    return name;
-                }
-            }
-            ',' if depth == 0 => return name,
-            _ => {}
-        }
-    }
-    if depth != 0 {
-        return name;
-    }
-    inner.trim()
-}
-
 fn series_color(i: usize) -> egui::Color32 {
     egui::ecolor::Hsva::new(i as f32 * GOLDEN_RATIO, 0.85, 0.5, 1.0).into()
 }
@@ -3805,29 +3763,6 @@ mod tests {
         assert!(!map.contains_key("plain.x"), "a non-class DefId is not a declaring class");
         assert!(!map.contains_key("h"), "an unqualified name has no component to resolve");
         assert!(!map.contains_key("nosuch.y"), "unknown components resolve to nothing");
-    }
-
-    /// Downstream views name derivatives as the DAE does; tracking has to key
-    /// on the base variable, which is what the index maps to a source line.
-    #[test]
-    fn strip_der_reduces_a_derivative_to_its_variable() {
-        assert_eq!(strip_der("der(h)"), "h");
-        assert_eq!(strip_der("der(gear.phi)"), "gear.phi");
-        // Not a derivative at all.
-        assert_eq!(strip_der("h"), "h");
-        assert_eq!(strip_der("order"), "order");
-        // One layer only: der(der(h)) is itself a DAE variable in a reduced
-        // system, so reducing it all the way to `h` would track the wrong thing.
-        assert_eq!(strip_der("der(der(h))"), "der(h)");
-        // Looks like der(...) but is an expression, not a single derivative:
-        // the leading `der(` is closed before the end.
-        assert_eq!(strip_der("der(a) + der(b)"), "der(a) + der(b)");
-        // A top-level comma is not one variable's derivative either.
-        assert_eq!(strip_der("der(a, b)"), "der(a, b)");
-        // Unbalanced input must be returned untouched rather than mangled.
-        assert_eq!(strip_der("der(h"), "der(h");
-        assert_eq!(strip_der("der((h)"), "der((h)");
-        assert_eq!(strip_der("der( h )"), "h", "surrounding space is trimmed");
     }
 
     /// Tracking is a toggle from every view, and derivative mentions resolve to

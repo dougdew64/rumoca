@@ -881,3 +881,20 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   tracking are one concept wearing two vocabularies, that the UI showed emitted context transiently
   and un-emitted context permanently, and that "where did this come from?" is not always a source
   line. Phases 5 and 6 exist because of what Phase 4 turned up.
+- **2026-07-28 — Heuristic name-matching removed; the tracking plan's principle is now honoured.**
+  `docs/cross-stage-tracking-plan.md` opens with *"No heuristic name-matching. All mappings use
+  Rumoca's typed provenance"* — and `matches_tracked`, used by every stage view to decide
+  highlighting, was a whole-word **substring search**. Digging in showed why: the structural report
+  Rumoca emits carries *names only* (`"unknown": "src.n.i"`), no `def_id`, so the views genuinely
+  had only strings. But the heuristic was never "using names" — flat names are canonical and name
+  exactly one variable. It was **fuzzy search over them**, and `matches_tracked` conflated two
+  different questions. Identity ("is this unknown the tracked variable?") is now `same_variable`:
+  exact equality modulo one `der(...)`, which is all the fuzziness ever bought. Membership ("does
+  this equation mention it?") is answered **structurally** where the data exists —
+  `tarjan_anim::equation_mentions` reads the incidence matrix's `rows[eq]`, which the structural
+  phase already computed, instead of substring-searching pretty-printed equation text. Where a
+  caller holds only text, `source_view::mentions_identifier` asks the **lexer**: `height` is one
+  token and not a mention of `h`, and identifiers inside string literals and comments are excluded.
+  `matches_tracked` and its word-boundary scanner are deleted — the heuristic is gone rather than
+  contained. Also consolidated three copies of `der(...)`-stripping into
+  `identifier_index::strip_der`.

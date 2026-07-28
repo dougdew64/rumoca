@@ -287,7 +287,7 @@ impl ReductionView {
         ui.add_space(2.0);
         for name in &self.demoted_states {
             let is_tracked = tracked.map_or(false, |t| {
-                name == t || crate::identifier_index::matches_tracked(name, t)
+                crate::identifier_index::same_variable(name, t)
             });
             ui.horizontal(|ui| {
                 ui.label(
@@ -332,7 +332,7 @@ impl ReductionView {
                 ui.end_row();
                 for row in &self.differentiated_rows {
                     let is_tracked = tracked.map_or(false, |t| {
-                        row.for_state == t || crate::identifier_index::matches_tracked(&row.for_state, t)
+                        crate::identifier_index::same_variable(&row.for_state, t)
                     });
                     let mut rt = egui::RichText::new(&row.for_state).monospace();
                     if is_tracked {
@@ -372,7 +372,7 @@ impl ReductionView {
                 ui.end_row();
                 for elim in &self.eliminations {
                     let is_tracked = tracked.map_or(false, |t| {
-                        elim.variable == t || crate::identifier_index::matches_tracked(&elim.variable, t)
+                        crate::identifier_index::same_variable(&elim.variable, t)
                     });
                     let mut rt = egui::RichText::new(&elim.variable).monospace();
                     if is_tracked {

@@ -293,7 +293,8 @@ fn node_ui(
                     // Prose fields are excluded: a tracked name occurring inside
                     // human-written text is a coincidence, not a mention.
                     Value::String(s) if !is_prose_field(key) => {
-                        s == t || crate::identifier_index::matches_tracked(s, t)
+                        crate::identifier_index::same_variable(s, t)
+                            || crate::source_view::mentions_identifier(s, t)
                     }
                     _ => false,
                 }
@@ -350,8 +351,7 @@ fn nav_target(
     // navigation stack — the vocabulary stays consistent whether you found the
     // class through a DefId field or through the variable itself.
     let name = trackable_name(key, scalar, opts)?;
-    let bare = name.strip_prefix("der(").and_then(|r| r.strip_suffix(')')).unwrap_or(&name);
-    opts.declaring_classes?.get(bare).cloned()
+    opts.declaring_classes?.get(crate::identifier_index::strip_der(&name)).cloned()
 }
 
 // Right-click context menu for any tree row.
@@ -440,7 +440,7 @@ fn trackable_name(key: &str, value: &Value, opts: &TreeOptions<'_>) -> Option<St
     }
     let Value::String(s) = value else { return None };
     let known = opts.known_variables?;
-    let bare = s.strip_prefix("der(").and_then(|r| r.strip_suffix(')')).unwrap_or(s);
+    let bare = crate::identifier_index::strip_der(s);
     (known.contains(bare) || known.contains(s.as_str())).then(|| s.clone())
 }
 
@@ -585,7 +585,8 @@ fn collect_tracked_ancestors<'a>(
             let here = collect_tracked_ancestors(v, tracked, ancestors);
             found || here
         }),
-        Value::String(s) => s == tracked || crate::identifier_index::matches_tracked(s, tracked),
+        Value::String(s) => crate::identifier_index::same_variable(s, tracked)
+            || crate::source_view::mentions_identifier(s, tracked),
         _ => false,
     };
     if dominated {
@@ -613,8 +614,8 @@ fn collect_tracked_ancestors<'a>(
 /// Deliberately short. Listing a field wrongly hides real matches, which is the
 /// worse failure — so a field is added only when its contents are certainly
 /// prose. `unit` and `quantity` are omitted on purpose: they hold code-like
-/// values (`"N.m"`), and `matches_tracked` already treats `.` as a word
-/// character, so they do not produce false positives.
+/// values (`"N.m"`), which the lexer reads as one dotted reference rather than
+/// as a mention of `m`.
 const PROSE_FIELDS: &[&str] = &["description", "comment", "file_name"];
 
 fn is_prose_field(key: &str) -> bool {
@@ -812,11 +813,19 @@ mod tests {
     }
 
     #[test]
-    fn collect_tracked_ancestors_uses_matches_tracked_for_strings() {
-        let tree = json!({"eq": "der(h) - v"});
+    fn collect_tracked_ancestors_finds_mentions_lexically() {
         let mut set = HashSet::new();
-        let found = collect_tracked_ancestors(&tree, "h", &mut set);
-        assert!(found, "should match 'h' inside 'der(h) - v' via matches_tracked");
+        assert!(
+            collect_tracked_ancestors(&json!({"eq": "der(h) - v"}), "h", &mut set),
+            "`der(h) - v` mentions h"
+        );
+        // The point of using the lexer rather than a substring search: `h` is
+        // part of `height`, not a mention of it.
+        set.clear();
+        assert!(
+            !collect_tracked_ancestors(&json!({"eq": "height - v"}), "h", &mut set),
+            "`height` is one identifier, not a mention of h"
+        );
     }
 
     /// `Real h "height of h"` must not read as a use of `h`.

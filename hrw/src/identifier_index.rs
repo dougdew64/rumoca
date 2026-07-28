@@ -203,40 +203,61 @@ fn best_match<'a>(vars: &[&'a IndexedVariable], path: &str) -> Option<&'a Indexe
     None
 }
 
-/// Internal helper: find the first position where `needle` appears as a whole
-/// identifier in `haystack`. Word-boundary characters are alphanumeric + `_`;
-/// when `dot_is_word_char` is true, `.` is also treated as a word character
-/// (so `"gear.h"` does NOT match `"h"`).
-fn find_whole_identifier_impl(
-    haystack: &str,
-    needle: &str,
-    dot_is_word_char: bool,
-) -> Option<usize> {
-    let is_word_byte = |b: u8| -> bool {
-        b.is_ascii_alphanumeric() || b == b'_' || (dot_is_word_char && b == b'.')
-    };
-    let mut start = 0;
-    while let Some(pos) = haystack[start..].find(needle) {
-        let abs = start + pos;
-        let before_ok =
-            abs == 0 || !is_word_byte(haystack.as_bytes()[abs - 1]);
-        let end = abs + needle.len();
-        let after_ok =
-            end >= haystack.len() || !is_word_byte(haystack.as_bytes()[end]);
-        if before_ok && after_ok {
-            return Some(abs);
+/// Reduce a derivative mention to the variable it differentiates.
+///
+/// Views name things as the DAE does, so an incidence column may read `der(h)`
+/// where the source declares `h`. One canonical implementation — this used to
+/// exist three times (`app.rs`, and twice inline in `tree.rs`).
+///
+/// Peels exactly **one** layer: `der(der(h))` yields `der(h)`, which is itself a
+/// variable in a reduced system, so reducing further would name the wrong thing.
+/// Input that merely looks the part is returned untouched — `der(a) + der(b)`
+/// begins and ends correctly but its opening paren closes early.
+pub fn strip_der(name: &str) -> &str {
+    let Some(rest) = name.strip_prefix("der(") else { return name };
+    let Some(inner) = rest.strip_suffix(')') else { return name };
+    let mut depth = 0i32;
+    for c in inner.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth < 0 {
+                    return name;
+                }
+            }
+            // A top-level comma means this is not one variable's derivative.
+            ',' if depth == 0 => return name,
+            _ => {}
         }
-        start = abs + 1;
     }
-    None
+    if depth != 0 {
+        return name;
+    }
+    inner.trim()
 }
 
-/// Check whether `haystack` contains `needle` as a whole identifier bounded
-/// by non-alphanumeric, non-underscore, non-dot characters (or string edges).
-/// Treats `.` as a word character so `"gear.h"` does NOT match `"h"`, but
-/// `"der(h)"` does. Used across views for tracked-identifier highlighting.
-pub fn matches_tracked(haystack: &str, needle: &str) -> bool {
-    find_whole_identifier_impl(haystack, needle, true).is_some()
+/// Whether two names refer to the same DAE variable.
+///
+/// **Exact comparison, modulo one `der(…)` wrapper on either side.**
+///
+/// This replaced a whole-word substring search (`matches_tracked`), which
+/// `docs/cross-stage-tracking-plan.md` had ruled out from the start: *"No
+/// heuristic name-matching."* The substring version was buying exactly one
+/// thing — letting a tracked `h` match an unknown named `der(h)` — and paying
+/// for it with false positives wherever a name appeared inside other text.
+///
+/// Exact comparison is well-founded here because **flat names are canonical**:
+/// `src.n.i` names precisely one variable in the DAE. A name is an identifier
+/// that happens to be a string, not a search term. Every value that reaches
+/// this function is a qualified flat name — `clickable_spans` and
+/// `trackable_name` both yield them.
+///
+/// For *membership* questions — "does this equation mention the variable?" —
+/// do not use this on rendered equation text. The incidence matrix answers that
+/// structurally: `rows[i]` holds the columns equation `i` touches.
+pub fn same_variable(a: &str, b: &str) -> bool {
+    strip_der(a) == strip_der(b)
 }
 
 use crate::byte_offset_to_line;
@@ -375,41 +396,41 @@ mod tests {
         assert_eq!(span_texts(text, &spans), vec![("h", "h".to_string())]);
     }
 
+    /// Identity is exact, modulo one `der(...)` wrapper.
+    ///
+    /// Replaced a whole-word substring search. The substring version bought
+    /// exactly one thing -- letting tracked `h` match an unknown `der(h)` --
+    /// and paid for it with false positives wherever a name sat inside other
+    /// text. `docs/cross-stage-tracking-plan.md` ruled that out from the start.
     #[test]
-    fn matches_tracked_exact() {
-        assert!(matches_tracked("h", "h"));
-        assert!(matches_tracked("v", "v"));
+    fn same_variable_is_exact_modulo_der() {
+        assert!(same_variable("h", "h"));
+        assert!(same_variable("der(h)", "h"));
+        assert!(same_variable("h", "der(h)"));
+        assert!(same_variable("gear.flange_b.tau", "gear.flange_b.tau"));
+
+        // A name inside another name is not the same variable.
+        assert!(!same_variable("height", "h"));
+        assert!(!same_variable("gear.h", "h"));
+        assert!(!same_variable("inertia.J", "J"));
+        assert!(!same_variable("gear.flange_b.tau", "tau"));
+        // Rendered equation text is not a variable -- ask the lexer instead,
+        // via `source_view::mentions_identifier`.
+        assert!(!same_variable("der(h) - v", "h"));
     }
 
     #[test]
-    fn matches_tracked_in_der() {
-        assert!(matches_tracked("der(h)", "h"));
-        assert!(matches_tracked("der(v)", "v"));
-        assert!(!matches_tracked("der(v)", "h"));
-    }
-
-    #[test]
-    fn matches_tracked_in_equation_text() {
-        assert!(matches_tracked("der(h) - v", "h"));
-        assert!(matches_tracked("der(h) - v", "v"));
-    }
-
-    #[test]
-    fn matches_tracked_rejects_substring() {
-        assert!(!matches_tracked("height", "h"));
-        assert!(!matches_tracked("variable", "v"));
-    }
-
-    #[test]
-    fn matches_tracked_rejects_qualified_segment() {
-        assert!(!matches_tracked("gear.h", "h"));
-        assert!(!matches_tracked("inertia.J", "J"));
-    }
-
-    #[test]
-    fn matches_tracked_qualified_name() {
-        assert!(matches_tracked("gear.flange_b.tau", "gear.flange_b.tau"));
-        assert!(!matches_tracked("gear.flange_b.tau", "tau"));
+    fn strip_der_peels_one_layer() {
+        assert_eq!(strip_der("der(h)"), "h");
+        assert_eq!(strip_der("der(gear.phi)"), "gear.phi");
+        assert_eq!(strip_der("h"), "h");
+        assert_eq!(strip_der("order"), "order");
+        // der(der(h)) is itself a variable in a reduced system.
+        assert_eq!(strip_der("der(der(h))"), "der(h)");
+        // Looks the part, but the opening paren closes early.
+        assert_eq!(strip_der("der(a) + der(b)"), "der(a) + der(b)");
+        assert_eq!(strip_der("der(a, b)"), "der(a, b)");
+        assert_eq!(strip_der("der(h"), "der(h");
     }
 
     // --- IdentifierIndex::build ---
