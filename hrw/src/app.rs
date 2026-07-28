@@ -124,6 +124,32 @@ enum FlattenView {
     Tree,
 }
 
+/// Sub-view names for the capture's `view` section.
+///
+/// Written out rather than derived from `Debug` because these strings are read
+/// by Claude and appear in `docs/context-assembly.md`; a `#[derive(Debug)]`
+/// rename would silently change the emitted vocabulary. The enums themselves
+/// stay display-only.
+fn structural_view_name(v: StructuralView) -> &'static str {
+    match v {
+        StructuralView::Summary => "Summary",
+        StructuralView::SpyPlot => "SpyPlot",
+        StructuralView::Incidence => "Incidence",
+        StructuralView::MatchingAnim => "MatchingAnim",
+        StructuralView::TarjanAnim => "TarjanAnim",
+        StructuralView::Animate => "Animate",
+        StructuralView::Tree => "Tree",
+    }
+}
+
+fn flatten_view_name(v: FlattenView) -> &'static str {
+    match v {
+        FlattenView::Equations => "EquationSheet",
+        FlattenView::SourceMap => "SourceMap",
+        FlattenView::Tree => "Tree",
+    }
+}
+
 /// What the bottom two-thirds of the Specimen mode LHS shows.
 ///
 /// `Debug` so the crash log can name it — the derived variant name is exactly
@@ -1127,6 +1153,7 @@ impl App {
             resolve_value: self.stages.resolve.value.as_ref(),
             focus,
             tracking: self.tracking_context(stage_values),
+            view: self.view_context(),
         }
     }
 
@@ -1193,6 +1220,74 @@ impl App {
         });
         self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
         self.bridge_status = Some(status_line(seq, &target, "explain", result));
+    }
+
+    /// What HRW is showing, for the capture.
+    ///
+    /// One builder for all four `Ask` construction sites, so the emitted view
+    /// can never depend on which path produced the capture — a point made by
+    /// clicking a node and the same point re-emitted when the followed
+    /// identifier changes must describe the same screen.
+    ///
+    /// Overlaps `diagnostic_snapshot` deliberately rather than sharing with it.
+    /// The two answer different questions — *what was on screen when this
+    /// context was assembled* versus *what was the app doing when it died* —
+    /// and merging them would tie the capture's shape to the crash log's.
+    fn view_context(&self) -> bridge::View<'_> {
+        bridge::View {
+            ui_mode: match self.ui_mode {
+                UiMode::Tour => "Tour",
+                UiMode::Specimen => "Specimen",
+                UiMode::Debug => "Debug",
+            },
+            stage_view: match self.stage {
+                StageKind::Structural | StageKind::IndexReduction => {
+                    Some(structural_view_name(self.structural_view))
+                }
+                StageKind::Flatten => Some(flatten_view_name(self.flatten_view)),
+                _ => None,
+            },
+            specimen_detail: (self.ui_mode == UiMode::Specimen).then(|| {
+                match self.specimen_detail {
+                    SpecimenDetail::Source => "Source",
+                    SpecimenDetail::Narrative => "Narrative",
+                }
+            }),
+            viewing_log: self.viewing_log,
+            animation: self.animation_view(),
+        }
+    }
+
+    /// The on-screen animation's position, if the current stage is showing one.
+    ///
+    /// Reported only for the *current* stage tab: the caches hold several
+    /// animations at once, and naming a stale one would say the user was
+    /// looking at something they were not.
+    fn animation_view(&self) -> Option<bridge::AnimationView<'static>> {
+        let (which, position, live) = match self.stage {
+            StageKind::Structural => match self.structural_view {
+                StructuralView::MatchingAnim => {
+                    let a = self.cached_matching_anim.as_ref()?.as_ref()?;
+                    ("matching", a.position(), a.live_state(false))
+                }
+                StructuralView::TarjanAnim => {
+                    let a = self.cached_tarjan_anim.as_ref()?.as_ref()?;
+                    ("tarjan", a.position(), a.live_state(false))
+                }
+                _ => return None,
+            },
+            StageKind::IndexReduction => {
+                let a = self.cached_reduction_anim.as_ref()?.as_ref()?;
+                ("reduction", a.position(), a.live_state(false))
+            }
+            _ => return None,
+        };
+        Some(bridge::AnimationView {
+            which,
+            frame: position.0,
+            frame_count: position.1,
+            live_state: live.name(),
+        })
     }
 
     /// The application state a crash file should carry.
@@ -1342,6 +1437,7 @@ impl App {
                 // A navigated library class is outside the specimen pipeline,
                 // so there are no stages to sweep for the followed identifier.
                 tracking: None,
+                view: self.view_context(),
             };
             status_line(seq, &target, request_str, bridge::write(&ask))
         } else {
@@ -2229,6 +2325,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 resolve_value: self.stages.resolve.value.as_ref(),
                 focus: Focus::Stage,
                 tracking,
+                view: self.view_context(),
             };
             self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
             return;
@@ -2268,6 +2365,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             resolve_value: self.stages.resolve.value.as_ref(),
             focus,
             tracking,
+            view: self.view_context(),
         };
         self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }

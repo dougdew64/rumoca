@@ -119,12 +119,23 @@ pub const STAGE_FILE_NAMES: &[&str] = &[
     "solve_lowering.json",
 ];
 
-// Maximum size (in bytes) of a node subtree to inline in the focus file.
-// Nodes larger than this are described by "shape" only (list of keys, or array
-// length). Claude can always re-derive the full subtree from the staged IR file.
-// 16KB is generous for typical IR nodes (a single component, equation, etc.)
-// but prevents the focus file from exploding on large class definitions.
-const MAX_NODE_BYTES: usize = 16 * 1024;
+/// Maximum size of a captured node's subtree before it degrades to a shape
+/// summary (its key names, or an array length).
+///
+/// **Re-justified 2026-07-28.** The old reasoning was "prevent the focus file
+/// from exploding", which is a tidiness argument, and it produced a perverse
+/// result: past the limit the node was replaced by its *shape*, so the largest
+/// and most interesting nodes were the ones taught about least. A captured
+/// class definition would arrive as a list of key names.
+///
+/// The right question is what a reader needs, and Doug's direction is explicit
+/// — answer quality first, token consumption not a constraint. So this is now
+/// 256 KiB: large enough that a whole flattened class or a stage's equation
+/// list arrives intact, and the degradation is a genuine last resort rather
+/// than a routine event. Past it, the shape summary plus the stage file under
+/// `stages/` is a real fallback, because a node that big is being skimmed
+/// rather than read.
+const MAX_NODE_BYTES: usize = 256 * 1024;
 
 // Self-describing instructions embedded in every focus file. When Doug opens
 // `focus.json` directly while dogfooding, this text explains what it is and
@@ -144,9 +155,24 @@ wants SEVERAL breakpoints along the identifier's trajectory.\n\n\
 Either may be absent. When both are present and the request is ambiguous, \
 compare `seq` with `tracking.seq`: whichever is higher was acted on last and \
 is almost certainly the subject.\n\n\
+Three sections exist so you do not have to reconstruct by hand what HRW \
+already knew:\n\
+  • `view` — what was ON SCREEN. A point made in a tree and one made paused \
+mid-animation are different questions; only this section distinguishes them.\n\
+  • `phase_source` — where this stage's algorithm lives in the workspace. \
+Read the code rather than inferring the algorithm from its output.\n\
+  • `neighbourhood` (on `node`, and on each `tracking` context) — the IR \
+AROUND an address: the largest enclosing node that fit, plus the names \
+adjacent to the hit. Fields on the enclosing object are often the answer \
+(`generated: true` says a variable was manufactured by a phase, not \
+declared), and adjacency is often the finding (a manufactured companion sits \
+beside the variable it shadows).\n\n\
 In `tracking.stages`, `mentions: 0` is information, not a gap — the name is \
 genuinely absent from that stage, which is how a demoted or alias-eliminated \
-variable announces itself.";
+variable announces itself. Counts are exact; `paths` and `contexts` are \
+samples, and say so when truncated.\n\n\
+Everything here is a fact about the IR or the app. Nothing is an \
+interpretation — that part is yours.";
 
 /// One segment of a key-path into a JSON tree.
 ///
@@ -324,11 +350,25 @@ pub fn summarize_tracking(t: &Tracking) -> (usize, usize) {
 
 /// Cap on recorded mention paths per stage.
 ///
-/// A count is always exact; the paths are a sample. Without a cap, following a
-/// common variable through a large model would produce a focus file bigger than
-/// the stage IR it describes — and Claude can always read the stage file for
-/// the rest.
-const MAX_MENTION_PATHS: usize = 12;
+/// **The count is always exact; only the addresses are sampled.** The cap is
+/// about how much a reader can hold in view, not about file size — following a
+/// common variable can produce hundreds of mentions, and a list that long stops
+/// being a map of where the identifier lives and becomes something to skim.
+///
+/// Forty rather than the original twelve: twelve was chosen when the focus file
+/// was judged against the stage IR's size, which was the wrong yardstick. At
+/// forty, a variable's whole footprint in a stage is usually listed rather than
+/// glimpsed, and `paths_truncated` still says when it is not.
+const MAX_MENTION_PATHS: usize = 40;
+
+/// How many mentions per stage get their surrounding IR, not just an address.
+///
+/// Two tiers on purpose. `paths` answers *where does this identifier appear*,
+/// cheaply and nearly completely. `contexts` answers *what does each appearance
+/// look like* — and that is what carries `generated: true`, the neighbouring
+/// `__pre__` companions, the enclosing equation. Six is enough to see the
+/// pattern in a stage; past that the answers repeat and the addresses suffice.
+const MAX_MENTION_CONTEXTS: usize = 6;
 
 /// Walk one stage's IR, counting and locating mentions of `name`.
 ///
@@ -336,17 +376,22 @@ const MAX_MENTION_PATHS: usize = 12;
 /// on-screen highlighting can never disagree: exact identity
 /// (`same_variable`), lexical mention for code-bearing strings
 /// (`mentions_identifier`), and prose fields excluded by name.
+///
+/// Collects `Vec<Seg>` rather than formatted strings because the caller needs
+/// to navigate back to each hit to build its neighbourhood; a rendered
+/// `"a.b[0].c"` cannot be walked, and re-parsing one would be guesswork the
+/// moment a key contains a dot — which, in `bindings.__pre__.overSpeed`, it does.
 fn find_mentions(
     value: &Value,
     name: &str,
     path: &mut Vec<Seg>,
-    paths: &mut Vec<String>,
+    paths: &mut Vec<Vec<Seg>>,
     total: &mut usize,
 ) {
-    let hit = |path: &[Seg], total: &mut usize, paths: &mut Vec<String>| {
+    let hit = |path: &[Seg], total: &mut usize, paths: &mut Vec<Vec<Seg>>| {
         *total += 1;
         if paths.len() < MAX_MENTION_PATHS {
-            paths.push(describe_path(path));
+            paths.push(path.to_vec());
         }
     };
     match value {
@@ -383,11 +428,16 @@ fn find_mentions(
 /// Build the `tracking` section: where the followed identifier lives, stage by
 /// stage — **including where it does not**.
 ///
+/// `pub` so `examples/capture_probe.rs` can print it against a real compiled
+/// specimen. Checking that the capture carries what a reader would otherwise
+/// hunt for by hand means *reading the emitted value*; unit tests check shape,
+/// and shape is not the thing in question.
+///
 /// Absence is emitted deliberately. "Not present in Initialization or Solve
 /// lowering" is how a demoted or alias-eliminated variable announces itself, and
 /// a hits-only capture cannot express disappearance. The disappearance is often
 /// the whole story.
-fn build_tracking(t: &Tracking) -> Value {
+pub fn build_tracking(t: &Tracking) -> Value {
     let stages: Vec<Value> = t
         .stage_values
         .iter()
@@ -399,8 +449,16 @@ fn build_tracking(t: &Tracking) -> Value {
                 json!({
                     "stage": stage_name,
                     "mentions": total,
-                    "paths": paths,
+                    "paths": paths.iter().map(|p| describe_path(p)).collect::<Vec<_>>(),
                     "paths_truncated": total > paths.len(),
+                    // The surrounding IR for the first few. An address alone
+                    // makes the reader open the stage file *and* already know
+                    // what to look for; this carries what they would have found.
+                    "contexts": paths.iter()
+                        .take(MAX_MENTION_CONTEXTS)
+                        .map(|p| neighbourhood(v, p))
+                        .collect::<Vec<_>>(),
+                    "contexts_truncated": paths.len() > MAX_MENTION_CONTEXTS,
                 })
             }
             // No IR at all is different from IR without the name in it.
@@ -414,8 +472,12 @@ fn build_tracking(t: &Tracking) -> Value {
                  pipeline, as opposed to `node`, which is the point they are \
                  POINTING AT. Stages with `mentions: 0` are meaningful: the \
                  name is genuinely absent there, which is how a demoted or \
-                 alias-eliminated variable shows itself. `paths` is a sample \
-                 capped at 12 per stage; `mentions` is the exact count.",
+                 alias-eliminated variable shows itself. `mentions` is the \
+                 exact count; `paths` are addresses (a sample when \
+                 `paths_truncated`); `contexts` carry the surrounding IR for \
+                 the first few — `context` is the largest enclosing node that \
+                 fit the budget, and `siblings.window` is what sits beside the \
+                 hit in IR order.",
         "identifier": t.name,
         "stages": stages,
     });
@@ -429,6 +491,116 @@ fn build_tracking(t: &Tracking) -> Value {
         out["declared_in_class"] = json!(class);
     }
     out
+}
+
+/// What HRW is actually showing — the view the user was looking at when they
+/// assembled this context.
+///
+/// **The capture used to be blind to this.** A point at a node in the Resolve
+/// tree and a point made while paused mid-index-reduction at frame 12 produced
+/// *identical* files, even though in the second case the frame is most of the
+/// question. Which view is on screen changes what "explain this" means, and it
+/// is free to emit.
+///
+/// Every field is what the app is showing, not what it means. `stage_view`
+/// carries the sub-tab's own name (`"MatchingAnim"`, `"EquationSheet"`) because
+/// the enum variant is the exact fact, and a hand-written prettier string would
+/// be a second thing to keep in sync.
+#[derive(Clone, Copy)]
+pub struct View<'a> {
+    /// Which of the three left-panel modes: Tour, Specimen, Debug.
+    pub ui_mode: &'a str,
+    /// The sub-view within the current stage, when the stage has sub-tabs
+    /// (Structural and Flatten do; the generic tree stages do not).
+    pub stage_view: Option<&'a str>,
+    /// Which specimen-mode detail pane: source or narrative.
+    pub specimen_detail: Option<&'a str>,
+    /// True when the Log pane has replaced the stage view.
+    pub viewing_log: bool,
+    /// Where an on-screen animation stands, if one is showing.
+    pub animation: Option<AnimationView<'a>>,
+}
+
+/// An animation's position, for the capture.
+#[derive(Clone, Copy)]
+pub struct AnimationView<'a> {
+    /// Which algorithm: `"matching"`, `"tarjan"`, `"reduction"`.
+    pub which: &'a str,
+    /// Cursor position and total frames — "frame 12 of 47".
+    pub frame: usize,
+    pub frame_count: usize,
+    /// `LiveState` as a name: Idle, Arming, Running, Finished.
+    pub live_state: &'a str,
+}
+
+impl View<'_> {
+    fn to_json(self) -> Value {
+        json!({
+            "note": "what HRW was showing when this context was assembled. A point \
+                     made in a tree and one made mid-animation are different questions, \
+                     and only this section can tell them apart.",
+            "ui_mode": self.ui_mode,
+            "stage_view": self.stage_view,
+            "specimen_detail": self.specimen_detail,
+            "viewing_log": self.viewing_log,
+            "animation": self.animation.map(|a| json!({
+                "which": a.which,
+                "frame": a.frame,
+                "frame_count": a.frame_count,
+                "live_state": a.live_state,
+            })),
+        })
+    }
+}
+
+/// Where in Rumoca a stage's code lives.
+///
+/// **Emitted so the algorithm can be read rather than inferred from its
+/// output.** Explaining what the Events phase does by reading `events.json` is
+/// working backwards from a result; the in-workspace move exists precisely so
+/// the phase source is readable, and this closes the last gap — knowing which
+/// file to open.
+///
+/// These are facts about the build (HRW calls exactly these functions from
+/// `worker.rs`), not an interpretation of what the phases do. `None` for
+/// Simulation-adjacent entries that HRW reaches through a different path.
+fn phase_source(stage: StageKind) -> Value {
+    // (crate directory, the entry point HRW actually calls)
+    let (krate, entry) = match stage {
+        StageKind::Parse => ("crates/rumoca-phase-parse", "parse_to_ast"),
+        // Resolution is driven through the compile session rather than a free
+        // function, so the entry named here is the session method.
+        StageKind::Resolve => ("crates/rumoca-compile", "Session::resolved"),
+        StageKind::Instantiate => ("crates/rumoca-phase-instantiate", "instantiate_model"),
+        StageKind::Typecheck => ("crates/rumoca-phase-typecheck", "typecheck_instanced"),
+        // Flatten has no standalone entry point: it is extracted from the
+        // reachable-closure pipeline result. Saying so is more useful than
+        // naming a function that does not exist.
+        StageKind::Flatten => {
+            ("crates/rumoca-compile", "Session::compile_model_strict_reachable_with_recovery")
+        }
+        StageKind::Structural => ("crates/rumoca-phase-structural", "build_structural_report"),
+        StageKind::IndexReduction => (
+            "crates/rumoca-phase-structural",
+            "dae_prepare::reduce_constrained_dummy_derivatives / \
+             dae_prepare::index_reduce_missing_state_derivatives",
+        ),
+        StageKind::Initialization => ("crates/rumoca-phase-structural", "build_ic_plan"),
+        // Events are not produced by a phase call — the hybrid structure is
+        // already in the DAE and HRW reads it out. Naming the IR is the honest
+        // answer to "where is this computed?".
+        StageKind::Events => ("crates/rumoca-ir-dae", "Dae::discrete (populated during flatten)"),
+        StageKind::SolveLowering => ("crates/rumoca-phase-solve", "lower_dae_to_solve_model"),
+        StageKind::Simulation => ("crates/rumoca-sim", "simulate_solve_model"),
+    };
+    json!({
+        "note": "where this stage's algorithm lives in the Rumoca workspace — read \
+                 the code rather than inferring the algorithm from its output. \
+                 Paths are relative to the repository root; HRW calls these from \
+                 hrw/src/worker.rs.",
+        "crate": krate,
+        "entry": entry,
+    })
 }
 
 /// All the context needed to write one focus file.
@@ -465,6 +637,9 @@ pub struct Ask<'a> {
     /// What the user is following — the *thread*. Independent of `focus`:
     /// point-only, thread-only, and both are all normal states.
     pub tracking: Option<Tracking<'a>>,
+    /// What HRW was showing. See [`View`] — a point made in a tree and one made
+    /// mid-animation used to produce identical files.
+    pub view: View<'a>,
 }
 
 /// Write the focus file to `.hrw-bridge/focus.json`.
@@ -629,8 +804,11 @@ pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
 //   "libraries": [<library paths>],
 //   "def_resolutions": { "<id>": { "name": ..., "kind": ... }, ... },
 //   "stages": { "dir": ..., "files": [...] },
+//   "view": { ... },          // what HRW was showing (mode, sub-view, animation frame)
+//   "phase_source": { ... },  // where this stage's algorithm lives in Rumoca
 //   "node": { ... }           // only for kind=node
 //   "cross_stage": { ... }    // only for kind=node
+//   "tracking": { ... }       // only when following an identifier
 // }
 fn build(ask: &Ask) -> Value {
     let kind = match ask.focus {
@@ -649,6 +827,8 @@ fn build(ask: &Ask) -> Value {
         "stage": stage_str,
         "libraries": ask.libraries,
         "def_resolutions": def_resolutions(ask.def_index),
+        "view": ask.view.to_json(),
+        "phase_source": ask.stage.map(phase_source),
         "stages": {
             "dir": STAGES_DIR,
             "note": "each <name>.json is that stage's FULL IR for the current specimen \
@@ -671,9 +851,15 @@ fn build(ask: &Ask) -> Value {
     doc
 }
 
-// Safety limit on the number of scalar changes reported in a cross-stage diff.
-// Real diffs are small (a handful of `null -> id` fields); this backstop
-// prevents pathological cases from producing an enormous focus file.
+/// Limit on scalar changes reported in a cross-stage diff.
+///
+/// Kept at 400 after review, and the reasoning is different from the other two
+/// caps. Those bound *how much surrounding IR to carry*, where more is better
+/// until it stops being readable. This bounds a **list of differences**, and a
+/// cross-stage diff that runs to hundreds of entries is no longer telling a
+/// reader what the phase did to the node — it is saying the node was rebuilt.
+/// Real diffs are a handful of `null -> id` fields; the interesting signal is
+/// gone long before 400. This stays a backstop, not a sample.
 const MAX_CHANGES: usize = 400;
 
 // Build the cross-stage diff for a captured node.
@@ -785,6 +971,119 @@ fn capped(node: &Value) -> Value {
     }
 }
 
+/// Byte budget for one *enclosing context* block.
+///
+/// Not a tidiness limit. It bounds how much surrounding IR one address is worth
+/// carrying, and it is spent greedily: [`enclosing_context`] hands back the
+/// **largest** ancestor that fits, so a small leaf in a small object yields the
+/// whole equation while a leaf in a 988-entry map yields only its immediate
+/// parent. 8 KiB is roughly one flattened equation with all its spans — the
+/// unit at which IR stops being self-explanatory and needs the stage file
+/// anyway.
+const MAX_CONTEXT_BYTES: usize = 8 * 1024;
+
+/// How many sibling names to show around a hit, on each side.
+///
+/// A *window centred on the hit*, not the first N — the two are very different.
+/// Following `__pre__.overSpeed` into Solve lowering lands in a map of 988
+/// bindings, and the finding worth having is that `__pre__.c`, `__pre__.load.w`
+/// and `__pre__.maxSpeed` sit immediately beside it (the phase makes a
+/// pre-companion for everything the event logic samples). The first 40 keys of
+/// that map would have said nothing. Position is an exact fact about the IR, so
+/// this stays inside the "emit facts, not interpretation" rule.
+const SIBLING_WINDOW: usize = 12;
+
+/// The IR *around* an address, not just the value at it.
+///
+/// A path alone forces the reader to go open the stage file, and — worse —
+/// forces them to already know what to look for. Following `__pre__.overSpeed`
+/// produced the path
+/// `discrete_updates.valued_updates_f_m[0].rhs.If.else_branch.VarRef.name.name`,
+/// and the decisive fact about that mention was `generated: true` on the object
+/// one level up: the variable is *manufactured by the Events phase*, which is
+/// the entire explanation. Nothing in the path says so. Four separate reads of
+/// `events.json` are what turned it up, and only because the reader thought to
+/// look.
+///
+/// So this returns the enclosing IR, the position among siblings, and the value
+/// itself — the three things that were reconstructed by hand.
+fn neighbourhood(root: &Value, path: &[Seg]) -> Value {
+    let (depth, context) = enclosing_context(root, path);
+    json!({
+        "path": describe_path(path),
+        "value": navigate(root, path),
+        // How far up the returned context sits. 0 is the stage root; equal to
+        // the path length means the value stood alone in its budget.
+        "context_at_depth": depth,
+        "context_path": describe_path(&path[..depth]),
+        "context": context,
+        "siblings": siblings(root, path),
+    })
+}
+
+/// The largest ancestor of `path` that fits in [`MAX_CONTEXT_BYTES`].
+///
+/// Walks *up* from the addressed value. Ancestors only grow, so the first one
+/// that overflows ends the search and the previous one is the answer. Returns
+/// `(depth, value)` where `depth` indexes into `path`.
+///
+/// Spending the budget greedily is the point: it adapts to the IR instead of
+/// fixing an arbitrary number of levels. One level up from a leaf inside a huge
+/// map is all that fits; from a leaf inside a small equation, the whole equation
+/// comes along. Neither case needs a rule of its own.
+fn enclosing_context(root: &Value, path: &[Seg]) -> (usize, Value) {
+    let mut best = (path.len(), Value::Null);
+    for depth in (0..=path.len()).rev() {
+        let Some(node) = navigate(root, &path[..depth]) else { continue };
+        let bytes = serde_json::to_string(node).map(|s| s.len()).unwrap_or(usize::MAX);
+        if bytes > MAX_CONTEXT_BYTES {
+            break;
+        }
+        best = (depth, node.clone());
+    }
+    best
+}
+
+/// What sits beside the addressed value in its parent.
+///
+/// `count` is exact; `window` is a positional sample around the hit. For an
+/// array element the window is the neighbouring indices; for an object field it
+/// is the neighbouring keys in IR order. Returns `Null` at the root, which has
+/// no parent and therefore no siblings — a fact, not a missing value.
+fn siblings(root: &Value, path: &[Seg]) -> Value {
+    let Some((last, parent_path)) = path.split_last() else { return Value::Null };
+    let Some(parent) = navigate(root, parent_path) else { return Value::Null };
+
+    let (count, position, names): (usize, Option<usize>, Vec<String>) = match parent {
+        Value::Object(map) => {
+            let keys: Vec<&String> = map.keys().collect();
+            let Seg::Key(k) = last else { return Value::Null };
+            let at = keys.iter().position(|key| *key == k);
+            (keys.len(), at, keys.iter().map(|k| (*k).clone()).collect())
+        }
+        Value::Array(arr) => {
+            let Seg::Index(i) = last else { return Value::Null };
+            (arr.len(), Some(*i), (0..arr.len()).map(|n| format!("[{n}]")).collect())
+        }
+        // A scalar has no siblings. Reaching here means the path addressed
+        // something inside a scalar, which cannot happen via `navigate`.
+        _ => return Value::Null,
+    };
+
+    let centre = position.unwrap_or(0);
+    let lo = centre.saturating_sub(SIBLING_WINDOW);
+    let hi = (centre + SIBLING_WINDOW + 1).min(names.len());
+    json!({
+        "count": count,
+        "position": position,
+        "window": &names[lo..hi],
+        "window_is_complete": lo == 0 && hi == names.len(),
+        "note": "names adjacent to this one in IR order, centred on it. \
+                 Adjacency is often the finding: a manufactured companion \
+                 variable sits beside the variable it shadows.",
+    })
+}
+
 // Recursively diff two JSON subtrees, collecting scalar-level changes.
 //
 // Each change is a `{ "path": "...", "parse": <old>, "resolve": <new> }` record.
@@ -866,6 +1165,12 @@ fn build_node(key_path: &[Seg], root: &Value, specimen: Option<&Path>) -> Value 
     json!({
         "key_path": key_path_json,
         "subtree": subtree,
+        // What the node sits in. A captured scalar is often uninterpretable
+        // alone: pointing at `def_id: 85` gives an integer and a path, and
+        // answering "the def_id of *what*?" meant reconstructing the parent by
+        // hand. `neighbourhood` carries the enclosing object and the node's
+        // position among its siblings, so the subject arrives whole.
+        "neighbourhood": neighbourhood(root, key_path),
         "provenance": ascend_provenance(root, key_path, specimen),
     })
 }
@@ -1019,6 +1324,21 @@ fn shape(v: &Value) -> Value {
 mod tests {
     use super::*;
 
+    /// A neutral `View` for tests that are not about the view section.
+    ///
+    /// Named rather than inlined so adding a field to `View` is a one-line
+    /// change here instead of an edit at every `Ask` in this module.
+    fn test_view() -> View<'static> {
+        View {
+            ui_mode: "Specimen",
+            stage_view: None,
+            specimen_detail: None,
+            viewing_log: false,
+            animation: None,
+        }
+    }
+
+
     /// Span-ascent picks the *tightest* enclosing location, and the slice is
     /// expanded to whole source lines. The clicked node is a bare string leaf
     /// with no location of its own — provenance must come from its ancestor.
@@ -1106,6 +1426,7 @@ mod tests {
             resolve_value: Some(&resolve),
             focus: Focus::Node { key_path: key_path.clone(), stage_value: &resolve },
             tracking: None,
+            view: test_view(),
         };
 
         let cs = build(&ask)["cross_stage"].clone();
@@ -1146,6 +1467,7 @@ mod tests {
                 declaring_class: None,
                 stage_values: stages,
             }),
+            view: test_view(),
         }
     }
 
@@ -1221,23 +1543,206 @@ mod tests {
             resolve_value: None,
             focus: Focus::Stage,
             tracking: None,
+            view: test_view(),
         };
         assert!(build(&ask).get("tracking").is_none());
     }
 
-    /// The path sample is capped; the count is not.
+    /// The samples are capped; the count is not. Two tiers, two caps.
+    ///
+    /// Sized from the constants rather than a literal — this test previously
+    /// hard-coded 40 mentions, which silently stopped testing truncation the
+    /// day the cap was raised to 40 and the two coincided.
     #[test]
-    fn mention_paths_are_capped_but_counted_exactly() {
-        let many: Vec<Value> = (0..40).map(|_| json!({ "unknown": "h" })).collect();
+    fn mention_samples_are_capped_but_counted_exactly() {
+        let n = MAX_MENTION_PATHS + 5;
+        let many: Vec<Value> = (0..n).map(|_| json!({ "unknown": "h" })).collect();
         let stage = json!({ "rows": many });
         let stages: Vec<(&str, Option<&Value>)> = vec![("structural", Some(&stage))];
         let empty = BTreeMap::new();
         let doc = build(&tracking_ask("h", &stages, &empty));
         let entry = &doc["tracking"]["stages"][0];
 
-        assert_eq!(entry["mentions"], json!(40), "count is exact");
+        assert_eq!(entry["mentions"], json!(n), "count is exact regardless of the caps");
         assert_eq!(entry["paths"].as_array().unwrap().len(), MAX_MENTION_PATHS);
         assert_eq!(entry["paths_truncated"], json!(true));
+        assert_eq!(entry["contexts"].as_array().unwrap().len(), MAX_MENTION_CONTEXTS);
+        assert_eq!(entry["contexts_truncated"], json!(true));
+    }
+
+    /// A mention arrives with the IR around it, not just an address.
+    ///
+    /// Regression for the finding that cost four manual reads of `events.json`:
+    /// `__pre__.overSpeed` is *manufactured*, and the only thing that says so is
+    /// `generated: true` on the object one level above the matching leaf. The
+    /// address alone cannot carry it.
+    #[test]
+    fn mention_contexts_carry_the_enclosing_ir_and_siblings() {
+        // Shaped like the real Events IR: the name sits in a small object whose
+        // sibling field is the decisive one.
+        let stage = json!({
+            "discrete_updates": {
+                "valued_updates_f_m": [{
+                    "lhs": { "name": "overSpeed" },
+                    "rhs": { "else_branch": { "VarRef": {
+                        "name": { "name": "__pre__.overSpeed", "generated": true }
+                    }}},
+                }]
+            }
+        });
+        let stages: Vec<(&str, Option<&Value>)> = vec![("events", Some(&stage))];
+        let empty = BTreeMap::new();
+        let doc = build(&tracking_ask("__pre__.overSpeed", &stages, &empty));
+        let ctx = &doc["tracking"]["stages"][0]["contexts"][0];
+
+        assert_eq!(ctx["value"], json!("__pre__.overSpeed"));
+        // The enclosing node fits well inside the budget, so the whole update
+        // comes along — and with it, `generated`.
+        assert!(
+            ctx["context"].to_string().contains("\"generated\":true"),
+            "the decisive sibling field must arrive with the mention: {ctx}",
+        );
+        // And the leaf's own siblings are named.
+        let window = ctx["siblings"]["window"].as_array().expect("sibling window");
+        assert!(
+            window.iter().any(|v| v == "generated"),
+            "siblings must list what sits beside the hit: {window:?}",
+        );
+        assert_eq!(ctx["siblings"]["window_is_complete"], json!(true));
+    }
+
+    /// In a large map the budget buys only the immediate parent — but the
+    /// sibling window still lands on the neighbours, which is where the signal
+    /// was for `__pre__.overSpeed` in Solve lowering (988 bindings, and the
+    /// other `__pre__` companions immediately beside it).
+    #[test]
+    fn sibling_window_is_centred_on_the_hit_not_the_start() {
+        let mut bindings = serde_json::Map::new();
+        for i in 0..400 {
+            bindings.insert(format!("filler_{i:03}"), json!({ "P": { "index": i } }));
+        }
+        bindings.insert("zzz_target".to_owned(), json!("x"));
+        bindings.insert("zzz_neighbour".to_owned(), json!("y"));
+        let root = json!({ "bindings": Value::Object(bindings) });
+
+        let path = vec![Seg::Key("bindings".into()), Seg::Key("zzz_target".into())];
+        let sib = siblings(&root, &path);
+
+        assert_eq!(sib["count"], json!(402));
+        assert_eq!(sib["window_is_complete"], json!(false));
+        let window: Vec<&str> =
+            sib["window"].as_array().unwrap().iter().filter_map(Value::as_str).collect();
+        assert!(window.contains(&"zzz_target"), "the window must contain the hit: {window:?}");
+        assert!(
+            window.contains(&"zzz_neighbour"),
+            "the window must reach the hit's neighbours, not the map's first keys: {window:?}",
+        );
+        assert!(
+            !window.contains(&"filler_000"),
+            "a first-N sample would have shown this and said nothing: {window:?}",
+        );
+    }
+
+    /// The budget is spent greedily upward, so a small leaf brings its whole
+    /// enclosing structure and a leaf in something huge brings only its parent.
+    #[test]
+    fn enclosing_context_takes_the_largest_ancestor_that_fits() {
+        let small = json!({ "eq": { "lhs": "a", "rhs": "b" } });
+        let path = vec![Seg::Key("eq".into()), Seg::Key("lhs".into())];
+        let (depth, ctx) = enclosing_context(&small, &path);
+        assert_eq!(depth, 0, "a small tree fits entirely, so the root is returned");
+        assert_eq!(ctx, small);
+
+        // Now make the root overflow the budget: the leaf's parent still fits.
+        let filler: String = "x".repeat(MAX_CONTEXT_BYTES);
+        let big = json!({ "eq": { "lhs": "a", "rhs": "b" }, "bulk": filler });
+        let (depth, ctx) = enclosing_context(&big, &path);
+        assert_eq!(depth, 1, "the root no longer fits, so its child is returned");
+        assert_eq!(ctx, json!({ "lhs": "a", "rhs": "b" }));
+    }
+
+    /// The capture says what was on screen, and points at the phase code.
+    ///
+    /// Both were absent until 2026-07-28. Without `view`, a point made in a
+    /// tree and one made paused at animation frame 12 produced identical files.
+    /// Without `phase_source`, the algorithm could only be inferred from its
+    /// output — which is backwards, and the whole reason HRW moved into the
+    /// Rumoca workspace was to make the phase code readable.
+    #[test]
+    fn the_capture_reports_the_view_and_the_phase_source() {
+        let empty = BTreeMap::new();
+        let ask = Ask {
+            seq: 1,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("M"),
+            stage: Some(StageKind::Events),
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Stage,
+            tracking: None,
+            view: View {
+                ui_mode: "Specimen",
+                stage_view: Some("MatchingAnim"),
+                specimen_detail: Some("Source"),
+                viewing_log: false,
+                animation: Some(AnimationView {
+                    which: "reduction",
+                    frame: 12,
+                    frame_count: 47,
+                    live_state: "Running",
+                }),
+            },
+        };
+        let doc = build(&ask);
+
+        assert_eq!(doc["view"]["ui_mode"], json!("Specimen"));
+        assert_eq!(doc["view"]["stage_view"], json!("MatchingAnim"));
+        assert_eq!(doc["view"]["animation"]["frame"], json!(12));
+        assert_eq!(doc["view"]["animation"]["frame_count"], json!(47));
+        assert_eq!(doc["view"]["animation"]["live_state"], json!("Running"));
+
+        assert_eq!(doc["phase_source"]["crate"], json!("crates/rumoca-ir-dae"));
+        assert!(doc["phase_source"]["entry"].as_str().is_some_and(|e| e.contains("discrete")));
+    }
+
+    /// Every stage names a crate that exists. A `phase_source` pointing at a
+    /// directory that was renamed during a rebase is worse than none — it sends
+    /// the reader somewhere confidently wrong.
+    #[test]
+    fn every_phase_source_crate_exists_on_disk() {
+        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+        for &stage in StageKind::ALL {
+            let src = phase_source(stage);
+            let dir = src["crate"].as_str().expect("crate path");
+            assert!(
+                root.join(dir).is_dir(),
+                "{stage:?} points at `{dir}`, which is not a directory in the workspace",
+            );
+            assert!(!src["entry"].as_str().unwrap_or_default().is_empty());
+        }
+    }
+
+    /// The captured node arrives with what it belongs to.
+    ///
+    /// Pointing at `def_id: 85` used to emit an integer and a path; answering
+    /// "the def_id of *what*?" meant rebuilding the parent by hand.
+    #[test]
+    fn a_captured_node_carries_its_neighbourhood() {
+        let root = json!({ "def_id": 85, "name": "MotorWithBrake", "class_type": "model" });
+        let node = build_node(&[Seg::Key("def_id".into())], &root, None);
+
+        assert_eq!(node["neighbourhood"]["value"], json!(85));
+        assert_eq!(node["neighbourhood"]["context"]["name"], json!("MotorWithBrake"));
+        let window: Vec<&str> = node["neighbourhood"]["siblings"]["window"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert!(window.contains(&"name") && window.contains(&"class_type"), "{window:?}");
     }
 
     /// A node outside the model class (e.g. the parse `within`) is not diffable.
@@ -1257,6 +1762,7 @@ mod tests {
             resolve_value: None,
             focus: Focus::Node { key_path: vec![Seg::Key("within".into())], stage_value: &parse },
             tracking: None,
+            view: test_view(),
         };
         assert_eq!(build(&ask)["cross_stage"]["applicable"], json!(false));
     }
@@ -1279,6 +1785,7 @@ mod tests {
             resolve_value: None,
             focus: Focus::Specimen,
             tracking: None,
+            view: test_view(),
         };
         let doc = build(&ask);
         let files = doc["stages"]["files"]
@@ -1385,6 +1892,7 @@ mod tests {
                 stage_value: &json!({"x": 1}),
             },
             tracking: None,
+            view: test_view(),
         };
         let doc = build(&ask);
         let cs = &doc["cross_stage"];
@@ -1417,6 +1925,7 @@ mod tests {
             resolve_value: None,
             focus: Focus::Specimen,
             tracking: None,
+            view: test_view(),
         };
         let doc = build(&ask);
         assert_eq!(doc["stage"], json!("(navigated definition)"));
@@ -1536,6 +2045,7 @@ mod tests {
                 stage_value: &val,
             },
             tracking: None,
+            view: test_view(),
         };
         let path = write(&ask).expect("write focus");
         assert!(path.exists(), "focus.json should exist");

@@ -121,6 +121,20 @@ impl LiveState {
     }
 
     /// Status badge text and colour, or `None` when there is nothing to say.
+    /// A stable name, for the capture and the crash log.
+    ///
+    /// Separate from [`LiveState::badge`] on purpose: the badge is display text
+    /// that may gain an ellipsis or change wording, while this is an identifier
+    /// something else reasons over. One string for looking at, one for matching.
+    pub fn name(self) -> &'static str {
+        match self {
+            LiveState::Idle => "Idle",
+            LiveState::Arming => "Arming",
+            LiveState::Running => "Running",
+            LiveState::Finished => "Finished",
+        }
+    }
+
     pub fn badge(self) -> Option<(&'static str, eframe::egui::Color32)> {
         match self {
             LiveState::Idle => None,

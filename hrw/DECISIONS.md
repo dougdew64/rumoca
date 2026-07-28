@@ -981,3 +981,35 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   Date formatting is hand-rolled (Hinnant's `civil_from_days`) rather than taking a date
   dependency for two format strings. `examples/crash_probe.rs` verifies the panic path, which
   **cannot** be a unit test — the harness installs its own hook and catches the unwind.
+- **2026-07-28 — The capture carries the IR *around* an address, what was on screen, and where the
+  phase code lives.** Doug: *"Design the context captures in a way which will best enable you to
+  answer my 'Explain' questions. You are the consumer of context, not me."* Five changes, each
+  measured against what the first two real `explain` answers cost to produce rather than guessed at:
+  (1) **Mentions carry a neighbourhood.** An address alone makes the reader open the stage file *and*
+  already know what to look for. Following `__pre__.overSpeed` gave the path
+  `discrete_updates.valued_updates_f_m[0].rhs.If.else_branch.VarRef.name.name`, and the decisive fact
+  — `generated: true` on the object above the leaf, meaning the variable is *manufactured by the
+  Events phase* — took four reads of `events.json` to find. `enclosing_context` now spends a byte
+  budget **greedily upward**, returning the largest ancestor that fits, so a small leaf brings its
+  whole equation and a leaf in a 1014-entry map brings just its parent. No per-case rule needed.
+  (2) **A sibling *window centred on the hit*, not the first N.** The other decisive finding —
+  Solve lowering makes a `__pre__` companion for everything the event logic samples — came only from
+  keys adjacent to the hit. The first 40 keys of that map would have said nothing. Position is an
+  exact fact, so this stays inside the emit-facts-not-interpretation rule. Verified against real IR:
+  the window now contains `__pre__.c`, `__pre__.c[1..2]`, `__pre__.load.w`, `__pre__.maxSpeed`.
+  (3) **`view`** — a point made in a tree and one made paused at animation frame 12 previously
+  produced *identical* files, though in the second case the frame is most of the question.
+  (4) **`phase_source`** — stage → crate + entry function, so the algorithm can be read rather than
+  inferred from its output. That is what the in-workspace move was for. A test asserts every named
+  crate directory exists, because a confidently wrong pointer is worse than none.
+  (5) **The caps re-justified on need, not file size.** `MAX_NODE_BYTES` 16 KiB → 256 KiB: the old
+  limit was perverse, degrading the *largest and most interesting* nodes to a list of key names.
+  `MAX_MENTION_PATHS` 12 → 40, plus a second tier `MAX_MENTION_CONTEXTS` = 6 — `paths` answers
+  *where*, `contexts` answer *what it looks like*. `MAX_CHANGES` stays 400, and the asymmetry is
+  deliberate: the others bound how much surrounding IR to carry, where more is better; that one
+  bounds a list of differences, and a 400-entry diff has stopped being informative anyway.
+  `find_mentions` now collects `Vec<Seg>` rather than rendered strings — a formatted `a.b[0].c`
+  cannot be navigated back, and re-parsing one is guesswork the moment a key contains a dot, which
+  in `bindings.__pre__.overSpeed` it does. `examples/capture_probe.rs` prints the capture for a real
+  specimen, because whether it carries what a reader would hunt for is answered by *reading the
+  emitted value*, not by a shape assertion.
