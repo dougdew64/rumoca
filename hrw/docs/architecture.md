@@ -738,10 +738,21 @@ for parser throughput), which applies to every crate. At that level LLVM drops
 line-table entries and reports locals as `<optimized out>` — so even once a
 breakpoint binds, `frame_index` is unreadable and stepping teaches nothing.
 
-`[profile.dev.package.rumoca-phase-structural] opt-level = 0` overrides it for
-the crate under study. Note this *lowers* opt-level for debuggability, opposite
-in purpose to the four overrides above it, which *raise* it for speed. Extend
-this to any crate whose algorithms are being live-traced.
+`[profile.dev.package.<crate>] opt-level = 0` overrides it per crate. Note this
+*lowers* opt-level for debuggability, opposite in purpose to the four overrides
+above it, which *raise* it for speed. Two crates carry it today:
+`rumoca-phase-structural` (the live-trace anchor) and `rumoca-phase-dae` (DAE
+construction — `pre()` lowering, when-equation lowering, event structure).
+
+**Extend this to any crate the moment you first try to set a breakpoint in it**,
+not after losing time to the failure — because the failure is quiet. A
+breakpoint on a line with no line-table entry still **binds**, so VS Code shows
+an ordinary verified breakpoint that simply never fires. Nothing on screen
+distinguishes it from a line that was never executed, which sends you looking
+for the wrong bug: whether the code runs, whether the session is attached,
+whether the call path is what you thought. `rumoca-phase-dae` was added
+2026-07-28 after exactly that detour, tracing where `__pre__.overSpeed` is
+created.
 
 #### 3. The GPU backend and long pauses
 
@@ -843,6 +854,7 @@ In the CodeLLDB Debug Console:
 | Pause in an unrelated crate during startup, "Paused on breakpoint" | Anchor folded onto another empty function (§1) |
 | Breakpoint never verifies; no gutter dot while the session is live | Same — the adapter cannot bind it meaningfully |
 | Locals show `<optimized out>` | `opt-level` above 0 for the crate (§2) |
+| Breakpoint looks verified but never fires, and the code definitely runs | Line-table entry dropped at `opt-level` above 0 — add the crate to §2 |
 | Visuals freeze, then exit code 101, nothing in the Debug Console | GPU device loss after a long pause (§3); look in the terminal |
 | First Debug click misses, second works | Cold line-table resolution — fixed by the pre-warm |
 | Stepping works but the animation does not advance | Single-thread stepping; use `ns`/`si`/`so` (§4) |

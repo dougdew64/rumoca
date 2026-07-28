@@ -237,12 +237,27 @@ opt-level = 3
 [profile.dev.package.scnr2]
 opt-level = 3
 
-# Unoptimized debug builds for the crate carrying the live-trace breakpoint
-# anchor. Unlike the overrides above (which *raise* opt-level for speed), this
-# one *lowers* it for debuggability: `[profile.dev] opt-level = 1` applies to
-# every workspace crate, and at that level LLVM drops line-table entries and
-# reports locals as `<optimized out>` — which makes single-stepping this phase
-# in the debugger, an explicit goal of this fork, unreliable.
-# See hrw/docs/windows-migration.md.
+# Unoptimized debug builds for the phase crates under study. Unlike the
+# overrides above (which *raise* opt-level for speed), these *lower* it for
+# debuggability: `[profile.dev] opt-level = 1` applies to every workspace crate,
+# and at that level LLVM drops line-table entries and reports locals as
+# `<optimized out>` — which makes single-stepping these phases in the debugger,
+# an explicit goal of this fork, unreliable.
+#
+# The failure is quiet and misleading: a breakpoint on a line with no
+# line-table entry still *binds*, so VS Code shows it as an ordinary verified
+# breakpoint, and it simply never fires. Nothing distinguishes it from a line
+# that was never reached. Add a crate here the first time you try to set a
+# breakpoint in it, not after losing an hour to that.
+#
+# See hrw/docs/architecture.md § Live trace debugging on Windows.
+
+# Carries the live-trace breakpoint anchor.
 [profile.dev.package.rumoca-phase-structural]
+opt-level = 0
+
+# DAE construction: pre() lowering, when-equation lowering, event structure.
+# Added 2026-07-28 when breakpoints in `pre_lowering::lower_pre_operator`
+# verified but never fired while tracing where `__pre__.overSpeed` is created.
+[profile.dev.package.rumoca-phase-dae]
 opt-level = 0
