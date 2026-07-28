@@ -833,3 +833,24 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   "in `Modelica.Electrical.Analog.Sources.ConstantVoltage`" with a Go-to-definition button reusing
   the existing nav stack, instead of the previous dead end. Only the first segment resolves —
   deeper names give the containing component's type — so the wording is "in", never "declared in".
+- **2026-07-27 — Glyphs are limited to ones this codebase already renders.** The tracking bar's
+  clear button used `\u{2715}` (✕ MULTIPLICATION X), which none of egui's bundled fonts covers, so
+  it drew as a tofu box. HRW already makes every bundled font a fallback for both families, but
+  that only helps when *some* bundled font has the glyph. Changed to `\u{00d7}` (×), which is
+  Latin-1 and present in every text font including the monospace one. The "Track" menu item added
+  the same day used `\u{25ce}`, chosen without checking — also replaced, with `\u{1f3af}` (🎯),
+  already rendered by the Tarjan view, and deliberately not a magnifier since 🔎 Capture sits
+  directly above it in the same menu. **Rule: pick glyphs already used elsewhere in `hrw/src`;**
+  anything else is a silent tofu risk that only surfaces in manual testing.
+- **2026-07-27 — Capture and tracking are one concept: context assembly; the "Tracking" bar becomes
+  a Context Bar.** Doug, on testing Phase 4: the difference between captured and tracked has no
+  better answer than *point versus thread* — capture is one node with its provenance, tracking is
+  one identifier across every stage. Both exist only to assemble context for questions to Claude.
+  The UI treated them asymmetrically for no reason: capture is persistent state shown transiently
+  (a status line), tracking is persistent state shown permanently but **never emitted**. So the one
+  thing actually in Claude's context was invisible, and the visible one was not context at all.
+  The Context Bar replaces the Tracking bar and is governed by one rule — **it renders what will be
+  emitted, nothing more and nothing less** — which makes it honest by construction and means it
+  cannot exist until tracking emits. Compound capture and Context Bar are therefore one piece of
+  work, and that work is now Phase 5. Design in `docs/context-assembly.md` (renamed from
+  `tracking-as-capture.md`).

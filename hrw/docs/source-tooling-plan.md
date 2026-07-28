@@ -147,11 +147,14 @@ the scrollbar.
 
 ---
 
-## Phase 5 — Forward identifier debugging
+## Phase 5 — The Context Bar (and forward identifier debugging)
 
-**Goal.** From a tracked identifier, break in the Rumoca phase that determines it.
+**Goal.** Make the thin-emitter / thick-reasoner split visible: tracking emits a
+compound capture, and a Context Bar renders what Claude will actually receive.
+Breakpoint selection then follows from that context rather than from a table in
+the app.
 
-**Status: design settled 2026-07-27 — see [`tracking-as-capture.md`](tracking-as-capture.md).**
+**Status: design settled 2026-07-27 — see [`context-assembly.md`](context-assembly.md).**
 
 The design question below ("which phase function is the meaningful site?") is
 **dissolved**, not answered. Doug's proposal — give tracking a second meaning, so
@@ -187,8 +190,14 @@ output is the next one's input. Phases 1–2 are self-contained and low-risk;
 Phase 3 improves behaviour already in daily use; Phases 4–5 add capability.
 
 Phases 1 and 2 can land as a single commit pair (crate-free — all HRW). Phase 3
-touches existing tested behaviour and should be its own commit. Phase 5 may not
-touch code at all until its design question is answered.
+touches existing tested behaviour and should be its own commit.
+
+Phase 5 is no longer blocked on a design question — that was settled on
+2026-07-27 by dissolving it (see [`context-assembly.md`](context-assembly.md)).
+It is now the largest phase and the one that matters most to the project's
+premise: HRW is not a standalone tool, and the Context Bar is where that stops
+being an idea in a charter and becomes something visible on screen every time
+you use it.
 
 ## Progress
 
@@ -224,4 +233,6 @@ touch code at all until its design question is answered.
       **Remaining:** incidence column headers, spy-plot blocks, reduction-view
       rows — all canvas-painted, so they need hit-testing rather than a widget
       response.
-- [ ] Phase 5 — Forward identifier debugging *(design first)*
+- [ ] **Phase 5 — The Context Bar** — make tracking emit, render the bar as a view
+      of the emission, and let breakpoint selection follow from it. Design settled;
+      see [`context-assembly.md`](context-assembly.md).

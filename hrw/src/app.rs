@@ -2753,7 +2753,11 @@ impl eframe::App for App {
                                 }
                             },
                         }
-                        if ui.small_button("\u{2715}").on_hover_text("Clear tracking").clicked() {
+                        // U+00D7, not U+2715 MULTIPLICATION X. egui's bundled
+                        // fonts have no glyph for U+2715, so it rendered as an
+                        // empty tofu box. U+00D7 is Latin-1 and present in every
+                        // text font — including the monospace one.
+                        if ui.small_button("\u{00d7}").on_hover_text("Clear tracking").clicked() {
                             clear = true;
                         }
                     });

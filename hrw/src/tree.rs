@@ -360,7 +360,12 @@ fn row_menu(
         // per-view feature.
         if let Some(name) = &track
             && ui
-                .button(format!("\u{25ce} Track {name}"))
+                // U+1F3AF, already rendered elsewhere in this app. Sticking to
+                // glyphs the bundled fonts are known to cover avoids the tofu
+                // box that U+2715 produced in the tracking bar — egui ships far
+                // less than the whole of Unicode. Deliberately not a magnifier:
+                // 🔎 Capture sits directly above this in the same menu.
+                .button(format!("\u{1f3af} Track {name}"))
                 .on_hover_text(
                     "Highlight this identifier across every stage, and show \
                      where it is declared in the specimen source.",
