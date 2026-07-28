@@ -40,7 +40,7 @@ pub struct TarjanAnimation {
     /// Kept so "is this node the tracked variable's equation?" is answered
     /// structurally. It used to be answered by substring-searching the
     /// pretty-printed equation text, which is exactly the heuristic
-    /// name-matching `docs/cross-stage-tracking-plan.md` rules out.
+    /// name-matching `docs/source-tooling-plan.md` rules out.
     rows: Vec<Vec<usize>>,
     unknown_names: Vec<String>,
     adj: Vec<Vec<usize>>,
@@ -208,7 +208,7 @@ impl TarjanAnimation {
     /// structural phase computed. Previously this substring-searched the
     /// pretty-printed equation text, which could match a name occurring inside
     /// another name, inside a function call, or inside an origin label, and
-    /// which `docs/cross-stage-tracking-plan.md` ruled out from the start.
+    /// which `docs/source-tooling-plan.md` rules out as a standing principle.
     fn equation_mentions(&self, eq: usize, tracked: Option<&str>) -> bool {
         let Some(tracked) = tracked else { return false };
         let Some(col) = self

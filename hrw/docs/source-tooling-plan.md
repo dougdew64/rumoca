@@ -8,6 +8,55 @@ how weak the tree is as an instrument — **#11** (in-view search) as Phase 6.
 
 Created 2026-07-27.
 
+## Standing principle: no heuristic name-matching
+
+Carried forward from `cross-stage-tracking-plan.md` (retired 2026-07-28), where
+it was stated at the outset of the #10 work:
+
+> **Accuracy and correctness required. No heuristic name-matching.** All
+> mappings use Rumoca's typed provenance.
+
+It was violated for a while and is now honoured. `matches_tracked` — a
+whole-word substring search — decided highlighting in every stage view until
+2026-07-28. The reason it happened is worth knowing: **the structural report
+Rumoca emits carries names only** (`"unknown": "src.n.i"`, no `def_id`), so the
+views genuinely had nothing but strings.
+
+The resolution was not to abandon the principle but to separate two questions
+that one function was answering:
+
+- **Identity** — "is this the tracked variable?" — `identifier_index::same_variable`:
+  exact equality modulo one `der(…)`. Flat names are canonical; being strings
+  does not make them search terms.
+- **Membership** — "does this equation mention it?" — structural where the data
+  exists (`tarjan_anim::equation_mentions` reads the incidence matrix's
+  `rows[eq]`), and lexical where only text is available
+  (`source_view::mentions_identifier`, which knows `height` is one token and
+  that string literals and comments are not code).
+
+**Any future tracking work must meet this bar.** If a new view needs to decide
+whether something is the tracked variable, it uses identity; if it needs to know
+whether something *refers* to it, it uses structure, or the lexer — never a
+substring search.
+
+## What provenance Rumoca already preserves
+
+Also carried forward, and directly relevant to Phase 5's compound capture, which
+needs to know what identity information is available to emit:
+
+- Every flat/DAE **variable** carries `component_ref` (with `def_id`) and
+  `source_span` pointing back to its declaration.
+- Every flat/DAE **equation** carries `span` and a typed `EquationOrigin`.
+- The flat model carries `symbol_ancestry` (`DefId → Arc<[DefId]>`).
+- All `VarRef` expressions in equations carry structured `ComponentReference`
+  objects, via the `structured_refs.rs` postprocess pass.
+
+No invasive Rumoca changes are needed to use any of it — the provenance is
+already there; HRW has to extract and index it. Note the gap this leaves: the
+*structural report* does not surface `def_id`, which is why views fall back to
+names. Adding it would be additive, observation-only instrumentation of the kind
+this fork exists for.
+
 ## Why these are one piece of work
 
 Each of them needs to answer the same question — *given a position in Modelica

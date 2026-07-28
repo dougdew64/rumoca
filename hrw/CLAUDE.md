@@ -18,10 +18,18 @@ visibility / adding observation hooks in the `../crates/rumoca-*` crates** — i
 instrumentation, and it must stay **additive, observation-only, and upstreamable** (see
 [`DECISIONS.md`](DECISIONS.md)).
 
-**Completed initiative — End-to-end tour upgrade** ([`docs/end-to-end-tour-plan.md`](docs/end-to-end-tour-plan.md)):
-all three visualization features are delivered: (1) equation sheet (#27), (2) source-to-equation
-traceability (#28), (3) solver stepping (#29). The tour document is wired to these views. Only the
-manual verification stop ("verify every stop works with a fresh MotorWithBrake load") remains open.
+**Completed initiative — End-to-end tour upgrade.** All three visualization features are delivered:
+(1) equation sheet (#27), (2) source-to-equation traceability (#28), (3) solver stepping (#29). The
+tour document is wired to these views. Only the manual verification stop ("verify every stop works
+with a fresh MotorWithBrake load") remains open. *(Its plan document was retired 2026-07-28 —
+see `DECISIONS.md`.)*
+
+**Current initiative — source tooling** ([`docs/source-tooling-plan.md`](docs/source-tooling-plan.md)):
+seven phases covering the Modelica lexer, syntax highlighting, identifier tracking, the Context Bar,
+the tree rework, and the canvas views. Phases 1–4 complete. **Phase 5 is next: the Context Bar**,
+designed in [`docs/context-assembly.md`](docs/context-assembly.md) — the feature that makes the
+thin-emitter / thick-reasoner split visible, and the one that most matters to the premise that HRW
+is an instrument for use with Claude rather than a standalone tool.
 
 **Current work — Pass two, in this order:**
 1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than

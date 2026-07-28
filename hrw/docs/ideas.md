@@ -1158,7 +1158,7 @@ corresponding identifier in the source view.
   or classification row) and incidence matrix (click a column header). Spy plot
   blocks, tree leaves, and reduction view rows are secondary.
 - **When:** after #10 step 4 is complete (all views wired for forward tracking).
-  This is step 5 in the [cross-stage tracking plan](cross-stage-tracking-plan.md).
+  Delivered as Phase 4 of the [source tooling plan](source-tooling-plan.md).
 
 **Relates to:** #10 (cross-stage identifier tracking — this is the bidirectional
 extension).

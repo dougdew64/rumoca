@@ -631,7 +631,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
 - **2026-07-25 — Three UI modes: Tour / Specimen / Debug.** Replaced `show_left_panel: bool` with
   `UiMode` enum. Tour mode: 50/50 split, tour guide on left. Specimen mode: 50/50 split, specimen
   list (top third) + narrative (bottom two-thirds) on left. Debug mode: left panel hidden (VS Code
-  alongside). Mode selector in View menu. See `docs/ui-modes-design.md`.
+  alongside). Mode selector in View menu. Behaviour documented in `docs/architecture.md` § Panel layout and UI modes (design doc retired 2026-07-28).
 - **2026-07-25 — Dependency added: `egui_commonmark 0.24`.** Renders markdown (tour content,
   specimen narratives) inside egui. No-default-features (image loading disabled — we embed no
   images). Used by both tour mode and specimen mode left panels.
@@ -686,7 +686,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
 - **2026-07-27 — `hrw/README.md` added.** Setup guide for reproducing the environment on a fresh
   Windows machine: toolchain, the gitignored MSL vendor staging step, the gitignored VS Code
   extension build step, required launch settings, and a failure-signature table. Supersedes the
-  setup checklist in `docs/windows-migration.md`, which is retained as the migration record.
+  setup checklist in `README.md` (the migration doc was retired 2026-07-28; its diagnosis lives in `docs/architecture.md`).
 - **2026-07-27 — Bridge targets the anchor's body statement, not its signature.** Debuggers skip a
   function prologue, so a breakpoint requested on the `pub fn` line resolves one line lower. The
   bridge and the debugger therefore disagreed about the location, and a bridge-armed breakpoint sat
@@ -898,3 +898,22 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `matches_tracked` and its word-boundary scanner are deleted — the heuristic is gone rather than
   contained. Also consolidated three copies of `der(...)`-stripping into
   `identifier_index::strip_der`.
+- **2026-07-25 (recorded 2026-07-28) — Identifier tracking is an HRW interaction, not a VS Code
+  extension one.** Carried forward from the retired `cross-stage-tracking-plan.md`, where it was a
+  design decision with no DECISIONS entry. A VS Code-extension path for selecting and highlighting
+  identifiers was evaluated and rejected: context selection belongs where the IR is rendered, and
+  the extension's job is narrower — arming breakpoints on request, which it still does. Keeping the
+  interaction in HRW is also what lets the source view, the stage views, and the bridge share one
+  notion of what is being followed.
+- **2026-07-28 — Four completed-plan documents retired.** `end-to-end-tour-plan.md` (initiative
+  complete), `ui-modes-design.md` (three-mode UI shipped; the *behaviour* is documented in
+  `architecture.md` § Panel layout and UI modes, and the decisions already have entries here),
+  `windows-migration.md` (migration complete; the durable diagnosis lives in `architecture.md`
+  § Live trace debugging on Windows and the setup in `README.md`), and
+  `cross-stage-tracking-plan.md` (superseded by `source-tooling-plan.md`). Durable content was
+  folded out first, not discarded: the **no-heuristic-name-matching principle** and the **inventory
+  of provenance Rumoca preserves** moved into `source-tooling-plan.md`, and the HRW-not-extension
+  decision is recorded above. **Rationale for deleting rather than archiving:** git holds every
+  deleted file, so nothing is lost — but nobody greps deleted files, so stale plans in `docs/` cost
+  attention on every read and risk being mistaken for current intent. `DECISIONS.md` already *is*
+  the project's history; a second archive would compete with it and be read by no one.
