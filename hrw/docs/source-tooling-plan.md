@@ -181,6 +181,65 @@ considered meaningful. **Settle this in discussion before writing code** — it 
 a curriculum question about what is worth stopping to look at, not a plumbing
 problem.
 
+### Deliverables
+
+1. **Tracking emits a compound capture.** Every place tracking highlighted,
+   across every stage, plus absences. `focus` (deliberate point) and `tracking`
+   (ambient thread) as distinct sections of one file, so ambient browsing never
+   destroys the context you meant to ask about.
+2. **The Context Bar**, replacing the Tracking bar — a rendering of what will be
+   emitted, including the standing context (stage IRs, DefId table, libraries)
+   that the current UI never mentions at all.
+3. **Rename the user-facing verbs** — see below.
+4. **Retire the bridge's use of the status bar** — see below.
+
+### Rename: "Capture" → "Point at", "Track" → "Follow"
+
+Doug, 2026-07-27, on testing Phase 4. The bridge's own architecture note says the
+loop is **point → ask → understand**, yet the menu says "Capture" — a word for
+what the *app* does (writes a file) rather than what the *user* does. "Follow"
+beats "Track" for being directional: tracking could mean recording or
+monitoring; following implies the thing goes somewhere and you are going with
+it. The pair also carries the point/thread distinction without anyone having to
+explain it, and makes the menu and the Context Bar share one vocabulary.
+
+Scope, deliberately partial:
+
+- **Rename:** context-menu labels, the Context Bar's own wording, and the docs.
+- **Leave:** the wire format and internal identifiers — `focus.json`,
+  `emit_node_focus`, `AskRequest`, `Focus`. Renaming a protocol Claude already
+  reads buys nothing and breaks continuity with recorded sessions.
+- **Do update:** the self-describing `instructions` string inside `focus.json`
+  (`bridge.rs`), so a user reading the file while dogfooding does not meet a
+  third vocabulary — and add a one-line note in `bridge.rs` mapping the UI verbs
+  to the code's nouns, so the two do not drift silently.
+
+### Retire the bridge's use of the status bar
+
+The Context Bar strictly dominates the *success* case: a persistent statement of
+what is pointed at beats a transient "captured #3" that disappears.
+
+**But `bridge_status` also reports failures, and those must not vanish with it.**
+`bridge::write` returns `io::Result`. If the write fails — missing
+`.hrw-bridge/`, bad permissions — a bar that cheerfully reads "Pointing at
+`components.src.V`" would be claiming context Claude does not have; Claude would
+still be holding the *previous* focus. That is precisely the lie the bar's
+governing rule exists to prevent, and worse than today's behaviour because it is
+confident.
+
+So failure moves *into* the bar rather than staying on a second surface:
+
+```
+Context   MotorWithBrake · captured in Flatten
+  Pointing at   components.src.V     ⚠ not emitted — permission denied
+```
+
+The bar's contract is "this is what Claude has"; saying so when emission fails
+*is* that contract being honoured.
+
+**Sequencing:** the removal happens only once the bar exists. Doing it first
+would leave a window with no capture feedback at all.
+
 ---
 
 ## Sequencing
@@ -233,6 +292,9 @@ you use it.
       **Remaining:** incidence column headers, spy-plot blocks, reduction-view
       rows — all canvas-painted, so they need hit-testing rather than a widget
       response.
-- [ ] **Phase 5 — The Context Bar** — make tracking emit, render the bar as a view
-      of the emission, and let breakpoint selection follow from it. Design settled;
-      see [`context-assembly.md`](context-assembly.md).
+- [ ] **Phase 5 — The Context Bar** — four deliverables: tracking emits a compound
+      capture; the Context Bar renders what will be emitted (including the standing
+      context the UI never mentions today); "Capture"/"Track" become "Point
+      at"/"Follow" in the UI and docs; and the status bar loses its bridge role,
+      with emission *failures* moving into the bar. Design settled — see
+      [`context-assembly.md`](context-assembly.md).

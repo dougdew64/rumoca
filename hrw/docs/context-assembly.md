@@ -147,6 +147,41 @@ Context   MotorWithBrake · Flatten
 - Showing both rows also settles the overwrite concern by making coexistence
   visible instead of leaving it a hidden hazard.
 
+### Vocabulary: point at, follow
+
+The menu says "Capture" and "Track"; the bar would say "Pointing at" and
+"Following". Two vocabularies for one concept. Doug's call (2026-07-27) is that
+the bar's verbs are the better ones and should win everywhere:
+
+- **"Capture" describes what the app does** — writes a file. **"Point at"
+  describes what the user does.** The bridge's own architecture note already
+  says the loop is *point → ask → understand*; the menu was using a different
+  word for the first step of its own model.
+- **"Follow" is directional where "Track" is not.** Tracking could mean
+  recording, monitoring, or logging. Following implies the thing goes somewhere
+  and you are going with it.
+- They pair, and the pairing carries the point/thread distinction for free.
+
+Renaming covers the **UI labels, the Context Bar, and the docs**. The wire
+format and internal identifiers (`focus.json`, `emit_node_focus`, `AskRequest`,
+`Focus`) stay: renaming a protocol Claude already reads buys nothing and breaks
+continuity with recorded sessions. The self-describing `instructions` string
+inside `focus.json` *is* updated, so someone reading that file while dogfooding
+does not meet a third vocabulary.
+
+### The status bar loses its bridge role
+
+`bridge_status` currently shows a transient line after each capture. The Context
+Bar dominates that: persistent beats transient, and "what is pointed at" beats
+"something was captured a moment ago".
+
+**Except for failures.** `bridge::write` returns `io::Result`, and if it fails
+the bar must say so — otherwise it reads "Pointing at X" while Claude is still
+holding the previous focus, which is exactly the confident lie the governing
+rule forbids. Failure therefore moves *into* the bar, not onto a second surface.
+The removal is sequenced after the bar exists, so there is never a window
+without capture feedback.
+
 ## What this does to Phase 5
 
 Phase 5 of [`source-tooling-plan.md`](source-tooling-plan.md) was stated as a
