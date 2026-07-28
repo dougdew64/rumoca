@@ -130,11 +130,23 @@ const MAX_NODE_BYTES: usize = 16 * 1024;
 // `focus.json` directly while dogfooding, this text explains what it is and
 // how to use it, without needing to consult separate documentation.
 const INSTRUCTIONS: &str = "\
-HRW bridge focus file, written by the app when you capture a node/stage/model \
-(the 🔎 Capture actions) — capturing does NOT ask anything by itself. Ask your \
-question in the Claude Code chat; Claude reads this file to see what you \
-captured, then reasons over the specimen source, the staged IR, the Rumoca \
-phase code, and docs/compiler-phases.";
+HRW bridge focus file. Writing it does NOT ask anything by itself — the user \
+asks in the Claude Code chat, and this describes what they had assembled. \
+Reason over it together with the specimen source, the staged IR under \
+`stages/`, the Rumoca phase code, and docs/compiler-phases.\n\n\
+It carries context in two shapes, and the difference matters:\n\
+  • POINTING AT — the `kind`/`node`/`cross_stage`/`stage` fields at top level. \
+One node, one stage, chosen deliberately. For `explain` this is the subject; \
+for `debug-where-set` it wants ONE breakpoint, where that value is set.\n\
+  • FOLLOWING — the `tracking` section. One identifier, everywhere it appears \
+across every stage. For `explain` this is the lens; for `debug-where-set` it \
+wants SEVERAL breakpoints along the identifier's trajectory.\n\n\
+Either may be absent. When both are present and the request is ambiguous, \
+compare `seq` with `tracking.seq`: whichever is higher was acted on last and \
+is almost certainly the subject.\n\n\
+In `tracking.stages`, `mentions: 0` is information, not a gap — the name is \
+genuinely absent from that stage, which is how a demoted or alias-eliminated \
+variable announces itself.";
 
 /// One segment of a key-path into a JSON tree.
 ///
@@ -250,6 +262,152 @@ impl AskRequest {
     }
 }
 
+/// The ambient half of the context: what the user is *following*.
+///
+/// Where [`Focus`] is a **point** — one node, one stage, deliberately chosen —
+/// this is a **thread**: one identifier, everywhere it appears, across every
+/// stage. Both are context assembly; see `docs/context-assembly.md`.
+///
+/// Emitting it turns work HRW already does into context it can be asked about.
+/// Every stage view already sweeps its own data each frame to decide what to
+/// highlight, then discards the answer at the end of the paint. This keeps it.
+///
+/// ## Why the two must stay distinguishable
+///
+/// They drive different behaviour, so flattening them degrades both:
+///
+/// - For `explain`, the point is the **subject** and the thread is the
+///   **lens**. "Pointed at this node, following `src.V`" asks for the node
+///   explained as part of that variable's story.
+/// - For `debug-where-set`, it decides **how many breakpoints**: a point wants
+///   one site, a thread wants several — resolved, flattened, matched, demoted.
+///
+/// Hence `seq` here as well as on the focus: when both are present and the
+/// request is ambiguous, whichever was acted on *last* is almost certainly the
+/// subject. One shared counter could not express that.
+pub struct Tracking<'a> {
+    /// Monotonic counter for *this* section, compared against the focus `seq`
+    /// to tell "pointed at this, then went following" from the reverse.
+    pub seq: u64,
+    /// The followed identifier, as a qualified flat name.
+    pub name: &'a str,
+    /// 1-based source line, when the specimen declares it.
+    pub declared_line: Option<u32>,
+    /// The class that declares it, when a component type does.
+    pub declaring_class: Option<&'a str>,
+    /// Every pipeline stage's IR, in order, as `(name, value)`.
+    pub stage_values: &'a [(&'a str, Option<&'a Value>)],
+}
+
+/// Cap on recorded mention paths per stage.
+///
+/// A count is always exact; the paths are a sample. Without a cap, following a
+/// common variable through a large model would produce a focus file bigger than
+/// the stage IR it describes — and Claude can always read the stage file for
+/// the rest.
+const MAX_MENTION_PATHS: usize = 12;
+
+/// Walk one stage's IR, counting and locating mentions of `name`.
+///
+/// Uses exactly the rules the views use, so the emitted context and the
+/// on-screen highlighting can never disagree: exact identity
+/// (`same_variable`), lexical mention for code-bearing strings
+/// (`mentions_identifier`), and prose fields excluded by name.
+fn find_mentions(
+    value: &Value,
+    name: &str,
+    path: &mut Vec<Seg>,
+    paths: &mut Vec<String>,
+    total: &mut usize,
+) {
+    let hit = |path: &[Seg], total: &mut usize, paths: &mut Vec<String>| {
+        *total += 1;
+        if paths.len() < MAX_MENTION_PATHS {
+            paths.push(describe_path(path));
+        }
+    };
+    match value {
+        Value::Object(map) => {
+            for (k, v) in map {
+                path.push(Seg::Key(k.clone()));
+                // A key *is* the name — e.g. `variables.states["emf.phi"]`.
+                if crate::identifier_index::same_variable(k, name) {
+                    hit(path, total, paths);
+                } else if let Value::String(s) = v {
+                    if !crate::identifier_index::is_prose_field(k)
+                        && (crate::identifier_index::same_variable(s, name)
+                            || crate::source_view::mentions_identifier(s, name))
+                    {
+                        hit(path, total, paths);
+                    }
+                } else {
+                    find_mentions(v, name, path, paths, total);
+                }
+                path.pop();
+            }
+        }
+        Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                path.push(Seg::Index(i));
+                find_mentions(v, name, path, paths, total);
+                path.pop();
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Build the `tracking` section: where the followed identifier lives, stage by
+/// stage — **including where it does not**.
+///
+/// Absence is emitted deliberately. "Not present in Initialization or Solve
+/// lowering" is how a demoted or alias-eliminated variable announces itself, and
+/// a hits-only capture cannot express disappearance. The disappearance is often
+/// the whole story.
+fn build_tracking(t: &Tracking) -> Value {
+    let stages: Vec<Value> = t
+        .stage_values
+        .iter()
+        .map(|(stage_name, value)| match value {
+            Some(v) => {
+                let mut paths = Vec::new();
+                let mut total = 0usize;
+                find_mentions(v, t.name, &mut Vec::new(), &mut paths, &mut total);
+                json!({
+                    "stage": stage_name,
+                    "mentions": total,
+                    "paths": paths,
+                    "paths_truncated": total > paths.len(),
+                })
+            }
+            // No IR at all is different from IR without the name in it.
+            None => json!({ "stage": stage_name, "produced_no_ir": true }),
+        })
+        .collect();
+
+    let mut out = json!({
+        "seq": t.seq,
+        "note": "the identifier the user is FOLLOWING — a thread through the \
+                 pipeline, as opposed to `node`, which is the point they are \
+                 POINTING AT. Stages with `mentions: 0` are meaningful: the \
+                 name is genuinely absent there, which is how a demoted or \
+                 alias-eliminated variable shows itself. `paths` is a sample \
+                 capped at 12 per stage; `mentions` is the exact count.",
+        "identifier": t.name,
+        "stages": stages,
+    });
+    // Where it came from — a source line, a class, or neither. Neither means a
+    // compiler phase created it; that conclusion is Claude's to draw, so HRW
+    // reports facts and absences rather than a category.
+    if let Some(line) = t.declared_line {
+        out["declared_at_line"] = json!(line);
+    }
+    if let Some(class) = t.declaring_class {
+        out["declared_in_class"] = json!(class);
+    }
+    out
+}
+
 /// All the context needed to write one focus file.
 ///
 /// This struct aggregates everything the bridge needs from the app's state:
@@ -279,8 +437,11 @@ pub struct Ask<'a> {
     pub parse_value: Option<&'a Value>,
     /// The Resolve stage's IR (if available). Used for cross-stage diffing.
     pub resolve_value: Option<&'a Value>,
-    /// What the user captured (node, stage, or specimen).
+    /// What the user captured (node, stage, or specimen) — the *point*.
     pub focus: Focus<'a>,
+    /// What the user is following — the *thread*. Independent of `focus`:
+    /// point-only, thread-only, and both are all normal states.
+    pub tracking: Option<Tracking<'a>>,
 }
 
 /// Write the focus file to `.hrw-bridge/focus.json`.
@@ -477,6 +638,12 @@ fn build(ask: &Ask) -> Value {
     if let Focus::Node { key_path, stage_value } = &ask.focus {
         doc["node"] = build_node(key_path, stage_value, ask.specimen);
         doc["cross_stage"] = build_cross_stage(ask, key_path);
+    }
+    // The ambient half. A sibling section rather than nested, so the point and
+    // the thread are structurally separate and neither can be mistaken for the
+    // other — see `Tracking` for why that distinction is load-bearing.
+    if let Some(t) = &ask.tracking {
+        doc["tracking"] = build_tracking(t);
     }
     doc
 }
@@ -915,6 +1082,7 @@ mod tests {
             parse_value: Some(&parse),
             resolve_value: Some(&resolve),
             focus: Focus::Node { key_path: key_path.clone(), stage_value: &resolve },
+            tracking: None,
         };
 
         let cs = build(&ask)["cross_stage"].clone();
@@ -929,6 +1097,124 @@ mod tests {
         };
         assert!(has("def_id", 9), "changes: {changes:?}");
         assert!(has("type_def_id", 100), "changes: {changes:?}");
+    }
+
+    /// Build an `Ask` that is following `name` across `stages`.
+    fn tracking_ask<'a>(
+        name: &'a str,
+        stages: &'a [(&'a str, Option<&'a Value>)],
+        def_index: &'a BTreeMap<u64, DefInfo>,
+    ) -> Ask<'a> {
+        Ask {
+            seq: 1,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("M"),
+            stage: Some(StageKind::Flatten),
+            libraries: vec![],
+            def_index,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Stage,
+            tracking: Some(Tracking {
+                seq: 7,
+                name,
+                declared_line: Some(23),
+                declaring_class: None,
+                stage_values: stages,
+            }),
+        }
+    }
+
+    /// The compound capture records where the followed identifier lives **and
+    /// where it does not** — absence is how a demoted variable announces itself.
+    #[test]
+    fn tracking_section_reports_presence_and_absence() {
+        let flatten = json!({ "variables": { "states": { "h": { "kind": "state" } } } });
+        let initialization = json!({ "plan": [] });
+        let stages: Vec<(&str, Option<&Value>)> = vec![
+            ("flatten", Some(&flatten)),
+            ("initialization", Some(&initialization)),
+            ("events", None),
+        ];
+        let empty = BTreeMap::new();
+        let doc = build(&tracking_ask("h", &stages, &empty));
+        let t = &doc["tracking"];
+
+        assert_eq!(t["identifier"], json!("h"));
+        assert_eq!(t["seq"], json!(7), "its own counter, not the focus seq");
+        assert_eq!(t["declared_at_line"], json!(23));
+
+        let by_stage = t["stages"].as_array().expect("stages array");
+        assert_eq!(by_stage[0]["stage"], json!("flatten"));
+        assert_eq!(by_stage[0]["mentions"], json!(1), "the key `h` is a mention");
+        // Absence is emitted, not omitted.
+        assert_eq!(by_stage[1]["mentions"], json!(0), "genuinely absent here");
+        // And "produced no IR" is distinct from "IR without the name in it".
+        assert_eq!(by_stage[2]["produced_no_ir"], json!(true));
+        assert!(by_stage[2].get("mentions").is_none());
+    }
+
+    /// Emission uses the same matching rules as the views, or the Context Bar
+    /// would describe context that differs from what is highlighted on screen.
+    #[test]
+    fn tracking_matches_like_the_views_do() {
+        let stage = json!({
+            "equation": "der(h) - v",       // mentions h, lexically
+            "other": "height",              // one identifier, NOT a mention of h
+            "description": "height of h",   // prose: not a mention
+            "unknown": "h",                 // exact identity
+            "nested": { "list": [ { "name": "der(h)" } ] },
+        });
+        let stages: Vec<(&str, Option<&Value>)> = vec![("flatten", Some(&stage))];
+        let empty = BTreeMap::new();
+        let doc = build(&tracking_ask("h", &stages, &empty));
+        let entry = &doc["tracking"]["stages"][0];
+
+        // equation, unknown, nested name — but not `other`, not `description`.
+        assert_eq!(entry["mentions"], json!(3), "got: {:?}", entry["paths"]);
+        let paths: Vec<&str> = entry["paths"].as_array().unwrap()
+            .iter().map(|p| p.as_str().unwrap()).collect();
+        assert!(paths.iter().any(|p| *p == "equation"));
+        assert!(paths.iter().any(|p| *p == "unknown"));
+        assert!(paths.iter().any(|p| p.contains("nested")));
+        assert!(!paths.iter().any(|p| *p == "other"), "substring is not a mention");
+        assert!(!paths.iter().any(|p| *p == "description"), "prose is not a mention");
+    }
+
+    /// Following and pointing are independent: either may be absent.
+    #[test]
+    fn tracking_section_absent_when_nothing_is_followed() {
+        let empty = BTreeMap::new();
+        let ask = Ask {
+            seq: 1,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("M"),
+            stage: Some(StageKind::Parse),
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Stage,
+            tracking: None,
+        };
+        assert!(build(&ask).get("tracking").is_none());
+    }
+
+    /// The path sample is capped; the count is not.
+    #[test]
+    fn mention_paths_are_capped_but_counted_exactly() {
+        let many: Vec<Value> = (0..40).map(|_| json!({ "unknown": "h" })).collect();
+        let stage = json!({ "rows": many });
+        let stages: Vec<(&str, Option<&Value>)> = vec![("structural", Some(&stage))];
+        let empty = BTreeMap::new();
+        let doc = build(&tracking_ask("h", &stages, &empty));
+        let entry = &doc["tracking"]["stages"][0];
+
+        assert_eq!(entry["mentions"], json!(40), "count is exact");
+        assert_eq!(entry["paths"].as_array().unwrap().len(), MAX_MENTION_PATHS);
+        assert_eq!(entry["paths_truncated"], json!(true));
     }
 
     /// A node outside the model class (e.g. the parse `within`) is not diffable.
@@ -947,6 +1233,7 @@ mod tests {
             parse_value: Some(&parse),
             resolve_value: None,
             focus: Focus::Node { key_path: vec![Seg::Key("within".into())], stage_value: &parse },
+            tracking: None,
         };
         assert_eq!(build(&ask)["cross_stage"]["applicable"], json!(false));
     }
@@ -968,6 +1255,7 @@ mod tests {
             parse_value: None,
             resolve_value: None,
             focus: Focus::Specimen,
+            tracking: None,
         };
         let doc = build(&ask);
         let files = doc["stages"]["files"]
@@ -1073,6 +1361,7 @@ mod tests {
                 key_path: vec![Seg::Key("x".into())],
                 stage_value: &json!({"x": 1}),
             },
+            tracking: None,
         };
         let doc = build(&ask);
         let cs = &doc["cross_stage"];
@@ -1104,6 +1393,7 @@ mod tests {
             parse_value: None,
             resolve_value: None,
             focus: Focus::Specimen,
+            tracking: None,
         };
         let doc = build(&ask);
         assert_eq!(doc["stage"], json!("(navigated definition)"));
@@ -1222,6 +1512,7 @@ mod tests {
                 key_path: vec![Seg::Key("name".to_owned())],
                 stage_value: &val,
             },
+            tracking: None,
         };
         let path = write(&ask).expect("write focus");
         assert!(path.exists(), "focus.json should exist");

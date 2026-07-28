@@ -292,7 +292,7 @@ fn node_ui(
                 match scalar {
                     // Prose fields are excluded: a tracked name occurring inside
                     // human-written text is a coincidence, not a mention.
-                    Value::String(s) if !is_prose_field(key) => {
+                    Value::String(s) if !crate::identifier_index::is_prose_field(key) => {
                         crate::identifier_index::same_variable(s, t)
                             || crate::source_view::mentions_identifier(s, t)
                     }
@@ -435,7 +435,7 @@ fn row_menu(
 /// same reason they are excluded from tracked highlighting (see
 /// [`is_prose_field`]).
 fn trackable_name(key: &str, value: &Value, opts: &TreeOptions<'_>) -> Option<String> {
-    if is_prose_field(key) {
+    if crate::identifier_index::is_prose_field(key) {
         return None;
     }
     let Value::String(s) = value else { return None };
@@ -571,7 +571,7 @@ fn collect_tracked_ancestors<'a>(
         Value::Object(map) => map.iter().fold(false, |found, (k, v)| {
             let here = if k == tracked {
                 true
-            } else if is_prose_field(k) && matches!(v, Value::String(_)) {
+            } else if crate::identifier_index::is_prose_field(k) && matches!(v, Value::String(_)) {
                 // A prose field's string is human text, not code — see
                 // `is_prose_field`. Its contents must not drag the whole subtree
                 // open as though the identifier were mentioned there.
@@ -595,33 +595,8 @@ fn collect_tracked_ancestors<'a>(
     dominated
 }
 
-/// IR fields whose string values are prose written for a human, not code.
-///
-/// Tracked-identifier matching is a whole-word text search, which cannot tell a
-/// mention from a coincidence. In code-bearing strings — equation text, variable
-/// names — an occurrence *is* a mention. In prose it is not:
-///
-/// ```modelica
-/// Real h "height of h";
-/// ```
-///
-/// Tracking `h` used to highlight that description and expand the path to it,
-/// claiming the variable is used somewhere it is only talked about. This is the
-/// same false positive the lexer removed from the source view, but the fix here
-/// is different: these strings are not Modelica, so tokenizing them would be a
-/// category error. What matters is which *field* the string came from.
-///
-/// Deliberately short. Listing a field wrongly hides real matches, which is the
-/// worse failure — so a field is added only when its contents are certainly
-/// prose. `unit` and `quantity` are omitted on purpose: they hold code-like
-/// values (`"N.m"`), which the lexer reads as one dotted reference rather than
-/// as a mention of `m`.
-const PROSE_FIELDS: &[&str] = &["description", "comment", "file_name"];
 
-fn is_prose_field(key: &str) -> bool {
-    PROSE_FIELDS.contains(&key)
-}
-
+///
 fn header_tracked(key: &str, hint: &str) -> egui::RichText {
     egui::RichText::new(format!("{key}  {hint}"))
         .monospace()
@@ -834,7 +809,7 @@ mod tests {
     /// so tracking `h` must neither highlight it nor expand the path to it.
     #[test]
     fn collect_tracked_ancestors_ignores_prose_fields() {
-        for field in PROSE_FIELDS {
+        for field in crate::identifier_index::PROSE_FIELDS {
             let tree = json!({ *field: "height of h" });
             let mut set = HashSet::new();
             let found = collect_tracked_ancestors(&tree, "h", &mut set);

@@ -237,6 +237,29 @@ pub fn strip_der(name: &str) -> &str {
     inner.trim()
 }
 
+/// IR fields whose string values are prose written for a human, not code.
+///
+/// An identifier occurring in code *is* a mention; in prose it is a
+/// coincidence. `Real h "height of h"` must not read as a use of `h`.
+///
+/// Note the fix is by **field**, not by content: these strings are not
+/// Modelica, so lexing them would be a category error — `mentions_identifier`
+/// would happily find `h` as a token in "height of h". What matters is where
+/// the string came from.
+///
+/// Deliberately short: listing a field wrongly *hides* real matches, which is
+/// the worse failure. `unit` and `quantity` are omitted on purpose — they hold
+/// code-like values (`"N.m"`) that the lexer reads as one dotted reference.
+///
+/// Shared by the tree (highlighting) and the bridge (emission), which must
+/// agree about what counts as a mention or the Context Bar would describe
+/// something different from what the views show.
+pub const PROSE_FIELDS: &[&str] = &["description", "comment", "file_name"];
+
+pub fn is_prose_field(key: &str) -> bool {
+    PROSE_FIELDS.contains(&key)
+}
+
 /// Whether two names refer to the same DAE variable.
 ///
 /// **Exact comparison, modulo one `der(…)` wrapper on either side.**

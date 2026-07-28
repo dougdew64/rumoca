@@ -30,6 +30,7 @@ use std::path::{Path, PathBuf};
 use eframe::egui;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use serde_json::Value;
 
 // The bridge module handles communication with Claude Code (the AI assistant
 // running in a terminal alongside this app): we write JSON "focus" files that
@@ -332,6 +333,11 @@ pub struct App {
     declaring_classes: HashMap<String, String>,
     // "Reveal identifiers" — expand every tree path leading to a variable.
     expand_trackable: bool,
+    // Bumped whenever the followed identifier changes. Emitted alongside the
+    // focus `seq` so Claude can tell which of the two was acted on last —
+    // "pointed at this, then went following" and the reverse are different
+    // questions. See docs/context-assembly.md.
+    track_seq: u64,
     // Which tracked identifier the source view has already scrolled to.
     //
     // Reverse tracking (idea #37) scrolls the source to a variable's
@@ -660,6 +666,7 @@ impl App {
             known_variables: None,
             declaring_classes: HashMap::new(),
             expand_trackable: false,
+            track_seq: 0,
             scrolled_source_for: None,
             pending_stage: None,
             pending_live_debug: None,
@@ -1026,7 +1033,13 @@ impl App {
     /// context without the user having to copy-paste IR.
     ///
     /// Build an `Ask` from the current specimen state (shared fields).
-    fn base_ask<'a>(&'a self, seq: u64, request: bridge::AskRequest, focus: Focus<'a>) -> Ask<'a> {
+    fn base_ask<'a>(
+        &'a self,
+        seq: u64,
+        request: bridge::AskRequest,
+        focus: Focus<'a>,
+        stage_values: &'a [(&'a str, Option<&'a Value>)],
+    ) -> Ask<'a> {
         Ask {
             seq,
             request,
@@ -1038,7 +1051,32 @@ impl App {
             parse_value: self.stages.parse.value.as_ref(),
             resolve_value: self.stages.resolve.value.as_ref(),
             focus,
+            tracking: self.tracking_context(stage_values),
         }
+    }
+
+    /// The ambient half of the emitted context — what is being followed.
+    ///
+    /// Always included when something is tracked, whatever the user pointed at.
+    /// Following is not a mode you enter to ask a question; it is standing
+    /// context that any question is asked *within*. See
+    /// `docs/context-assembly.md`.
+    fn tracking_context<'a>(
+        &'a self,
+        stage_values: &'a [(&'a str, Option<&'a Value>)],
+    ) -> Option<bridge::Tracking<'a>> {
+        let name = self.tracked_identifier.as_deref()?;
+        Some(bridge::Tracking {
+            seq: self.track_seq,
+            name,
+            declared_line: self
+                .identifier_index
+                .as_ref()
+                .and_then(|idx| idx.variables.get(name))
+                .map(|v| v.source_line),
+            declaring_class: self.declaring_classes.get(name).map(String::as_str),
+            stage_values,
+        })
     }
 
     /// The `ask_seq` counter makes each capture unique, and the status bar
@@ -1061,7 +1099,8 @@ impl App {
                     .unwrap_or("?"),
             ),
         };
-        let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus);
+        let stage_values = self.stages.as_stage_pairs();
+        let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
         self.bridge_status = Some(status_line(seq, &target, "explain", bridge::write(&ask)));
     }
 
@@ -1094,6 +1133,9 @@ impl App {
                 parse_value: None,
                 resolve_value: None,
                 focus: Focus::Node { key_path, stage_value: &entry.value },
+                // A navigated library class is outside the specimen pipeline,
+                // so there are no stages to sweep for the followed identifier.
+                tracking: None,
             };
             status_line(seq, &target, request_str, bridge::write(&ask))
         } else {
@@ -1101,7 +1143,8 @@ impl App {
             match &stage_value {
                 Some(value) => {
                     let focus = Focus::Node { key_path, stage_value: value };
-                    let ask = self.base_ask(seq, request, focus);
+                    let stage_values = self.stages.as_stage_pairs();
+                    let ask = self.base_ask(seq, request, focus, &stage_values);
                     status_line(seq, &target, request_str, bridge::write(&ask))
                 }
                 None => "(no IR for this stage to point at)".to_owned(),
@@ -2009,6 +2052,10 @@ egui::Panel::top("bar").show(ui, |ui| {
         } else {
             self.tracked_identifier = Some(name);
         }
+        // Recency, not identity: the counter advances on *any* change,
+        // including clearing, so the emitted context can say which half of it
+        // the user touched most recently.
+        self.track_seq += 1;
     }
 
     fn source_map_ui(&mut self, ui: &mut egui::Ui) {
@@ -3642,6 +3689,7 @@ impl App {
             known_variables: None,
             declaring_classes: HashMap::new(),
             expand_trackable: false,
+            track_seq: 0,
             scrolled_source_for: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
