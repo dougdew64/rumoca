@@ -299,6 +299,29 @@ pub struct Tracking<'a> {
     pub stage_values: &'a [(&'a str, Option<&'a Value>)],
 }
 
+/// How much a followed identifier actually has behind it: total mentions, and
+/// how many stages contain at least one.
+///
+/// For the Context Bar, which states what a question will have to work with
+/// *before* it is asked — the difference between a rich answer and a thin one.
+/// Computed at emission time (a click), never per frame: it walks every stage's
+/// IR.
+pub fn summarize_tracking(t: &Tracking) -> (usize, usize) {
+    let mut mentions = 0usize;
+    let mut stages = 0usize;
+    for (_, value) in t.stage_values {
+        if let Some(v) = value {
+            let mut here = 0usize;
+            find_mentions(v, t.name, &mut Vec::new(), &mut Vec::new(), &mut here);
+            if here > 0 {
+                stages += 1;
+            }
+            mentions += here;
+        }
+    }
+    (mentions, stages)
+}
+
 /// Cap on recorded mention paths per stage.
 ///
 /// A count is always exact; the paths are a sample. Without a cap, following a

@@ -313,7 +313,10 @@ mod tests {
 
     #[test]
     fn simple_literal() {
-        assert_eq!(format_expr(&lit_real(3.14)), "3.14");
+        // Not 3.14: clippy reads that as an approximation of `PI` and denies it,
+        // which failed `cargo clippy -p hrw --all-targets`. The value is
+        // arbitrary — what is under test is decimal formatting.
+        assert_eq!(format_expr(&lit_real(2.75)), "2.75");
         assert_eq!(format_expr(&lit_int(42)), "42");
     }
 

@@ -84,7 +84,7 @@ impl ReductionAnimation {
                     .unwrap_or(0);
                 let _ = rumoca_phase_structural::dae_prepare
                     ::index_reduce_missing_state_derivatives_with_trace(
-                        &mut dae, Some(&lt), &mut frames, &mut demoted_so_far,
+                        &mut dae, Some(&lt), &mut frames, &demoted_so_far,
                         round_offset,
                     );
                 on_complete();

@@ -27,6 +27,9 @@ Instrumentation of the Rumoca crates is **intended**, but must be:
   rebases on upstream stay clean.
 - **Upstreamable** — shaped as a general observability/tracing API (a candidate PR to CogniPilot),
   and kept **separable from `hrw/`** so an upstream PR is a clean cherry-pick of Rumoca-only changes.
+  After touching a `crates/rumoca-*` file, run **`cargo clippy -p <that-crate> --all-targets`**: the
+  Rumoca crates are clippy-clean and `[workspace.lints]` denies, so a lint the instrumentation
+  introduces would fail upstream CI. `cargo test` passes straight through these.
 
 Doug aims to upstream this work and become a Rumoca maintainer. "Updating Rumoca" = **rebasing the
 `hrw` branch on upstream** (`hrw/docs/updating-rumoca.md`), not a pin bump.

@@ -140,48 +140,13 @@ impl IdentifierIndex {
             if tok.kind != TokenKind::Identifier {
                 continue;
             }
-            let path = dotted_path_ending_at(line_text, tokens, i);
+            let path = crate::source_view::dotted_path_ending_at(line_text, tokens, i);
             if let Some(var) = best_match(&vars, &path) {
                 spans.push((tok.start, tok.end, var.name.clone()));
             }
         }
         spans
     }
-}
-
-/// Reconstruct the dotted component path ending at token `i`.
-///
-/// For `phi` in `b.phi` this yields `"b.phi"`; for a bare `x` it yields `"x"`.
-/// Walking backwards over `Identifier ('.' Identifier)*` is what lets two
-/// same-leaf variables on one line be told apart.
-fn dotted_path_ending_at(line_text: &str, tokens: &[LineToken], i: usize) -> String {
-    let mut parts = vec![&line_text[tokens[i].start..tokens[i].end]];
-    let mut j = i;
-    loop {
-        // Step back over a dot, then over the identifier before it, skipping
-        // whitespace in case the source is written `b . phi`.
-        let Some(dot) = prev_significant(tokens, j) else { break };
-        if tokens[dot].kind != TokenKind::Operator
-            || &line_text[tokens[dot].start..tokens[dot].end] != "."
-        {
-            break;
-        }
-        let Some(ident) = prev_significant(tokens, dot) else { break };
-        if tokens[ident].kind != TokenKind::Identifier {
-            break;
-        }
-        parts.push(&line_text[tokens[ident].start..tokens[ident].end]);
-        j = ident;
-    }
-    parts.reverse();
-    parts.join(".")
-}
-
-/// Index of the nearest non-whitespace token before `i`.
-fn prev_significant(tokens: &[LineToken], i: usize) -> Option<usize> {
-    tokens[..i]
-        .iter()
-        .rposition(|t| t.kind != TokenKind::Whitespace)
 }
 
 /// Pick the variable a dotted path refers to, preferring the longest match.

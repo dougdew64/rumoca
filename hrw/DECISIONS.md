@@ -917,3 +917,27 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   deleted file, so nothing is lost — but nobody greps deleted files, so stale plans in `docs/` cost
   attention on every read and risk being mistaken for current intent. `DECISIONS.md` already *is*
   the project's history; a second archive would compete with it and be read by no one.
+- **2026-07-28 — A mention is the whole dotted path, not a matching leaf; and instrumented Rumoca
+  crates must stay clippy-clean.** Two corrections found by testing the Context Bar.
+  (1) The first real `explain` on `__pre__.overSpeed` emitted **four mentions in Parse and Resolve**
+  — stages where that variable does not exist. `source_view::identifier_is` accepted a bare
+  `overSpeed` because the tracked name ends with `.overSpeed`, and `mentions_identifier` used it
+  per-token. Membership now reconstructs the dotted path around each identifier token
+  (`dotted_path_ending_at`) and compares the **whole path** with `same_variable`, so `a.phi` is not
+  a mention of `b.phi`. `identifier_is` survives, documented as deliberately leaf-tolerant and
+  restricted to *highlighting a token inside text already identified as relevant* — never to decide
+  whether text mentions a variable. **The governing rule (Doug):** correctness in the Context Bar
+  and emitted context outranks reach — the reasoner can relate `overSpeed` to `__pre__.overSpeed`
+  from the names, but it cannot recover from a false count. One shared implementation of the path
+  walk now lives in `source_view`; `identifier_index::clickable_spans` calls it.
+  (2) Checking this with clippy showed the **instrumentation had introduced six clippy errors** into
+  `rumoca-phase-structural`, which is clippy-clean at the fork point (verified against `8cdc7419` in
+  a scratch worktree). Rumoca denies these via `[workspace.lints]`, so an upstream PR would have
+  failed CI — a direct violation of the *upstreamable* half of the instrumentation discipline. All
+  six are fixed in the algorithm crates, not silenced: `IndexReductionStep::Differentiated` boxes
+  its two `Expression`s (they made every frame in a trace pay 360 bytes), the traced
+  missing-derivative pass takes `demoted_so_far: &[String]` (it reads the accumulator; only its
+  demoting sibling extends it), the per-state candidate filter is extracted as
+  `differentiable_candidate_equations`, Tarjan's SCC pop is extracted as `pop_scc`, and the traced
+  augmenting path uses `continue` guards. **Standing rule: run `cargo clippy -p <rumoca-crate>`
+  after touching an instrumented Rumoca crate** — `cargo test` passes right through these.

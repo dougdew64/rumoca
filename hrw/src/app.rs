@@ -237,10 +237,10 @@ pub struct App {
 
     // ---- 6. Claude bridge ----
     // The "capture" system writes JSON files that Claude Code reads to
-    // understand what the user is looking at. `ask_seq` is a monotonic counter
+    // understand what the user is looking at. `context_seq` is a monotonic counter
     // so each capture gets a unique ID; `bridge_status` shows confirmation in
     // the bottom status bar.
-    ask_seq: u64,
+    context_seq: u64,
     bridge_status: Option<String>,
 
     // ---- 7. Panels and windows toggled from the menu bar ----
@@ -333,6 +333,16 @@ pub struct App {
     declaring_classes: HashMap<String, String>,
     // "Reveal identifiers" — expand every tree path leading to a variable.
     expand_trackable: bool,
+    // The last deliberate capture — the *point*. Retained (it used to be
+    // written and forgotten) because the Context Bar must state it, and
+    // because re-emitting when following changes has to preserve it.
+    pointed_at: Option<PointedAt>,
+    // Set when the last emission failed. The bar says so rather than claiming
+    // context Claude does not have.
+    point_error: Option<String>,
+    // Mentions and stage count for the followed identifier, computed at
+    // emission time. Never per frame — the sweep walks every stage IR.
+    tracking_summary: Option<(usize, usize)>,
     // Bumped whenever the followed identifier changes. Emitted alongside the
     // focus `seq` so Claude can tell which of the two was acted on last —
     // "pointed at this, then went following" and the reverse are different
@@ -381,6 +391,43 @@ pub struct App {
     // first (slow) resolution of live_trace.rs does not happen on the critical
     // path of the first Debug click.
     prewarm: Prewarm,
+}
+
+/// The last deliberate capture, retained so the Context Bar can state it and so
+/// re-emission preserves it.
+///
+/// `stage` is the stage the capture was **made** in, not the one currently on
+/// screen. They diverge as soon as the user switches tabs, and the bar must
+/// report the former — anything else describes context Claude does not have.
+#[derive(Clone)]
+struct PointedAt {
+    /// Stamp from the shared context counter — comparable against
+    /// `track_seq`, which is stamped from the same source.
+    seq: u64,
+    /// Human-readable description, exactly as emitted.
+    target: String,
+    /// Which of the three capture shapes this was.
+    ///
+    /// **All three must be recorded, not just `Node`.** Only node captures were
+    /// retained at first, so clicking a stage tab — which emits a *stage*
+    /// capture — rewrote `focus.json` while the bar went on displaying the
+    /// previous node. The bar and the file disagreed, which is precisely the
+    /// drift its governing rule forbids.
+    kind: PointKind,
+    stage: StageKind,
+    request: bridge::AskRequest,
+}
+
+/// What a capture pointed at, kept so the focus can be rebuilt when the
+/// followed identifier changes.
+#[derive(Clone)]
+enum PointKind {
+    /// A specific IR node, addressed from the stage root.
+    Node(Vec<Seg>),
+    /// A whole stage's IR.
+    Stage,
+    /// The specimen as a whole.
+    Specimen,
 }
 
 #[derive(Clone, Copy)]
@@ -620,7 +667,7 @@ impl App {
             nav: Vec::new(),
             nav_loading: None,
             nav_error: None,
-            ask_seq: 0,
+            context_seq: 0,
             bridge_status: None,
             ui_mode: UiMode::Tour,
             specimen_detail: SpecimenDetail::default(),
@@ -666,6 +713,9 @@ impl App {
             known_variables: None,
             declaring_classes: HashMap::new(),
             expand_trackable: false,
+            pointed_at: None,
+            point_error: None,
+            tracking_summary: None,
             track_seq: 0,
             scrolled_source_for: None,
             pending_stage: None,
@@ -765,6 +815,12 @@ impl App {
         self.cached_equation_sheet = None;
         self.known_variables = None;
         self.declaring_classes.clear();
+        // A point addresses IR that no longer exists once the stages are
+        // replaced. Clearing it here is what lets `emit_context` treat a missing
+        // stage value as transient rather than terminal.
+        self.pointed_at = None;
+        self.point_error = None;
+        self.tracking_summary = None;
         self.identifier_index = None;
         self.tracked_identifier = None;
         self.cached_source = None;
@@ -1079,12 +1135,13 @@ impl App {
         })
     }
 
-    /// The `ask_seq` counter makes each capture unique, and the status bar
-    /// confirms what was captured ("captured equations.3.lhs -- now ask me
-    /// about it in the chat").
+    /// Emit a stage or specimen capture, and record it as the point.
+    ///
+    /// Recording matters as much as emitting: this path used to write the file
+    /// without updating `pointed_at`, so a stage-tab click replaced the emitted
+    /// context while the Context Bar carried on showing the previous node.
     fn emit_focus(&mut self, focus: Focus) {
-        self.ask_seq += 1;
-        let seq = self.ask_seq;
+        let seq = self.next_seq();
         // Name what was captured, so the status confirms the *right* thing was
         // written — not just that some focus was.
         let target = match &focus {
@@ -1100,8 +1157,35 @@ impl App {
             ),
         };
         let stage_values = self.stages.as_stage_pairs();
+        let kind = match &focus {
+            Focus::Node { key_path, .. } => PointKind::Node(key_path.clone()),
+            Focus::Stage => PointKind::Stage,
+            Focus::Specimen => PointKind::Specimen,
+        };
         let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
-        self.bridge_status = Some(status_line(seq, &target, "explain", bridge::write(&ask)));
+        let result = bridge::write(&ask);
+        self.pointed_at = Some(PointedAt {
+            seq,
+            target: target.clone(),
+            kind,
+            stage: self.stage,
+            request: bridge::AskRequest::Explain,
+        });
+        self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
+        self.bridge_status = Some(status_line(seq, &target, "explain", result));
+    }
+
+    /// The next stamp from the **shared** context counter.
+    ///
+    /// One counter for both halves, so `seq` and `tracking.seq` are directly
+    /// comparable and "which did the user touch last?" has an answer. Two
+    /// independent counters looked comparable and were not: after twelve
+    /// captures and one follow they read 12 and 1, which says nothing about
+    /// recency — and a reader trusting the instructions would conclude the
+    /// wrong thing. Found on the first real `explain`.
+    fn next_seq(&mut self) -> u64 {
+        self.context_seq += 1;
+        self.context_seq
     }
 
     /// Capture the node the user acted on — scoped to the navigated class when
@@ -1116,8 +1200,7 @@ impl App {
     ///   IR. The capture includes the Parse and Resolve values so Claude can
     ///   diff across stages (e.g. "what did Typecheck change vs Instantiate?").
     fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: bridge::AskRequest) {
-        self.ask_seq += 1;
-        let seq = self.ask_seq;
+        let seq = self.next_seq();
         let target = bridge::describe_path(&key_path);
         let request_str = request.as_str();
 
@@ -1142,10 +1225,21 @@ impl App {
             let stage_value = self.current_stage().value.clone();
             match &stage_value {
                 Some(value) => {
-                    let focus = Focus::Node { key_path, stage_value: value };
+                    let focus = Focus::Node { key_path: key_path.clone(), stage_value: value };
                     let stage_values = self.stages.as_stage_pairs();
                     let ask = self.base_ask(seq, request, focus, &stage_values);
-                    status_line(seq, &target, request_str, bridge::write(&ask))
+                    let result = bridge::write(&ask);
+                    // Retained so the Context Bar can state it, and so a later
+                    // change of what is followed re-emits without losing it.
+                    self.pointed_at = Some(PointedAt {
+                        seq,
+                        target: target.clone(),
+                        kind: PointKind::Node(key_path),
+                        stage: self.stage,
+                        request,
+                    });
+                    self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
+                    status_line(seq, &target, request_str, result)
                 }
                 None => "(no IR for this stage to point at)".to_owned(),
             }
@@ -1953,89 +2047,225 @@ egui::Panel::top("bar").show(ui, |ui| {
         }
     }
 
-    /// The tracking indicator: what is currently being followed, and where it
-    /// is declared.
+    /// Re-emit the focus file from whatever context is currently assembled.
     ///
-    /// Rendered above every pane — stages, log, simulation — so the answer to
-    /// "what is tracked?" never depends on which view you are in.
+    /// The single write path, so the file always reflects **both** halves at
+    /// once: the point retained in `pointed_at` and the thread in
+    /// `tracked_identifier`. Called when either changes.
     ///
-    /// **This becomes the Context Bar in Phase 5** (see
-    /// `docs/context-assembly.md`). It is a separate method so that rewrite is
-    /// contained, and because the rule it will then obey — *render what will be
-    /// emitted, nothing more* — is easier to hold to in eighty lines than
-    /// inside a twelve-hundred-line `ui`.
+    /// This is what stops ambient following from destroying deliberate
+    /// pointing. Following used to emit nothing at all; the naive fix — writing
+    /// a fresh focus on every track change — would have overwritten the node
+    /// the user meant to ask about. Retaining the point and re-emitting both
+    /// keeps them independent, which is the property `docs/context-assembly.md`
+    /// asks for.
+    fn emit_context(&mut self) {
+        let stage_values = self.stages.as_stage_pairs();
+        // Summarised now (on a click), never per frame — it walks every stage.
+        // Computed before the borrow below, since `tracking` borrows self.
+        let summary = self
+            .tracking_context(&stage_values)
+            .as_ref()
+            .map(bridge::summarize_tracking);
+        self.tracking_summary = summary;
+
+        let tracking = self.tracking_context(&stage_values);
+        let Some(point) = self.pointed_at.clone() else {
+            // Following with nothing pointed at is a normal state; emit the
+            // thread on its own rather than withholding context.
+            let ask = Ask {
+                seq: self.context_seq,
+                request: bridge::AskRequest::Explain,
+                specimen: self.selected.as_deref(),
+                model: self.model.as_deref(),
+                stage: Some(self.stage),
+                libraries: self.library_strings(),
+                def_index: &self.def_index,
+                parse_value: self.stages.parse.value.as_ref(),
+                resolve_value: self.stages.resolve.value.as_ref(),
+                focus: Focus::Stage,
+                tracking,
+            };
+            self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+            return;
+        };
+
+        // Rebuild whichever shape was captured. Handling only `Node` here would
+        // silently drop stage and specimen captures on the next follow-change,
+        // reintroducing the disagreement between bar and file.
+        let stage_value = self.stages.get(point.stage).value.clone();
+        let focus = match (&point.kind, &stage_value) {
+            (PointKind::Node(key_path), Some(value)) => {
+                Focus::Node { key_path: key_path.clone(), stage_value: value }
+            }
+            // The stage's IR is not available, so the node cannot be described.
+            // Skip re-emission rather than dropping the point: the file still
+            // holds what Claude has, and the bar still describes that file, so
+            // the two stay in agreement. Discarding the capture here would
+            // destroy deliberate context over a transient condition — a
+            // recompile clears the point through `reset`, which is the place
+            // that knows the old IR is genuinely gone.
+            (PointKind::Node(_), None) => return,
+            (PointKind::Stage, _) => Focus::Stage,
+            (PointKind::Specimen, _) => Focus::Specimen,
+        };
+        let ask = Ask {
+            seq: point.seq,
+            request: point.request,
+            specimen: self.selected.as_deref(),
+            model: self.model.as_deref(),
+            // The stage the capture was MADE in, not the one now on screen.
+            // A bar reading "Structural" for a point captured in Flatten would
+            // be describing context Claude does not have.
+            stage: Some(point.stage),
+            libraries: self.library_strings(),
+            def_index: &self.def_index,
+            parse_value: self.stages.parse.value.as_ref(),
+            resolve_value: self.stages.resolve.value.as_ref(),
+            focus,
+            tracking,
+        };
+        self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+    }
+
+    /// The Context Bar: what Claude can see right now.
     ///
-    /// It already follows the half of that rule it can: the `[x]` clear button
-    /// belongs here because it *changes* the context; the declaring class is a
-    /// link rather than a button because navigation is not context, but a
-    /// displayed fact may itself be actionable.
-    fn tracking_bar_ui(&mut self, ui: &mut egui::Ui) {
-        let Some(name) = self.tracked_identifier.clone() else { return };
-        let mut clear = false;
+    /// ## The rule this obeys
+    ///
+    /// **It renders what will be emitted — nothing more, nothing less.** If it
+    /// showed context Claude does not receive, or omitted context Claude does,
+    /// questions would be calibrated against a fiction. Built as a view of the
+    /// payload, it cannot drift, because there is nothing to drift from.
+    ///
+    /// Hence three rows and no fourth: *pointing at* and *following* are the two
+    /// shapes of assembled context, and *always* is the standing context —
+    /// stage IRs, the DefId table, the libraries — that the old UI never
+    /// mentioned at all, leaving the user to underestimate what a question had
+    /// behind it.
+    ///
+    /// Controls here are only those that **change** what is emitted. Navigation
+    /// is not context, so the declaring class is a link rather than a button.
+    /// See `docs/context-assembly.md`.
+    fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
+        let has_point = self.pointed_at.is_some();
+        let has_thread = self.tracked_identifier.is_some();
+        if !has_point && !has_thread {
+            return;
+        }
+
+        let mut clear_thread = false;
         let mut go_to_class: Option<String> = None;
 
-        // Where the declaration is — or, just as informative, that there isn't
-        // one. `IdentifierIndex` holds only variables whose span belongs to the
-        // specimen, so a miss means the name came from a library or a compiler
-        // phase created it. Saying so beats the earlier behaviour, where
-        // reverse tracking did nothing and looked broken.
-        let declared_at = self.identifier_index.as_ref()
-            .and_then(|idx| idx.variables.get(&name))
-            .map(|v| v.source_line);
-
         ui.horizontal(|ui| {
-            ui.label(
-                egui::RichText::new(format!("Tracking: {name}"))
-                    .monospace()
-                    .color(crate::colors::TRACKED_GOLD)
-            );
-            match declared_at {
-                Some(line) => {
-                    ui.weak(format!("\u{2014} declared at line {line}"));
-                }
-                // Not in the specimen — but the component it lives in usually
-                // names a library class, which is the real answer to "where did
-                // this come from?".
-                None => match self.declaring_classes.get(&name) {
-                    Some(class) => {
-                        ui.weak("\u{2014} in");
-                        if ui
-                            .link(class)
-                            .on_hover_text(format!(
-                                "Open {class} \u{2014} the type of the component this \
-                                 variable belongs to. Use Back to return here.",
-                            ))
-                            .clicked()
-                        {
-                            go_to_class = Some(class.clone());
-                        }
-                    }
-                    None => {
-                        ui.weak("\u{2014} not declared in this specimen")
-                            .on_hover_text(
-                                "Neither the specimen nor a component type declares \
-                                 this name, so a compiler phase created it \u{2014} an \
-                                 index-reduction dummy derivative or an alias, for \
-                                 example. Capture it and ask Claude to trace where it \
-                                 came from.",
-                            );
-                    }
-                },
+            ui.label(egui::RichText::new("Context").strong());
+            if let Some(model) = &self.model {
+                ui.weak(format!("\u{00b7} {model}"));
             }
-            // U+00D7, not U+2715 MULTIPLICATION X: egui's bundled fonts have no
-            // glyph for U+2715, so it rendered as an empty tofu box.
-            if ui.small_button("\u{00d7}").on_hover_text("Clear tracking").clicked() {
-                clear = true;
+            if let Some(point) = &self.pointed_at {
+                ui.weak(format!("\u{00b7} pointed at in {}", point.stage.name()));
+            }
+            // An emission failure must be stated here, not swallowed. Otherwise
+            // the bar claims context Claude does not have — it would still be
+            // holding the *previous* focus — which is the confident lie this
+            // whole design exists to prevent.
+            if let Some(err) = &self.point_error {
+                ui.colored_label(
+                    ui.visuals().error_fg_color,
+                    format!("\u{26a0} not emitted \u{2014} {err}"),
+                );
             }
         });
 
-        if clear {
+        if let Some(point) = &self.pointed_at {
+            ui.horizontal(|ui| {
+                ui.weak("   Pointing at  ");
+                ui.label(egui::RichText::new(&point.target).monospace());
+                ui.weak(format!("({})", point.request.as_str()));
+            });
+        }
+
+        if let Some(name) = self.tracked_identifier.clone() {
+            ui.horizontal(|ui| {
+                ui.weak("   Following    ");
+                ui.label(
+                    egui::RichText::new(&name)
+                        .monospace()
+                        .color(crate::colors::TRACKED_GOLD),
+                );
+                match self
+                    .identifier_index
+                    .as_ref()
+                    .and_then(|idx| idx.variables.get(&name))
+                    .map(|v| v.source_line)
+                {
+                    Some(line) => {
+                        ui.weak(format!("\u{2014} declared at line {line}"));
+                    }
+                    None => match self.declaring_classes.get(&name) {
+                        Some(class) => {
+                            ui.weak("\u{2014} in");
+                            if ui
+                                .link(class)
+                                .on_hover_text(format!(
+                                    "Open {class} \u{2014} the type of the component this \
+                                     variable belongs to. Use Back to return here.",
+                                ))
+                                .clicked()
+                            {
+                                go_to_class = Some(class.clone());
+                            }
+                        }
+                        None => {
+                            ui.weak("\u{2014} not declared in this specimen")
+                                .on_hover_text(
+                                    "Neither the specimen nor a component type declares \
+                                     this name, so a compiler phase created it. Ask \
+                                     Claude to trace where it came from.",
+                                );
+                        }
+                    },
+                }
+                // What the question will actually have behind it.
+                if let Some((mentions, stages)) = self.tracking_summary {
+                    ui.weak(format!(
+                        "\u{00b7} {mentions} mention{} across {stages} stage{}",
+                        if mentions == 1 { "" } else { "s" },
+                        if stages == 1 { "" } else { "s" },
+                    ));
+                }
+                if ui.small_button("\u{00d7}").on_hover_text("Stop following").clicked() {
+                    clear_thread = true;
+                }
+            });
+        }
+
+        // Standing context — true for the whole session, and never previously
+        // stated anywhere. Without it the user underestimates what Claude can
+        // already see without doing anything.
+        ui.horizontal(|ui| {
+            ui.weak("   Always       ");
+            let stage_count = self.stages.as_stage_pairs()
+                .iter().filter(|(_, v)| v.is_some()).count();
+            ui.weak(format!(
+                "{stage_count} stage IRs \u{00b7} {} DefIds",
+                self.def_index.len(),
+            ))
+            .on_hover_text(
+                "Every pipeline stage's full IR is on disk under .hrw-bridge/stages/, \
+                 and the DefId table resolves numeric ids to names. Claude reads these \
+                 without you pointing at anything.",
+            );
+        });
+        ui.separator();
+
+        if clear_thread {
             self.tracked_identifier = None;
+            self.track_seq = self.next_seq();
+            self.emit_context();
         }
         if let Some(class) = go_to_class {
             self.navigate_to(class);
         }
-        ui.separator();
     }
 
     /// Toggle the tracked identifier — the single entry point for tracking,
@@ -2055,7 +2285,11 @@ egui::Panel::top("bar").show(ui, |ui| {
         // Recency, not identity: the counter advances on *any* change,
         // including clearing, so the emitted context can say which half of it
         // the user touched most recently.
-        self.track_seq += 1;
+        self.track_seq = self.next_seq();
+        // Following is context, so changing it changes what Claude has. Emit
+        // now rather than waiting for the next capture, or the Context Bar
+        // would show a thread that had never been sent.
+        self.emit_context();
     }
 
     fn source_map_ui(&mut self, ui: &mut egui::Ui) {
@@ -3025,7 +3259,7 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
-                self.tracking_bar_ui(ui);
+                self.context_bar_ui(ui);
 
                 if self.viewing_log {
                     if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
@@ -3643,7 +3877,7 @@ impl App {
             nav: Vec::new(),
             nav_loading: None,
             nav_error: None,
-            ask_seq: 0,
+            context_seq: 0,
             bridge_status: None,
             ui_mode: UiMode::Tour,
             specimen_detail: SpecimenDetail::default(),
@@ -3689,6 +3923,9 @@ impl App {
             known_variables: None,
             declaring_classes: HashMap::new(),
             expand_trackable: false,
+            pointed_at: None,
+            point_error: None,
+            tracking_summary: None,
             track_seq: 0,
             scrolled_source_for: None,
             pending_live_debug: None,
@@ -3704,6 +3941,106 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Following is context, so changing it must re-emit — and must not destroy
+    /// the point. That independence is the property the Context Bar's honesty
+    /// rests on.
+    #[test]
+    fn following_re_emits_without_losing_the_point() {
+        let (mut app, _tx) = App::test_with_sender();
+        app.pointed_at = Some(PointedAt {
+            seq: 3,
+            target: "components.src.V".to_owned(),
+            kind: PointKind::Node(vec![Seg::Key("components".into())]),
+            stage: StageKind::Flatten,
+            request: bridge::AskRequest::Explain,
+        });
+
+        app.set_tracked_identifier("h".to_owned());
+        assert_eq!(app.tracked_identifier.as_deref(), Some("h"));
+        assert!(
+            app.pointed_at.is_some(),
+            "ambient following must not clear a deliberate capture"
+        );
+        assert_eq!(app.track_seq, 1, "the thread's own recency counter advanced");
+
+        // Un-following also re-emits, and still leaves the point alone.
+        app.set_tracked_identifier("h".to_owned());
+        assert!(app.tracked_identifier.is_none());
+        assert!(app.pointed_at.is_some());
+        assert_eq!(app.track_seq, 2);
+    }
+
+    /// One counter for both halves, so the two stamps are comparable.
+    ///
+    /// Two independent counters *looked* comparable and were not: after twelve
+    /// captures and one follow they read 12 and 1, and the emitted instructions
+    /// told the reader to compare them. Found on the first real `explain`.
+    #[test]
+    fn point_and_thread_stamps_are_comparable() {
+        let (mut app, _tx) = App::test_with_sender();
+
+        app.emit_focus(Focus::Stage);
+        let after_point = app.pointed_at.as_ref().unwrap().seq;
+
+        app.set_tracked_identifier("h".to_owned());
+        assert!(
+            app.track_seq > after_point,
+            "following happened later, so its stamp must be higher \
+             (point {after_point}, thread {})",
+            app.track_seq,
+        );
+
+        app.emit_focus(Focus::Stage);
+        assert!(
+            app.pointed_at.as_ref().unwrap().seq > app.track_seq,
+            "pointing happened later, so now the point's stamp must be higher"
+        );
+    }
+
+    /// Every capture shape is recorded, not just node captures.
+    ///
+    /// Clicking a stage tab emits a *stage* capture. That path used to write
+    /// the file without updating `pointed_at`, so the emitted context changed
+    /// while the Context Bar kept displaying the previous node — the exact
+    /// drift the bar's rule forbids.
+    #[test]
+    fn stage_and_specimen_captures_are_recorded_too() {
+        let (mut app, _tx) = App::test_with_sender();
+
+        app.emit_focus(Focus::Stage);
+        let point = app.pointed_at.as_ref().expect("a stage capture is still a point");
+        assert!(matches!(point.kind, PointKind::Stage));
+        assert!(point.target.contains("stage"));
+
+        app.emit_focus(Focus::Specimen);
+        assert!(matches!(
+            app.pointed_at.as_ref().unwrap().kind,
+            PointKind::Specimen
+        ));
+    }
+
+    /// The bar reports the stage the capture was *made* in. Switching tabs
+    /// afterwards must not change what it claims Claude has.
+    #[test]
+    fn the_point_remembers_its_own_stage() {
+        let (mut app, _tx) = App::test_with_sender();
+        app.stage = StageKind::Flatten;
+        app.pointed_at = Some(PointedAt {
+            seq: 1,
+            target: "x".to_owned(),
+            kind: PointKind::Stage,
+            stage: StageKind::Flatten,
+            request: bridge::AskRequest::Explain,
+        });
+
+        app.stage = StageKind::Structural;
+        assert_eq!(
+            app.pointed_at.as_ref().unwrap().stage,
+            StageKind::Flatten,
+            "the captured stage is a property of the capture, not of the view"
+        );
+    }
 
     /// The pre-warm state machine: arm → await ack → remove, and — critically —
     /// abandon *without consuming the ack* if a Debug click takes over.

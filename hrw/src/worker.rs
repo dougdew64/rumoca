@@ -3504,7 +3504,7 @@ fn index_reduce_for_structural_analysis(
         .max()
         .unwrap_or(0);
     match dp::index_reduce_missing_state_derivatives_with_trace(
-        dae, None, &mut ir_frames, &mut demoted_so_far, round_offset,
+        dae, None, &mut ir_frames, &demoted_so_far, round_offset,
     ) {
         Ok(n) => steps.push(("index_reduce_missing_state_derivatives", format!("{n} demoted"))),
         Err(e) => {

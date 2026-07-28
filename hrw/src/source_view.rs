@@ -300,16 +300,69 @@ impl<'a> ModelicaText<'a> {
 /// see `tarjan_anim::equation_mentions`. This is for callers that have only the
 /// string.
 pub fn mentions_identifier(text: &str, tracked: &str) -> bool {
-    tokenize(text).iter().any(|t| {
-        t.kind == TokenKind::Identifier && identifier_is(&text[t.start..t.end], tracked)
+    let tokens: Vec<LineToken> = tokenize(text)
+        .into_iter()
+        .map(|t| LineToken { kind: t.kind, start: t.start, end: t.end })
+        .collect();
+    (0..tokens.len()).any(|i| {
+        tokens[i].kind == TokenKind::Identifier
+            && crate::identifier_index::same_variable(
+                &dotted_path_ending_at(text, &tokens, i),
+                tracked,
+            )
     })
+}
+
+/// Reconstruct the dotted component path ending at token `i`.
+///
+/// For `phi` in `b.phi` this yields `"b.phi"`; for a bare `x`, `"x"`.
+///
+/// **Comparing the whole path, not just the leaf, is what makes a mention
+/// honest.** An earlier version accepted a token whenever the tracked name
+/// merely *ended with* `.token`. That is right for tracking `gear.phi` and
+/// meeting the tokens `gear . phi` — they are that reference. It is wrong for
+/// tracking `__pre__.overSpeed` and meeting a bare `overSpeed`, which is a
+/// different DAE variable entirely; the emitted context claimed four mentions
+/// of `__pre__.overSpeed` in stages where no such variable exists.
+///
+/// Related-but-distinct names are for the reasoner to connect, not for the
+/// emitter to conflate. That `__pre__.overSpeed` is the previous-value
+/// companion of `overSpeed` is legible from the names; a false mention count
+/// is not recoverable from anything.
+pub(crate) fn dotted_path_ending_at(text: &str, tokens: &[LineToken], i: usize) -> String {
+    let mut parts = vec![&text[tokens[i].start..tokens[i].end]];
+    let mut j = i;
+    loop {
+        // Step back over a dot, then the identifier before it, skipping
+        // whitespace in case the text is written `b . phi`.
+        let Some(dot) = prev_significant(tokens, j) else { break };
+        if tokens[dot].kind != TokenKind::Operator || &text[tokens[dot].start..tokens[dot].end] != "."
+        {
+            break;
+        }
+        let Some(ident) = prev_significant(tokens, dot) else { break };
+        if tokens[ident].kind != TokenKind::Identifier {
+            break;
+        }
+        parts.push(&text[tokens[ident].start..tokens[ident].end]);
+        j = ident;
+    }
+    parts.reverse();
+    parts.join(".")
+}
+
+/// Index of the nearest non-whitespace token before `i`.
+pub(crate) fn prev_significant(tokens: &[LineToken], i: usize) -> Option<usize> {
+    tokens[..i].iter().rposition(|t| t.kind != TokenKind::Whitespace)
 }
 
 /// Whether an identifier token names the tracked variable.
 ///
-/// Matches the bare name, and the last component of a qualified one, so
-/// tracking `gear.phi` highlights the `phi` in `gear.phi` without also
-/// highlighting an unrelated `phi`… which it would if only leaves were compared.
+/// Leaf-tolerant **on purpose**, and only used for *highlighting* a token
+/// inside already-identified Modelica text (`ModelicaText::tracked`), where the
+/// surrounding reference is known to be the tracked one and only the visible
+/// token needs marking. Do not use it to decide whether text *mentions* a
+/// variable — see [`dotted_path_ending_at`].
 pub(crate) fn identifier_is(token: &str, tracked: &str) -> bool {
     token == tracked || tracked.ends_with(&format!(".{token}"))
 }
@@ -433,6 +486,33 @@ mod tests {
     #[test]
     fn empty_line_produces_no_segments() {
         assert!(segments("", &[], &[]).is_empty());
+    }
+
+    /// A mention is the *whole dotted path*, not a matching leaf.
+    ///
+    /// Found on the first real `explain`: following `__pre__.overSpeed`, the
+    /// emitted context claimed four mentions in Parse and Resolve — stages
+    /// where no such variable exists. They were mentions of `overSpeed`, a
+    /// different DAE variable, accepted because the tracked name ends with
+    /// `.overSpeed`. Correctness in the emitted context matters more than
+    /// reach: relating the two is the reasoner's job, and it can do it from
+    /// the names. A false count is not recoverable from anything.
+    #[test]
+    fn mentions_require_the_whole_path() {
+        // The legitimate case the leaf rule existed for: the tokens really do
+        // form the tracked reference.
+        assert!(mentions_identifier("der(gear.phi) - v", "gear.phi"));
+        assert!(mentions_identifier("der(h) - v", "h"));
+
+        // The bug: a bare `overSpeed` is not `__pre__.overSpeed`.
+        assert!(!mentions_identifier("overSpeed", "__pre__.overSpeed"));
+        assert!(!mentions_identifier("when load.w > maxSpeed", "__pre__.overSpeed"));
+        // ...and the real thing still matches.
+        assert!(mentions_identifier("__pre__.overSpeed", "__pre__.overSpeed"));
+
+        // A different component's same-leaf variable is not a mention either.
+        assert!(!mentions_identifier("a.phi + 1", "b.phi"));
+        assert!(mentions_identifier("b.phi + 1", "b.phi"));
     }
 
     /// Regression for the equation sheet, which used `text.contains(tracked)`:
