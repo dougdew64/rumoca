@@ -142,9 +142,25 @@ and IR tree; the source view scrolls to and highlights the corresponding line.
 - Watch for feedback loops: setting `tracked_identifier` from a downstream click
   must not re-trigger a scroll every frame, only on change.
 
-**Done when.** Clicking an incidence row scrolls the source view to the
-declaring line and highlights it; clicking the same thing twice does not fight
-the scrollbar.
+**Status: COMPLETE, 2026-07-28.** Delivered: `set_tracked_identifier` as the one
+entry point (toggles, reveals the source); `strip_der`; scroll-to-line armed on
+*change* via `scrolled_source_for`; following from the equation sheet's variable
+grid and from the IR tree's row menu — the tree being on every stage tab, which
+makes the gesture ambient rather than per-view; trackability decided by the
+model rather than by string shape; the "Reveal identifiers" affordance; the
+declaring-class lookup, so a flattened name like `src.V` reports the library
+class that declares it and can navigate there; and the rule that tracking never
+answers with silence.
+
+**The canvas-painted views moved to Phase 7** — see below for why.
+
+**What Phase 4 was actually for.** The plan said "click a downstream mention,
+land on the source that produced it", and it does that. But the more valuable
+outcome was diagnostic: working through it exposed that capture and tracking are
+one concept (context assembly) wearing two vocabularies, that the UI showed the
+emitted context transiently and the un-emitted context permanently, and that the
+answer to "where did this come from?" is not always a source line. Phases 5 and 6
+exist because of what Phase 4 turned up.
 
 ---
 
@@ -313,12 +329,51 @@ Not commitments — the point of a design-first phase is to choose among these.
   is looking at, the Context Bar's rule says the emitted context should say so.
   Phase 5 and Phase 6 meet here.
 
+## Phase 7 — Bring the canvas views up to the same standard
+
+**Goal.** The custom-painted views — incidence matrix, spy plot, Tarjan graph,
+reduction rows — still render Modelica as flat text and cannot be clicked to
+follow anything. Everything the widget-based views gained in Phases 2–4 stops at
+the canvas edge.
+
+**Scope.**
+
+- **Follow from a canvas.** Hit-testing on row and column labels, spy-plot
+  blocks, Tarjan nodes, and reduction rows, each calling
+  `set_tracked_identifier` — the same one entry point the widget views use.
+- **Syntax highlighting for canvas labels** — `docs/ideas.md` #38. Row labels
+  and node names are equation text, so they should read like the equation sheet
+  does. `Painter::galley` built from a `LayoutJob` gets the colours for free and
+  can be positioned and rotated as a unit.
+
+These are one phase because they are **one code region**: both need labels to
+stop being a single `painter.text` call and start being laid-out, measured,
+hit-testable runs. Doing them separately would mean rewriting the same code
+twice.
+
+**Why this is after Phases 5 and 6, not part of Phase 4.**
+
+Doug, 2026-07-28: doing it now risks *"a code mess for stuff like the row labels
+and column labels that we would have to clean up later"*. Two concrete reasons:
+
+- **Phase 5 turns every tracking entry point into an emission point.** Once
+  tracking performs a compound capture, wiring five more entry points before the
+  emission contract exists means retrofitting all of them afterwards.
+- **Phase 6 may change what a label even is.** If the tree gains filtering and
+  search, the canvas views will want the same, and the answer may change how
+  labels are structured before any of this is built on top of them.
+
+The fundamentals first, then the surfaces that depend on them.
+
 ## Sequencing
 
-1 → 2 → 3 → 4 → 5 → 6. Each phase ships something usable on its own, and each
-one's output is the next one's input. Phases 1–2 are self-contained and
-low-risk; Phase 3 improves behaviour already in daily use; Phases 4–5 add
-capability; Phase 6 reworks the widget all of them are rendered in.
+1 → 2 → 3 → 4 → 5 → 6 → 7. Each phase ships something usable on its own, and
+each one's output is the next one's input. Phases 1–2 are self-contained and
+low-risk; Phase 3 improves behaviour already in daily use; Phase 4 added
+capability and, more usefully, exposed what Phases 5 and 6 are for; Phase 5
+makes the emitter visible; Phase 6 reworks the widget everything is rendered
+in; Phase 7 extends the result to the canvas views, deliberately last so it is
+built on settled fundamentals rather than needing to be cleaned up after them.
 
 Phases 1 and 2 can land as a single commit pair (crate-free — all HRW). Phase 3
 touches existing tested behaviour and should be its own commit.
@@ -353,7 +408,7 @@ you use it.
       anticipated); and same-leaf names on one line (`a.phi` vs `b.phi`) link to
       the right variable via longest-dotted-path matching. Dropped the plan's
       "hover explaining the name did not survive flattening" idea — see below.
-- [~] **Phase 4 — Reverse identifier tracking (#37)** — 2026-07-27: scroll-to-line
+- [x] **Phase 4 — Reverse identifier tracking (#37)** ✅ 2026-07-28: scroll-to-line
       in the source view (armed on *change* only, via `scrolled_source_for`),
       `strip_der`, a single `set_tracked_identifier` entry point that toggles and
       reveals the source, and two entry points — the equation sheet's
@@ -361,9 +416,8 @@ you use it.
       tree is on every stage tab, so the gesture is now near-ambient rather than
       per-view. Tracking never answers with silence: the tracking bar states the
       declaring line, or says the name is not declared in this specimen.
-      **Remaining:** incidence column headers, spy-plot blocks, reduction-view
-      rows — all canvas-painted, so they need hit-testing rather than a widget
-      response.
+      The canvas-painted views moved to **Phase 7**, deliberately after the
+      fundamentals are settled.
 - [ ] **Phase 5 — The Context Bar** — four deliverables: tracking emits a compound
       capture; the Context Bar renders what will be emitted (including the standing
       context the UI never mentions today); "Capture"/"Track" become "Point

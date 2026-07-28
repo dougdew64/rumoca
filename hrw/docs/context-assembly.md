@@ -20,6 +20,19 @@ The Context Bar below is the part of the UI that makes that split **visible**.
 Doug's framing: it is "a constant reminder of the role which HRW plays and which
 Claude plays in our overall design."
 
+And it sits alongside the three-tier progression as a load-bearing idea, not a
+convenience (Doug, 2026-07-28):
+
+> Along with our three-tier snapshot / replay / live trace, I believe that the
+> context bar concept will be of central importance.
+
+The two answer different halves of the same mission. The three tiers make an
+algorithm's *process* observable — static result, recorded replay, live-stepped
+code. The Context Bar makes the *conversation about it* legible: what has been
+assembled, what Claude can therefore see, and what a question will have behind
+it. Observation without a way to ask is a picture; asking without knowing what
+was observed is guesswork.
+
 ## Two shapes of context
 
 HRW has grown two ways to assemble context, and until now they looked unrelated:

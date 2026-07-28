@@ -866,3 +866,18 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   declaring class, not just DefId fields, so "↪ Go to …" appears in the tree row menu for
   identifiers too — navigation lives with the other actions, and the same menu item means the same
   thing whether the class was found through a DefId or through the variable.
+- **2026-07-28 — Phase 4 complete; canvas views deferred to a new Phase 7.** Reverse identifier
+  tracking is done for the widget-based views: one `set_tracked_identifier` entry point, scroll-to-
+  line on change, following from the equation sheet and from the IR tree's row menu (the tree being
+  on every stage tab, which makes the gesture ambient), trackability decided by the model rather
+  than by string shape, the declaring-class lookup, and the rule that tracking never answers with
+  silence. The canvas-painted views — incidence and spy-plot row/column labels, Tarjan nodes,
+  reduction rows — are **deliberately postponed**. Doug's reasoning: wiring them now risks "a code
+  mess ... that we would have to clean up later", because Phase 5 turns every tracking entry point
+  into an *emission* point, and Phase 6 may change what a label even is. Phase 7 pairs that work
+  with idea #38 (syntax highlighting for canvas labels) since both require labels to stop being a
+  single `painter.text` call and become laid-out, measured, hit-testable runs — one code region, so
+  one phase. **Phase 4's more valuable outcome was diagnostic**: it exposed that capture and
+  tracking are one concept wearing two vocabularies, that the UI showed emitted context transiently
+  and un-emitted context permanently, and that "where did this come from?" is not always a source
+  line. Phases 5 and 6 exist because of what Phase 4 turned up.
