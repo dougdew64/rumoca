@@ -124,6 +124,20 @@ enum FlattenView {
     Tree,
 }
 
+/// The general rule for how context gets assembled — the empty bar's hover.
+///
+/// The visible line names one gesture that works *right now*; this names the
+/// rule behind all of them, which holds regardless of what is on screen. Both
+/// are needed: the state-specific hint gets you moving, and the rule explains
+/// why the same click does different things in different places — the thing
+/// Doug found genuinely confusing when he first met it.
+const EMPTY_CONTEXT_RULE: &str = "Context is assembled from two things: one node you POINT AT, \
+and one identifier you FOLLOW. Which one a left-click gives you depends on what the view shows. \
+Where things appear as names \u{2014} the specimen source, the variable grid \u{2014} left-click \
+follows them. Where the view shows IR nodes \u{2014} trees, stage tabs, incidence rows \u{2014} \
+left-click points at them, and right-click offers Follow for names the model knows. Hover \
+anything clickable and it will say which.";
+
 /// Sub-view names for the capture's `view` section.
 ///
 /// Written out rather than derived from `Debug` because these strings are read
@@ -2441,6 +2455,42 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// Controls here are only those that **change** what is emitted. Navigation
     /// is not context, so the declaring class is a link rather than a button.
     /// See `docs/context-assembly.md`.
+    /// How to leave the empty context, given what is **actually on screen**.
+    ///
+    /// The first version of this line was generic — "left-click a node to point
+    /// at it, or right-click a variable name to follow it" — and Doug met it
+    /// immediately after loading a specimen, where it was wrong twice over: the
+    /// log view was showing, so there was no tree and no node to left-click;
+    /// and the only clickable things in sight were source identifiers, which
+    /// are **left**-click-to-follow, not right-click.
+    ///
+    /// A hint that names an unavailable gesture is worse than no hint. It is
+    /// also the same defect as everything else this bar exists to prevent — a
+    /// confident statement that does not match the state — so it is built from
+    /// the state rather than written once.
+    ///
+    /// Each branch is a fact about what is rendered right now:
+    /// - Source identifiers are underlined and clickable only in Specimen mode
+    ///   showing Source, and only once a compile has produced the identifier
+    ///   index (it is `None` while compilation is still running).
+    /// - With the log showing there is no IR view at all, so the way forward is
+    ///   a stage tab, not a node.
+    fn empty_context_hint(&self) -> String {
+        let mut ways: Vec<&str> = Vec::new();
+        if self.ui_mode == UiMode::Specimen
+            && self.specimen_detail == SpecimenDetail::Source
+            && self.identifier_index.is_some()
+        {
+            ways.push("left-click an underlined identifier in the source to follow it");
+        }
+        ways.push(if self.viewing_log {
+            "open a stage tab to inspect its IR"
+        } else {
+            "left-click a node to point at it"
+        });
+        format!("\u{00b7} nothing assembled \u{2014} {}", ways.join(", or "))
+    }
+
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
         let has_point = self.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
@@ -2458,12 +2508,10 @@ egui::Panel::top("bar").show(ui, |ui| {
             // nothing to say, and the status bar already carries the opening
             // hint.
             if self.selected.is_some() {
+                let hint = self.empty_context_hint();
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Context").strong());
-                    ui.weak(
-                        "\u{00b7} nothing assembled \u{2014} left-click a node to point at it, \
-                         or right-click a variable name to follow it",
-                    );
+                    ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
                 });
                 ui.separator();
             }
@@ -4316,6 +4364,57 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The empty-context hint must name a gesture that is actually available.
+    ///
+    /// Regression for the exact state Doug hit: start HRW, switch to Specimen
+    /// mode, load a specimen. The first version of the hint said "left-click a
+    /// node to point at it, or right-click a variable name to follow it" and was
+    /// wrong twice over — the log view was showing so there was no tree and no
+    /// node, and the only clickable things on screen were source identifiers,
+    /// which are LEFT-click-to-follow.
+    ///
+    /// A hint naming an unavailable gesture is worse than no hint, and it is the
+    /// same defect the Context Bar exists to prevent: a confident statement that
+    /// does not match the state.
+    #[test]
+    fn the_empty_hint_names_only_gestures_that_are_available() {
+        let mut app = App::test_default();
+
+        // The state Doug hit: specimen loaded, log showing, source on the left,
+        // a compile finished so identifiers are underlined.
+        app.ui_mode = UiMode::Specimen;
+        app.specimen_detail = SpecimenDetail::Source;
+        app.viewing_log = true;
+        app.identifier_index = Some(identifier_index::IdentifierIndex::default());
+
+        let hint = app.empty_context_hint();
+        assert!(
+            hint.contains("left-click an underlined identifier"),
+            "must name the gesture that works here: {hint}",
+        );
+        assert!(
+            !hint.contains("right-click"),
+            "the source view has no context menu; naming one is the original bug: {hint}",
+        );
+        assert!(
+            !hint.contains("a node to point at"),
+            "no tree is showing, so there is no node to left-click: {hint}",
+        );
+        assert!(hint.contains("stage tab"), "the way to an IR view is a tab: {hint}");
+
+        // Before the compile lands there is no index, so nothing is underlined
+        // and that gesture must not be offered.
+        app.identifier_index = None;
+        let hint = app.empty_context_hint();
+        assert!(!hint.contains("underlined"), "nothing is clickable yet: {hint}");
+
+        // With a stage view open instead of the log, pointing is available.
+        app.viewing_log = false;
+        let hint = app.empty_context_hint();
+        assert!(hint.contains("a node to point at"), "{hint}");
+        assert!(!hint.contains("stage tab"), "a tab is already open: {hint}");
+    }
 
     /// Every combination of the two primitives must be reachable, and the
     /// emitted file must describe each one honestly.
