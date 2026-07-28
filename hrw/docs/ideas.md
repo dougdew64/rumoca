@@ -1286,3 +1286,71 @@ I clicked something" from a guessing game into a file.
 exists; this persists it), the Context Bar's `PointedAt` state, and the
 `architecture.md` § Live trace debugging notes on the egui-wgpu device-loss
 failure.
+
+---
+
+## 40. Instrument `pre()` lowering — the DAE-construction phase HRW cannot show
+
+Captured 2026-07-28 (Doug), after a debugging session that failed for reasons
+unrelated to the question being asked.
+
+**The question that prompted it.** Following `__pre__.overSpeed` through
+MotorWithBrake, the natural next question is *where does that variable come
+from?* It appears in the Events IR, in Solve lowering's parameter vector, and
+nowhere in the specimen — because `rumoca-phase-dae`'s `lower_pre_operator`
+manufactures it. HRW can show the phase's **result** but not its **process**,
+which is the exact gap the in-workspace move exists to close.
+
+**Why a debugger is the wrong instrument for it.** Answering the question by
+breakpoint took four wrong turns — a stale opt-level, a probe that silently
+failed to compile, and finally the recorded windows-msvc finding that CodeLLDB's
+PDB reader cannot bind breakpoints in path-dep `crates/rumoca-*` at all. Even
+when it works, a debugger answers the question *once*, for one person, on one
+machine, and leaves nothing behind. An instrumented phase answers it every time,
+for anyone, with no adapter involved — and it is upstreamable, where a debugging
+session is not.
+
+**What to instrument.** `lower_pre_operator`
+(`crates/rumoca-phase-dae/src/pre_lowering.rs`) has a clean four-beat structure
+that maps directly onto animation frames:
+
+1. **Discover** — `collect_pre_targets_from_*` walks equations, conditions,
+   clocks, event actions and initialization, finding every `pre(x)`. Frame per
+   target found, with the equation it was found in.
+2. **Name** — `rumoca_core::pre_slot_name(base)` mints `__pre__.x`. One frame
+   per target; this is the moment the variable begins to exist.
+3. **Materialize** — `build_pre_parameter` creates it as a **parameter**,
+   inheriting the base's shape and start value. Frame showing what was copied —
+   this is *why* the slot lands in `P[…]` rather than among the unknowns.
+4. **Substitute** — `rewrite_equations` / `rewrite_pre_expr` replace each
+   `BuiltinCall{Pre}` with a `VarRef`. Frame per rewritten equation, before and
+   after.
+
+**The detail that makes it worth animating:** the pass **runs twice** — once from
+`to_dae_with_options`, and again from `finalize_lowered_dae` after canonical
+condition variables introduce `pre()` references of their own. On MotorWithBrake
+the first pass mints `__pre__.overSpeed`; the second mints `__pre__.c[1]`,
+`__pre__.c[2]`, `__pre__.load.w`, `__pre__.maxSpeed` — the companion cluster
+visible beside `__pre__.overSpeed` in Solve lowering's bindings. A static view
+cannot show that a phase ran twice on different input; an animation makes it the
+obvious feature of the trace. (Measured: `lower_pre_operator` entered twice,
+`pre_slot_name` called with `overSpeed` twice and `c` seven times.)
+
+**Shape of the work.** Follow the existing pattern exactly —
+`rumoca-phase-structural`'s `LiveTrace<T>` plus a `*_with_trace` entry point,
+additive and observation-only, with a `PreLoweringStep` enum and frames carrying
+the DAE state. HRW renders it with the same `animation_controls` the matching,
+Tarjan and reduction views use, so it inherits play/pause/step, the frame
+counter, and live-trace debugging for free. Note `rumoca-phase-dae` already has
+`[profile.dev.package] opt-level = 0` (added the same day), so single-stepping it
+works once an adapter that can bind there is used.
+
+**Also worth doing while in there:** this is the first *non-structural* crate to
+be instrumented, so it will show whether `LiveTrace` genuinely generalises or
+whether it has quietly grown structural-phase assumptions. That answer matters
+for ideas #19–#22, which propose instrumenting resolve, flatten, event lowering
+and the solver.
+
+**Relates to:** `LiveTrace` in `rumoca-phase-structural`, the three animation
+views, ideas #9 / #19–#22, and `DECISIONS.md` (2026-07-28) on where
+`__pre__.overSpeed` is created.
