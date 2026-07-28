@@ -94,6 +94,43 @@ present.
   and disappearance is often the whole story.
 - Refresh when tracking changes — a click, not a frame.
 
+### The payload must keep point and thread apart
+
+Doug, 2026-07-27: keeping one wire format is right — it is all captured context
+— **but the payload must still say which part is pointed at and which is
+followed.** The distinction drives different behaviour, so losing it silently
+degrades both request types:
+
+**For `explain`,** the point is the *subject* and the thread is the *lens*.
+"Pointed at `components.src.V`, following `src.V`" asks for that node explained
+as part of that variable's story. "Pointed at an equation, following `h`" asks
+about the equation with attention to how `h` participates. Flatten the two and
+the answer addresses the wrong thing — a cross-stage narrative when one field was
+asked about, or one field when the trajectory was wanted.
+
+**For `debug-where-set`, it decides how many breakpoints to arm:**
+
+| | breakpoints |
+|---|---|
+| a **point** — one node, one stage | **one** site: where that value is set |
+| a **thread** — one identifier across stages | **several**: resolved, flattened, matched, demoted |
+
+Conflating them arms one breakpoint when the trajectory was wanted, or scatters
+them across the pipeline when a single field was. The multi-entry bridge request
+exists precisely for the second case.
+
+Requirements that follow:
+
+- **Structural separation, not a flag.** Two named sections, so the distinction
+  cannot be lost by a reader or flattened by a future edit.
+- **Each independently absent.** Point without thread, thread without point, or
+  both — all are normal states and the payload must express them.
+- **Per-section recency.** If both are present and the request is ambiguous,
+  whichever was acted on *last* is almost certainly the subject. One shared
+  `seq` cannot express this; each section needs its own, so the reasoner can
+  tell "pointed at this, then went following" from "was following, then pointed
+  at this" — which mean different questions.
+
 ### The concern to design around
 
 **Ambient tracking must not overwrite deliberate capture.** Capture means "this
