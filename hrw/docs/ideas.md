@@ -308,6 +308,23 @@ participates in (Events), and its solver variable slot (Solve lowering / Simulat
 
 ## 11. In-view search for Modelica identifiers
 
+**Half delivered 2026-07-28** — the *find-and-jump* half exists for the followed
+identifier. The Context Bar's Following row shows `3 of 4 in Flatten` with prev
+/ next arrows; each jump opens the collapsed ancestors and scrolls the match to
+the centre of the tree. Matches come from `bridge::mention_paths`, the same walk
+that produces `tracking.paths` in the emitted context, so the tree and Claude
+cannot disagree about where an identifier appears.
+
+What remains is the *query* half: a text field for finding something you are
+**not** following. Note the ordering argument that produced this split — a search
+box would have asked Doug to type an identifier the app was already displaying.
+The plumbing that remains to be reused (ancestor expansion, scroll-to,
+match cycling, count display) is the bulk of the work; adding a query swaps
+"matches of the followed name" for "matches of typed text".
+
+The original capture follows.
+
+
 Captured 2026-07-21 (Doug). A search interaction within each stage view: type a
 Modelica identifier (variable, parameter, component, equation label) and the view
 scrolls to / expands / highlights where that identifier's information appears.

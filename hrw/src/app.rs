@@ -409,6 +409,25 @@ pub struct App {
     // identifier stays tracked would pin the view and make the scrollbar
     // unusable. Comparing against this field is what makes it a one-shot.
     scrolled_source_for: Option<String>,
+    // ---- Jump to the followed identifier ----
+    // Where the followed name appears in the CURRENT stage's IR, so the Context
+    // Bar can cycle through the matches. Comes from `bridge::mention_paths` —
+    // the same walk that produces `tracking.paths` in the emitted context, so
+    // the tree cannot highlight one set of nodes while Claude is told about
+    // another.
+    //
+    // Cached because the walk visits the whole stage IR and lexes every
+    // code-bearing string in it; doing that per frame is what `tracking_summary`
+    // already avoids. `jump_matches_key` records what the cache was built for,
+    // so a stage switch or a change of followed name rebuilds it and nothing
+    // else does.
+    jump_matches: Vec<Vec<Seg>>,
+    jump_matches_key: Option<(StageKind, String)>,
+    jump_index: usize,
+    // Set for ONE frame when the user asks to jump. See `TreeOptions::jump_to`
+    // for why it must not persist.
+    jump_target: Option<Vec<Seg>>,
+
     // Per-line token classification for `cached_source`, built on demand.
     // Tokenizing is cheap but not free, and the source cannot change while it
     // is displayed — so it is built once per specimen, not once per frame.
@@ -776,6 +795,10 @@ impl App {
             point_error: None,
             tracking_summary: None,
             track_seq: 0,
+            jump_matches: Vec::new(),
+            jump_matches_key: None,
+            jump_index: 0,
+            jump_target: None,
             scrolled_source_for: None,
             pending_stage: None,
             pending_live_debug: None,
@@ -2455,6 +2478,62 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// Controls here are only those that **change** what is emitted. Navigation
     /// is not context, so the declaring class is a link rather than a button.
     /// See `docs/context-assembly.md`.
+    /// Rebuild the jump match list if the stage or the followed name changed.
+    ///
+    /// Cheap on the common path — a tuple comparison — because the walk itself
+    /// is not: it visits every node of the stage IR and lexes every code-bearing
+    /// string. Same discipline as `tracking_summary`, which is computed on a
+    /// click and never per frame.
+    fn refresh_jump_matches(&mut self) {
+        let key = self
+            .tracked_identifier
+            .as_ref()
+            .map(|name| (self.stage, name.clone()));
+        if key == self.jump_matches_key {
+            return;
+        }
+        self.jump_matches = match (&key, self.current_stage().value.as_ref()) {
+            (Some((_, name)), Some(value)) => bridge::mention_paths(value, name),
+            _ => Vec::new(),
+        };
+        // Restart the cycle: an index carried over from another stage would
+        // point at a match that no longer exists, and "3 of 4" would be a lie
+        // about a different list.
+        self.jump_index = 0;
+        self.jump_matches_key = key;
+    }
+
+    /// Advance to the next match and ask the tree to scroll to it.
+    ///
+    /// Wraps around rather than stopping at the end — with a handful of matches,
+    /// a dead button at the last one is a worse surprise than returning to the
+    /// first.
+    fn jump_to_next_match(&mut self, forward: bool) {
+        if self.jump_matches.is_empty() {
+            return;
+        }
+        let n = self.jump_matches.len();
+        self.jump_index = if forward {
+            (self.jump_index + 1) % n
+        } else {
+            (self.jump_index + n - 1) % n
+        };
+        self.jump_target = Some(self.jump_matches[self.jump_index].clone());
+        // The matches live in a stage's IR, so the tree has to be on screen for
+        // the jump to land. Leaving the log showing would make the button look
+        // broken.
+        self.viewing_log = false;
+        diagnostics::record_action(
+            "jump",
+            format!(
+                "match {} of {n} for {} in {}",
+                self.jump_index + 1,
+                self.tracked_identifier.as_deref().unwrap_or("?"),
+                self.stage.name(),
+            ),
+        );
+    }
+
     /// How to leave the empty context, given what is **actually on screen**.
     ///
     /// The first version of this line was generic — "left-click a node to point
@@ -2518,8 +2597,13 @@ egui::Panel::top("bar").show(ui, |ui| {
             return;
         }
 
+        // The match list has to be current before the row that reports it.
+        self.refresh_jump_matches();
+
         let mut clear_thread = false;
         let mut clear_point = false;
+        let mut jump_forward = false;
+        let mut jump_back = false;
         let mut go_to_class: Option<String> = None;
 
         ui.horizontal(|ui| {
@@ -2615,6 +2699,45 @@ egui::Panel::top("bar").show(ui, |ui| {
                         if stages == 1 { "" } else { "s" },
                     ));
                 }
+                // Jump to where it lives in THIS stage.
+                //
+                // Replaces hunting for it by eye. "Reveal identifiers" tried to
+                // solve this by expanding every path that leads to *any*
+                // trackable name — which surfaces N nodes to reveal one, making
+                // the haystack bigger. Here the target is already known: the
+                // user said which identifier they are following, so the app
+                // should not also make them find it.
+                let n = self.jump_matches.len();
+                if n == 0 {
+                    // Meaningful, not a failure — the same information as
+                    // `mentions: 0` in the emitted context. A variable absent
+                    // from Parse but present in Flatten is showing you the
+                    // flattening boundary.
+                    ui.weak(format!("\u{00b7} not in {}", self.stage.name()));
+                } else {
+                    ui.weak(format!(
+                        "\u{00b7} {} of {n} in {}",
+                        self.jump_index + 1,
+                        self.stage.name(),
+                    ));
+                    if ui
+                        .small_button("\u{2190}")
+                        .on_hover_text("Previous occurrence in this stage")
+                        .clicked()
+                    {
+                        jump_back = true;
+                    }
+                    if ui
+                        .small_button("\u{2192}")
+                        .on_hover_text(
+                            "Scroll the tree to where this identifier appears in this \
+                             stage, opening whatever is collapsed above it",
+                        )
+                        .clicked()
+                    {
+                        jump_forward = true;
+                    }
+                }
                 if ui.small_button("\u{00d7}").on_hover_text("Stop following").clicked() {
                     clear_thread = true;
                 }
@@ -2640,6 +2763,9 @@ egui::Panel::top("bar").show(ui, |ui| {
         });
         ui.separator();
 
+        if jump_forward || jump_back {
+            self.jump_to_next_match(jump_forward);
+        }
         if clear_point {
             self.pointed_at = None;
             // A stale failure would otherwise keep warning about an emission
@@ -3956,6 +4082,7 @@ impl eframe::App for App {
                                     known_variables: self.known_variables.as_ref(),
                                     declaring_classes: Some(&self.declaring_classes),
                                     expand_trackable,
+                                    jump_to: self.jump_target.as_deref(),
                                 };
                                 egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
                                     tree::tree_ui(ui, label, value, prev, &mut tree_actions, &self.def_index, &self.field_help, opts);
@@ -4003,6 +4130,10 @@ impl eframe::App for App {
                             known_variables: self.known_variables.as_ref(),
                             declaring_classes: Some(&self.declaring_classes),
                             expand_trackable,
+                            // A navigated library class is a different IR, so a
+                            // jump target addressed into the stage tree would
+                            // land on an unrelated node or nothing at all.
+                            jump_to: None,
                         });
                 });
             }
@@ -4051,6 +4182,15 @@ impl eframe::App for App {
         } else if want_stage_ask {
             self.emit_focus(Focus::Stage);
         }
+
+        // The jump lasts exactly one frame. It has now been rendered: the target
+        // row called `scroll_to_me`, and forcing its ancestors open *stored*
+        // that state in egui, so they stay open on their own from here. Holding
+        // it any longer would re-scroll every frame — pinning the view the way
+        // the source view's reverse-tracking scroll did before it was gated on
+        // change — and would keep those headers forced open, which is the
+        // "Reveal identifiers" complaint all over again.
+        self.jump_target = None;
     }
 }
 
@@ -4350,6 +4490,10 @@ impl App {
             point_error: None,
             tracking_summary: None,
             track_seq: 0,
+            jump_matches: Vec::new(),
+            jump_matches_key: None,
+            jump_index: 0,
+            jump_target: None,
             scrolled_source_for: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
@@ -4364,6 +4508,62 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Cycling, wrap-around, and the cache key that keeps "3 of 4" honest.
+    ///
+    /// The index is per (stage, followed name). Carrying it across a stage
+    /// switch would leave it pointing into a list that no longer exists, and the
+    /// counter would be describing a different set of matches than the arrows
+    /// move through.
+    #[test]
+    fn jumping_cycles_within_the_current_stage_and_resets_across_stages() {
+        let mut app = App::test_default();
+        app.stages.flatten.value = Some(serde_json::json!({
+            "variables": { "emf.w": 1 },
+            "equations": [{ "text": "emf.w - der(emf.phi)" }, { "text": "emf.k * emf.w" }],
+        }));
+        app.stages.parse.value = Some(serde_json::json!({ "classes": { "M": { "name": "M" } } }));
+        app.stage = StageKind::Flatten;
+        app.tracked_identifier = Some("emf.w".to_owned());
+
+        app.refresh_jump_matches();
+        assert_eq!(app.jump_matches.len(), 3, "one key plus two equations");
+        assert_eq!(app.jump_index, 0);
+
+        // Forward through the list and around the end. Wrapping beats a dead
+        // button: with a handful of matches, stopping is the worse surprise.
+        app.jump_to_next_match(true);
+        assert_eq!(app.jump_index, 1);
+        app.jump_to_next_match(true);
+        assert_eq!(app.jump_index, 2);
+        app.jump_to_next_match(true);
+        assert_eq!(app.jump_index, 0, "forward from the last match wraps");
+        app.jump_to_next_match(false);
+        assert_eq!(app.jump_index, 2, "and back again from the first");
+
+        // The jump must have asked the tree for something, and must have left
+        // the log view — the matches live in a stage IR, so a jump with the log
+        // showing would look broken.
+        assert!(app.jump_target.is_some());
+        assert!(!app.viewing_log);
+
+        // Switching stage rebuilds the list and restarts the cycle.
+        app.stage = StageKind::Parse;
+        app.refresh_jump_matches();
+        assert!(app.jump_matches.is_empty(), "emf.w does not exist before flattening");
+        assert_eq!(app.jump_index, 0, "a stale index would describe another stage's list");
+
+        // Nothing to jump to is not an error; the control simply does nothing.
+        app.jump_target = None;
+        app.jump_to_next_match(true);
+        assert!(app.jump_target.is_none());
+
+        // And with nothing followed at all, the list empties rather than lingering.
+        app.stage = StageKind::Flatten;
+        app.tracked_identifier = None;
+        app.refresh_jump_matches();
+        assert!(app.jump_matches.is_empty());
+    }
 
     /// The empty-context hint must name a gesture that is actually available.
     ///

@@ -192,7 +192,10 @@ interpretation — that part is yours.";
 /// This is the tree-agnostic addressing scheme that lets the bridge, tree
 /// inspector, and custom views all refer to the same node without knowing
 /// Rumoca types.
-#[derive(Clone, Debug)]
+/// `PartialEq` so a rendered tree row can ask "am I the node being jumped to?"
+/// by comparing paths. Pointer identity is not usable there — the jump target
+/// arrives as a path from `find_mentions`, not as a reference into the tree.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Seg {
     /// An object field name (e.g., "components", "def_id").
     Key(String),
@@ -219,9 +222,17 @@ impl Seg {
         }
     }
 
-    // Navigate one step into a JSON value: `Key("x")` does `v["x"]`,
-    // `Index(3)` does `v[3]`. Returns None if the key/index doesn't exist.
-    // This is the fundamental building block of `navigate()`.
+    /// Navigate one step into a JSON value: `Key("x")` does `v["x"]`,
+    /// `Index(3)` does `v[3]`. Returns `None` if the key/index doesn't exist.
+    /// This is the fundamental building block of `navigate()`.
+    ///
+    /// `pub` as `get_in` for the tree, which walks a jump target's ancestors to
+    /// open them. Named differently from the private `get` so it does not read
+    /// like a `serde_json` method at the call site.
+    pub fn get_in<'a>(&self, v: &'a Value) -> Option<&'a Value> {
+        self.get(v)
+    }
+
     fn get<'a>(&self, v: &'a Value) -> Option<&'a Value> {
         match self {
             Seg::Key(k) => v.get(k),
@@ -361,7 +372,7 @@ pub fn summarize_tracking(t: &Tracking) -> (usize, usize) {
     for (_, value) in t.stage_values {
         if let Some(v) = value {
             let mut here = 0usize;
-            find_mentions(v, t.name, &mut Vec::new(), &mut Vec::new(), &mut here);
+            find_mentions(v, t.name, &mut Vec::new(), &mut Vec::new(), &mut here, 0);
             if here > 0 {
                 stages += 1;
             }
@@ -404,16 +415,22 @@ const MAX_MENTION_CONTEXTS: usize = 6;
 /// to navigate back to each hit to build its neighbourhood; a rendered
 /// `"a.b[0].c"` cannot be walked, and re-parsing one would be guesswork the
 /// moment a key contains a dot — which, in `bindings.__pre__.overSpeed`, it does.
+///
+/// Wrapped by [`mention_paths`] for callers outside this module.
 fn find_mentions(
     value: &Value,
     name: &str,
     path: &mut Vec<Seg>,
     paths: &mut Vec<Vec<Seg>>,
     total: &mut usize,
+    cap: usize,
 ) {
     let hit = |path: &[Seg], total: &mut usize, paths: &mut Vec<Vec<Seg>>| {
+        // `total` is always exact; `cap` only bounds how many addresses are
+        // kept. The emitted context caps them (a reader cannot hold hundreds in
+        // view); the jump control does not (it cycles through every one).
         *total += 1;
-        if paths.len() < MAX_MENTION_PATHS {
+        if paths.len() < cap {
             paths.push(path.to_vec());
         }
     };
@@ -432,7 +449,7 @@ fn find_mentions(
                         hit(path, total, paths);
                     }
                 } else {
-                    find_mentions(v, name, path, paths, total);
+                    find_mentions(v, name, path, paths, total, cap);
                 }
                 path.pop();
             }
@@ -440,12 +457,30 @@ fn find_mentions(
         Value::Array(arr) => {
             for (i, v) in arr.iter().enumerate() {
                 path.push(Seg::Index(i));
-                find_mentions(v, name, path, paths, total);
+                find_mentions(v, name, path, paths, total, cap);
                 path.pop();
             }
         }
         _ => {}
     }
+}
+
+/// Every node in `stage_value` that mentions `name`, in tree order.
+///
+/// **The same list the capture emits.** `tracking.paths` in `focus.json` is
+/// `describe_path` applied to exactly this, so the tree's "where is it" and
+/// Claude's "where is it" cannot diverge. A second matcher written for the UI
+/// would be a second definition of *mention*, and this project has spent a phase
+/// removing exactly that kind of drift — the app must not highlight one set of
+/// nodes while telling Claude about another.
+///
+/// Uncapped, unlike the emitted `paths`: the cap there bounds what a *reader*
+/// can hold in view, while a jump control needs every match to cycle through.
+pub fn mention_paths(stage_value: &Value, name: &str) -> Vec<Vec<Seg>> {
+    let mut paths = Vec::new();
+    let mut total = 0usize;
+    find_mentions(stage_value, name, &mut Vec::new(), &mut paths, &mut total, usize::MAX);
+    paths
 }
 
 /// Build the `tracking` section: where the followed identifier lives, stage by
@@ -468,7 +503,7 @@ pub fn build_tracking(t: &Tracking) -> Value {
             Some(v) => {
                 let mut paths = Vec::new();
                 let mut total = 0usize;
-                find_mentions(v, t.name, &mut Vec::new(), &mut paths, &mut total);
+                find_mentions(v, t.name, &mut Vec::new(), &mut paths, &mut total, MAX_MENTION_PATHS);
                 json!({
                     "stage": stage_name,
                     "mentions": total,
@@ -1701,6 +1736,61 @@ mod tests {
         let (depth, ctx) = enclosing_context(&big, &path);
         assert_eq!(depth, 1, "the root no longer fits, so its child is returned");
         assert_eq!(ctx, json!({ "lhs": "a", "rhs": "b" }));
+    }
+
+    /// The jump control and the emitted context must see the same nodes.
+    ///
+    /// `mention_paths` is what the tree scrolls through; `tracking.paths` is
+    /// what Claude is told. They come from one walk on purpose — a second
+    /// matcher written for the UI would be a second definition of *mention*, and
+    /// the app would highlight one set of nodes while describing another. That
+    /// class of drift is what the whole phase was spent removing.
+    #[test]
+    fn the_jump_list_and_the_emitted_paths_are_one_list() {
+        let stage = serde_json::json!({
+            "variables": { "emf.w": { "kind": "algebraic" } },
+            "equations": [
+                { "text": "emf.w - der(emf.phi)" },
+                { "text": "load.w - emf.k" },
+                { "text": "emf.k * emf.w - emf.v" },
+            ],
+        });
+        let stages: Vec<(&str, Option<&Value>)> = vec![("flatten", Some(&stage))];
+        let empty = BTreeMap::new();
+        let doc = build(&tracking_ask("emf.w", &stages, &empty));
+
+        let emitted: Vec<String> = doc["tracking"]["stages"][0]["paths"]
+            .as_array()
+            .expect("paths")
+            .iter()
+            .filter_map(|v| v.as_str().map(str::to_owned))
+            .collect();
+        let jump: Vec<String> =
+            mention_paths(&stage, "emf.w").iter().map(|p| describe_path(p)).collect();
+
+        assert_eq!(jump, emitted, "the tree and the capture must agree node for node");
+        assert_eq!(jump.len(), 3, "key, and two of the three equations: {jump:?}");
+        assert!(
+            !jump.iter().any(|p| p.contains("[1]")),
+            "the equation mentioning only load.w must not match: {jump:?}",
+        );
+    }
+
+    /// The emitted list is capped for readability; the jump list is not, because
+    /// a control that cycles must reach every occurrence.
+    #[test]
+    fn the_jump_list_is_uncapped_where_the_emitted_one_is_sampled() {
+        let n = MAX_MENTION_PATHS + 7;
+        let rows: Vec<Value> = (0..n).map(|_| serde_json::json!({ "unknown": "h" })).collect();
+        let stage = serde_json::json!({ "rows": rows });
+        let stages: Vec<(&str, Option<&Value>)> = vec![("structural", Some(&stage))];
+        let empty = BTreeMap::new();
+        let doc = build(&tracking_ask("h", &stages, &empty));
+
+        assert_eq!(doc["tracking"]["stages"][0]["paths"].as_array().unwrap().len(), MAX_MENTION_PATHS);
+        assert_eq!(mention_paths(&stage, "h").len(), n, "cycling must reach the last one");
+        // The count was always exact; that is what makes the cap safe.
+        assert_eq!(doc["tracking"]["stages"][0]["mentions"], serde_json::json!(n));
     }
 
     /// The capture says what was on screen, and points at the phase code.

@@ -1093,3 +1093,29 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `kind: "none"` beats a missing `kind`. The `instructions` string says so, and adds the rule that
   matters most for this state: **if both are absent, say nothing has been assembled rather than
   answering from `stage` or from whatever was captured before.**
+- **2026-07-28 — Jump to the followed identifier, rather than search for it.** Doug: *"That
+  ['Reveal identifiers'] checkbox has never really delivered the benefit which I had hoped for. Even
+  after I check the box, I struggle to find the identifier which is being tracked."* He proposed a
+  tree search feature (idea #11). **Search was the wrong shape for this problem**, and the reason is
+  worth keeping: search asks the user to *type what they are looking for*, but HRW already knows —
+  they said which identifier they are following. The missing piece was never the query, it was the
+  **jump**.
+  Why Reveal failed, precisely: it is a *mode* that expands every path leading to **any** trackable
+  name, so to surface one identifier it surfaces N. It makes the haystack bigger. It was built to
+  answer "what can I follow here?", and that question got a better answer later anyway — the
+  `known_variables` ground-truth fix that stopped underlining `op: "Add"`. Left in place for now
+  rather than removed on a prediction; Phase 6's "reveal as action not mode" is where it gets
+  settled, and `Expansion::force_open` is already logged in `tech-debt.md` as existing only for it.
+  **The design constraint that mattered most: one match list, not two.** `bridge::mention_paths`
+  wraps the same walk that produces `tracking.paths` in the emitted context, with the cap
+  parameterised (the emitted list is sampled for a reader; the jump list is uncapped so cycling can
+  reach every occurrence). A separate matcher written for the UI would have been a second definition
+  of *mention* — the app highlighting one set of nodes while telling Claude about another, which is
+  the drift this phase was spent removing. A test asserts the two lists are identical node for node.
+  Mechanics worth knowing: `jump_to` is set for **one frame**. Forcing a header open with
+  `open(Some(true))` also *stores* that state, so after the jump the ancestors stay open on their own
+  and remain collapsible; held longer it would re-scroll every frame and take the headers out of the
+  user's hands — the Reveal complaint again. The jump also clears `viewing_log`, since the matches
+  live in a stage IR and a jump with the log showing would look broken. `0 matches` renders as "not
+  in <stage>", which is information of the same kind as `mentions: 0`.
+  This is half of idea #11 (find-and-jump); the query half remains, and now reuses this plumbing.

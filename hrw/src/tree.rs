@@ -110,6 +110,15 @@ pub struct TreeOptions<'a> {
     /// Expand every path that leads to a trackable name, so they can be found
     /// without hunting through collapsed nodes.
     pub expand_trackable: bool,
+    /// Scroll this node into view and open everything above it, for one frame.
+    ///
+    /// The "jump to the followed identifier" control. Set for a single frame:
+    /// forcing the ancestors open also *stores* that state in egui, so once the
+    /// jump has happened the headers stay open on their own and the user can
+    /// collapse them again. Held longer, it would pin the scroll and take the
+    /// headers out of the user's hands — the complaint that sank "Reveal
+    /// identifiers" as a mode.
+    pub jump_to: Option<&'a [Seg]>,
 }
 
 /// Render a `serde_json::Value` as a collapsible tree widget.
@@ -145,6 +154,19 @@ pub fn tree_ui(
     }
     if opts.expand_trackable && opts.known_variables.is_some() {
         collect_trackable_ancestors(value, &opts, &mut expansion.force_open);
+    }
+    // Every ancestor of the jump target, so the row exists to be scrolled to.
+    // `force_open`, not `default_open`: the whole point is to open headers the
+    // user has already collapsed, and `default_open` is ignored once egui has
+    // remembered a header's state.
+    if let Some(target) = opts.jump_to {
+        let mut node = value;
+        expansion.force_open.insert(node as *const Value);
+        for seg in target {
+            let Some(next) = seg.get_in(node) else { break };
+            expansion.force_open.insert(next as *const Value);
+            node = next;
+        }
     }
     node_ui(ui, 0, root_label, value, prev, &mut path, actions, def_index, field_help, opts, &expansion);
 }
@@ -245,6 +267,10 @@ fn node_ui(
 ) {
     let force_open = expansion.force_open.contains(&(value as *const Value));
     let should_expand = force_open || expansion.default_open.contains(&(value as *const Value));
+    // Compared by path, not by pointer: the jump target comes from
+    // `bridge::mention_paths`, which addresses nodes rather than holding
+    // references to them. `path` here is already this node's own path.
+    let is_jump_target = opts.jump_to.is_some_and(|target| target == path.as_slice());
     ui.push_id(salt, |ui| match value {
         Value::Object(map) => {
             let hint = format!("{{{}}}", map.len());
@@ -265,6 +291,7 @@ fn node_ui(
             if resp.header_response.clicked() {
                 actions.capture = Some(path.to_vec());
             }
+            scroll_if_jump_target(is_jump_target, &resp.header_response);
             row_menu(&resp.header_response, path, actions, &format!("{key} {hint}"), None, None);
             if let Some(doc) = field_help.get(key) {
                 resp.header_response.clone().on_hover_text(doc);
@@ -285,6 +312,7 @@ fn node_ui(
             if resp.header_response.clicked() {
                 actions.capture = Some(path.to_vec());
             }
+            scroll_if_jump_target(is_jump_target, &resp.header_response);
             row_menu(&resp.header_response, path, actions, &format!("{key} {hint}"), None, None);
         }
         scalar => {
@@ -304,6 +332,7 @@ fn node_ui(
             if resp.clicked() {
                 actions.capture = Some(path.to_vec());
             }
+            scroll_if_jump_target(is_jump_target, &resp);
             let trackable = trackable_name(key, scalar, &opts);
             row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index, &opts), trackable.clone());
             // Explain the underline. Appended to the field's own help rather
@@ -312,6 +341,18 @@ fn node_ui(
             resp.clone().on_hover_text(row_hover(field_help.get(key), trackable.as_deref()));
         }
     });
+}
+
+/// Bring a jumped-to row into view.
+///
+/// **Centred**, not merely made visible. A match scrolled to the very bottom
+/// edge is technically on screen and practically still lost — which is exactly
+/// how "Reveal identifiers" failed: the node was revealed and the user still
+/// could not find it.
+fn scroll_if_jump_target(is_target: bool, resp: &egui::Response) {
+    if is_target {
+        resp.scroll_to_me(Some(egui::Align::Center));
+    }
 }
 
 /// What a tree row's tooltip should say.
