@@ -1559,6 +1559,442 @@ impl App {
         out
     }
 
+    /// The Matching animation view (Structural Analysis tab).
+    ///
+    /// Extracted from `ui` during the 2026-07-28 sweep. This and its two
+    /// siblings below are near-identical — same six-step live-debug sequence,
+    /// differing only in the `PendingLiveDebug` variant and which cached
+    /// animation field they touch. Sitting adjacent makes that obvious; the
+    /// actual de-duplication needs a trait over the three animation types and
+    /// is logged in `docs/tech-debt.md`, deliberately not attempted here since
+    /// Phase 7 will rework these views anyway.
+    fn matching_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
+    if self.cached_incidence.is_none() {
+        self.cached_incidence = Some(
+            self.stages.get(self.stage).value.as_ref()
+                .and_then(incidence_view::IncidenceMatrix::from_report)
+        );
+    }
+    let arming = self.is_arming(PendingLiveDebug::Matching);
+    let live = self.cached_matching_anim.as_ref()
+        .and_then(|o| o.as_ref())
+        .map_or(
+            if arming { LiveState::Arming } else { LiveState::Idle },
+            |a| a.live_state(arming),
+        );
+    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Matching)
+        && !live.is_busy();
+    let mut debug_clicked = false;
+    let action = self.live_debug_poll(
+        ui.ctx(), live, PendingLiveDebug::Matching,
+    );
+    if matches!(action, LiveDebugAction::SpawnLive) {
+        if let Some(Some(mat)) = &self.cached_incidence {
+            let live = matching_anim::MatchingAnimation::start_live(mat, || {
+                let _ = bridge::remove_live_trace_breakpoint();
+            });
+            if live.is_none() {
+                let _ = bridge::remove_live_trace_breakpoint();
+                self.live_breakpoint_armed = false;
+            }
+            self.cached_matching_anim = Some(live);
+            self.matching_anim_canvas.request_fit();
+        }
+    }
+    if self.cached_matching_anim.is_none() {
+        let inc = self.cached_incidence.as_ref().unwrap();
+        self.cached_matching_anim = Some(
+            inc.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
+        );
+    }
+    if let Some(Some(anim)) = &mut self.cached_matching_anim {
+        if ir_split {
+            ui.label(egui::RichText::new("Before (raw DAE)")
+                .strong().color(crate::colors::ANIM_FAIL));
+            ui.weak("Matching animation unavailable (structurally singular \u{2014} only a partial matching exists)");
+            ui.add_space(12.0);
+            ui.label(egui::RichText::new("After (reduced)")
+                .strong().color(crate::colors::ANIM_PATH_FOUND));
+        }
+        debug_clicked = anim.ui(
+            ui, &mut self.matching_anim_canvas,
+            self.tracked_identifier.as_deref(), arming, debug_enabled,
+        );
+    } else {
+        ui.weak("(no incidence data for matching animation)");
+    }
+    if debug_clicked {
+        self.start_live_debug(PendingLiveDebug::Matching);
+    }
+    }
+
+    /// The BLT / Tarjan animation view. See [`Self::matching_anim_ui`].
+    fn tarjan_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
+    if self.cached_incidence.is_none() {
+        self.cached_incidence = Some(
+            self.stages.get(self.stage).value.as_ref()
+                .and_then(incidence_view::IncidenceMatrix::from_report)
+        );
+    }
+    let arming = self.is_arming(PendingLiveDebug::Tarjan);
+    let live = self.cached_tarjan_anim.as_ref()
+        .and_then(|o| o.as_ref())
+        .map_or(
+            if arming { LiveState::Arming } else { LiveState::Idle },
+            |a| a.live_state(arming),
+        );
+    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tarjan)
+        && !live.is_busy();
+    let mut debug_clicked = false;
+    let action = self.live_debug_poll(
+        ui.ctx(), live, PendingLiveDebug::Tarjan,
+    );
+    if matches!(action, LiveDebugAction::SpawnLive) {
+        if let Some(Some(mat)) = &self.cached_incidence {
+            let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
+                let _ = bridge::remove_live_trace_breakpoint();
+            });
+            if live.is_none() {
+                let _ = bridge::remove_live_trace_breakpoint();
+                self.live_breakpoint_armed = false;
+            }
+            self.cached_tarjan_anim = Some(live);
+            self.tarjan_anim_canvas.request_fit();
+        }
+    }
+    if self.cached_tarjan_anim.is_none() {
+        let inc = self.cached_incidence.as_ref().unwrap();
+        self.cached_tarjan_anim = Some(
+            inc.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
+        );
+    }
+    if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
+        if ir_split {
+            ui.label(egui::RichText::new("Before (raw DAE)")
+                .strong().color(crate::colors::ANIM_FAIL));
+            ui.weak("BLT animation unavailable (structurally singular \u{2014} no full matching for block decomposition)");
+            ui.add_space(12.0);
+            ui.label(egui::RichText::new("After (reduced)")
+                .strong().color(crate::colors::ANIM_PATH_FOUND));
+        }
+        debug_clicked = anim.ui(
+            ui, &mut self.tarjan_anim_canvas,
+            self.tracked_identifier.as_deref(), arming, debug_enabled,
+        );
+    } else {
+        ui.weak("(no dependency graph for BLT animation)");
+    }
+    if debug_clicked {
+        self.start_live_debug(PendingLiveDebug::Tarjan);
+    }
+    }
+
+    /// The index-reduction animation view. See [`Self::matching_anim_ui`].
+    fn reduction_anim_ui(&mut self, ui: &mut egui::Ui) {
+    let arming = self.is_arming(PendingLiveDebug::Reduction);
+    let live = self.cached_reduction_anim.as_ref()
+        .and_then(|o| o.as_ref())
+        .map_or(
+            if arming { LiveState::Arming } else { LiveState::Idle },
+            |a| a.live_state(arming),
+        );
+    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Reduction)
+        && !live.is_busy();
+    let mut debug_clicked = false;
+    let action = self.live_debug_poll(
+        ui.ctx(), live, PendingLiveDebug::Reduction,
+    );
+    if matches!(action, LiveDebugAction::SpawnLive) {
+        if let Some(dae) = &self.cached_dae {
+            let live = reduction_anim::ReductionAnimation::start_live(
+                dae.clone(), || {
+                    let _ = bridge::remove_live_trace_breakpoint();
+                },
+            );
+            if live.is_none() {
+                let _ = bridge::remove_live_trace_breakpoint();
+                self.live_breakpoint_armed = false;
+            }
+            self.cached_reduction_anim = Some(live);
+        }
+    }
+    if self.cached_reduction_anim.is_none() {
+        let frames = &self.index_reduction_frames;
+        self.cached_reduction_anim = Some(if frames.is_empty() {
+            None
+        } else {
+            Some(reduction_anim::ReductionAnimation::from_frames(frames.clone()))
+        });
+    }
+    if let Some(Some(anim)) = &mut self.cached_reduction_anim {
+        debug_clicked = egui::ScrollArea::vertical()
+            .auto_shrink(false)
+            .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+            .inner;
+    } else {
+        ui.weak("(no index-reduction trace for this model)");
+    }
+    if debug_clicked {
+        self.start_live_debug(PendingLiveDebug::Reduction);
+    }
+    }
+
+    /// The top menu bar (File, View, Help).
+    ///
+    /// Extracted from `ui` during the 2026-07-28 sweep — self-contained, and
+    /// `ui` had grown past the point where a reader could see its shape.
+    fn menu_bar_ui(&mut self, ui: &mut egui::Ui) {
+egui::Panel::top("bar").show(ui, |ui| {
+    // `MenuBar` creates a horizontal bar with dropdown menus.
+    egui::MenuBar::new().ui(ui, |ui| {
+        ui.menu_button("File", |ui| {
+            if ui.button("Rescan specimens").clicked() {
+                self.rescan();
+                ui.close();
+            }
+            ui.separator();
+            if ui.button("Settings…").clicked() {
+                self.show_settings = true;
+                ui.close();
+            }
+            ui.separator();
+            if ui.button("Quit").clicked() {
+                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        });
+        ui.menu_button("View", |ui| {
+            if ui.selectable_label(self.ui_mode == UiMode::Tour, "Tour").clicked() {
+                self.ui_mode = UiMode::Tour;
+                ui.close();
+            }
+            if ui.selectable_label(self.ui_mode == UiMode::Specimen, "Specimen").clicked() {
+                self.ui_mode = UiMode::Specimen;
+                ui.close();
+            }
+            if ui.selectable_label(self.ui_mode == UiMode::Debug, "Debug").clicked() {
+                self.ui_mode = UiMode::Debug;
+                ui.close();
+            }
+        });
+        ui.menu_button("Help", |ui| {
+            if ui.button("Using HRW…").clicked() {
+                self.show_help = true;
+                ui.close();
+            }
+            if ui.button("About HRW…").clicked() {
+                self.show_about = true;
+                ui.close();
+            }
+        });
+    });
+});
+    }
+
+    /// The specimen's Modelica source: syntax-highlighted, with clickable
+    /// identifiers, and scrolled to whatever is being followed.
+    ///
+    /// Extracted from `ui` during the 2026-07-28 sweep. It is the one place
+    /// three separate mechanisms have to agree about a line — the lexer's
+    /// tokens, `IdentifierIndex`'s clickable spans, and `source_view::segments`
+    /// merging them — and that is much easier to keep straight in its own
+    /// function than buried a thousand lines into a panel closure.
+    fn specimen_source_ui(&mut self, ui: &mut egui::Ui) {
+        let source = self.selected.as_ref().map(|path| {
+            self.cached_source.get_or_insert_with(|| {
+                std::fs::read_to_string(path).unwrap_or_default()
+            }).as_str()
+        });
+        let mut clicked_id: Option<String> = None;
+        match source {
+            Some(text) if !text.is_empty() => {
+                egui::ScrollArea::both()
+                    .id_salt("specimen_source")
+                    .auto_shrink(false)
+                    .show(ui, |ui| {
+                    let tracked = self.tracked_identifier.as_deref();
+                    let dark = ui.visuals().dark_mode;
+                    // Reverse tracking: when the tracked
+                    // identifier changes — typically from a click
+                    // in a downstream view — bring its
+                    // declaration into view. Gated on *change*,
+                    // not on the value: scrolling every frame
+                    // while an identifier stays tracked would peg
+                    // the view and fight the scrollbar.
+                    let scroll_to = (self.tracked_identifier
+                        != self.scrolled_source_for)
+                        .then(|| {
+                            self.tracked_identifier.as_deref().and_then(|name| {
+                                self.identifier_index.as_ref()
+                                    .and_then(|idx| idx.variables.get(name))
+                                    .map(|v| v.source_line)
+                            })
+                        })
+                        .flatten();
+                    if scroll_to.is_some() || self.tracked_identifier.is_none() {
+                        self.scrolled_source_for = self.tracked_identifier.clone();
+                    }
+                    // Tokenized once per specimen, not per frame.
+                    let highlight = self.cached_highlight.get_or_insert_with(
+                        || crate::source_view::SourceHighlight::new(text)
+                    );
+                    for (i, line) in text.lines().enumerate() {
+                        let line_1 = (i + 1) as u32;
+                        let line_tokens = highlight.line(i);
+                        let spans = self.identifier_index.as_ref()
+                            .map(|idx| idx.clickable_spans(line_1, line, line_tokens))
+                            .unwrap_or_default();
+                        // One pass produces both colour and click
+                        // targets, so the two cannot disagree about
+                        // where a run of text begins and ends.
+                        let segments = crate::source_view::segments(
+                            line, line_tokens, &spans,
+                        );
+                        let row = ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 0.0;
+                            ui.label(
+                                egui::RichText::new(format!("{:>4} ", line_1))
+                                    .monospace()
+                                    .weak()
+                            );
+                            for seg in &segments {
+                                match seg.link {
+                                    Some(name) => {
+                                        // Clickable identifiers keep their own
+                                        // colours, which outrank syntax colour —
+                                        // interactivity has to win visually.
+                                        let color = if tracked == Some(name) {
+                                            crate::colors::TRACKED_GOLD
+                                        } else {
+                                            crate::colors::CLICKABLE_IDENT
+                                        };
+                                        let label = egui::Label::new(
+                                            egui::RichText::new(seg.text)
+                                                .monospace()
+                                                .color(color)
+                                                .underline()
+                                        ).sense(egui::Sense::click());
+                                        if ui.add(label).on_hover_text(name).clicked() {
+                                            clicked_id = Some(name.to_owned());
+                                        }
+                                    }
+                                    None => {
+                                        let mut rt = egui::RichText::new(seg.text)
+                                            .monospace();
+                                        if let Some(c) = crate::colors::syntax_color(
+                                            seg.kind, dark,
+                                        ) {
+                                            rt = rt.color(c);
+                                        }
+                                        ui.label(rt);
+                                    }
+                                }
+                            }
+                        });
+                        if scroll_to == Some(line_1) {
+                            row.response.scroll_to_me(
+                                Some(egui::Align::Center),
+                            );
+                        }
+                    }
+                });
+            }
+            _ => {
+                ui.weak("Select a specimen to view its source.");
+            }
+        }
+        if let Some(name) = clicked_id {
+            // Shared with every other entry point, so clicking a name here
+            // toggles exactly as following from a tree or the equation sheet
+            // does. This used to be a private copy of the same logic.
+            self.set_tracked_identifier(name);
+        }
+    }
+
+    /// The tracking indicator: what is currently being followed, and where it
+    /// is declared.
+    ///
+    /// Rendered above every pane — stages, log, simulation — so the answer to
+    /// "what is tracked?" never depends on which view you are in.
+    ///
+    /// **This becomes the Context Bar in Phase 5** (see
+    /// `docs/context-assembly.md`). It is a separate method so that rewrite is
+    /// contained, and because the rule it will then obey — *render what will be
+    /// emitted, nothing more* — is easier to hold to in eighty lines than
+    /// inside a twelve-hundred-line `ui`.
+    ///
+    /// It already follows the half of that rule it can: the `[x]` clear button
+    /// belongs here because it *changes* the context; the declaring class is a
+    /// link rather than a button because navigation is not context, but a
+    /// displayed fact may itself be actionable.
+    fn tracking_bar_ui(&mut self, ui: &mut egui::Ui) {
+        let Some(name) = self.tracked_identifier.clone() else { return };
+        let mut clear = false;
+        let mut go_to_class: Option<String> = None;
+
+        // Where the declaration is — or, just as informative, that there isn't
+        // one. `IdentifierIndex` holds only variables whose span belongs to the
+        // specimen, so a miss means the name came from a library or a compiler
+        // phase created it. Saying so beats the earlier behaviour, where
+        // reverse tracking did nothing and looked broken.
+        let declared_at = self.identifier_index.as_ref()
+            .and_then(|idx| idx.variables.get(&name))
+            .map(|v| v.source_line);
+
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new(format!("Tracking: {name}"))
+                    .monospace()
+                    .color(crate::colors::TRACKED_GOLD)
+            );
+            match declared_at {
+                Some(line) => {
+                    ui.weak(format!("\u{2014} declared at line {line}"));
+                }
+                // Not in the specimen — but the component it lives in usually
+                // names a library class, which is the real answer to "where did
+                // this come from?".
+                None => match self.declaring_classes.get(&name) {
+                    Some(class) => {
+                        ui.weak("\u{2014} in");
+                        if ui
+                            .link(class)
+                            .on_hover_text(format!(
+                                "Open {class} \u{2014} the type of the component this \
+                                 variable belongs to. Use Back to return here.",
+                            ))
+                            .clicked()
+                        {
+                            go_to_class = Some(class.clone());
+                        }
+                    }
+                    None => {
+                        ui.weak("\u{2014} not declared in this specimen")
+                            .on_hover_text(
+                                "Neither the specimen nor a component type declares \
+                                 this name, so a compiler phase created it \u{2014} an \
+                                 index-reduction dummy derivative or an alias, for \
+                                 example. Capture it and ask Claude to trace where it \
+                                 came from.",
+                            );
+                    }
+                },
+            }
+            // U+00D7, not U+2715 MULTIPLICATION X: egui's bundled fonts have no
+            // glyph for U+2715, so it rendered as an empty tofu box.
+            if ui.small_button("\u{00d7}").on_hover_text("Clear tracking").clicked() {
+                clear = true;
+            }
+        });
+
+        if clear {
+            self.tracked_identifier = None;
+        }
+        if let Some(class) = go_to_class {
+            self.navigate_to(class);
+        }
+        ui.separator();
+    }
+
     /// Toggle the tracked identifier — the single entry point for tracking,
     /// whichever view the click came from.
     ///
@@ -2059,52 +2495,7 @@ impl eframe::App for App {
         self.tick_prewarm(ui.ctx());
 
         // ---- Top menu bar ----
-        // `Panel::top` claims a strip at the top of the window. Its string ID
-        // ("bar") must be unique among panels so egui can track its state.
-        egui::Panel::top("bar").show(ui, |ui| {
-            // `MenuBar` creates a horizontal bar with dropdown menus.
-            egui::MenuBar::new().ui(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Rescan specimens").clicked() {
-                        self.rescan();
-                        ui.close();
-                    }
-                    ui.separator();
-                    if ui.button("Settings…").clicked() {
-                        self.show_settings = true;
-                        ui.close();
-                    }
-                    ui.separator();
-                    if ui.button("Quit").clicked() {
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
-                });
-                ui.menu_button("View", |ui| {
-                    if ui.selectable_label(self.ui_mode == UiMode::Tour, "Tour").clicked() {
-                        self.ui_mode = UiMode::Tour;
-                        ui.close();
-                    }
-                    if ui.selectable_label(self.ui_mode == UiMode::Specimen, "Specimen").clicked() {
-                        self.ui_mode = UiMode::Specimen;
-                        ui.close();
-                    }
-                    if ui.selectable_label(self.ui_mode == UiMode::Debug, "Debug").clicked() {
-                        self.ui_mode = UiMode::Debug;
-                        ui.close();
-                    }
-                });
-                ui.menu_button("Help", |ui| {
-                    if ui.button("Using HRW…").clicked() {
-                        self.show_help = true;
-                        ui.close();
-                    }
-                    if ui.button("About HRW…").clicked() {
-                        self.show_about = true;
-                        ui.close();
-                    }
-                });
-            });
-        });
+        self.menu_bar_ui(ui);
 
         self.floating_windows(ui);
 
@@ -2252,118 +2643,7 @@ impl eframe::App for App {
 
                 // -- Bottom two-thirds: source or narrative --
                 match self.specimen_detail {
-                    SpecimenDetail::Source => {
-                        let source = self.selected.as_ref().map(|path| {
-                            self.cached_source.get_or_insert_with(|| {
-                                std::fs::read_to_string(path).unwrap_or_default()
-                            }).as_str()
-                        });
-                        let mut clicked_id: Option<String> = None;
-                        match source {
-                            Some(text) if !text.is_empty() => {
-                                egui::ScrollArea::both()
-                                    .id_salt("specimen_source")
-                                    .auto_shrink(false)
-                                    .show(ui, |ui| {
-                                    let tracked = self.tracked_identifier.as_deref();
-                                    let dark = ui.visuals().dark_mode;
-                                    // Reverse tracking: when the tracked
-                                    // identifier changes — typically from a click
-                                    // in a downstream view — bring its
-                                    // declaration into view. Gated on *change*,
-                                    // not on the value: scrolling every frame
-                                    // while an identifier stays tracked would peg
-                                    // the view and fight the scrollbar.
-                                    let scroll_to = (self.tracked_identifier
-                                        != self.scrolled_source_for)
-                                        .then(|| {
-                                            self.tracked_identifier.as_deref().and_then(|name| {
-                                                self.identifier_index.as_ref()
-                                                    .and_then(|idx| idx.variables.get(name))
-                                                    .map(|v| v.source_line)
-                                            })
-                                        })
-                                        .flatten();
-                                    if scroll_to.is_some() || self.tracked_identifier.is_none() {
-                                        self.scrolled_source_for = self.tracked_identifier.clone();
-                                    }
-                                    // Tokenized once per specimen, not per frame.
-                                    let highlight = self.cached_highlight.get_or_insert_with(
-                                        || crate::source_view::SourceHighlight::new(text)
-                                    );
-                                    for (i, line) in text.lines().enumerate() {
-                                        let line_1 = (i + 1) as u32;
-                                        let line_tokens = highlight.line(i);
-                                        let spans = self.identifier_index.as_ref()
-                                            .map(|idx| idx.clickable_spans(line_1, line, line_tokens))
-                                            .unwrap_or_default();
-                                        // One pass produces both colour and click
-                                        // targets, so the two cannot disagree about
-                                        // where a run of text begins and ends.
-                                        let segments = crate::source_view::segments(
-                                            line, line_tokens, &spans,
-                                        );
-                                        let row = ui.horizontal(|ui| {
-                                            ui.spacing_mut().item_spacing.x = 0.0;
-                                            ui.label(
-                                                egui::RichText::new(format!("{:>4} ", line_1))
-                                                    .monospace()
-                                                    .weak()
-                                            );
-                                            for seg in &segments {
-                                                match seg.link {
-                                                    Some(name) => {
-                                                        // Clickable identifiers keep their own
-                                                        // colours, which outrank syntax colour —
-                                                        // interactivity has to win visually.
-                                                        let color = if tracked == Some(name) {
-                                                            crate::colors::TRACKED_GOLD
-                                                        } else {
-                                                            crate::colors::CLICKABLE_IDENT
-                                                        };
-                                                        let label = egui::Label::new(
-                                                            egui::RichText::new(seg.text)
-                                                                .monospace()
-                                                                .color(color)
-                                                                .underline()
-                                                        ).sense(egui::Sense::click());
-                                                        if ui.add(label).on_hover_text(name).clicked() {
-                                                            clicked_id = Some(name.to_owned());
-                                                        }
-                                                    }
-                                                    None => {
-                                                        let mut rt = egui::RichText::new(seg.text)
-                                                            .monospace();
-                                                        if let Some(c) = crate::colors::syntax_color(
-                                                            seg.kind, dark,
-                                                        ) {
-                                                            rt = rt.color(c);
-                                                        }
-                                                        ui.label(rt);
-                                                    }
-                                                }
-                                            }
-                                        });
-                                        if scroll_to == Some(line_1) {
-                                            row.response.scroll_to_me(
-                                                Some(egui::Align::Center),
-                                            );
-                                        }
-                                    }
-                                });
-                            }
-                            _ => {
-                                ui.weak("Select a specimen to view its source.");
-                            }
-                        }
-                        if let Some(name) = clicked_id {
-                            if self.tracked_identifier.as_deref() == Some(&name) {
-                                self.tracked_identifier = None;
-                            } else {
-                                self.tracked_identifier = Some(name);
-                            }
-                        }
-                    }
+                    SpecimenDetail::Source => self.specimen_source_ui(ui),
                     SpecimenDetail::Narrative => {
                         let model_name = self.model.as_deref();
                         let narrative = model_name.and_then(|name| {
@@ -2698,86 +2978,7 @@ impl eframe::App for App {
                 }
                 ui.separator();
 
-                // Tracking indicator: shows which identifier is being tracked.
-                // Shown on all panes (log, simulation, stages) so the user
-                // always knows what's tracked and can clear it.
-                if let Some(name) = self.tracked_identifier.clone() {
-                    let mut clear = false;
-                    let mut go_to_class: Option<String> = None;
-                    // Where the declaration is — or, just as informative, that
-                    // there isn't one. `IdentifierIndex` only holds variables
-                    // whose span belongs to the specimen, so a miss means the
-                    // name came from a library or was created by a compiler
-                    // phase. Saying so beats the previous behaviour, where
-                    // reverse tracking simply did nothing and looked broken.
-                    let declared_at = self.identifier_index.as_ref()
-                        .and_then(|idx| idx.variables.get(&name))
-                        .map(|v| v.source_line);
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new(format!("Tracking: {name}"))
-                                .monospace()
-                                .color(crate::colors::TRACKED_GOLD)
-                        );
-                        match declared_at {
-                            Some(line) => {
-                                ui.weak(format!("\u{2014} declared at line {line}"));
-                            }
-                            // Not in the specimen — but the component it lives in
-                            // usually names a library class, which is the real
-                            // answer to "where did this come from?".
-                            None => match self.declaring_classes.get(&name) {
-                                Some(class) => {
-                                    // The class name is a *fact* about what is
-                                    // being followed, so it belongs here. It is
-                                    // rendered as a link rather than paired with
-                                    // a button: this bar states context and
-                                    // carries only the controls that change it
-                                    // (the clear buttons). Navigation is not
-                                    // context — but a displayed fact may itself
-                                    // be actionable, which is different from
-                                    // adding chrome. See docs/context-assembly.md.
-                                    ui.weak("\u{2014} in");
-                                    if ui
-                                        .link(class)
-                                        .on_hover_text(format!(
-                                            "Open {class} \u{2014} the type of the \
-                                             component this variable belongs to. Use \
-                                             Back to return here.",
-                                        ))
-                                        .clicked()
-                                    {
-                                        go_to_class = Some(class.clone());
-                                    }
-                                }
-                                None => {
-                                    ui.weak("\u{2014} not declared in this specimen")
-                                        .on_hover_text(
-                                            "Neither the specimen nor a component type \
-                                             declares this name, so a compiler phase \
-                                             created it \u{2014} an index-reduction dummy \
-                                             derivative or an alias, for example. Capture \
-                                             it and ask Claude to trace where it came from.",
-                                        );
-                                }
-                            },
-                        }
-                        // U+00D7, not U+2715 MULTIPLICATION X. egui's bundled
-                        // fonts have no glyph for U+2715, so it rendered as an
-                        // empty tofu box. U+00D7 is Latin-1 and present in every
-                        // text font — including the monospace one.
-                        if ui.small_button("\u{00d7}").on_hover_text("Clear tracking").clicked() {
-                            clear = true;
-                        }
-                    });
-                    if clear {
-                        self.tracked_identifier = None;
-                    }
-                    if let Some(class) = go_to_class {
-                        self.navigate_to(class);
-                    }
-                    ui.separator();
-                }
+                self.tracking_bar_ui(ui);
 
                 if self.viewing_log {
                     if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
@@ -2994,121 +3195,9 @@ impl eframe::App for App {
                         }
                     }
                 } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
-                    if self.cached_incidence.is_none() {
-                        self.cached_incidence = Some(
-                            self.stages.get(self.stage).value.as_ref()
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        );
-                    }
-                    let arming = self.is_arming(PendingLiveDebug::Matching);
-                    let live = self.cached_matching_anim.as_ref()
-                        .and_then(|o| o.as_ref())
-                        .map_or(
-                            if arming { LiveState::Arming } else { LiveState::Idle },
-                            |a| a.live_state(arming),
-                        );
-                    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Matching)
-                        && !live.is_busy();
-                    let mut debug_clicked = false;
-                    let action = self.live_debug_poll(
-                        ui.ctx(), live, PendingLiveDebug::Matching,
-                    );
-                    if matches!(action, LiveDebugAction::SpawnLive) {
-                        if let Some(Some(mat)) = &self.cached_incidence {
-                            let live = matching_anim::MatchingAnimation::start_live(mat, || {
-                                let _ = bridge::remove_live_trace_breakpoint();
-                            });
-                            if live.is_none() {
-                                let _ = bridge::remove_live_trace_breakpoint();
-                                self.live_breakpoint_armed = false;
-                            }
-                            self.cached_matching_anim = Some(live);
-                            self.matching_anim_canvas.request_fit();
-                        }
-                    }
-                    if self.cached_matching_anim.is_none() {
-                        let inc = self.cached_incidence.as_ref().unwrap();
-                        self.cached_matching_anim = Some(
-                            inc.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
-                        );
-                    }
-                    if let Some(Some(anim)) = &mut self.cached_matching_anim {
-                        if ir_split {
-                            ui.label(egui::RichText::new("Before (raw DAE)")
-                                .strong().color(crate::colors::ANIM_FAIL));
-                            ui.weak("Matching animation unavailable (structurally singular \u{2014} only a partial matching exists)");
-                            ui.add_space(12.0);
-                            ui.label(egui::RichText::new("After (reduced)")
-                                .strong().color(crate::colors::ANIM_PATH_FOUND));
-                        }
-                        debug_clicked = anim.ui(
-                            ui, &mut self.matching_anim_canvas,
-                            self.tracked_identifier.as_deref(), arming, debug_enabled,
-                        );
-                    } else {
-                        ui.weak("(no incidence data for matching animation)");
-                    }
-                    if debug_clicked {
-                        self.start_live_debug(PendingLiveDebug::Matching);
-                    }
+                    self.matching_anim_ui(ui, ir_split);
                 } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
-                    if self.cached_incidence.is_none() {
-                        self.cached_incidence = Some(
-                            self.stages.get(self.stage).value.as_ref()
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        );
-                    }
-                    let arming = self.is_arming(PendingLiveDebug::Tarjan);
-                    let live = self.cached_tarjan_anim.as_ref()
-                        .and_then(|o| o.as_ref())
-                        .map_or(
-                            if arming { LiveState::Arming } else { LiveState::Idle },
-                            |a| a.live_state(arming),
-                        );
-                    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tarjan)
-                        && !live.is_busy();
-                    let mut debug_clicked = false;
-                    let action = self.live_debug_poll(
-                        ui.ctx(), live, PendingLiveDebug::Tarjan,
-                    );
-                    if matches!(action, LiveDebugAction::SpawnLive) {
-                        if let Some(Some(mat)) = &self.cached_incidence {
-                            let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
-                                let _ = bridge::remove_live_trace_breakpoint();
-                            });
-                            if live.is_none() {
-                                let _ = bridge::remove_live_trace_breakpoint();
-                                self.live_breakpoint_armed = false;
-                            }
-                            self.cached_tarjan_anim = Some(live);
-                            self.tarjan_anim_canvas.request_fit();
-                        }
-                    }
-                    if self.cached_tarjan_anim.is_none() {
-                        let inc = self.cached_incidence.as_ref().unwrap();
-                        self.cached_tarjan_anim = Some(
-                            inc.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
-                        );
-                    }
-                    if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
-                        if ir_split {
-                            ui.label(egui::RichText::new("Before (raw DAE)")
-                                .strong().color(crate::colors::ANIM_FAIL));
-                            ui.weak("BLT animation unavailable (structurally singular \u{2014} no full matching for block decomposition)");
-                            ui.add_space(12.0);
-                            ui.label(egui::RichText::new("After (reduced)")
-                                .strong().color(crate::colors::ANIM_PATH_FOUND));
-                        }
-                        debug_clicked = anim.ui(
-                            ui, &mut self.tarjan_anim_canvas,
-                            self.tracked_identifier.as_deref(), arming, debug_enabled,
-                        );
-                    } else {
-                        ui.weak("(no dependency graph for BLT animation)");
-                    }
-                    if debug_clicked {
-                        self.start_live_debug(PendingLiveDebug::Tarjan);
-                    }
+                    self.tarjan_anim_ui(ui, ir_split);
                 } else if report_ready && self.structural_view == StructuralView::Summary {
                     if self.stage == StageKind::Structural {
                         Self::structural_singular_summary(ui, &self.stages.structural);
@@ -3123,52 +3212,7 @@ impl eframe::App for App {
                         }
                     }
                 } else if self.structural_view == StructuralView::Animate {
-                    let arming = self.is_arming(PendingLiveDebug::Reduction);
-                    let live = self.cached_reduction_anim.as_ref()
-                        .and_then(|o| o.as_ref())
-                        .map_or(
-                            if arming { LiveState::Arming } else { LiveState::Idle },
-                            |a| a.live_state(arming),
-                        );
-                    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Reduction)
-                        && !live.is_busy();
-                    let mut debug_clicked = false;
-                    let action = self.live_debug_poll(
-                        ui.ctx(), live, PendingLiveDebug::Reduction,
-                    );
-                    if matches!(action, LiveDebugAction::SpawnLive) {
-                        if let Some(dae) = &self.cached_dae {
-                            let live = reduction_anim::ReductionAnimation::start_live(
-                                dae.clone(), || {
-                                    let _ = bridge::remove_live_trace_breakpoint();
-                                },
-                            );
-                            if live.is_none() {
-                                let _ = bridge::remove_live_trace_breakpoint();
-                                self.live_breakpoint_armed = false;
-                            }
-                            self.cached_reduction_anim = Some(live);
-                        }
-                    }
-                    if self.cached_reduction_anim.is_none() {
-                        let frames = &self.index_reduction_frames;
-                        self.cached_reduction_anim = Some(if frames.is_empty() {
-                            None
-                        } else {
-                            Some(reduction_anim::ReductionAnimation::from_frames(frames.clone()))
-                        });
-                    }
-                    if let Some(Some(anim)) = &mut self.cached_reduction_anim {
-                        debug_clicked = egui::ScrollArea::vertical()
-                            .auto_shrink(false)
-                            .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
-                            .inner;
-                    } else {
-                        ui.weak("(no index-reduction trace for this model)");
-                    }
-                    if debug_clicked {
-                        self.start_live_debug(PendingLiveDebug::Reduction);
-                    }
+                    self.reduction_anim_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::Equations {
                     self.equation_sheet_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {

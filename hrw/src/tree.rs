@@ -17,16 +17,25 @@
 //!
 //! ## Click/capture flow
 //!
-//! Every row in the tree is interactive:
+//! Every row in the tree is interactive. Nothing here asks anything — the tree
+//! records *what the user acted on* into [`TreeActions`], the app turns that
+//! into a bridge focus file (see `bridge.rs`), and the user asks their actual
+//! question in the Claude Code chat.
 //!
-//! - **Left-click** a row to "capture" it — this records the node's *key-path*
-//!   (its address from the stage root, like `components.inertia.type_def_id`)
-//!   into the `ask` output parameter. The app then writes a bridge focus file
-//!   (see `bridge.rs`) describing what was captured. The user asks their actual
-//!   question in the Claude Code chat; this tree never asks anything itself.
+//! - **Left-click** a row to capture it — recording the node's *key-path*, its
+//!   address from the stage root, like `components.inertia.type_def_id`.
+//! - **Right-click** opens a context menu: Capture, Track (for names the model
+//!   knows), Show-in-debugger, Go-to-definition (for DefId fields *and* for
+//!   variable names, via `TreeOptions::declaring_classes`), and Copy-text.
 //!
-//! - **Right-click** opens a context menu with: Capture, Show-in-debugger,
-//!   Go-to-definition (for DefId-typed fields), and Copy-text.
+//! Inputs the tree needs — what is tracked, which names are real variables, how
+//! to expand — arrive as [`TreeOptions`]. Both are bundles rather than long
+//! parameter lists; see their docs for why.
+//!
+//! **Vocabulary note:** Phase 5 of `docs/source-tooling-plan.md` renames the
+//! user-facing verbs to "Point at" and "Follow". The code's nouns (`capture`,
+//! `track`, `focus.json`) deliberately stay, since they are also the wire
+//! format Claude reads.
 //!
 //! The key-path is accumulated as the recursive walk descends: each level
 //! pushes its segment (`Seg::Key` or `Seg::Index`) onto a `Vec<Seg>` path,
@@ -554,22 +563,28 @@ fn collect_tracked_ancestors<'a>(
     tracked: &str,
     ancestors: &mut HashSet<*const Value>,
 ) -> bool {
+    // `fold`, not `any`: `any` short-circuits at the first matching child, so
+    // later siblings were never visited and their ancestors never recorded —
+    // the tree opened the path to the *first* mention only. Every child must be
+    // walked for every path to be openable.
     let dominated = match value {
-        Value::Object(map) => map.iter().any(|(k, v)| {
-            if k == tracked {
-                return true;
-            }
-            // A prose field's string is human text, not code — see
-            // `is_prose_field`. Its contents must not drag the whole subtree
-            // open as though the identifier were mentioned there.
-            if is_prose_field(k) && matches!(v, Value::String(_)) {
-                return false;
-            }
-            collect_tracked_ancestors(v, tracked, ancestors)
+        Value::Object(map) => map.iter().fold(false, |found, (k, v)| {
+            let here = if k == tracked {
+                true
+            } else if is_prose_field(k) && matches!(v, Value::String(_)) {
+                // A prose field's string is human text, not code — see
+                // `is_prose_field`. Its contents must not drag the whole subtree
+                // open as though the identifier were mentioned there.
+                false
+            } else {
+                collect_tracked_ancestors(v, tracked, ancestors)
+            };
+            found || here
         }),
-        Value::Array(arr) => arr
-            .iter()
-            .any(|v| collect_tracked_ancestors(v, tracked, ancestors)),
+        Value::Array(arr) => arr.iter().fold(false, |found, v| {
+            let here = collect_tracked_ancestors(v, tracked, ancestors);
+            found || here
+        }),
         Value::String(s) => s == tracked || crate::identifier_index::matches_tracked(s, tracked),
         _ => false,
     };
