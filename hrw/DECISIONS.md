@@ -854,3 +854,15 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   cannot exist until tracking emits. Compound capture and Context Bar are therefore one piece of
   work, and that work is now Phase 5. Design in `docs/context-assembly.md` (renamed from
   `tracking-as-capture.md`).
+- **2026-07-27 — The tracking bar carries context and the controls that change it; navigation moves
+  out.** Testing Phase 4 raised the question of whether the bar's "Go to definition" button belongs
+  in the Context Bar that will replace it. It does not: the bar's job is to state what Claude will
+  receive, and navigation changes nothing about that. The `[x]` clear buttons *do* belong, because
+  they mutate what gets emitted. But deleting the button outright would have made the action
+  unreachable when tracking was started from the equation sheet or source view, where there is no
+  tree row to right-click. Resolution: **the fact stays, the chrome goes** — the declaring class is
+  rendered as a link rather than as text plus a button, so the bar reads as context and one of its
+  facts happens to be navigable. Separately, `nav_target` now resolves a variable name to its
+  declaring class, not just DefId fields, so "↪ Go to …" appears in the tree row menu for
+  identifiers too — navigation lives with the other actions, and the same menu item means the same
+  thing whether the class was found through a DefId or through the variable.

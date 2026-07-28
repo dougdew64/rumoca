@@ -2728,9 +2728,18 @@ impl eframe::App for App {
                             // answer to "where did this come from?".
                             None => match self.declaring_classes.get(&name) {
                                 Some(class) => {
-                                    ui.weak(format!("\u{2014} in {class}"));
+                                    // The class name is a *fact* about what is
+                                    // being followed, so it belongs here. It is
+                                    // rendered as a link rather than paired with
+                                    // a button: this bar states context and
+                                    // carries only the controls that change it
+                                    // (the clear buttons). Navigation is not
+                                    // context — but a displayed fact may itself
+                                    // be actionable, which is different from
+                                    // adding chrome. See docs/context-assembly.md.
+                                    ui.weak("\u{2014} in");
                                     if ui
-                                        .small_button("\u{21aa} Go to definition")
+                                        .link(class)
                                         .on_hover_text(format!(
                                             "Open {class} \u{2014} the type of the \
                                              component this variable belongs to. Use \
@@ -3197,6 +3206,7 @@ impl eframe::App for App {
                                 let opts = tree::TreeOptions {
                                     tracked: self.tracked_identifier.as_deref(),
                                     known_variables: self.known_variables.as_ref(),
+                                    declaring_classes: Some(&self.declaring_classes),
                                     expand_trackable,
                                 };
                                 egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
@@ -3243,6 +3253,7 @@ impl eframe::App for App {
                         tree::TreeOptions {
                             tracked: self.tracked_identifier.as_deref(),
                             known_variables: self.known_variables.as_ref(),
+                            declaring_classes: Some(&self.declaring_classes),
                             expand_trackable,
                         });
                 });

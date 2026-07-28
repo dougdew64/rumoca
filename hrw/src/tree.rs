@@ -93,6 +93,10 @@ pub struct TreeOptions<'a> {
     /// `None` (no successful compile yet) means nothing is offered — a wrong
     /// offer is worse than no offer.
     pub known_variables: Option<&'a HashSet<String>>,
+    /// Variable name -> the class that declares it, when that is not the
+    /// specimen. Lets "Go to definition" work from a variable name, not only
+    /// from a DefId field.
+    pub declaring_classes: Option<&'a HashMap<String, String>>,
     /// Expand every path that leads to a trackable name, so they can be found
     /// without hunting through collapsed nodes.
     pub expand_trackable: bool,
@@ -290,7 +294,7 @@ fn node_ui(
                 actions.capture = Some(path.to_vec());
             }
             let trackable = trackable_name(key, scalar, &opts);
-            row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index), trackable.clone());
+            row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index, &opts), trackable.clone());
             // Explain the underline. Appended to the field's own help rather
             // than replacing it, so discoverability does not cost the
             // documentation that is already there.
@@ -314,17 +318,31 @@ fn node_ui(
 // "Modelica.Mechanics.Rotational.Inertia") — this becomes the "Go to
 // definition" navigation target. If the DefId resolves to something that isn't
 // a class (a variable, a function), navigation doesn't apply and we return None.
-fn nav_target(key: &str, scalar: &Value, def_index: &BTreeMap<u64, DefInfo>) -> Option<String> {
-    // Only fields whose name ends with `_def_id` or similar carry DefIds.
-    if !is_def_id_key(key) {
+fn nav_target(
+    key: &str,
+    scalar: &Value,
+    def_index: &BTreeMap<u64, DefInfo>,
+    opts: &TreeOptions<'_>,
+) -> Option<String> {
+    // Fields whose name ends with `_def_id` or similar carry DefIds.
+    if is_def_id_key(key) {
+        // Look up the numeric id in the def_index (populated by the worker from
+        // Rumoca's resolver output). `as_u64()` returns None for non-number values.
+        if let Some(info) = def_index.get(&scalar.as_u64()?) {
+            // Only class definitions are navigable — you can "go to" a class,
+            // but not to a variable or built-in.
+            return (info.kind == crate::worker::DefKind::Class)
+                .then(|| info.name.clone());
+        }
         return None;
     }
-    // Look up the numeric id in the def_index (populated by the worker from
-    // Rumoca's resolver output). `as_u64()` returns None for non-number values.
-    let info = def_index.get(&scalar.as_u64()?)?;
-    // Only class definitions are navigable — you can "go to" a class, but
-    // not to a variable or built-in.
-    (info.kind == crate::worker::DefKind::Class).then(|| info.name.clone())
+    // A variable name is navigable too, when the model says which class
+    // declares it: `src.V` goes to `src`'s type. Same menu item, same
+    // navigation stack — the vocabulary stays consistent whether you found the
+    // class through a DefId field or through the variable itself.
+    let name = trackable_name(key, scalar, opts)?;
+    let bare = name.strip_prefix("der(").and_then(|r| r.strip_suffix(')')).unwrap_or(&name);
+    opts.declaring_classes?.get(bare).cloned()
 }
 
 // Right-click context menu for any tree row.
@@ -602,16 +620,47 @@ mod tests {
 
     // --- nav_target ---
 
+    /// A variable name navigates to the class that declares it, using the same
+    /// menu item as a DefId field — so "Go to definition" means one thing
+    /// whether you found the class through a DefId or through the variable.
+    #[test]
+    fn nav_target_resolves_a_variable_to_its_declaring_class() {
+        let index = BTreeMap::new();
+        let known: HashSet<String> = ["src.V"].iter().map(|s| (*s).to_owned()).collect();
+        let declaring: HashMap<String, String> = [(
+            "src.V".to_owned(),
+            "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
+        )].into_iter().collect();
+        let opts = TreeOptions {
+            known_variables: Some(&known),
+            declaring_classes: Some(&declaring),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            nav_target("name", &json!("src.V"), &index, &opts).as_deref(),
+            Some("Modelica.Electrical.Analog.Sources.ConstantVoltage")
+        );
+        // A derivative resolves through its base variable.
+        assert_eq!(
+            nav_target("name", &json!("der(src.V)"), &index, &opts).as_deref(),
+            Some("Modelica.Electrical.Analog.Sources.ConstantVoltage")
+        );
+        // Specimen-declared variables have no declaring *class* — the source
+        // view is where they are found, not the navigation stack.
+        assert!(nav_target("name", &json!("h"), &index, &opts).is_none());
+    }
+
     #[test]
     fn nav_target_returns_none_for_non_def_id_key() {
         let index = BTreeMap::new();
-        assert!(nav_target("name", &json!(42), &index).is_none());
+        assert!(nav_target("name", &json!(42), &index, &TreeOptions::default()).is_none());
     }
 
     #[test]
     fn nav_target_returns_none_for_missing_id() {
         let index = BTreeMap::new();
-        assert!(nav_target("type_def_id", &json!(999), &index).is_none());
+        assert!(nav_target("type_def_id", &json!(999), &index, &TreeOptions::default()).is_none());
     }
 
     #[test]
@@ -624,7 +673,7 @@ mod tests {
             file_name: None,
             line: None,
         });
-        assert!(nav_target("def_id", &json!(42), &index).is_none());
+        assert!(nav_target("def_id", &json!(42), &index, &TreeOptions::default()).is_none());
     }
 
     #[test]
@@ -638,7 +687,7 @@ mod tests {
             line: None,
         });
         assert_eq!(
-            nav_target("type_def_id", &json!(100), &index).as_deref(),
+            nav_target("type_def_id", &json!(100), &index, &TreeOptions::default()).as_deref(),
             Some("Modelica.Mechanics.Rotational.Inertia"),
         );
     }
@@ -653,7 +702,7 @@ mod tests {
             file_name: None,
             line: None,
         });
-        assert_eq!(nav_target("base_def_id", &json!(7), &index).as_deref(), Some("Base.Model"));
+        assert_eq!(nav_target("base_def_id", &json!(7), &index, &TreeOptions::default()).as_deref(), Some("Base.Model"));
     }
 
     #[test]
@@ -666,7 +715,7 @@ mod tests {
             file_name: None,
             line: None,
         });
-        assert!(nav_target("def_id", &json!("not a number"), &index).is_none());
+        assert!(nav_target("def_id", &json!("not a number"), &index, &TreeOptions::default()).is_none());
     }
 
     // --- def_annotation ---
