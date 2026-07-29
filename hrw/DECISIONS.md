@@ -1306,3 +1306,21 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   replaced three copies of "which animation is showing?" for the same reason. Both were the
   `hrw-stage-diff-highlight-extend` rule — every new view must be wired into *all* per-stage systems
   — failing in the direction where the compiler cannot help.
+- **2026-07-29 — All four traced phases take an observer callback; `LiveTrace` is one implementation
+  of it, not the interface.** Completes the migration idea #40 proposed. `matching`, `tarjan`,
+  index reduction and `pre()` lowering now take `Option<rumoca_core::FrameObserver<'_, F>>` — a
+  plain `&dyn Fn(&F)` defined once in `rumoca-core`.
+  **The change was forced, not chosen.** Instrumenting `rumoca-phase-dae` the old way would have
+  meant taking `Option<&LiveTrace<F>>`, with `LiveTrace` living in `rumoca-phase-structural` — a
+  dependency from DAE construction onto structural analysis, pointing the wrong way down the
+  pipeline. A callback needs no dependency at all, and lets a consumer buffer, stream, count or
+  debugger-step frames without any phase being changed to allow it. It is also the more upstreamable
+  contract: CogniPilot can implement whatever observer they like rather than adopting HRW's.
+  Two incidental wins. The observer takes `&F` rather than `F`, so **an untraced run allocates
+  nothing and a watching one clones only if it decides to keep the frame** — the old code cloned
+  every frame on the live path. And the crate tests now demonstrate the intended usage instead of
+  exercising a type only HRW uses.
+  `LiveTrace` stays in `rumoca-phase-structural`, re-documented as *one implementation* of an
+  observer. HRW wires it up as `Some(&|f| lt.push(f.clone()))` at three call sites. Moving it out is
+  a separate change with its own risks: it carries `live_trace_breakpoint`, the debugger anchor, and
+  both the `opt-level = 0` override and `bridge::find_live_trace_line` are keyed to that file.

@@ -61,12 +61,16 @@ impl ReductionAnimation {
                 // Opening frame — the first Continue after the startup gate
                 // lands here, on the system before any reduction, rather than
                 // mid-search.
+                // Where HRW's `LiveTrace` meets the phase's observer callback.
+                // The phase crate never learns `LiveTrace` exists — see
+                // `rumoca_core::FrameObserver`.
+                let observe = |f: &IndexReductionFrame| lt.push(f.clone());
                 rumoca_phase_structural::dae_prepare::emit_index_reduction_start(
-                    &mut frames, Some(&lt), &dae, &demoted_so_far,
+                    &mut frames, Some(&observe), &dae, &demoted_so_far,
                 );
                 let _ = rumoca_phase_structural::dae_prepare
                     ::reduce_constrained_dummy_derivatives_with_trace(
-                        &mut dae, Some(&lt), &mut frames, &mut demoted_so_far,
+                        &mut dae, Some(&observe), &mut frames, &mut demoted_so_far,
                     );
                 let round_offset = frames.iter()
                     .filter_map(|f| match &f.step {
@@ -77,7 +81,7 @@ impl ReductionAnimation {
                     .unwrap_or(0);
                 let _ = rumoca_phase_structural::dae_prepare
                     ::index_reduce_missing_state_derivatives_with_trace(
-                        &mut dae, Some(&lt), &mut frames, &demoted_so_far,
+                        &mut dae, Some(&observe), &mut frames, &demoted_so_far,
                         round_offset,
                     );
                 on_complete();

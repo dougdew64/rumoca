@@ -100,7 +100,11 @@ impl MatchingAnimation {
             .name("matching-debug".to_owned())
             .spawn(move || {
                 lt.wait_for_debugger();
-                maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&lt));
+                // Where HRW's `LiveTrace` meets the phase's observer callback.
+                // The phase crate never learns `LiveTrace` exists — see
+                // `rumoca_core::FrameObserver`.
+                let observe = |f: &MatchingFrame| lt.push(f.clone());
+                maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&observe));
                 on_complete();
                 done_for_thread.store(true, Ordering::Release);
             })
