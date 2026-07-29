@@ -3,9 +3,14 @@
 //! written under `docs/specimen-notebook/<Model>/trace/`, plus a `manifest.json`
 //! recording the Rumoca rev and a specimen content hash.
 //!
-//! The trace is the *ground truth* the specimen's `narrative.md` is written
-//! against. Regenerate after editing the specimen or bumping the Rumoca pin
-//! (see `docs/updating-rumoca.md`), then review the narrative against the diff.
+//! The trace is the **ground truth** for every number anyone states about a
+//! specimen. Regenerate after editing the specimen or bumping the Rumoca pin
+//! (see `docs/updating-rumoca.md`) and review the diff to see what changed.
+//!
+//! It used to be the reference a hand-written `narrative.md` was checked
+//! against; those narratives were retired 2026-07-29 (`docs/ideas.md` #42)
+//! because Claude regenerates that explanation on demand. Nothing now needs
+//! re-verifying after a regeneration — which is the point of generating it.
 //!
 //! ```text
 //! cargo run --example gen_trace -- ProportionalLoop   # one specimen
@@ -188,7 +193,8 @@ fn generate_trace(name: &str) -> Result<(), String> {
 
 /// Build a JSON summary of simulation results: variable names, final values,
 /// time span, and a sampled trajectory (first/last 5 time points for each
-/// variable) — enough for a narrative without storing the full trajectory.
+/// variable) — enough to answer questions about the run without storing the
+/// full trajectory.
 fn simulation_to_json(data: &hrw::worker::SimData, t_end: f64) -> serde_json::Value {
     let variables: Vec<serde_json::Value> = data
         .names

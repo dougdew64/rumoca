@@ -5,7 +5,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 8111150799795289109,
+          "source": 14944577168124936103,
           "start": 1088,
           "end": 1102
         },
@@ -13,7 +13,7 @@
           {
             "ident": "reference",
             "span": {
-              "source": 8111150799795289109,
+              "source": 14944577168124936103,
               "start": 1088,
               "end": 1102
             },
@@ -37,7 +37,7 @@
         "end_column": 27,
         "start": 1088,
         "end": 1102,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -64,7 +64,7 @@
             "end_column": 12,
             "start": 1078,
             "end": 1087,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
           },
           "token_number": 16,
           "token_type": 48
@@ -85,13 +85,13 @@
               "end_column": 33,
               "start": 1105,
               "end": 1108,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
             },
             "token_number": 20,
             "token_type": 68
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1105,
             "end": 1108
           }
@@ -118,13 +118,13 @@
               "end_column": 33,
               "start": 1105,
               "end": 1108,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
             },
             "token_number": 20,
             "token_type": 68
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1105,
             "end": 1108
           }
@@ -150,7 +150,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 8111150799795289109,
+          "source": 14944577168124936103,
           "start": 1133,
           "end": 1152
         },
@@ -158,7 +158,7 @@
           {
             "ident": "controllerGain",
             "span": {
-              "source": 8111150799795289109,
+              "source": 14944577168124936103,
               "start": 1133,
               "end": 1152
             },
@@ -182,7 +182,7 @@
         "end_column": 32,
         "start": 1133,
         "end": 1152,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -209,7 +209,7 @@
             "end_column": 12,
             "start": 1123,
             "end": 1132,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
           },
           "token_number": 23,
           "token_type": 48
@@ -230,13 +230,13 @@
               "end_column": 39,
               "start": 1155,
               "end": 1159,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
             },
             "token_number": 27,
             "token_type": 68
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1155,
             "end": 1159
           }
@@ -263,13 +263,13 @@
               "end_column": 39,
               "start": 1155,
               "end": 1159,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
             },
             "token_number": 27,
             "token_type": 68
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1155,
             "end": 1159
           }
@@ -295,7 +295,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 8111150799795289109,
+          "source": 14944577168124936103,
           "start": 1196,
           "end": 1210
         },
@@ -303,7 +303,7 @@
           {
             "ident": "plantGain",
             "span": {
-              "source": 8111150799795289109,
+              "source": 14944577168124936103,
               "start": 1196,
               "end": 1210
             },
@@ -327,7 +327,7 @@
         "end_column": 27,
         "start": 1196,
         "end": 1210,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -354,7 +354,7 @@
             "end_column": 12,
             "start": 1186,
             "end": 1195,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
           },
           "token_number": 30,
           "token_type": 48
@@ -375,13 +375,13 @@
               "end_column": 33,
               "start": 1213,
               "end": 1216,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
             },
             "token_number": 34,
             "token_type": 68
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1213,
             "end": 1216
           }
@@ -408,13 +408,13 @@
               "end_column": 33,
               "start": 1213,
               "end": 1216,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
             },
             "token_number": 34,
             "token_type": 68
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1213,
             "end": 1216
           }
@@ -440,7 +440,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 8111150799795289109,
+          "source": 14944577168124936103,
           "start": 1266,
           "end": 1276
         },
@@ -448,7 +448,7 @@
           {
             "ident": "error",
             "span": {
-              "source": 8111150799795289109,
+              "source": 14944577168124936103,
               "start": 1266,
               "end": 1276
             },
@@ -472,7 +472,7 @@
         "end_column": 13,
         "start": 1266,
         "end": 1276,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -511,7 +511,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1266,
             "end": 1276
           }
@@ -547,7 +547,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 8111150799795289109,
+          "source": 14944577168124936103,
           "start": 1308,
           "end": 1320
         },
@@ -555,7 +555,7 @@
           {
             "ident": "command",
             "span": {
-              "source": 8111150799795289109,
+              "source": 14944577168124936103,
               "start": 1308,
               "end": 1320
             },
@@ -579,7 +579,7 @@
         "end_column": 15,
         "start": 1308,
         "end": 1320,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -618,7 +618,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1308,
             "end": 1320
           }
@@ -654,7 +654,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 8111150799795289109,
+          "source": 14944577168124936103,
           "start": 1358,
           "end": 1374
         },
@@ -662,7 +662,7 @@
           {
             "ident": "measurement",
             "span": {
-              "source": 8111150799795289109,
+              "source": 14944577168124936103,
               "start": 1358,
               "end": 1374
             },
@@ -686,7 +686,7 @@
         "end_column": 19,
         "start": 1358,
         "end": 1374,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -725,7 +725,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1358,
             "end": 1374
           }
@@ -791,7 +791,7 @@
                           "end_column": 8,
                           "start": 1436,
                           "end": 1441,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                         },
                         "token_number": 50,
                         "token_type": 64
@@ -800,7 +800,7 @@
                     }
                   ],
                   "span": {
-                    "source": 8111150799795289109,
+                    "source": 14944577168124936103,
                     "start": 1436,
                     "end": 1441
                   }
@@ -823,7 +823,7 @@
                               "end_column": 20,
                               "start": 1444,
                               "end": 1453,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                             },
                             "token_number": 52,
                             "token_type": 64
@@ -832,7 +832,7 @@
                         }
                       ],
                       "span": {
-                        "source": 8111150799795289109,
+                        "source": 14944577168124936103,
                         "start": 1444,
                         "end": 1453
                       }
@@ -852,7 +852,7 @@
                               "end_column": 34,
                               "start": 1456,
                               "end": 1467,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                             },
                             "token_number": 54,
                             "token_type": 64
@@ -861,14 +861,14 @@
                         }
                       ],
                       "span": {
-                        "source": 8111150799795289109,
+                        "source": 14944577168124936103,
                         "start": 1456,
                         "end": 1467
                       }
                     }
                   },
                   "span": {
-                    "source": 8111150799795289109,
+                    "source": 14944577168124936103,
                     "start": 1444,
                     "end": 1467
                   }
@@ -889,7 +889,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1436,
             "end": 1441
           }
@@ -911,7 +911,7 @@
                           "end_column": 10,
                           "start": 1471,
                           "end": 1478,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                         },
                         "token_number": 56,
                         "token_type": 64
@@ -920,7 +920,7 @@
                     }
                   ],
                   "span": {
-                    "source": 8111150799795289109,
+                    "source": 14944577168124936103,
                     "start": 1471,
                     "end": 1478
                   }
@@ -943,7 +943,7 @@
                               "end_column": 27,
                               "start": 1481,
                               "end": 1495,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                             },
                             "token_number": 58,
                             "token_type": 64
@@ -952,7 +952,7 @@
                         }
                       ],
                       "span": {
-                        "source": 8111150799795289109,
+                        "source": 14944577168124936103,
                         "start": 1481,
                         "end": 1495
                       }
@@ -972,7 +972,7 @@
                               "end_column": 35,
                               "start": 1498,
                               "end": 1503,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                             },
                             "token_number": 60,
                             "token_type": 64
@@ -981,14 +981,14 @@
                         }
                       ],
                       "span": {
-                        "source": 8111150799795289109,
+                        "source": 14944577168124936103,
                         "start": 1498,
                         "end": 1503
                       }
                     }
                   },
                   "span": {
-                    "source": 8111150799795289109,
+                    "source": 14944577168124936103,
                     "start": 1481,
                     "end": 1503
                   }
@@ -1009,7 +1009,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1471,
             "end": 1478
           }
@@ -1031,7 +1031,7 @@
                           "end_column": 14,
                           "start": 1507,
                           "end": 1518,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                         },
                         "token_number": 62,
                         "token_type": 64
@@ -1040,7 +1040,7 @@
                     }
                   ],
                   "span": {
-                    "source": 8111150799795289109,
+                    "source": 14944577168124936103,
                     "start": 1507,
                     "end": 1518
                   }
@@ -1063,7 +1063,7 @@
                               "end_column": 26,
                               "start": 1521,
                               "end": 1530,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                             },
                             "token_number": 64,
                             "token_type": 64
@@ -1072,7 +1072,7 @@
                         }
                       ],
                       "span": {
-                        "source": 8111150799795289109,
+                        "source": 14944577168124936103,
                         "start": 1521,
                         "end": 1530
                       }
@@ -1092,7 +1092,7 @@
                               "end_column": 36,
                               "start": 1533,
                               "end": 1540,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/ProportionalLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ProportionalLoop.mo"
                             },
                             "token_number": 66,
                             "token_type": 64
@@ -1101,14 +1101,14 @@
                         }
                       ],
                       "span": {
-                        "source": 8111150799795289109,
+                        "source": 14944577168124936103,
                         "start": 1533,
                         "end": 1540
                       }
                     }
                   },
                   "span": {
-                    "source": 8111150799795289109,
+                    "source": 14944577168124936103,
                     "start": 1521,
                     "end": 1540
                   }
@@ -1129,7 +1129,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 8111150799795289109,
+            "source": 14944577168124936103,
             "start": 1507,
             "end": 1518
           }

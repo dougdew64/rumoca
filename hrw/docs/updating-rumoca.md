@@ -40,14 +40,18 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
   (e.g. in `worker.rs` or `tree.rs`) may need a matching code change; new fields may be worth
   surfacing. Removed fields hint at API breakage step 2 should also have caught.
 
-## 5. Regenerate specimen traces + review narratives
+## 5. Regenerate specimen traces
 - For each specimen with a notebook entry (`docs/specimen-notebook/<Model>/`):
-  `cargo run --example gen_trace -- <SpecimenName>` — rewrites the six stage IR files under
+  `cargo run --example gen_trace -- <SpecimenName>` — rewrites the stage IR files under
   `trace/` and the `trace/manifest.json` (which stamps the new Rumoca rev).
-- **Review the trace diff**, then re-read that specimen's `narrative.md` against it. The narrative
-  cites specific trace locations, so a `git diff` on `trace/` points straight at any claim that may
-  have gone stale (a changed residual, a different tearing, a new/removed block). Update the prose to
-  match — the trace is ground truth, the narrative is the story told about it.
+- **Review the trace diff** — it tells you what the rebase changed about each specimen (a changed
+  residual, a different tearing, a new or removed block). That review is for *your* understanding of
+  the rebase; nothing else depends on it.
+- **There is no prose to re-read.** Until 2026-07-29 each entry carried a `narrative.md` whose claims
+  had to be re-checked against the trace here, and that was the single most expensive step of a pin
+  bump. Those narratives are retired (`docs/ideas.md` #42): Claude regenerates the explanation on
+  demand, and `purpose.md` makes no claim a rebase can invalidate. The trace is generated, so it
+  cannot go stale either.
 
 ## 6. Update guided tours
 - Guided tours (`docs/compiler-phases/*/guided-tour.md`) contain **line numbers, code snippets,

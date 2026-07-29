@@ -60,7 +60,7 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
         "unknowns": [
           0,
           2
@@ -68,7 +68,7 @@
         "equation_text": "error - (reference - measurement)"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
         "unknowns": [
           0,
           1
@@ -76,7 +76,7 @@
         "equation_text": "command - controllerGain * error"
       },
       {
-        "equation": "f_x[2]",
+        "equation": "f_x[2] (top-level model equation)",
         "unknowns": [
           1,
           2

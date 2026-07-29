@@ -93,7 +93,7 @@ const DEFAULT_LIBRARIES: &str = concat!(
 const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 
 /// Fraction of the left panel's height reserved for the specimen file list
-/// (the top third). The remaining two-thirds show source or narrative.
+/// (the top third). The remaining two-thirds show source or purpose note.
 const SPECIMEN_LIST_HEIGHT_FRACTION: f32 = 1.0 / 3.0;
 
 /// Fraction of available width given to the source column in the
@@ -231,8 +231,14 @@ enum SpecimenDetail {
     /// The specimen's Modelica source text.
     #[default]
     Source,
-    /// The specimen narrative from `docs/specimen-notebook/<Model>/narrative.md`.
-    Narrative,
+    /// The specimen's purpose note from
+    /// `docs/specimen-notebook/<Model>/purpose.md`. Renamed from `narrative.md`
+    /// 2026-07-29 when the stage-by-stage prose was retired — a file called
+    /// `narrative.md` containing no narrative is the kind of stale signal that
+    /// retirement was meant to remove. See `docs/ideas.md` #42.
+    /// The specimen's purpose note (`purpose.md`). Was `Narrative` until
+    /// 2026-07-29; the stage-by-stage prose it named is retired.
+    Purpose,
 }
 
 /// One level of "go to definition" navigation: a class extracted from the
@@ -261,7 +267,7 @@ pub enum UiMode {
     /// Guided tour: LHS shows the tour document, RHS shows stage tabs.
     #[default]
     Tour,
-    /// Specimen exploration: LHS shows specimen list + narrative, RHS shows stage tabs.
+    /// Specimen exploration: LHS shows specimen list + purpose note, RHS shows stage tabs.
     Specimen,
     /// Debugger-assisted: LHS hidden, stage tabs fill the window. VS Code alongside.
     Debug,
@@ -450,10 +456,11 @@ pub struct App {
 
     // ---- 13. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
-    // narrative rendering so heading IDs and image state persist across frames.
+    // purpose-note rendering so heading IDs and image state persist across frames.
     commonmark_cache: egui_commonmark::CommonMarkCache,
-    // Specimen narratives loaded on demand from docs/specimen-notebook/<Model>/narrative.md.
-    cached_narratives: HashMap<PathBuf, Option<String>>,
+    // Specimen purpose notes, loaded on demand from
+    // docs/specimen-notebook/<Model>/purpose.md.
+    cached_purpose_notes: HashMap<PathBuf, Option<String>>,
     // The selected specimen's Modelica source text, loaded on demand.
     cached_source: Option<String>,
     // Every variable name in the compiled model — ground truth for which tree
@@ -893,7 +900,7 @@ impl App {
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
-            cached_narratives: HashMap::new(),
+            cached_purpose_notes: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
             known_variables: None,
@@ -1457,7 +1464,7 @@ impl App {
             specimen_detail: (self.ui_mode == UiMode::Specimen).then(|| {
                 match self.specimen_detail {
                     SpecimenDetail::Source => "Source",
-                    SpecimenDetail::Narrative => "Narrative",
+                    SpecimenDetail::Purpose => "Purpose",
                 }
             }),
             viewing_log: self.viewing_log,
@@ -4560,7 +4567,7 @@ impl eframe::App for App {
                     &mut self.specimen_detail,
                     &[
                         (SpecimenDetail::Source, "Source"),
-                        (SpecimenDetail::Narrative, "Narrative"),
+                        (SpecimenDetail::Purpose, "Purpose"),
                     ],
                 );
                 ui.add_space(4.0);
@@ -4568,16 +4575,16 @@ impl eframe::App for App {
                 // -- Bottom two-thirds: source or narrative --
                 match self.specimen_detail {
                     SpecimenDetail::Source => self.specimen_source_ui(ui),
-                    SpecimenDetail::Narrative => {
+                    SpecimenDetail::Purpose => {
                         let model_name = self.model.as_deref();
                         let narrative = model_name.and_then(|name| {
                             let key = PathBuf::from(name);
-                            let cached = self.cached_narratives.entry(key).or_insert_with(|| {
+                            let cached = self.cached_purpose_notes.entry(key).or_insert_with(|| {
                                 let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
                                 let path = manifest
                                     .join("docs/specimen-notebook")
                                     .join(name)
-                                    .join("narrative.md");
+                                    .join("purpose.md");
                                 std::fs::read_to_string(path).ok()
                             });
                             cached.as_deref()
@@ -4753,7 +4760,7 @@ fn read_purpose(path: &Path) -> Option<String> {
     })
 }
 
-/// A blue-tinted header bar for left-panel sections (Tour, Specimens, Narrative).
+/// A blue-tinted header bar for left-panel sections (Tour, Specimens, Purpose).
 /// Uses a navy background with light-blue text in dark mode, matching the RHS
 /// stage-tab palette for visual consistency.
 struct SectionStyle {
@@ -4795,7 +4802,7 @@ fn section_header(ui: &mut egui::Ui, title: &str) {
     });
 }
 
-/// A section header bar with clickable toggle options (e.g. "Source | Narrative").
+/// A section header bar with clickable toggle options (e.g. "Source | Purpose").
 /// The active option is shown in bright text; inactive options are dimmed and clickable.
 fn section_header_toggle<T: PartialEq + Copy>(
     ui: &mut egui::Ui,
@@ -5053,7 +5060,7 @@ impl App {
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
-            cached_narratives: HashMap::new(),
+            cached_purpose_notes: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
             known_variables: None,

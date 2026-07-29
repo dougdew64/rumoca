@@ -111,7 +111,7 @@ initialization observable (`RcCircuit` IC plan + relaxation; `CapacitorLoop` str
 init-determinacy blow-ups). **Arc 4 closed:** index reduction on `Drivetrain`; the nonlinear four-bar +
 planar library (`lib/PlanarMechanics.mo`) parked/deferred (`docs/ideas.md` #5). Arc 1–7 done (Parse …
 Simulation + BLT spy-plot + the 14-specimen notebook). **New pipeline stages must be wired into the
-stage-diff highlight + stage-file publishing AND the notebook trace/narrative** (see Claude's
+stage-diff highlight + stage-file publishing AND the notebook trace** (see Claude's
 `hrw-stage-diff-highlight-extend` memory).
 
 **Close-out gates under review:** Doug is separately weighing whether the differential test (System
@@ -119,15 +119,24 @@ Modeler round-trip) and the debugger single-step should remain arc close-out gat
 closed with both accepted (deferred / unconfirmed). Until he decides, treat them as satisfiable-by-acceptance,
 not hard blockers (see `docs/ideas.md` #4).
 
-**Per-specimen lab notebook (`docs/specimen-notebook/`) — now active.** Each entry pairs a durable
-**compilation trace** (`trace/` = the per-stage IR files + a `manifest.json` stamping the Rumoca
-rev + specimen hash, produced by `cargo run --example gen_trace -- <Model>`) with a Claude-written
-**`narrative.md`** — the grounded story of *that specimen's* trip through the pipeline, foregrounding
-the phenomenon the specimen was designed to trigger, citing specific trace locations, and linking to
-`docs/compiler-phases` chapters + external math references. `ProportionalLoop` is the pilot entry;
-regenerate traces + review narratives on a pin bump (see `docs/updating-rumoca.md` step 5). The
-notebook is *specimen-specific* (Claude's synthesis); it is distinct from `docs/compiler-phases`
-(Doug's *generic* phase theory).
+**Per-specimen lab notebook (`docs/specimen-notebook/`).** Each entry has two parts:
+
+- **`trace/`** — the durable per-stage IR plus a `manifest.json` stamping the Rumoca rev and
+  specimen hash, produced by `cargo run --example gen_trace -- <Model>`. **Generated, therefore
+  correct by construction.** Any number about a specimen is read from here.
+- **`purpose.md`** — why the specimen exists (the phenomenon it was authored to trigger) and which
+  of Doug's questions it has answered. HRW renders it as the **Purpose** tab of the specimen view.
+
+**Converted 2026-07-29.** Each entry used to carry a `narrative.md` telling the story of that
+specimen's trip through the pipeline. Retired, for the reason in `docs/ideas.md` #42: **Claude
+regenerates that explanation on demand, so storing it buys nothing and costs staleness** — and the
+staleness was real, not hypothetical (`end_to_end_tour.md` described a 7x7 incidence matrix on a tab
+showing 48 equations, uncaught because nothing checks prose). 1,632 lines of narrative became 638
+lines of purpose. It also removed the most expensive step of a Rumoca pin bump: there is no prose
+left to re-verify.
+
+**Both the notebook and `docs/compiler-phases` are written by Claude** — see the authorship
+correction below.
 
 **Deferred — revisit after Doug's consideration:** the Arc-1/2 close-out differential tests
 (round-tripping specimens through System Modeler vs Rumoca). Doug is deliberately thinking through the
@@ -218,7 +227,7 @@ can be set inside a Rumoca phase while it processes a specimen.
   feature it exercises, e.g. "high-index, structurally singular DAE"). The app scans it (`read_purpose`)
   and shows it under the filename in the specimen list; keep it distinct from the Modelica description
   string (which stays a faithful *model* description). Add one to each new specimen, and give it a
-  `docs/specimen-notebook/<Model>/` trace + narrative (see the notebook README).
+  `docs/specimen-notebook/<Model>/` trace + `purpose.md` (see the notebook README).
 
 ## Arc close-out ritual
 

@@ -24,13 +24,67 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
         "unknowns": [
           0
         ],
         "equation_text": "measurement - plantGain * controllerGain * (reference - measurement)"
       }
     ]
+  },
+  "before": {
+    "n_equations": 3,
+    "n_unknowns": 3,
+    "n_matched": 3,
+    "matching": [
+      {
+        "equation": "f_x[0]",
+        "unknown": "measurement"
+      },
+      {
+        "equation": "f_x[1]",
+        "unknown": "error"
+      },
+      {
+        "equation": "f_x[2]",
+        "unknown": "command"
+      }
+    ],
+    "incidence": {
+      "n_eq": 3,
+      "n_var": 3,
+      "unknown_names": [
+        "error",
+        "command",
+        "measurement"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "unknowns": [
+            0,
+            2
+          ],
+          "equation_text": "error - (reference - measurement)"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "unknowns": [
+            0,
+            1
+          ],
+          "equation_text": "command - controllerGain * error"
+        },
+        {
+          "equation": "f_x[2] (top-level model equation)",
+          "unknowns": [
+            1,
+            2
+          ],
+          "equation_text": "measurement - plantGain * command"
+        }
+      ]
+    }
   },
   "reduction": {
     "states_before": [],
@@ -84,11 +138,11 @@
     "eliminations": [
       {
         "variable": "error",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":8111150799795289109,\"start\":1088,\"end\":1102},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":8111150799795289109,\"start\":1088,\"end\":1102},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":8111150799795289109,\"start\":1444,\"end\":1453}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":8111150799795289109,\"start\":1358,\"end\":1374},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":8111150799795289109,\"start\":1358,\"end\":1374},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":8111150799795289109,\"start\":1456,\"end\":1467}}},\"span\":{\"source\":8111150799795289109,\"start\":1444,\"end\":1467}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1453}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1456,\"end\":1467}}},\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1467}}}"
       },
       {
         "variable": "command",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":8111150799795289109,\"start\":1133,\"end\":1152},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":8111150799795289109,\"start\":1133,\"end\":1152},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":8111150799795289109,\"start\":1481,\"end\":1495}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":8111150799795289109,\"start\":1088,\"end\":1102},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":8111150799795289109,\"start\":1088,\"end\":1102},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":8111150799795289109,\"start\":1444,\"end\":1453}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":8111150799795289109,\"start\":1358,\"end\":1374},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":8111150799795289109,\"start\":1358,\"end\":1374},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":8111150799795289109,\"start\":1456,\"end\":1467}}},\"span\":{\"source\":8111150799795289109,\"start\":1444,\"end\":1467}}},\"span\":{\"source\":8111150799795289109,\"start\":1481,\"end\":1503}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1133,\"end\":1152},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":14944577168124936103,\"start\":1133,\"end\":1152},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1481,\"end\":1495}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1453}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1456,\"end\":1467}}},\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1467}}},\"span\":{\"source\":14944577168124936103,\"start\":1481,\"end\":1503}}}"
       }
     ],
     "stopped_at": null,
