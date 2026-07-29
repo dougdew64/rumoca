@@ -206,6 +206,50 @@ impl Animated for TarjanAnimation {
 }
 
 impl TarjanAnimation {
+    /// What the graph is showing, in words.
+    ///
+    /// Companion to `matching_anim::render_running_state`, added for the same
+    /// reason: the picture is only legible once you know what the algorithm is
+    /// *for*, and where it has got to.
+    ///
+    /// Both numbers come from the frame's own snapshot, so they track the
+    /// algorithm rather than the final block structure. The **stack depth** is
+    /// the one worth watching: Tarjan closes a component only when the stack
+    /// unwinds back to a node whose lowlink never fell below its own index, so
+    /// a deep stack means "still inside something that might be one big block".
+    fn render_running_state(&self, ui: &mut egui::Ui, frame: &TarjanFrame) {
+        ui.add_space(2.0);
+        ui.horizontal_wrapped(|ui| {
+            ui.weak("Goal:");
+            ui.weak(
+                "find groups of equations that must be solved together. A group \u{2014} a \
+                 strongly connected component \u{2014} is a set of equations each of which \
+                 depends on the others, so none can be solved first. Everything else can be \
+                 ordered and solved one at a time.",
+            );
+        });
+        ui.horizontal_wrapped(|ui| {
+            ui.label(
+                egui::RichText::new(format!(
+                    "{} block{} closed of {} equations",
+                    frame.sccs_so_far.len(),
+                    if frame.sccs_so_far.len() == 1 { "" } else { "s" },
+                    self.n_nodes,
+                ))
+                .strong()
+                .color(crate::colors::ANIM_PATH_FOUND),
+            );
+            ui.weak(format!("\u{2014} {} on the stack", frame.stack.len()));
+            // A block with more than one member is the interesting outcome: it
+            // is a simultaneous system the solver cannot decompose further.
+            if let Some(largest) = frame.sccs_so_far.iter().map(Vec::len).max()
+                && largest > 1
+            {
+                ui.weak(format!("\u{00b7} largest block: {largest} equations"));
+            }
+        });
+    }
+
     /// Whether equation `eq` references the tracked variable.
     ///
     /// Answered from the incidence matrix — `rows[eq]` holds exactly the
@@ -272,16 +316,7 @@ impl TarjanAnimation {
                 ui.label(egui::RichText::new(icon).size(16.0));
                 ui.label(desc);
             });
-            // SCC summary.
-            if !frame.sccs_so_far.is_empty() {
-                ui.horizontal(|ui| {
-                    ui.weak(format!(
-                        "{} SCC{} discovered so far",
-                        frame.sccs_so_far.len(),
-                        if frame.sccs_so_far.len() == 1 { "" } else { "s" },
-                    ));
-                });
-            }
+            self.render_running_state(ui, frame);
         }
 
         ui.add_space(4.0);

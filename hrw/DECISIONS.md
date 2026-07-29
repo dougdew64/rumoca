@@ -1338,3 +1338,23 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   all four animations in one sitting after the observer migration, which is the kind of scrutiny a
   single view never got. Same species as the phantom `request` and `kind: "stage"`: **a field that
   prints the one number available rather than the one that is true.**
+- **2026-07-29 — Text summaries beside the visual animations too.** Doug, after using the reduction
+  and `pre()` replays: *"Originally, I had incorrectly assumed that the only animations which would
+  be helpful would be the ones which included visualizations of mathematical objects such as
+  matrices. But, your text-only animations… are tremendously helpful. If nothing else, the text only
+  playbacks provide useful summaries of what I will find if I decide to step through the algorithm
+  code."*
+  So matching and Tarjan gained a **running-state panel** under their step line, in the shape the two
+  text-only views already had: a one-line statement of what the algorithm is *for*, then where it
+  has got to. Matching shows `Matched 3 of 8 — still unmatched: …`; Tarjan shows blocks closed,
+  stack depth, and the largest block so far. All counts come from the frame's own snapshot, so they
+  track the algorithm rather than reporting the final answer early.
+  Two design notes. **Naming what is *not* yet matched is the useful half** — a system ending with an
+  unmatched equation is structurally singular, which is exactly what the Index Reduction stage
+  exists to fix, so the unmatched list is the bridge between the two stages. And **stack depth is
+  the number worth watching in Tarjan**: a component closes only when the stack unwinds to a node
+  whose lowlink never fell below its own index, so a deep stack means "still inside something that
+  might be one big block".
+  The data was already being emitted — `matched_so_far`, `sccs_found_so_far` and `stack_depth` went
+  into `current_frame_context` for the capture on 2026-07-29 and were never rendered. The capture
+  knew more than the screen did.

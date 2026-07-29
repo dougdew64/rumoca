@@ -177,6 +177,7 @@ impl MatchingAnimation {
                 ui.label(egui::RichText::new(icon).size(16.0));
                 ui.label(desc);
             });
+            self.render_running_state(ui, frame);
         }
 
         ui.add_space(4.0);
@@ -223,6 +224,57 @@ impl Animated for MatchingAnimation {
 }
 
 impl MatchingAnimation {
+    /// What the matrix is showing, in words.
+    ///
+    /// The step line says what just happened; this says **where the algorithm
+    /// stands**, and states the goal once so the picture is legible rather than
+    /// decorative. Doug, 2026-07-29: the text-only reduction and `pre()` replays
+    /// turned out more useful than expected — *"the text only playbacks provide
+    /// useful summaries of what I will find if I decide to step through the
+    /// algorithm code"* — and he asked for the same beside the visual ones.
+    ///
+    /// The counts come from the frame's own `match_eq` snapshot, so they are the
+    /// state *at this frame*, not the final result. Watching "3 of 8" climb is
+    /// the content of an augmenting-path algorithm; the final number says
+    /// nothing about how it got there.
+    fn render_running_state(&self, ui: &mut egui::Ui, frame: &MatchingFrame) {
+        let matched = frame.match_eq.iter().filter(|m| m.is_some()).count();
+        ui.add_space(2.0);
+        ui.horizontal_wrapped(|ui| {
+            ui.weak("Goal:");
+            ui.weak(
+                "pair every equation with a distinct unknown it will solve for. \
+                 Kuhn's algorithm grows the pairing one equation at a time, \
+                 backtracking through already-paired unknowns when it has to.",
+            );
+        });
+        ui.horizontal_wrapped(|ui| {
+            ui.label(
+                egui::RichText::new(format!("Matched {matched} of {}", self.n_eq))
+                    .strong()
+                    .color(if matched == self.n_eq {
+                        crate::colors::ANIM_PATH_FOUND
+                    } else {
+                        crate::colors::ANIM_EXPLORE
+                    }),
+            );
+            // Naming what is *not* matched yet is the useful half: a system that
+            // ends with an unmatched equation is structurally singular, and that
+            // is the outcome the Index Reduction stage exists to fix.
+            let unmatched: Vec<&str> = frame
+                .match_eq
+                .iter()
+                .enumerate()
+                .filter(|(_, m)| m.is_none())
+                .map(|(eq, _)| self.equation_names.get(eq).map(String::as_str).unwrap_or("?"))
+                .take(6)
+                .collect();
+            if !unmatched.is_empty() {
+                ui.weak(format!("\u{2014} still unmatched: {}", unmatched.join(", ")));
+            }
+        });
+    }
+
     fn draw_matrix(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         let label_headroom = 1.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
