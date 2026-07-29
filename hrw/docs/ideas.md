@@ -1965,3 +1965,82 @@ argument applies to the spy plot.
 entry for "what does a rank deficiency of 1 mean", and `docs/answer-platform-plan.md`
 Phase 3 — this is a concrete item for it, with a real question behind it rather than
 a guess at likely demand.
+
+---
+
+## 45. Diagnostic mode — explaining why *Doug's own* model failed
+
+Raised 2026-07-29 (Doug), after the rank-deficiency tour:
+
+> Your ability to leverage HRW when answering my questions means that HRW could have
+> production value. For example, I might attempt to compile a specimen which I had
+> authored, see that the structural phase had failed for my specimen and then ask you
+> to explain the failure in the structural phase.
+
+### Why this is a different question shape
+
+**Educational:** the specimen is known-good and authored to exhibit a phenomenon. The
+question is *why does the compiler do this*, and the answer is explanatory. "`f_x[46]`
+is unmatched" is a satisfying answer.
+
+**Diagnostic:** Doug wrote the model, it failed, and the question is *what is wrong
+with my model*. The answer has to be **actionable and point at his source** — "the
+`connect()` on line 23 ties two positions together, so `phi` is over-determined" —
+not at an IR node he did not write.
+
+This use case will probably arrive **before** the Cellier problems do. Authoring
+Modelica that fails to compile is the normal experience of writing Modelica, and a
+robotics student modelling a mechanism will do it constantly.
+
+### Audit of what HRW emits today (2026-07-29, quick pass — verify before relying)
+
+- **Structural singular — well emitted, but the spans are dropped.**
+  `structural_error_to_json` emits `n_equations`, `n_unknowns`, `n_matched`,
+  `rank_deficiency`, `unmatched_equations`, `unmatched_unknowns`, `guidance` — enough
+  for today's answer. But `StructuralError::Singular` *also* carries
+  **`unmatched_unknown_spans`**, whose own doc comment says it exists "so the failure
+  is traceable back to source", and **HRW does not emit it.** Rumoca hands over the
+  source traceability and HRW drops it on the floor. That is the single cheapest fix
+  here and the one that turns "unknown `emf.p.v`" into "line N of your model".
+- **Resolve / typecheck / flatten — no source location in the payload.** These are the
+  failures a hand-authored model hits *most* often: a mistyped name, a dimension
+  mismatch, an incompatible connector. So the diagnostics are weakest exactly where
+  authoring goes wrong. Worth a careful audit rather than the quick grep behind this
+  entry.
+
+**Priority note:** a missing span forces Claude to guess *where* in Doug's source the
+problem is, which is priority 1 in `docs/tech-debt.md`'s ordering — above tour holes.
+
+### The part that makes the System Modeler oracle load-bearing
+
+When a hand-authored model fails, there are **two possible causes**: the model is
+wrong, or **Rumoca cannot handle it.** Rumoca is not a production compiler. Those two
+are indistinguishable from inside HRW, and telling Doug "your model is wrong" when the
+truth is "Rumoca is incomplete" would be a confident wrong answer of the worst kind —
+he would go and rewrite a correct model.
+
+**#43's oracle is the only way to tell them apart.** Compile the same source in System
+Modeler: if it succeeds there and fails here, the bug is Rumoca's. That elevates the
+oracle from a nice-to-have to a **requirement of diagnostic mode**, and it gives the
+long-deferred differential test (#4) its real motivation.
+
+It is also the path by which HRW starts producing **upstream bug reports** for
+CogniPilot, which is a stated goal — a Rumoca-only failure on a model System Modeler
+accepts is exactly a filable issue.
+
+### Sketch
+
+1. **Emit `unmatched_unknown_spans`** in `structural_error_to_json`. Small, and it is
+   already computed.
+2. **Audit the other failure payloads** for source location; add spans where Rumoca
+   has them and widen visibility where it does not.
+3. **A "why did this fail?" capture** — when a stage carries an error, `focus.json`
+   should say so prominently with the failing stage's payload, so Claude does not have
+   to be told which stage broke.
+4. **Oracle comparison on demand** — "does System Modeler accept this?" as a question
+   Claude can answer, which needs nothing built beyond what #43 verified.
+
+**Relates to:** #43 (the oracle, now load-bearing), #4 (the differential test, now
+motivated), #42 (a diagnostic answer will often want a tour), the priority order in
+`docs/tech-debt.md`, and `project-engage-rumoca-community` — Rumoca-only failures are
+upstream issues.
