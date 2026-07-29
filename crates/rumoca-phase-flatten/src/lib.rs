@@ -33,7 +33,10 @@ mod alias_paths;
 mod array_comprehension;
 mod ast_lower;
 mod boolean_eval;
-mod connections;
+/// Connection expansion (MLS §9). `pub` since 2026-07-29 so `connections::trace`
+/// — the observation hooks used by `flatten_ref_with_options_traced` — is
+/// reachable; everything else in it stays `pub(crate)`.
+pub mod connections;
 mod connections_builtin;
 mod constant_extraction;
 #[cfg(test)]
@@ -339,6 +342,29 @@ pub fn flatten_ref_with_options(
     model_name: &str,
     options: FlattenOptions,
 ) -> Result<flat::Model, FlattenError> {
+    flatten_ref_with_options_traced(tree, overlay, model_name, options, None)
+}
+
+/// [`flatten_ref_with_options`] with an observer attached to connection
+/// expansion (MLS §9).
+///
+/// Connection expansion is where most of a flat model's equations come from,
+/// and its rule — a potential set of *n* variables becomes *n − 1* equality
+/// equations, a flow set of the same *n* becomes one sum-to-zero equation — is
+/// not recoverable from the finished model. The observer sees each connection
+/// set form and each set's equations appear.
+///
+/// Observation-only: the flat model produced is identical either way. Passing
+/// `None` is exactly [`flatten_ref_with_options`].
+pub fn flatten_ref_with_options_traced(
+    tree: &ast::ClassTree,
+    overlay: &ast::InstanceOverlay,
+    model_name: &str,
+    options: FlattenOptions,
+    connection_observer: Option<
+        rumoca_core::FrameObserver<'_, crate::connections::trace::ConnectionFrame>,
+    >,
+) -> Result<flat::Model, FlattenError> {
     let mut ctx = Context::new();
     ctx.materialize_structured_families = options.materialize_structured_families;
     if !model_name.is_empty() {
@@ -392,6 +418,7 @@ pub fn flatten_ref_with_options(
         options,
         flatten_graph: &flatten_graph,
         component_override_map: &component_override_map,
+        connection_observer,
     })?;
 
     Ok(flat)

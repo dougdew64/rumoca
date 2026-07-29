@@ -196,7 +196,7 @@ fn test_stream_connection_does_not_generate_potential_equality() {
         ..Default::default()
     });
 
-    process_connections(&mut flat, &overlay, false).expect("stream connection processing");
+    process_connections(&mut flat, &overlay, false, None).expect("stream connection processing");
 
     assert!(
         flat.equations.is_empty(),
@@ -272,7 +272,7 @@ fn test_connector_path_with_structural_member_expands_nonstructural_members() {
         ..Default::default()
     });
 
-    process_connections(&mut flat, &overlay, false).expect("connector connection processing");
+    process_connections(&mut flat, &overlay, false, None).expect("connector connection processing");
 
     assert!(
         flat.variables
@@ -815,7 +815,7 @@ fn test_process_connections_negates_nested_connector_under_outside_root() {
         ..Default::default()
     });
 
-    process_connections(&mut flat, &overlay, false).expect("nested connector connection");
+    process_connections(&mut flat, &overlay, false, None).expect("nested connector connection");
 
     let flow_origins: Vec<String> = flat
         .equations
@@ -1898,4 +1898,157 @@ fn test_find_sub_variables_indexed_prefix_does_not_cross_match_connector_members
     assert!(subs.contains(&rumoca_core::VarName::new("resistor.n.i")));
     assert!(!subs.contains(&rumoca_core::VarName::new("resistor.p.v")));
     assert!(!subs.contains(&rumoca_core::VarName::new("resistor.p.i")));
+}
+
+/// A three-connector model joined by two `connect()` statements, for the
+/// connection-expansion trace tests below. `connect(a, b)` and `connect(b, c)`
+/// must form **one** set of three per kind, because connection sets are built
+/// by union-find and are therefore transitive.
+fn three_connector_chain() -> (flat::Model, ast::InstanceOverlay) {
+    let mut flat = flat::Model::new();
+    for name in ["a", "b", "c"] {
+        flat.add_variable(
+            rumoca_core::VarName::new(name),
+            flat::Variable {
+                name: rumoca_core::VarName::new(name),
+                is_primitive: false,
+                source_span: test_span(),
+                ..flat::Variable::empty_with_span(test_span())
+            },
+        );
+        flat.add_variable(
+            rumoca_core::VarName::new(format!("{name}.v")),
+            flat::Variable {
+                name: rumoca_core::VarName::new(format!("{name}.v")),
+                is_primitive: true,
+                source_span: test_span(),
+                ..flat::Variable::empty_with_span(test_span())
+            },
+        );
+        flat.add_variable(
+            rumoca_core::VarName::new(format!("{name}.i")),
+            flat::Variable {
+                name: rumoca_core::VarName::new(format!("{name}.i")),
+                flow: true,
+                is_primitive: true,
+                source_span: test_span(),
+                ..flat::Variable::empty_with_span(test_span())
+            },
+        );
+    }
+    let connect = |a: &str, b: &str| ast::InstanceConnection {
+        a: ast::QualifiedName::from_ident(a),
+        b: ast::QualifiedName::from_ident(b),
+        connector_type: None,
+        span: Span::DUMMY,
+        scope: String::new(),
+    };
+    let mut overlay = ast::InstanceOverlay::new();
+    overlay.add_class(ast::ClassInstanceData {
+        instance_id: ast::InstanceId(0),
+        qualified_name: ast::QualifiedName::from_ident("Root"),
+        connections: vec![connect("a", "b"), connect("b", "c")],
+        ..Default::default()
+    });
+    (flat, overlay)
+}
+
+/// Run `three_connector_chain` with an observer attached, returning the frames.
+fn trace_three_connector_chain() -> (flat::Model, Vec<super::trace::ConnectionFrame>) {
+    let (mut flat, overlay) = three_connector_chain();
+    let frames = std::cell::RefCell::new(Vec::new());
+    {
+        let sink = |f: &super::trace::ConnectionFrame| frames.borrow_mut().push(f.clone());
+        process_connections(&mut flat, &overlay, false, Some(&sink)).expect("traced run");
+    }
+    (flat, frames.into_inner())
+}
+
+/// Attaching an observer must not change what the phase computes. This is the
+/// instrumentation discipline's central claim, so it is asserted rather than
+/// assumed.
+#[test]
+fn the_connection_trace_is_observation_only() {
+    let (mut plain, overlay) = three_connector_chain();
+    process_connections(&mut plain, &overlay, false, None).expect("untraced run");
+
+    let (traced, _) = trace_three_connector_chain();
+
+    assert_eq!(
+        plain.equations.len(),
+        traced.equations.len(),
+        "the observer changed how many equations were produced",
+    );
+}
+
+/// The trace reports the asymmetry that is the whole of MLS §9.2.
+///
+/// One set of three (union-find is transitive) yields **2** equality equations
+/// for the potential variable (`n - 1`) and **1** sum-to-zero equation for the
+/// flow variable (Kirchhoff). Pinning both numbers is the point: a trace that
+/// merely said "a set was processed" would not teach the rule.
+#[test]
+fn the_connection_trace_reports_the_potential_flow_asymmetry() {
+    use super::trace::ConnectionStep;
+    let (_, frames) = trace_three_connector_chain();
+
+    // Union-find is transitive: a-b and b-c make one set of three, per kind.
+    let potential: Vec<&super::trace::ConnectionFrame> = frames
+        .iter()
+        .filter(|f| matches!(&f.step, ConnectionStep::SetFormed { kind: "potential", .. }))
+        .collect();
+    assert_eq!(potential.len(), 1, "one potential set, not two");
+    if let ConnectionStep::SetFormed { variables, .. } = &potential[0].step {
+        assert_eq!(variables.len(), 3, "a.v, b.v and c.v are one set: {variables:?}");
+    }
+
+    let generated: Vec<(&str, usize, usize)> = frames
+        .iter()
+        .filter_map(|f| match &f.step {
+            ConnectionStep::EquationsGenerated { kind, set_size, equations_added } => {
+                Some((*kind, *set_size, *equations_added))
+            }
+            _ => None,
+        })
+        .collect();
+    assert!(
+        generated.contains(&("potential", 3, 2)),
+        "a potential set of 3 must yield 2 equalities: {generated:?}",
+    );
+    assert!(
+        generated.contains(&("flow", 3, 1)),
+        "a flow set of 3 must yield 1 sum-to-zero equation: {generated:?}",
+    );
+}
+
+/// The bookends announce the input and the running counts stay honest — a
+/// consumer renders "3 of 7" from these, so they must be monotonic and land on
+/// the model's real total.
+#[test]
+fn the_connection_trace_brackets_the_pass_with_honest_running_counts() {
+    use super::trace::ConnectionStep;
+    let (flat, frames) = trace_three_connector_chain();
+
+    assert!(
+        matches!(
+            frames.first().map(|f| &f.step),
+            Some(ConnectionStep::Start { connect_statements: 2 }),
+        ),
+        "first frame should announce 2 connect() statements: {:?}",
+        frames.first(),
+    );
+    assert!(
+        matches!(frames.last().map(|f| &f.step), Some(ConnectionStep::Complete { .. })),
+        "last frame should be Complete: {:?}",
+        frames.last(),
+    );
+    assert!(
+        frames.windows(2).all(|w| w[0].equations_so_far <= w[1].equations_so_far),
+        "equations_so_far went backwards",
+    );
+    assert_eq!(
+        frames.last().unwrap().equations_so_far,
+        flat.equations.len(),
+        "the final running count must match the model",
+    );
 }

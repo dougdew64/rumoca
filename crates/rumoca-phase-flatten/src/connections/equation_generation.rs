@@ -1,4 +1,5 @@
 use super::*;
+use super::trace::{self, ConnectionFrame, ConnectionStep};
 use indexmap::IndexSet;
 use rumoca_ir_ast as ast;
 
@@ -293,11 +294,24 @@ pub(super) fn build_prefix_children(
     children
 }
 
+/// Expand every `connect()` into equations (MLS §9).
+///
+/// `observer`, when attached, receives one [`ConnectionFrame`] per connection
+/// set plus start/complete bookends. It is observation-only: attaching it
+/// changes nothing about the equations produced.
 pub(crate) fn process_connections(
     flat: &mut flat::Model,
     overlay: &ast::InstanceOverlay,
     strict_validation: bool,
+    observer: Option<rumoca_core::FrameObserver<'_, ConnectionFrame>>,
 ) -> Result<(), FlattenError> {
+    // Every count reported to the observer is *measured* against this baseline
+    // rather than predicted from set sizes, so array scalarization (one logical
+    // equation becoming several rows) cannot make the trace lie.
+    let equations_at_start = flat.equations.len();
+    let emit = |step: ConnectionStep, sets: usize, eqs: usize| {
+        trace::emit(observer, step, sets, eqs);
+    };
     // Build prefix-to-children index once for O(1) sub-variable lookups
     let prefix_children = build_prefix_children(flat);
 
@@ -317,6 +331,11 @@ pub(crate) fn process_connections(
     }
 
     let all_connections: Vec<&ast::InstanceConnection> = owned_connections.iter().collect();
+    emit(
+        ConnectionStep::Start { connect_statements: all_connections.len() },
+        0,
+        0,
+    );
     let var_index = ConnectionVarIndex::new(flat);
 
     #[cfg(feature = "tracing")]
@@ -359,22 +378,13 @@ pub(crate) fn process_connections(
     let (connection_sets, raw_stream_groups) =
         build_connection_sets(&all_connections, flat, &prefix_children, &var_index)?;
 
-    // Generate equations for each connection set
-    for set in connection_sets {
-        match set.kind {
-            ConnectionKind::Flow => generate_flow_equation(
-                flat,
-                &set.variables,
-                set.scope.as_str(),
-                &interface_flow_vars_by_scope,
-                set.span,
-            )?,
-            ConnectionKind::Potential => {
-                generate_equality_equations(flat, &set.variables, set.span)?
-            }
-            ConnectionKind::Stream => mark_stream_connection_set(flat, &set.variables),
-        }
-    }
+    let sets_so_far = generate_connection_set_equations(
+        flat,
+        connection_sets,
+        &interface_flow_vars_by_scope,
+        observer,
+        equations_at_start,
+    )?;
 
     // MLS §15.2: rewrite inStream() over connected stream variables. For a
     // two-connector set, inStream of one side is exactly the other side's
@@ -385,7 +395,15 @@ pub(crate) fn process_connections(
 
     // MLS §9.2: Generate equations for unconnected flow variables.
     // Flow variables not in any connection set get `flow_var = 0` equations.
+    let before_unconnected = flat.equations.len();
     generate_unconnected_flow_equations(flat)?;
+    emit(
+        ConnectionStep::UnconnectedFlow {
+            equations_added: flat.equations.len() - before_unconnected,
+        },
+        sets_so_far,
+        flat.equations.len() - equations_at_start,
+    );
 
     // MLS §9.2: Generate flow=0 for interface flow variables not connected
     // at their parent scope or at the model boundary for standalone checking.
@@ -398,7 +416,75 @@ pub(crate) fn process_connections(
         &interface_connector_roots_by_scope,
     )?;
 
+    emit(
+        ConnectionStep::Complete {
+            sets: sets_so_far,
+            equations_added: flat.equations.len() - equations_at_start,
+        },
+        sets_so_far,
+        flat.equations.len() - equations_at_start,
+    );
+
     Ok(())
+}
+
+/// Generate the equations for every connection set, in order.
+///
+/// The asymmetry here is the whole of MLS §9.2, and is what the trace exists to
+/// make visible: a **potential** set of *n* variables becomes *n − 1* equality
+/// equations, while a **flow** set of the same *n* becomes exactly **one**
+/// sum-to-zero equation (Kirchhoff). Counts reported to the observer are
+/// measured across each generating call rather than predicted from the set
+/// size, so array scalarization cannot make the trace lie.
+///
+/// Returns the number of sets processed.
+fn generate_connection_set_equations(
+    flat: &mut flat::Model,
+    connection_sets: Vec<ConnectionSet>,
+    interface_flow_vars_by_scope: &IndexMap<String, FlowVarSet>,
+    observer: Option<rumoca_core::FrameObserver<'_, ConnectionFrame>>,
+    equations_at_start: usize,
+) -> Result<usize, FlattenError> {
+    let mut sets_so_far = 0usize;
+    for set in connection_sets {
+        let kind = set.kind.name();
+        trace::emit(
+            observer,
+            ConnectionStep::SetFormed {
+                kind,
+                scope: set.scope.clone(),
+                variables: set.variables.iter().map(|v| v.as_str().to_owned()).collect(),
+            },
+            sets_so_far,
+            flat.equations.len() - equations_at_start,
+        );
+        let before = flat.equations.len();
+        match set.kind {
+            ConnectionKind::Flow => generate_flow_equation(
+                flat,
+                &set.variables,
+                set.scope.as_str(),
+                interface_flow_vars_by_scope,
+                set.span,
+            )?,
+            ConnectionKind::Potential => {
+                generate_equality_equations(flat, &set.variables, set.span)?
+            }
+            ConnectionKind::Stream => mark_stream_connection_set(flat, &set.variables),
+        }
+        sets_so_far += 1;
+        trace::emit(
+            observer,
+            ConnectionStep::EquationsGenerated {
+                kind,
+                set_size: set.variables.len(),
+                equations_added: flat.equations.len() - before,
+            },
+            sets_so_far,
+            flat.equations.len() - equations_at_start,
+        );
+    }
+    Ok(sets_so_far)
 }
 
 /// Generate `flow_var = 0` equations for unconnected flow variables.

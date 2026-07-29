@@ -915,6 +915,10 @@ pub(crate) struct FinalizeFlatModelInput<'a, 'tree> {
     pub(crate) options: FlattenOptions,
     pub(crate) flatten_graph: &'a FlattenGraphData,
     pub(crate) component_override_map: &'a ComponentOverrideMap,
+    /// Observation-only hook for connection expansion (MLS §9). `None` for
+    /// every ordinary compile; see `connections::trace`.
+    pub(crate) connection_observer:
+        Option<rumoca_core::FrameObserver<'a, crate::connections::trace::ConnectionFrame>>,
 }
 
 pub(crate) fn finalize_flat_model(
@@ -930,12 +934,18 @@ pub(crate) fn finalize_flat_model(
         options,
         flatten_graph,
         component_override_map,
+        connection_observer,
     } = input;
     outer_refs::redirect_outer_refs(flat, &overlay.outer_prefix_to_inner);
 
     let connections_start = maybe_start_timer();
     let connections_result =
-        connections::process_connections(flat, overlay, options.strict_connection_validation);
+        connections::process_connections(
+            flat,
+            overlay,
+            options.strict_connection_validation,
+            connection_observer,
+        );
     maybe_record_connections_timing(connections_start);
     connections_result?;
 

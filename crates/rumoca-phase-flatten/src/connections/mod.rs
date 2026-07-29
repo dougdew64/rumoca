@@ -32,6 +32,7 @@ use crate::path_utils::{
 
 mod equation_generation;
 mod path_index;
+pub mod trace;
 use equation_generation::*;
 pub(crate) use equation_generation::{connection_involves_disabled, process_connections};
 use path_index::*;
@@ -345,6 +346,19 @@ enum ConnectionKind {
     Flow,
     Potential,
     Stream,
+}
+
+impl ConnectionKind {
+    /// Stable lowercase name, for traces and diagnostics. Written out rather
+    /// than derived from `Debug` so a rename of the variant cannot silently
+    /// change an observer's vocabulary.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            ConnectionKind::Flow => "flow",
+            ConnectionKind::Potential => "potential",
+            ConnectionKind::Stream => "stream",
+        }
+    }
 }
 
 /// Union-Find data structure for building connection sets.
