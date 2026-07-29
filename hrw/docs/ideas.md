@@ -285,8 +285,11 @@ connection *set*, not per union-find merge; the merges sit several call levels
 below `process_connections`. Worth doing only if watching sets form turns out to
 leave "why is this one set and not two?" unanswered.
 
-**Remaining candidates:** Newton iteration / per-step convergence (see #22), and
-**forward-mode AD lowering** (`rumoca-phase-solve::ad`) — see below.
+**Remaining candidates:** **forward-mode AD lowering**
+(`rumoca-phase-solve::ad`) — see below. Newton iteration / per-step convergence
+is **deferred pending simulator maturity** (Doug, 2026-07-29 — see #22); it is
+the last obvious replay-shaped algorithm, but instrumenting a phase we do not
+trust would teach the wrong thing.
 
 **Solve lowering: the phase does not qualify, but AD inside it might.** Asked
 2026-07-29 (Doug) whether Solve Lowering was meant to get an animation. It was
@@ -673,6 +676,28 @@ and mode functions (`f_m`).
   public fields; the process of *constructing* those fields is the target.
 
 ## 22. Exact event times and per-step Newton convergence from the solver
+
+**DEFERRED 2026-07-29 (Doug) — pending simulator maturity.** *"So far as I can
+tell, the simulator used by Rumoca is immature and not yet functional. So, I
+don't want to waste time or effort on stuff like simulation animations now.
+Ultimately, my greatest interest might be the simulation view as I have many
+ideas there. But for now, I want to focus on stuff where we are confident that
+the underlying Rumoca machinery works correctly and reliably."*
+
+So: **not a candidate for instrumentation work, despite being the last obvious
+replay-shaped algorithm.** Revisit when the simulator is trustworthy, and note
+Doug expects this to become his *highest*-interest area eventually — the deferral
+is about readiness, not value.
+
+**How we will know when to revisit — measure it, do not estimate it.** What is
+known today is narrow: `worker_simulate_runs_bouncing_ball` and
+`single_inertia_simulates_to_a_correct_trajectory` pass, so simple specimens
+work. That is entirely compatible with failing on stiff, high-index or
+event-heavy models, which is where Doug's judgement comes from. #43 makes the
+question answerable rather than arguable: **System Modeler simulates the same
+specimen and the trajectories get diffed.** A standing differential test over the
+specimen corpus would turn "so far as I can tell" into a number, and tell us the
+month this becomes worth building. Cheap, and it is the same machinery #4 needs.
 
 Captured 2026-07-22 (from pass-two-plan Arc 7). Two solver-internal data streams
 not yet surfaced:
@@ -1632,6 +1657,53 @@ understood the possibilities of this project."*
   answered. Links to the #41 ledger.
 - Also fix the second stale authorship claim in `hrw/CLAUDE.md`, which still
   contrasts the notebook with "Doug's *generic* phase theory".
+
+### What the 2026-07-29 animation work revealed about the address space
+
+Doug asked for four more animations *before* this design work, deliberately: an
+address vocabulary designed against three animations that all lived on the
+Structural stage would have been over-fitted. It was the right call, and these
+are the findings, all discovered while wiring them.
+
+**Sub-views are not one thing.** The eight animations sit behind **four
+dissimilar enums** — `StructuralView` (shared by the Structural *and* Index
+Reduction stages), `EventsView`, `FlattenView`, and `InitView` (created
+2026-07-29). A link that says "go to sub-view X" must paper over all four. With
+three animations on one stage, the natural design would have assumed a single
+enum.
+
+**Not every animation is addressable the same way.** `matching_anim` and
+`tarjan_anim` paint on a `Canvas` with pan/zoom; the four newer views are text
+and grid panels. "Frame 7" is meaningful for both; **"node 25" is meaningful only
+for the canvas ones.**
+
+**Missing capability — camera aiming.** `Canvas` has `request_fit` and
+drag-to-pan and *nothing that centres on a given node*. A tour stop saying "watch
+what happens at node 25" currently cannot make Doug look at node 25. This is the
+single biggest gap for canvas-view tours.
+
+  *Warning attached:* the 2026-07-29 canvas bug (diagram sliding sideways because
+  a line of text above it changed the height, and the fit is uniform-scale +
+  horizontally centred) shows how fragile that camera is. A tour deliberately
+  aiming it will be fighting the same fit logic — see `should_refit` in
+  `canvas.rs` and its tests before building this.
+
+**Live and recorded are not addressable alike.** `Animated::position()` returns
+`(cursor, total)`, but a live session has no meaningful total — that was a real
+bug Doug caught. So "frame 7 of 11" is well-defined only for recorded playback,
+and the vocabulary must say so rather than pretend otherwise.
+
+**The replay/reveal split has to reach the link.** A stop on the Tearing view can
+legitimately offer to arm the debugger; one on the IC plan cannot, because there
+is nothing to trace. If links cannot express that, a tour will show a Debug
+button that does nothing — exactly the defect Doug found on the pre-lowering view.
+
+**Do not over-fit to these eight either.** All eight are *compiler-phase*
+animations addressing equations and variables. A front-end animation (#19-#22:
+resolve, instantiate) would address **source spans and def_ids**. A solver
+animation would address **time**, not a frame index. The address space needs at
+least three shapes and only one is currently sampled — though see #22 on why the
+solver shape is not urgent.
 
 ### The discipline this needs from Claude
 
