@@ -45,6 +45,30 @@ use eframe::egui;
 const MIN_ZOOM: f32 = 1.0;
 const MAX_ZOOM: f32 = 400.0;
 const FIT_MARGIN: f32 = 0.92;
+
+/// How much the canvas height must change, as a fraction of its height at the
+/// last fit, before it counts as a resize rather than content reflow above it.
+///
+/// A wrapped status line is roughly 20px; a canvas is typically 400-800px tall,
+/// so reflow moves the height by 3-5%. A window or panel resize worth re-framing
+/// for moves it by far more. 15% sits well clear of both.
+const HEIGHT_REFIT_FRACTION: f32 = 0.15;
+
+/// Whether a canvas last fitted at `fitted` size, now allocated `current`,
+/// should re-fit to its content.
+///
+/// Split out of [`Canvas::show`] so the decision can be tested without a
+/// `Ui` — it is the whole of the fix for the BLT diagram shifting sideways
+/// while its animation played (see the call site for the mechanism).
+///
+/// `fitted` of zero means "never fitted", which is not a size change.
+fn should_refit(fitted: egui::Vec2, current: egui::Vec2) -> bool {
+    if fitted == egui::Vec2::ZERO {
+        return false;
+    }
+    current.x != fitted.x
+        || (current.y - fitted.y).abs() > fitted.y * HEIGHT_REFIT_FRACTION
+}
 const SCROLL_ZOOM_SENSITIVITY: f32 = 0.002;
 
 /// Persistent camera state for a pan/zoom canvas.
@@ -72,7 +96,14 @@ pub struct Canvas {
     /// Matrix views use 0.1 so column labels sit near the view top.
     fit_vertical_bias: f32,
     /// Last allocated size, so we can re-fit when the window resizes.
-    last_rect_size: egui::Vec2,
+    /// Canvas size at the last fit-to-content, so a later `show()` can tell a
+    /// real resize from the layout jitter of content above the canvas.
+    ///
+    /// Compared against the size at the last *fit* rather than the last
+    /// *frame*: a slow window drag changes the height in many small steps, and
+    /// comparing frame-to-frame would let every step fall under the threshold
+    /// and never refit at all.
+    fitted_rect_size: egui::Vec2,
 }
 
 impl Default for Canvas {
@@ -85,7 +116,7 @@ impl Default for Canvas {
             zoom: 20.0,
             fit: true,
             fit_vertical_bias: 0.0,
-            last_rect_size: egui::Vec2::ZERO,
+            fitted_rect_size: egui::Vec2::ZERO,
         }
     }
 }
@@ -266,6 +297,61 @@ mod tests {
         assert!(canvas.fit, "default canvas should request a fit");
     }
 
+    /// A line of text appearing above the canvas must not re-frame the
+    /// drawing.
+    ///
+    /// This is the BLT bug (Doug, 2026-07-29): the fit is uniform-scale and
+    /// horizontally centred, so a *height* change alone changes the zoom and
+    /// therefore the centring padding — the diagram slides sideways. The BLT
+    /// view's status line wraps as Tarjan's stack deepens and un-wraps as it
+    /// unwinds, so the diagram shifted right and then back left, once per run.
+    #[test]
+    fn a_wrapped_line_of_text_does_not_trigger_a_refit() {
+        let fitted = egui::vec2(900.0, 600.0);
+        // One wrapped status line is about 20px.
+        assert!(!should_refit(fitted, egui::vec2(900.0, 580.0)), "line appears");
+        assert!(!should_refit(fitted, egui::vec2(900.0, 600.0)), "line goes away");
+        // Even a few lines of reflow stays under the bar.
+        assert!(!should_refit(fitted, egui::vec2(900.0, 545.0)), "three lines");
+    }
+
+    /// A real resize still re-frames. Width always counts, because the fit is
+    /// horizontally centred and a different width is genuinely a different
+    /// framing; height counts once it is past anything reflow can produce.
+    #[test]
+    fn a_real_resize_still_triggers_a_refit() {
+        let fitted = egui::vec2(900.0, 600.0);
+        assert!(should_refit(fitted, egui::vec2(880.0, 600.0)), "narrower window");
+        assert!(should_refit(fitted, egui::vec2(900.0, 400.0)), "much shorter window");
+        assert!(should_refit(fitted, egui::vec2(900.0, 900.0)), "much taller window");
+    }
+
+    /// Comparing against the size at the last *fit* rather than the last
+    /// *frame* is what makes a slow drag work: a vertical-only window resize
+    /// arrives as many small steps, and frame-to-frame comparison would let
+    /// every one of them fall under the threshold and never refit at all.
+    #[test]
+    fn a_slow_vertical_drag_accumulates_to_a_refit() {
+        let fitted = egui::vec2(900.0, 600.0);
+        let mut refit = false;
+        for step in 1..=10 {
+            let h = 600.0 - (step as f32) * 15.0;
+            if should_refit(fitted, egui::vec2(900.0, h)) {
+                refit = true;
+                break;
+            }
+        }
+        assert!(refit, "a drag that shrinks the canvas by 150px must eventually refit");
+    }
+
+    /// A canvas that has never been fitted reports no size change, so the
+    /// first `show()` is driven by `fit` starting true rather than by a
+    /// spurious resize.
+    #[test]
+    fn a_never_fitted_canvas_reports_no_size_change() {
+        assert!(!should_refit(egui::Vec2::ZERO, egui::vec2(900.0, 600.0)));
+    }
+
     #[test]
     fn request_fit_sets_flag() {
         let mut canvas = Canvas { fit: false, ..Canvas::default() };
@@ -344,11 +430,26 @@ impl Canvas {
         let (rect, response) =
             ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
 
-        // Re-fit when the canvas area changes (window resize, panel toggle).
-        if rect.size() != self.last_rect_size && self.last_rect_size != egui::Vec2::ZERO {
+        // Re-fit when the canvas area changes (window resize, panel toggle) —
+        // but only for changes that are really a resize.
+        //
+        // The fit below is **uniform-scale and horizontally centred**:
+        // `zoom = min(zx, zy)` and `pad_x = (width - world_width * zoom) / 2`.
+        // So a change in *height alone* moves content *sideways* — shrink the
+        // height, the zoom drops, the content narrows, and the centring padding
+        // grows. Meanwhile the text above a canvas changes height by a line as
+        // an animation steps: the BLT view's status line wraps when Tarjan's
+        // stack gets deep and un-wraps as it unwinds, which shifted the whole
+        // diagram right and then back left, once per run (Doug, 2026-07-29).
+        //
+        // Width changes always refit — the fit is horizontally centred, so a
+        // different width genuinely means a different framing. Height changes
+        // refit only when large enough to be a resize rather than a reflow: a
+        // wrapped line is ~20px against a canvas several hundred tall, so the
+        // fraction below separates the two cleanly with room to spare.
+        if should_refit(self.fitted_rect_size, rect.size()) {
             self.fit = true;
         }
-        self.last_rect_size = rect.size();
 
         // --- Fit-to-content (one-shot) ---
         //
@@ -370,6 +471,7 @@ impl Canvas {
             let pad_x = (rect.width() - world_bounds.width() * self.zoom) / 2.0;
             self.pan = world_bounds.min.to_vec2() - egui::vec2(pad_x, top_reserve) / self.zoom;
             self.fit = false;
+            self.fitted_rect_size = rect.size();
         }
 
         // --- Pan by dragging ---
