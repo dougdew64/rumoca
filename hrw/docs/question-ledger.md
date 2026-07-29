@@ -122,6 +122,51 @@ the yes/no would have been correct and useless. Logged as a candidate in
 `docs/ideas.md` #9 rather than proposed as work, because whether watching a JVP
 tape assemble beats a breakpoint in `ad.rs` is a question for Doug's reading.
 
+### 2026-07-29 — "The Structural phase summary claims that the rank has a deficiency of 1. What does that mean?"
+
+- **Context:** **first entry with a real HRW capture.** `focus.json` seq 1, `kind:
+  stage`, `request: explain`, stage `Structural`, `stage_view: Summary`, specimen
+  `MotorWithBrake.mo`, `ui_mode: Specimen`.
+- **Medium:** text first (per the medium rule), then **the first ad hoc tour**, at
+  Doug's request — "Write it."
+- **Repeat?** First asking.
+- **Concepts:** structural vs numerical rank; maximum matching as structural rank;
+  hidden constraints; dummy-derivative demotion; degrees of freedom.
+
+**What the answer rested on** — read from the bridge rather than recalled: 48
+equations, 48 unknowns, 47 matched. Unmatched witnesses `f_x[46]`
+(`emf.flange.phi - load.flange_a.phi`) and `emf.p.v`. Then the index-reduction
+report: `reduce_constrained_dummy_derivatives` → 1 demoted, `emf.phi`, states 4 → 3,
+`eliminate_trivial` → 41 eliminated.
+
+**The framing that carried it:**
+
+> The model was written with 4 independent states. The constraints permit only 3.
+> The deficiency is the compiler discovering that, before any number is computed.
+
+Reaching that required going *past* the definition to the cause: the unmatched
+equation contains **no derivatives**, so it constrains positions directly, which is
+the textbook hidden constraint. A rigid coupling removes a degree of freedom — which
+lands on the robotics mathematics Doug is aiming at rather than staying a compiler
+fact.
+
+**Two things worth carrying forward:**
+
+- **The unmatched pair is not a matched pair.** `f_x[46]` never mentions `emf.p.v`.
+  Which equation and which unknown get stranded is *not unique* — a different
+  maximum matching strands a different pair; only the count is invariant. Left
+  unexplained this reads as a bug, so say it every time these witnesses come up.
+- **Verification over assertion worked.** Every number above came from
+  `.hrw-bridge/stages/*.json`, and the "no rows differentiated, it took the
+  dummy-derivative path instead" detail would have been guessed wrong — the obvious
+  assumption for a hidden constraint is that it gets differentiated.
+
+**Feature request produced → `docs/ideas.md` #44.** Writing the tour surfaced that
+`Matching ▶` is **hidden when Structural is singular**, so the one view that would
+let Doug *watch* the deficiency happen is unavailable exactly when it matters. This
+is the **not-visible-in-HRW** branch of the repeat signal, arriving without needing a
+repeat — the first requirement the #42 mechanism produced, on its first use.
+
 ---
 
 ## Open observations
@@ -129,10 +174,14 @@ tape assemble beats a breakpoint in `ad.rs` is a question for Doug's reading.
 Not entries — patterns across too few data points to trust yet, kept so they can
 be confirmed or killed later.
 
-- **Both entries are conversational, with no HRW context.** Today's questions were
-  about the project's design, not about IR. The `focus.json` context field is
-  therefore unexercised, and #41's claim that it will answer "what was he looking
-  at when he got stuck?" is so far untested. Expect this to change once the
-  Cellier work starts, and be suspicious if it doesn't.
-- **n = 2.** Nothing here supports a generalisation yet. Resist reading trends
+- ~~Both entries are conversational, with no HRW context.~~ **Retired 2026-07-29**
+  by the rank-deficiency entry, which carried a full capture (stage, sub-view,
+  specimen). #41's claim that the context field would matter is no longer untested:
+  knowing Doug was on *Structural → Summary* for *MotorWithBrake* is what made the
+  answer specific rather than a definition of rank deficiency in general.
+- **The first tour produced a feature request immediately** (#44). One data point,
+  but it is the data point the whole #42 argument predicted, so note whether it
+  keeps happening — a mechanism that surfaces a real gap per use is worth far more
+  than one that produces tours.
+- **n = 3.** Still nothing that supports a generalisation. Resist reading trends
   into it.

@@ -1826,3 +1826,55 @@ unattended that depends on it.
 ledger), #17 (Jacobian conditioning — the clearest Mathematica use), #4 (the
 deferred differential test, now reframed), `user-wolfram-tools` and
 `user-linear-algebra-learning` in Claude's memory.
+
+---
+
+## 44. Show `Matching ▶` when the Structural stage is singular
+
+**Found 2026-07-29 by writing the first ad hoc tour** — the first requirement the
+#42 mechanism produced, on its first use.
+
+Doug asked what a rank deficiency of 1 means. The best available answer is to watch
+Kuhn's algorithm exhaust its augmenting paths and give up on the 48th equation.
+**That view is hidden.** `app.rs` gates four sub-tabs on `!is_singular ||
+is_index_reduction`:
+
+```rust
+if !is_singular || is_index_reduction {
+    ui.selectable_value(.., StructuralView::SpyPlot, "Spy-plot");
+}
+ui.selectable_value(.., StructuralView::Incidence, "Incidence");
+if !is_singular || is_index_reduction {
+    ui.selectable_value(.., StructuralView::MatchingAnim, "Matching ▶");
+    ui.selectable_value(.., StructuralView::TarjanAnim, "BLT ▶");
+    ui.selectable_value(.., StructuralView::TearingAnim, "Tearing ▶");
+}
+```
+
+**The gating is right for three of the four and backwards for the fourth.** A spy
+plot, a BLT decomposition and tearing all require a *complete* matching before they
+mean anything — hiding them on a singular system is correct. But the matching
+**animation** is a replay of the *search*, and the search failing is the most
+instructive thing on that tab. It is hidden exactly when it would teach the most.
+
+**What it should do instead.** `matching_anim` already builds from
+`IncidenceMatrix::from_report`, and a singular Structural report *does* carry an
+`incidence` and a partial `matching` (`partial_matching_to_json`), so the data is
+present. The animation should run and **end on the failure**: the last frame is an
+augmenting-path search that finds no path, and the running-state panel already says
+"Matched 47 of 48 — still unmatched: …", which is precisely the sentence the
+question needs. Check what `maximum_matching_with_trace` emits when a search fails —
+whether there is a distinct terminal step or whether the frame stream simply stops —
+and if there is no explicit "gave up" step, that is a small `rumoca-phase-structural`
+addition of the same shape as the tearing `NoProgress` variant.
+
+**Also worth reconsidering:** `Tearing ▶` on a singular Structural tab could
+legitimately say "no blocks to tear — there is no matching to decompose", which is
+more informative than the tab being absent. Absence reads as "this feature does not
+exist here"; a message reads as "here is why there is nothing to show." The same
+argument applies to the spy plot.
+
+**Relates to:** #42 (produced this), #9 (the animation set), the question ledger
+entry for "what does a rank deficiency of 1 mean", and `docs/answer-platform-plan.md`
+Phase 3 — this is a concrete item for it, with a real question behind it rather than
+a guess at likely demand.
