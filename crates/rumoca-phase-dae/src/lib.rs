@@ -98,6 +98,15 @@ pub use dae_lowering::{
     scalarize_phantom_vector_equations,
 };
 pub use errors::{ToDaeError, ToDaeResult};
+/// Observability for `pre()` lowering — additive, observation-only.
+///
+/// `lower_pre_operator_with_trace` records the four beats of the pass (discover,
+/// name, materialize, substitute) so the manufacture of a `__pre__.x` slot can be
+/// watched rather than inferred from its output. `lower_pre_operator` is
+/// unchanged in behaviour and now simply calls it with no observer.
+pub use pre_lowering::{
+    PreLoweringFrame, PreLoweringObserver, PreLoweringStep, lower_pre_operator_with_trace,
+};
 // Re-export moved functions so sibling modules can still use `super::`.
 pub(crate) use variable_analysis::{
     collect_continuous_equation_lhs, find_connected_inputs_only_connected_to_inputs,

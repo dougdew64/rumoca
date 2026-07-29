@@ -1463,3 +1463,137 @@ fn test_lower_pre_resolves_encoded_matrix_element_to_declared_array() -> Result<
     }
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// Observability (additive, observation-only)
+// ---------------------------------------------------------------------------
+
+/// The traced pass must record the manufacture of a slot, in order.
+///
+/// The point of instrumenting this phase is that `__pre__.x` appears in no
+/// source file, so the only way to understand where it came from is to watch it
+/// be made. That means the trace has to carry the *steps*, not just the outcome:
+/// discover the reference, construct the name, materialize the parameter,
+/// substitute it into the equations.
+#[test]
+fn traced_lowering_records_the_manufacture_of_a_slot() -> Result<(), ToDaeError> {
+    use super::{PreLoweringStep, lower_pre_operator_with_trace};
+
+    let mut dae = dae::Dae::new();
+    dae.variables
+        .discrete_valued
+        .insert(rumoca_core::VarName::new("overSpeed"), discrete_valued_var("overSpeed"));
+    dae.discrete.valued_updates.push(dae::Equation::explicit(
+        rumoca_core::VarName::new("overSpeed"),
+        pre_call("overSpeed"),
+        test_span(1, 2),
+        "when-equation hold branch".to_string(),
+    ));
+
+    let mut frames = Vec::new();
+    lower_pre_operator_with_trace(&mut dae, &mut frames, None)?;
+
+    // Opens and closes with the pass boundary — that is what separates the two
+    // runs this pass makes per compile when a replay concatenates them.
+    assert!(matches!(frames.first().map(|f| &f.step), Some(PreLoweringStep::Start { .. })));
+    assert!(matches!(
+        frames.last().map(|f| &f.step),
+        Some(PreLoweringStep::Complete { slots_created: 1 }),
+    ));
+
+    let named = frames
+        .iter()
+        .find_map(|f| match &f.step {
+            PreLoweringStep::Named { base, slot } => Some((base.clone(), slot.clone())),
+            _ => None,
+        })
+        .expect("the name must be constructed in view");
+    assert_eq!(named, ("overSpeed".to_owned(), "__pre__.overSpeed".to_owned()));
+
+    // Discovery precedes naming precedes materialization. Out of order, the
+    // replay would tell a story the algorithm did not follow.
+    let index = |m: fn(&PreLoweringStep) -> bool| frames.iter().position(|f| m(&f.step));
+    let discovered = index(|s| matches!(s, PreLoweringStep::Discovered { .. })).expect("discovered");
+    let named_at = index(|s| matches!(s, PreLoweringStep::Named { .. })).expect("named");
+    let made = index(|s| matches!(s, PreLoweringStep::Materialized { .. })).expect("materialized");
+    let subst = index(|s| matches!(s, PreLoweringStep::Substituted { .. })).expect("substituted");
+    assert!(discovered < named_at && named_at < made && made < subst, "beats out of order");
+
+    // The running set grows: nothing before materialization, the slot after.
+    assert!(frames[named_at].slots_so_far.is_empty());
+    assert_eq!(frames[made].slots_so_far, vec!["__pre__.overSpeed".to_owned()]);
+    Ok(())
+}
+
+/// An observer sees exactly the frames the replay buffer keeps.
+///
+/// A live session steps the observer; playback afterwards reads the buffer. If
+/// the two diverged, stepping and replaying the same run would show different
+/// things — the drift this project keeps eliminating.
+#[test]
+fn the_observer_and_the_replay_buffer_see_the_same_frames() -> Result<(), ToDaeError> {
+    use super::lower_pre_operator_with_trace;
+    use std::cell::RefCell;
+
+    let mut dae = dae::Dae::new();
+    dae.variables
+        .discrete_valued
+        .insert(rumoca_core::VarName::new("k"), discrete_valued_var("k"));
+    dae.discrete.valued_updates.push(dae::Equation::explicit(
+        rumoca_core::VarName::new("k"),
+        pre_call("k"),
+        test_span(1, 2),
+        "update".to_string(),
+    ));
+
+    let observed = RefCell::new(Vec::new());
+    let mut frames = Vec::new();
+    lower_pre_operator_with_trace(
+        &mut dae,
+        &mut frames,
+        Some(&|f| observed.borrow_mut().push(format!("{:?}", f.step))),
+    )?;
+
+    let replayed: Vec<String> = frames.iter().map(|f| format!("{:?}", f.step)).collect();
+    assert_eq!(observed.into_inner(), replayed, "live and replay must agree frame for frame");
+    Ok(())
+}
+
+/// Tracing must not change what the pass does.
+///
+/// The instrumentation discipline is *observation-only*: `lower_pre_operator`
+/// now delegates to the traced entry point, so this pins that the delegation is
+/// behaviour-preserving rather than merely compiling.
+#[test]
+fn tracing_does_not_change_the_result() -> Result<(), ToDaeError> {
+    use super::lower_pre_operator_with_trace;
+
+    let build = || {
+        let mut dae = dae::Dae::new();
+        dae.variables
+            .discrete_valued
+            .insert(rumoca_core::VarName::new("z"), discrete_valued_var("z"));
+        dae.discrete.valued_updates.push(dae::Equation::explicit(
+            rumoca_core::VarName::new("z"),
+            pre_call("z"),
+            test_span(1, 2),
+            "update".to_string(),
+        ));
+        dae
+    };
+
+    let mut untraced = build();
+    lower_pre_operator(&mut untraced)?;
+    let mut traced = build();
+    lower_pre_operator_with_trace(&mut traced, &mut Vec::new(), None)?;
+
+    assert_eq!(
+        format!("{:?}", untraced.variables.parameters),
+        format!("{:?}", traced.variables.parameters),
+    );
+    assert_eq!(
+        format!("{:?}", untraced.discrete.valued_updates),
+        format!("{:?}", traced.discrete.valued_updates),
+    );
+    Ok(())
+}

@@ -21,6 +21,131 @@ use crate::{ToDaeError, reference_validation::build_enum_literal_query_set};
 /// 1. Creates a parameter `__pre__.x` with the same dimensions and start value as `x`
 /// 2. Replaces the `BuiltinCall { Pre, [VarRef(x)] }` with `VarRef("__pre__.x")`
 pub(crate) fn lower_pre_operator(dae: &mut dae::Dae) -> Result<(), ToDaeError> {
+    lower_pre_operator_with_trace(dae, &mut Vec::new(), None)
+}
+
+/// One step of `pre()` lowering, recorded for replay.
+///
+/// The pass has four beats and they are worth seeing separately, because the
+/// name `__pre__.x` is *manufactured* — it appears in no source file, so the
+/// only way to understand where it came from is to watch it be made.
+#[derive(Debug, Clone)]
+pub enum PreLoweringStep {
+    /// The pass is starting. Emitted once per call — and this pass runs
+    /// **twice** per compile (see [`lower_pre_operator_with_trace`]), so this
+    /// frame is what separates the two runs in a replay.
+    Start {
+        /// Which invocation this is, 1-based, as far as the caller has counted.
+        pass: usize,
+        /// `pre()`-bearing partitions, for scale: how much there is to search.
+        equations: usize,
+    },
+    /// A `pre(x)` reference was found. Which partition it came from is not
+    /// recorded: `PreTarget` does not carry it, and threading it through the
+    /// collection functions would change the algorithm rather than observe it.
+    Discovered { target: String },
+    /// The generated name was constructed: `pre(x)` → `__pre__.x`.
+    ///
+    /// The single most informative frame in the trace. Everything downstream —
+    /// the parameter slot, the `P[…]` binding in solve lowering, the sibling
+    /// cluster of `__pre__` companions — follows from this one line.
+    Named { base: String, slot: String },
+    /// The slot was materialized as a **parameter**, inheriting the base
+    /// variable's shape and start value. This is why a pre-slot lands among the
+    /// parameters rather than the unknowns.
+    Materialized { slot: String, inherited_from: String },
+    /// A partition's equations were rewritten, replacing `pre(x)` calls with
+    /// references to the slot.
+    Substituted { partition: &'static str, equations: usize },
+    /// The pass finished.
+    Complete { slots_created: usize },
+}
+
+/// A recorded step plus the running state at that moment.
+#[derive(Debug, Clone)]
+pub struct PreLoweringFrame {
+    pub step: PreLoweringStep,
+    /// Slots created so far, in creation order. Carried on every frame so a
+    /// replay can show the set growing rather than only its final contents.
+    pub slots_so_far: Vec<String>,
+}
+
+/// Somewhere to send frames as they happen, for live stepping.
+///
+/// **Deliberately a callback rather than a concrete tracer.** The structural
+/// phases take `Option<&LiveTrace<F>>` directly, which works but couples the
+/// algorithm to one observer implementation living in a sibling phase crate —
+/// and `rumoca-phase-dae` has no business depending on `rumoca-phase-structural`
+/// (the dependency would run backwards through the pipeline). A callback needs
+/// no dependency at all: the observer pushes into whatever it likes, and the
+/// debugger anchor it may call lives on the caller's side.
+///
+/// This is the more upstreamable shape, and the existing three could migrate to
+/// it. See `hrw/DECISIONS.md` (2026-07-29).
+pub type PreLoweringObserver<'a> = &'a dyn Fn(&PreLoweringFrame);
+
+/// Like [`lower_pre_operator`], but records every step for replay.
+///
+/// `observer`, when present, is called with each frame *as it is produced* —
+/// that is the hook a debugger-stepped live session parks on. `frames`
+/// accumulates the same sequence for recorded playback. Both are always fed, so
+/// a live session leaves a replayable trace behind when it finishes.
+///
+/// **This pass runs twice per compile**, from `to_dae_with_options` and again
+/// from `finalize_lowered_dae` after canonical condition variables introduce
+/// `pre()` references of their own. On `MotorWithBrake` the first run creates
+/// `__pre__.overSpeed`; the second creates the `__pre__.c[…]`, `__pre__.load.w`
+/// and `__pre__.maxSpeed` companions. A static view cannot show that a phase ran
+/// twice on different input; a replay makes it the obvious feature of the trace.
+pub fn lower_pre_operator_with_trace(
+    dae: &mut dae::Dae,
+    frames: &mut Vec<PreLoweringFrame>,
+    observer: Option<PreLoweringObserver<'_>>,
+) -> Result<(), ToDaeError> {
+    let mut slots: Vec<String> = Vec::new();
+    emit(
+        frames,
+        observer,
+        &slots,
+        PreLoweringStep::Start {
+            // The caller counts passes; within one call this is always the
+            // first. HRW distinguishes the two runs by frame order.
+            pass: 1,
+            equations: dae.continuous.equations.len()
+                + dae.discrete.real_updates.len()
+                + dae.discrete.valued_updates.len()
+                + dae.conditions.equations.len(),
+        },
+    );
+    lower_pre_operator_inner(dae, frames, observer, &mut slots)?;
+    let created = slots.len();
+    emit(frames, observer, &slots, PreLoweringStep::Complete { slots_created: created });
+    Ok(())
+}
+
+/// Push a frame to the replay buffer and, if watching, to the observer.
+///
+/// Mirrors `emit_matching_frame` in the structural phases, minus the coupling to
+/// a concrete tracer.
+fn emit(
+    frames: &mut Vec<PreLoweringFrame>,
+    observer: Option<PreLoweringObserver<'_>>,
+    slots: &[String],
+    step: PreLoweringStep,
+) {
+    let frame = PreLoweringFrame { step, slots_so_far: slots.to_vec() };
+    if let Some(observe) = observer {
+        observe(&frame);
+    }
+    frames.push(frame);
+}
+
+fn lower_pre_operator_inner(
+    dae: &mut dae::Dae,
+    frames: &mut Vec<PreLoweringFrame>,
+    observer: Option<PreLoweringObserver<'_>>,
+    slots: &mut Vec<String>,
+) -> Result<(), ToDaeError> {
     // Collect pre() targets across every equation partition uniformly.
     // SPEC_0007 §Stage 3 Contract: applies to f_x, f_z, f_m, f_c without
     // exception. MLS Appendix B canonical vector v := [p; t; ẋ; x; y; z; m;
@@ -47,7 +172,22 @@ pub(crate) fn lower_pre_operator(dae: &mut dae::Dae) -> Result<(), ToDaeError> {
     let mut pre_params: IndexMap<rumoca_core::VarName, dae::Variable> = IndexMap::new();
 
     for (target_name, target) in &pre_targets {
+        emit(
+            frames,
+            observer,
+            slots,
+            PreLoweringStep::Discovered { target: target.source_name.as_str().to_owned() },
+        );
         let pre_param_name = rumoca_core::pre_slot_name(target.source_name.as_str());
+        emit(
+            frames,
+            observer,
+            slots,
+            PreLoweringStep::Named {
+                base: target.source_name.as_str().to_owned(),
+                slot: pre_param_name.as_str().to_owned(),
+            },
+        );
         let Some(var) = find_variable(dae, &target.source_name) else {
             return Err(ToDaeError::runtime_contract_violation_at(
                 format!(
@@ -58,6 +198,16 @@ pub(crate) fn lower_pre_operator(dae: &mut dae::Dae) -> Result<(), ToDaeError> {
             ));
         };
         let pre_var = build_pre_parameter(&pre_param_name, var, target.source_name.as_str());
+        slots.push(pre_param_name.as_str().to_owned());
+        emit(
+            frames,
+            observer,
+            slots,
+            PreLoweringStep::Materialized {
+                slot: pre_param_name.as_str().to_owned(),
+                inherited_from: target.source_name.as_str().to_owned(),
+            },
+        );
         pre_params.insert(pre_param_name, pre_var);
     }
 
@@ -73,26 +223,26 @@ pub(crate) fn lower_pre_operator(dae: &mut dae::Dae) -> Result<(), ToDaeError> {
 
     let relation_memories = relation_memory_exprs(dae)?;
 
-    rewrite_equations(
-        &mut dae.continuous.equations,
-        &pre_targets,
-        &relation_memories,
-    )?;
-    rewrite_equations(
-        &mut dae.discrete.real_updates,
-        &pre_targets,
-        &relation_memories,
-    )?;
-    rewrite_equations(
-        &mut dae.discrete.valued_updates,
-        &pre_targets,
-        &relation_memories,
-    )?;
-    rewrite_equations(
-        &mut dae.conditions.equations,
-        &pre_targets,
-        &relation_memories,
-    )?;
+    // One frame per partition rewritten. The partitions are the DAE's canonical
+    // split (MLS Appendix B) — continuous residuals, discrete real and valued
+    // updates, conditions — and seeing which of them a substitution touched is
+    // how a reader learns that `pre()` is not only a `when`-equation concern.
+    macro_rules! rewrite_traced {
+        ($partition:expr, $label:literal) => {{
+            let n = $partition.len();
+            rewrite_equations(&mut $partition, &pre_targets, &relation_memories)?;
+            emit(
+                frames,
+                observer,
+                slots,
+                PreLoweringStep::Substituted { partition: $label, equations: n },
+            );
+        }};
+    }
+    rewrite_traced!(dae.continuous.equations, "continuous residuals");
+    rewrite_traced!(dae.discrete.real_updates, "discrete real updates");
+    rewrite_traced!(dae.discrete.valued_updates, "discrete valued updates");
+    rewrite_traced!(dae.conditions.equations, "condition equations");
     for expr in &mut dae.conditions.relations {
         *expr = rewrite_pre_expr(expr, &pre_targets, &relation_memories)?;
     }
