@@ -8,7 +8,10 @@
 //! - [`sort_dae`]: Transform a DAE into BLT-sorted block form (errors on singular systems).
 //! - [`analyze_structure`]: Diagnostic-only analysis (for CasADi workflows).
 
-mod blt;
+/// BLT decomposition. `pub` since 2026-07-29 so a consumer can find the coupled
+/// blocks and replay the tearing decision made inside each — the tearing trace
+/// needs a block's own equation/unknown sets, which only this produces.
+pub mod blt;
 pub mod dae_prepare;
 mod diagnostics;
 pub mod eliminate;
@@ -322,6 +325,55 @@ pub fn build_structural_report(dae: &dae::Dae) -> Result<StructuralReport, Struc
     })
 }
 
+/// Restrict the global incidence to one coupled block: for each of the block's
+/// equations, the set of *block-local* unknown indices it touches.
+///
+/// Tearing works in block-local index space — `tear_algebraic_loop` is handed a
+/// size `n` and an `n`-column incidence, and knows nothing of the surrounding
+/// system. This is the translation from global to local. Exposed (2026-07-29)
+/// so an observer can replay one block's tearing decisions outside this crate;
+/// `tear_loop` below is its in-crate caller.
+pub fn block_local_incidence(
+    inc: &Incidence,
+    equations: &[EquationRef],
+    unknowns: &[UnknownId],
+) -> Vec<std::collections::HashSet<usize>> {
+    // Global incidence index for every unknown name in the whole system.
+    let unknown_index: std::collections::HashMap<&UnknownId, usize> = inc
+        .unknown_names
+        .iter()
+        .enumerate()
+        .map(|(i, name)| (name, i))
+        .collect();
+    block_local_incidence_with(inc, equations, unknowns, &unknown_index)
+}
+
+/// `block_local_incidence` for a caller that already built the name -> global
+/// index map, so a whole-report run does not rebuild it once per block.
+fn block_local_incidence_with(
+    inc: &Incidence,
+    equations: &[EquationRef],
+    unknowns: &[UnknownId],
+    unknown_index: &std::collections::HashMap<&UnknownId, usize>,
+) -> Vec<std::collections::HashSet<usize>> {
+    // Local var index for each block unknown (by its global incidence index).
+    let var_local: std::collections::HashMap<usize, usize> = unknowns
+        .iter()
+        .enumerate()
+        .filter_map(|(local, name)| unknown_index.get(name).map(|&global| (global, local)))
+        .collect();
+
+    equations
+        .iter()
+        .map(|eq| {
+            inc.eq_unknowns[eq.0]
+                .iter()
+                .filter_map(|global_var| var_local.get(global_var).copied())
+                .collect()
+        })
+        .collect()
+}
+
 /// Tear a single coupled block, mapping the local tearing indices back to names.
 fn tear_loop(
     dae: &dae::Dae,
@@ -330,24 +382,7 @@ fn tear_loop(
     unknowns: &[UnknownId],
     unknown_index: &std::collections::HashMap<&UnknownId, usize>,
 ) -> Option<report::TearingReport> {
-    // Local var index for each block unknown (by its global incidence index).
-    let var_local: std::collections::HashMap<usize, usize> = unknowns
-        .iter()
-        .enumerate()
-        .filter_map(|(local, name)| unknown_index.get(name).map(|&global| (global, local)))
-        .collect();
-
-    // Restrict the global incidence to this block: per block-equation, the set
-    // of block-local unknown indices it touches.
-    let local_eq_unknowns: Vec<std::collections::HashSet<usize>> = equations
-        .iter()
-        .map(|eq| {
-            inc.eq_unknowns[eq.0]
-                .iter()
-                .filter_map(|global_var| var_local.get(global_var).copied())
-                .collect()
-        })
-        .collect();
+    let local_eq_unknowns = block_local_incidence_with(inc, equations, unknowns, unknown_index);
 
     let result = tear_algebraic_loop(unknowns.len(), &local_eq_unknowns)?;
     Some(report::TearingReport {
@@ -432,6 +467,74 @@ mod tests {
     use super::*;
     use rumoca_core::{SourceId, Span};
     use rumoca_ir_dae as dae;
+
+    /// `block_local_incidence` translates a coupled block out of global index
+    /// space and into the 0..n local space tearing works in. The system here has
+    /// four equations and four unknowns; the block is the middle two of each, so
+    /// the answer must mention only local 0 and 1 and must *drop* the unknowns
+    /// that live outside the block (here global 0 and 3).
+    #[test]
+    fn test_block_local_incidence_restricts_to_the_block() {
+        let unknown_names: Vec<UnknownId> = ["a", "b", "c", "d"]
+            .iter()
+            .map(|n| UnknownId::Variable(rumoca_core::VarName::from(*n)))
+            .collect();
+        // eq0: {a}   eq1: {a,b,c}   eq2: {b,c,d}   eq3: {d}
+        let eq_unknowns: Vec<std::collections::HashSet<usize>> = vec![
+            [0].into_iter().collect(),
+            [0, 1, 2].into_iter().collect(),
+            [1, 2, 3].into_iter().collect(),
+            [3].into_iter().collect(),
+        ];
+        let inc = Incidence {
+            n_eq: 4,
+            n_var: 4,
+            eq_unknowns,
+            unknown_names: unknown_names.clone(),
+            unknown_spans: vec![None; 4],
+            equation_refs: (0..4).map(EquationRef).collect(),
+        };
+
+        // The block is equations 1,2 over unknowns b,c (globals 1,2).
+        let equations = [EquationRef(1), EquationRef(2)];
+        let unknowns = [unknown_names[1].clone(), unknown_names[2].clone()];
+        let local = block_local_incidence(&inc, &equations, &unknowns);
+
+        assert_eq!(local.len(), 2, "one row per block equation");
+        // eq1 touched a,b,c globally; only b,c are in the block -> locals 0,1.
+        assert_eq!(local[0], [0, 1].into_iter().collect());
+        // eq2 touched b,c,d globally; d is outside the block and is dropped.
+        assert_eq!(local[1], [0, 1].into_iter().collect());
+    }
+
+    /// A block-local incidence feeds straight into the traced tearing entry
+    /// point — this is the composition the observatory relies on.
+    #[test]
+    fn test_block_local_incidence_feeds_traced_tearing() {
+        let unknown_names: Vec<UnknownId> = ["x", "y"]
+            .iter()
+            .map(|n| UnknownId::Variable(rumoca_core::VarName::from(*n)))
+            .collect();
+        let inc = Incidence {
+            n_eq: 2,
+            n_var: 2,
+            eq_unknowns: vec![[0, 1].into_iter().collect(), [0, 1].into_iter().collect()],
+            unknown_names: unknown_names.clone(),
+            unknown_spans: vec![None; 2],
+            equation_refs: (0..2).map(EquationRef).collect(),
+        };
+        let local = block_local_incidence(
+            &inc,
+            &[EquationRef(0), EquationRef(1)],
+            &unknown_names,
+        );
+        // `FrameObserver` is `&dyn Fn`, so the sink cannot capture `&mut`.
+        let frames = std::cell::RefCell::new(Vec::new());
+        let sink = |f: &TearingFrame| frames.borrow_mut().push(format!("{:?}", f.step));
+        let result = tear_algebraic_loop_with_trace(2, &local, Some(&sink));
+        assert!(result.is_some(), "a 2x2 dense loop is tearable");
+        assert!(!frames.borrow().is_empty(), "the observer saw the decisions");
+    }
 
     #[test]
     fn test_analyze_empty_dae() {

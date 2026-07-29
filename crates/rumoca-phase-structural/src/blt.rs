@@ -9,7 +9,7 @@ use crate::types::{BltBlock, EquationRef, UnknownId};
 /// Tarjan emits SCCs in reverse topological order of the condensation DAG.
 /// Since dependency edges point from dependent → dependency, this output order
 /// is already the correct BLT evaluation order (dependencies first).
-pub(crate) fn build_blt_blocks(
+pub fn build_blt_blocks(
     incidence: &Incidence,
     match_eq: &[Option<usize>],
     adj: &[Vec<usize>],
