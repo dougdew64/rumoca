@@ -538,6 +538,13 @@ pub enum FromWorker {
         identifier_index: Option<crate::identifier_index::IdentifierIndex>,
         /// Index-reduction animation frames (empty if no reduction occurred).
         index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+        /// `pre()`-lowering replay frames (idea #40). Recorded by re-running DAE
+        /// construction over the flat model with an observer attached — the pass
+        /// runs *inside* construction, so the finished DAE cannot be replayed.
+        pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
+        /// The flat model, for a live-debug replay of `pre()` lowering. It is the
+        /// last artifact from *before* that pass runs.
+        flat: Option<rumoca_ir_flat::Model>,
         /// The raw DAE for live-debug replay of index reduction.
         dae: Option<rumoca_ir_dae::Dae>,
     },
@@ -1048,6 +1055,8 @@ impl WorkerState {
                     equation_sheet: None,
                     identifier_index: None,
                     index_reduction_frames: Vec::new(),
+                    pre_lowering_frames: Vec::new(),
+                    flat: None,
                     dae: None,
                 };
             }
@@ -1196,10 +1205,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae) = match &model {
+        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None)
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None)
             }
             Some(simple_name) => {
                 let qualified = self.session.qualify_model_name(&uri, simple_name);
@@ -1292,7 +1301,32 @@ impl WorkerState {
                     _ => None,
                 };
 
-                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae)
+                // `pre()`-lowering replay frames (idea #40).
+                //
+                // Re-runs **DAE construction** over the flat model rather than
+                // the pass alone. The pass runs *inside* construction, so the
+                // DAE above already has its `__pre__` slots and no `pre()` calls
+                // left — replaying the pass on it would produce nothing. The
+                // flat model is the last artifact from before it ran.
+                //
+                // The rebuilt DAE is discarded: this is purely observation, and
+                // the compile's own result is what every other stage shows.
+                let (pre_frames, flat) = match result {
+                    Some(PhaseResult::Success(cr)) => {
+                        let frames = std::cell::RefCell::new(Vec::new());
+                        let _ = rumoca_phase_dae::to_dae_with_options_traced(
+                            &cr.flat,
+                            Default::default(),
+                            Some(&|f: &rumoca_phase_dae::PreLoweringFrame| {
+                                frames.borrow_mut().push(f.clone());
+                            }),
+                        );
+                        (frames.into_inner(), Some(cr.flat.clone()))
+                    }
+                    _ => (Vec::new(), None),
+                };
+
+                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
             }
         };
 
@@ -1323,6 +1357,8 @@ impl WorkerState {
             equation_sheet,
             identifier_index,
             index_reduction_frames: ir_frames,
+            pre_lowering_frames: pre_frames,
+            flat: compiled_flat,
             dae: compiled_dae,
         }
     }
@@ -2897,6 +2933,52 @@ mod tests {
         };
         assert!(!index_reduction_frames.is_empty(),
             "MotorWithBrake should produce index-reduction animation frames");
+    }
+
+    /// The `pre()` lowering replay reaches HRW with real frames (idea #40).
+    ///
+    /// End to end through the worker, because the interesting part is *where the
+    /// frames come from*: the pass runs inside DAE construction, so the compiled
+    /// DAE is already past it and the worker has to re-run construction over
+    /// `cr.flat` to see anything. A unit test on the animation type would not
+    /// have caught getting that wrong — it would just have shown zero frames.
+    #[test]
+    fn the_pre_lowering_replay_reaches_hrw_with_real_frames() {
+        use rumoca_phase_dae::PreLoweringStep;
+
+        let FromWorker::Compiled { pre_lowering_frames, flat, .. } =
+            compile_specimen_shared("MotorWithBrake")
+        else {
+            panic!("expected Compiled");
+        };
+        assert!(flat.is_some(), "the flat model must be carried for live replay");
+        assert!(!pre_lowering_frames.is_empty(), "MotorWithBrake uses pre() via its when-equation");
+
+        let named: Vec<(String, String)> = pre_lowering_frames
+            .iter()
+            .filter_map(|f| match &f.step {
+                PreLoweringStep::Named { base, slot } => Some((base.clone(), slot.clone())),
+                _ => None,
+            })
+            .collect();
+        assert!(
+            named.iter().any(|(b, s)| b == "overSpeed" && s == "__pre__.overSpeed"),
+            "the slot the Events IR references must be seen being named: {named:?}",
+        );
+
+        // The pass runs twice per compile, and the second run creates nothing.
+        // That was *mis*-stated as the opposite until the instrumentation showed
+        // otherwise, so it is pinned here rather than left to memory.
+        let completions: Vec<usize> = pre_lowering_frames
+            .iter()
+            .filter_map(|f| match &f.step {
+                PreLoweringStep::Complete { slots_created } => Some(*slots_created),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(completions.len(), 2, "the pass runs twice per compile: {completions:?}");
+        assert!(completions[0] > 0, "the first pass creates the slots");
+        assert_eq!(completions[1], 0, "the second finds nothing left to lower");
     }
 
     /// Following an identifier must survive **real** IR, whatever is in it.

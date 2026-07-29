@@ -1268,3 +1268,25 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   Measured: `matching_anim` −68 lines, `tarjan_anim` −55, `playback.rs` +324 of which roughly half
   is tests and rationale. **Line count is up; duplication is down from three copies to one** — which
   was the point.
+- **2026-07-29 — Idea #40 delivered: `pre()` lowering is replayable, and phases take an observer
+  rather than a `LiveTrace`.** The `__pre__.x` slots appear in the Events IR, in Solve lowering's
+  parameter vector, and **in no source file** — they are synthesized because a `when` equation needs
+  a value to hold when no branch fires and a DAE cannot say "unchanged". Reading the phase's output
+  shows the slot already existing; only a replay shows it being made.
+  **The observer is a callback, not `LiveTrace`.** This idea was written partly to test whether
+  `LiveTrace` generalises beyond the structural phases. The answer turned out to be better than
+  yes: **the phases do not need it.** `LiveTrace` lives in `rumoca-phase-structural`, and a
+  dependency from DAE construction onto structural analysis would run backwards through the
+  pipeline. `rumoca-phase-dae` takes `Option<&dyn Fn(&PreLoweringFrame)>`; HRW owns the `LiveTrace`
+  and hands over a closure that pushes into it. The phase crate never learns `LiveTrace` exists.
+  That is the more upstreamable shape and the existing three could migrate to it (logged).
+  **Tracing had to wrap DAE construction, not the pass.** `pre()` lowering runs *inside*
+  `to_dae_with_options`, so by the time HRW holds a DAE the slots exist and the `pre()` calls are
+  gone — replaying the pass on that DAE traces nothing. Hence `to_dae_with_options_traced`, and
+  hence the worker carrying `cr.flat`: the flat model is the last artifact from before the pass ran.
+  **`Playback<T>` generalised.** `PreLoweringAnimation` declares no cursor, no timing, no channel,
+  and compiled first try — the payoff from sequencing the animation debt ahead of this work rather
+  than after it, which was the whole argument for reordering.
+  **Hosted on the Events stage** as a sub-tab rather than a new `StageKind`: the slots exist because
+  of `when` equations and Events is the stage that shows them, and a new stage would have to be
+  wired into every per-stage system to say something that belongs beside what is already there.

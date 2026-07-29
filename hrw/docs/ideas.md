@@ -1289,6 +1289,30 @@ failure.
 
 ---
 
+## 40. ~~Instrument `pre()` lowering~~ ✅ DELIVERED
+
+**Delivered 2026-07-29.** `rumoca-phase-dae` gained `to_dae_with_options_traced`
+and `lower_pre_operator_with_trace`; HRW gained `pre_lowering_anim`, a sub-tab on
+the **Events** stage. Four beats replay: discover → name → materialize →
+substitute.
+
+**Two findings the work produced.**
+
+1. **`LiveTrace` did not need to generalise — the phases do not need it.** The
+   question this idea was written to answer had a better answer than expected:
+   `rumoca-phase-dae` takes an **observer callback**, not a `LiveTrace`, because
+   `LiveTrace` lives in `rumoca-phase-structural` and that dependency would run
+   backwards through the pipeline. HRW owns the `LiveTrace` and passes a closure.
+   More upstreamable, and the existing three phases could migrate to it.
+2. **The instrumentation immediately falsified a documented claim** — see the
+   correction below, which was the first thing it produced.
+
+What *did* generalise is `Playback<T>`: the new view declares no cursor, no
+timing, no channel, and compiled first try. That is the payoff from sequencing
+the animation debt ahead of this.
+
+The original capture follows.
+
 ## 40. Instrument `pre()` lowering — the DAE-construction phase HRW cannot show
 
 Captured 2026-07-28 (Doug), after a debugging session that failed for reasons

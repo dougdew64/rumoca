@@ -49,6 +49,7 @@ use crate::incidence_view;
 use crate::matching_anim;
 use crate::tarjan_anim;
 use crate::log_view;
+use crate::pre_lowering_anim;
 use crate::reduction_anim;
 use crate::reduction_view;
 use crate::spyplot;
@@ -138,6 +139,28 @@ Where things appear as names \u{2014} the specimen source, the variable grid \u{
 follows them. Where the view shows IR nodes \u{2014} trees, stage tabs, incidence rows \u{2014} \
 left-click points at them, and right-click offers Follow for names the model knows. Hover \
 anything clickable and it will say which.";
+
+/// Sub-tab selector for the Events stage: the IR tree, or a replay of `pre()`
+/// lowering — where the `__pre__.x` slots the Events IR references get made.
+///
+/// Events hosts that replay even though the pass belongs to DAE construction:
+/// the slots exist *because* of `when` equations, and this is the stage that
+/// shows them. A separate `StageKind` would have to be wired into every
+/// per-stage system (tabs, diffs, stage files, capture, notebook) to say
+/// something that belongs beside what is already here.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum EventsView {
+    #[default]
+    Tree,
+    PreLowering,
+}
+
+fn events_view_name(v: EventsView) -> &'static str {
+    match v {
+        EventsView::Tree => "Tree",
+        EventsView::PreLowering => "PreLowering",
+    }
+}
 
 /// Sub-view names for the capture's `view` section.
 ///
@@ -316,6 +339,7 @@ pub struct App {
     // addition to the generic JSON tree. Each custom view has its own `Canvas`
     // (pan/zoom camera state).
     flatten_view: FlattenView,
+    events_view: EventsView,
     highlighted_eq_row: Option<usize>,
     highlighted_source_line: Option<u32>,
     structural_view: StructuralView,
@@ -363,6 +387,13 @@ pub struct App {
     cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     tarjan_anim_canvas: Canvas,
     index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+    // Idea #40: replay of `pre()` lowering, on the Events stage. The frames are
+    // recorded by re-running DAE construction over the flat model, since the
+    // pass runs inside construction and the finished DAE has nothing left to
+    // replay. `cached_flat` is kept for the live-debug variant.
+    pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
+    cached_flat: Option<rumoca_ir_flat::Model>,
+    cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
     cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
     cached_dae: Option<rumoca_ir_dae::Dae>,
     // "Before" views for the Index Reduction split — parsed from the `"before"`
@@ -508,6 +539,9 @@ enum PendingLiveDebug {
     Matching,
     Tarjan,
     Reduction,
+    /// Idea #40. Unlike the other three it replays a phase of *DAE
+    /// construction*, so it re-runs from the flat model rather than the DAE.
+    PreLowering,
 }
 
 enum LiveDebugAction {
@@ -603,6 +637,9 @@ impl App {
     fn has_live_debug_data(&self, variant: PendingLiveDebug) -> bool {
         match variant {
             PendingLiveDebug::Reduction => self.cached_dae.is_some(),
+            // The flat model, not the DAE: `pre()` lowering runs inside DAE
+            // construction, so the DAE is already past it.
+            PendingLiveDebug::PreLowering => self.cached_flat.is_some(),
             _ => matches!(&self.cached_incidence, Some(Some(_))),
         }
     }
@@ -755,6 +792,7 @@ impl App {
             show_about: false,
             field_help: field_help::load(),
             flatten_view: FlattenView::Equations,
+            events_view: EventsView::default(),
             highlighted_eq_row: None,
             highlighted_source_line: None,
             structural_view: StructuralView::SpyPlot,
@@ -781,6 +819,9 @@ impl App {
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            cached_flat: None,
+            cached_pre_lowering_anim: None,
             cached_reduction_anim: None,
             cached_dae: None,
             cached_before_incidence: None,
@@ -1023,6 +1064,7 @@ impl App {
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
                     identifier_index, index_reduction_frames, dae,
+                    pre_lowering_frames, flat,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -1045,6 +1087,9 @@ impl App {
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
                     self.index_reduction_frames = index_reduction_frames;
+                    self.pre_lowering_frames = pre_lowering_frames;
+                    self.cached_flat = flat;
+                    self.cached_pre_lowering_anim = None;
                     self.cached_dae = dae;
                     self.cached_report_stage = None;
                     self.cached_spy_plot = None;
@@ -1334,6 +1379,7 @@ impl App {
                     Some(structural_view_name(self.structural_view))
                 }
                 StageKind::Flatten => Some(flatten_view_name(self.flatten_view)),
+                StageKind::Events => Some(events_view_name(self.events_view)),
                 _ => None,
             },
             specimen_detail: (self.ui_mode == UiMode::Specimen).then(|| {
@@ -1372,6 +1418,9 @@ impl App {
                 _ => None,
             },
             StageKind::IndexReduction => Some(self.cached_reduction_anim.as_ref()?.as_ref()?),
+            StageKind::Events if self.events_view == EventsView::PreLowering => {
+                Some(self.cached_pre_lowering_anim.as_ref()?.as_ref()?)
+            }
             _ => None,
         }
     }
@@ -2203,6 +2252,60 @@ impl App {
     if debug_clicked {
         self.start_live_debug(PendingLiveDebug::Reduction);
     }
+    }
+
+    /// The `pre()`-lowering replay (idea #40), on the Events stage.
+    ///
+    /// Mirrors `reduction_anim_ui` beat for beat — the six-step live-debug
+    /// sequence is the same for every animated view. The one difference is what
+    /// gets re-run for a live session: the flat model rather than the DAE,
+    /// because this pass happens *inside* DAE construction and the DAE HRW holds
+    /// is already past it.
+    fn pre_lowering_anim_ui(&mut self, ui: &mut egui::Ui) {
+        let arming = self.is_arming(PendingLiveDebug::PreLowering);
+        let live = self
+            .cached_pre_lowering_anim
+            .as_ref()
+            .and_then(|o| o.as_ref())
+            .map_or(
+                if arming { LiveState::Arming } else { LiveState::Idle },
+                |a| a.live_state(arming),
+            );
+        let debug_enabled =
+            self.has_live_debug_data(PendingLiveDebug::PreLowering) && !live.is_busy();
+        let mut debug_clicked = false;
+        let action = self.live_debug_poll(ui.ctx(), live, PendingLiveDebug::PreLowering);
+        if matches!(action, LiveDebugAction::SpawnLive)
+            && let Some(flat) = &self.cached_flat
+        {
+            let live = pre_lowering_anim::PreLoweringAnimation::start_live(flat.clone(), || {
+                let _ = bridge::remove_live_trace_breakpoint();
+            });
+            if live.is_none() {
+                let _ = bridge::remove_live_trace_breakpoint();
+                self.live_breakpoint_armed = false;
+            }
+            self.cached_pre_lowering_anim = Some(live);
+        }
+        if self.cached_pre_lowering_anim.is_none() {
+            let frames = &self.pre_lowering_frames;
+            self.cached_pre_lowering_anim = Some(if frames.is_empty() {
+                None
+            } else {
+                Some(pre_lowering_anim::PreLoweringAnimation::from_frames(frames.clone()))
+            });
+        }
+        if let Some(Some(anim)) = &mut self.cached_pre_lowering_anim {
+            debug_clicked = egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .inner;
+        } else {
+            ui.weak("(no pre() lowering in this model)");
+        }
+        if debug_clicked {
+            self.start_live_debug(PendingLiveDebug::PreLowering);
+        }
     }
 
     /// The top menu bar (File, View, Help).
@@ -3950,6 +4053,28 @@ impl eframe::App for App {
                     ui.separator();
                 }
 
+                // The Events stage offers a replay of `pre()` lowering beside the
+                // tree — only when there is a trace to replay, so smooth models
+                // never show an empty tab.
+                let events_ready =
+                    self.stage == StageKind::Events && !self.pre_lowering_frames.is_empty();
+                if events_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut self.events_view, EventsView::Tree, "Tree");
+                        ui.selectable_value(
+                            &mut self.events_view,
+                            EventsView::PreLowering,
+                            "pre() lowering \u{25b6}",
+                        )
+                        .on_hover_text(
+                            "Replay where the __pre__ parameter slots are manufactured. They \
+                             appear in no source file: a `when` equation needs a value to hold \
+                             when no branch fires, and a DAE cannot say \u{201c}unchanged\u{201d}.",
+                        );
+                    });
+                    ui.separator();
+                }
+
                 // The report stages (Structural + Index reduction) offer a custom
                 // BLT spy-plot alongside the generic tree; every other stage is
                 // tree-only.
@@ -4132,6 +4257,8 @@ impl eframe::App for App {
                     }
                 } else if self.structural_view == StructuralView::Animate {
                     self.reduction_anim_ui(ui);
+                } else if events_ready && self.events_view == EventsView::PreLowering {
+                    self.pre_lowering_anim_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::Equations {
                     self.equation_sheet_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
@@ -4538,6 +4665,7 @@ impl App {
             show_about: false,
             field_help: HashMap::new(),
             flatten_view: FlattenView::Equations,
+            events_view: EventsView::default(),
             highlighted_eq_row: None,
             highlighted_source_line: None,
             structural_view: StructuralView::SpyPlot,
@@ -4564,6 +4692,9 @@ impl App {
             cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            cached_flat: None,
+            cached_pre_lowering_anim: None,
             cached_reduction_anim: None,
             cached_dae: None,
             cached_before_incidence: None,
@@ -5468,6 +5599,8 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            flat: None,
             dae: None,
         }).unwrap();
         app.drain_worker();
@@ -5494,6 +5627,8 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            flat: None,
             dae: None,
         }).unwrap();
         app.drain_worker();
@@ -5524,6 +5659,8 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            flat: None,
             dae: None,
         }).unwrap();
         app.drain_worker();
@@ -5555,6 +5692,8 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            flat: None,
             dae: None,
         }).unwrap();
         app.drain_worker();
@@ -5584,6 +5723,8 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            pre_lowering_frames: Vec::new(),
+            flat: None,
             dae: None,
         }).unwrap();
         app.drain_worker();

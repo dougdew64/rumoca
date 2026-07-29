@@ -35,6 +35,10 @@ rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
 # through rumoca-compile; naming it directly gives access to the observability
 # types (`PreLoweringFrame`, `to_dae_with_options_traced`).
 rumoca-phase-dae = { path = "../crates/rumoca-phase-dae" }
+# The flat model is the last artifact from *before* pre() lowering runs, so a
+# live replay of that pass re-runs DAE construction from it. See
+# `pre_lowering_anim::start_live`.
+rumoca-ir-flat = { path = "../crates/rumoca-ir-flat" }
 rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # Arc 4: name the DAE type for the index-reduction funnel
 rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # Arc 7: DAE -> SolveModel (solve lowering)
 rumoca-solver = { path = "../crates/rumoca-solver" }  # Phase 3: SolverStepRecord for diagnostics plot

@@ -32,7 +32,9 @@
 //! - **`log_view`** — timestamped compilation/simulation log panel.
 //! - **`reduction_anim`** — index-reduction algorithm animation (step-by-step replay).
 //! - **`playback`** — frame cursor/timing/live-session state shared by every
-//!   animated algorithm view (`Playback<T>`), plus `AnimationView`.
+//!   animated algorithm view (`Playback<T>`), plus the `Animated` trait.
+//! - **`pre_lowering_anim`** — replay of `pre()` lowering: where a `__pre__.x`
+//!   parameter slot is manufactured (idea #40).
 //! - **`colors`** — shared color constants used across canvas and view modules.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
@@ -50,6 +52,7 @@ pub mod diagnostics;
 pub mod log_view;
 pub mod modelica_lex;
 pub mod playback;
+pub mod pre_lowering_anim;
 pub mod reduction_anim;
 pub mod reduction_view;
 pub mod source_view;
