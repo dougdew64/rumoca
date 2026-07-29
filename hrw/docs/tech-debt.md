@@ -8,6 +8,71 @@ Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 in the
 2026-07-25 cycle, 25 in the 2026-07-25 sweep, and 20 in the 2026-07-26 sweep.
 See git history for details.
 
+## 2026-07-29 scoped sweep
+
+Run *before* #42 (ad hoc tours) rather than as general hygiene, and deliberately
+**scoped by what #42 will touch**. Three items were separated out as *not*
+sweep material — see "Deferred into #42" below — because unifying them without
+#42's requirements in hand would be designing the abstraction before knowing
+what it must express, which is the mistake that made `end_to_end_tour.md`
+worthless.
+
+**Fixed this sweep:**
+
+- **`ui()` reduced from 982 lines to 325**, closing an item open across two
+  sweeps. The fix was identified last sweep and *blocked*: extraction needed
+  seven transposable out-parameters threaded through, because egui panel
+  closures borrow `self`, so a click records intent and `ui()` acts after the
+  borrows end. `FrameIntent` bundles them (the same move `tree::TreeActions`
+  already made for the tree), and `central_panel_ui` then moved out wholesale
+  taking `&mut self` plus one `&mut FrameIntent`.
+- **Three dead locals removed.** `node_ask`, `debug_ask` and `nav_to` were
+  declared `None`, never assigned inside the panels, then folded in with
+  `.or(tree_actions.x)` — so the fold was always just `tree_actions.x`. Vestiges
+  of a design where other views would write into them. The tree is the only
+  producer, and a comment now says so.
+- **Batch narrative regeneration — closed as obsolete, not done.** The item
+  asked for a workflow to review 14 `narrative.md` files after a Rumoca rebase.
+  The narratives are being retired (see #42's notebook conversion), so the debt
+  evaporated rather than got paid. `trace/` stays and is generated, so it needs
+  no review workflow.
+- **The test-race entry was wrong about scope.** It blamed `bridge.rs`'s test
+  module. Verified 2026-07-29 that `worker::tests::output_capture_handles_large_write_without_deadlock`
+  races too — it redirects *process-global* stdout, so any concurrently-running
+  test that writes steals bytes — and that both failures reproduce **on a clean
+  tree**. `--test-threads=1` is required for the whole suite, not just bridge
+  tests. Entry corrected below.
+
+**Re-measured, not re-estimated:**
+
+| | logged 2026-07-28 | measured 2026-07-29 |
+|---|---|---|
+| `ui()` | 880 | **325** |
+| `central_panel_ui()` | — | **664** *(new — extracted from `ui`)* |
+| `source_map_ui()` | 245 | 245 |
+| `generic_error_summary()` | 201 | 201 |
+| `compile()` | 327 | **363** |
+| `app.rs` | ~5900 | **6375** |
+| `bridge.rs` | 2342 | **2365** |
+
+`compile()` and `app.rs` grew with the four new animations (five view methods,
+two new sub-view enums, three cache fields, `record_connection_frames` and its
+plumbing). That growth is logged rather than swept: `app.rs`'s next reduction is
+`central_panel_ui`, and #42 will touch it.
+
+**Deferred into #42, as its opening moves rather than as debt:**
+
+- **The four dissimilar sub-view enums** (`StructuralView` — shared by two
+  stages — plus `EventsView`, `FlattenView`, `InitView`). Unifying them looks
+  like cleanup but *is* the first design decision of the `hrw://` link
+  vocabulary.
+- **`bridge.rs` at 2365 lines.** #42 needs links to reach parity with
+  `focus.json`, which is this file's job. Decomposing before knowing what the
+  links must express is guessing.
+- **`Canvas` cannot aim at a node.** A missing capability, not debt. See #42.
+
+---
+
 ## 2026-07-28 comprehensive sweep
 
 Run before Phases 5–7 of `source-tooling-plan.md`, on the principle that this
@@ -57,7 +122,9 @@ because the code rotted.
 
 ## Code quality / duplication
 
-- [ ] **`ui()` is 880 lines.** *(was 1272 before this sweep)*
+- [x] **`ui()` is 880 lines.** *(was 1272 before this sweep)* — **fixed
+  2026-07-29: now 325.** See the 2026-07-29 sweep above; the `FrameIntent`
+  bundling suggested here is exactly what unblocked it.
   Still the largest function in the codebase and still growing with each
   feature. The remaining bulk is the central panel's stage dispatch. Further
   extraction is blocked on one thing: `ui` collects intent into ~8 locals
@@ -68,8 +135,11 @@ because the code rotted.
   out-parameters; then the stage dispatch can move out wholesale.
   *File:* `app.rs`.
 
-- [ ] **`compile()` is 380 lines with an inlined `macro_rules!`.**
-  *(was ~285 when last logged — it has grown too.)*
+- [ ] **`compile()` is 363 lines with an inlined `macro_rules!`.**
+  *(measured 2026-07-29; 327 at Phase 5 close, ~285 before that — it grows every
+  time a stage gains an artifact, most recently `record_connection_frames`.)*
+  Not swept 2026-07-29: nothing upcoming forces it, and the growth is one line
+  per new artifact rather than structural rot.
   *File:* `worker.rs`.
 
 - [x] **The three animation views are near-identical.** *(fixed 2026-07-29)*
@@ -104,17 +174,37 @@ because the code rotted.
 
 ## Build process / specimen notebook
 
-- [ ] **No batch narrative regeneration.** After a Rumoca rebase or trace
+- [x] **No batch narrative regeneration.** ~~After a Rumoca rebase or trace
   regeneration, all 14 narratives may need review with no script or checklist
-  driving it. Add a batch workflow, or at minimum a checklist in
-  `docs/updating-rumoca.md`.
+  driving it.~~ **Closed 2026-07-29 as obsolete** — the narratives are being
+  retired (#42's notebook conversion). `trace/` is generated and needs no review
+  workflow. Debt that evaporated rather than got paid.
+
+- [ ] **`central_panel_ui()` is 664 lines.** *(new 2026-07-29, extracted from
+  `ui()`.)* Now a coherent unit — the stage tab bar, status banners, sub-tab
+  bars and per-stage dispatch — rather than a tangle, and it takes only
+  `&mut FrameIntent`, so further extraction is no longer blocked. The natural
+  next cut is per-stage: the sub-tab bars are already four near-parallel blocks,
+  and #42 will rework exactly those. **Do not split before #42** — that is the
+  deferral recorded in the 2026-07-29 sweep.
+  *File:* `app.rs`.
 
 ## Robustness
 
-- [ ] **Bridge test filesystem races under parallel execution.**
-  *(deferred — requires parameterizing the bridge dir; mitigated by
-  `--test-threads=1`, which `README.md` documents as required.)*
-  *File:* `bridge.rs` — test module.
+- [ ] **Test races under parallel execution — two causes, not one.**
+  *(Corrected 2026-07-29: the entry previously blamed only `bridge.rs`.)*
+  1. `bridge.rs` tests share `.hrw-bridge/focus.json` — requires parameterizing
+     the bridge dir to fix.
+  2. `worker::tests::output_capture_handles_large_write_without_deadlock`
+     redirects **process-global stdout**, so any concurrently-running test that
+     writes to stdout steals bytes. Inherently exclusive; would need a serial
+     guard or a non-global capture mechanism.
+
+  Both reproduce **on a clean tree** — verified by stashing. Mitigated by
+  `--test-threads=1`, now required for the *whole* suite and documented in
+  `README.md` and `hrw/CLAUDE.md`. Worth fixing before any CI, since the default
+  harness both fails *and* hangs.
+  *Files:* `bridge.rs`, `worker.rs` — test modules.
 
 - [ ] **`build_declaring_classes` resolves only the first path segment.**
   `src.V` resolves exactly; `gear.flange_a.tau` yields `gear`'s type, which

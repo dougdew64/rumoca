@@ -71,8 +71,16 @@ cargo build -p hrw
 cargo test -p hrw -- --test-threads=1
 ```
 
-**`--test-threads=1` is required.** Several tests exercise the Claude bridge and the breakpoint
-pre-warm, which share single files under `.hrw-bridge/`; in parallel they race each other.
+**`--test-threads=1` is required.** Two independent causes, both of which reproduce on a clean
+checkout:
+
+1. Tests that exercise the Claude bridge and the breakpoint pre-warm share single files under
+   `.hrw-bridge/`, so in parallel they race each other.
+2. `worker::tests::output_capture_handles_large_write_without_deadlock` redirects **process-global**
+   stdout, so any concurrently-running test that writes to stdout steals bytes from it.
+
+Without the flag the suite does not merely fail — it can also **hang**, which looks like a broken
+build rather than a test-isolation problem. The serialized run takes roughly 2.5 minutes.
 
 ### 5. Run
 
