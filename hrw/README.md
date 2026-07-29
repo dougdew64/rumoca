@@ -98,9 +98,20 @@ signature table. Read it before changing anything in this area.
 
 | Extension | Id | Why |
 |-----------|-----|-----|
-| CodeLLDB | `vadimcn.vscode-lldb` | The primary debug adapter. Rust-aware formatters, and the thread run-mode control that all-threads stepping needs. |
+| C/C++ | `ms-vscode.cpptools` | **Required.** Provides the `cppvsdbg` adapter — the working debug config on windows-msvc. Install the base extension only, *not* the Extension Pack. |
 | rust-analyzer | `rust-lang.rust-analyzer` | Language support |
-| C/C++ | `ms-vscode.cpptools` | *Optional.* Provides the `cppvsdbg` adapter, kept as a cross-check. Install the base extension only — not the Extension Pack. |
+| CodeLLDB | `vadimcn.vscode-lldb` | *Optional.* The alternative adapter, with Rust-aware formatters. Retained; see the caveat below. |
+
+**Use the `Debug HRW Observatory (cppvsdbg)` launch config.** Verified 2026-07-28: breakpoints in
+the path-dep `crates/rumoca-*` bind and fire, and live-trace stepping advances the animation with
+plain **F10** — no Debug Console aliases needed. That last point was a surprise: all-threads
+stepping was assumed to be a CodeLLDB feature, when in fact **LLDB defaults to stepping one thread
+and must be told otherwise**, while the Visual Studio debugger already runs all threads on a step.
+
+If you use CodeLLDB instead, type `ns` / `si` / `so` in the Debug Console rather than pressing
+F10/F11, or the animation will not advance. A note in `launch.json` records CodeLLDB mis-binding
+breakpoints in path-dep crates; that note is **unverified** — it predates the discovery of Rumoca's
+compile cache, which produces a near-identical symptom (see `docs/architecture.md` §§ 4–5).
 
 ### 7. The HRW Debugger Bridge extension
 

@@ -3,13 +3,53 @@
   // Kept in sync with hrw/.vscode/launch.json, which serves the same purpose
   // when hrw/ itself is the opened folder.
   //
-  // Debug stack per charter Decision 6 / CLAUDE.md: rust-analyzer + CodeLLDB.
+  // Debug stack per charter Decision 6 / CLAUDE.md: rust-analyzer + a debug
+  // adapter. cppvsdbg is listed FIRST because it is VS Code's default pick and
+  // is the verified-working config on windows-msvc (2026-07-28); the CodeLLDB
+  // config is retained below. See hrw/docs/architecture.md §4.
   "version": "0.2.0",
   "configurations": [
     {
+      // PREFERRED CONFIG (2026-07-28). Microsoft's Visual Studio debugger,
+      // via the ms-vscode.cpptools extension. Verified end to end: breakpoints
+      // in path-dep crates (crates/rumoca-*) bind and fire, and live-trace
+      // stepping of index reduction advances the animation with plain F10.
+      //
+      // It needs no all-threads aliases. That was long assumed to be an LLDB
+      // capability, but it is the reverse — LLDB defaults to stepping ONE
+      // thread and must be told otherwise, while the VS debugger runs all
+      // threads on a step already. So the aliases in the lldb config below are
+      // a workaround for LLDB's default, not a feature LLDB uniquely provides.
+      //
+      // Added 2026-07-27 because CodeLLDB appeared to produce a corrupt
+      // symbol/line mapping for this binary on windows-msvc. NOTE that finding
+      // is now SUSPECT: it predates the discovery of Rumoca's compile cache,
+      // which makes a phase breakpoint silently never fire and which accounted
+      // for every case investigated on 2026-07-28. It has not been re-tested.
+      // See hrw/docs/architecture.md §§ 4-5.
+      //
+      // cppvsdbg has no Cargo integration, hence the explicit `program` path
+      // and the preLaunchTask in tasks.json.
+      "type": "cppvsdbg",
+      "request": "launch",
+      "name": "Debug HRW Observatory (cppvsdbg)",
+      "program": "${workspaceFolder}/target/debug/hrw.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      // cppvsdbg takes name/value pairs, not the object form `lldb` uses.
+      "environment": [
+        { "name": "_NO_DEBUG_HEAP", "value": "1" },
+        { "name": "RUST_BACKTRACE", "value": "1" },
+        // Same GPU device-loss experiment as the lldb config above — the
+        // egui-wgpu panic after long debugger pauses hit both adapters.
+        { "name": "WGPU_BACKEND", "value": "gl" }
+      ],
+      "preLaunchTask": "cargo build -p hrw"
+    },
+    {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug HRW Observatory",
+      "name": "Debug HRW Observatory (lldb — see note)",
       "cargo": {
         "args": ["build", "--bin=hrw"],
         "filter": { "name": "hrw", "kind": "bin" }
@@ -60,35 +100,6 @@
         // suspensions better. Remove this if it makes no difference.
         "WGPU_BACKEND": "gl"
       }
-    },
-    {
-      // Microsoft's Visual Studio debugger (requires the ms-vscode.cpptools
-      // extension). Added 2026-07-27 because CodeLLDB's PDB reader produces a
-      // CORRUPT symbol/line mapping for this binary on windows-msvc: a
-      // breakpoint in a path-dep crate (crates/rumoca-*) binds to an unrelated
-      // address, and `image lookup -r -n live_trace_breakpoint` returns a
-      // symbol by that name whose address resolves to hashbrown code at
-      // eframe's epi.rs:273. Breakpoints in the `hrw` package itself resolve
-      // fine. cppvsdbg reads PDB natively instead of reimplementing it.
-      // See hrw/docs/windows-migration.md.
-      //
-      // Unlike the lldb config above, cppvsdbg has no Cargo integration — hence
-      // the explicit `program` path and the preLaunchTask in tasks.json.
-      "type": "cppvsdbg",
-      "request": "launch",
-      "name": "Debug HRW Observatory (cppvsdbg)",
-      "program": "${workspaceFolder}/target/debug/hrw.exe",
-      "args": [],
-      "cwd": "${workspaceFolder}",
-      // cppvsdbg takes name/value pairs, not the object form `lldb` uses.
-      "environment": [
-        { "name": "_NO_DEBUG_HEAP", "value": "1" },
-        { "name": "RUST_BACKTRACE", "value": "1" },
-        // Same GPU device-loss experiment as the lldb config above — the
-        // egui-wgpu panic after long debugger pauses hit both adapters.
-        { "name": "WGPU_BACKEND", "value": "gl" }
-      ],
-      "preLaunchTask": "cargo build -p hrw"
     }
   ]
 }

@@ -783,16 +783,27 @@ Panic output goes to the debuggee's stderr, which under CodeLLDB is the
 integrated terminal, **not** the Debug Console. Looking in the wrong pane makes
 these crashes appear silent.
 
-#### 4. All-threads stepping
+#### 4. All-threads stepping — and which adapter to use
 
 VS Code's F10/F11 step the *selected thread*. That is wrong for live trace: the
 visuals are painted by the UI thread, so stepping only the algorithm thread
-leaves the animation stale, and live trace degrades into replay with extra
-steps. The render window is the `sleep(frame_delay)` in `LiveTrace::push` —
-Continue (F5) crosses it with every thread running, which is why Continue
-updates the animation.
+leaves the animation stale and live trace degrades into replay with extra steps.
+The render window is the `sleep(frame_delay)` in `LiveTrace::push` — Continue
+(F5) crosses it with every thread running, which is why Continue updates the
+animation.
 
-The lldb launch config defines aliases, typed in the Debug Console:
+**All-threads stepping is an adapter default, not a capability difference.**
+This was assumed for a long time to be LLDB-specific, because the LLDB config
+needs explicit aliases to get it. It is the reverse: **LLDB defaults to stepping
+one thread and needs to be told otherwise; the Visual Studio debugger runs all
+threads on a step already.**
+
+| Adapter | Config | All-threads stepping |
+|---------|--------|----------------------|
+| **cppvsdbg** *(preferred)* | *Debug HRW Observatory (cppvsdbg)* | Default — plain **F10 / F11** |
+| lldb (CodeLLDB) | *Debug HRW Observatory* | Needs `ns` / `si` / `so` in the Debug Console |
+
+The LLDB aliases, if you use that config:
 
 | Alias | Command |
 |-------|---------|
@@ -800,52 +811,23 @@ The lldb launch config defines aliases, typed in the Debug Console:
 | `si`  | `thread step-in -m all-threads` |
 | `so`  | `thread step-out -m all-threads` |
 
-These previously lived in a user-level `~/.lldbinit` on the Linux machine and
-were lost in the platform move; they are in version control now. LLDB also
-offers `while-stepping`, which runs other threads only during single-stepping
-portions — `all-threads` is the mode that gives the UI thread real wall-clock
-time. **Status: implemented but not yet verified end to end.**
+(LLDB also offers `while-stepping`, which runs other threads only during
+single-stepping portions; `all-threads` is the mode that gives the UI thread
+real wall-clock time.)
 
-#### 5. Debug adapter
+**Verified 2026-07-28 under cppvsdbg**, end to end: breakpoints in
+`crates/rumoca-phase-dae` bound and fired, and live-trace stepping of index
+reduction advanced the animation with plain F10 — no aliases involved. Doug uses
+cppvsdbg going forward.
 
-Two launch configurations exist, and both work now that the anchor is fixed:
-
-- **CodeLLDB** (`type: lldb`, extension `vadimcn.vscode-lldb`) — the primary.
-  Has Rust-aware formatters and the thread-run-mode control the aliases need.
-  Cargo integration is built in, so no separate build task.
-- **cppvsdbg** (extension `ms-vscode.cpptools`) — Microsoft's debugger, added
-  while CodeLLDB was suspected of misreading PDB. It reads PDB natively and
-  proved the fault was in the *binary*, not either reader. No Cargo integration,
-  hence the explicit `program` path and the `preLaunchTask` in `tasks.json`. It
-  is worth keeping as a cross-check: it reports moved breakpoints honestly,
-  where CodeLLDB silently kept a stale entry.
-
-Note that debuggers skip a function's prologue, so a breakpoint requested on a
-`pub fn` signature line resolves to the first statement line (`exact_match = 0`
-in LLDB's `breakpoint list`). That is correct behavior, not a fault — but it
-used to produce a phantom duplicate: the bridge asked for the signature line
-while the debugger placed the breakpoint one line lower, so a bridge-armed
-breakpoint and a hand-set one at the same place looked like two locations.
-
-Two changes remove it. `bridge::find_live_trace_line` now targets the anchor's
-first body *statement* — located structurally (signature → opening brace →
-first non-blank, non-comment line) rather than by a hard-coded offset, so it
-survives edits to the anchor. And the extension's `isDuplicate` checks all of
-`vscode.debug.breakpoints` rather than only the ones it armed, so a breakpoint
-you set by hand suppresses the bridge's. That is also safer on the way out:
-`handleRemove` only removes breakpoints the extension added, so a hand-set
-breakpoint survives the end of the live session.
-
-#### 6. Diagnostic commands
-
-In the CodeLLDB Debug Console:
-
-| Command | What it answers |
-|---------|-----------------|
-| `image lookup -r -n live_trace_breakpoint` | Is the anchor at its own address with its own file:line, or folded onto another function? |
-| `breakpoint list` | Did the breakpoint resolve, and to which address and line? |
-| `thread list` | Which thread is stopped, and what is `frame_index`? |
-| `help thread step-out` | Confirms which run-mode flags a step command accepts |
+**A standing caution about the CodeLLDB finding.** `launch.json` records that
+CodeLLDB mis-binds breakpoints in path-dep `crates/rumoca-*`, pointing them at
+unrelated addresses. That note predates the discovery of Rumoca's compile cache
+(§5), which produces a *very* similar symptom — a phase breakpoint that never
+fires — and which accounted for every case investigated on 2026-07-28. The
+CodeLLDB finding has **not been re-tested since**, so treat it as unverified
+rather than settled. If you go back to CodeLLDB, retest it on a model the
+process has not yet compiled before concluding anything about the adapter.
 
 #### 5. Rumoca's compile cache — why a phase breakpoint fires only once
 

@@ -13,8 +13,30 @@
   //
   // Every setting below is explained in docs/architecture.md § Live trace
   // debugging on Windows. Do not drop one without reading it.
+  // cppvsdbg is listed FIRST: VS Code picks the first entry by default, and
+  // it is the verified-working adapter on windows-msvc (2026-07-28) for both
+  // path-dep breakpoints and live-trace stepping. Kept in sync with the
+  // workspace-root .vscode/launch.json. See hrw/docs/architecture.md §4.
   "version": "0.2.0",
   "configurations": [
+    {
+      // Microsoft's Visual Studio debugger (requires ms-vscode.cpptools).
+      // Secondary/cross-check adapter — it reads PDB natively and reports moved
+      // breakpoints honestly. No Cargo integration, hence the explicit program
+      // path and the preLaunchTask.
+      "type": "cppvsdbg",
+      "request": "launch",
+      "name": "Debug HRW Observatory (cppvsdbg)",
+      "program": "${workspaceFolder}/../target/debug/hrw.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/..",
+      "environment": [
+        { "name": "_NO_DEBUG_HEAP", "value": "1" },
+        { "name": "RUST_BACKTRACE", "value": "1" },
+        { "name": "WGPU_BACKEND", "value": "gl" }
+      ],
+      "preLaunchTask": "cargo build -p hrw"
+    },
     {
       "type": "lldb",
       "request": "launch",
@@ -47,24 +69,6 @@
         // backend.
         "WGPU_BACKEND": "gl"
       }
-    },
-    {
-      // Microsoft's Visual Studio debugger (requires ms-vscode.cpptools).
-      // Secondary/cross-check adapter — it reads PDB natively and reports moved
-      // breakpoints honestly. No Cargo integration, hence the explicit program
-      // path and the preLaunchTask.
-      "type": "cppvsdbg",
-      "request": "launch",
-      "name": "Debug HRW Observatory (cppvsdbg)",
-      "program": "${workspaceFolder}/../target/debug/hrw.exe",
-      "args": [],
-      "cwd": "${workspaceFolder}/..",
-      "environment": [
-        { "name": "_NO_DEBUG_HEAP", "value": "1" },
-        { "name": "RUST_BACKTRACE", "value": "1" },
-        { "name": "WGPU_BACKEND", "value": "gl" }
-      ],
-      "preLaunchTask": "cargo build -p hrw"
     },
     {
       "type": "lldb",

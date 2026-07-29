@@ -1201,3 +1201,20 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   `(stage, name)` — both unchanged across a recompile while the IR underneath them is not.
   A surviving point or follow triggers re-emission, since the focus file otherwise describes the
   previous compile's IR: same node, different values, and a stale subtree is worse than an absent one.
+- **2026-07-28 — cppvsdbg is the preferred debug adapter; all-threads stepping was never
+  LLDB-specific.** Doug verified both halves end to end under cppvsdbg: breakpoints in path-dep
+  `crates/rumoca-phase-dae` bound and fired, and live-trace stepping of index reduction advanced the
+  animation with plain **F10**. He uses cppvsdbg going forward.
+  **The correction that matters:** all-threads stepping was treated for weeks as a CodeLLDB
+  capability that cppvsdbg lacked — it is the reverse. **LLDB defaults to stepping one thread and
+  must be told otherwise** (hence the `ns`/`si`/`so` aliases); the Visual Studio debugger already
+  runs all threads on a step. The aliases are a workaround for a default, not access to a feature.
+  That misreading is why cppvsdbg sat unused as a "cross-check" while the live-trace requirement was
+  believed to rule it out.
+  `launch.json` now lists cppvsdbg **first** (VS Code's default pick), `README.md` promotes
+  `ms-vscode.cpptools` to required, and `architecture.md` §4 carries the adapter comparison.
+  **Left explicitly unsettled:** the recorded claim that CodeLLDB mis-binds breakpoints in path-dep
+  crates. It predates the compile-cache discovery, which produces a near-identical symptom and
+  accounted for every case investigated that day, and it has not been re-tested. Marked *suspect*
+  rather than deleted — it may still be real, and the honest state is "unverified", not "wrong".
+  Anyone returning to CodeLLDB should retest it on a model the process has not yet compiled.
