@@ -1622,12 +1622,17 @@ point at anything interesting.
    shows a short note rather than the retired `end_to_end_tour.md`. Living in the
    gitignored bridge directory makes the ephemerality rule structural rather than
    a discipline. `bridge::read_tour`, `App::poll_tour_file`, `App::no_tour_ui`.
-2. **Link vocabulary.** Today's three verbs reach a stage tab and no further.
-   Everything built in the 2026-07-29 animation work lives *below* the stage
-   level: sub-tabs (`Tearing`, `Aliases`, `IC plan`, `Connections`), animation
-   frame positions, the pointed-at node, the followed identifier. A tour that can
-   only say "go to the Structural tab" cannot say "open the Tearing view, frame
-   7, and see why `command` won". Target parity with the Context Bar.
+2. **Link vocabulary.** ✅ **Sub-views delivered 2026-07-29.**
+   `hrw://stage/<Stage>/<SubView>` and `hrw://load/<Specimen>/<Stage>/<SubView>`,
+   with slugs that *are* the capture's own names (`SubView::from_slug` resolves them
+   per stage). The parity principle is now enforced by
+   `link_slugs_and_capture_names_are_the_same_vocabulary` rather than merely intended.
+
+   **Still below the reach of a link:** an animation **frame position**, the
+   pointed-at node, the followed identifier. A tour can now say "open the Tearing
+   view" but not "…and go to frame 7, where `command` won". Frame addressing is the
+   next natural increment; nothing has needed it yet, so it waits for a tour that
+   does.
 3. **Ad hoc specimens — split, do not repurpose.** Doug offered `specimens/` for
    repurposing; recommend against. The curated corpus has real properties
    (portable Modelica subset, `// purpose:` comments, System Modeler round-trip
@@ -1894,10 +1899,27 @@ deferred differential test, now reframed), `user-wolfram-tools` and
 
 ---
 
-## 44. Show `Matching ▶` when the Structural stage is singular
+## 44. ~~Show `Matching ▶` when the Structural stage is singular~~ ✅ DELIVERED
 
 **Found 2026-07-29 by writing the first ad hoc tour** — the first requirement the
-#42 mechanism produced, on its first use.
+#42 mechanism produced, on its first use. **Fixed the same day**, pre-emptively: no
+question was waiting on it, and the cheapest moment to fix a hole is while nothing is
+blocked by it (see the priority order in `docs/tech-debt.md`).
+
+**The fix was one UI condition.** Nothing had to be built: the trace already emitted
+`MatchingStep::EquationFailed` and `matching_anim` already painted the failed row red
+with "has no augmenting path — unmatched (rank deficiency)". The feature was **written
+and then gated out of reach**, and nothing tested it, which is how it stayed hidden.
+`a_singular_report_still_animates_and_ends_on_the_failure` now pins it against real
+`MotorWithBrake` data: exactly one failure, 47 of 48 matched.
+
+**The `Tearing ▶` / `Spy-plot` half of this idea was deliberately NOT done, and the
+original suggestion was wrong.** Showing them with an explanatory message sounded
+kinder than absence, but a BLT decomposition or a tearing result computed from a
+*partial* matching would be plausible-looking and meaningless — a "makes Claude
+guess" hazard, which the priority order ranks above tour holes. Absence is correct
+there. The distinction is that `Matching ▶` replays a *search*, so its failure is the
+content; the other three consume a *result* that does not exist yet.
 
 Doug asked what a rank deficiency of 1 means. The best available answer is to watch
 Kuhn's algorithm exhaust its augmenting paths and give up on the 48th equation.

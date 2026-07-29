@@ -90,9 +90,31 @@ Two kinds, and both count:
 
 | Hole | First hit | Evidence | Tracked as | Status |
 |---|---|---|---|---|
-| `Matching ▶` hidden when Structural is singular — the one view that shows *why* a rank deficiency exists is unavailable exactly when it matters | 2026-07-29, "what does a rank deficiency of 1 mean?" | Tour Stop 3 is an admission rather than a stop | [ideas #44](ideas.md) | **open** |
-| `hrw://` cannot address a **sub-tab** — only stage tabs. Every animation and every custom view lives one level below what a link can reach | 2026-07-29, same tour | 4 navigation moments degraded to "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶** yourself". Tour has 2 working links and 4 prose hand-offs | [ideas #42](ideas.md) gap 2, plan Phase 3 | **open** |
-| `Canvas` cannot centre on a node — a stop cannot make Doug *look at* node 25 | *predicted, not yet hit* | Would have bitten if the tour had needed a specific node; see the `should_refit` fragility | [ideas #42](ideas.md) gap 3 | open (unconfirmed) |
+| `Matching ▶` hidden when Structural is singular — the one view that shows *why* a rank deficiency exists is unavailable exactly when it matters | 2026-07-29, "what does a rank deficiency of 1 mean?" | Tour Stop 3 was an admission rather than a stop | [ideas #44](ideas.md) | ✅ **fixed 2026-07-29** |
+| `hrw://` cannot address a **sub-tab** — only stage tabs. Every animation and every custom view lives one level below what a link can reach | 2026-07-29, same tour | 4 navigation moments degraded to "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶** yourself" | [ideas #42](ideas.md) gap 2 | ✅ **fixed 2026-07-29** |
+| `Canvas` cannot centre on a node — a stop cannot make Doug *look at* node 25 | *predicted, not yet hit* | Would bite if a stop needed a specific node; see the `should_refit` fragility | [ideas #42](ideas.md) gap 3 | open (unconfirmed) |
+
+**Closed 2026-07-29, both pre-emptively** — no question was waiting on either, which is
+the point: Doug's deadlines are real, and the cheapest moment to fix a hole is while
+nothing is blocked by it.
+
+- **#44 needed no new code.** `MatchingStep::EquationFailed` was already emitted and
+  `matching_anim` already painted the failed row red. The feature had been *built and
+  then gated out of reach* — one UI condition. A regression test now pins it
+  (`a_singular_report_still_animates_and_ends_on_the_failure`: exactly one failure,
+  47 of 48, on real `MotorWithBrake` data), because nothing had tested it, which is
+  how it stayed hidden.
+- **Sub-view links use the capture's own vocabulary.** `SubView::from_slug` resolves
+  slugs *per stage*, and the slugs are exactly `structural_view_name` /
+  `flatten_view_name` / `events_view_name` / `init_view_name` — #42's parity principle
+  as code rather than as an aspiration.
+  `link_slugs_and_capture_names_are_the_same_vocabulary` asserts the two lists cannot
+  drift.
+
+**Measured effect on the tour that exposed them:** regenerated, it went from **2
+working links and 4 prose hand-offs to 9 links and none**, and Stop 3 turned from an
+apology into the best stop in the tour — the same algorithm failing on the raw system
+and succeeding on the reduced one, with one demotion between.
 
 **Recording discipline.** When a tour hits a hole: add a row here *and* note it in the
 [question ledger](question-ledger.md) entry for the question that exposed it. The

@@ -2994,6 +2994,54 @@ mod tests {
             "MotorWithBrake should produce index-reduction animation frames");
     }
 
+    /// A **singular** structural report still produces a matching animation, and
+    /// that animation ends on the failure (ideas #44).
+    ///
+    /// This is the claim the #44 fix rests on. Until 2026-07-29 the `Matching ▶`
+    /// sub-tab was hidden whenever the Structural stage was singular, so the one
+    /// view that shows *why* a rank deficiency exists was unreachable exactly when
+    /// it mattered. Nothing had to be built to fix it — the trace already emits
+    /// `MatchingStep::EquationFailed` and the view already paints the failed row —
+    /// but nothing tested it either, which is how it stayed hidden.
+    ///
+    /// Guards two regressions: `from_report` learning to bail on a report that
+    /// carries an `error`, and the trace stopping short instead of recording the
+    /// give-up.
+    #[test]
+    fn a_singular_report_still_animates_and_ends_on_the_failure() {
+        use rumoca_phase_structural::matching::MatchingStep;
+
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("MotorWithBrake")
+        else {
+            panic!("expected Compiled");
+        };
+        let report = stages.structural.value.as_ref().expect("a structural report");
+        assert!(
+            report.get("error").is_some(),
+            "MotorWithBrake's raw structural stage is expected to be singular",
+        );
+
+        let mat = crate::incidence_view::IncidenceMatrix::from_report(report)
+            .expect("a singular report still carries an incidence matrix");
+        let anim = crate::matching_anim::MatchingAnimation::from_incidence(&mat);
+
+        let failures = anim.failed_equations();
+        assert_eq!(
+            failures.len(),
+            1,
+            "a deficiency of 1 means exactly one equation gives up: {failures:?}",
+        );
+
+        let (matched, total) = anim.match_progress();
+        assert_eq!((matched, total), (47, 48), "47 of 48 matched");
+
+        // The give-up must be *recorded*, not merely implied by the count.
+        assert!(
+            anim.steps().iter().any(|s| matches!(s, MatchingStep::EquationFailed(_))),
+            "the trace must record the equation it gave up on",
+        );
+    }
+
     /// The connection-expansion replay reaches HRW with real frames (MLS §9).
     ///
     /// End to end through the worker for the same reason the `pre()` test is:

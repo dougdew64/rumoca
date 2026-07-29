@@ -50,6 +50,43 @@ pub struct MatchingAnimation {
 }
 
 impl MatchingAnimation {
+    /// Equations the search gave up on, in the order it gave up.
+    ///
+    /// One entry per `MatchingStep::EquationFailed`, which is exactly the rank
+    /// deficiency of the incidence matrix: each failure is an equation with no
+    /// augmenting path left, so it stays unmatched. An empty result means a
+    /// perfect matching.
+    ///
+    /// Reads the whole frame stream rather than the cursor, so it answers "how
+    /// does this end" regardless of where playback has got to.
+    pub fn failed_equations(&self) -> Vec<usize> {
+        self.playback
+            .frames()
+            .iter()
+            .filter_map(|f| match f.step {
+                MatchingStep::EquationFailed(eq) => Some(eq),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// `(matched, total)` at the end of the trace — the final matching, not the
+    /// cursor's partial one. `matched < total` is a structurally singular system.
+    pub fn match_progress(&self) -> (usize, usize) {
+        let matched = self
+            .playback
+            .frames()
+            .last()
+            .map(|f| f.match_eq.iter().filter(|m| m.is_some()).count())
+            .unwrap_or(0);
+        (matched, self.n_eq)
+    }
+
+    /// Every step in the trace, in order.
+    pub fn steps(&self) -> Vec<MatchingStep> {
+        self.playback.frames().iter().map(|f| f.step.clone()).collect()
+    }
+
     /// Build the animation trace from a parsed incidence matrix (recorded mode).
     pub fn from_incidence(mat: &IncidenceMatrix) -> Self {
         let eq_vars: Vec<HashSet<usize>> = mat

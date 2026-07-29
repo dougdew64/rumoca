@@ -114,7 +114,7 @@ const TRAJECTORY_PLOT_HEIGHT_FRACTION: f32 = 0.65;
 ///
 /// On the Index Reduction tab, comparative views (SpyPlot, Incidence) render
 /// in a Before/After split; Summary, Animate, and Tree are full-width.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum StructuralView {
     Summary,
     SpyPlot,
@@ -150,7 +150,7 @@ fn init_view_name(v: InitView) -> &'static str {
 
 /// Sub-tab selector for the Flatten stage: readable equation sheet, source
 /// traceability map, or the generic serde tree.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum FlattenView {
     Equations,
     SourceMap,
@@ -540,6 +540,11 @@ pub struct App {
     // last successful stage. This field defers the stage switch until the
     // Compiled message arrives.
     pending_stage: Option<StageKind>,
+    /// Sub-view requested by an `hrw://load/…/<Stage>/<SubView>` link, applied
+    /// alongside `pending_stage` once the compile lands. Separate from the stage
+    /// because it must be applied *after* the default-sub-view logic, which would
+    /// otherwise overwrite it.
+    pending_sub_view: Option<SubView>,
 
     // ---- 15. Deferred live debug spawn (ack handshake) ----
     // When the Debug button is clicked, `arm_live_trace_breakpoint` writes a
@@ -932,6 +937,7 @@ impl App {
             jump_target: None,
             scrolled_source_for: None,
             pending_stage: None,
+            pending_sub_view: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
             prewarm: Prewarm::NotStarted,
@@ -1079,6 +1085,7 @@ impl App {
         // carry over a stage override from a previous LoadAndSwitch click.
         // LoadAndSwitch calls open() first, then sets pending_stage.
         self.pending_stage = None;
+        self.pending_sub_view = None;
         // Start with the log view so the user sees compilation progress.
         self.log_entries.clear();
         self.viewing_log = true;
@@ -2968,6 +2975,16 @@ impl App {
                     }
                     self.cached_report_stage = Some(self.stage);
                 }
+                // A sub-view requested by an hrw:// link is applied *here*, after
+                // the default-sub-view logic above, precisely because that logic
+                // would otherwise overwrite it: it forces Summary whenever a
+                // report stage is entered singular. A link saying "show me the
+                // matching animation" has to win over the default saying "show
+                // the summary first".
+                if self.pending_sub_view.is_some() {
+                    let sub = self.pending_sub_view.take();
+                    self.apply_sub_view(sub);
+                }
                 let is_index_reduction = self.stage == StageKind::IndexReduction;
                 let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
                 let is_singular = note.contains("singular");
@@ -3022,8 +3039,26 @@ impl App {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                     }
                     ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
+                    // Matching is shown *even when singular* — that is the whole
+                    // point of it. The other three below need a complete matching
+                    // before they mean anything; this one is a replay of the
+                    // *search*, and the search failing is the most instructive
+                    // thing on a singular stage. It was hidden here until
+                    // 2026-07-29, when writing a tour to answer "what does a rank
+                    // deficiency of 1 mean?" ran straight into its absence
+                    // (ideas #44). Nothing else was needed: the trace already
+                    // emits `MatchingStep::EquationFailed` and the view already
+                    // paints the failed row red. The feature was built, then
+                    // gated out of reach.
+                    ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}")
+                        .on_hover_text(if is_singular && !is_index_reduction {
+                            "Watch the augmenting-path search run out. The equation it \
+                             gives up on is the rank deficiency."
+                        } else {
+                            "Replay the augmenting-path search that pairs each equation \
+                             with one unknown."
+                        });
                     if !is_singular || is_index_reduction {
-                        ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
                         ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
                         // Tearing operates on the coupled blocks BLT finds,
                         // so it needs the same full matching those two do.
@@ -3238,6 +3273,26 @@ impl App {
                         jump_to: None,
                     });
             });
+        }
+    }
+
+    /// Point the current stage's sub-view selector at `sub`, if one was requested.
+    ///
+    /// Each stage keeps its own selector enum, so this is a small dispatch rather
+    /// than one assignment. A `SubView` can only have been built by
+    /// `SubView::from_slug` against a stage, so a mismatch here would mean the link
+    /// named one stage and the app is on another — possible if the user clicked away
+    /// mid-compile. Ignoring it is right: better to leave the view where the user put
+    /// it than to yank it somewhere the link no longer describes.
+    fn apply_sub_view(&mut self, sub: Option<SubView>) {
+        match (sub, self.stage) {
+            (Some(SubView::Structural(v)), StageKind::Structural | StageKind::IndexReduction) => {
+                self.structural_view = v;
+            }
+            (Some(SubView::Flatten(v)), StageKind::Flatten) => self.flatten_view = v,
+            (Some(SubView::Events(v)), StageKind::Events) => self.events_view = v,
+            (Some(SubView::Init(v)), StageKind::Initialization) => self.init_view = v,
+            _ => {}
         }
     }
 
@@ -4704,14 +4759,20 @@ impl eframe::App for App {
                         self.notice = Some(format!("specimen not found: {name}"));
                     }
                 }
-                HrwLink::SwitchStage(kind) => {
+                HrwLink::SwitchStage(kind, sub) => {
                     self.stage = kind;
                     self.viewing_log = false;
+                    self.apply_sub_view(sub);
                 }
-                HrwLink::LoadAndSwitch(name, kind) => {
+                HrwLink::LoadAndSwitch(name, kind, sub) => {
                     if let Some(path) = self.find_specimen(&name) {
                         self.open(path);
                         self.pending_stage = Some(kind);
+                        // The stage switch waits for the compile to finish, so the
+                        // sub-view has to wait with it — applying it now would be
+                        // overwritten by the default-sub-view logic that runs when
+                        // the report first becomes ready.
+                        self.pending_sub_view = sub;
                     } else {
                         self.notice = Some(format!("specimen not found: {name}"));
                     }
@@ -4939,29 +5000,106 @@ struct FrameIntent {
     go_home: bool,
 }
 
+/// A sub-view within a stage, addressable by an `hrw://` link.
+///
+/// **The slugs are exactly the names the capture emits** (`structural_view_name`,
+/// `flatten_view_name`, `events_view_name`, `init_view_name`), which is #42's design
+/// principle applied: `hrw://` should express any noun `focus.json` can describe, so
+/// the two directions share one vocabulary rather than inventing a second.
+///
+/// Added 2026-07-29 to close a tour hole. Links reached a stage tab and no further,
+/// so every animation and custom view — all of them one level below a stage — had to
+/// be handed off in prose ("same tab → now click **Incidence**"). The first tour had
+/// two working links and four such hand-offs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SubView {
+    Structural(StructuralView),
+    Flatten(FlattenView),
+    Events(EventsView),
+    Init(InitView),
+}
+
+impl SubView {
+    /// Resolve a slug against the stage it appears under.
+    ///
+    /// Stage-scoped rather than global because the same slug means different things
+    /// in different stages — `Tree` exists under four of them — and because a link
+    /// naming a sub-view the stage does not have should fail to parse rather than
+    /// navigate somewhere surprising.
+    fn from_slug(stage: StageKind, slug: &str) -> Option<Self> {
+        Some(match stage {
+            StageKind::Structural | StageKind::IndexReduction => {
+                Self::Structural(match slug {
+                    "Summary" => StructuralView::Summary,
+                    "SpyPlot" => StructuralView::SpyPlot,
+                    "Incidence" => StructuralView::Incidence,
+                    "MatchingAnim" => StructuralView::MatchingAnim,
+                    "TarjanAnim" => StructuralView::TarjanAnim,
+                    "TearingAnim" => StructuralView::TearingAnim,
+                    "AliasAnim" => StructuralView::AliasAnim,
+                    "Animate" => StructuralView::Animate,
+                    "Tree" => StructuralView::Tree,
+                    _ => return None,
+                })
+            }
+            StageKind::Flatten => Self::Flatten(match slug {
+                "EquationSheet" => FlattenView::Equations,
+                "SourceMap" => FlattenView::SourceMap,
+                "Connections" => FlattenView::Connections,
+                "Tree" => FlattenView::Tree,
+                _ => return None,
+            }),
+            StageKind::Events => Self::Events(match slug {
+                "PreLowering" => EventsView::PreLowering,
+                "Tree" => EventsView::Tree,
+                _ => return None,
+            }),
+            StageKind::Initialization => Self::Init(match slug {
+                "IcPlan" => InitView::IcPlan,
+                "Tree" => InitView::Tree,
+                _ => return None,
+            }),
+            // Stages with no sub-views: a link naming one is malformed.
+            _ => return None,
+        })
+    }
+}
+
 /// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
+#[derive(Debug, PartialEq, Eq)]
 enum HrwLink {
     /// `hrw://load/<Specimen>` — load and compile a specimen by name.
     LoadSpecimen(String),
-    /// `hrw://stage/<Stage>` — switch to a stage tab (specimen already loaded).
-    SwitchStage(StageKind),
-    /// `hrw://load/<Specimen>/<Stage>` — load a specimen and switch to a stage.
-    LoadAndSwitch(String, StageKind),
+    /// `hrw://stage/<Stage>[/<SubView>]` — switch to a stage tab, optionally to a
+    /// sub-view within it (specimen already loaded).
+    SwitchStage(StageKind, Option<SubView>),
+    /// `hrw://load/<Specimen>/<Stage>[/<SubView>]` — load a specimen, then switch.
+    LoadAndSwitch(String, StageKind, Option<SubView>),
 }
 
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
 fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     let path = url.strip_prefix("hrw://")?;
-    let parts: Vec<&str> = path.splitn(3, '/').collect();
+    let parts: Vec<&str> = path.splitn(4, '/').collect();
     match parts.as_slice() {
+        ["load", specimen, stage, view] => {
+            let kind = StageKind::from_slug(stage)?;
+            let sub = SubView::from_slug(kind, view)?;
+            Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind, Some(sub)))
+        }
         ["load", specimen, stage] => {
             let kind = StageKind::from_slug(stage)?;
-            Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind))
+            Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind, None))
         }
         ["load", specimen] => Some(HrwLink::LoadSpecimen((*specimen).to_owned())),
+        ["stage", stage, view] => {
+            let kind = StageKind::from_slug(stage)?;
+            let sub = SubView::from_slug(kind, view)?;
+            Some(HrwLink::SwitchStage(kind, Some(sub)))
+        }
         ["stage", stage] => {
             let kind = StageKind::from_slug(stage)?;
-            Some(HrwLink::SwitchStage(kind))
+            Some(HrwLink::SwitchStage(kind, None))
         }
         _ => None,
     }
@@ -5157,6 +5295,7 @@ impl App {
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,
+            pending_sub_view: None,
             // Tests drive `tick_prewarm` explicitly; nothing is armed for them.
             prewarm: Prewarm::NotStarted,
         };
@@ -6275,13 +6414,13 @@ mod tests {
     #[test]
     fn parse_hrw_link_switch_stage() {
         let link = parse_hrw_link("hrw://stage/Structural");
-        assert!(matches!(link, Some(HrwLink::SwitchStage(StageKind::Structural))));
+        assert!(matches!(link, Some(HrwLink::SwitchStage(StageKind::Structural, None))));
     }
 
     #[test]
     fn parse_hrw_link_load_and_switch() {
         let link = parse_hrw_link("hrw://load/GearWithBrake/Parse");
-        assert!(matches!(link, Some(HrwLink::LoadAndSwitch(ref s, StageKind::Parse)) if s == "GearWithBrake"));
+        assert!(matches!(link, Some(HrwLink::LoadAndSwitch(ref s, StageKind::Parse, None)) if s == "GearWithBrake"));
     }
 
     #[test]
@@ -6353,6 +6492,110 @@ mod tests {
         let mut app = App::test_default();
         app.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
         assert!(app.find_specimen("Bouncing").is_none());
+    }
+
+    /// A link can address a sub-view, on both the load and the switch forms.
+    ///
+    /// Closes the quiet tour hole logged 2026-07-29: links reached a stage tab and
+    /// no further, so every animation had to be handed off in prose ("same tab →
+    /// now click **Incidence**"). The first tour had two working links and four
+    /// such hand-offs.
+    #[test]
+    fn a_link_can_address_a_sub_view() {
+        assert_eq!(
+            parse_hrw_link("hrw://stage/Structural/MatchingAnim"),
+            Some(HrwLink::SwitchStage(
+                StageKind::Structural,
+                Some(SubView::Structural(StructuralView::MatchingAnim)),
+            )),
+        );
+        assert_eq!(
+            parse_hrw_link("hrw://load/MotorWithBrake/IndexReduction/AliasAnim"),
+            Some(HrwLink::LoadAndSwitch(
+                "MotorWithBrake".to_owned(),
+                StageKind::IndexReduction,
+                Some(SubView::Structural(StructuralView::AliasAnim)),
+            )),
+        );
+        // The bare forms still work — a sub-view is optional, not required.
+        assert_eq!(
+            parse_hrw_link("hrw://stage/Flatten"),
+            Some(HrwLink::SwitchStage(StageKind::Flatten, None)),
+        );
+    }
+
+    /// A sub-view slug is resolved **against its stage**, so the same word means
+    /// different things in different stages and a wrong pairing does not navigate.
+    #[test]
+    fn sub_view_slugs_are_stage_scoped() {
+        // `Tree` exists under four stages and means a different enum in each.
+        assert_eq!(
+            SubView::from_slug(StageKind::Flatten, "Tree"),
+            Some(SubView::Flatten(FlattenView::Tree)),
+        );
+        assert_eq!(
+            SubView::from_slug(StageKind::Events, "Tree"),
+            Some(SubView::Events(EventsView::Tree)),
+        );
+
+        // A slug from the wrong stage must not resolve — better a dead link than
+        // one that navigates somewhere the author did not mean.
+        assert!(SubView::from_slug(StageKind::Flatten, "MatchingAnim").is_none());
+        assert!(SubView::from_slug(StageKind::Events, "IcPlan").is_none());
+        // Stages with no sub-views reject every slug.
+        assert!(SubView::from_slug(StageKind::Parse, "Tree").is_none());
+        // And a malformed link is None rather than a partial navigation.
+        assert!(parse_hrw_link("hrw://stage/Structural/NoSuchView").is_none());
+    }
+
+    /// **Every sub-view name the capture emits is addressable by a link, and vice
+    /// versa.** This is #42's design principle as an assertion: `hrw://` should
+    /// express any noun `focus.json` can describe, so the two directions share one
+    /// vocabulary. Without this test the two lists drift, and a tour would point at
+    /// a view whose capture name had been renamed.
+    #[test]
+    fn link_slugs_and_capture_names_are_the_same_vocabulary() {
+        let cases: &[(StageKind, &[&str])] = &[
+            (
+                StageKind::Structural,
+                &[
+                    structural_view_name(StructuralView::Summary),
+                    structural_view_name(StructuralView::SpyPlot),
+                    structural_view_name(StructuralView::Incidence),
+                    structural_view_name(StructuralView::MatchingAnim),
+                    structural_view_name(StructuralView::TarjanAnim),
+                    structural_view_name(StructuralView::TearingAnim),
+                    structural_view_name(StructuralView::AliasAnim),
+                    structural_view_name(StructuralView::Animate),
+                    structural_view_name(StructuralView::Tree),
+                ],
+            ),
+            (
+                StageKind::Flatten,
+                &[
+                    flatten_view_name(FlattenView::Equations),
+                    flatten_view_name(FlattenView::SourceMap),
+                    flatten_view_name(FlattenView::Connections),
+                    flatten_view_name(FlattenView::Tree),
+                ],
+            ),
+            (
+                StageKind::Events,
+                &[events_view_name(EventsView::Tree), events_view_name(EventsView::PreLowering)],
+            ),
+            (
+                StageKind::Initialization,
+                &[init_view_name(InitView::Tree), init_view_name(InitView::IcPlan)],
+            ),
+        ];
+        for (stage, names) in cases {
+            for name in *names {
+                assert!(
+                    SubView::from_slug(*stage, name).is_some(),
+                    "capture emits {name:?} for {stage:?} but no link can address it",
+                );
+            }
+        }
     }
 
     /// An ad hoc tour written to the bridge round-trips, and its links parse.
