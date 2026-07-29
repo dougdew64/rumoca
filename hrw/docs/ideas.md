@@ -1544,3 +1544,104 @@ something outside the loop gets to say Claude was wrong.
 (animations, for the replay/reveal distinction), `#35` (tour progress tracking —
 now largely superseded), `docs/context-assembly.md`, and the retirement of
 `end_to_end_tour.md`'s explanatory prose.
+
+---
+
+## 42. Ad hoc tours — HRW as a channel for Claude's *answers*, not just its input
+
+Requested 2026-07-29 (Doug), immediately after agreeing the phase docs are
+Claude's database and noticing the specimen notebook has the same problem the
+end-to-end tour did:
+
+> Instead of using HRW's tour mode to enable a hard-coded end-to-end tour, I want
+> to use tour mode for working through tours which you've created ad hoc in
+> response to questions which I ask. […] Sometimes, HRW will provide you a MUCH
+> more effective way to answer my questions than by merely emitting text here in
+> this chat window.
+
+### Why this is the missing half
+
+The project already has a noun channel *inbound*: Doug assembles context with the
+mouse, HRW emits `focus.json`, Claude reasons. But the **answer** has only ever
+come back as chat text. Ad hoc tours give the return path the same shape as the
+input — Claude can answer with a *sequence of HRW contexts*.
+
+**Design principle: `hrw://` links should express any noun `focus.json` can
+describe.** `focus.json` is the noun going out; `hrw://` is the noun coming back.
+Same vocabulary, opposite direction.
+
+### The rule that prevents this rotting like the tour did
+
+**A tour is regenerable output; the question is the durable artifact.** So ad hoc
+tours are **ephemeral by default**. If Doug wants one again months later, Claude
+does not retrieve a stale file — it regenerates against the current tree, correct
+by construction. What gets stored is the *question*, which #41's ledger already
+covers. This is the same "store what cannot be regenerated" rule, third
+application.
+
+### Current state (verified 2026-07-29 by reading `app.rs`)
+
+Tour mode is a left panel rendering **one markdown file `include_str!`'d into the
+binary at compile time** (`end_to_end_tour.md`, `app.rs` ~3770), plus clickable
+`hrw://` links parsed by `parse_hrw_link` with exactly three verbs:
+`load/<Specimen>`, `stage/<Stage>`, `load/<Specimen>/<Stage>`.
+
+So the *mechanism* is close to right. The failure was never the tour concept — it
+was static content, bound at build time, with a link vocabulary too coarse to
+point at anything interesting.
+
+### Gaps, in order of size-to-value
+
+1. **Runtime loading.** `include_str!` means a new tour needs a rebuild. Ad hoc
+   tours must load from disk (a scratch path Claude writes to, picked up without
+   a restart). Smallest change, biggest unlock — do this first.
+2. **Link vocabulary.** Today's three verbs reach a stage tab and no further.
+   Everything built in the 2026-07-29 animation work lives *below* the stage
+   level: sub-tabs (`Tearing`, `Aliases`, `IC plan`, `Connections`), animation
+   frame positions, the pointed-at node, the followed identifier. A tour that can
+   only say "go to the Structural tab" cannot say "open the Tearing view, frame
+   7, and see why `command` won". Target parity with the Context Bar.
+3. **Ad hoc specimens — split, do not repurpose.** Doug offered `specimens/` for
+   repurposing; recommend against. The curated corpus has real properties
+   (portable Modelica subset, `// purpose:` comments, System Modeler round-trip
+   intent) that scratch models would quietly degrade. Two directories: curated,
+   and generated-for-a-question. Generated ones are ephemeral on the same rule.
+
+### The most valuable consequence
+
+**Specimens become a medium of explanation.** "Here is the smallest model that
+exhibits the thing you asked about" is what a good teacher does, and it is
+currently impossible — Claude can only point at the models that already exist.
+This also feeds the Cellier loop directly: his problems often specify a system
+that could be realised as a specimen and actually run through Rumoca, so a
+claimed answer can be *checked* rather than asserted.
+
+### Specimen notebook conversion (authorised 2026-07-29)
+
+Doug: *"I expressed the original design for the specimen notebook before I truly
+understood the possibilities of this project."*
+
+- **`trace/` — keep.** Generated, correct by construction, and what lets any
+  number be checked. This half was always right.
+- **`narrative.md` — retire the prose.** Claude's regenerable explanation with
+  hand-transcribed numbers that nothing verifies: the same species as
+  `end_to_end_tour.md` Stop 8 (describes a 7x7 matrix on a tab showing 48
+  equations).
+- **Replacement is not prose:** a short record of why the specimen exists (which
+  phenomenon it triggers) and which of Doug's questions it was built for or
+  answered. Links to the #41 ledger.
+- Also fix the second stale authorship claim in `hrw/CLAUDE.md`, which still
+  contrasts the notebook with "Doug's *generic* phase theory".
+
+### The discipline this needs from Claude
+
+**A tour is for answers that are irreducibly sequential or spatial.** Most
+questions still get two sentences of text. If "what is a dummy derivative?" starts
+returning a nine-stop tour, this feature has made Claude worse, not better. The
+new medium is not a licence for verbosity.
+
+**Relates to:** #41 (the ledger stores the questions these tours answer), #35
+(multiple tour documents + progress tracking — largely superseded by this), #9
+(the animation views are the richest tour destinations), `docs/context-assembly.md`
+(the noun vocabulary this must reach parity with), and the retirement of
+`end_to_end_tour.md`'s explanatory prose.
