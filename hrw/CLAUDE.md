@@ -51,7 +51,23 @@ worker-side live-debug path (`docs/ideas.md` #9). New Rumoca instrumentation: `r
 process-global stdout and on `focus.json`; they fail or hang under the default parallel harness, on a
 clean tree as well.
 
-**Agreed work order (Doug, 2026-07-28), in this sequence:**
+**Current plan: [`docs/answer-platform-plan.md`](docs/answer-platform-plan.md)** (2026-07-29).
+Five phases sequencing #41 (Claude's teaching database), #42 (ad hoc tours), #43 (Wolfram + System
+Modeler as answer channels) and #5 (four-bar / planar mechanics), plus a change to the tech-debt
+trigger — from weekly-by-calendar to **scoped by what the next phase touches**.
+
+Its spine is the tension it had to resolve: **#42's premise is evidenced, its scale is not.** Doug
+attempted the tour and found the prose worse than the conversation, so ad hoc tours are real friction
+from real use. But link-vocabulary parity, camera aiming and sub-view unification have no question
+behind them yet, so #42 is split — the smallest unlock (runtime tour loading) now, everything else
+only after a real Cellier question asks for it. If that second half never gets built because tours
+turn out to be rarely the right medium, the plan succeeded.
+
+The plan **supersedes items 3-5 of the work order below** (attempt the tour, refactor `bridge.rs`,
+Phases 6-7), which were written before the tour was attempted and found wanting. Items 1-2 are
+delivered.
+
+**Superseded work order (Doug, 2026-07-28) — retained for its reasoning:**
 
 1. **Animation debt** — a trait over the three animation types, plus `animation_controls`'s 8
    positional parameters and the duplicated matrix-canvas boilerplate. First because idea #40 builds
