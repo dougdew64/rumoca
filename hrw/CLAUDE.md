@@ -36,6 +36,21 @@ a standalone tool.
 practical scenario demonstrates a need. Multiple `follow` items and a third "compare" primitive were
 considered and deliberately not built — **do not re-propose them from first principles.**
 
+**Delivered 2026-07-29 — four more phase animations.** Tearing, alias elimination, initial-condition
+planning and connection expansion now have animated views, bringing the total to eight. Building them
+established a distinction to preserve: **not every phase hides a search.** Tearing and connection
+expansion are real processes with reasons that exist only mid-run, so they are *replays*; alias
+elimination and IC planning are lists computed before HRW sees them, so they are *reveals* with no
+Debug button, and their module docs say why. Connection expansion is instrumented for a live trace
+but has no Debug button *yet* — re-running flatten needs the whole MSL on the UI thread; the fix is a
+worker-side live-debug path (`docs/ideas.md` #9). New Rumoca instrumentation: `rumoca-phase-structural`
+(`pub mod blt`, `block_local_incidence`) and `rumoca-phase-flatten` (`connections::trace`,
+`flatten_ref_with_options_traced`) — the first non-structural, non-DAE crate instrumented.
+
+**Note on running HRW's tests: use `--test-threads=1`.** Two pre-existing tests race on
+process-global stdout and on `focus.json`; they fail or hang under the default parallel harness, on a
+clean tree as well.
+
 **Agreed work order (Doug, 2026-07-28), in this sequence:**
 
 1. **Animation debt** — a trait over the three animation types, plus `animation_controls`'s 8
