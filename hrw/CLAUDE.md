@@ -56,12 +56,22 @@ Five phases sequencing #41 (Claude's teaching database), #42 (ad hoc tours), #43
 Modeler as answer channels) and #5 (four-bar / planar mechanics), plus a change to the tech-debt
 trigger — from weekly-by-calendar to **scoped by what the next phase touches**.
 
-Its spine is the tension it had to resolve: **#42's premise is evidenced, its scale is not.** Doug
-attempted the tour and found the prose worse than the conversation, so ad hoc tours are real friction
-from real use. But link-vocabulary parity, camera aiming and sub-view unification have no question
-behind them yet, so #42 is split — the smallest unlock (runtime tour loading) now, everything else
-only after a real Cellier question asks for it. If that second half never gets built because tours
-turn out to be rarely the right medium, the plan succeeded.
+Its spine — **corrected by Doug the same day**, and the corrected form is the load-bearing one:
+
+> **Features are experimentable; stored prose is not.**
+
+Claude's first version said nothing should be built ahead of a real question, generalising from the
+tour's failure. The counter-example was already in the repo: the **animations were also speculative**
+— nobody asked for a tearing replay — and they are the project's most educational output. Tour
+worthless, animations excellent, both built ahead of any question. So speculativeness is not the
+discriminator. *A feature you did not know you needed teaches you by being used; prose you did not
+know you needed just rots.* The tour's real defect was storing **regenerable content that nothing
+checked**.
+
+So: **build speculative features freely** — in a domain nobody has mapped, feature-building *is* the
+exploration method, and mistakes are cheap here. Keep only the narrow rule: do not *store*
+regenerable explanation ahead of use. Runtime tour loading still goes first, as the **enabler of
+experimentation** rather than as a hedge.
 
 The plan **supersedes items 3-5 of the work order below** (attempt the tour, refactor `bridge.rs`,
 Phases 6-7), which were written before the tour was attempted and found wanting. Items 1-2 are

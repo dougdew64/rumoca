@@ -11,29 +11,53 @@ was attempted and found wanting.
 
 ---
 
-## The tension this plan has to resolve
+## Features are experimentable; stored prose is not
 
-Today established that **building explanatory infrastructure ahead of real use** is
-what made `end_to_end_tour.md` worthless, and that features should be
-**traceable to a real question** Claude answered badly or could not answer.
+**This section was wrong in its first version (2026-07-29) and Doug corrected it
+the same day.** The corrected form is the more useful one, so the error is recorded
+rather than quietly replaced.
 
-#42 is a large build with **zero logged questions demanding it.** By the rule just
-established, that is suspect.
+The wrong version said: building anything ahead of a real question is what ruined
+`end_to_end_tour.md`, therefore #42 must wait for questions to justify it.
 
-The resolution, and the spine of this plan:
+The counter-example is in this repository. **The animations were also built ahead
+of any specific question** — nobody asked for a tearing replay — and by Doug's
+account they are *the most educational thing the project has produced*:
 
-> **#42's *premise* is evidenced; its *scale* is not.**
+> "my experiments with the features which you have built have been the most
+> educational aspect of this entire project so far."
 
-Doug attempted the tour, found the prose worse than the conversation, and
-identified ad hoc tours as what he actually wanted. That is real friction from real
-use — not something Claude imagined. What is *not* evidenced is the size: link
-vocabulary parity, camera aiming, sub-view unification, ad hoc specimen
-generation. None of those has a question behind it yet.
+The tour was worthless; the animations were the best part; both were speculative.
+So speculativeness is not the discriminator. The discriminator is:
 
-So #42 is built in two widely separated pieces: the **smallest possible unlock**
-now, and everything else **only after real questions ask for it**. If that second
-piece never gets built because tours turn out to be rarely the right medium, the
-plan has succeeded, not failed.
+> **A feature you did not know you needed teaches you by being used. Prose you did
+> not know you needed just rots.**
+
+The tour's defect was never that it was built early — it was that it **stored
+regenerable content that nothing checked**. Two different defects, collapsed into
+one by the first version of this section.
+
+**So the rule is narrower than "build only what a question asks for":**
+
+- **Do not store regenerable explanation ahead of use.** This is the real rule, and
+  it is what retired the narratives and the tour prose.
+- **Features are exempt, and speculative features are often correct.** In a domain
+  nobody has mapped — Doug: *"I'm still trying to get my head around the
+  possibilities of software in this new age of AI"* — **feature-building is the
+  exploration method.** Requirements for something unprecedented cannot be derived;
+  they are discovered by building a first iteration and pushing on it.
+- **Mistakes are cheap here.** There is no product and no user but Doug. The project
+  has already changed course several times as the possibilities became clearer, and
+  each change was an improvement.
+
+**What this changes about the sequencing below.** Phase 1 still comes first, but as
+the *enabler of experimentation* rather than as a hedge against overbuilding: while
+every tour needs a rebuild, tours cannot be experimented with at all. And Phase 2
+is no longer "the requirements document for Phase 3" — one problem from one chapter
+of a many-chaptered book is an anecdote, not a requirements process. Doug:
+*"Working through the first Cellier problem might not be all that informative for
+our decision making."* Build a first iteration of #42, **experiment with it for a
+while**, and let a period of use rather than a single trial decide what comes next.
 
 ---
 
@@ -67,7 +91,7 @@ without a rebuild.
 **Why first:** it is the only thing standing between "Claude can compose an answer
 in HRW" and "Claude cannot." Everything else in #42 is refinement.
 
-## Phase 2 — First Cellier problem  *(the forcing function)*
+## Phase 2 — First Cellier problems  *(start the real loop)*
 
 Start the actual loop: read a narrative, work here, solve the problem. Use
 **existing specimens** — do not build new ones in anticipation.
@@ -76,16 +100,19 @@ Suggested starting material: the structural-analysis chapters the retired tour
 already cited (Cellier & Kofman, *CSM* Ch. 9.3–9.5), where Rumoca's fit is best,
 so the first attempt tests **the loop** rather than **the fit**.
 
-**What this phase produces, which is the point:**
+**What this phase produces:**
 
 - Ledger entries — the first real ones with HRW context attached.
-- A list of what a tour could not express. *This is Phase 3's requirements
-  document.*
-- Probably a specimen or two, which tells us whether ad hoc specimens matter.
-- An answer to whether the fit varies by chapter as much as expected.
+- Evidence about what tours cannot yet express. **Evidence, not a requirements
+  document** — one problem is an anecdote. Expect to run several, over a period,
+  before the pattern is trustworthy.
+- Possibly a specimen or two, which starts to say whether ad hoc specimens matter.
+- A first read on how much the fit varies by chapter.
 
 **Exit criterion:** one Cellier problem solved, with the ledger recording what
-unlocked it. Not "the loop feels good" — a solved problem.
+unlocked it. Not "the loop feels good" — a solved problem. But this is a *start*,
+not a gate: Phase 3 does not wait for a statistically respectable sample, and
+building more of #42 to experiment with is a legitimate move at any point.
 
 **Risks, stated in advance:**
 
@@ -95,9 +122,11 @@ unlocked it. Not "the loop feels good" — a solved problem.
 - Some chapters will not fit at all (numerical integration theory is pencil work).
   Expect a lopsided loop; do not design a uniform process around it.
 
-## Phase 3 — #42 stage 2, driven by Phase 2  *(medium, scope TBD by Phase 2)*
+## Phase 3 — #42 stage 2  *(medium; overlaps Phase 2 rather than following it)*
 
-Now with requirements. Expected, in likely order of demand:
+Deliberately **not gated on Phase 2 finishing.** Build a first iteration of these,
+experiment, and let a period of use decide what to keep and what to change. Ordered
+by a guess at likely value, not by evidence:
 
 1. **Link vocabulary parity with `focus.json`** — the design principle is that
    `hrw://` should express any noun `focus.json` can describe. Same vocabulary,
@@ -112,13 +141,17 @@ Now with requirements. Expected, in likely order of demand:
 4. **`bridge.rs` decomposition** (2,365 lines) — it owns `focus.json`, so it owns
    half of vocabulary parity. Sequenced *here* rather than earlier for exactly that
    reason.
-5. **Ad hoc specimens** — *only if* Phase 2 showed a need. **Split, do not
-   repurpose** `specimens/`: the curated corpus has properties (portable subset,
+5. **Ad hoc specimens** — constructing the smallest model that exhibits a
+   phenomenon is what a good teacher does, and Claude currently cannot. **Split, do
+   not repurpose** `specimens/`: the curated corpus has properties (portable subset,
    `// purpose:` comments, System Modeler round-trip intent) that scratch models
    would degrade.
 
-**Build only what Phase 2 asked for.** An item with no question behind it stays in
-the backlog.
+**Build a first iteration and experiment**, rather than waiting for each item to
+be demanded. The order above is a guess at likely demand, not a gate. The one thing
+to keep disciplined is the *storage* rule: a tour that gets built and used is fine
+whether or not a question asked for it; a tour whose prose gets **saved** as a
+durable artifact is not (see #42's ephemerality rule).
 
 ## Phase 4 — #41 stage B: the citation checker  *(small, can slot in anywhere)*
 
@@ -140,11 +173,12 @@ definition: the target is **the mathematics of robotics**, and a closed kinemati
 chain produces exactly the high-index DAE that Pantelides exists to fix.
 Constrained mechanisms *are* index-3 DAEs.
 
-**Trigger, not a slot.** Build it when a Cellier question or a robotics question
-needs a constrained mechanism that no existing specimen provides. Building it
-because "robotics sounds right" is the mistake this plan is organised against —
-and #5 was parked originally because the nonlinear four-bar was a rabbit hole, so
-it deserves a real reason before re-entry.
+**Trigger-gated, but for a practical reason rather than a principled one.** #5 was
+parked originally because the nonlinear four-bar turned into a rabbit hole — that
+is a cost argument, not a "wait for a question" argument. Build it when the
+mathematics of a constrained mechanism is what Doug wants to work on, which the
+curriculum definition says is the target. It does not need a logged question first;
+it needs an appetite for the rabbit hole.
 
 ---
 
@@ -200,6 +234,11 @@ clippy warnings in HRW (the Rumoca crates are clean and denied, HRW is not).
 ## The one thing that is always in flight
 
 **The ledger.** Every phase appends to it, and it is the only artifact whose value
-depends on elapsed time. If a phase ends with no ledger entries, that phase was
-infrastructure work with no questions behind it — which is precisely the failure
-mode this plan exists to prevent.
+depends on elapsed time.
+
+Doug's correction *strengthens* this rather than weakening it. If experimenting
+with features is what teaches — the project's strongest evidence to date — then
+**the record of which experiment taught what** is the irreplaceable artifact. A
+phase that ends with no ledger entries is not necessarily wasted work (the
+animations had none while being built), but it does mean the learning went
+unrecorded, and that is the one loss this project cannot absorb.
