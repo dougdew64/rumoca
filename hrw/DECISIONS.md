@@ -1290,3 +1290,19 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   **Hosted on the Events stage** as a sub-tab rather than a new `StageKind`: the slots exist because
   of `when` equations and Events is the stage that shows them, and a new stage would have to be
   wired into every per-stage system to say something that belongs beside what is already there.
+- **2026-07-29 — Live-debug variants compare by derived equality, not a hand-written pair list.**
+  Doug: *"The Play button works, but when I click the Debug button nothing happens."* Not the new
+  view's plumbing — `live_debug_poll` and `is_arming` both decided "is the pending session this
+  view's?" by enumerating matching pairs *by hand*:
+  `(Matching, Matching) | (Tarjan, Tarjan) | (Reduction, Reduction)`. Adding a fourth variant
+  compiled cleanly and **silently never matched**, so the click armed nothing, showed no "Arming…"
+  badge, and produced no error. `matches!` over tuple patterns has no exhaustiveness check to fail.
+  Fixed by deriving `PartialEq` and comparing with `==`, which **cannot go stale**. That removes the
+  class rather than the instance: the next view added will work without touching the arming code.
+  A test iterates `PendingLiveDebug::ALL` (test-only, since nothing in the app enumerates variants —
+  which is precisely why the omission was silent) and asserts each variant is recognised while
+  arming *and* is not mistaken for another view's session.
+  Worth noting as the second silent-omission bug of this shape: the same day, `on_screen_animation`
+  replaced three copies of "which animation is showing?" for the same reason. Both were the
+  `hrw-stage-diff-highlight-extend` rule — every new view must be wired into *all* per-stage systems
+  — failing in the direction where the compiler cannot help.

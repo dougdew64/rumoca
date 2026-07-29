@@ -534,7 +534,14 @@ enum PointKind {
     Specimen,
 }
 
-#[derive(Clone, Copy)]
+/// `PartialEq` so "is the pending session this view's?" is `==`.
+///
+/// It used to be a hand-written list of matching pairs — `(Matching, Matching) |
+/// (Tarjan, Tarjan) | (Reduction, Reduction)` — in two places. Adding a fourth
+/// variant compiled cleanly and silently never matched, so the Debug button did
+/// nothing at all: no error, no arming badge, no session. Derived equality
+/// cannot go stale that way.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum PendingLiveDebug {
     Matching,
     Tarjan,
@@ -542,6 +549,22 @@ enum PendingLiveDebug {
     /// Idea #40. Unlike the other three it replays a phase of *DAE
     /// construction*, so it re-runs from the flat model rather than the DAE.
     PreLowering,
+}
+
+impl PendingLiveDebug {
+    /// Every variant, so a test can check the arming machinery handles all of
+    /// them without naming them. Add new variants here.
+    ///
+    /// Test-only: nothing in the app iterates the variants, because each view
+    /// names its own. That is exactly why the omission this guards against was
+    /// silent.
+    #[cfg(test)]
+    const ALL: &'static [PendingLiveDebug] = &[
+        PendingLiveDebug::Matching,
+        PendingLiveDebug::Tarjan,
+        PendingLiveDebug::Reduction,
+        PendingLiveDebug::PreLowering,
+    ];
 }
 
 enum LiveDebugAction {
@@ -674,13 +697,7 @@ impl App {
         }
 
         if let Some((armed_at, v)) = self.pending_live_debug {
-            let matches_variant = matches!(
-                (v, variant),
-                (PendingLiveDebug::Matching, PendingLiveDebug::Matching)
-                | (PendingLiveDebug::Tarjan, PendingLiveDebug::Tarjan)
-                | (PendingLiveDebug::Reduction, PendingLiveDebug::Reduction)
-            );
-            if matches_variant {
+            if v == variant {
                 let acked = bridge::check_breakpoint_ack();
                 let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
                 if acked || timed_out {
@@ -703,15 +720,7 @@ impl App {
     /// false. Without this, the controls stayed enabled for the several frames
     /// between the Debug click and the algorithm thread spawning.
     fn is_arming(&self, variant: PendingLiveDebug) -> bool {
-        matches!(
-            self.pending_live_debug.map(|(_, v)| v),
-            Some(v) if matches!(
-                (v, variant),
-                (PendingLiveDebug::Matching, PendingLiveDebug::Matching)
-                    | (PendingLiveDebug::Tarjan, PendingLiveDebug::Tarjan)
-                    | (PendingLiveDebug::Reduction, PendingLiveDebug::Reduction)
-            )
-        )
+        self.pending_live_debug.is_some_and(|(_, v)| v == variant)
     }
 
     /// Create the application. Called once by eframe at startup.
@@ -4921,6 +4930,39 @@ mod tests {
         });
         app.revalidate_point_against_new_ir();
         assert!(app.pointed_at.is_some(), "a stage point always resolves");
+    }
+
+    /// Every live-debug variant must be recognised by the arming machinery.
+    ///
+    /// Regression for the Debug button doing **nothing** on the `pre()`-lowering
+    /// view. `live_debug_poll` and `is_arming` compared variants by a
+    /// hand-written list of matching pairs — `(Matching, Matching) | (Tarjan,
+    /// Tarjan) | (Reduction, Reduction)` — so a fourth variant compiled cleanly
+    /// and silently never matched. No error, no arming badge, no session.
+    ///
+    /// Iterating `ALL` rather than naming variants keeps this honest: a fifth
+    /// view added without touching the arming code still gets checked here,
+    /// which is the point. Derived `PartialEq` is what makes it pass, but the
+    /// test is what makes the next omission loud.
+    #[test]
+    fn every_live_debug_variant_is_recognised_while_arming() {
+        for &variant in PendingLiveDebug::ALL {
+            let mut app = App::test_default();
+            assert!(!app.is_arming(variant), "{variant:?} must not arm on its own");
+
+            app.pending_live_debug = Some((std::time::Instant::now(), variant));
+            assert!(app.is_arming(variant), "{variant:?} armed but not recognised");
+
+            // ...and must not be mistaken for any other view's session.
+            for &other in PendingLiveDebug::ALL {
+                if other != variant {
+                    assert!(
+                        !app.is_arming(other),
+                        "{variant:?} armed, but {other:?} also reported arming",
+                    );
+                }
+            }
+        }
     }
 
     /// Every combination of the two primitives must be reachable, and the
