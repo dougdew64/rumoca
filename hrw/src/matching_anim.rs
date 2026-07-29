@@ -16,7 +16,7 @@
 
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::Arc;
 use std::thread;
 
 use eframe::egui;
@@ -27,30 +27,26 @@ use rumoca_phase_structural::matching::{
 };
 
 use crate::canvas::Canvas;
+use crate::playback::{Animated, Playback};
 use crate::incidence_view::IncidenceMatrix;
+
+/// Seconds between auto-advance frames.
+const FRAME_INTERVAL: f64 = 0.4;
 
 /// Animation state machine — supports three modes:
 /// 1. **Recorded**: pre-computed frames from `from_incidence` (play/pause/step)
 /// 2. **Live**: reads frames from an `mpsc` channel receiver as a debugger
 ///    steps through the algorithm on a worker thread
 pub struct MatchingAnimation {
-    frames: Vec<MatchingFrame>,
+    /// Cursor, timing and live-session state — see [`Playback`]. The three
+    /// animation views used to declare those seven fields each; now only the
+    /// matrix geometry below is this view's own.
+    playback: Playback<MatchingFrame>,
     n_eq: usize,
     n_var: usize,
     equation_names: Vec<String>,
     unknown_names: Vec<String>,
     rows: Vec<Vec<usize>>,
-    cursor: usize,
-    playing: bool,
-    /// Seconds between auto-advance frames.
-    interval: f64,
-    elapsed: f64,
-    /// Receiver end of the live trace channel — the animation drains new
-    /// frames from it without contending on the producer's lock.
-    live_rx: Option<mpsc::Receiver<MatchingFrame>>,
-    /// Whether the live algorithm thread has finished (atomic — no lock
-    /// contention with LLDB's post-step variable evaluation).
-    live_done: Arc<AtomicBool>,
 }
 
 impl MatchingAnimation {
@@ -63,25 +59,16 @@ impl MatchingAnimation {
             .collect();
         let result = maximum_matching_with_trace(mat.n_eq(), mat.n_var(), &eq_vars, None);
         Self {
-            frames: result.frames,
+            // `Playback::recorded` sets `live_done` true, which is the honest
+            // answer to "is a live session still running?" for a recorded
+            // animation — and what `live_debug_lifecycle` relies on to release a
+            // breakpoint armed for a session that is never coming.
+            playback: Playback::recorded(result.frames, FRAME_INTERVAL),
             n_eq: mat.n_eq(),
             n_var: mat.n_var(),
             equation_names: mat.equation_texts().to_vec(),
             unknown_names: mat.unknown_names().to_vec(),
             rows: mat.rows().to_vec(),
-            cursor: 0,
-            playing: false,
-            interval: 0.4,
-            elapsed: 0.0,
-            live_rx: None,
-            // `true`, not `false`: for a recorded animation the honest answer to
-            // "is a live session still running?" is no. `live_debug_lifecycle`
-            // uses this as its breakpoint-cleanup safety net — if a breakpoint is
-            // armed while the view is showing a recorded animation, no live
-            // session is coming and the breakpoint must be released. With `false`
-            // that net was inert and an armed breakpoint could leak. Matches
-            // `ReductionAnimation::from_frames`.
-            live_done: Arc::new(AtomicBool::new(true)),
         }
     }
 
@@ -120,78 +107,17 @@ impl MatchingAnimation {
             .ok()?;
 
         Some(Self {
-            frames: Vec::new(),
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
             n_eq: mat.n_eq(),
             n_var: mat.n_var(),
             equation_names: mat.equation_texts().to_vec(),
             unknown_names: mat.unknown_names().to_vec(),
             rows: mat.rows().to_vec(),
-            cursor: 0,
-            playing: false,
-            interval: 0.4,
-            elapsed: 0.0,
-            live_rx: Some(rx),
-            live_done: done,
         })
     }
 
-    /// Where playback stands: `(cursor, frame count)`.
-    ///
-    /// Exists for the crash log (`diagnostics.rs`). "Which animation, at which
-    /// frame" is one of the first things worth knowing about a crash in an
-    /// animated view, and both fields are otherwise private.
-    pub fn position(&self) -> (usize, usize) {
-        (self.cursor, self.frames.len())
-    }
-
-    /// Whether this animation is in live debug mode.
-    pub fn is_live(&self) -> bool {
-        self.live_rx.is_some()
-    }
-
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty() && self.live_rx.is_none()
-    }
-
-    fn current_frame(&self) -> Option<&MatchingFrame> {
-        self.frames.get(self.cursor)
-    }
-
-    /// In live mode, drain any new frames from the channel receiver and
-    /// auto-advance the cursor to the latest one.
-    fn sync_live(&mut self) {
-        if let Some(rx) = &self.live_rx {
-            let before = self.frames.len();
-            self.frames.extend(rx.try_iter());
-            if self.frames.len() > before {
-                self.cursor = self.frames.len().saturating_sub(1);
-            }
-        }
-    }
-
-    /// Whether the live algorithm thread has finished running.
-    pub fn live_finished(&self) -> bool {
-        self.live_done.load(Ordering::Acquire)
-    }
-
-    /// Map the raw live-session flags onto the shared [`crate::LiveState`].
-    ///
-    /// `arming` comes from the app: the Debug button's breakpoint handshake
-    /// takes several frames, and throughout them this view is still showing the
-    /// *recorded* animation — so the animation alone cannot tell that a session
-    /// is starting, and its controls would stay enabled after the click.
-    pub fn live_state(&self, arming: bool) -> crate::LiveState {
-        if self.is_live() {
-            if self.live_finished() {
-                crate::LiveState::Finished
-            } else {
-                crate::LiveState::Running
-            }
-        } else if arming {
-            crate::LiveState::Arming
-        } else {
-            crate::LiveState::Idle
-        }
+        self.playback.is_empty()
     }
 
     /// Render the animation controls and the annotated incidence matrix.
@@ -208,56 +134,28 @@ impl MatchingAnimation {
         debug_enabled: bool,
     ) -> bool {
         // In live mode, sync new frames from the channel receiver.
-        self.sync_live();
-        let live = self.live_state(arming);
+        self.playback.sync_live();
+        let live = self.playback.live_state(arming);
 
         // Nothing to show at all — no recorded frames and no live session.
-        if self.frames.is_empty() && !self.is_live() && !arming {
+        if self.playback.is_empty() && !arming {
             ui.label("No matching trace available.");
             return false;
         }
 
-        // A live session takes the cursor; drop any timed playback that was
-        // running when the user clicked Debug, so it cannot resume when the
-        // session finishes and re-enables the controls.
-        if live.is_busy() {
-            self.playing = false;
-        }
-
         let dt = ui.input(|i| i.stable_dt) as f64;
-        if self.playing && !live.is_busy() {
-            self.elapsed += dt;
-            if self.elapsed >= self.interval {
-                self.elapsed = 0.0;
-                if self.cursor + 1 < self.frames.len() {
-                    self.cursor += 1;
-                } else {
-                    self.playing = false;
-                }
-            }
-            ui.ctx().request_repaint();
-        }
-        if live.is_busy() {
+        if self.playback.tick(dt, live) {
             ui.ctx().request_repaint();
         }
 
         // --- Controls ---
-        let n_frames = self.frames.len();
-        let debug_clicked = crate::animation_controls(
-            ui,
-            &mut self.cursor,
-            &mut self.playing,
-            &mut self.elapsed,
-            &mut self.interval,
-            n_frames,
-            live,
-            debug_enabled,
-        );
+        let debug_clicked =
+            crate::animation_controls(ui, self.playback.controls(), live, debug_enabled);
 
         // A session is starting or the debugger is parked at the startup gate,
         // so no frames have arrived. The controls above stay rendered (disabled)
         // rather than the whole row vanishing until the first Continue.
-        if self.frames.is_empty() {
+        if self.playback.frames().is_empty() {
             ui.add_space(4.0);
             ui.label("Waiting for first frame from debugger\u{2026}");
             ui.ctx().request_repaint();
@@ -265,7 +163,7 @@ impl MatchingAnimation {
         }
 
         // --- Step description ---
-        if let Some(frame) = self.current_frame() {
+        if let Some(frame) = self.playback.current() {
             ui.horizontal(|ui| {
                 let (icon, desc) = step_description(
                     &frame.step,
@@ -285,6 +183,42 @@ impl MatchingAnimation {
         debug_clicked
     }
 
+}
+
+impl Animated for MatchingAnimation {
+    fn which(&self) -> &'static str {
+        "matching"
+    }
+
+    fn position(&self) -> (usize, usize) {
+        self.playback.position()
+    }
+
+    fn live_state(&self, arming: bool) -> crate::LiveState {
+        self.playback.live_state(arming)
+    }
+
+    /// The step description the view is drawing, plus how much of the matching
+    /// is settled.
+    ///
+    /// `matched` is the count the frame's own `match_eq` snapshot carries, so it
+    /// is the state *at this frame* rather than the final result — which is the
+    /// whole point of watching an augmenting-path algorithm run. `step` comes
+    /// from `step_description`, shared with the on-screen label so the two
+    /// cannot give different accounts of the same frame.
+    fn current_frame_context(&self) -> Option<serde_json::Value> {
+        let frame = self.playback.current()?;
+        let (_, desc) = step_description(&frame.step, &self.equation_names, &self.unknown_names);
+        Some(serde_json::json!({
+            "step": desc,
+            "matched_so_far": frame.match_eq.iter().filter(|m| m.is_some()).count(),
+            "n_equations": self.n_eq,
+            "n_unknowns": self.n_var,
+        }))
+    }
+}
+
+impl MatchingAnimation {
     fn draw_matrix(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         let label_headroom = 1.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
@@ -319,7 +253,7 @@ impl MatchingAnimation {
             }
         }
 
-        let Some(frame) = self.current_frame() else {
+        let Some(frame) = self.playback.current() else {
             return;
         };
 
@@ -571,29 +505,28 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = MatchingAnimation::from_incidence(&mat);
         assert!(!anim.is_empty());
-        assert!(anim.frames.len() > 3); // at least TryEquation + Explore + Assign per eq
+        assert!(anim.position().1 > 3); // at least TryEquation + Explore + Assign per eq
     }
 
     /// A recorded animation must report that no live session is running.
     ///
-    /// `live_debug_lifecycle` uses `live_finished()` as its breakpoint-cleanup
-    /// safety net: an armed breakpoint with no live session coming has to be
-    /// released. This was `false` here, which made that net inert. Mirrors
-    /// `ReductionAnimation::from_frames`' `from_empty_frames` test.
+    /// `live_debug_lifecycle` uses this as its breakpoint-cleanup safety net: an
+    /// armed breakpoint with no live session coming has to be released. It was
+    /// once `false` here, which made that net inert. Now guaranteed by
+    /// `Playback::recorded` for every view at once, but asserted here too —
+    /// this is the view whose regression prompted it.
     #[test]
     fn recorded_animation_reports_no_live_session() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = MatchingAnimation::from_incidence(&mat);
-        assert!(!anim.is_live());
-        assert!(anim.live_finished(), "a recorded animation has no live session running");
+        assert_eq!(anim.live_state(false), crate::LiveState::Idle);
     }
 
     #[test]
     fn animation_starts_paused_at_frame_zero() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = MatchingAnimation::from_incidence(&mat);
-        assert_eq!(anim.cursor, 0);
-        assert!(!anim.playing);
+        assert_eq!(anim.position().0, 0);
     }
 
     #[test]
@@ -613,7 +546,7 @@ mod tests {
     fn final_frame_has_complete_matching() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = MatchingAnimation::from_incidence(&mat);
-        let last = anim.frames.last().unwrap();
+        let last = anim.playback.frames().last().unwrap();
         let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
         assert_eq!(matched, 3, "3x3 system should have perfect matching");
     }
@@ -623,14 +556,13 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let mut anim = MatchingAnimation::start_live(&mat, || {}).expect("spawn thread");
         for _ in 0..100 {
-            if anim.live_finished() { break; }
+            if anim.live_state(false) == crate::LiveState::Finished { break; }
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
-        anim.sync_live();
-        assert!(!anim.frames.is_empty());
-        assert!(anim.is_live());
-        assert!(anim.live_finished());
-        let last = anim.frames.last().unwrap();
+        anim.playback.sync_live();
+        assert!(!anim.playback.frames().is_empty());
+        assert_eq!(anim.live_state(false), crate::LiveState::Finished);
+        let last = anim.playback.frames().last().unwrap();
         let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
         assert_eq!(matched, 3, "live mode should reach same final matching");
     }

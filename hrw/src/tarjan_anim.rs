@@ -15,7 +15,7 @@
 
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::Arc;
 use std::thread;
 
 use eframe::egui;
@@ -27,12 +27,17 @@ use rumoca_phase_structural::tarjan::{
 };
 
 use crate::canvas::Canvas;
+use crate::playback::{Animated, Playback};
 use crate::incidence_view::IncidenceMatrix;
 use crate::truncate_label;
 
 /// Animation state for Tarjan SCC discovery — supports recorded and live modes.
+/// Seconds between auto-advance frames.
+const FRAME_INTERVAL: f64 = 0.5;
+
 pub struct TarjanAnimation {
-    frames: Vec<TarjanFrame>,
+    /// Cursor, timing and live-session state — see [`Playback`].
+    playback: Playback<TarjanFrame>,
     n_nodes: usize,
     node_names: Vec<String>,
     /// Which unknown columns each equation touches, and the column names.
@@ -44,12 +49,6 @@ pub struct TarjanAnimation {
     rows: Vec<Vec<usize>>,
     unknown_names: Vec<String>,
     adj: Vec<Vec<usize>>,
-    cursor: usize,
-    playing: bool,
-    interval: f64,
-    elapsed: f64,
-    live_rx: Option<mpsc::Receiver<TarjanFrame>>,
-    live_done: Arc<AtomicBool>,
 }
 
 /// Build the equation dependency graph from a matching result.
@@ -101,22 +100,12 @@ impl TarjanAnimation {
         let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
         let result = tarjan_scc_with_trace(n_eq, &adj, None);
         Some(Self {
-            frames: result.frames,
+            playback: Playback::recorded(result.frames, FRAME_INTERVAL),
             n_nodes: n_eq,
             node_names: mat.equation_texts().to_vec(),
             rows: mat.rows().to_vec(),
             unknown_names: mat.unknown_names().to_vec(),
             adj,
-            cursor: 0,
-            playing: false,
-            interval: 0.5,
-            elapsed: 0.0,
-            live_rx: None,
-            // `true`, not `false` — see the note in `MatchingAnimation::from_incidence`:
-            // a recorded animation has no live session running, and
-            // `live_debug_lifecycle` relies on that to release a stray armed
-            // breakpoint.
-            live_done: Arc::new(AtomicBool::new(true)),
         })
     }
 
@@ -160,18 +149,12 @@ impl TarjanAnimation {
             .ok()?;
 
         Some(Self {
-            frames: Vec::new(),
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
             n_nodes: n_eq,
             node_names: mat.equation_texts().to_vec(),
             rows: mat.rows().to_vec(),
             unknown_names: mat.unknown_names().to_vec(),
             adj,
-            cursor: 0,
-            playing: false,
-            interval: 0.5,
-            elapsed: 0.0,
-            live_rx: Some(rx),
-            live_done: done,
         })
     }
 
@@ -180,36 +163,45 @@ impl TarjanAnimation {
     /// Exists for the crash log (`diagnostics.rs`). "Which animation, at which
     /// frame" is one of the first things worth knowing about a crash in an
     /// animated view, and both fields are otherwise private.
-    pub fn position(&self) -> (usize, usize) {
-        (self.cursor, self.frames.len())
-    }
-
-    pub fn is_live(&self) -> bool {
-        self.live_rx.is_some()
-    }
-
     pub fn is_empty(&self) -> bool {
-        self.frames.is_empty() && self.live_rx.is_none()
+        self.playback.is_empty()
     }
 
-    fn current_frame(&self) -> Option<&TarjanFrame> {
-        self.frames.get(self.cursor)
+}
+
+impl Animated for TarjanAnimation {
+    fn which(&self) -> &'static str {
+        "tarjan"
     }
 
-    fn sync_live(&mut self) {
-        if let Some(rx) = &self.live_rx {
-            let before = self.frames.len();
-            self.frames.extend(rx.try_iter());
-            if self.frames.len() > before {
-                self.cursor = self.frames.len().saturating_sub(1);
-            }
-        }
+    fn position(&self) -> (usize, usize) {
+        self.playback.position()
     }
 
-    pub fn live_finished(&self) -> bool {
-        self.live_done.load(Ordering::Acquire)
+    fn live_state(&self, arming: bool) -> crate::LiveState {
+        self.playback.live_state(arming)
     }
 
+    /// The step description the view is drawing, plus how many strongly
+    /// connected components have been closed so far.
+    ///
+    /// `sccs_so_far` is the frame's own snapshot, so it tracks the algorithm
+    /// rather than the final block structure — Tarjan closes components one at a
+    /// time as the stack unwinds, and *when* each closes is the thing worth
+    /// watching. `step` is shared with the on-screen label.
+    fn current_frame_context(&self) -> Option<serde_json::Value> {
+        let frame = self.playback.current()?;
+        let (_, desc) = step_description(&frame.step, &self.node_names);
+        Some(serde_json::json!({
+            "step": desc,
+            "sccs_found_so_far": frame.sccs_so_far.len(),
+            "stack_depth": frame.stack.len(),
+            "n_nodes": self.n_nodes,
+        }))
+    }
+}
+
+impl TarjanAnimation {
     /// Whether equation `eq` references the tracked variable.
     ///
     /// Answered from the incidence matrix — `rows[eq]` holds exactly the
@@ -230,26 +222,6 @@ impl TarjanAnimation {
         self.rows.get(eq).is_some_and(|cols| cols.contains(&col))
     }
 
-    /// Map the raw live-session flags onto the shared [`crate::LiveState`].
-    ///
-    /// `arming` comes from the app: the Debug button's breakpoint handshake
-    /// takes several frames, and throughout them this view is still showing the
-    /// *recorded* animation — so the animation alone cannot tell that a session
-    /// is starting, and its controls would stay enabled after the click.
-    pub fn live_state(&self, arming: bool) -> crate::LiveState {
-        if self.is_live() {
-            if self.live_finished() {
-                crate::LiveState::Finished
-            } else {
-                crate::LiveState::Running
-            }
-        } else if arming {
-            crate::LiveState::Arming
-        } else {
-            crate::LiveState::Idle
-        }
-    }
-
     /// Returns `true` on the frame the Debug button is clicked — the caller
     /// owns the bridge state needed to actually arm a session.
     #[must_use]
@@ -261,56 +233,28 @@ impl TarjanAnimation {
         arming: bool,
         debug_enabled: bool,
     ) -> bool {
-        self.sync_live();
-        let live = self.live_state(arming);
+        self.playback.sync_live();
+        let live = self.playback.live_state(arming);
 
         // Nothing to show at all — no recorded frames and no live session.
-        if self.frames.is_empty() && !self.is_live() && !arming {
+        if self.playback.is_empty() && !arming {
             ui.label("No Tarjan trace available.");
             return false;
         }
 
-        // A live session takes the cursor; drop any timed playback that was
-        // running when the user clicked Debug, so it cannot resume when the
-        // session finishes and re-enables the controls.
-        if live.is_busy() {
-            self.playing = false;
-        }
-
         let dt = ui.input(|i| i.stable_dt) as f64;
-        if self.playing && !live.is_busy() {
-            self.elapsed += dt;
-            if self.elapsed >= self.interval {
-                self.elapsed = 0.0;
-                if self.cursor + 1 < self.frames.len() {
-                    self.cursor += 1;
-                } else {
-                    self.playing = false;
-                }
-            }
-            ui.ctx().request_repaint();
-        }
-        if live.is_busy() {
+        if self.playback.tick(dt, live) {
             ui.ctx().request_repaint();
         }
 
         // --- Controls ---
-        let n_frames = self.frames.len();
-        let debug_clicked = crate::animation_controls(
-            ui,
-            &mut self.cursor,
-            &mut self.playing,
-            &mut self.elapsed,
-            &mut self.interval,
-            n_frames,
-            live,
-            debug_enabled,
-        );
+        let debug_clicked =
+            crate::animation_controls(ui, self.playback.controls(), live, debug_enabled);
 
         // A session is starting or the debugger is parked at the startup gate,
         // so no frames have arrived. The controls above stay rendered (disabled)
         // rather than the whole row vanishing until the first Continue.
-        if self.frames.is_empty() {
+        if self.playback.frames().is_empty() {
             ui.add_space(4.0);
             ui.label("Waiting for first frame from debugger\u{2026}");
             ui.ctx().request_repaint();
@@ -318,7 +262,7 @@ impl TarjanAnimation {
         }
 
         // --- Step description ---
-        if let Some(frame) = self.current_frame() {
+        if let Some(frame) = self.playback.current() {
             ui.horizontal(|ui| {
                 let (icon, desc) = step_description(&frame.step, &self.node_names);
                 ui.label(egui::RichText::new(icon).size(16.0));
@@ -358,7 +302,7 @@ impl TarjanAnimation {
         let bg = visuals.extreme_bg_color;
         painter.rect_filled(view.to_screen_rect(bounds), egui::CornerRadius::ZERO, bg);
 
-        let Some(frame) = self.current_frame() else {
+        let Some(frame) = self.playback.current() else {
             return;
         };
 
@@ -533,16 +477,18 @@ mod tests {
     fn recorded_animation_reports_no_live_session() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = TarjanAnimation::from_incidence(&mat).unwrap();
-        assert!(!anim.is_live());
-        assert!(anim.live_finished(), "a recorded animation has no live session running");
+        assert_eq!(
+            anim.live_state(false),
+            crate::LiveState::Idle,
+            "a recorded animation has no live session running",
+        );
     }
 
     #[test]
     fn tarjan_animation_starts_paused() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let anim = TarjanAnimation::from_incidence(&mat).unwrap();
-        assert_eq!(anim.cursor, 0);
-        assert!(!anim.playing);
+        assert_eq!(anim.position().0, 0);
     }
 
     #[test]
@@ -568,13 +514,12 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let mut anim = TarjanAnimation::start_live(&mat, || {}).unwrap();
         for _ in 0..100 {
-            if anim.live_finished() { break; }
+            if anim.live_state(false) == crate::LiveState::Finished { break; }
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
-        anim.sync_live();
-        assert!(!anim.frames.is_empty());
-        assert!(anim.is_live());
-        assert!(anim.live_finished());
+        anim.playback.sync_live();
+        assert!(!anim.playback.frames().is_empty());
+        assert_eq!(anim.live_state(false), crate::LiveState::Finished);
     }
 
     #[test]

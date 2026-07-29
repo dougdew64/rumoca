@@ -72,58 +72,25 @@ because the code rotted.
   *(was ~285 when last logged — it has grown too.)*
   *File:* `worker.rs`.
 
-- [ ] **The three animation views are near-identical.**
-  `matching_anim_ui` / `tarjan_anim_ui` / `reduction_anim_ui` (extracted this
-  sweep, ~57/57/46 lines) repeat the same six-step live-debug sequence,
-  differing only in the `PendingLiveDebug` variant and the cached-animation
-  field. Their `ui()` methods in `matching_anim.rs` / `tarjan_anim.rs` /
-  `reduction_anim.rs` likewise share ~40 lines, and `live_state(&self, arming)`
-  is byte-identical in all three. **Deliberately not fixed this sweep:** the
-  real fix is a trait over the three animation types, and Phase 7 reworks these
-  views anyway — doing it now risks the churn Phase 7 was postponed to avoid.
-  Extracting them into adjacent named functions was the safe half, and it makes
-  the duplication visible.
-  **DEFERRAL WITHDRAWN 2026-07-28 — this is now the next work.** The reason above
-  no longer holds: idea #40 comes *before* Phase 7, and #40 builds a **fourth**
-  animation view (pre-lowering). Copying the pattern again would hand Phase 7
-  four near-duplicates instead of three, and make `live_state` identical in four
-  files. Paying it first also makes #40 smaller. Take it together with the two
-  items below — they are the same refactor seen from three angles.
-
-  **One requirement to fold in while unifying them:** the trait should expose
-  `current_frame_context() -> Value` alongside `position()` and `live_state()`.
-  The capture currently emits `view.animation` as *position only* — `which`,
-  `frame`, `frame_count`, `live_state` — so a question asked while paused on
-  frame 12 tells Claude where the user is but not what they are looking at. The
-  per-frame display text already exists (`reduction_anim.rs` maps each
-  `IndexReductionStep` to a label); it is simply never emitted. Adding it here
-  means the fourth view from #40 inherits it rather than needing it retrofitted.
-  This is the "enrich what the primitives emit" axis, which the Phase 5 freeze
-  explicitly leaves open.
-  *Files:* `app.rs`, `matching_anim.rs`, `tarjan_anim.rs`, `reduction_anim.rs`.
-
-- [ ] **`animation_controls` takes 8 positional parameters** *(do with the item above)*, two of them
-  adjacent bools, so transposing arguments compiles silently. Grouping
-  cursor/playing/elapsed/interval into an `AnimationPlayback` struct would make
-  misuse a type error. Same pattern already applied successfully to
-  `TreeActions` and `TreeOptions`.
-  *File:* `lib.rs`.
-
-- [ ] **`source_map_ui()` is 247 lines.** *File:* `app.rs`.
-
-- [ ] **`generic_error_summary()` is 217 lines.** Dispatches on 6 error kinds
-  with inline UI; each branch could be a helper. *File:* `app.rs`.
-
-- [ ] **Long view functions.** `matching_anim::draw_matrix` (191),
-  `incidence_view::ui` (190), `expr_format::format_expr_into` (177),
-  `equation_sheet::match_connection_to_source` (162), `app::equation_sheet_ui`
-  (157), `spyplot::ui` (136), `worker::to_json` (135).
-
-- [ ] **Duplicated matrix canvas boilerplate.** *(do with the animation-trait item)* Three views repeat the same
-  ~10-line pattern. *Files:* `spyplot.rs`, `incidence_view.rs`,
-  `matching_anim.rs`. **Overlaps Phase 7** — fix them together.
-
-## Known-temporary code
+- [x] **The three animation views are near-identical.** *(fixed 2026-07-29)*
+  Resolved as `playback::Playback<T>` — a generic struct holding the seven
+  fields all three declared (`frames`, `cursor`, `playing`, `interval`,
+  `elapsed`, `live_rx`, `live_done`) plus the five byte-identical methods on
+  them. **A generic struct rather than a trait**: a trait would have shared the
+  behaviour and left the state declared three times, so it could still drift.
+  `playback::Animated` is the small trait on top, for the one thing that cannot
+  be generic — what the current frame *means*.
+  Rolled up with the two items that were the same refactor from other angles:
+  `animation_controls` went from **8 positional parameters to 4** (the four
+  transposable `&mut`s are now `PlaybackControls`), and `app.rs` lost two more
+  copies of "which animation is on screen?" to `on_screen_animation()`.
+  Net: `matching_anim` −68, `tarjan_anim` −55; `playback.rs` is 324 lines of
+  which roughly half is tests and rationale. Line count is up, *duplication* is
+  down from three copies to one — which was the point, since idea #40 adds a
+  fourth view.
+  **Folded in at the same time:** `Animated::current_frame_context`, so the
+  capture's `view.animation` carries *what* the user is looking at and not only
+  *where* they are. See `DECISIONS.md` (2026-07-29).
 
 - [ ] **`Expansion::force_open` exists only because "Reveal identifiers" is a
   mode.** Phase 6 is expected to make revealing an *action*, at which point

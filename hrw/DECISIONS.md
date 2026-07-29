@@ -1237,3 +1237,33 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   by recompile) was found by **using** the thing, not by reasoning about it.
   Enriching what the existing primitives *emit* is explicitly unaffected and still encouraged — a
   different axis, governed by "Claude is the context consumer".
+- **2026-07-29 — `Playback<T>` and `Animated`: the animation debt paid, with frame content folded
+  in.** The three animation views each declared the *same seven fields* (`frames`, `cursor`,
+  `playing`, `interval`, `elapsed`, `live_rx`, `live_done`) and carried five **byte-identical**
+  methods over them, plus ~30 lines of identical timing prologue in each `ui()`.
+  `ReductionAnimation` was those seven fields and nothing else.
+  **A generic struct, not a trait.** A trait would have shared the *behaviour* and left the state
+  declared three times, so it could still drift apart. `Playback<T>` shares both; each view now owns
+  one and keeps only what is genuinely its own (matrix geometry for matching and Tarjan, nothing at
+  all for reduction). `Animated` is the small trait *on top*, for the one thing that cannot be
+  generic — what the current frame means. Named `Animated` rather than `AnimationView` so it cannot
+  be confused with `bridge::AnimationView`, the emitted shape it feeds; both appear in `app.rs`.
+  Rolled up with the two items that were the same refactor from other angles: `animation_controls`
+  went from **8 positional parameters to 4** (its four transposable `&mut`s — two adjacent bools —
+  became `PlaybackControls`), and `app.rs` lost two further copies of "which animation is on
+  screen?" to `on_screen_animation()`.
+  **Why now, having been deliberately deferred:** the deferral assumed Phase 7 would rework these
+  views first. Idea #40 adds a **fourth** view before Phase 7, so copying the pattern again would
+  have left Phase 7 four near-duplicates and made `live_state` identical in four files.
+  **Folded in: `Animated::current_frame_context`.** The capture's `view.animation` carried position
+  only, so a question asked while paused on frame 12 said *where* Doug was but not *what he was
+  looking at* — frames live in memory and appear in no stage IR. Each view already computes a
+  human-readable step description in order to draw it; `reduction_anim`'s was split out of
+  `render_step` as `step_summary` and is now handed to the capture unchanged, so screen and emitted
+  context cannot give different accounts of one frame. This matters for the route Doug named into
+  the algorithms: watch, get confused, ask — *before* knowing enough to phrase a question about the
+  algorithm itself. The crash log gets it too, since a crash mid-animation is among the harder ones
+  to reproduce.
+  Measured: `matching_anim` −68 lines, `tarjan_anim` −55, `playback.rs` +324 of which roughly half
+  is tests and rationale. **Line count is up; duplication is down from three copies to one** — which
+  was the point.

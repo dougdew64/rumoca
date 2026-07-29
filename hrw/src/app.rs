@@ -42,6 +42,7 @@ use crate::identifier_index;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::canvas::Canvas;
+use crate::playback::Animated;
 use crate::LiveState;
 use crate::field_help;
 use crate::incidence_view;
@@ -1351,30 +1352,40 @@ impl App {
     /// Reported only for the *current* stage tab: the caches hold several
     /// animations at once, and naming a stale one would say the user was
     /// looking at something they were not.
-    fn animation_view(&self) -> Option<bridge::AnimationView<'static>> {
-        let (which, position, live) = match self.stage {
+    /// The animation the current stage tab is showing, if any.
+    ///
+    /// One place that answers "which animation is on screen?" — the capture and
+    /// the crash log both used to carry their own copy of this match, so a new
+    /// view (idea #40's `pre()` lowering) would have needed adding in three
+    /// places and would have been forgotten in one.
+    ///
+    /// Reported only for the *current* tab: the caches hold several animations
+    /// at once, and naming a stale one would say the user was looking at
+    /// something they were not.
+    fn on_screen_animation(&self) -> Option<&dyn Animated> {
+        match self.stage {
             StageKind::Structural => match self.structural_view {
                 StructuralView::MatchingAnim => {
-                    let a = self.cached_matching_anim.as_ref()?.as_ref()?;
-                    ("matching", a.position(), a.live_state(false))
+                    Some(self.cached_matching_anim.as_ref()?.as_ref()?)
                 }
-                StructuralView::TarjanAnim => {
-                    let a = self.cached_tarjan_anim.as_ref()?.as_ref()?;
-                    ("tarjan", a.position(), a.live_state(false))
-                }
-                _ => return None,
+                StructuralView::TarjanAnim => Some(self.cached_tarjan_anim.as_ref()?.as_ref()?),
+                _ => None,
             },
-            StageKind::IndexReduction => {
-                let a = self.cached_reduction_anim.as_ref()?.as_ref()?;
-                ("reduction", a.position(), a.live_state(false))
-            }
-            _ => return None,
-        };
+            StageKind::IndexReduction => Some(self.cached_reduction_anim.as_ref()?.as_ref()?),
+            _ => None,
+        }
+    }
+
+    fn animation_view(&self) -> Option<bridge::AnimationView<'static>> {
+        let anim = self.on_screen_animation()?;
+        let (frame, frame_count) = anim.position();
         Some(bridge::AnimationView {
-            which,
-            frame: position.0,
-            frame_count: position.1,
-            live_state: live.name(),
+            which: anim.which(),
+            frame,
+            frame_count,
+            live_state: anim.live_state(false).name(),
+            // What the user is looking at, not merely where they are.
+            frame_context: anim.current_frame_context(),
         })
     }
 
@@ -1455,29 +1466,16 @@ impl App {
     /// the caches can hold several at once, and listing a stale one would
     /// suggest the user was looking at something they were not.
     fn animation_diagnostic(&self) -> Value {
-        let (name, position, live) = match self.stage {
-            StageKind::Structural => match self.structural_view {
-                StructuralView::MatchingAnim => match &self.cached_matching_anim {
-                    Some(Some(a)) => ("matching", Some(a.position()), Some(a.live_state(false))),
-                    _ => ("matching", None, None),
-                },
-                StructuralView::TarjanAnim => match &self.cached_tarjan_anim {
-                    Some(Some(a)) => ("tarjan", Some(a.position()), Some(a.live_state(false))),
-                    _ => ("tarjan", None, None),
-                },
-                _ => return Value::Null,
-            },
-            StageKind::IndexReduction => match &self.cached_reduction_anim {
-                Some(Some(a)) => ("reduction", Some(a.position()), Some(a.live_state(false))),
-                _ => return Value::Null,
-            },
-            _ => return Value::Null,
-        };
+        let Some(anim) = self.on_screen_animation() else { return Value::Null };
+        let (frame, frame_count) = anim.position();
         json!({
-            "which": name,
-            "frame": position.map(|(cursor, _)| cursor),
-            "frame_count": position.map(|(_, n)| n),
-            "live_state": live.map(|s| format!("{s:?}")),
+            "which": anim.which(),
+            "frame": frame,
+            "frame_count": frame_count,
+            "live_state": anim.live_state(false).name(),
+            // A crash mid-animation is one of the harder ones to reproduce, so
+            // the file carries what was being shown, not just the index.
+            "showing": anim.current_frame_context(),
         })
     }
 

@@ -31,6 +31,8 @@
 //! - **`identifier_index`** — cross-stage identifier index (source → flat names).
 //! - **`log_view`** — timestamped compilation/simulation log panel.
 //! - **`reduction_anim`** — index-reduction algorithm animation (step-by-step replay).
+//! - **`playback`** — frame cursor/timing/live-session state shared by every
+//!   animated algorithm view (`Playback<T>`), plus `AnimationView`.
 //! - **`colors`** — shared color constants used across canvas and view modules.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
@@ -47,6 +49,7 @@ pub mod matching_anim;
 pub mod diagnostics;
 pub mod log_view;
 pub mod modelica_lex;
+pub mod playback;
 pub mod reduction_anim;
 pub mod reduction_view;
 pub mod source_view;
@@ -216,15 +219,18 @@ pub fn frame_label(cursor: usize, n_frames: usize) -> String {
 #[must_use]
 pub fn animation_controls(
     ui: &mut eframe::egui::Ui,
-    cursor: &mut usize,
-    playing: &mut bool,
-    elapsed: &mut f64,
-    interval: &mut f64,
-    n_frames: usize,
+    playback: crate::playback::PlaybackControls<'_>,
     live: LiveState,
     debug_enabled: bool,
 ) -> bool {
     use eframe::egui;
+    // Destructured once, so the body reads exactly as before. The bundle exists
+    // to fix the *call site*: this used to take `cursor`, `playing`, `elapsed`
+    // and `interval` as four separate `&mut` arguments — two of them adjacent
+    // bools — so transposing a pair compiled silently and misbehaved at runtime.
+    // Same reasoning as `TreeActions` and `TreeOptions`.
+    let crate::playback::PlaybackControls { cursor, playing, elapsed, interval, n_frames } =
+        playback;
     let busy = live.is_busy();
     let mut debug_clicked = false;
     // Explains every disabled control in the row.

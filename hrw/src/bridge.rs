@@ -609,7 +609,7 @@ fn generated_origin(name: &str) -> Option<Value> {
 /// carries the sub-tab's own name (`"MatchingAnim"`, `"EquationSheet"`) because
 /// the enum variant is the exact fact, and a hand-written prettier string would
 /// be a second thing to keep in sync.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct View<'a> {
     /// Which of the three left-panel modes: Tour, Specimen, Debug.
     pub ui_mode: &'a str,
@@ -624,8 +624,8 @@ pub struct View<'a> {
     pub animation: Option<AnimationView<'a>>,
 }
 
-/// An animation's position, for the capture.
-#[derive(Clone, Copy)]
+/// An animation's position **and what it is showing**, for the capture.
+#[derive(Clone)]
 pub struct AnimationView<'a> {
     /// Which algorithm: `"matching"`, `"tarjan"`, `"reduction"`.
     pub which: &'a str,
@@ -634,10 +634,24 @@ pub struct AnimationView<'a> {
     pub frame_count: usize,
     /// `LiveState` as a name: Idle, Arming, Running, Finished.
     pub live_state: &'a str,
+    /// What the frame under the cursor shows — the same description the view is
+    /// drawing, from `playback::Animated::current_frame_context`.
+    ///
+    /// **Position alone was not enough.** This section used to carry only
+    /// `frame: 12, frame_count: 47`, which says *where* the user is but not
+    /// *what they are looking at* — the frames live in memory and are in no
+    /// stage IR, so a question asked mid-animation could not be answered
+    /// precisely. That gap mattered because Doug's stated route into the
+    /// algorithms is to watch them and ask, before he knows enough to phrase a
+    /// question about the algorithm itself.
+    ///
+    /// `None` before the first frame of a live session arrives — a real state,
+    /// not a failure.
+    pub frame_context: Option<Value>,
 }
 
 impl View<'_> {
-    fn to_json(self) -> Value {
+    fn to_json(&self) -> Value {
         json!({
             "note": "what HRW was showing when this context was assembled. A point \
                      made in a tree and one made mid-animation are different questions, \
@@ -646,11 +660,12 @@ impl View<'_> {
             "stage_view": self.stage_view,
             "specimen_detail": self.specimen_detail,
             "viewing_log": self.viewing_log,
-            "animation": self.animation.map(|a| json!({
+            "animation": self.animation.as_ref().map(|a| json!({
                 "which": a.which,
                 "frame": a.frame,
                 "frame_count": a.frame_count,
                 "live_state": a.live_state,
+                "showing": a.frame_context,
             })),
         })
     }
@@ -1938,6 +1953,7 @@ mod tests {
                     frame: 12,
                     frame_count: 47,
                     live_state: "Running",
+                    frame_context: Some(json!({ "step": "Round 0: state emf.phi" })),
                 }),
             },
         };
@@ -1948,6 +1964,13 @@ mod tests {
         assert_eq!(doc["view"]["animation"]["frame"], json!(12));
         assert_eq!(doc["view"]["animation"]["frame_count"], json!(47));
         assert_eq!(doc["view"]["animation"]["live_state"], json!("Running"));
+        // Position alone said where the user was; `showing` says what they were
+        // looking at, which is what makes a mid-animation question answerable.
+        assert!(
+            doc["view"]["animation"]["showing"]["step"].as_str().is_some_and(|s| s.contains("emf.phi")),
+            "the frame's own description must reach the capture: {}",
+            doc["view"]["animation"],
+        );
 
         assert_eq!(doc["phase_source"]["crate"], json!("crates/rumoca-ir-dae"));
         assert!(doc["phase_source"]["entry"].as_str().is_some_and(|e| e.contains("discrete")));
