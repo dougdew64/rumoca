@@ -161,6 +161,19 @@ fact.
   dummy-derivative path instead" detail would have been guessed wrong — the obvious
   assumption for a hidden constraint is that it gets differentiated.
 
+**Outcome — the tour delivered.** Doug walked it and reported: *"I found row 46 and
+have concluded that the ad hoc tour feature is working brilliantly."*
+
+**So what unlocked it was Stop 2** — finding the one row in a 48x48 matrix with no
+matching marker on it. Everything else in the tour is Claude asserting things; that
+stop is Doug verifying one himself, which is why it was the stop that had to work.
+**Generalise this when composing tours: at least one stop should be something Doug
+can check rather than be told.**
+
+Also a small confirmed data point about the rendered surface, which Claude had
+flagged as the risk in this tour: **the incidence view's matching markers are legible
+enough at 48x48 to spot a single missing one.** That was not obvious in advance.
+
 **Feature request produced → `docs/ideas.md` #44.** Writing the tour surfaced that
 `Matching ▶` is **hidden when Structural is singular**, so the one view that would
 let Doug *watch* the deficiency happen is unavailable exactly when it matters. This
