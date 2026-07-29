@@ -26,10 +26,20 @@ see `DECISIONS.md`.)*
 
 **Current initiative — source tooling** ([`docs/source-tooling-plan.md`](docs/source-tooling-plan.md)):
 seven phases covering the Modelica lexer, syntax highlighting, identifier tracking, the Context Bar,
-the tree rework, and the canvas views. Phases 1–4 complete. **Phase 5 is next: the Context Bar**,
-designed in [`docs/context-assembly.md`](docs/context-assembly.md) — the feature that makes the
-thin-emitter / thick-reasoner split visible, and the one that most matters to the premise that HRW
-is an instrument for use with Claude rather than a standalone tool.
+the tree rework, and the canvas views. **Phases 1–5 complete** (Phase 5 closed 2026-07-28 after Doug
+tested the full loop end to end). The Context Bar, designed in
+[`docs/context-assembly.md`](docs/context-assembly.md), is what makes the thin-emitter /
+thick-reasoner split visible — the premise that HRW is an instrument for use with Claude rather than
+a standalone tool.
+
+**The composition primitives are frozen**: one point-at + one follow + background, unchanged until a
+practical scenario demonstrates a need. Multiple `follow` items and a third "compare" primitive were
+considered and deliberately not built — **do not re-propose them from first principles.**
+
+**Phases 6 and 7 are next** — the tree rework (in-view search, reveal as action not mode, provenance
+noise suppression) and the canvas views (hit-testing for row/column labels, spy-plot blocks, Tarjan
+nodes, reduction rows). Both will be shaped by what Phase 5 turned up; half of Phase 6's search work
+already landed as the jump-to-followed-identifier control.
 
 **Current work — Pass two, in this order:**
 1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than

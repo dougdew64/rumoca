@@ -1218,3 +1218,22 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   accounted for every case investigated that day, and it has not been re-tested. Marked *suspect*
   rather than deleted — it may still be real, and the honest state is "unverified", not "wrong".
   Anyone returning to CodeLLDB should retest it on a model the process has not yet compiled.
+- **2026-07-28 — Phase 5 closed; the context-assembly primitives are frozen pending evidence.** Doug,
+  after testing the full loop end to end — follow from the specimen source, jump to the node in a
+  tree, point at it, `explain`, then breakpoints that fire: *"Until I can demonstrate with practical
+  scenarios why we need to change the context assembly primitives, we will keep them as they are."*
+  **The frozen set:** one point-at (node / stage / specimen) + one follow (an identifier across all
+  stages) + the always-captured background. Two candidates were designed and deliberately **not**
+  built: **multiple simultaneous `follow` items** (Doug's own idea, deferred by him pending
+  experience) and a **third "compare these two" primitive** (Claude's suggestion, declined because
+  comparison already works well as *background* via `cross_stage`, so a manual version would be
+  labour rather than capability).
+  **The reasoning is about evidence, not conservatism.** This is new interaction design with no prior
+  art — the noun is assembled rather than selected, and published eagerly because the verb is typed
+  in another process — so intuition about what is missing is untrustworthy. An argument that
+  something would be *more expressive* does not count; a scenario Doug actually hit does. Phase 5's
+  own history supports the rule: every genuine defect it produced (the phantom `request`, `kind:
+  "stage"` for a cleared point, the un-clearable point, the wrong empty-state hint, context destroyed
+  by recompile) was found by **using** the thing, not by reasoning about it.
+  Enriching what the existing primitives *emit* is explicitly unaffected and still encouraged — a
+  different axis, governed by "Claude is the context consumer".

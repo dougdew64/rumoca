@@ -219,10 +219,21 @@ exist because of what Phase 4 turned up.
 the capture carries the IR *around* each address, what was on screen, and where
 the phase code lives; the user-facing verbs are "Point at" and "Follow"; and the
 status bar no longer duplicates the bar's job. See `DECISIONS.md` for the five
-capture changes and why each was measured rather than guessed. **Open by
-design:** whether the two composition primitives are the right ones is now a
-question for testing, not for more design — Doug will form opinions by using it
-before any move to multiple `follow` items.
+capture changes and why each was measured rather than guessed.
+
+**Closed 2026-07-28**, after Doug tested the full loop end to end: follow from
+the specimen source, jump to the node in a tree, point at it, ask `explain`, ask
+for breakpoints, hit them.
+
+**The primitives are frozen.** Doug: *"During the weeks and months ahead, I will
+gain experience with the Context Bar and will form opinions. Until I can
+demonstrate with practical scenarios why we need to change the context assembly
+primitives, we will keep them as they are."* So **one point-at + one follow +
+background** stands until a real scenario shows it failing. Ideas raised during
+design and deliberately **not** built — multiple simultaneous `follow` items, and
+a third "compare these two" primitive — stay unbuilt. Do not re-propose them from
+first principles; the bar for changing this is a scenario Doug hit, not an
+argument that something would be more expressive.
 
 
 **Goal.** Make the thin-emitter / thick-reasoner split visible: tracking emits a
