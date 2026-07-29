@@ -1138,3 +1138,26 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   silently the day it changes. Worth noting how this was found: `phase_source` pointed at
   `rumoca-ir-dae`, reading from there led to `generated_names.rs`, and the contract came with it —
   which is exactly what that field was added for.
+- **2026-07-28 — Phase breakpoints fire only on the first compile of a model: Rumoca's compile
+  cache.** Four rounds of misdiagnosis, worth recording so the fifth does not happen.
+  Breakpoints in `rumoca-phase-dae::pre_lowering` verified but never fired, while a breakpoint in
+  `rumoca-phase-structural` fired every time — **identical build flags, both path-dep crates, both
+  `opt-level = 0`, both `debuginfo = 2`** (measured from `cargo build -v`, not assumed). The cause is
+  `CompiledSourceRoot::compile_cache`, an `IndexMap<String, PhaseResult>` keyed by model name:
+  `compile_model_strict_reachable_with_recovery` returns the cached result, so the phases do not run
+  on any reselect. Structural kept firing only because HRW calls `build_structural_report` *itself*,
+  outside the cached call. Confirmed by loading a model the process had never compiled — all three
+  breakpoints fired immediately.
+  **What made it expensive:** each wrong hypothesis was individually reasonable and each cost a
+  relaunch. `opt-level = 1` dropping line tables was real (it is why a breakpoint in the `hrw`
+  package will not bind at all — that package still has no override) but was not this. The recorded
+  windows-migration finding that CodeLLDB mis-binds breakpoints in path-dep `crates/rumoca-*` was
+  reached for as an authority and **is at best incomplete** — a path-dep breakpoint fired fine here.
+  It is left in `launch.json` because the symptom it describes (pausing at an unrelated address in
+  `epi.rs`) is different from this one, but it should not be treated as settled.
+  **Method note, the actual lesson:** the answer came from a three-way experiment — one breakpoint
+  in HRW's own package, one in a phase crate known to work, one in the target — run in a single
+  specimen load. Serial single-hypothesis fixes cost four rounds; the experiment that distinguished
+  them cost one. Prefer the discriminating test over the next plausible fix. It also required
+  distrusting a *negative* result: an earlier probe "proved" the function was never called, when in
+  fact the probe had failed to compile and its errors had been discarded.

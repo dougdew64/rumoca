@@ -847,6 +847,32 @@ In the CodeLLDB Debug Console:
 | `thread list` | Which thread is stopped, and what is `frame_index`? |
 | `help thread step-out` | Confirms which run-mode flags a step command accepts |
 
+#### 5. Rumoca's compile cache — why a phase breakpoint fires only once
+
+`CompiledSourceRoot` holds `compile_cache: Mutex<IndexMap<String, PhaseResult>>`,
+keyed by model name. `Session::compile_model_strict_reachable_with_recovery`
+consults it, so **the second and later compiles of the same model return a
+cached result and the phases never run**.
+
+HRW does remove and re-add the document before each compile (`worker.rs`, "so
+the session treats it as new"), which defeats *document* caching — but not this
+one.
+
+The failure is deeply confusing because it is **selective**. Breakpoints in
+`rumoca-phase-structural` keep firing on every reselect, because HRW calls
+`build_structural_report` **itself**, on the returned DAE, outside the cached
+call. So one phase crate stops and another does not, with identical build flags
+— which reads exactly like a debug-info or adapter defect and sends you to §1
+and §2. It cost four rounds of misdiagnosis on 2026-07-28, including a wrongly
+blamed `opt-level` and a wrongly blamed PDB reader.
+
+**How to tell in one step:** load a model this process has **not** compiled yet.
+A first-ever compile cannot be a cache hit, so the phase breakpoints fire. If
+they do, nothing is wrong with the debugger.
+
+`Session::compile_model_strict_reachable_uncached_with_recovery` is the public
+escape hatch; HRW does not currently use it (see `DECISIONS.md`, 2026-07-28).
+
 #### 7. Failure signatures
 
 | Symptom | Cause |
@@ -855,6 +881,8 @@ In the CodeLLDB Debug Console:
 | Breakpoint never verifies; no gutter dot while the session is live | Same — the adapter cannot bind it meaningfully |
 | Locals show `<optimized out>` | `opt-level` above 0 for the crate (§2) |
 | Breakpoint looks verified but never fires, and the code definitely runs | Line-table entry dropped at `opt-level` above 0 — add the crate to §2 |
+| Breakpoint in a *compiler phase* never fires, but one in `rumoca-phase-structural` does | Rumoca's **compile cache** (§5) — the phase only runs on the first compile of that model per process |
+| Breakpoint in HRW's own code will not bind at all | The `hrw` package is still at `opt-level = 1`; no override (§2) |
 | Visuals freeze, then exit code 101, nothing in the Debug Console | GPU device loss after a long pause (§3); look in the terminal |
 | First Debug click misses, second works | Cold line-table resolution — fixed by the pre-warm |
 | Stepping works but the animation does not advance | Single-thread stepping; use `ns`/`si`/`so` (§4) |
