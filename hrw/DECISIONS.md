@@ -1358,3 +1358,36 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   The data was already being emitted — `matched_so_far`, `sccs_found_so_far` and `stack_depth` went
   into `current_frame_context` for the capture on 2026-07-29 and were never rendered. The capture
   knew more than the screen did.
+
+- **2026-07-29 — Three more animations: tearing, alias elimination, IC planning.** Doug: *"Implement
+  animations for tearing, alias elimination, initial condition planning and connection expansion"*
+  (connection expansion follows separately — it needs `rumoca-phase-flatten` instrumented). Three
+  design calls fell out of building them.
+
+  **(1) Not every phase hides a search, and the views say which they are.** Tearing is a genuine
+  greedy algorithm: it counts appearances, picks a winner, and the cascade of causal assignments
+  that follows is the payoff. Alias elimination and IC planning are not — the elimination pass walks
+  a list and substitutes, and the IC plan is already computed by the time HRW holds the report.
+  So the tearing view is a **replay** with a Debug button and a live trace; the other two are
+  **reveals** of recorded lists, with no Debug button, and each module's doc comment says so
+  explicitly. Giving all three the same chrome would have been easier and would have taught
+  something false.
+
+  **(2) The tearing view rebuilds from the DAE rather than reading the report.** Every other
+  animated view is built from the stage JSON. Tearing cannot be: it works in each coupled block's
+  own `0..n` index space, and `StructuralReport` has already translated back to names. So
+  `walk_blocks` redoes incidence → matching → BLT → `block_local_incidence` and re-runs the
+  algorithm with an observer. Recorded and live playback call the *same* walk, so they cannot
+  diverge. This is also why the Rumoca side needed `pub mod blt` and `pub fn block_local_incidence`
+  (commit `e3124880`) — the *result* was already public; the way back into the algorithm's index
+  space was not.
+
+  **(3) The Structural and Index Reduction tabs tear different DAEs.** They describe different
+  systems, and a high-index model's raw DAE has no full matching — hence no blocks, hence nothing
+  to tear. `App::tearing_dae` re-runs the reduction funnel for the Index Reduction tab rather than
+  caching a second DAE the two tabs would have to keep in sync; it is pure and cheap.
+
+  Also added `src/test_support.rs` (`dae_for(model)`), because a view that *reconstructs* compiler
+  state has a failure mode hand-built frames cannot catch — the reconstruction can be wired to the
+  wrong index space and every unit test still passes. One end-to-end test per such view closes that
+  gap; it returns `Option` so a missing specimen skips rather than fails.

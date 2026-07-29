@@ -51,9 +51,14 @@ pub mod matching_anim;
 pub mod diagnostics;
 pub mod log_view;
 pub mod modelica_lex;
+pub mod alias_anim;
+pub mod ic_plan_anim;
 pub mod playback;
 pub mod pre_lowering_anim;
 pub mod reduction_anim;
+pub mod tearing_anim;
+#[cfg(test)]
+pub mod test_support;
 pub mod reduction_view;
 pub mod source_view;
 pub mod spyplot;

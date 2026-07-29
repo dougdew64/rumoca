@@ -400,7 +400,7 @@ impl ReductionView {
 //   - Unary -> "op rhs" (e.g., "-x")
 //   - BuiltinCall -> "func(args)" (e.g., "sin(theta)")
 //   - anything else -> "(expr)" as a fallback
-fn abbreviate_expr(json_expr: &str) -> String {
+pub(crate) fn abbreviate_expr(json_expr: &str) -> String {
     if let Ok(v) = serde_json::from_str::<Value>(json_expr) {
         expr_to_short(&v)
     } else {
@@ -447,7 +447,7 @@ fn unary_op_symbol(variant: &str) -> &str {
 
 // Recursive expression-to-string renderer. Each branch pattern-matches on the
 // Rumoca IR expression enum variant (serialized as a JSON object with one key).
-fn expr_to_short(v: &Value) -> String {
+pub(crate) fn expr_to_short(v: &Value) -> String {
     match v.get("VarRef").or_else(|| v.get("Literal")) {
         Some(inner) => {
             if let Some(name) = inner.get("name").and_then(|n| n.as_str()) {

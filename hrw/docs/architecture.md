@@ -40,6 +40,9 @@ hrw/
 │   ├── matching_anim.rs   # Animated matching stepper (augmenting-path replay)
 │   ├── tarjan_anim.rs     # Animated Tarjan SCC stepper (BLT discovery replay)
 │   ├── reduction_anim.rs  # Animated index-reduction stepper (step-by-step replay)
+│   ├── tearing_anim.rs    # Animated tearing stepper (greedy loop-breaking replay)
+│   ├── alias_anim.rs      # Alias-elimination reveal (substitutions, one at a time)
+│   ├── ic_plan_anim.rs    # Initial-condition plan walk (t=0 solve order)
 │   ├── reduction_view.rs  # Index reduction process summary panel
 │   ├── equation_sheet.rs     # Readable equation sheet from the flat DAE
 │   ├── identifier_index.rs  # Cross-stage identifier index (source → flat names)
@@ -940,6 +943,44 @@ constraint, demote state, round complete) with before/after equation text and a
 running table of demoted states. Live mode receives the raw `Dae` (cloned from the
 worker's compilation result and stored in `App::cached_dae`) and spawns a thread
 running both reduction passes with a shared `LiveTrace<IndexReductionFrame>`.
+
+**Tearing animation** (`tearing_anim.rs`, ~450 lines): replays the greedy
+heuristic that breaks an algebraic loop open. Each frame is one decision — tear
+the variable appearing in the most unsolved equations, or make an equation
+causal because the tears left it with exactly one unknown. The two counts that
+justify each decision (`appearances`, `competitors`) exist only while the
+algorithm runs, which is the whole reason for the view: the `TearingReport` in
+the stage JSON has the answer but not the reasoning.
+
+Unlike the other replays this one is **not built from the stage report**.
+Tearing works in each coupled block's own `0..n` index space and the report has
+already translated back to names, so `walk_blocks` rebuilds the situation from
+the DAE — incidence, matching, BLT blocks, then
+`rumoca_phase_structural::block_local_incidence` to get into block-local space —
+and re-runs `tear_algebraic_loop_with_trace` with an observer attached. The same
+walk serves recorded and live playback, so the two cannot diverge.
+
+Which DAE depends on the tab: Structural tears the raw DAE, Index Reduction the
+reduced one (`App::tearing_dae`), because that is the system its report
+describes — and a high-index model's raw DAE has no full matching, hence no
+blocks, hence nothing to tear.
+
+**Alias-elimination reveal** (`alias_anim.rs`, ~280 lines) and
+**initial-condition plan walk** (`ic_plan_anim.rs`, ~430 lines): both are
+`Playback`-driven like the replays, but they are **reveals of recorded lists,
+not replays of searches**, and both say so in their module docs. Rumoca's
+elimination pass has no backtracking and no competing candidate; the IC plan is
+already computed by the time HRW holds the report. Neither offers a Debug
+button, because there is no hidden process a live trace could show. Being
+explicit about that distinction matters: pretending every phase hides a search
+would teach something false.
+
+What the stepping buys in both cases is *accumulation* — the unknown count
+falling one substitution at a time, the IC plan's long causal runs punctuated by
+the few blocks that actually iterate — rather than meeting a finished table of
+forty rows. The IC view's header additionally carries the two facts that explain
+the plan's shape: the determinacy verdict, and which equations the planner
+dropped / unknowns it pinned to make the initial system square.
 
 ### Index reduction summary (`reduction_view.rs`, ~650 lines)
 

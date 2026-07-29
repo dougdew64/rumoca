@@ -47,7 +47,10 @@ use crate::LiveState;
 use crate::field_help;
 use crate::incidence_view;
 use crate::matching_anim;
+use crate::alias_anim;
+use crate::ic_plan_anim;
 use crate::tarjan_anim;
+use crate::tearing_anim;
 use crate::log_view;
 use crate::pre_lowering_anim;
 use crate::reduction_anim;
@@ -113,8 +116,31 @@ enum StructuralView {
     Incidence,
     MatchingAnim,
     TarjanAnim,
+    /// Replay of tearing an algebraic loop open. Shares this enum (rather than
+    /// getting a stage of its own) because tearing is part of what the
+    /// Structural stage reports — its output is already in `blocks`.
+    TearingAnim,
+    /// Reveal of the alias eliminations. Index Reduction only -- that is the
+    /// stage whose report carries them.
+    AliasAnim,
     Animate,
     Tree,
+}
+
+/// Sub-tab selector for the Initialization stage: the IR tree, or a walk of the
+/// initial-condition solve plan.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum InitView {
+    #[default]
+    Tree,
+    IcPlan,
+}
+
+fn init_view_name(v: InitView) -> &'static str {
+    match v {
+        InitView::Tree => "Tree",
+        InitView::IcPlan => "IcPlan",
+    }
 }
 
 /// Sub-tab selector for the Flatten stage: readable equation sheet, source
@@ -175,6 +201,8 @@ fn structural_view_name(v: StructuralView) -> &'static str {
         StructuralView::Incidence => "Incidence",
         StructuralView::MatchingAnim => "MatchingAnim",
         StructuralView::TarjanAnim => "TarjanAnim",
+        StructuralView::TearingAnim => "TearingAnim",
+        StructuralView::AliasAnim => "AliasAnim",
         StructuralView::Animate => "Animate",
         StructuralView::Tree => "Tree",
     }
@@ -340,6 +368,7 @@ pub struct App {
     // (pan/zoom camera state).
     flatten_view: FlattenView,
     events_view: EventsView,
+    init_view: InitView,
     highlighted_eq_row: Option<usize>,
     highlighted_source_line: Option<u32>,
     structural_view: StructuralView,
@@ -394,6 +423,15 @@ pub struct App {
     pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
     cached_flat: Option<rumoca_ir_flat::Model>,
     cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
+    /// Tearing replay for the current stage tab. `Some(None)` means "computed,
+    /// and this model has no algebraic loop" — distinct from `None`, "not yet
+    /// computed". Rebuilt on stage change because Structural and Index
+    /// Reduction tear *different* DAEs (raw vs reduced).
+    cached_tearing_anim: Option<Option<tearing_anim::TearingAnimation>>,
+    /// Alias-elimination reveal, built from the Index Reduction report.
+    cached_alias_anim: Option<Option<alias_anim::AliasAnimation>>,
+    /// Initial-condition plan walk, built from the Initialization report.
+    cached_ic_plan_anim: Option<Option<ic_plan_anim::IcPlanAnimation>>,
     cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
     cached_dae: Option<rumoca_ir_dae::Dae>,
     // "Before" views for the Index Reduction split — parsed from the `"before"`
@@ -549,6 +587,9 @@ enum PendingLiveDebug {
     /// Idea #40. Unlike the other three it replays a phase of *DAE
     /// construction*, so it re-runs from the flat model rather than the DAE.
     PreLowering,
+    /// Tearing. Re-runs from the DAE, like Reduction, because tearing needs the
+    /// BLT blocks and those are rebuilt from the incidence each time.
+    Tearing,
 }
 
 impl PendingLiveDebug {
@@ -564,6 +605,7 @@ impl PendingLiveDebug {
         PendingLiveDebug::Tarjan,
         PendingLiveDebug::Reduction,
         PendingLiveDebug::PreLowering,
+        PendingLiveDebug::Tearing,
     ];
 }
 
@@ -659,7 +701,7 @@ impl App {
     /// Whether this view has the data its algorithm needs — gates the Debug button.
     fn has_live_debug_data(&self, variant: PendingLiveDebug) -> bool {
         match variant {
-            PendingLiveDebug::Reduction => self.cached_dae.is_some(),
+            PendingLiveDebug::Reduction | PendingLiveDebug::Tearing => self.cached_dae.is_some(),
             // The flat model, not the DAE: `pre()` lowering runs inside DAE
             // construction, so the DAE is already past it.
             PendingLiveDebug::PreLowering => self.cached_flat.is_some(),
@@ -802,6 +844,7 @@ impl App {
             field_help: field_help::load(),
             flatten_view: FlattenView::Equations,
             events_view: EventsView::default(),
+            init_view: InitView::default(),
             highlighted_eq_row: None,
             highlighted_source_line: None,
             structural_view: StructuralView::SpyPlot,
@@ -831,6 +874,9 @@ impl App {
             pre_lowering_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
+            cached_tearing_anim: None,
+            cached_alias_anim: None,
+            cached_ic_plan_anim: None,
             cached_reduction_anim: None,
             cached_dae: None,
             cached_before_incidence: None,
@@ -1106,6 +1152,9 @@ impl App {
                     self.cached_reduction = None;
                     self.cached_matching_anim = None;
                     self.cached_tarjan_anim = None;
+                    self.cached_tearing_anim = None;
+                    self.cached_alias_anim = None;
+                    self.cached_ic_plan_anim = None;
                     self.cached_reduction_anim = None;
                     self.cached_before_incidence = None;
                     if self.live_breakpoint_armed {
@@ -1389,6 +1438,7 @@ impl App {
                 }
                 StageKind::Flatten => Some(flatten_view_name(self.flatten_view)),
                 StageKind::Events => Some(events_view_name(self.events_view)),
+                StageKind::Initialization => Some(init_view_name(self.init_view)),
                 _ => None,
             },
             specimen_detail: (self.ui_mode == UiMode::Specimen).then(|| {
@@ -1424,11 +1474,16 @@ impl App {
                     Some(self.cached_matching_anim.as_ref()?.as_ref()?)
                 }
                 StructuralView::TarjanAnim => Some(self.cached_tarjan_anim.as_ref()?.as_ref()?),
+                StructuralView::TearingAnim => Some(self.cached_tearing_anim.as_ref()?.as_ref()?),
+                StructuralView::AliasAnim => Some(self.cached_alias_anim.as_ref()?.as_ref()?),
                 _ => None,
             },
             StageKind::IndexReduction => Some(self.cached_reduction_anim.as_ref()?.as_ref()?),
             StageKind::Events if self.events_view == EventsView::PreLowering => {
                 Some(self.cached_pre_lowering_anim.as_ref()?.as_ref()?)
+            }
+            StageKind::Initialization if self.init_view == InitView::IcPlan => {
+                Some(self.cached_ic_plan_anim.as_ref()?.as_ref()?)
             }
             _ => None,
         }
@@ -2261,6 +2316,139 @@ impl App {
     if debug_clicked {
         self.start_live_debug(PendingLiveDebug::Reduction);
     }
+    }
+
+    /// The tearing replay, on the Structural and Index Reduction stages.
+    ///
+    /// Unlike the other animated views this one is not built from the stage's
+    /// JSON report: tearing works in each coupled block's own 0..n index space,
+    /// and the report has already translated back to names. So the view walks
+    /// the DAE again (`tearing_anim::walk_blocks`) and re-runs the algorithm
+    /// with an observer attached.
+    ///
+    /// Which DAE depends on the tab. The Structural tab tears the raw DAE; the
+    /// Index Reduction tab tears the *reduced* one, because that is the system
+    /// its report describes -- and for a high-index model the raw DAE has no
+    /// full matching, hence no blocks, hence nothing to tear.
+    fn tearing_anim_ui(&mut self, ui: &mut egui::Ui) {
+        let arming = self.is_arming(PendingLiveDebug::Tearing);
+        let live = self
+            .cached_tearing_anim
+            .as_ref()
+            .and_then(|o| o.as_ref())
+            .map_or(
+                if arming { LiveState::Arming } else { LiveState::Idle },
+                |a| a.live_state(arming),
+            );
+        let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tearing) && !live.is_busy();
+        let mut debug_clicked = false;
+        let action = self.live_debug_poll(ui.ctx(), live, PendingLiveDebug::Tearing);
+        if matches!(action, LiveDebugAction::SpawnLive)
+            && let Some(dae) = self.tearing_dae()
+        {
+            let live = tearing_anim::TearingAnimation::start_live(dae, || {
+                let _ = bridge::remove_live_trace_breakpoint();
+            });
+            if live.is_none() {
+                let _ = bridge::remove_live_trace_breakpoint();
+                self.live_breakpoint_armed = false;
+            }
+            self.cached_tearing_anim = Some(live);
+        }
+        if self.cached_tearing_anim.is_none() {
+            self.cached_tearing_anim =
+                Some(self.tearing_dae().map(|dae| tearing_anim::TearingAnimation::record(&dae)));
+        }
+        if let Some(Some(anim)) = &mut self.cached_tearing_anim {
+            debug_clicked = egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .inner;
+        } else {
+            ui.weak("(no DAE available for tearing)");
+        }
+        if debug_clicked {
+            self.start_live_debug(PendingLiveDebug::Tearing);
+        }
+    }
+
+    /// The DAE the current stage tab should tear -- see [`Self::tearing_anim_ui`].
+    ///
+    /// Index reduction is re-run here rather than carried from the worker
+    /// because it is a pure function of the DAE, and re-running it keeps the
+    /// two tabs from having to agree about a second cached artifact.
+    fn tearing_dae(&self) -> Option<rumoca_ir_dae::Dae> {
+        let dae = self.cached_dae.as_ref()?;
+        if self.stage == StageKind::IndexReduction {
+            let mut reduced = dae.clone();
+            crate::worker::index_reduce_in_place(&mut reduced);
+            Some(reduced)
+        } else {
+            Some(dae.clone())
+        }
+    }
+
+    /// The alias-elimination reveal, on the Index Reduction stage.
+    ///
+    /// Simpler than the replay views: no live-debug lifecycle, because this
+    /// phase has no search to trace (see `alias_anim`'s module note).
+    fn alias_anim_ui(&mut self, ui: &mut egui::Ui) {
+        if self.cached_alias_anim.is_none() {
+            self.cached_alias_anim = Some(
+                self.stages
+                    .get(self.stage)
+                    .value
+                    .as_ref()
+                    .and_then(alias_anim::AliasAnimation::from_report),
+            );
+        }
+        if let Some(Some(anim)) = &mut self.cached_alias_anim {
+            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
+        } else {
+            ui.weak("(no alias eliminations in this report)");
+        }
+    }
+
+    /// Whether the current report has alias eliminations worth a tab.
+    ///
+    /// Read straight from the stage JSON rather than the cache: the tab bar is
+    /// drawn before the view is, so the cache may not exist yet.
+    fn has_alias_eliminations(&self) -> bool {
+        self.stages
+            .get(self.stage)
+            .value
+            .as_ref()
+            .and_then(|v| v.get("reduction")?.get("eliminations")?.as_array())
+            .is_some_and(|a| !a.is_empty())
+    }
+
+    /// The initial-condition plan walk, on the Initialization stage.
+    fn ic_plan_anim_ui(&mut self, ui: &mut egui::Ui) {
+        if self.cached_ic_plan_anim.is_none() {
+            self.cached_ic_plan_anim = Some(
+                self.stages
+                    .initialization
+                    .value
+                    .as_ref()
+                    .and_then(ic_plan_anim::IcPlanAnimation::from_report),
+            );
+        }
+        if let Some(Some(anim)) = &mut self.cached_ic_plan_anim {
+            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
+        } else {
+            ui.weak("(no initial-condition plan in this report)");
+        }
+    }
+
+    /// Whether the initialization report has a plan worth a tab. See
+    /// [`Self::has_alias_eliminations`] on why this reads the JSON directly.
+    fn has_ic_plan(&self) -> bool {
+        self.stages
+            .initialization
+            .value
+            .as_ref()
+            .and_then(|v| v.get("blocks")?.as_array())
+            .is_some_and(|a| !a.is_empty())
     }
 
     /// The `pre()`-lowering replay (idea #40), on the Events stage.
@@ -4084,6 +4272,23 @@ impl eframe::App for App {
                     ui.separator();
                 }
 
+                // The Initialization stage offers a walk of the initial-condition
+                // solve plan beside the tree -- only when there is a plan, so a
+                // model whose initialization failed never shows an empty tab.
+                let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
+                if init_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut self.init_view, InitView::Tree, "Tree");
+                        ui.selectable_value(&mut self.init_view, InitView::IcPlan, "IC plan \u{25b6}")
+                            .on_hover_text(
+                                "Walk the plan for computing a consistent state at t=0. Mostly \
+                                 plain assignment; the few blocks that iterate are where \
+                                 initialization fails when it fails.",
+                            );
+                    });
+                    ui.separator();
+                }
+
                 // The report stages (Structural + Index reduction) offer a custom
                 // BLT spy-plot alongside the generic tree; every other stage is
                 // tree-only.
@@ -4099,6 +4304,10 @@ impl eframe::App for App {
                         self.cached_reduction = None;
                         self.cached_matching_anim = None;
                         self.cached_tarjan_anim = None;
+                        self.cached_tearing_anim = None;
+                        self.cached_alias_anim = None;
+                    self.cached_alias_anim = None;
+                    self.cached_ic_plan_anim = None;
                         self.cached_reduction_anim = None;
                         self.cached_before_incidence = None;
                         // Default sub-view: Summary for IndexReduction and
@@ -4150,6 +4359,18 @@ impl eframe::App for App {
                         if is_index_reduction && !self.index_reduction_frames.is_empty() {
                             ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
                         }
+                        // Alias elimination is reported by this stage only, and
+                        // only when something was actually eliminated -- a model
+                        // with no aliases must not show an empty tab.
+                        if is_index_reduction && self.has_alias_eliminations() {
+                            ui.selectable_value(&mut self.structural_view, StructuralView::AliasAnim, "Aliases \u{25b6}")
+                                .on_hover_text(
+                                    "Watch variables be substituted away. Every connection \
+                                     equation `a = b` lets one of the two be deleted, which is \
+                                     why the solved system is far smaller than the equation \
+                                     count suggests.",
+                                );
+                        }
                         // Spy-plot, Matching, BLT require a full matching —
                         // hide them when the Structural stage is singular.
                         if !is_singular || is_index_reduction {
@@ -4159,6 +4380,9 @@ impl eframe::App for App {
                         if !is_singular || is_index_reduction {
                             ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
                             ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
+                            // Tearing operates on the coupled blocks BLT finds,
+                            // so it needs the same full matching those two do.
+                            ui.selectable_value(&mut self.structural_view, StructuralView::TearingAnim, "Tearing \u{25b6}");
                         }
                         ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
                     });
@@ -4251,6 +4475,10 @@ impl eframe::App for App {
                     self.matching_anim_ui(ui, ir_split);
                 } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
                     self.tarjan_anim_ui(ui, ir_split);
+                } else if report_ready && self.structural_view == StructuralView::TearingAnim {
+                    self.tearing_anim_ui(ui);
+                } else if report_ready && self.structural_view == StructuralView::AliasAnim {
+                    self.alias_anim_ui(ui);
                 } else if report_ready && self.structural_view == StructuralView::Summary {
                     if self.stage == StageKind::Structural {
                         Self::structural_singular_summary(ui, &self.stages.structural);
@@ -4268,6 +4496,8 @@ impl eframe::App for App {
                     self.reduction_anim_ui(ui);
                 } else if events_ready && self.events_view == EventsView::PreLowering {
                     self.pre_lowering_anim_ui(ui);
+                } else if init_ready && self.init_view == InitView::IcPlan {
+                    self.ic_plan_anim_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::Equations {
                     self.equation_sheet_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
@@ -4675,6 +4905,7 @@ impl App {
             field_help: HashMap::new(),
             flatten_view: FlattenView::Equations,
             events_view: EventsView::default(),
+            init_view: InitView::default(),
             highlighted_eq_row: None,
             highlighted_source_line: None,
             structural_view: StructuralView::SpyPlot,
@@ -4704,6 +4935,9 @@ impl App {
             pre_lowering_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
+            cached_tearing_anim: None,
+            cached_alias_anim: None,
+            cached_ic_plan_anim: None,
             cached_reduction_anim: None,
             cached_dae: None,
             cached_before_incidence: None,

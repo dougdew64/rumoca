@@ -1653,7 +1653,7 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
 /// - `TornBlock` — a coupled system reduced by tearing (pick "tear" variables,
 ///   solve the rest causally, iterate on the tear variables)
 /// - `CoupledLM` — a fully coupled system solved by Levenberg-Marquardt
-fn ic_plan_to_json(
+pub(crate) fn ic_plan_to_json(
     plan: &[rumoca_phase_structural::IcBlock],
     hint: Option<&rumoca_phase_structural::IcRelaxationHint>,
     n_x: usize,
@@ -3615,6 +3615,17 @@ struct ReductionReport {
 /// All funnel steps come from `rumoca_phase_structural::dae_prepare` (aliased
 /// as `dp`). They mutate the DAE in place (`&mut Dae`) and return either
 /// `Result<usize, Error>` (count of states demoted) or `Result<(), Error>`.
+/// Index-reduce a DAE in place, discarding the report.
+///
+/// The Structural and Index Reduction tabs describe *different systems*: the
+/// raw DAE and the reduced one. A view that reconstructs compiler state from a
+/// DAE (the tearing replay) therefore needs the reduced DAE when it is showing
+/// the Index Reduction tab. Re-running the funnel is cheap and pure, which
+/// beats caching a second DAE that the two tabs would have to keep in sync.
+pub(crate) fn index_reduce_in_place(dae: &mut rumoca_ir_dae::Dae) {
+    let _ = index_reduce_for_structural_analysis(dae);
+}
+
 fn index_reduce_for_structural_analysis(
     dae: &mut rumoca_ir_dae::Dae,
 ) -> (ReductionReport, Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>) {

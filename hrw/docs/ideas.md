@@ -247,10 +247,30 @@ need it; it's specifically for the event/hybrid ones.
 
 ## 9. Incremental / animated views of algorithms
 
-**Partially implemented 2026-07-22.** Matching (augmenting paths) and BLT discovery
-(Tarjan SCC) now have animated steppers — see `matching_anim.rs` and `tarjan_anim.rs`.
-Trace infrastructure added to `rumoca-phase-structural` (`maximum_matching_with_trace`,
-`tarjan_scc_with_trace`). Remaining candidates: Pantelides, tearing, Newton iteration.
+**Largely implemented; one candidate left.** Seven animated views now exist:
+
+| View | Kind | Live trace? |
+| --- | --- | --- |
+| Matching — augmenting paths (`matching_anim.rs`) | replay of a search | yes |
+| BLT discovery — Tarjan SCC (`tarjan_anim.rs`) | replay of a search | yes |
+| Index reduction — Pantelides / dummy derivatives (`reduction_anim.rs`) | replay of a search | yes |
+| `pre()` lowering (`pre_lowering_anim.rs`, idea #40) | replay of a pass | yes |
+| Tearing (`tearing_anim.rs`, 2026-07-29) | replay of a search | yes |
+| Alias elimination (`alias_anim.rs`, 2026-07-29) | reveal of a list | no — nothing to trace |
+| Initial-condition planning (`ic_plan_anim.rs`, 2026-07-29) | reveal of a list | no — nothing to trace |
+
+Trace infrastructure in `rumoca-phase-structural` (`maximum_matching_with_trace`,
+`tarjan_scc_with_trace`, `tear_algebraic_loop_with_trace`, `block_local_incidence`)
+and `rumoca-phase-dae` (`to_dae_with_options_traced`).
+
+The **replay / reveal** distinction is deliberate and worth preserving: only some
+phases hide a search. Alias elimination walks a list and substitutes; the IC plan is
+already computed when HRW sees it. Those two get a stepper for the *accumulation*
+(the unknown count falling, the plan's shape emerging) but no Debug button, and their
+module docs say why. See `DECISIONS.md` (2026-07-29).
+
+**Remaining candidates:** connection expansion (needs `rumoca-phase-flatten`
+instrumented — see #20), and Newton iteration / per-step convergence (see #22).
 
 Captured 2026-07-21 (Doug). **Top-of-mind, long-running theme.** Educational
 animations of challenging compiler algorithms — index reduction (Pantelides
