@@ -1324,3 +1324,17 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   observer. HRW wires it up as `Some(&|f| lt.push(f.clone()))` at three call sites. Moving it out is
   a separate change with its own risks: it carries `live_trace_breakpoint`, the debugger anchor, and
   both the `opt-level = 0` override and `bridge::find_live_trace_line` are keyed to that file.
+- **2026-07-29 — A running live session shows no frame total.** Doug, stepping all four animations:
+  *"Instead of showing 1/11, 2/11 … 11/11 the frame report shows 1/1, 2/2 … 11/11."* Correct, and the
+  reason is sharper than an off-by-one. In a live session frames arrive **one at a time** from the
+  algorithm thread and the cursor follows the newest, so the count so far always equals `cursor + 1`.
+  The denominator was not wrong arithmetic — it was a **claim about the total**, and `3/3` says *you
+  are at the end* on every single frame, when the algorithm may have fifty steps left.
+  The total is genuinely unknown until the session finishes, so the honest rendering is to omit it:
+  `Frame 3 · live`. Once `Finished` the frames are an ordinary recorded trace, the total is real, and
+  `n/total` returns. Recorded playback was never affected.
+  **Not caused by the `Playback<T>` refactor** — the old `start_live` also began with an empty frame
+  vector, so this had been true since live tracing was built. It surfaced now because Doug stepped
+  all four animations in one sitting after the observer migration, which is the kind of scrutiny a
+  single view never got. Same species as the phantom `request` and `kind: "stage"`: **a field that
+  prints the one number available rather than the one that is true.**

@@ -188,12 +188,26 @@ pub const POINT_AT_HOVER: &str =
 
 /// Label for the frame counter.
 ///
+/// **No denominator while a live session is running.** Frames arrive one at a
+/// time from the algorithm thread, so `cursor + 1` always equals the count so
+/// far — the label read "Frame 1/1, 2/2, … 11/11". That is not merely odd: a
+/// denominator is a claim about the total, and `3/3` says *you are at the end*
+/// when the algorithm may have fifty steps left. The total is genuinely unknown
+/// until the session finishes, and the honest rendering is to omit it rather
+/// than print the one number that happens to be available.
+///
+/// Once the session is `Finished` the frames are an ordinary recorded trace, the
+/// total is known, and `n/total` returns.
+///
 /// `n_frames` is zero while a live session is armed but the debugger is still
-/// paused at the startup gate — the controls render in that state so Reset
-/// stays reachable, and "Frame 1/0" would be nonsense.
-pub fn frame_label(cursor: usize, n_frames: usize) -> String {
+/// paused at the startup gate — the controls render in that state so Reset stays
+/// reachable, and "Frame 1/0" would be nonsense.
+pub fn frame_label(cursor: usize, n_frames: usize, live: LiveState) -> String {
     if n_frames == 0 {
         "No frames yet".to_owned()
+    } else if live.is_busy() {
+        // The debugger is still producing frames; the total does not exist yet.
+        format!("Frame {} \u{00b7} live", cursor + 1)
     } else {
         format!("Frame {}/{}", cursor + 1, n_frames)
     }
@@ -294,7 +308,7 @@ pub fn animation_controls(
         }
 
         ui.separator();
-        ui.label(frame_label(*cursor, n_frames));
+        ui.label(frame_label(*cursor, n_frames, live));
 
         ui.separator();
         ui.add_enabled_ui(!busy, |ui| {
@@ -399,9 +413,29 @@ mod tests_playback {
     /// state is reachable rather than hypothetical.
     #[test]
     fn frame_label_handles_the_empty_live_case() {
-        assert_eq!(super::frame_label(0, 0), "No frames yet");
-        assert_eq!(super::frame_label(0, 1), "Frame 1/1");
-        assert_eq!(super::frame_label(3, 10), "Frame 4/10");
+        use super::LiveState;
+        assert_eq!(super::frame_label(0, 0, LiveState::Idle), "No frames yet");
+        assert_eq!(super::frame_label(0, 1, LiveState::Idle), "Frame 1/1");
+        assert_eq!(super::frame_label(3, 10, LiveState::Idle), "Frame 4/10");
+    }
+
+    /// A running live session must not print a denominator.
+    ///
+    /// Frames arrive one at a time, so the count so far always equals
+    /// `cursor + 1` — the label read "1/1, 2/2, … 11/11", which says *you are at
+    /// the end* on every single frame. The total is unknown until the session
+    /// finishes; omitting it is the honest rendering. Doug caught this stepping
+    /// through all four animations.
+    #[test]
+    fn a_running_live_session_shows_no_total() {
+        use super::LiveState;
+        assert_eq!(super::frame_label(0, 1, LiveState::Running), "Frame 1 \u{00b7} live");
+        assert_eq!(super::frame_label(10, 11, LiveState::Running), "Frame 11 \u{00b7} live");
+        // Arming has no frames yet, so the empty case still wins.
+        assert_eq!(super::frame_label(0, 0, LiveState::Arming), "No frames yet");
+        // Once finished, the frames are an ordinary recorded trace and the total
+        // is real again.
+        assert_eq!(super::frame_label(3, 11, LiveState::Finished), "Frame 4/11");
     }
 
     /// Controls are disabled only *while* a live session owns the cursor — from
