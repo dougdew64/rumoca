@@ -1707,6 +1707,42 @@ animation would address **time**, not a frame index. The address space needs at
 least three shapes and only one is currently sampled — though see #22 on why the
 solver shape is not urgent.
 
+### The unplanned payoff: tours multiply user testing
+
+Doug, 2026-07-29, after the first tour produced #44 on its first use:
+
+> The surface area of HRW had already become more than I could effectively test by
+> myself. This ad hoc tour feature mitigates that problem. […] By asking you
+> questions, and you providing answers as ad hoc tours, we are multiplying the
+> effective user testing of HRW.
+
+**Why it works: different coverage profiles.** Doug navigates where he already
+knows to go. A tour navigates where **the question** demands, which can be
+somewhere neither party would have visited. #44 is the proof — the tour needed
+`Matching ▶` on a singular system, a place Doug could never navigate to *because it
+is not there*. **You cannot manually test the absence of a feature you do not know
+should exist.**
+
+**Holes in a tour are the signal, so never route silently around one.** The first
+tour's Stop 3 is an admission rather than a stop: "I wanted to send you here and
+cannot, and here is why that gating is wrong." Doug: *"holes in tours can be useful
+ways to identify HRW functionality gaps or bugs."* A tour that hides its gap loses
+the finding *and* leaves the reader wondering why the obvious next place went
+unmentioned.
+
+**The limit, which must not be over-trusted.** Claude does not *run* HRW — it reads
+code and `.hrw-bridge/*.json` and reasons about what the UI will show. So it tests
+the **logical** surface (missing sub-tabs, wrong gating, absent data, unparseable
+links) and is **blind to the rendered** one (layout, legibility, truncation,
+per-frame cost). The 2026-07-29 BLT sideways-drift bug — a diagram sliding because a
+text line above it changed height — could not have been found this way; Doug found
+it by watching. **Claude tests the logical surface; Doug tests the rendered one.**
+
+**And the discipline that keeps it worth anything: the testing stays a byproduct.**
+If tour stops get chosen to maximise coverage rather than to answer the question,
+the tours get worse and the answers degrade. The coverage benefit is real *precisely
+because* it is incidental.
+
 ### The discipline this needs from Claude
 
 **A tour is for answers that are irreducibly sequential or spatial.** Most
