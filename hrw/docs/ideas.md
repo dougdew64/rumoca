@@ -1738,6 +1738,35 @@ per-frame cost). The 2026-07-29 BLT sideways-drift bug — a diagram sliding bec
 text line above it changed height — could not have been found this way; Doug found
 it by watching. **Claude tests the logical surface; Doug tests the rendered one.**
 
+**Doug's correction, same day — the rendered surface is covered too, indirectly.**
+Claude's "blind to the rendered surface" claim was too pessimistic. Claude cannot
+see it, but a tour **aims Doug's attention at it**:
+
+> I'm more likely to experience that kind of bug while being led through one of your
+> tours. […] I will always be in user acceptance testing mode while being led through
+> your tours.
+
+The mechanism: **a rendered bug is a violated expectation, and a tour supplies the
+expectation.** Undirected use does not — a subtly wrong rendering just looks like how
+the app is, which is presumably how the BLT sideways-drift survived as long as it
+did. A stop that says "watch the stack depth as Tarjan descends" gives Doug something
+specific to check, so a drifting diagram registers as *wrong* rather than as *normal*.
+
+So the full loop: Claude composes (logical surface + aims attention) → Doug walks it
+in acceptance mode (rendered surface) → bug reported → **fixed in flight if it is
+degrading the tour**, rather than only logged → tour restarted clean.
+
+**Boundary on "fix in flight":** yes when the fix is small and the bug is spoiling the
+tour (the 2026-07-29 canvas fix was about an hour, including two wrong hypotheses).
+No when the honest fix is structural — say so and log it rather than derail a
+learning session into a refactor. State which it is and let Doug overrule.
+
+**An unanticipated bonus: a tour's admissions are self-liquidating.** The first
+tour's Stop 3 ("I wanted to send you to `Matching ▶` and cannot") exists only until
+#44 lands. Fix it, regenerate, and the hole evaporates — because tours are
+regenerated rather than stored. A *stored* tour would carry that apology forever and
+eventually describe HRW as missing a feature it has.
+
 **And the discipline that keeps it worth anything: the testing stays a byproduct.**
 If tour stops get chosen to maximise coverage rather than to answer the question,
 the tours get worse and the answers degrade. The coverage benefit is real *precisely
