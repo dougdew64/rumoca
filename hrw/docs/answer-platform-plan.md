@@ -190,7 +190,8 @@ a weekly scan of `docs/tech-debt.md`. Phase 0's sweep was instead **scoped by wh
 open across two sweeps, one closed as *obsolete*, one *corrected* as wrong, and
 three deliberately pushed into #42 rather than swept.
 
-Proposed standing rule, for Doug to accept or reject:
+**Adopted 2026-07-29** (Doug: *"Your tech debt proposal is spot on… We are entirely
+agile for this project"*):
 
 - **Sweep at each phase boundary, scoped to what the next phase touches.**
 - **Measure, never re-estimate.** Phase 0 found `compile()` had grown 327 → 363 and

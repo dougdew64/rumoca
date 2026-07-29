@@ -720,7 +720,7 @@ picture of what the solver is doing at each time step.
 
 ## 23. Dedicated performance review cycle (when needed)
 
-Captured 2026-07-22 (Doug + Claude). The weekly tech-debt scan already catches
+Captured 2026-07-22 (Doug + Claude). The tech-debt sweep already catches
 performance items incidentally (it found per-frame `from_report` re-parsing,
 per-frame `Path::exists()`, and per-frame `layout_no_wrap` — all fixed). A
 **dedicated** performance review with profiling is not yet warranted: the app is
@@ -732,12 +732,12 @@ the worker thread.
   (b) instrumentation hooks add measurable overhead to compilation (noticeable
   when comparing instrumented vs upstream Rumoca), or (c) simulation plotting
   with many variables or long time series causes frame drops.
-- **What it would look like:** a periodic (monthly, not weekly) pass with
+- **What it would look like:** an occasional pass with
   `cargo flamegraph` or `perf` on a representative specimen, looking for hot
   spots in the UI thread. Focus areas: tree rendering (deep/wide JSON), canvas
   painting (large matrices), and channel throughput (many `CompileProgress`
   messages per compile).
-- **For now:** let the weekly tech-debt scan catch performance issues as they
+- **For now:** let the phase-boundary tech-debt sweep catch performance issues as they
   surface — it has a good track record.
 
 ## 24. Re-envision compiler-phases docs as HRW-driven guided tours

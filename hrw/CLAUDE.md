@@ -54,7 +54,9 @@ clean tree as well.
 **Current plan: [`docs/answer-platform-plan.md`](docs/answer-platform-plan.md)** (2026-07-29).
 Five phases sequencing #41 (Claude's teaching database), #42 (ad hoc tours), #43 (Wolfram + System
 Modeler as answer channels) and #5 (four-bar / planar mechanics), plus a change to the tech-debt
-trigger — from weekly-by-calendar to **scoped by what the next phase touches**.
+trigger — from weekly-by-calendar to **scoped by what the next phase touches** (adopted 2026-07-29;
+see `docs/tech-debt.md` for the rules). `central_panel_ui` at 664 lines is logged and deliberately
+not split before Phase 3 reworks the sub-tab bars — Doug: *"acknowledged"*.
 
 Its spine — **corrected by Doug the same day**, and the corrected form is the load-bearing one:
 

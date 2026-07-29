@@ -1,8 +1,25 @@
 # Tech Debt — HRW Observatory
 
-Weekly quality improvements identified by code review. Items are grouped by
-theme, ordered by severity within each group. Check off items as they are
-completed; clear completed items at the end of each cycle.
+Quality improvements identified by code review. Items are grouped by theme,
+ordered by severity within each group. Check off items as they are completed;
+clear completed items at the end of each cycle.
+
+**Trigger: each phase boundary, scoped to what the next phase touches** — adopted
+2026-07-29, replacing a weekly calendar scan. Doug, on the change: *"my original
+tech debt schedule is a prime example of old fashioned software development
+mentality where teams have to agree upon weekly schedules and other such stuff
+which absolutely do not matter for this project. We are entirely agile."*
+
+The rules, in full:
+
+- **Measure, never re-estimate.** The 2026-07-28 sweep found `ui()` had grown 385
+  lines in a day, unnoticed; the 2026-07-29 sweep found `compile()` at 363 where
+  327 was logged.
+- **Three outcomes are all legitimate:** *fixed*; *closed as obsolete* (the batch
+  narrative workflow — the narratives it served were retired); or *deferred into the
+  phase that will rewrite it*, when sweeping would mean designing an abstraction
+  before its requirements exist.
+- **Skip what the next phase will rewrite.** Applied three times on 2026-07-29.
 
 Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 in the
 2026-07-25 cycle, 25 in the 2026-07-25 sweep, and 20 in the 2026-07-26 sweep.
