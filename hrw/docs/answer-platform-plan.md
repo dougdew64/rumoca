@@ -133,9 +133,13 @@ building more of #42 to experiment with is a legitimate move at any point.
 
 ## Phase 3 — #42 stage 2  *(medium; overlaps Phase 2 rather than following it)*
 
-Deliberately **not gated on Phase 2 finishing.** Build a first iteration of these,
-experiment, and let a period of use decide what to keep and what to change. Ordered
-by a guess at likely value, not by evidence:
+Deliberately **not gated on Phase 2 finishing.** Build a first iteration, experiment,
+and let a period of use decide what to keep.
+
+**Reordered 2026-07-29 by evidence rather than guesswork.** The first tour hit two
+holes, and that changes the ranking: sub-tab links degraded *four* navigation moments
+in a single tour, which makes gap 2 the most-felt item rather than gap 1. See the
+tour-holes table in `docs/tech-debt.md`.
 
 1. **Link vocabulary parity with `focus.json`** — the design principle is that
    `hrw://` should express any noun `focus.json` can describe. Same vocabulary,
@@ -201,6 +205,12 @@ three deliberately pushed into #42 rather than swept.
 
 **Adopted 2026-07-29** (Doug: *"Your tech debt proposal is spot on… We are entirely
 agile for this project"*):
+
+- **Every sweep starts from the tour-holes table** at the top of `docs/tech-debt.md`.
+  A tour hole is a place HRW stopped Claude from answering a question, so it degrades
+  the deliverable rather than costing future effort — and it arrives with the question
+  it blocked as evidence. Doug: *"Fixing those gaps and bugs is high priority."* It is
+  the only section of that file whose priority is not a judgement call.
 
 - **Sweep at each phase boundary, scoped to what the next phase touches.**
 - **Measure, never re-estimate.** Phase 0 found `compile()` had grown 327 → 363 and

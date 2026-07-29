@@ -32,6 +32,14 @@ file, and it is the only artifact here that gets more valuable with time.
   - the **thing is not visible in HRW** → this is a feature request, and a better
     one than Claude would invent. Log it in `docs/ideas.md` and say so.
 
+**If composing a tour hits an HRW gap** — you cannot get somewhere, or you work
+around it with prose ("same tab → now click X") — record it in the **tour holes**
+table at the top of [`tech-debt.md`](tech-debt.md), not only here. Doug's ruling:
+those outrank all other tech debt, because they degrade the deliverable rather than
+costing future effort. **Prose workarounds count**: the first tour logged its loud
+hole (#44) and silently accepted a quiet one at four separate stops, which went
+unnoticed until Doug asked whether holes were being tracked.
+
 **After answering**, append an entry if something durable happened. Not every
 turn — every-turn capture produces a log nobody can retrieve from. Say out loud
 in the conversation when writing here, so Doug can veto an entry before it
@@ -173,6 +181,17 @@ can check rather than be told.**
 Also a small confirmed data point about the rendered surface, which Claude had
 flagged as the risk in this tour: **the incidence view's matching markers are legible
 enough at 48x48 to spot a single missing one.** That was not obvious in advance.
+
+**Two tour holes, not one — and only the loud one got logged at first.**
+
+1. **Loud:** `Matching ▶` hidden when Structural is singular → `docs/ideas.md` #44.
+   Noticed immediately because it forced an admission into the tour.
+2. **Quiet:** `hrw://` cannot address a sub-tab, so Stops 2, 5 and 6 degrade to
+   "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶**
+   yourself." The tour has **2 working links and 4 prose hand-offs.** This one went
+   unrecorded until Doug asked whether tour holes were being tracked — which is
+   exactly why quiet holes need the same discipline as loud ones. Both are now rows
+   in `tech-debt.md`'s tour-holes table.
 
 **Feature request produced → `docs/ideas.md` #44.** Writing the tour surfaced that
 `Matching ▶` is **hidden when Structural is singular**, so the one view that would

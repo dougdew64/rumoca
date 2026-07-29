@@ -20,10 +20,49 @@ The rules, in full:
   phase that will rewrite it*, when sweeping would mean designing an abstraction
   before its requirements exist.
 - **Skip what the next phase will rewrite.** Applied three times on 2026-07-29.
+- **Start from the tour-holes table above.** It is the only section whose items arrive
+  with evidence that they blocked a real answer, which makes it the only section whose
+  priority is not a judgement call.
 
 Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 in the
 2026-07-25 cycle, 25 in the 2026-07-25 sweep, and 20 in the 2026-07-26 sweep.
 See git history for details.
+
+## Tour holes — highest priority
+
+**A tour hole is a place where HRW stopped Claude from answering a question.** Doug's
+ruling, 2026-07-29:
+
+> When attempting to deliver to me the thing which I value most (answers), I want very
+> much for you to have available all of the HRW functionality which you need. Fixing
+> those gaps and bugs is high priority.
+
+**These outrank everything else in this file**, including items that have been open
+across several sweeps. Ordinary debt costs *future* effort; a tour hole degrades the
+*deliverable*, and it arrives with evidence attached — a real question it got in the
+way of. **Every sweep starts here.**
+
+Two kinds, and both count:
+
+- **Loud holes** — Claude cannot get there at all, and has to say so mid-tour. These
+  get noticed because they are embarrassing.
+- **Quiet holes** — Claude works around it with prose ("same tab → now click X") and
+  the tour is a little worse at several points. **These are the dangerous ones**: they
+  accumulate unnoticed, and the first tour produced one that went unlogged until Doug
+  asked whether holes were being tracked.
+
+| Hole | First hit | Evidence | Tracked as | Status |
+|---|---|---|---|---|
+| `Matching ▶` hidden when Structural is singular — the one view that shows *why* a rank deficiency exists is unavailable exactly when it matters | 2026-07-29, "what does a rank deficiency of 1 mean?" | Tour Stop 3 is an admission rather than a stop | [ideas #44](ideas.md) | **open** |
+| `hrw://` cannot address a **sub-tab** — only stage tabs. Every animation and every custom view lives one level below what a link can reach | 2026-07-29, same tour | 4 navigation moments degraded to "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶** yourself". Tour has 2 working links and 4 prose hand-offs | [ideas #42](ideas.md) gap 2, plan Phase 3 | **open** |
+| `Canvas` cannot centre on a node — a stop cannot make Doug *look at* node 25 | *predicted, not yet hit* | Would have bitten if the tour had needed a specific node; see the `should_refit` fragility | [ideas #42](ideas.md) gap 3 | open (unconfirmed) |
+
+**Recording discipline.** When a tour hits a hole: add a row here *and* note it in the
+[question ledger](question-ledger.md) entry for the question that exposed it. The
+ledger says which question suffered; this table is what a sweep reads. A hole worked
+around in prose still gets a row — that is the whole point of the quiet/loud split.
+
+---
 
 ## 2026-07-29 scoped sweep
 
