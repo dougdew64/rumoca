@@ -183,6 +183,13 @@ Candidates, not commitments — consult when planning new work; promote items in
   **Before working on code that touches a compiler phase, read that phase's description** — but treat
   untagged prose as a lead, not a fact. (Distinct from `docs/specimen-notebook/` — the specimen lab
   notebook, also Claude's.)
+- **[`docs/question-ledger.md`](docs/question-ledger.md) — started 2026-07-29.** The questions
+  themselves: verbatim wording, what was on screen, which medium answered, and what actually made it
+  click. **Scan it before answering in a familiar area.** A repeated question is the signal, and it
+  branches two ways that call for opposite responses — the concept is hard (try a different angle,
+  don't restate louder), or the thing is not visible in HRW (a feature request, better than any
+  Claude invents). The first entry is a repeat about Claude's own coined term, which is a lesson
+  about Claude: naming an abstraction is not teaching it.
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
   Specification sections. Respect phase boundaries — IR crates are pure data.
 
