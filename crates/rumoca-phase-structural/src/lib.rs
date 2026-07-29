@@ -27,6 +27,8 @@ mod variable_scope;
 
 pub use diagnostics::{AlgebraicLoop, StructuralDiagnostics};
 pub use live_trace::{LiveTrace, live_trace_breakpoint};
+/// Observability for greedy tearing — additive, observation-only.
+pub use tearing::{TearingFrame, TearingStep, tear_algebraic_loop_with_trace};
 pub use eliminate::{EliminationResult, Substitution};
 pub use ic_plan::{CausalStep, IcBlock, IcRelaxationHint, build_ic_plan, build_ic_relaxation_hint};
 pub use incidence::{Incidence, build_incidence, build_solver_sparsity_triplets};
