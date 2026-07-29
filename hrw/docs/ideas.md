@@ -285,7 +285,29 @@ connection *set*, not per union-find merge; the merges sit several call levels
 below `process_connections`. Worth doing only if watching sets form turns out to
 leave "why is this one set and not two?" unanswered.
 
-**Remaining candidate:** Newton iteration / per-step convergence (see #22).
+**Remaining candidates:** Newton iteration / per-step convergence (see #22), and
+**forward-mode AD lowering** (`rumoca-phase-solve::ad`) — see below.
+
+**Solve lowering: the phase does not qualify, but AD inside it might.** Asked
+2026-07-29 (Doug) whether Solve Lowering was meant to get an animation. It was
+not, and the reason is the replay/reveal test above. Two of the phase's three
+jobs are translations with nothing hidden: `layout.rs` packs DAE variables into
+the solver's `y`/`p` slots (a walk that assigns indices, and the result is
+already readable as `problem.layout` / `problem.solve_layout` in the stage
+tree), and `lower.rs` compiles each equation into a register-machine program,
+one node at a time.
+
+`ad.rs` is the exception. Forward-mode AD rewrites the primal program into a
+J·v program by applying the chain rule per operation — `x*y` becomes
+`x*dy + y*dx` — which *is* a rule-driven transformation with a reason at every
+step. It is also where the **Jacobian comes from**, so it pairs with #17 (which
+covers the Jacobian's values and conditioning but not the program that computes
+them) and with the linear-algebra thread.
+
+Deliberately **not** proposed as work: whether watching a JVP tape assemble
+teaches more than reading `ad.rs` with a breakpoint in it is exactly the kind of
+question that should come from Doug's reading, not from Claude's guess. Revisit
+when the Jacobian becomes a live topic.
 
 Captured 2026-07-21 (Doug). **Top-of-mind, long-running theme.** Educational
 animations of challenging compiler algorithms — index reduction (Pantelides
