@@ -2030,8 +2030,36 @@ accepts is exactly a filable issue.
 
 ### Sketch
 
-1. **Emit `unmatched_unknown_spans`** in `structural_error_to_json`. Small, and it is
-   already computed.
+1. ✅ **Emit `unmatched_unknown_spans`** — **DONE 2026-07-29.**
+   `structural_error_to_json` now emits `unmatched_unknown_locations`: per unmatched
+   unknown, its `line`, `column`, `excerpt`, and **`line_text`** — the source line,
+   quotable straight back at Doug. `span_to_location` counts newlines and uses
+   `from_utf8_lossy`, so a specimen containing non-ASCII cannot panic (an em-dash in a
+   description string crashed the lexer this way on 2026-07-27).
+
+   **Verified on `CapacitorLoop`:** unmatched unknown `gnd.p.i` resolves to **line 9,
+   `connect(src.n, gnd.p);`** — the physically meaningful line, not merely a line. A
+   capacitor straight across an ideal source leaves the ground branch current
+   undetermined, and that is where the connect is written.
+
+   **The test specimen is `CapacitorLoop`**, chosen because it fails structurally *and
+   stays failed* after index reduction. `MotorWithBrake` and `Drivetrain` are also
+   singular but get rescued, so neither is a diagnostic case — the distinction between
+   "high-index" and "ill-posed" is exactly what a diagnosis has to make.
+
+   **A wrong number found while doing it, and fixed.** `rank_deficiency` was computed
+   from the *incidence passed in* rather than from the error's own counts, and
+   `index_reduction_stage` passes the **raw** incidence while its error describes the
+   **reduced** system. `CapacitorLoop` therefore reported a deficiency of **7** (14 raw
+   equations minus 7 reduced matches) where the truth is 1. Claude would have read that
+   and repeated it — the priority-1 failure mode, arriving with data behind it.
+   `rank_deficiency_is_consistent_with_its_own_counts` now pins it.
+
+   **Also learned, for step 2's audit:** a model with a genuinely *missing* equation
+   never reaches structural analysis. Rumoca catches it at **DAE construction** ("flatten
+   succeeded; DAE construction failed"), which is earlier and more specific — good
+   compiler behaviour, but it means the most common authoring error of all lands on a
+   failure path whose payload has *not* been audited yet. Start step 2 there.
 2. **Audit the other failure payloads** for source location; add spans where Rumoca
    has them and widen visibility where it does not.
 3. **A "why did this fail?" capture** — when a stage carries an error, `focus.json`

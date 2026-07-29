@@ -1284,11 +1284,11 @@ impl WorkerState {
                 }
 
                 let flatten = run_stage!("Flatten", flatten_stage(result), flatten);
-                let structural = run_stage!("Structural analysis", structural_stage(result), structural);
+                let structural = run_stage!("Structural analysis", structural_stage(result, &source), structural);
                 let (index_reduction, ir_frames) = {
                     log(LogLevel::StageStart, "Index reduction".to_owned());
                     let t = Instant::now();
-                    let (stage, frames) = index_reduction_stage(result);
+                    let (stage, frames) = index_reduction_stage(result, &source);
                     drain_traces(&log);
                     log(LogLevel::StageEnd, format!(
                         "Index reduction ({:.1}ms)", t.elapsed().as_secs_f64() * 1000.0
@@ -1452,7 +1452,74 @@ fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
     }
 }
 
-fn structural_stage(result: Option<&PhaseResult>) -> Stage {
+/// Turn a Rumoca `Span` into a source location Claude can quote back at Doug.
+///
+/// A span is byte offsets into the specimen source. On its own that is useless in an
+/// answer — "unknown `gnd.p.i`" tells Doug nothing about *his* model. With the line
+/// number and the line's text it becomes "line 5 of your model, the `gnd`
+/// declaration", which is the difference between explaining the compiler and
+/// diagnosing the model (ideas #45).
+///
+/// Byte offsets are converted by counting newlines rather than by character
+/// arithmetic, and excerpts use `from_utf8_lossy`, so a specimen containing
+/// non-ASCII cannot panic here. An em-dash in a description string caused exactly
+/// that class of crash in the lexer on 2026-07-27.
+fn span_to_location(source: &str, span: &rumoca_core::Span) -> Option<serde_json::Value> {
+    let bytes = source.as_bytes();
+    // `BytePos` is a newtype over `usize`; unwrap once here so the arithmetic
+    // below reads as ordinary slicing.
+    let (start, end) = (span.start.0, span.end.0);
+    if start > end || end > bytes.len() {
+        // A span from a different source file than this specimen. Nothing to say
+        // about it, and inventing a line number would be worse than silence.
+        return None;
+    }
+    let line_start = bytes[..start].iter().rposition(|&b| b == b'\n').map_or(0, |i| i + 1);
+    let line_end = bytes[end..].iter().position(|&b| b == b'\n').map_or(bytes.len(), |i| end + i);
+    let line = bytes[..start].iter().filter(|&&b| b == b'\n').count() + 1;
+    let column = start - line_start + 1;
+    Some(serde_json::json!({
+        "line": line,
+        "column": column,
+        "excerpt": String::from_utf8_lossy(&bytes[start..end]),
+        "line_text": String::from_utf8_lossy(&bytes[line_start..line_end]).trim_end(),
+        "byte_start": start,
+        "byte_end": end,
+    }))
+}
+
+/// Source locations for a singular error's unmatched unknowns, parallel to
+/// `unmatched_unknowns`.
+///
+/// `StructuralError::Singular` has carried `unmatched_unknown_spans` all along — its
+/// doc comment says it exists "so the failure is traceable back to source" — and HRW
+/// dropped it until 2026-07-29. Emitting it is what lets a failure be explained in
+/// terms of the model Doug actually wrote (ideas #45).
+///
+/// Entries carry `location: null` where an unknown has no source provenance: solver
+/// scalars and manufactured variables genuinely have no line, and saying so keeps the
+/// array aligned with `unmatched_unknowns` instead of silently shortening it.
+fn unmatched_unknown_locations(
+    source: &str,
+    names: &[String],
+    spans: &[Option<rumoca_core::Span>],
+) -> serde_json::Value {
+    serde_json::Value::Array(
+        names
+            .iter()
+            .enumerate()
+            .map(|(i, name)| {
+                let loc = spans
+                    .get(i)
+                    .and_then(|s| s.as_ref())
+                    .and_then(|s| span_to_location(source, s));
+                serde_json::json!({ "unknown": name, "location": loc })
+            })
+            .collect(),
+    )
+}
+
+fn structural_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
@@ -1476,7 +1543,7 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
             let obj = json.as_object_mut().unwrap();
             obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae.continuous.equations)));
             obj.insert("matching".to_owned(), matching_json);
-            obj.insert("error".to_owned(), structural_error_to_json(&e, &inc));
+            obj.insert("error".to_owned(), structural_error_to_json(&e, source));
             let note = match &e {
                 rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
                 _ => format!("{e}"),
@@ -1502,6 +1569,7 @@ fn structural_stage(result: Option<&PhaseResult>) -> Stage {
 /// mutates it in place, and we don't want to modify the original.
 fn index_reduction_stage(
     result: Option<&PhaseResult>,
+    source: &str,
 ) -> (Stage, Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>) {
     if let Some(stage) = not_reached_stage(result) {
         return (stage, Vec::new());
@@ -1543,7 +1611,7 @@ fn index_reduction_stage(
                 &before_inc, &before_match_eq, Some(&cr.dae.continuous.equations),
             ));
             obj.insert("reduction".to_owned(), reduction.to_json());
-            obj.insert("error".to_owned(), structural_error_to_json(&e, &before_inc));
+            obj.insert("error".to_owned(), structural_error_to_json(&e, source));
             (Stage::recovered(json, format!("still singular after index reduction: {msg}")), frames)
         }
     }
@@ -1924,26 +1992,46 @@ fn partial_matching_to_json(
 }
 
 /// Convert a `StructuralError` into structured JSON for UI rendering.
+/// Convert a `StructuralError` into structured JSON for the UI and for Claude.
+///
+/// Takes the specimen `source` so unmatched unknowns can be reported with the line
+/// that declares them (ideas #45). It no longer takes the incidence: the only thing
+/// that used it was the rank-deficiency computation, which was *wrong* to use it —
+/// see the comment on that field.
 fn structural_error_to_json(
     e: &rumoca_phase_structural::StructuralError,
-    inc: &rumoca_phase_structural::Incidence,
+    source: &str,
 ) -> serde_json::Value {
     match e {
         rumoca_phase_structural::StructuralError::Singular {
             n_equations, n_unknowns, n_matched,
-            unmatched_equations, unmatched_unknowns, ..
+            unmatched_equations, unmatched_unknowns, unmatched_unknown_spans,
         } => serde_json::json!({
             "kind": "singular",
             "message": format!("{e}"),
             "n_equations": n_equations,
             "n_unknowns": n_unknowns,
             "n_matched": n_matched,
-            "rank_deficiency": inc.n_eq.max(inc.n_var) - n_matched,
+            // From the **error's own** counts, not from `inc`. Until 2026-07-29 this
+            // read `inc.n_eq.max(inc.n_var) - n_matched`, and `index_reduction_stage`
+            // passes the *raw* incidence while the error describes the *reduced*
+            // system — so `CapacitorLoop` reported a rank deficiency of **7** (14 raw
+            // equations minus 7 reduced matches) where the truth is 1. A wrong number
+            // is worse than a missing one: it reads as authoritative, and Claude would
+            // have repeated it.
+            "rank_deficiency": (*n_equations).max(*n_unknowns) - n_matched,
             "unmatched_equations": unmatched_equations,
             "unmatched_unknowns": unmatched_unknowns,
+            // The point of ideas #45: where in *Doug's source* each untethered
+            // unknown is declared, so a failure can be diagnosed rather than merely
+            // described.
+            "unmatched_unknown_locations":
+                unmatched_unknown_locations(source, unmatched_unknowns, unmatched_unknown_spans),
             "guidance": "The maximum matching could not pair every equation with a unique \
-                unknown. This system requires index reduction before it can be solved \
-                \u{2014} see the Index Reduction tab.",
+                unknown. Each unmatched unknown is a variable no equation determines; \
+                `unmatched_unknown_locations` gives the source line that declares it. \
+                If the Index Reduction stage also reports singular, the model is \
+                genuinely ill-posed rather than merely high-index.",
         }),
         _ => serde_json::json!({
             "kind": "other",
@@ -2992,6 +3080,85 @@ mod tests {
         };
         assert!(!index_reduction_frames.is_empty(),
             "MotorWithBrake should produce index-reduction animation frames");
+    }
+
+    /// A structural failure is reported **in terms of Doug's source** (ideas #45).
+    ///
+    /// This is the whole diagnostic claim: "unknown `gnd.p.i`" tells Doug nothing
+    /// about the model he wrote, while "line 9, `connect(src.n, gnd.p);`" is a
+    /// diagnosis. `StructuralError::Singular` has carried `unmatched_unknown_spans`
+    /// all along; HRW dropped it until 2026-07-29.
+    ///
+    /// `CapacitorLoop` is the specimen for this because it fails structurally **and
+    /// stays failed** after index reduction — a capacitor straight across an ideal
+    /// source is genuinely ill-posed, not merely high-index. `MotorWithBrake` and
+    /// `Drivetrain` are also singular but get rescued, so neither is a diagnostic case.
+    #[test]
+    fn a_structural_failure_names_the_source_line() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop")
+        else {
+            panic!("expected Compiled");
+        };
+
+        for (label, stage) in
+            [("structural", &stages.structural), ("index_reduction", &stages.index_reduction)]
+        {
+            let err = stage
+                .value
+                .as_ref()
+                .and_then(|v| v.get("error"))
+                .unwrap_or_else(|| panic!("{label} should be singular for CapacitorLoop"));
+
+            let locs = err
+                .get("unmatched_unknown_locations")
+                .and_then(|v| v.as_array())
+                .unwrap_or_else(|| panic!("{label} must carry unmatched_unknown_locations"));
+            assert_eq!(locs.len(), 1, "{label}: one unmatched unknown");
+
+            let entry = &locs[0];
+            assert_eq!(entry["unknown"], "gnd.p.i", "{label}");
+            let loc = &entry["location"];
+            assert!(!loc.is_null(), "{label}: the unknown must have a source location");
+            assert_eq!(loc["line"], 9, "{label}: gnd.p.i traces to the ground connect()");
+            assert!(
+                loc["line_text"].as_str().is_some_and(|t| t.contains("connect(src.n, gnd.p)")),
+                "{label}: line_text must be quotable back at Doug: {loc:?}",
+            );
+        }
+    }
+
+    /// Rank deficiency comes from the **error's own** counts, not from whatever
+    /// incidence the caller happened to pass.
+    ///
+    /// Regression test for a wrong number found 2026-07-29. The field used to read
+    /// `inc.n_eq.max(inc.n_var) - n_matched`, and `index_reduction_stage` passes the
+    /// *raw* incidence while its error describes the *reduced* system — so
+    /// `CapacitorLoop` reported a deficiency of **7** (14 raw equations minus 7
+    /// reduced matches) where the truth is 1.
+    ///
+    /// A wrong number is worse than a missing one: it reads as authoritative, and
+    /// Claude would have quoted it straight into an answer.
+    #[test]
+    fn rank_deficiency_is_consistent_with_its_own_counts() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop")
+        else {
+            panic!("expected Compiled");
+        };
+        for (label, stage) in
+            [("structural", &stages.structural), ("index_reduction", &stages.index_reduction)]
+        {
+            let err = stage.value.as_ref().and_then(|v| v.get("error")).expect(label);
+            let n_eq = err["n_equations"].as_u64().expect("n_equations");
+            let n_var = err["n_unknowns"].as_u64().expect("n_unknowns");
+            let n_matched = err["n_matched"].as_u64().expect("n_matched");
+            let deficiency = err["rank_deficiency"].as_u64().expect("rank_deficiency");
+            assert_eq!(
+                deficiency,
+                n_eq.max(n_var) - n_matched,
+                "{label}: deficiency must follow from the counts beside it",
+            );
+            assert_eq!(deficiency, 1, "{label}: CapacitorLoop is one short, before and after");
+        }
     }
 
     /// A **singular** structural report still produces a matching animation, and
