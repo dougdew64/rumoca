@@ -1645,3 +1645,110 @@ new medium is not a licence for verbosity.
 (the animation views are the richest tour destinations), `docs/context-assembly.md`
 (the noun vocabulary this must reach parity with), and the retirement of
 `end_to_end_tour.md`'s explanatory prose.
+
+---
+
+## 43. Three platforms, three questions — Wolfram and System Modeler as answer channels
+
+Requested 2026-07-29 (Doug), extending #42 beyond HRW:
+
+> I want you to view HRW as a platform for answering my questions, when you
+> believe that your response would be best delivered as something like an ad hoc
+> tour instead of as text here in this conversation. Also […] I want you to view
+> Wolfram System Modeler and Wolfram desktop app as platforms for answering
+> questions where the responses would be best delivered there.
+
+### The point is independence, not extra channels
+
+Claude flagged a structural weakness earlier the same day: under the #41
+arrangement Claude is author, maintainer, primary reader **and** judge of what is
+true — four roles with no outside check, and said Cellier's problems were the only
+mitigation. That was too pessimistic. Two more exist, and both are already
+installed:
+
+- **Wolfram Desktop computes.** When Claude claims a block is well-conditioned,
+  or a matrix has rank 6, or a Jacobian is singular where the incidence pattern
+  says otherwise — that can be *computed* rather than asserted. "Emitter correct,
+  reasoner supplements", finally applicable to Claude's own mathematical claims.
+- **System Modeler is an independent implementation.** If Rumoca and System
+  Modeler disagree about a specimen, one of them is wrong and neither Doug nor
+  Claude gets a vote. That is the strongest check in the whole setup.
+
+### The division of labour
+
+| Platform | The question it answers |
+| --- | --- |
+| **Wolfram Desktop** | What *should* happen — the mathematics, computed exactly |
+| **HRW / Rumoca** | How *this* compiler does it — the process, step by step |
+| **System Modeler** | What a *mature independent* implementation actually gets |
+
+Three different questions. Not redundancy.
+
+### Verified capability status (2026-07-29 — run, not assumed)
+
+Both are **live today** through the Wolfram MCP tools; this is not aspirational.
+
+- Kernel: **Wolfram 15.0.0 for Microsoft Windows**, responding to
+  `mcp__Wolfram__WolframLanguageEvaluator`. `MatrixRank`, `RowReduce`, `Det` all
+  work — the linear algebra Cellier-style structural work needs.
+- `mcp__Wolfram__WriteNotebook` writes a `.nb` to disk from markdown; `ReadNotebook`
+  reads one back. So a notebook is a deliverable answer format.
+- **System Modeler is reachable from the same kernel** — `SystemModel` is in the
+  `System`` ` context and models load, compile and simulate.
+
+**Working incantations, recorded because they cost four attempts to find.** The
+obvious accessor forms fail with `SystemModelSimulationData::urvs`:
+
+```wolfram
+sim = SystemModelSimulate[
+    SystemModel["Modelica.Electrical.Analog.Examples.CauerLowPassAnalog"], {0, 60}];
+sim["StateVariables"]                  (* {"C1.v","C4.v","C5.v","L1.i","L2.i"} *)
+v = sim["C1.v", TargetUnits -> None];  (* returns a Function of time *)
+v[2.0]                                 (* 0.49473283090381587 *)
+```
+
+`sim["ValuesAtTime", t]["var"]` and `sim["ValuesAtTime"[t]]["var"]` both fail —
+use `sim["var", TargetUnits -> None]` and apply the resulting function to a time.
+Note also that a short horizon can return all zeros legitimately (that model's
+step source starts late); check against a horizon where the response is
+non-trivial before concluding anything is broken.
+
+### Two consequences
+
+**It unblocks the differential test.** The charter's System Modeler round-trip has
+been deferred since Arcs 1-2 as a close-out chore nobody wanted (see #4). Under
+this framing it stops being a chore: *"is Rumoca right about this?"* is a
+**question**, and System Modeler is where the answer gets delivered. Chores get
+deferred; answers do not. The comparison is now mechanical — simulate the same
+specimen both ways and diff the state trajectories.
+
+**It is where the linear algebra connects.** #17 wants Jacobian sparsity and
+conditioning, and the structural-vs-numerical rank distinction — a matrix can have
+full *structural* rank while being numerically singular. HRW can show the
+incidence pattern; only Mathematica can show the rank actually collapsing on the
+same small system. That connection is currently unmakeable, and it is the
+explicit link to Doug's Fall 2026 linear algebra course.
+
+### Disciplines Claude owes, extending #42's
+
+1. **Text is the default.** The medium follows the question's nature. If "what is
+   a dummy derivative?" starts returning a notebook, this has made Claude worse.
+2. **Never hand over unevaluated Wolfram code as if it were a result.** Claude
+   writes Wolfram Language less reliably than Rust, and a notebook on Doug's
+   machine looks authoritative whether or not it is right. The evaluator exists —
+   use it before delivering, every time. The four-attempt accessor hunt above is
+   the argument for this rule, not against it.
+3. **The #41 ledger records the medium.** "The tearing animation" and "the rank
+   computation" are different facts about how Doug learns, and a ledger that
+   drops the medium loses half of "what unlocked it".
+
+### Caveat
+
+The Wolfram MCP connection is interactive-session-bound and may be absent in
+headless or scheduled runs. Fine for working sessions; do not build anything
+unattended that depends on it.
+
+**Relates to:** #42 (ad hoc tours — same idea, HRW as the channel), #41 (the
+ledger), #17 (Jacobian conditioning — the clearest Mathematica use), #4 (the
+deferred differential test, now reframed), `user-wolfram-tools` and
+`user-linear-algebra-learning` in Claude's memory.
