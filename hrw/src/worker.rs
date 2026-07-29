@@ -793,11 +793,28 @@ impl WorkerState {
         // into a fully-qualified name like "BouncingBall" (for top-level models,
         // these are the same, but nested models would differ).
         let qualified = self.session.qualify_model_name(&uri, model);
-        // Rumoca API: `compile_model_strict_reachable_with_recovery` is the main
-        // pipeline entry point. It runs parse → resolve → flatten → DAE construction,
-        // with error recovery so partial results are available on failure.
-        // Returns a `CompileReport` whose `requested_result` is `Option<PhaseResult>`.
-        let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
+        // Rumoca API: the main pipeline entry point. It runs parse → resolve →
+        // flatten → DAE construction, with error recovery so partial results are
+        // available on failure. Returns a `CompileReport` whose `requested_result`
+        // is `Option<PhaseResult>`.
+        // NOTE the `_uncached_` variant. `compile_model_strict_reachable_with_recovery`
+        // consults `CompiledSourceRoot::compile_cache`, an `IndexMap` keyed by model
+        // name, and returns the previous `PhaseResult` for any model already compiled
+        // in this process. The IR would be identical — but **the phases would not
+        // run**, and HRW is an observatory: "watch the compiler work" has to mean the
+        // compiler actually worked. Breakpoints in a phase crate then fire exactly
+        // once per model per session and never again, which on 2026-07-28 read as a
+        // debugger defect and cost four rounds of misdiagnosis (see
+        // `docs/architecture.md` § Rumoca's compile cache).
+        //
+        // The `remove_document`/`update_document` dance above defeats *document*
+        // caching; it does not touch this one.
+        //
+        // Deliberately paying recompile time on every specimen load. Doug, when
+        // choosing this: "This project is for learning, not for production
+        // performance. Debuggability is of the highest priority."
+        let report =
+            self.session.compile_model_strict_reachable_uncached_with_recovery(&qualified);
         // Drain any tracing events that Rumoca emitted during compilation.
         drain_traces(&log);
         log(LogLevel::StageEnd, format!("Compile ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
@@ -1189,7 +1206,12 @@ impl WorkerState {
 
                 log(LogLevel::StageStart, "DAE pipeline (flatten → solve lowering)".to_owned());
                 let t_pipeline = Instant::now();
-                let report = self.session.compile_model_strict_reachable_with_recovery(&qualified);
+                // Uncached, for the reason spelled out in `simulate` above: a
+                // cached result means the phases did not run, so nothing can be
+                // observed happening — breakpoints, tracing, or timing.
+                let report = self
+                    .session
+                    .compile_model_strict_reachable_uncached_with_recovery(&qualified);
                 drain_traces(&log);
                 drain_output(&mut output_capture, &log);
 

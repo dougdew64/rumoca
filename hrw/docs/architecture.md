@@ -870,8 +870,22 @@ blamed `opt-level` and a wrongly blamed PDB reader.
 A first-ever compile cannot be a cache hit, so the phase breakpoints fire. If
 they do, nothing is wrong with the debugger.
 
-`Session::compile_model_strict_reachable_uncached_with_recovery` is the public
-escape hatch; HRW does not currently use it (see `DECISIONS.md`, 2026-07-28).
+**HRW now uses `compile_model_strict_reachable_uncached_with_recovery`** at both
+production call sites (`WorkerState::compile` and `simulate`), so the phases run
+on every specimen load and a breakpoint in any of them fires every time.
+
+Measured before switching, one session with the MSL already loaded — the case a
+reselect actually hits:
+
+| | first compile | cached | uncached |
+|---|---|---|---|
+| MotorWithBrake | 1.12 s | 302 ms | 297 ms |
+| BouncingBall | 958 ms | 271 ms | 261 ms |
+
+**The cache was saving nothing measurable.** It skipped DAE construction — the
+part worth watching — while resolve and MSL reachability, which dominate the
+time, ran regardless. So the old behaviour paid for a compile and withheld the
+observable part of it. `examples/compile_timing.rs` reproduces the table.
 
 #### 7. Failure signatures
 
@@ -882,7 +896,7 @@ escape hatch; HRW does not currently use it (see `DECISIONS.md`, 2026-07-28).
 | Locals show `<optimized out>` | `opt-level` above 0 for the crate (§2) |
 | Breakpoint looks verified but never fires, and the code definitely runs | Line-table entry dropped at `opt-level` above 0 — add the crate to §2 |
 | Breakpoint in a *compiler phase* never fires, but one in `rumoca-phase-structural` does | Rumoca's **compile cache** (§5) — the phase only runs on the first compile of that model per process |
-| Breakpoint in HRW's own code will not bind at all | The `hrw` package is still at `opt-level = 1`; no override (§2) |
+| Breakpoint in HRW's own code will not bind at all | Fixed 2026-07-28 — `hrw` now has an `opt-level = 0` override (§2) |
 | Visuals freeze, then exit code 101, nothing in the Debug Console | GPU device loss after a long pause (§3); look in the terminal |
 | First Debug click misses, second works | Cold line-table resolution — fixed by the pre-warm |
 | Stepping works but the animation does not advance | Single-thread stepping; use `ns`/`si`/`so` (§4) |

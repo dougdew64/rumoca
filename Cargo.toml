@@ -257,7 +257,17 @@ opt-level = 3
 opt-level = 0
 
 # DAE construction: pre() lowering, when-equation lowering, event structure.
-# Added 2026-07-28 when breakpoints in `pre_lowering::lower_pre_operator`
-# verified but never fired while tracing where `__pre__.overSpeed` is created.
+# Added 2026-07-28 while tracing where `__pre__.overSpeed` is created.
 [profile.dev.package.rumoca-phase-dae]
+opt-level = 0
+
+# HRW itself. Added 2026-07-28 after discovering that a breakpoint in HRW's own
+# worker would not bind at all — `hrw` was the one package still inheriting
+# `[profile.dev] opt-level = 1`, so its line tables were degraded like everyone
+# else's. Awkward for a project whose charter calls the debugger a first-class
+# learning instrument: the observatory could be used to debug the compiler but
+# not itself. Costs UI-loop performance in debug builds, deliberately — Doug:
+# "This project is for learning, not for production performance. Debuggability
+# is of the highest priority."
+[profile.dev.package.hrw]
 opt-level = 0

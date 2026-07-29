@@ -1161,3 +1161,22 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   them cost one. Prefer the discriminating test over the next plausible fix. It also required
   distrusting a *negative* result: an earlier probe "proved" the function was never called, when in
   fact the probe had failed to compile and its errors had been discarded.
+- **2026-07-28 — HRW compiles uncached, and builds itself unoptimized. Debuggability over speed.**
+  Doug, deciding both: *"This project is for learning, not for production performance. Debuggability
+  is of the highest priority."*
+  (1) **`compile_model_strict_reachable_uncached_with_recovery`** at both production call sites.
+  Rumoca's compile cache returned an identical `PhaseResult` for any model already compiled in the
+  process — so the IR was right but **the phases did not run**, which for an observatory is the
+  wrong kind of correct: "watch the compiler work" has to mean the compiler worked. It also made
+  phase breakpoints fire exactly once per model per session.
+  **Measured before switching** (one session, MSL loaded — the case a reselect hits): MotorWithBrake
+  302 ms cached vs 297 ms uncached; BouncingBall 271 vs 261. **Within noise.** The cache skipped DAE
+  construction, the part worth watching, while resolve and MSL reachability — which dominate —
+  ran either way. The old behaviour paid for a compile and withheld the observable part of it, so
+  this costs nothing and there was never a real trade-off. `examples/compile_timing.rs` reproduces
+  the table; keep it, so the next person tempted to re-enable the cache has the number.
+  (2) **`[profile.dev.package.hrw] opt-level = 0`.** `hrw` was the one package still inheriting
+  `[profile.dev] opt-level = 1`, so breakpoints in HRW's own worker, bridge and UI would not bind at
+  all — the observatory could debug the compiler but not itself, in a project whose charter calls the
+  debugger a first-class learning instrument. This one does have a real cost: HRW's per-frame code is
+  now unoptimized, so watch for sluggishness on large trees and revert if it bites.
