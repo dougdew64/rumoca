@@ -36,6 +36,25 @@ understandable and correct.
 
 ---
 
+## Measured 2026-07-28, at Phase 5 close
+
+Re-measured rather than re-estimated, per the sweep discipline. Drift across the
+whole of Phase 5 was negligible — two functions *shrank* — so **no general sweep
+is due**; the animation item above was rescheduled on sequencing grounds, not
+because the code rotted.
+
+| | logged | measured |
+|---|---|---|
+| `ui()` | 880 | 894 |
+| `source_map_ui()` | 247 | 245 |
+| `generic_error_summary()` | 217 | 201 |
+| `compile()` | 380 | 327 |
+
+- [ ] **`bridge.rs` is 2342 lines**, up substantially during Phase 5 (mention
+  neighbourhoods, sibling windows, `View`, `phase_source`, `Focus::Nothing`).
+  Scheduled after idea #40 and before Phase 6 — both remaining phases touch it.
+  *File:* `bridge.rs`.
+
 ## Code quality / duplication
 
 - [ ] **`ui()` is 880 lines.** *(was 1272 before this sweep)*
@@ -64,9 +83,15 @@ understandable and correct.
   views anyway — doing it now risks the churn Phase 7 was postponed to avoid.
   Extracting them into adjacent named functions was the safe half, and it makes
   the duplication visible.
+  **DEFERRAL WITHDRAWN 2026-07-28 — scheduled next.** The reason above no longer
+  holds: Doug's agreed order is idea #40 *before* Phase 7, and #40 builds a
+  **fourth** animation view (pre-lowering). Copying the pattern again would hand
+  Phase 7 four near-duplicates instead of three, and make `live_state` identical
+  in four files. Paying it first also makes #40 smaller. Take it together with
+  the two items below — they are the same refactor seen from three angles.
   *Files:* `app.rs`, `matching_anim.rs`, `tarjan_anim.rs`, `reduction_anim.rs`.
 
-- [ ] **`animation_controls` takes 8 positional parameters**, two of them
+- [ ] **`animation_controls` takes 8 positional parameters** *(do with the item above)*, two of them
   adjacent bools, so transposing arguments compiles silently. Grouping
   cursor/playing/elapsed/interval into an `AnimationPlayback` struct would make
   misuse a type error. Same pattern already applied successfully to
@@ -83,7 +108,7 @@ understandable and correct.
   `equation_sheet::match_connection_to_source` (162), `app::equation_sheet_ui`
   (157), `spyplot::ui` (136), `worker::to_json` (135).
 
-- [ ] **Duplicated matrix canvas boilerplate.** Three views repeat the same
+- [ ] **Duplicated matrix canvas boilerplate.** *(do with the animation-trait item)* Three views repeat the same
   ~10-line pattern. *Files:* `spyplot.rs`, `incidence_view.rs`,
   `matching_anim.rs`. **Overlaps Phase 7** — fix them together.
 
