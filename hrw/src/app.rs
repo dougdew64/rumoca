@@ -883,6 +883,22 @@ impl App {
     /// compilation finishes and the user clicks a stage tab, `viewing_log`
     /// flips to false.
     fn open(&mut self, path: PathBuf) {
+        // Reselecting the SAME specimen keeps the assembled context.
+        //
+        // Recompiling used to wipe the point and the follow unconditionally,
+        // which made one workflow impossible: assembling context, asking for
+        // breakpoints, then recompiling to hit them — because the recompile
+        // destroyed the very context that motivated the breakpoints. Doug hit
+        // this the first time the breakpoints actually worked.
+        //
+        // Clearing is right when the specimen *changes*: a key-path addresses
+        // one model's IR and means nothing in another's. For a reselect the IR
+        // is normally identical, so the point still resolves and the followed
+        // name still exists. "Normally" is not "always" — the file may have been
+        // edited between loads — so the retained point is *validated* against
+        // the new IR when it arrives, not assumed to survive.
+        let same_specimen = self.selected.as_deref() == Some(path.as_path());
+
         // Mark as compiling — this disables stage tab highlighting and shows a
         // spinner.
         self.compiling = true;
@@ -898,13 +914,21 @@ impl App {
         self.known_variables = None;
         self.declaring_classes.clear();
         // A point addresses IR that no longer exists once the stages are
-        // replaced. Clearing it here is what lets `emit_context` treat a missing
-        // stage value as transient rather than terminal.
-        self.pointed_at = None;
+        // replaced — but only when the specimen changed. See `same_specimen`.
+        if !same_specimen {
+            self.pointed_at = None;
+            self.tracked_identifier = None;
+        }
         self.point_error = None;
         self.tracking_summary = None;
         self.identifier_index = None;
-        self.tracked_identifier = None;
+        // Whatever the followed name matched belonged to the old IR, so the
+        // jump list must be rebuilt rather than reused.
+        self.jump_matches = Vec::new();
+        self.jump_matches_key = None;
+        self.jump_index = 0;
+        self.jump_target = None;
+        self.scrolled_source_for = None;
         self.cached_source = None;
         self.cached_highlight = None;
         self.highlighted_eq_row = None;
@@ -1034,6 +1058,12 @@ impl App {
                     }
                     self.live_breakpoint_armed = false;
                     self.pending_live_debug = None;
+                    // A point retained across a reselect must still address
+                    // something. Validated rather than assumed: the source may
+                    // have been edited between loads, and a bar naming a node
+                    // that no longer exists — over an emitted `subtree: null` —
+                    // is exactly the confident lie this design forbids.
+                    self.revalidate_point_against_new_ir();
                     self.spy_canvas.request_fit();
                     self.incidence_canvas.request_fit();
                     self.matching_anim_canvas.request_fit();
@@ -2478,6 +2508,47 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// Controls here are only those that **change** what is emitted. Navigation
     /// is not context, so the declaring class is a link rather than a button.
     /// See `docs/context-assembly.md`.
+    /// Drop a retained point if the recompiled IR no longer contains it.
+    ///
+    /// Runs once per compile, after the new stages land. Only `PointKind::Node`
+    /// can dangle — a stage or specimen point names something that exists by
+    /// construction.
+    ///
+    /// The **follow is deliberately not validated**: it is a name, not an
+    /// address, and a name matching nothing is already reported honestly as
+    /// `mentions: 0` in every stage. Dropping it would discard a deliberate
+    /// choice in order to answer a question the emitted context answers better.
+    ///
+    /// Re-emits when anything survived, because the focus file still describes
+    /// the *previous* compile's IR until it is rewritten — same node, different
+    /// values — and a stale subtree is worse than an absent one.
+    fn revalidate_point_against_new_ir(&mut self) {
+        let dangling = match &self.pointed_at {
+            Some(point) => match &point.kind {
+                PointKind::Node(key_path) => !self
+                    .stages
+                    .get(point.stage)
+                    .value
+                    .as_ref()
+                    .is_some_and(|value| bridge::node_exists(value, key_path)),
+                PointKind::Stage | PointKind::Specimen => false,
+            },
+            None => false,
+        };
+        if dangling {
+            let target = self.pointed_at.take().map(|p| p.target).unwrap_or_default();
+            // Said out loud. Silently dropping it would leave the user believing
+            // Claude still has a node that has vanished from the bar.
+            self.notice = Some(format!(
+                "point dropped \u{2014} {target} no longer exists in the recompiled IR",
+            ));
+            diagnostics::record_action("point-dropped", target);
+        }
+        if self.pointed_at.is_some() || self.tracked_identifier.is_some() {
+            self.emit_context();
+        }
+    }
+
     /// Rebuild the jump match list if the stage or the followed name changed.
     ///
     /// Cheap on the common path — a tuple comparison — because the walk itself
@@ -4634,6 +4705,93 @@ mod tests {
         let hint = app.empty_context_hint();
         assert!(hint.contains("a node to point at"), "{hint}");
         assert!(!hint.contains("stage tab"), "a tab is already open: {hint}");
+    }
+
+    /// Recompiling the same specimen must not destroy the assembled context.
+    ///
+    /// The workflow this broke: point at a node, ask for breakpoints, then
+    /// recompile to hit them — and the recompile wiped the very context that
+    /// motivated the breakpoints. Doug hit it the first time the breakpoints
+    /// actually fired.
+    ///
+    /// Switching to a *different* specimen must still clear, because a key-path
+    /// addresses one model's IR and means nothing in another's.
+    #[test]
+    fn reselecting_the_same_specimen_keeps_the_context_but_switching_clears_it() {
+        let (mut app, _tx) = App::test_with_sender();
+        let motor = PathBuf::from("specimens/MotorWithBrake.mo");
+
+        app.selected = Some(motor.clone());
+        app.pointed_at = Some(PointedAt {
+            seq: 1,
+            target: "components.src.V".to_owned(),
+            kind: PointKind::Stage,
+            stage: StageKind::Flatten,
+            request: bridge::AskRequest::Explain,
+        });
+        app.tracked_identifier = Some("emf.w".to_owned());
+
+        app.open(motor.clone());
+        assert!(app.pointed_at.is_some(), "a reselect must keep the point");
+        assert_eq!(app.tracked_identifier.as_deref(), Some("emf.w"), "and the follow");
+
+        // The jump list belonged to the old IR and must not be reused, even
+        // though the stage and followed name are unchanged — which is exactly
+        // the key `refresh_jump_matches` caches on.
+        assert!(app.jump_matches_key.is_none(), "stale match list must be invalidated");
+
+        app.open(PathBuf::from("specimens/BouncingBall.mo"));
+        assert!(app.pointed_at.is_none(), "a different specimen clears the point");
+        assert!(app.tracked_identifier.is_none(), "and the follow");
+    }
+
+    /// A retained point that no longer resolves is dropped, and says so.
+    ///
+    /// Keeping it would leave the Context Bar naming a node that does not exist
+    /// and the emitted `node.subtree` as `null` — a confident claim about
+    /// nothing. A stage point cannot dangle, so it survives.
+    #[test]
+    fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
+        let (mut app, _tx) = App::test_with_sender();
+        app.stages.flatten.value = Some(serde_json::json!({ "variables": { "emf.w": 1 } }));
+
+        // Addresses something the new IR does not have.
+        app.pointed_at = Some(PointedAt {
+            seq: 1,
+            target: "variables.gone".to_owned(),
+            kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("gone".into())]),
+            stage: StageKind::Flatten,
+            request: bridge::AskRequest::Explain,
+        });
+        app.revalidate_point_against_new_ir();
+        assert!(app.pointed_at.is_none(), "a dangling point must not be kept");
+        let notice = app.notice.as_deref().unwrap_or_default();
+        assert!(notice.contains("point dropped"), "the drop must be stated: {notice}");
+        assert!(notice.contains("variables.gone"), "and must name what was lost: {notice}");
+
+        // One that still resolves survives untouched.
+        app.notice = None;
+        app.pointed_at = Some(PointedAt {
+            seq: 2,
+            target: "variables.emf.w".to_owned(),
+            kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("emf.w".into())]),
+            stage: StageKind::Flatten,
+            request: bridge::AskRequest::Explain,
+        });
+        app.revalidate_point_against_new_ir();
+        assert!(app.pointed_at.is_some(), "a resolvable point survives a recompile");
+        assert!(app.notice.is_none(), "and says nothing");
+
+        // A stage point cannot dangle — there is always a stage.
+        app.pointed_at = Some(PointedAt {
+            seq: 3,
+            target: "stage".to_owned(),
+            kind: PointKind::Stage,
+            stage: StageKind::Parse,
+            request: bridge::AskRequest::Explain,
+        });
+        app.revalidate_point_against_new_ir();
+        assert!(app.pointed_at.is_some(), "a stage point always resolves");
     }
 
     /// Every combination of the two primitives must be reachable, and the

@@ -1180,3 +1180,24 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   all — the observatory could debug the compiler but not itself, in a project whose charter calls the
   debugger a first-class learning instrument. This one does have a real cost: HRW's per-frame code is
   now unoptimized, so watch for sluggishness on large trees and revert if it bites.
+- **2026-07-28 — Recompiling the same specimen keeps the assembled context.** Doug, the first time
+  the phase breakpoints actually fired: *"After I requested 'debug' and you set breakpoints, it seems
+  that you also cleared the captured context as my context bar is now empty."* Not the breakpoint
+  request — `open()` cleared `pointed_at` and `tracked_identifier` unconditionally, and hitting a
+  phase breakpoint *requires* a recompile. **The workflow was self-defeating: assembling context to
+  ask for breakpoints, then destroying that context in order to reach them.** Neither half was wrong
+  on its own, which is why it survived until the two were used together.
+  Clearing is right when the specimen **changes** — a key-path addresses one model's IR and means
+  nothing in another's. For a reselect the IR is normally identical, so the point still resolves.
+  "Normally" is not "always" (the file may have been edited between loads), so a retained point is
+  **validated** against the new IR rather than assumed to survive: `bridge::node_exists` re-walks the
+  key-path, and a dangling point is dropped **out loud** via `notice`. Keeping it would leave the bar
+  naming a node that no longer exists over an emitted `subtree: null`.
+  Three deliberate asymmetries. The **follow is not validated** — it is a name, not an address, and a
+  name matching nothing is already reported honestly as `mentions: 0` in every stage; dropping it
+  would discard a deliberate choice to answer a question the emitted context answers better. **Stage
+  and specimen points cannot dangle**, so they are exempt by construction. And the **jump match list
+  is always invalidated**, even on a reselect, because `refresh_jump_matches` caches on
+  `(stage, name)` — both unchanged across a recompile while the IR underneath them is not.
+  A surviving point or follow triggers re-emission, since the focus file otherwise describes the
+  previous compile's IR: same node, different values, and a stale subtree is worse than an absent one.

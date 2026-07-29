@@ -1297,6 +1297,17 @@ fn build_node(key_path: &[Seg], root: &Value, specimen: Option<&Path>) -> Value 
     })
 }
 
+/// Whether a key-path still addresses something in `root`.
+///
+/// Used after a recompile to decide whether a retained point survived. A path
+/// that no longer resolves must not be kept: the Context Bar would name a node
+/// that does not exist, and the emitted `node.subtree` would be `null` — a
+/// confident claim about nothing, which is the failure this design keeps
+/// eliminating.
+pub fn node_exists(root: &Value, path: &[Seg]) -> bool {
+    navigate(root, path).is_some()
+}
+
 // Navigate a key-path from the root to a specific node.
 //
 // Returns `None` if any segment in the path doesn't exist (e.g., the key
