@@ -28,7 +28,43 @@ Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 in the
 2026-07-25 cycle, 25 in the 2026-07-25 sweep, and 20 in the 2026-07-26 sweep.
 See git history for details.
 
-## Tour holes — highest priority
+## Priority order — read this before choosing what to fix
+
+Set 2026-07-29, when Doug named the real operating constraint: **his robotics
+education has deadlines.**
+
+> Try to imagine me as a Purdue robotics student who is under time pressure to
+> complete an assignment, is having a difficulty understanding a concept, needs to get
+> an answer from you, but cannot get that answer because we procrastinated
+> implementing a bug fix that would require hours to implement. In short, my robotics
+> education is not merely going to be for entertainment, on a leisurely schedule of my
+> choosing.
+
+**So "high priority" is not enough — fixes here are PRE-EMPTIVE.** High priority means
+"first in the next sweep", which still leaves the gap open when the deadline lands, and
+the hours a fix needs are hours Doug will not have. **Fix while there is slack.**
+
+Feature *experimentation* stays cheap. **Unavailability does not.** Building the wrong
+feature costs some tokens; a missing capability the night before an assignment costs
+Doug the assignment.
+
+1. **Anything that forces Claude to guess instead of verify** — a phase not emitting
+   its data, a broken bridge, a claim that cannot be checked. **This is the
+   catastrophic case, not a missing tour.** On 2026-07-29 the textbook shape of a
+   hidden constraint says Pantelides *differentiates* it; the actual report showed
+   `differentiated_rows` empty and `emf.phi` demoted via the dummy-derivative path.
+   Recall would have been confidently wrong, and under deadline pressure Doug would
+   have had no reason to doubt it.
+2. **Anything that makes HRW unavailable** — crashes, hangs, failure to build. Note
+   the test suite *hangs* under the default harness; that class of failure bites worst
+   at the worst time.
+3. **Tour holes** — the table below. These usually *degrade* an answer rather than
+   block it, since a text answer remains available.
+4. **Ordinary debt** — everything further down this file.
+
+---
+
+## Tour holes
 
 **A tour hole is a place where HRW stopped Claude from answering a question.** Doug's
 ruling, 2026-07-29:
@@ -37,8 +73,9 @@ ruling, 2026-07-29:
 > much for you to have available all of the HRW functionality which you need. Fixing
 > those gaps and bugs is high priority.
 
-**These outrank everything else in this file**, including items that have been open
-across several sweeps. Ordinary debt costs *future* effort; a tour hole degrades the
+**These outrank all ordinary debt in this file** (but see the priority order above —
+anything that makes Claude *guess*, or makes HRW *unavailable*, comes first), including
+items that have been open across several sweeps. Ordinary debt costs *future* effort; a tour hole degrades the
 *deliverable*, and it arrives with evidence attached — a real question it got in the
 way of. **Every sweep starts here.**
 
