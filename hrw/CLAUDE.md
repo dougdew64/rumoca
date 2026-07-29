@@ -36,10 +36,33 @@ a standalone tool.
 practical scenario demonstrates a need. Multiple `follow` items and a third "compare" primitive were
 considered and deliberately not built — **do not re-propose them from first principles.**
 
-**Phases 6 and 7 are next** — the tree rework (in-view search, reveal as action not mode, provenance
-noise suppression) and the canvas views (hit-testing for row/column labels, spy-plot blocks, Tarjan
-nodes, reduction rows). Both will be shaped by what Phase 5 turned up; half of Phase 6's search work
-already landed as the jump-to-followed-identifier control.
+**Agreed work order (Doug, 2026-07-28), in this sequence:**
+
+1. **Animation debt** — a trait over the three animation types, plus `animation_controls`'s 8
+   positional parameters and the duplicated matrix-canvas boilerplate. First because idea #40 builds
+   a *fourth* animation view; copying the pattern again would leave Phase 7 four near-duplicates.
+   **Fold in** `current_frame_context()` on the trait, so `view.animation` in the capture carries
+   *what* the user is looking at and not merely *where* they are (see `docs/tech-debt.md`).
+2. **Idea #40** — instrument `lower_pre_operator` (`rumoca-phase-dae`) with `LiveTrace`. First
+   non-structural crate instrumented, so it also tests whether `LiveTrace` generalises — which gates
+   ideas #19–#22.
+3. **End-to-end tour attempt** — moved *ahead* of Phases 6 and 7 deliberately. Attempting the tour
+   is what generates requirements: every Phase 5 improvement came from Doug using the thing, none
+   from planning. The tour will stress exactly the tree and canvas work those phases contain, so
+   doing them first would be building on assumptions.
+4. **Refactor `bridge.rs`** — 2342 lines at Phase 5 close; Phase 6 touches it.
+5. **Phases 6 and 7** — the tree rework and the canvas views, **shaped by what the tour turns up**.
+   Half of Phase 6's search work already landed as the jump-to-followed-identifier control, and
+   incidence rows and spy-plot blocks are already clickable; Phase 7 adds axis labels, Tarjan nodes
+   and reduction rows.
+
+**The larger loop this sits inside** (Doug): attempt the tour → find what makes it tedious → fix
+that → repeat, until the tour is *pleasurable*. Only then does he begin reading Cellier and using
+HRW for its intended purpose, and only after that can he identify improvements to the phase
+animations — *"For now, I'm unable to identify such improvements as I am too ignorant about the
+algorithms which are being animated."* **Do not propose animation/pedagogy refinements before then;
+log them in `ideas.md` instead.** The signal that the loop has converged is a change in the *kind*
+of problem reported: from "this is broken or tedious" to "this doesn't teach me the thing well".
 
 **Current work — Pass two, in this order:**
 1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than

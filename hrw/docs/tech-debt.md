@@ -83,12 +83,23 @@ because the code rotted.
   views anyway — doing it now risks the churn Phase 7 was postponed to avoid.
   Extracting them into adjacent named functions was the safe half, and it makes
   the duplication visible.
-  **DEFERRAL WITHDRAWN 2026-07-28 — scheduled next.** The reason above no longer
-  holds: Doug's agreed order is idea #40 *before* Phase 7, and #40 builds a
-  **fourth** animation view (pre-lowering). Copying the pattern again would hand
-  Phase 7 four near-duplicates instead of three, and make `live_state` identical
-  in four files. Paying it first also makes #40 smaller. Take it together with
-  the two items below — they are the same refactor seen from three angles.
+  **DEFERRAL WITHDRAWN 2026-07-28 — this is now the next work.** The reason above
+  no longer holds: idea #40 comes *before* Phase 7, and #40 builds a **fourth**
+  animation view (pre-lowering). Copying the pattern again would hand Phase 7
+  four near-duplicates instead of three, and make `live_state` identical in four
+  files. Paying it first also makes #40 smaller. Take it together with the two
+  items below — they are the same refactor seen from three angles.
+
+  **One requirement to fold in while unifying them:** the trait should expose
+  `current_frame_context() -> Value` alongside `position()` and `live_state()`.
+  The capture currently emits `view.animation` as *position only* — `which`,
+  `frame`, `frame_count`, `live_state` — so a question asked while paused on
+  frame 12 tells Claude where the user is but not what they are looking at. The
+  per-frame display text already exists (`reduction_anim.rs` maps each
+  `IndexReductionStep` to a label); it is simply never emitted. Adding it here
+  means the fourth view from #40 inherits it rather than needing it retrofitted.
+  This is the "enrich what the primitives emit" axis, which the Phase 5 freeze
+  explicitly leaves open.
   *Files:* `app.rs`, `matching_anim.rs`, `tarjan_anim.rs`, `reduction_anim.rs`.
 
 - [ ] **`animation_controls` takes 8 positional parameters** *(do with the item above)*, two of them
