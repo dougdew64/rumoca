@@ -2542,6 +2542,682 @@ impl App {
         }
     }
 
+    /// The central panel: stage tab bar, status banners, sub-tab bars, and the
+    /// per-stage view dispatch. The bulk of the frame.
+    ///
+    /// Extracted from [`Self::ui`] on 2026-07-29. This was the payoff of
+    /// `FrameIntent`: the body records what the user asked for into `intent`
+    /// and the caller acts on it after the panel closures end, so the whole
+    /// block moves with a single out-parameter.
+    ///
+    /// The early `return` near the top (no specimen selected) exits this method,
+    /// the panel closure then ends normally, and `ui`'s deferred-action block
+    /// still runs — the same order as when this was a closure body.
+    fn central_panel_ui(&mut self, ui: &mut egui::Ui, intent: &mut FrameIntent) {
+        if self.nav.is_empty() {
+            // ---- Specimen stage view ----
+            // No specimen yet → no stages to show, so don't render the tab
+            // row (a highlighted tab before any compile is misleading).
+            // In Debug mode the specimen list is hidden, so show the
+            // dropdown here so the user can pick their first specimen.
+            if self.selected.is_none() {
+                if self.ui_mode == UiMode::Debug {
+                    let combo = egui::ComboBox::from_id_salt("specimen_switcher")
+                        .selected_text("(none)")
+                        .width(120.0);
+                    let mut switch_to = None;
+                    combo.show_ui(ui, |ui| {
+                        for path in &self.files {
+                            let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
+                            if ui.selectable_label(false, name).clicked() {
+                                switch_to = Some(path.clone());
+                            }
+                        }
+                    });
+                    if let Some(path) = switch_to {
+                        self.open(path);
+                    }
+                } else {
+                    ui.weak("Select a specimen to compile.");
+                }
+                return;
+            }
+            // `horizontal_wrapped` lays widgets left-to-right, wrapping to a
+            // second line when they don't fit. With 11 stage tabs, a narrow
+            // window needs this (vs `horizontal` which would clip).
+            ui.horizontal_wrapped(|ui| {
+                // ---- Stage tab bar ----
+                //
+                // WHY `selectable_label` INSTEAD OF `selectable_value`:
+                //
+                // egui has two selection widgets:
+                // - `selectable_value(&mut val, variant, text)` — ALWAYS highlights
+                //   when `val == variant`. Good for radio-button groups.
+                // - `selectable_label(is_selected, text)` — highlights when the
+                //   bool is true. You control the condition explicitly.
+                //
+                // We use `selectable_label` here because we need to SUPPRESS
+                // highlighting while compiling: when a fresh specimen is loading,
+                // no tab should appear selected (the previous specimen's stage
+                // would be misleading). The `stage_selected` bool below gates
+                // this: it's false while compiling or while viewing the log, so
+                // no tab highlights. `selectable_value` can't express this
+                // conditional because it always highlights the current value.
+                //
+                // THE `stage_tab_clicked` PATTERN:
+                //
+                // Each stage tab checks `.clicked()` and sets the same
+                // `stage_tab_clicked` flag. After the tab row, a single block
+                // acts on that flag to turn off `viewing_log` and emit a stage
+                // capture for the bridge. This avoids duplicating that logic
+                // in every tab's click handler.
+                //
+                // TAB COLORING:
+                //
+                // Each tab label is colored via `tab_label()`:
+                // - Red if the stage errored (so you see pipeline failures at a glance)
+                // - Green if the stage produced IR (success)
+                // - Default color if not yet reached or still compiling
+                // Specimen switcher — a compact dropdown showing the
+                // Specimen switcher dropdown — only in Debug mode, where
+                // the specimen list is hidden.
+                if self.ui_mode == UiMode::Debug {
+                    let current_name = self.selected.as_ref()
+                        .and_then(|p| p.file_stem())
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("(none)");
+                    let combo = egui::ComboBox::from_id_salt("specimen_switcher")
+                        .selected_text(current_name)
+                        .width(120.0);
+                    let mut switch_to = None;
+                    combo.show_ui(ui, |ui| {
+                        for path in &self.files {
+                            let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
+                            let is_selected = self.selected.as_deref() == Some(path.as_path());
+                            if ui.selectable_label(is_selected, name).clicked() {
+                                switch_to = Some(path.clone());
+                            }
+                        }
+                    });
+                    if let Some(path) = switch_to {
+                        self.open(path);
+                    }
+                    ui.separator();
+                }
+
+                if ui.selectable_label(self.viewing_log, "Log").clicked() {
+                    self.viewing_log = true;
+                }
+                ui.separator();
+                // ---- Play button (inline simulation trigger) ----
+                //
+                // This button starts a simulation WITHOUT switching to the
+                // Simulation tab. The user can be viewing the Structural
+                // spy-plot or the Log and press play — the sim runs in the
+                // background and the UI stays on the current view. This is
+                // useful for watching log messages during simulation or
+                // studying the IR while a run completes.
+                //
+                // `add_enabled` is like `add` (places a widget) but
+                // greys it out when the bool is false. The button is only
+                // active when: not compiling, not already simulating, a
+                // model was parsed, and solve_lowering succeeded (the
+                // simulator needs the SolveModel IR).
+                let can_sim = !self.compiling
+                    && !self.sim_running
+                    && self.model.is_some()
+                    && self.stages.solve_lowering.value.is_some();
+                if ui
+                    .add_enabled(can_sim, egui::Button::new("▶"))
+                    .on_hover_text("Run simulation (stays on the current view)")
+                    .on_disabled_hover_text("Compile a specimen first")
+                    .clicked()
+                {
+                    self.start_simulation();
+                }
+                if self.sim_running {
+                    ui.spinner();
+                }
+                ui.separator();
+                let err = ui.visuals().error_fg_color;
+                let ok = crate::colors::ok_color(ui.visuals().dark_mode);
+                // While a freshly-selected specimen is still compiling, NO tab is
+                // highlighted — the previous specimen's stage must not appear selected
+                // over an empty/loading one. The highlight returns once results land
+                // (`self.stage` = the furthest clean stage). Hence `selectable_label`
+                // with an explicit `stage_selected && …` bool, not `selectable_value`
+                // (which would always highlight the current stage).
+                //
+                // Selecting an IR stage tab ALSO captures that stage for the chat (no
+                // separate 🔎 button) — so its context is ready the instant you view
+                // it; the capture fires once below. Simulation is excluded: it's a
+                // run/plot action, not an IR capture.
+                let stage_selected = !self.compiling && !self.viewing_log;
+                let mut stage_tab_clicked = false;
+                let tabs: &[(StageKind, &str, &Stage, Option<&str>)] = &[
+                    (StageKind::Parse, "Parse", &self.stages.parse, None),
+                    (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
+                    (StageKind::Instantiate, "Instantiate", &self.stages.instantiate, None),
+                    (StageKind::Typecheck, "Typecheck", &self.stages.typecheck, Some(
+                        "The model-scoped instanced typecheck: it types the instantiated \
+                         overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
+                         Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
+                         pre-instantiation whole-tree typecheck; it fails on the full MSL.",
+                    )),
+                    (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
+                    (StageKind::Structural, "Structural", &self.stages.structural, Some(
+                        "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
+                         (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
+                         A high-index system (rigid constraints) reports SINGULAR here — see the \
+                         Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
+                         to pan, scroll to zoom, click a block to capture) or the raw report tree.",
+                    )),
+                    (StageKind::IndexReduction, "Index reduction", &self.stages.index_reduction, Some(
+                        "Structural analysis of the DAE AFTER index reduction (Pantelides / \
+                         dummy derivatives): the funnel differentiates constraints and demotes states \
+                         so a high-index singular system becomes matchable. For an already-index-1 \
+                         model this equals Structural. Same BLT spy-plot / tree.",
+                    )),
+                    (StageKind::Initialization, "Initialization", &self.stages.initialization, Some(
+                        "The consistent-initial-condition solve plan (build_ic_plan): the \
+                         ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
+                         scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
+                         dropped / unknowns pinned) when the initial subsystem is singular, and a \
+                         determinacy check that flags an OVER-determined init (more explicit initial \
+                         conditions than states — conflicting/redundant ICs).",
+                    )),
+                    (StageKind::Events, "Events", &self.stages.events, Some(
+                        "The DAE's hybrid / event structure: the conditions (relations that \
+                         trigger events), the discrete updates lowered from `when` clauses (f_z real, \
+                         f_m valued), and the event partition (zero-crossing root conditions + scheduled \
+                         time events). A smooth (continuous) model shows none.",
+                    )),
+                    (StageKind::SolveLowering, "Solve lowering", &self.stages.solve_lowering, Some(
+                        "The DAE lowered to a SolveModel (phase 8): the solvable form the \
+                         simulator runs — residual programs, variable layout, mass matrix, Jacobian \
+                         sparsity. This is the compile step just before simulation.",
+                    )),
+                ];
+                for &(kind, label, ref stage, hover) in tabs {
+                    let mut resp = ui.selectable_label(
+                        stage_selected && self.stage == kind,
+                        tab_label(label, stage, ok, err),
+                    );
+                    // A tab click is a point-at too — at the stage as a
+                    // whole. Appended to the tab's own explanation rather
+                    // than replacing it: what the stage *is* matters more
+                    // than what clicking does, and this is the row where a
+                    // reader is most likely to be learning the pipeline.
+                    let tip = match hover {
+                        Some(t) => format!("{t}\n\n{}", crate::POINT_AT_HOVER),
+                        None => crate::POINT_AT_HOVER.to_owned(),
+                    };
+                    resp = resp.on_hover_text(tip);
+                    if resp.clicked() {
+                        diagnostics::record_action("stage-tab", kind.name());
+                        self.stage = kind;
+                        stage_tab_clicked = true;
+                    }
+                }
+                // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
+                ui.separator();
+                let sim_label = {
+                    let text = egui::RichText::new("Simulation");
+                    if self.sim_error.is_some() {
+                        text.color(err)
+                    } else if self.sim_data.is_some() {
+                        text.color(ok)
+                    } else {
+                        text
+                    }
+                };
+                if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, sim_label)
+                    .on_hover_text(
+                        "Run the model (phase 9): compile → lower to a SolveModel → integrate \
+                         (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
+                         on the worker thread, so the UI stays live.",
+                    )
+                    .clicked()
+                {
+                    self.stage = StageKind::Simulation;
+                    self.viewing_log = false;
+                }
+                if stage_tab_clicked {
+                    self.viewing_log = false;
+                    if self.selected.is_some() {
+                        intent.want_stage_ask = true;
+                    }
+                }
+                // The compiled-model name is deliberately NOT shown here — the
+                // stage tab row is short on horizontal space, and the same
+                // identity is already visible in the specimen list and the
+                // tree breadcrumb. `self.model` itself is still maintained;
+                // it feeds the Claude bridge focus file, live-debug arming,
+                // capture gating, and the narrative lookup.
+                if self.compiling {
+                    ui.spinner();
+                }
+                if let Some(n) = &self.nav_loading {
+                    ui.weak(format!("opening {n}…"));
+                    ui.spinner();
+                }
+            });
+
+            if let Some(err) = &self.nav_error {
+                ui.colored_label(ui.visuals().error_fg_color, err);
+            }
+            ui.separator();
+
+            self.context_bar_ui(ui);
+
+            if self.viewing_log {
+                if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
+                    self.worker.send(ToWorker::SetTracing(self.tracing_enabled));
+                }
+            } else if self.stage == StageKind::Simulation {
+                self.simulation_pane(ui);
+            } else {
+            // Stage note (in its own scope so its borrow of `self` ends
+            // before the value section, which may borrow `self` mutably for
+            // the spy-plot canvas).
+            {
+                let stage = self.current_stage();
+                // Stages with structured error data show their own summary
+                // below; Structural/IndexReduction with singular/index-1
+                // notes show a status banner. Skip the generic note for both.
+                let has_error_summary = stage.note_is_error
+                    && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
+                let has_custom_banner = matches!(
+                    self.stage, StageKind::Structural | StageKind::IndexReduction
+                ) && stage.note.as_deref().map_or(false, |n| n.contains("singular") || n.contains("index-1"));
+                if let Some(note) = &stage.note {
+                    if !has_custom_banner && !has_error_summary {
+                        let color = if stage.note_is_error {
+                            ui.visuals().error_fg_color
+                        } else {
+                            ui.visuals().weak_text_color()
+                        };
+                        egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
+                            ui.colored_label(color, egui::RichText::new(note).monospace());
+                        });
+                        ui.separator();
+                    }
+                }
+            }
+
+            // The Flatten stage offers an equation sheet alongside the tree.
+            let flatten_ready =
+                self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
+            let has_source_map = flatten_ready
+                && self.cached_equation_sheet.as_ref().is_some_and(|s| !s.source_lines.is_empty());
+            if flatten_ready {
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut self.flatten_view, FlattenView::Equations, "Equations");
+                    if has_source_map {
+                        ui.selectable_value(&mut self.flatten_view, FlattenView::SourceMap, "Source Map");
+                    }
+                    // Connection expansion, only when the model has any --
+                    // a hand-written model shows no empty tab.
+                    if !self.connection_frames.is_empty() {
+                        ui.selectable_value(&mut self.flatten_view, FlattenView::Connections, "Connections \u{25b6}")
+                            .on_hover_text(
+                                "Watch connect() statements become equations. A potential set \
+                                 of n variables yields n-1 equalities; a flow set of the same \
+                                 n yields one sum-to-zero equation (Kirchhoff).",
+                            );
+                    }
+                    ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
+                });
+                ui.separator();
+            }
+
+            // The Events stage offers a replay of `pre()` lowering beside the
+            // tree — only when there is a trace to replay, so smooth models
+            // never show an empty tab.
+            let events_ready =
+                self.stage == StageKind::Events && !self.pre_lowering_frames.is_empty();
+            if events_ready {
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut self.events_view, EventsView::Tree, "Tree");
+                    ui.selectable_value(
+                        &mut self.events_view,
+                        EventsView::PreLowering,
+                        "pre() lowering \u{25b6}",
+                    )
+                    .on_hover_text(
+                        "Replay where the __pre__ parameter slots are manufactured. They \
+                         appear in no source file: a `when` equation needs a value to hold \
+                         when no branch fires, and a DAE cannot say \u{201c}unchanged\u{201d}.",
+                    );
+                });
+                ui.separator();
+            }
+
+            // The Initialization stage offers a walk of the initial-condition
+            // solve plan beside the tree -- only when there is a plan, so a
+            // model whose initialization failed never shows an empty tab.
+            let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
+            if init_ready {
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut self.init_view, InitView::Tree, "Tree");
+                    ui.selectable_value(&mut self.init_view, InitView::IcPlan, "IC plan \u{25b6}")
+                        .on_hover_text(
+                            "Walk the plan for computing a consistent state at t=0. Mostly \
+                             plain assignment; the few blocks that iterate are where \
+                             initialization fails when it fails.",
+                        );
+                });
+                ui.separator();
+            }
+
+            // The report stages (Structural + Index reduction) offer a custom
+            // BLT spy-plot alongside the generic tree; every other stage is
+            // tree-only.
+            let report_stage =
+                matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
+            let report_ready = report_stage && self.current_stage().value.is_some();
+            if report_ready {
+                // Invalidate caches when switching between Structural
+                // and IndexReduction — each has different report data.
+                if self.cached_report_stage != Some(self.stage) {
+                    self.cached_spy_plot = None;
+                    self.cached_incidence = None;
+                    self.cached_reduction = None;
+                    self.cached_matching_anim = None;
+                    self.cached_tarjan_anim = None;
+                    self.cached_tearing_anim = None;
+                    self.cached_alias_anim = None;
+                self.cached_alias_anim = None;
+                self.cached_ic_plan_anim = None;
+                self.cached_connection_anim = None;
+                    self.cached_reduction_anim = None;
+                    self.cached_before_incidence = None;
+                    // Default sub-view: Summary for IndexReduction and
+                    // singular Structural; SpyPlot otherwise.
+                    let is_singular = self.stages.get(self.stage).note.as_deref()
+                        .map_or(false, |n| n.contains("singular"));
+                    if self.stage == StageKind::IndexReduction || is_singular {
+                        self.structural_view = StructuralView::Summary;
+                    } else if matches!(self.structural_view,
+                        StructuralView::Summary | StructuralView::Animate)
+                    {
+                        self.structural_view = StructuralView::SpyPlot;
+                    }
+                    self.cached_report_stage = Some(self.stage);
+                }
+                let is_index_reduction = self.stage == StageKind::IndexReduction;
+                let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
+                let is_singular = note.contains("singular");
+                let has_summary = is_index_reduction || is_singular;
+
+                // Status banner
+                if is_index_reduction {
+                    if is_singular {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
+                            ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
+                        });
+                    } else {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new("Index-1").color(crate::colors::ANIM_PATH_FOUND).strong());
+                            ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
+                        });
+                    }
+                    ui.add_space(2.0);
+                } else if is_singular {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
+                        ui.weak("\u{2014} structurally singular; no perfect matching exists (see Index Reduction)");
+                    });
+                    ui.add_space(2.0);
+                }
+
+                // Sub-tab bar
+                ui.horizontal(|ui| {
+                    if has_summary {
+                        ui.selectable_value(&mut self.structural_view, StructuralView::Summary, "Summary");
+                        ui.separator();
+                    }
+                    if is_index_reduction && !self.index_reduction_frames.is_empty() {
+                        ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
+                    }
+                    // Alias elimination is reported by this stage only, and
+                    // only when something was actually eliminated -- a model
+                    // with no aliases must not show an empty tab.
+                    if is_index_reduction && self.has_alias_eliminations() {
+                        ui.selectable_value(&mut self.structural_view, StructuralView::AliasAnim, "Aliases \u{25b6}")
+                            .on_hover_text(
+                                "Watch variables be substituted away. Every connection \
+                                 equation `a = b` lets one of the two be deleted, which is \
+                                 why the solved system is far smaller than the equation \
+                                 count suggests.",
+                            );
+                    }
+                    // Spy-plot, Matching, BLT require a full matching —
+                    // hide them when the Structural stage is singular.
+                    if !is_singular || is_index_reduction {
+                        ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
+                    }
+                    ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
+                    if !is_singular || is_index_reduction {
+                        ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
+                        ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
+                        // Tearing operates on the coupled blocks BLT finds,
+                        // so it needs the same full matching those two do.
+                        ui.selectable_value(&mut self.structural_view, StructuralView::TearingAnim, "Tearing \u{25b6}");
+                    }
+                    ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
+                });
+                ui.separator();
+            }
+
+            // Whether the Index Reduction tab shows a Before/After split for
+            // comparative views. True when index reduction was actually needed
+            // (the note mentions "singular").
+            let ir_split = report_ready
+                && self.stage == StageKind::IndexReduction
+                && self.stages.get(self.stage).note.as_deref()
+                    .map_or(false, |n| n.contains("singular"));
+
+            if report_ready && self.structural_view == StructuralView::SpyPlot {
+                if ir_split {
+                    // No spy-plot for the Before pane (needs full matching),
+                    // show only the After pane.
+                    ui.label(egui::RichText::new("Before (raw DAE)")
+                        .strong().color(crate::colors::ANIM_FAIL));
+                    ui.weak("Spy-plot unavailable (structurally singular \u{2014} no BLT decomposition)");
+                    ui.add_space(12.0);
+                    ui.label(egui::RichText::new("After (reduced)")
+                        .strong().color(crate::colors::ANIM_PATH_FOUND));
+                }
+                let cached = self.cached_spy_plot.get_or_insert_with(|| {
+                    self.stages.get(self.stage).value.as_ref().and_then(spyplot::Plot::from_report)
+                });
+                if let Some(plot) = cached {
+                    ui.weak(plot.caption());
+                    plot.ui(ui, &mut self.spy_canvas, &mut intent.canvas_capture, self.tracked_identifier.as_deref());
+                } else {
+                    ui.weak("(the structural report has no BLT blocks to plot)");
+                }
+            } else if report_ready && self.structural_view == StructuralView::Incidence {
+                if ir_split {
+                    // Before/After split for incidence matrices.
+                    let before_cached = self.cached_before_incidence.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref()
+                            .and_then(|v| v.get("before"))
+                            .and_then(incidence_view::IncidenceMatrix::from_report)
+                    });
+                    let after_cached = self.cached_incidence.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref()
+                            .and_then(incidence_view::IncidenceMatrix::from_report)
+                    });
+                    ui.columns(2, |cols| {
+                        // Before pane
+                        cols[0].label(egui::RichText::new("Before (raw DAE)")
+                            .strong().color(crate::colors::ANIM_FAIL));
+                        if let Some(mat) = before_cached {
+                            cols[0].weak(mat.caption());
+                            mat.ui(
+                                &mut cols[0], &mut self.before_incidence_canvas,
+                                &mut intent.canvas_capture, self.highlighted_eq_row, None,
+                            );
+                        } else {
+                            cols[0].weak("(no before incidence data)");
+                        }
+                        // After pane
+                        cols[1].label(egui::RichText::new("After (reduced)")
+                            .strong().color(crate::colors::ANIM_PATH_FOUND));
+                        if let Some(mat) = after_cached {
+                            cols[1].weak(mat.caption());
+                            let tracked_col = self.tracked_identifier.as_deref()
+                                .and_then(|name| mat.column_index(name));
+                            mat.ui(
+                                &mut cols[1], &mut self.incidence_canvas,
+                                &mut intent.canvas_capture, self.highlighted_eq_row, tracked_col,
+                            );
+                        } else {
+                            cols[1].weak("(no after incidence data)");
+                        }
+                    });
+                } else {
+                    let cached = self.cached_incidence.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref()
+                            .and_then(incidence_view::IncidenceMatrix::from_report)
+                    });
+                    if let Some(mat) = cached {
+                        ui.weak(mat.caption());
+                        let tracked_col = self.tracked_identifier.as_deref()
+                            .and_then(|name| mat.column_index(name));
+                        mat.ui(ui, &mut self.incidence_canvas, &mut intent.canvas_capture, self.highlighted_eq_row, tracked_col);
+                    } else {
+                        ui.weak("(no incidence data in this report)");
+                    }
+                }
+            } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
+                self.matching_anim_ui(ui, ir_split);
+            } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
+                self.tarjan_anim_ui(ui, ir_split);
+            } else if report_ready && self.structural_view == StructuralView::TearingAnim {
+                self.tearing_anim_ui(ui);
+            } else if report_ready && self.structural_view == StructuralView::AliasAnim {
+                self.alias_anim_ui(ui);
+            } else if report_ready && self.structural_view == StructuralView::Summary {
+                if self.stage == StageKind::Structural {
+                    Self::structural_singular_summary(ui, &self.stages.structural);
+                } else {
+                    let cached = self.cached_reduction.get_or_insert_with(|| {
+                        self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
+                    });
+                    if let Some(view) = cached {
+                        view.ui(ui, self.tracked_identifier.as_deref());
+                    } else {
+                        ui.weak("(no reduction data in this report)");
+                    }
+                }
+            } else if self.structural_view == StructuralView::Animate {
+                self.reduction_anim_ui(ui);
+            } else if events_ready && self.events_view == EventsView::PreLowering {
+                self.pre_lowering_anim_ui(ui);
+            } else if init_ready && self.init_view == InitView::IcPlan {
+                self.ic_plan_anim_ui(ui);
+            } else if flatten_ready && self.flatten_view == FlattenView::Equations {
+                self.equation_sheet_ui(ui);
+            } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
+                self.source_map_ui(ui);
+            } else if flatten_ready && self.flatten_view == FlattenView::Connections {
+                self.connection_anim_ui(ui);
+            } else {
+                let stage = self.current_stage();
+                let has_error_data = stage.note_is_error
+                    && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
+                if has_error_data {
+                    let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
+                    egui::ScrollArea::vertical().id_salt("error_summary").auto_shrink(false).show(ui, |ui| {
+                        Self::generic_error_summary(ui, &error, self.stage);
+                    });
+                } else {
+                    match &stage.value {
+                        Some(value) => {
+                            let label = self.model.as_deref().unwrap_or("model");
+                            let prev = self.previous_stage_value();
+                            // Finding trackable names in a large IR means
+                            // opening nodes at random. This opens exactly
+                            // the paths that lead to one.
+                            ui.horizontal(|ui| {
+                                ui.checkbox(
+                                    &mut intent.expand_trackable,
+                                    "Reveal identifiers",
+                                ).on_hover_text(
+                                    "Expand every path leading to a variable of \
+                                     this model. Underlined values can be \
+                                     right-clicked to track.",
+                                );
+                                if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
+                                    ui.weak(format!("({n} in this model)"));
+                                }
+                            });
+                            let opts = tree::TreeOptions {
+                                tracked: self.tracked_identifier.as_deref(),
+                                known_variables: self.known_variables.as_ref(),
+                                declaring_classes: Some(&self.declaring_classes),
+                                expand_trackable: intent.expand_trackable,
+                                jump_to: self.jump_target.as_deref(),
+                            };
+                            egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
+                                tree::tree_ui(ui, label, value, prev, &mut intent.tree, &self.def_index, &self.field_help, opts);
+                            });
+                        }
+                        None if stage.note.is_none() => {
+                            ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
+                        }
+                        None => {}
+                    }
+                }
+            }
+            } // end: non-Simulation stage rendering
+        } else {
+            // ---- Navigation view (a class reached via "Go to definition") ----
+            ui.horizontal(|ui| {
+                if ui.button("Specimen").on_hover_text("Return to the specimen stages (top of navigation)").clicked() {
+                    intent.go_home = true;
+                }
+                if ui.button("← Back").clicked() {
+                    intent.go_back = true;
+                }
+                ui.separator();
+                let mut crumb = self.model.clone().unwrap_or_else(|| "model".to_owned());
+                for e in &self.nav {
+                    crumb.push_str("  ▸  ");
+                    crumb.push_str(&e.name);
+                }
+                ui.label(egui::RichText::new(crumb).monospace().strong());
+                if let Some(n) = &self.nav_loading {
+                    ui.weak(format!("opening {n}…"));
+                    ui.spinner();
+                }
+            });
+            if let Some(err) = &self.nav_error {
+                ui.colored_label(ui.visuals().error_fg_color, err);
+            }
+            ui.separator();
+
+            let entry = self.nav.last().unwrap();
+            egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
+                tree::tree_ui(ui, &entry.name, &entry.value, None, &mut intent.tree, &entry.def_index, &self.field_help,
+                    tree::TreeOptions {
+                        tracked: self.tracked_identifier.as_deref(),
+                        known_variables: self.known_variables.as_ref(),
+                        declaring_classes: Some(&self.declaring_classes),
+                        expand_trackable: intent.expand_trackable,
+                        // A navigated library class is a different IR, so a
+                        // jump target addressed into the stage tree would
+                        // land on an unrelated node or nothing at all.
+                        jump_to: None,
+                    });
+            });
+        }
+    }
+
     /// The top menu bar (File, View, Help).
     ///
     /// Extracted from `ui` during the 2026-07-28 sweep — self-contained, and
@@ -3965,683 +4641,25 @@ impl eframe::App for App {
         // `self` through the panel, so we can't call methods like
         // `emit_node_focus` inside it. Instead, the closure sets these flags
         // and the actual method calls happen after the closure, below.
-        let mut tree_actions = tree::TreeActions::default();
-        // Copied out because the stage-tree block holds an immutable borrow of
-        // self (via `current_stage`); written back with the other deferred actions.
-        let mut expand_trackable = self.expand_trackable;
-        let node_ask: Option<Vec<Seg>> = None;       // left-click capture (explain)
-        let debug_ask: Option<Vec<Seg>> = None;      // right-click debugger capture
-        let mut canvas_capture: Option<Vec<Seg>> = None; // spy-plot block click
-        let nav_to: Option<String> = None;           // "Go to definition" target
-        let mut want_stage_ask = false;              // stage tab was clicked
-        let mut go_back = false;                     // navigation "Back" button
-        let mut go_home = false;                     // navigation "Specimen" button
+        // Everything the panels want done, collected in one place. See
+        // `FrameIntent` for why this is a struct rather than seven locals.
+        //
+        // `hrw_link_action` is deliberately *not* in here: the left panel
+        // collects it and it is acted on immediately above, before the central
+        // panel renders, so it is not deferred state.
+        let mut intent = FrameIntent {
+            expand_trackable: self.expand_trackable,
+            ..FrameIntent::default()
+        };
 
         // `CentralPanel` fills all remaining space after top/bottom/left/right
         // panels have claimed theirs. This is where the main content lives.
+        // The central panel's body is `central_panel_ui`. It was extracted
+        // 2026-07-29 once `FrameIntent` made it possible: it needs only
+        // `&mut self` and one `&mut FrameIntent`, where before it would have
+        // required seven transposable out-parameters.
         egui::CentralPanel::default().show(ui, |ui| {
-            if self.nav.is_empty() {
-                // ---- Specimen stage view ----
-                // No specimen yet → no stages to show, so don't render the tab
-                // row (a highlighted tab before any compile is misleading).
-                // In Debug mode the specimen list is hidden, so show the
-                // dropdown here so the user can pick their first specimen.
-                if self.selected.is_none() {
-                    if self.ui_mode == UiMode::Debug {
-                        let combo = egui::ComboBox::from_id_salt("specimen_switcher")
-                            .selected_text("(none)")
-                            .width(120.0);
-                        let mut switch_to = None;
-                        combo.show_ui(ui, |ui| {
-                            for path in &self.files {
-                                let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
-                                if ui.selectable_label(false, name).clicked() {
-                                    switch_to = Some(path.clone());
-                                }
-                            }
-                        });
-                        if let Some(path) = switch_to {
-                            self.open(path);
-                        }
-                    } else {
-                        ui.weak("Select a specimen to compile.");
-                    }
-                    return;
-                }
-                // `horizontal_wrapped` lays widgets left-to-right, wrapping to a
-                // second line when they don't fit. With 11 stage tabs, a narrow
-                // window needs this (vs `horizontal` which would clip).
-                ui.horizontal_wrapped(|ui| {
-                    // ---- Stage tab bar ----
-                    //
-                    // WHY `selectable_label` INSTEAD OF `selectable_value`:
-                    //
-                    // egui has two selection widgets:
-                    // - `selectable_value(&mut val, variant, text)` — ALWAYS highlights
-                    //   when `val == variant`. Good for radio-button groups.
-                    // - `selectable_label(is_selected, text)` — highlights when the
-                    //   bool is true. You control the condition explicitly.
-                    //
-                    // We use `selectable_label` here because we need to SUPPRESS
-                    // highlighting while compiling: when a fresh specimen is loading,
-                    // no tab should appear selected (the previous specimen's stage
-                    // would be misleading). The `stage_selected` bool below gates
-                    // this: it's false while compiling or while viewing the log, so
-                    // no tab highlights. `selectable_value` can't express this
-                    // conditional because it always highlights the current value.
-                    //
-                    // THE `stage_tab_clicked` PATTERN:
-                    //
-                    // Each stage tab checks `.clicked()` and sets the same
-                    // `stage_tab_clicked` flag. After the tab row, a single block
-                    // acts on that flag to turn off `viewing_log` and emit a stage
-                    // capture for the bridge. This avoids duplicating that logic
-                    // in every tab's click handler.
-                    //
-                    // TAB COLORING:
-                    //
-                    // Each tab label is colored via `tab_label()`:
-                    // - Red if the stage errored (so you see pipeline failures at a glance)
-                    // - Green if the stage produced IR (success)
-                    // - Default color if not yet reached or still compiling
-                    // Specimen switcher — a compact dropdown showing the
-                    // Specimen switcher dropdown — only in Debug mode, where
-                    // the specimen list is hidden.
-                    if self.ui_mode == UiMode::Debug {
-                        let current_name = self.selected.as_ref()
-                            .and_then(|p| p.file_stem())
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("(none)");
-                        let combo = egui::ComboBox::from_id_salt("specimen_switcher")
-                            .selected_text(current_name)
-                            .width(120.0);
-                        let mut switch_to = None;
-                        combo.show_ui(ui, |ui| {
-                            for path in &self.files {
-                                let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
-                                let is_selected = self.selected.as_deref() == Some(path.as_path());
-                                if ui.selectable_label(is_selected, name).clicked() {
-                                    switch_to = Some(path.clone());
-                                }
-                            }
-                        });
-                        if let Some(path) = switch_to {
-                            self.open(path);
-                        }
-                        ui.separator();
-                    }
-
-                    if ui.selectable_label(self.viewing_log, "Log").clicked() {
-                        self.viewing_log = true;
-                    }
-                    ui.separator();
-                    // ---- Play button (inline simulation trigger) ----
-                    //
-                    // This button starts a simulation WITHOUT switching to the
-                    // Simulation tab. The user can be viewing the Structural
-                    // spy-plot or the Log and press play — the sim runs in the
-                    // background and the UI stays on the current view. This is
-                    // useful for watching log messages during simulation or
-                    // studying the IR while a run completes.
-                    //
-                    // `add_enabled` is like `add` (places a widget) but
-                    // greys it out when the bool is false. The button is only
-                    // active when: not compiling, not already simulating, a
-                    // model was parsed, and solve_lowering succeeded (the
-                    // simulator needs the SolveModel IR).
-                    let can_sim = !self.compiling
-                        && !self.sim_running
-                        && self.model.is_some()
-                        && self.stages.solve_lowering.value.is_some();
-                    if ui
-                        .add_enabled(can_sim, egui::Button::new("▶"))
-                        .on_hover_text("Run simulation (stays on the current view)")
-                        .on_disabled_hover_text("Compile a specimen first")
-                        .clicked()
-                    {
-                        self.start_simulation();
-                    }
-                    if self.sim_running {
-                        ui.spinner();
-                    }
-                    ui.separator();
-                    let err = ui.visuals().error_fg_color;
-                    let ok = crate::colors::ok_color(ui.visuals().dark_mode);
-                    // While a freshly-selected specimen is still compiling, NO tab is
-                    // highlighted — the previous specimen's stage must not appear selected
-                    // over an empty/loading one. The highlight returns once results land
-                    // (`self.stage` = the furthest clean stage). Hence `selectable_label`
-                    // with an explicit `stage_selected && …` bool, not `selectable_value`
-                    // (which would always highlight the current stage).
-                    //
-                    // Selecting an IR stage tab ALSO captures that stage for the chat (no
-                    // separate 🔎 button) — so its context is ready the instant you view
-                    // it; the capture fires once below. Simulation is excluded: it's a
-                    // run/plot action, not an IR capture.
-                    let stage_selected = !self.compiling && !self.viewing_log;
-                    let mut stage_tab_clicked = false;
-                    let tabs: &[(StageKind, &str, &Stage, Option<&str>)] = &[
-                        (StageKind::Parse, "Parse", &self.stages.parse, None),
-                        (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
-                        (StageKind::Instantiate, "Instantiate", &self.stages.instantiate, None),
-                        (StageKind::Typecheck, "Typecheck", &self.stages.typecheck, Some(
-                            "The model-scoped instanced typecheck: it types the instantiated \
-                             overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
-                             Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
-                             pre-instantiation whole-tree typecheck; it fails on the full MSL.",
-                        )),
-                        (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
-                        (StageKind::Structural, "Structural", &self.stages.structural, Some(
-                            "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
-                             (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
-                             A high-index system (rigid constraints) reports SINGULAR here — see the \
-                             Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
-                             to pan, scroll to zoom, click a block to capture) or the raw report tree.",
-                        )),
-                        (StageKind::IndexReduction, "Index reduction", &self.stages.index_reduction, Some(
-                            "Structural analysis of the DAE AFTER index reduction (Pantelides / \
-                             dummy derivatives): the funnel differentiates constraints and demotes states \
-                             so a high-index singular system becomes matchable. For an already-index-1 \
-                             model this equals Structural. Same BLT spy-plot / tree.",
-                        )),
-                        (StageKind::Initialization, "Initialization", &self.stages.initialization, Some(
-                            "The consistent-initial-condition solve plan (build_ic_plan): the \
-                             ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
-                             scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
-                             dropped / unknowns pinned) when the initial subsystem is singular, and a \
-                             determinacy check that flags an OVER-determined init (more explicit initial \
-                             conditions than states — conflicting/redundant ICs).",
-                        )),
-                        (StageKind::Events, "Events", &self.stages.events, Some(
-                            "The DAE's hybrid / event structure: the conditions (relations that \
-                             trigger events), the discrete updates lowered from `when` clauses (f_z real, \
-                             f_m valued), and the event partition (zero-crossing root conditions + scheduled \
-                             time events). A smooth (continuous) model shows none.",
-                        )),
-                        (StageKind::SolveLowering, "Solve lowering", &self.stages.solve_lowering, Some(
-                            "The DAE lowered to a SolveModel (phase 8): the solvable form the \
-                             simulator runs — residual programs, variable layout, mass matrix, Jacobian \
-                             sparsity. This is the compile step just before simulation.",
-                        )),
-                    ];
-                    for &(kind, label, ref stage, hover) in tabs {
-                        let mut resp = ui.selectable_label(
-                            stage_selected && self.stage == kind,
-                            tab_label(label, stage, ok, err),
-                        );
-                        // A tab click is a point-at too — at the stage as a
-                        // whole. Appended to the tab's own explanation rather
-                        // than replacing it: what the stage *is* matters more
-                        // than what clicking does, and this is the row where a
-                        // reader is most likely to be learning the pipeline.
-                        let tip = match hover {
-                            Some(t) => format!("{t}\n\n{}", crate::POINT_AT_HOVER),
-                            None => crate::POINT_AT_HOVER.to_owned(),
-                        };
-                        resp = resp.on_hover_text(tip);
-                        if resp.clicked() {
-                            diagnostics::record_action("stage-tab", kind.name());
-                            self.stage = kind;
-                            stage_tab_clicked = true;
-                        }
-                    }
-                    // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
-                    ui.separator();
-                    let sim_label = {
-                        let text = egui::RichText::new("Simulation");
-                        if self.sim_error.is_some() {
-                            text.color(err)
-                        } else if self.sim_data.is_some() {
-                            text.color(ok)
-                        } else {
-                            text
-                        }
-                    };
-                    if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, sim_label)
-                        .on_hover_text(
-                            "Run the model (phase 9): compile → lower to a SolveModel → integrate \
-                             (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
-                             on the worker thread, so the UI stays live.",
-                        )
-                        .clicked()
-                    {
-                        self.stage = StageKind::Simulation;
-                        self.viewing_log = false;
-                    }
-                    if stage_tab_clicked {
-                        self.viewing_log = false;
-                        if self.selected.is_some() {
-                            want_stage_ask = true;
-                        }
-                    }
-                    // The compiled-model name is deliberately NOT shown here — the
-                    // stage tab row is short on horizontal space, and the same
-                    // identity is already visible in the specimen list and the
-                    // tree breadcrumb. `self.model` itself is still maintained;
-                    // it feeds the Claude bridge focus file, live-debug arming,
-                    // capture gating, and the narrative lookup.
-                    if self.compiling {
-                        ui.spinner();
-                    }
-                    if let Some(n) = &self.nav_loading {
-                        ui.weak(format!("opening {n}…"));
-                        ui.spinner();
-                    }
-                });
-
-                if let Some(err) = &self.nav_error {
-                    ui.colored_label(ui.visuals().error_fg_color, err);
-                }
-                ui.separator();
-
-                self.context_bar_ui(ui);
-
-                if self.viewing_log {
-                    if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
-                        self.worker.send(ToWorker::SetTracing(self.tracing_enabled));
-                    }
-                } else if self.stage == StageKind::Simulation {
-                    self.simulation_pane(ui);
-                } else {
-                // Stage note (in its own scope so its borrow of `self` ends
-                // before the value section, which may borrow `self` mutably for
-                // the spy-plot canvas).
-                {
-                    let stage = self.current_stage();
-                    // Stages with structured error data show their own summary
-                    // below; Structural/IndexReduction with singular/index-1
-                    // notes show a status banner. Skip the generic note for both.
-                    let has_error_summary = stage.note_is_error
-                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
-                    let has_custom_banner = matches!(
-                        self.stage, StageKind::Structural | StageKind::IndexReduction
-                    ) && stage.note.as_deref().map_or(false, |n| n.contains("singular") || n.contains("index-1"));
-                    if let Some(note) = &stage.note {
-                        if !has_custom_banner && !has_error_summary {
-                            let color = if stage.note_is_error {
-                                ui.visuals().error_fg_color
-                            } else {
-                                ui.visuals().weak_text_color()
-                            };
-                            egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
-                                ui.colored_label(color, egui::RichText::new(note).monospace());
-                            });
-                            ui.separator();
-                        }
-                    }
-                }
-
-                // The Flatten stage offers an equation sheet alongside the tree.
-                let flatten_ready =
-                    self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
-                let has_source_map = flatten_ready
-                    && self.cached_equation_sheet.as_ref().is_some_and(|s| !s.source_lines.is_empty());
-                if flatten_ready {
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut self.flatten_view, FlattenView::Equations, "Equations");
-                        if has_source_map {
-                            ui.selectable_value(&mut self.flatten_view, FlattenView::SourceMap, "Source Map");
-                        }
-                        // Connection expansion, only when the model has any --
-                        // a hand-written model shows no empty tab.
-                        if !self.connection_frames.is_empty() {
-                            ui.selectable_value(&mut self.flatten_view, FlattenView::Connections, "Connections \u{25b6}")
-                                .on_hover_text(
-                                    "Watch connect() statements become equations. A potential set \
-                                     of n variables yields n-1 equalities; a flow set of the same \
-                                     n yields one sum-to-zero equation (Kirchhoff).",
-                                );
-                        }
-                        ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
-                    });
-                    ui.separator();
-                }
-
-                // The Events stage offers a replay of `pre()` lowering beside the
-                // tree — only when there is a trace to replay, so smooth models
-                // never show an empty tab.
-                let events_ready =
-                    self.stage == StageKind::Events && !self.pre_lowering_frames.is_empty();
-                if events_ready {
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut self.events_view, EventsView::Tree, "Tree");
-                        ui.selectable_value(
-                            &mut self.events_view,
-                            EventsView::PreLowering,
-                            "pre() lowering \u{25b6}",
-                        )
-                        .on_hover_text(
-                            "Replay where the __pre__ parameter slots are manufactured. They \
-                             appear in no source file: a `when` equation needs a value to hold \
-                             when no branch fires, and a DAE cannot say \u{201c}unchanged\u{201d}.",
-                        );
-                    });
-                    ui.separator();
-                }
-
-                // The Initialization stage offers a walk of the initial-condition
-                // solve plan beside the tree -- only when there is a plan, so a
-                // model whose initialization failed never shows an empty tab.
-                let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
-                if init_ready {
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut self.init_view, InitView::Tree, "Tree");
-                        ui.selectable_value(&mut self.init_view, InitView::IcPlan, "IC plan \u{25b6}")
-                            .on_hover_text(
-                                "Walk the plan for computing a consistent state at t=0. Mostly \
-                                 plain assignment; the few blocks that iterate are where \
-                                 initialization fails when it fails.",
-                            );
-                    });
-                    ui.separator();
-                }
-
-                // The report stages (Structural + Index reduction) offer a custom
-                // BLT spy-plot alongside the generic tree; every other stage is
-                // tree-only.
-                let report_stage =
-                    matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
-                let report_ready = report_stage && self.current_stage().value.is_some();
-                if report_ready {
-                    // Invalidate caches when switching between Structural
-                    // and IndexReduction — each has different report data.
-                    if self.cached_report_stage != Some(self.stage) {
-                        self.cached_spy_plot = None;
-                        self.cached_incidence = None;
-                        self.cached_reduction = None;
-                        self.cached_matching_anim = None;
-                        self.cached_tarjan_anim = None;
-                        self.cached_tearing_anim = None;
-                        self.cached_alias_anim = None;
-                    self.cached_alias_anim = None;
-                    self.cached_ic_plan_anim = None;
-                    self.cached_connection_anim = None;
-                        self.cached_reduction_anim = None;
-                        self.cached_before_incidence = None;
-                        // Default sub-view: Summary for IndexReduction and
-                        // singular Structural; SpyPlot otherwise.
-                        let is_singular = self.stages.get(self.stage).note.as_deref()
-                            .map_or(false, |n| n.contains("singular"));
-                        if self.stage == StageKind::IndexReduction || is_singular {
-                            self.structural_view = StructuralView::Summary;
-                        } else if matches!(self.structural_view,
-                            StructuralView::Summary | StructuralView::Animate)
-                        {
-                            self.structural_view = StructuralView::SpyPlot;
-                        }
-                        self.cached_report_stage = Some(self.stage);
-                    }
-                    let is_index_reduction = self.stage == StageKind::IndexReduction;
-                    let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
-                    let is_singular = note.contains("singular");
-                    let has_summary = is_index_reduction || is_singular;
-
-                    // Status banner
-                    if is_index_reduction {
-                        if is_singular {
-                            ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
-                                ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
-                            });
-                        } else {
-                            ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new("Index-1").color(crate::colors::ANIM_PATH_FOUND).strong());
-                                ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
-                            });
-                        }
-                        ui.add_space(2.0);
-                    } else if is_singular {
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
-                            ui.weak("\u{2014} structurally singular; no perfect matching exists (see Index Reduction)");
-                        });
-                        ui.add_space(2.0);
-                    }
-
-                    // Sub-tab bar
-                    ui.horizontal(|ui| {
-                        if has_summary {
-                            ui.selectable_value(&mut self.structural_view, StructuralView::Summary, "Summary");
-                            ui.separator();
-                        }
-                        if is_index_reduction && !self.index_reduction_frames.is_empty() {
-                            ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
-                        }
-                        // Alias elimination is reported by this stage only, and
-                        // only when something was actually eliminated -- a model
-                        // with no aliases must not show an empty tab.
-                        if is_index_reduction && self.has_alias_eliminations() {
-                            ui.selectable_value(&mut self.structural_view, StructuralView::AliasAnim, "Aliases \u{25b6}")
-                                .on_hover_text(
-                                    "Watch variables be substituted away. Every connection \
-                                     equation `a = b` lets one of the two be deleted, which is \
-                                     why the solved system is far smaller than the equation \
-                                     count suggests.",
-                                );
-                        }
-                        // Spy-plot, Matching, BLT require a full matching —
-                        // hide them when the Structural stage is singular.
-                        if !is_singular || is_index_reduction {
-                            ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
-                        }
-                        ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
-                        if !is_singular || is_index_reduction {
-                            ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}");
-                            ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
-                            // Tearing operates on the coupled blocks BLT finds,
-                            // so it needs the same full matching those two do.
-                            ui.selectable_value(&mut self.structural_view, StructuralView::TearingAnim, "Tearing \u{25b6}");
-                        }
-                        ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
-                    });
-                    ui.separator();
-                }
-
-                // Whether the Index Reduction tab shows a Before/After split for
-                // comparative views. True when index reduction was actually needed
-                // (the note mentions "singular").
-                let ir_split = report_ready
-                    && self.stage == StageKind::IndexReduction
-                    && self.stages.get(self.stage).note.as_deref()
-                        .map_or(false, |n| n.contains("singular"));
-
-                if report_ready && self.structural_view == StructuralView::SpyPlot {
-                    if ir_split {
-                        // No spy-plot for the Before pane (needs full matching),
-                        // show only the After pane.
-                        ui.label(egui::RichText::new("Before (raw DAE)")
-                            .strong().color(crate::colors::ANIM_FAIL));
-                        ui.weak("Spy-plot unavailable (structurally singular \u{2014} no BLT decomposition)");
-                        ui.add_space(12.0);
-                        ui.label(egui::RichText::new("After (reduced)")
-                            .strong().color(crate::colors::ANIM_PATH_FOUND));
-                    }
-                    let cached = self.cached_spy_plot.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref().and_then(spyplot::Plot::from_report)
-                    });
-                    if let Some(plot) = cached {
-                        ui.weak(plot.caption());
-                        plot.ui(ui, &mut self.spy_canvas, &mut canvas_capture, self.tracked_identifier.as_deref());
-                    } else {
-                        ui.weak("(the structural report has no BLT blocks to plot)");
-                    }
-                } else if report_ready && self.structural_view == StructuralView::Incidence {
-                    if ir_split {
-                        // Before/After split for incidence matrices.
-                        let before_cached = self.cached_before_incidence.get_or_insert_with(|| {
-                            self.stages.get(self.stage).value.as_ref()
-                                .and_then(|v| v.get("before"))
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        });
-                        let after_cached = self.cached_incidence.get_or_insert_with(|| {
-                            self.stages.get(self.stage).value.as_ref()
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        });
-                        ui.columns(2, |cols| {
-                            // Before pane
-                            cols[0].label(egui::RichText::new("Before (raw DAE)")
-                                .strong().color(crate::colors::ANIM_FAIL));
-                            if let Some(mat) = before_cached {
-                                cols[0].weak(mat.caption());
-                                mat.ui(
-                                    &mut cols[0], &mut self.before_incidence_canvas,
-                                    &mut canvas_capture, self.highlighted_eq_row, None,
-                                );
-                            } else {
-                                cols[0].weak("(no before incidence data)");
-                            }
-                            // After pane
-                            cols[1].label(egui::RichText::new("After (reduced)")
-                                .strong().color(crate::colors::ANIM_PATH_FOUND));
-                            if let Some(mat) = after_cached {
-                                cols[1].weak(mat.caption());
-                                let tracked_col = self.tracked_identifier.as_deref()
-                                    .and_then(|name| mat.column_index(name));
-                                mat.ui(
-                                    &mut cols[1], &mut self.incidence_canvas,
-                                    &mut canvas_capture, self.highlighted_eq_row, tracked_col,
-                                );
-                            } else {
-                                cols[1].weak("(no after incidence data)");
-                            }
-                        });
-                    } else {
-                        let cached = self.cached_incidence.get_or_insert_with(|| {
-                            self.stages.get(self.stage).value.as_ref()
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        });
-                        if let Some(mat) = cached {
-                            ui.weak(mat.caption());
-                            let tracked_col = self.tracked_identifier.as_deref()
-                                .and_then(|name| mat.column_index(name));
-                            mat.ui(ui, &mut self.incidence_canvas, &mut canvas_capture, self.highlighted_eq_row, tracked_col);
-                        } else {
-                            ui.weak("(no incidence data in this report)");
-                        }
-                    }
-                } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
-                    self.matching_anim_ui(ui, ir_split);
-                } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
-                    self.tarjan_anim_ui(ui, ir_split);
-                } else if report_ready && self.structural_view == StructuralView::TearingAnim {
-                    self.tearing_anim_ui(ui);
-                } else if report_ready && self.structural_view == StructuralView::AliasAnim {
-                    self.alias_anim_ui(ui);
-                } else if report_ready && self.structural_view == StructuralView::Summary {
-                    if self.stage == StageKind::Structural {
-                        Self::structural_singular_summary(ui, &self.stages.structural);
-                    } else {
-                        let cached = self.cached_reduction.get_or_insert_with(|| {
-                            self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
-                        });
-                        if let Some(view) = cached {
-                            view.ui(ui, self.tracked_identifier.as_deref());
-                        } else {
-                            ui.weak("(no reduction data in this report)");
-                        }
-                    }
-                } else if self.structural_view == StructuralView::Animate {
-                    self.reduction_anim_ui(ui);
-                } else if events_ready && self.events_view == EventsView::PreLowering {
-                    self.pre_lowering_anim_ui(ui);
-                } else if init_ready && self.init_view == InitView::IcPlan {
-                    self.ic_plan_anim_ui(ui);
-                } else if flatten_ready && self.flatten_view == FlattenView::Equations {
-                    self.equation_sheet_ui(ui);
-                } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
-                    self.source_map_ui(ui);
-                } else if flatten_ready && self.flatten_view == FlattenView::Connections {
-                    self.connection_anim_ui(ui);
-                } else {
-                    let stage = self.current_stage();
-                    let has_error_data = stage.note_is_error
-                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
-                    if has_error_data {
-                        let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
-                        egui::ScrollArea::vertical().id_salt("error_summary").auto_shrink(false).show(ui, |ui| {
-                            Self::generic_error_summary(ui, &error, self.stage);
-                        });
-                    } else {
-                        match &stage.value {
-                            Some(value) => {
-                                let label = self.model.as_deref().unwrap_or("model");
-                                let prev = self.previous_stage_value();
-                                // Finding trackable names in a large IR means
-                                // opening nodes at random. This opens exactly
-                                // the paths that lead to one.
-                                ui.horizontal(|ui| {
-                                    ui.checkbox(
-                                        &mut expand_trackable,
-                                        "Reveal identifiers",
-                                    ).on_hover_text(
-                                        "Expand every path leading to a variable of \
-                                         this model. Underlined values can be \
-                                         right-clicked to track.",
-                                    );
-                                    if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
-                                        ui.weak(format!("({n} in this model)"));
-                                    }
-                                });
-                                let opts = tree::TreeOptions {
-                                    tracked: self.tracked_identifier.as_deref(),
-                                    known_variables: self.known_variables.as_ref(),
-                                    declaring_classes: Some(&self.declaring_classes),
-                                    expand_trackable,
-                                    jump_to: self.jump_target.as_deref(),
-                                };
-                                egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                    tree::tree_ui(ui, label, value, prev, &mut tree_actions, &self.def_index, &self.field_help, opts);
-                                });
-                            }
-                            None if stage.note.is_none() => {
-                                ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
-                            }
-                            None => {}
-                        }
-                    }
-                }
-                } // end: non-Simulation stage rendering
-            } else {
-                // ---- Navigation view (a class reached via "Go to definition") ----
-                ui.horizontal(|ui| {
-                    if ui.button("Specimen").on_hover_text("Return to the specimen stages (top of navigation)").clicked() {
-                        go_home = true;
-                    }
-                    if ui.button("← Back").clicked() {
-                        go_back = true;
-                    }
-                    ui.separator();
-                    let mut crumb = self.model.clone().unwrap_or_else(|| "model".to_owned());
-                    for e in &self.nav {
-                        crumb.push_str("  ▸  ");
-                        crumb.push_str(&e.name);
-                    }
-                    ui.label(egui::RichText::new(crumb).monospace().strong());
-                    if let Some(n) = &self.nav_loading {
-                        ui.weak(format!("opening {n}…"));
-                        ui.spinner();
-                    }
-                });
-                if let Some(err) = &self.nav_error {
-                    ui.colored_label(ui.visuals().error_fg_color, err);
-                }
-                ui.separator();
-
-                let entry = self.nav.last().unwrap();
-                egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                    tree::tree_ui(ui, &entry.name, &entry.value, None, &mut tree_actions, &entry.def_index, &self.field_help,
-                        tree::TreeOptions {
-                            tracked: self.tracked_identifier.as_deref(),
-                            known_variables: self.known_variables.as_ref(),
-                            declaring_classes: Some(&self.declaring_classes),
-                            expand_trackable,
-                            // A navigated library class is a different IR, so a
-                            // jump target addressed into the stage tree would
-                            // land on an unrelated node or nothing at all.
-                            jump_to: None,
-                        });
-                });
-            }
+            self.central_panel_ui(ui, &mut intent);
         });
 
         // ---- Deferred actions ----
@@ -4650,17 +4668,27 @@ impl eframe::App for App {
         // now acted on. The panel closure has ended, so `self` is no longer
         // borrowed and we can call methods freely. This is the payoff of the
         // "collect intent, act later" pattern used throughout this function.
+        let FrameIntent {
+            tree: tree_actions,
+            expand_trackable,
+            canvas_capture,
+            want_stage_ask,
+            go_back,
+            go_home,
+        } = intent;
+
         if go_home {
             self.nav.clear();
         } else if go_back {
             self.nav.pop();
         }
         self.expand_trackable = expand_trackable;
-        // Fold the tree's actions in alongside the ones other views produce.
-        let nav_to = nav_to.or(tree_actions.nav_to);
-        let debug_ask = debug_ask.or(tree_actions.debug);
-        let mut node_ask = node_ask.or(tree_actions.capture);
-        if let Some(name) = nav_to {
+        // The tree is the only producer of these three; earlier revisions
+        // declared parallel locals for other views to write into, but nothing
+        // ever did, so `nav_to.or(tree_actions.nav_to)` was always the latter.
+        let debug_ask = tree_actions.debug;
+        let mut node_ask = tree_actions.capture;
+        if let Some(name) = tree_actions.nav_to {
             self.navigate_to(name);
         }
         // Reverse tracking from any stage (idea #37). Reveals the source, the
@@ -4795,6 +4823,36 @@ fn section_header_toggle<T: PartialEq + Copy>(
             }
         });
     });
+}
+
+/// Everything the frame's panels want done, acted on after they close.
+///
+/// egui panel bodies borrow `self`, so a click cannot mutate app state where it
+/// happens — it records what the user asked for and [`App::ui`] acts once the
+/// borrows end. Before this struct existed those were seven separate locals,
+/// which is what blocked extracting any panel body into a method: each
+/// extraction would have needed all eight threaded through as transposable
+/// out-parameters. One `&mut FrameIntent` instead.
+///
+/// Same pattern as `tree::TreeActions`, which bundled the tree's out-parameters
+/// for the same reason; that type is nested here rather than flattened, because
+/// the tree owns which of its actions exist.
+#[derive(Default)]
+struct FrameIntent {
+    /// What the IR tree wants: capture, debug-capture, navigate, track.
+    tree: tree::TreeActions,
+    /// Copied out of `self` because the stage-tree block holds an immutable
+    /// borrow of `self` (via `current_stage`); written back at the end.
+    expand_trackable: bool,
+    /// A spy-plot or incidence block was clicked — treated identically to a
+    /// tree-node click for capture purposes.
+    canvas_capture: Option<Vec<Seg>>,
+    /// A stage tab was clicked, so the capture should describe the stage.
+    want_stage_ask: bool,
+    /// Navigation "Back".
+    go_back: bool,
+    /// Navigation "Specimen" — clears the whole nav stack.
+    go_home: bool,
 }
 
 /// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
