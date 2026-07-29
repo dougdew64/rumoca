@@ -49,6 +49,25 @@ calcifies.
   different facts about how Doug learns.
 - **What unlocked it** — the specific thing, not a summary of the answer.
 - **Repeat?** — how many times this concept has come up.
+- **Medium feedback** — when Doug comments on the *medium* rather than the answer.
+  He committed on 2026-07-29 to saying so when a tour arrives where text would have
+  done, and asked that it be recorded as a signal. Record it here, and treat two
+  instances of the same kind as a standing correction, not two isolated notes.
+
+## The medium rule (Doug, 2026-07-29)
+
+**Lead with text, always. Write a tour only when Doug asks for one.**
+
+His solution to a problem Claude had raised: the failure mode is asymmetric. Text
+that should have been a tour costs one follow-up; a tour that should have been text
+costs minutes of walking stops to reach a two-sentence answer. Leaving the choice to
+Claude's judgement means Claude polices a bias it cannot feel — composing a tour will
+always be the more interesting work.
+
+One refinement Claude added and Doug accepted: **text first is not text silent.**
+When a tour would genuinely add something, say so at the end of the text answer, so
+Doug is accepting an offer rather than guessing which answers have a tour behind
+them. Doug also expects to request follow-up tours on his own initiative.
 
 ---
 

@@ -73,7 +73,7 @@ while**, and let a period of use rather than a single trial decide what comes ne
 
 ---
 
-## Phase 1 — Minimum viable ad hoc tour  *(small)*
+## Phase 1 — Minimum viable ad hoc tour  ✅ **DONE 2026-07-29**
 
 **Only one change: load the tour document from disk at runtime.** Today it is
 `include_str!`'d into the binary, so a new tour needs a rebuild.
@@ -85,8 +85,17 @@ while**, and let a period of use rather than a single trial decide what comes ne
   (`load`, `stage`, `load/stage`) are enough for a first tour, and the fourth verb
   should be chosen by a tour that needed it.
 
-**Exit criterion:** Claude writes a tour file mid-conversation and Doug opens it
-without a rebuild.
+**Exit criterion — met.** Claude writes `.hrw-bridge/tour.md` mid-conversation and
+Doug sees it without a rebuild. Delivered as `bridge::read_tour` +
+`App::poll_tour_file`; the round trip and link parsing are covered by
+`an_ad_hoc_tour_round_trips_through_the_bridge`.
+
+**Two things the work turned up.** The old `tour_document_hrw_links_are_valid` test
+had `end_to_end_tour.md` as its subject, a document HRW no longer shows — replaced.
+And `narrative_hrw_links_are_valid` had started passing **vacuously**: the notebook
+conversion renamed `narrative.md` to `purpose.md` and its `continue` swallowed every
+directory, so it checked nothing. It now counts the files it checked and asserts the
+count, because a silent-skip test is worse than no test.
 
 **Why first:** it is the only thing standing between "Claude can compose an answer
 in HRW" and "Claude cannot." Everything else in #42 is refinement.

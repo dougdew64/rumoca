@@ -1617,9 +1617,11 @@ point at anything interesting.
 
 ### Gaps, in order of size-to-value
 
-1. **Runtime loading.** `include_str!` means a new tour needs a rebuild. Ad hoc
-   tours must load from disk (a scratch path Claude writes to, picked up without
-   a restart). Smallest change, biggest unlock — do this first.
+1. ~~**Runtime loading.**~~ ✅ **DELIVERED 2026-07-29.** Tour mode now renders
+   `.hrw-bridge/tour.md`, polled every 250 ms and re-read on mtime change; absence
+   shows a short note rather than the retired `end_to_end_tour.md`. Living in the
+   gitignored bridge directory makes the ephemerality rule structural rather than
+   a discipline. `bridge::read_tour`, `App::poll_tour_file`, `App::no_tour_ui`.
 2. **Link vocabulary.** Today's three verbs reach a stage tab and no further.
    Everything built in the 2026-07-29 animation work lives *below* the stage
    level: sub-tabs (`Tearing`, `Aliases`, `IC plan`, `Connections`), animation

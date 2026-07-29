@@ -32,6 +32,18 @@
 //!    stage's full IR, rewritten once per compile. Claude can diff any two stages
 //!    by reading two files (e.g., `instantiate.json` vs `typecheck.json`).
 //!
+//! 3. **Tour file** (`.hrw-bridge/tour.md`) — the one channel that runs the *other
+//!    way*, added 2026-07-29 (ideas #42). Claude writes a markdown tour; HRW's
+//!    tour mode renders it and picks up a rewrite without a restart. Where
+//!    `focus.json` carries a noun *out* to Claude, this carries a sequence of
+//!    nouns *back*, as `hrw://` links the reader can click.
+//!
+//!    Living in the gitignored bridge directory is deliberate: #42 says ad hoc
+//!    tours are **ephemeral by default** — regenerated against the current tree
+//!    rather than retrieved and re-checked — and putting them here makes the
+//!    filesystem enforce that instead of Claude's discipline. What persists is
+//!    the *question* the tour answered, in `docs/question-ledger.md`.
+//!
 //! The `.hrw-bridge/` directory is gitignored. The paths are repo-relative
 //! (via `CARGO_MANIFEST_DIR`) so they are stable across Claude Code sessions.
 //!
@@ -90,6 +102,24 @@ const BREAKPOINT_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw
 /// the breakpoint is registered with LLDB. HRW polls for it before spawning
 /// the algorithm thread (see `check_breakpoint_ack`).
 pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-ack.json");
+
+/// An ad hoc tour written by Claude, rendered by HRW's tour mode (ideas #42).
+///
+/// The only bridge file that flows *into* HRW rather than out of it.
+pub const TOUR_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/tour.md");
+
+/// Read the ad hoc tour, with the modification time it was read at.
+///
+/// Returns `None` when no tour has been written — the common case, and not an
+/// error. The mtime lets a caller re-read only when the file actually changed,
+/// so a tour Claude rewrites mid-conversation appears without a restart and an
+/// unchanged one costs one `stat` per poll.
+pub fn read_tour() -> Option<(String, std::time::SystemTime)> {
+    let meta = fs::metadata(TOUR_FILE).ok()?;
+    let mtime = meta.modified().ok()?;
+    let text = fs::read_to_string(TOUR_FILE).ok()?;
+    Some((text, mtime))
+}
 
 /// Absolute path to `live_trace_breakpoint` in the structural crate, resolved
 /// at compile time so the VS Code extension can set breakpoints without path

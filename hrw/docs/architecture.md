@@ -1008,6 +1008,36 @@ needs the resolved `ClassTree` (which contains the whole MSL) and the instance
 overlay on the UI thread. A worker-side live-debug path would be the right fix;
 see `docs/ideas.md` #9.
 
+### Ad hoc tours (`bridge.rs` + `App::poll_tour_file`)
+
+Tour mode renders **whatever Claude writes to `.hrw-bridge/tour.md`** — the one
+bridge file that flows *into* HRW rather than out of it. Where `focus.json` carries
+a noun out to Claude, this carries a sequence of nouns back, as `hrw://` links the
+reader clicks to drive HRW to each stop.
+
+Until 2026-07-29 the panel showed `end_to_end_tour.md`, `include_str!`'d at compile
+time, so a new tour meant a rebuild. That was the single thing standing between
+"Claude can compose an answer in HRW" and "Claude cannot" (`docs/ideas.md` #42,
+Phase 1 of `docs/answer-platform-plan.md`).
+
+- **Polled, not watched.** `poll_tour_file` stats the file every
+  `TOUR_POLL_INTERVAL` (250 ms) and re-reads only when the mtime changed. Simpler
+  than a filesystem watcher, no platform quirks, and a tour appearing a
+  quarter-second late is imperceptible. Keeps filesystem work out of the paint
+  path, per the debugging conventions.
+- **Absence is the normal state.** No tour file means `no_tour_ui` — a short note
+  on what tour mode is for. Deliberately *not* the old `end_to_end_tour.md`: its
+  prose was retired for describing a 7x7 incidence matrix on a tab that shows 48
+  equations, and making it the default would put that back on screen.
+- **Ephemeral by construction.** The bridge directory is gitignored, so #42's
+  "tours are regenerated, not retrieved" rule is enforced by the filesystem rather
+  than by Claude's discipline. What persists is the *question*, in
+  `docs/question-ledger.md`.
+- **Text is the default medium** (Doug, 2026-07-29): Claude answers in text and
+  writes a tour only when asked. The failure mode is asymmetric — text that should
+  have been a tour costs one follow-up, while a tour that should have been text
+  costs minutes of walking stops to reach a two-sentence answer.
+
 ### Index reduction summary (`reduction_view.rs`, ~650 lines)
 
 A scrollable panel (not a canvas) summarizing what the Pantelides / dummy-derivative

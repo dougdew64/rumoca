@@ -71,6 +71,10 @@ use crate::worker::{
 /// live via Settings (or Ctrl +/−); egui's `zoom_factor` is the idiomatic knob.
 const DEFAULT_ZOOM: f32 = 2.0;
 
+/// How often tour mode stats `.hrw-bridge/tour.md`. A quarter second is well
+/// under human notice and keeps filesystem work out of the paint path.
+const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
+
 /// Default specimen directory: `specimens/` next to this crate's manifest.
 const DEFAULT_SPECIMEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
 
@@ -458,6 +462,16 @@ pub struct App {
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
     // purpose-note rendering so heading IDs and image state persist across frames.
     commonmark_cache: egui_commonmark::CommonMarkCache,
+    /// The ad hoc tour from `.hrw-bridge/tour.md` (ideas #42), with the mtime it
+    /// was read at, so a tour Claude rewrites mid-conversation is picked up
+    /// without restarting HRW. `None` means no tour has been written — the
+    /// common case, not an error.
+    cached_tour: Option<(String, std::time::SystemTime)>,
+    /// When the tour file was last polled. Stat-ing once per frame would be
+    /// cheap but puts filesystem work in the paint path, which the debugging
+    /// conventions rule out; a few polls a second is indistinguishable to a
+    /// reader and keeps the render path clean.
+    tour_polled_at: Option<std::time::Instant>,
     // Specimen purpose notes, loaded on demand from
     // docs/specimen-notebook/<Model>/purpose.md.
     cached_purpose_notes: HashMap<PathBuf, Option<String>>,
@@ -900,6 +914,8 @@ impl App {
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
+            cached_tour: None,
+            tour_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
@@ -3225,6 +3241,61 @@ impl App {
         }
     }
 
+    /// Re-read `.hrw-bridge/tour.md` if it changed since the last read.
+    ///
+    /// Polled rather than watched: a `stat` every [`TOUR_POLL_INTERVAL`] is
+    /// simpler than a filesystem watcher, has no platform quirks, and a tour
+    /// appearing a quarter-second late is imperceptible. Re-reads only when the
+    /// mtime differs, so an unchanged tour costs one `stat` per poll and no
+    /// markdown re-parse.
+    fn poll_tour_file(&mut self) {
+        let due = self
+            .tour_polled_at
+            .is_none_or(|last| last.elapsed() >= TOUR_POLL_INTERVAL);
+        if !due {
+            return;
+        }
+        self.tour_polled_at = Some(std::time::Instant::now());
+
+        match bridge::read_tour() {
+            Some((text, mtime)) => {
+                let unchanged =
+                    self.cached_tour.as_ref().is_some_and(|(_, seen)| *seen == mtime);
+                if !unchanged {
+                    self.cached_tour = Some((text, mtime));
+                }
+            }
+            // The tour was deleted, or none was ever written. Drop it rather
+            // than keep a stale copy on screen: a tour is ephemeral by design
+            // (ideas #42) and its absence is the normal state.
+            None => self.cached_tour = None,
+        }
+    }
+
+    /// What tour mode shows when Claude has not written a tour.
+    ///
+    /// Deliberately **not** `end_to_end_tour.md`, which used to be compiled in
+    /// here with `include_str!`. That document's prose was retired 2026-07-29
+    /// (ideas #42) — it described a 7x7 incidence matrix on a tab that shows 48
+    /// equations — so keeping it as the default would put the exact stale
+    /// content this change exists to remove back on screen.
+    fn no_tour_ui(ui: &mut egui::Ui) {
+        ui.label(egui::RichText::new("No tour right now.").strong());
+        ui.add_space(6.0);
+        ui.label(
+            "Tour mode shows a tour Claude wrote for a question you asked \u{2014} a \
+             sequence of places to look, with links that drive HRW to each one.",
+        );
+        ui.add_space(6.0);
+        ui.weak(
+            "Ask Claude for one. Answers come as text first; a tour is for the ones \
+             where a sequence of places beats a paragraph.",
+        );
+        ui.add_space(10.0);
+        ui.weak(format!("Claude writes it to {}", bridge::TOUR_FILE));
+        ui.weak("It appears here within a moment, and a rewrite is picked up live.");
+    }
+
     /// The top menu bar (File, View, Help).
     ///
     /// Extracted from `ui` during the 2026-07-28 sweep — self-contained, and
@@ -4450,20 +4521,26 @@ impl eframe::App for App {
         let mut hrw_link_action: Option<HrwLink> = None;
 
         if self.ui_mode == UiMode::Tour {
-            const TOUR_CONTENT: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
-            let tour_links = extract_hrw_links(TOUR_CONTENT);
+            self.poll_tour_file();
+            let tour_text = self.cached_tour.as_ref().map(|(t, _)| t.clone());
+            let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
             register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
             let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
             egui::Panel::left("tour_panel")
                 .exact_size(panel_width)
                 .show(ui, |ui| {
-                    section_header(ui, "End-to-End Tour");
+                    section_header(ui, "Tour");
                     egui::ScrollArea::vertical()
                         .id_salt("tour")
                         .show(ui, |ui| {
                         set_markdown_text_sizes(ui);
-                        egui_commonmark::CommonMarkViewer::new()
-                            .show(ui, &mut self.commonmark_cache, TOUR_CONTENT);
+                        match &tour_text {
+                            Some(text) => {
+                                egui_commonmark::CommonMarkViewer::new()
+                                    .show(ui, &mut self.commonmark_cache, text);
+                            }
+                            None => Self::no_tour_ui(ui),
+                        }
                     });
                 });
             hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &tour_links);
@@ -5060,6 +5137,8 @@ impl App {
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
+            cached_tour: None,
+            tour_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
@@ -6276,37 +6355,78 @@ mod tests {
         assert!(app.find_specimen("Bouncing").is_none());
     }
 
+    /// An ad hoc tour written to the bridge round-trips, and its links parse.
+    ///
+    /// Replaces `tour_document_hrw_links_are_valid`, which checked the links in
+    /// `end_to_end_tour.md` — a document HRW no longer shows. Its prose was
+    /// retired 2026-07-29 and tour mode now renders whatever Claude writes to
+    /// `.hrw-bridge/tour.md`, so the subject of that test no longer existed.
+    ///
+    /// Touches the shared bridge directory, so it needs `--test-threads=1` like
+    /// the other bridge tests.
     #[test]
-    fn tour_document_hrw_links_are_valid() {
-        const TOUR: &str = include_str!("../docs/compiler-phases/end_to_end_tour.md");
-        let links = extract_hrw_links(TOUR);
-        assert!(!links.is_empty(), "tour should contain hrw:// links");
+    fn an_ad_hoc_tour_round_trips_through_the_bridge() {
+        let saved = std::fs::read_to_string(bridge::TOUR_FILE).ok();
+
+        let tour = "# Stop 1
+
+Open [the Structural tab](hrw://stage/Structural).
+
+                    # Stop 2
+
+Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
+";
+        std::fs::create_dir_all(bridge::BRIDGE_DIR).unwrap();
+        std::fs::write(bridge::TOUR_FILE, tour).unwrap();
+
+        let (text, _mtime) = bridge::read_tour().expect("a written tour is readable");
+        assert!(text.contains("Stop 1"), "{text}");
+
+        let links = extract_hrw_links(&text);
+        assert_eq!(links.len(), 2, "both links found: {links:?}");
         for link in &links {
-            assert!(parse_hrw_link(link).is_some(), "invalid hrw link in tour: {link}");
+            assert!(parse_hrw_link(link).is_some(), "unparseable link: {link}");
+        }
+
+        // Absence is the normal state, not an error.
+        std::fs::remove_file(bridge::TOUR_FILE).unwrap();
+        assert!(bridge::read_tour().is_none(), "no tour file means no tour");
+
+        if let Some(prev) = saved {
+            std::fs::write(bridge::TOUR_FILE, prev).unwrap();
         }
     }
 
+    /// Every `hrw://` link in every specimen `purpose.md` parses.
+    ///
+    /// **Counts the files it checked and asserts the count is right.** Until
+    /// 2026-07-29 this looked for `narrative.md`, and when those were renamed to
+    /// `purpose.md` the `continue` swallowed every directory — the test passed by
+    /// checking nothing. A silent-skip test is worse than no test, so the count
+    /// is now part of the assertion.
     #[test]
-    fn narrative_hrw_links_are_valid() {
-        let notebook_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("docs/specimen-notebook");
-        if !notebook_dir.exists() {
-            return;
-        }
+    fn purpose_note_hrw_links_are_valid() {
+        let notebook_dir =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+        let mut checked = 0usize;
         for entry in std::fs::read_dir(&notebook_dir).unwrap() {
-            let narrative = entry.unwrap().path().join("narrative.md");
-            if !narrative.exists() {
+            let path = entry.unwrap().path();
+            if !path.is_dir() {
                 continue;
             }
-            let text = std::fs::read_to_string(&narrative).unwrap();
+            let purpose = path.join("purpose.md");
+            assert!(purpose.exists(), "every specimen dir needs a purpose.md: {}", path.display());
+            checked += 1;
+            let text = std::fs::read_to_string(&purpose).unwrap();
             for link in extract_hrw_links(&text) {
                 assert!(
                     parse_hrw_link(&link).is_some(),
                     "invalid hrw link in {}: {link}",
-                    narrative.display()
+                    purpose.display()
                 );
             }
         }
+        assert_eq!(checked, 14, "expected 14 specimen purpose notes, checked {checked}");
     }
 
     #[test]
