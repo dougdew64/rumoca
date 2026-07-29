@@ -48,6 +48,7 @@ use crate::field_help;
 use crate::incidence_view;
 use crate::matching_anim;
 use crate::alias_anim;
+use crate::connection_anim;
 use crate::ic_plan_anim;
 use crate::tarjan_anim;
 use crate::tearing_anim;
@@ -149,6 +150,9 @@ fn init_view_name(v: InitView) -> &'static str {
 enum FlattenView {
     Equations,
     SourceMap,
+    /// Replay of connection expansion (MLS §9) — where most of a flat model's
+    /// equations come from.
+    Connections,
     Tree,
 }
 
@@ -212,6 +216,7 @@ fn flatten_view_name(v: FlattenView) -> &'static str {
     match v {
         FlattenView::Equations => "EquationSheet",
         FlattenView::SourceMap => "SourceMap",
+        FlattenView::Connections => "Connections",
         FlattenView::Tree => "Tree",
     }
 }
@@ -421,6 +426,8 @@ pub struct App {
     // pass runs inside construction and the finished DAE has nothing left to
     // replay. `cached_flat` is kept for the live-debug variant.
     pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
+    /// Connection-expansion replay frames (MLS §9), recorded at compile time.
+    connection_frames: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
     cached_flat: Option<rumoca_ir_flat::Model>,
     cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
     /// Tearing replay for the current stage tab. `Some(None)` means "computed,
@@ -432,6 +439,8 @@ pub struct App {
     cached_alias_anim: Option<Option<alias_anim::AliasAnimation>>,
     /// Initial-condition plan walk, built from the Initialization report.
     cached_ic_plan_anim: Option<Option<ic_plan_anim::IcPlanAnimation>>,
+    /// Connection-expansion replay, built from the recorded frames.
+    cached_connection_anim: Option<Option<connection_anim::ConnectionAnimation>>,
     cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
     cached_dae: Option<rumoca_ir_dae::Dae>,
     // "Before" views for the Index Reduction split — parsed from the `"before"`
@@ -872,11 +881,13 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
             cached_tearing_anim: None,
             cached_alias_anim: None,
             cached_ic_plan_anim: None,
+            cached_connection_anim: None,
             cached_reduction_anim: None,
             cached_dae: None,
             cached_before_incidence: None,
@@ -1119,7 +1130,7 @@ impl App {
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
                     identifier_index, index_reduction_frames, dae,
-                    pre_lowering_frames, flat,
+                    pre_lowering_frames, connection_frames, flat,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -1143,6 +1154,7 @@ impl App {
                     self.identifier_index = identifier_index;
                     self.index_reduction_frames = index_reduction_frames;
                     self.pre_lowering_frames = pre_lowering_frames;
+                    self.connection_frames = connection_frames;
                     self.cached_flat = flat;
                     self.cached_pre_lowering_anim = None;
                     self.cached_dae = dae;
@@ -1155,6 +1167,7 @@ impl App {
                     self.cached_tearing_anim = None;
                     self.cached_alias_anim = None;
                     self.cached_ic_plan_anim = None;
+                    self.cached_connection_anim = None;
                     self.cached_reduction_anim = None;
                     self.cached_before_incidence = None;
                     if self.live_breakpoint_armed {
@@ -1484,6 +1497,9 @@ impl App {
             }
             StageKind::Initialization if self.init_view == InitView::IcPlan => {
                 Some(self.cached_ic_plan_anim.as_ref()?.as_ref()?)
+            }
+            StageKind::Flatten if self.flatten_view == FlattenView::Connections => {
+                Some(self.cached_connection_anim.as_ref()?.as_ref()?)
             }
             _ => None,
         }
@@ -2385,6 +2401,27 @@ impl App {
             Some(reduced)
         } else {
             Some(dae.clone())
+        }
+    }
+
+    /// The connection-expansion replay, on the Flatten stage.
+    ///
+    /// Recorded only — see `connection_anim`'s module note on why there is no
+    /// Debug button yet (re-running flatten needs the resolved ClassTree, which
+    /// contains the whole MSL).
+    fn connection_anim_ui(&mut self, ui: &mut egui::Ui) {
+        if self.cached_connection_anim.is_none() {
+            let frames = &self.connection_frames;
+            self.cached_connection_anim = Some(if frames.is_empty() {
+                None
+            } else {
+                Some(connection_anim::ConnectionAnimation::from_frames(frames.clone()))
+            });
+        }
+        if let Some(Some(anim)) = &mut self.cached_connection_anim {
+            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
+        } else {
+            ui.weak("(no connections in this model)");
         }
     }
 
@@ -4245,6 +4282,16 @@ impl eframe::App for App {
                         if has_source_map {
                             ui.selectable_value(&mut self.flatten_view, FlattenView::SourceMap, "Source Map");
                         }
+                        // Connection expansion, only when the model has any --
+                        // a hand-written model shows no empty tab.
+                        if !self.connection_frames.is_empty() {
+                            ui.selectable_value(&mut self.flatten_view, FlattenView::Connections, "Connections \u{25b6}")
+                                .on_hover_text(
+                                    "Watch connect() statements become equations. A potential set \
+                                     of n variables yields n-1 equalities; a flow set of the same \
+                                     n yields one sum-to-zero equation (Kirchhoff).",
+                                );
+                        }
                         ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
                     });
                     ui.separator();
@@ -4308,6 +4355,7 @@ impl eframe::App for App {
                         self.cached_alias_anim = None;
                     self.cached_alias_anim = None;
                     self.cached_ic_plan_anim = None;
+                    self.cached_connection_anim = None;
                         self.cached_reduction_anim = None;
                         self.cached_before_incidence = None;
                         // Default sub-view: Summary for IndexReduction and
@@ -4502,6 +4550,8 @@ impl eframe::App for App {
                     self.equation_sheet_ui(ui);
                 } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
                     self.source_map_ui(ui);
+                } else if flatten_ready && self.flatten_view == FlattenView::Connections {
+                    self.connection_anim_ui(ui);
                 } else {
                     let stage = self.current_stage();
                     let has_error_data = stage.note_is_error
@@ -4933,11 +4983,13 @@ impl App {
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
             cached_tearing_anim: None,
             cached_alias_anim: None,
             cached_ic_plan_anim: None,
+            cached_connection_anim: None,
             cached_reduction_anim: None,
             cached_dae: None,
             cached_before_incidence: None,
@@ -5876,6 +5928,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             flat: None,
             dae: None,
         }).unwrap();
@@ -5904,6 +5957,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             flat: None,
             dae: None,
         }).unwrap();
@@ -5936,6 +5990,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             flat: None,
             dae: None,
         }).unwrap();
@@ -5969,6 +6024,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             flat: None,
             dae: None,
         }).unwrap();
@@ -6000,6 +6056,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
+            connection_frames: Vec::new(),
             flat: None,
             dae: None,
         }).unwrap();

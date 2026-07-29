@@ -3227,6 +3227,7 @@ dependencies = [
  "rumoca-ir-dae",
  "rumoca-ir-flat",
  "rumoca-phase-dae",
+ "rumoca-phase-flatten",
  "rumoca-phase-instantiate",
  "rumoca-phase-parse",
  "rumoca-phase-solve",

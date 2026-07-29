@@ -1391,3 +1391,26 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   state has a failure mode hand-built frames cannot catch — the reconstruction can be wired to the
   wrong index space and every unit test still passes. One end-to-end test per such view closes that
   gap; it returns `Option` so a missing specimen skips rather than fails.
+
+- **2026-07-29 — Connection expansion animated; recorded only, deliberately.** The fourth of Doug's
+  four requested animations, and the first to need a *new crate* instrumented
+  (`rumoca-phase-flatten`, commit `edaa2bb8`). The thing worth seeing is MLS §9.2's asymmetry — a
+  potential set of *n* connected variables becomes *n − 1* equality equations, a flow set of the
+  same *n* becomes exactly one sum-to-zero equation (Kirchhoff) — plus the fact that connection sets
+  are transitive, since they are built by union-find. Neither survives into the flat model.
+
+  **No Debug button, and the reason is plumbing not principle.** The phase *is* instrumented for a
+  live trace, unlike alias elimination and IC planning where there is genuinely nothing to trace.
+  But re-running flatten needs the resolved `ClassTree` — which contains the whole MSL — and the
+  instance overlay, on the UI thread. The right fix is a **worker-side live-debug path**: spawn the
+  traced re-run where the tree already lives and stream frames back over the existing channel. That
+  would also let the three views that currently clone a DAE into the app stop doing so. Logged in
+  `docs/ideas.md` #9 rather than half-built here. The distinction matters for honesty: this view's
+  missing Debug button means "not yet", the other two mean "never".
+
+  **The re-run must match the real flatten.** `worker::record_connection_frames` re-runs instantiate
+  + typecheck + flatten with an observer, and its `FlattenOptions` must equal `rumoca_compile`'s own
+  `flatten_options_for_tree()` — `strict_connection_validation: true` above all, since that is what
+  makes an incompatible-connector model fail rather than expand. Recorded frames from different
+  options would describe a flatten that never happened. The end-to-end worker test exists for
+  exactly this: a unit test on the animation type would show zero frames and call it a pass.

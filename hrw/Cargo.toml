@@ -29,6 +29,7 @@ rumoca-phase-parse = { path = "../crates/rumoca-phase-parse" }
 # render the InstancedTree overlay (which the high-level pipeline doesn't expose).
 rumoca-phase-instantiate = { path = "../crates/rumoca-phase-instantiate" }
 rumoca-phase-typecheck = { path = "../crates/rumoca-phase-typecheck" }
+rumoca-phase-flatten = { path = "../crates/rumoca-phase-flatten" }
 # Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
 rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
 # Idea #40: replay `pre()` lowering. HRW already depended on this transitively

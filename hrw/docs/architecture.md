@@ -43,6 +43,7 @@ hrw/
 │   ├── tearing_anim.rs    # Animated tearing stepper (greedy loop-breaking replay)
 │   ├── alias_anim.rs      # Alias-elimination reveal (substitutions, one at a time)
 │   ├── ic_plan_anim.rs    # Initial-condition plan walk (t=0 solve order)
+│   ├── connection_anim.rs # Connection-expansion replay (connect() -> equations)
 │   ├── reduction_view.rs  # Index reduction process summary panel
 │   ├── equation_sheet.rs     # Readable equation sheet from the flat DAE
 │   ├── identifier_index.rs  # Cross-stage identifier index (source → flat names)
@@ -981,6 +982,31 @@ the few blocks that actually iterate — rather than meeting a finished table of
 forty rows. The IC view's header additionally carries the two facts that explain
 the plan's shape: the determinacy verdict, and which equations the planner
 dropped / unknowns it pinned to make the initial system square.
+
+**Connection-expansion replay** (`connection_anim.rs`, ~330 lines): watches
+`connect()` statements become equations (MLS §9), on the Flatten stage. The rule
+it exists to show is short and asymmetric — a **potential** set of *n* connected
+variables becomes *n − 1* equality equations, while a **flow** set of the same
+*n* becomes exactly **one** sum-to-zero equation (Kirchhoff) — and it is not
+recoverable from the finished flat model. The frames also show that connection
+sets are *transitive*: `connect(a, b)` plus `connect(b, c)` is one set of three,
+because Rumoca builds them with union-find.
+
+Frames come from `worker::record_connection_frames`, which **re-runs**
+instantiate + typecheck + flatten with an observer attached
+(`rumoca_phase_flatten::flatten_ref_with_options_traced`). The session's own
+compile has already flattened without one, and the frames exist only while the
+pass runs. The options must match `rumoca_compile`'s own
+(`flatten_options_for_tree`) or the recorded frames would describe a flatten
+that never happened — `strict_connection_validation: true` is the one that
+matters, since it is what makes an incompatible-connector model fail rather than
+expand.
+
+Recorded only: there is **no Debug button**, and the reason is plumbing rather
+than principle. The phase *is* instrumented for a live trace, but re-running it
+needs the resolved `ClassTree` (which contains the whole MSL) and the instance
+overlay on the UI thread. A worker-side live-debug path would be the right fix;
+see `docs/ideas.md` #9.
 
 ### Index reduction summary (`reduction_view.rs`, ~650 lines)
 

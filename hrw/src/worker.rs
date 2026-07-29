@@ -547,6 +547,9 @@ pub enum FromWorker {
         flat: Option<rumoca_ir_flat::Model>,
         /// The raw DAE for live-debug replay of index reduction.
         dae: Option<rumoca_ir_dae::Dae>,
+        /// Connection-expansion replay frames (MLS §9). Recorded by re-running
+        /// flatten with an observer; empty for a model with no `connect()`.
+        connection_frames: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
     },
     /// A class opened by navigation: its qualified name and (on success) its
     /// resolved IR plus the DefIds it references, so navigation can continue.
@@ -1056,6 +1059,7 @@ impl WorkerState {
                     identifier_index: None,
                     index_reduction_frames: Vec::new(),
                     pre_lowering_frames: Vec::new(),
+                    connection_frames: Vec::new(),
                     flat: None,
                     dae: None,
                 };
@@ -1119,6 +1123,7 @@ impl WorkerState {
         let mut def_index = BTreeMap::new();
         let mut instantiate = Stage::default();
         let mut typecheck = Stage::default();
+        let mut connection_frames = Vec::new();
         let resolve = match &model {
             None => Stage::err("parse produced no model to resolve"),
             Some(simple_name) => {
@@ -1141,6 +1146,10 @@ impl WorkerState {
                         log(LogLevel::StageStart, "Instantiate + Typecheck".to_owned());
                         let t_sub = Instant::now();
                         let (i, t) = instantiate_and_typecheck(&rt.0, &qualified);
+                        // Connection expansion (MLS §9) records its own replay.
+                        // It re-runs flatten, so it is timed inside this block
+                        // rather than pretending to be free.
+                        connection_frames = record_connection_frames(&rt.0, &qualified);
                         log(LogLevel::StageEnd, format!("Instantiate + Typecheck ({:.1}ms)", t_sub.elapsed().as_secs_f64() * 1000.0));
                         instantiate = i;
                         typecheck = t;
@@ -1358,6 +1367,7 @@ impl WorkerState {
             identifier_index,
             index_reduction_frames: ir_frames,
             pre_lowering_frames: pre_frames,
+            connection_frames,
             flat: compiled_flat,
             dae: compiled_dae,
         }
@@ -2110,6 +2120,55 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
 ///   in place with type information (dimensions, component types). The `&mut`
 ///   means it MODIFIES the overlay — which is why we serialize it BEFORE
 ///   typecheck (for the Instantiate tab) and AFTER (for the Typecheck tab).
+/// Record connection expansion (MLS §9) by re-running flatten with an observer.
+///
+/// The session's own compile has already flattened, without an observer — the
+/// frames exist only while the pass runs, so the only way to see them is to run
+/// it again. This is the same shape as the `pre()`-lowering replay: a second
+/// run of a pure function, paid for deliberately. Doug, on this trade:
+/// *"This project is for learning, not for production performance.
+/// Debuggability is of the highest priority."*
+///
+/// The options must match `rumoca_compile`'s own (`flatten_options_for_tree`),
+/// or the recorded frames would describe a flatten that never happened.
+/// `strict_connection_validation: true` is the one that matters here — it is
+/// what makes an incompatible-connector model fail rather than expand.
+///
+/// Returns an empty vec on any failure: this is an observation extra, and a
+/// model that will not instantiate has already reported that on its own tab.
+fn record_connection_frames(
+    tree: &rumoca_ir_ast::ClassTree,
+    model_name: &str,
+) -> Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame> {
+    use rumoca_phase_flatten::connections::trace::ConnectionFrame;
+
+    let Ok(mut overlay) = rumoca_phase_instantiate::instantiate_model(tree, model_name) else {
+        return Vec::new();
+    };
+    // Typecheck mutates the overlay (it annotates types and dimensions), and
+    // flatten reads those annotations — so the overlay must go through it even
+    // though its diagnostics are ignored here.
+    let _ = rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name);
+
+    let frames = std::cell::RefCell::new(Vec::new());
+    {
+        let sink = |f: &ConnectionFrame| frames.borrow_mut().push(f.clone());
+        let options = rumoca_phase_flatten::FlattenOptions {
+            strict_connection_validation: true,
+            simplify_variable_names: false,
+            materialize_structured_families: false,
+        };
+        let _ = rumoca_phase_flatten::flatten_ref_with_options_traced(
+            tree,
+            &overlay,
+            model_name,
+            options,
+            Some(&sink),
+        );
+    }
+    frames.into_inner()
+}
+
 fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) -> (Stage, Stage) {
     match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
         Ok(mut overlay) => {
@@ -2933,6 +2992,75 @@ mod tests {
         };
         assert!(!index_reduction_frames.is_empty(),
             "MotorWithBrake should produce index-reduction animation frames");
+    }
+
+    /// The connection-expansion replay reaches HRW with real frames (MLS §9).
+    ///
+    /// End to end through the worker for the same reason the `pre()` test is:
+    /// the interesting part is *where the frames come from*. The session's own
+    /// compile flattens without an observer, so `record_connection_frames` has
+    /// to re-run instantiate + typecheck + flatten to see anything. Get that
+    /// sequence wrong — skip the typecheck, use different `FlattenOptions` —
+    /// and the result is silently zero frames, or frames describing a flatten
+    /// that never happened. A unit test on the animation type cannot catch it.
+    #[test]
+    fn the_connection_replay_reaches_hrw_with_real_frames() {
+        use rumoca_phase_flatten::connections::trace::ConnectionStep;
+
+        let FromWorker::Compiled { connection_frames, .. } =
+            compile_specimen_shared("RcCircuit")
+        else {
+            panic!("expected Compiled");
+        };
+        assert!(
+            !connection_frames.is_empty(),
+            "RcCircuit wires four components together with connect()",
+        );
+
+        // Bookends, so a truncated trace is not mistaken for a short model.
+        assert!(
+            matches!(
+                connection_frames.first().map(|f| &f.step),
+                Some(ConnectionStep::Start { .. }),
+            ),
+            "{:?}",
+            connection_frames.first(),
+        );
+        let Some(ConnectionStep::Complete { sets, equations_added }) =
+            connection_frames.last().map(|f| f.step.clone())
+        else {
+            panic!("last frame must be Complete: {:?}", connection_frames.last());
+        };
+        assert!(sets > 0, "an RC circuit has connection sets");
+        assert!(equations_added > 0, "and they produce equations");
+
+        // The asymmetry must be present in a real model, not just in the unit
+        // test's hand-built frames: some potential set yields more than one
+        // equation, and every flow set yields exactly one.
+        let generated: Vec<(&str, usize, usize)> = connection_frames
+            .iter()
+            .filter_map(|f| match &f.step {
+                ConnectionStep::EquationsGenerated { kind, set_size, equations_added } => {
+                    Some((*kind, *set_size, *equations_added))
+                }
+                _ => None,
+            })
+            .collect();
+        assert!(
+            generated.iter().any(|(k, n, e)| *k == "potential" && *n > 2 && *e == n - 1),
+            "a potential set of n must yield n-1 equalities: {generated:?}",
+        );
+        assert!(
+            generated.iter().filter(|(k, ..)| *k == "flow").all(|(_, _, e)| *e == 1),
+            "every flow set yields exactly one sum-to-zero equation: {generated:?}",
+        );
+
+        // The running total must land on what Complete reported.
+        assert_eq!(
+            connection_frames.last().unwrap().equations_so_far,
+            equations_added,
+            "the running count and the Complete frame must agree",
+        );
     }
 
     /// The `pre()` lowering replay reaches HRW with real frames (idea #40).

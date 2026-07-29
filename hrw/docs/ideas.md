@@ -258,10 +258,12 @@ need it; it's specifically for the event/hybrid ones.
 | Tearing (`tearing_anim.rs`, 2026-07-29) | replay of a search | yes |
 | Alias elimination (`alias_anim.rs`, 2026-07-29) | reveal of a list | no — nothing to trace |
 | Initial-condition planning (`ic_plan_anim.rs`, 2026-07-29) | reveal of a list | no — nothing to trace |
+| Connection expansion (`connection_anim.rs`, 2026-07-29) | replay of a pass | not yet — see below |
 
 Trace infrastructure in `rumoca-phase-structural` (`maximum_matching_with_trace`,
 `tarjan_scc_with_trace`, `tear_algebraic_loop_with_trace`, `block_local_incidence`)
-and `rumoca-phase-dae` (`to_dae_with_options_traced`).
+`rumoca-phase-dae` (`to_dae_with_options_traced`) and `rumoca-phase-flatten`
+(`flatten_ref_with_options_traced`, `connections::trace`).
 
 The **replay / reveal** distinction is deliberate and worth preserving: only some
 phases hide a search. Alias elimination walks a list and substitutes; the IC plan is
@@ -269,8 +271,21 @@ already computed when HRW sees it. Those two get a stepper for the *accumulation
 (the unknown count falling, the plan's shape emerging) but no Debug button, and their
 module docs say why. See `DECISIONS.md` (2026-07-29).
 
-**Remaining candidates:** connection expansion (needs `rumoca-phase-flatten`
-instrumented — see #20), and Newton iteration / per-step convergence (see #22).
+**Open follow-up — a live path for connection expansion.** The phase is
+instrumented and its recorded replay is complete, but there is no Debug button:
+re-running flatten needs the resolved `ClassTree` (the whole MSL) and the
+instance overlay, and shipping those to the UI thread to arm a breakpoint is a
+bigger change than the view warranted on its own. The right fix is a
+**worker-side live-debug path** — spawn the traced re-run on the worker, where
+the tree already lives, and stream frames back over the existing channel. That
+would also simplify the three views that currently clone a DAE into the app.
+
+**Open follow-up — per-merge connection frames.** Frames are emitted per
+connection *set*, not per union-find merge; the merges sit several call levels
+below `process_connections`. Worth doing only if watching sets form turns out to
+leave "why is this one set and not two?" unanswered.
+
+**Remaining candidate:** Newton iteration / per-step convergence (see #22).
 
 Captured 2026-07-21 (Doug). **Top-of-mind, long-running theme.** Educational
 animations of challenging compiler algorithms — index reduction (Pantelides
