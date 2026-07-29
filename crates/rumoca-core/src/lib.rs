@@ -49,6 +49,28 @@ mod subscript;
 pub use expression_rewriter::{ExpressionRewriter, FallibleExpressionRewriter};
 pub use expression_visitor::{ExpressionScope, ExpressionVisitor, FallibleExpressionVisitor};
 pub use ir_primitives::*;
+
+/// Somewhere for an instrumented phase to send frames as they happen.
+///
+/// **The observability contract shared by every traced phase.** A phase that
+/// records its own progress takes `Option<FrameObserver<'_, F>>` and calls it
+/// once per step; `None` means nobody is watching and costs a branch.
+///
+/// A callback rather than a concrete tracer type, for two reasons:
+///
+/// - **No dependency runs backwards.** The first traced phases took
+///   `Option<&LiveTrace<F>>`, with `LiveTrace` living in
+///   `rumoca-phase-structural`. Instrumenting `rumoca-phase-dae` the same way
+///   would have meant DAE construction depending on structural analysis — a
+///   dependency pointing the wrong way down the pipeline. A callback needs no
+///   dependency at all.
+/// - **The consumer chooses the mechanism.** Buffer the frames, stream them
+///   over a channel, park a debugger on each one, or count them: the phase does
+///   not care, and does not have to be changed to allow a new one.
+///
+/// The observer receives `&F` rather than `F`, so an untraced run allocates
+/// nothing and a traced one clones only if it wants to keep the frame.
+pub type FrameObserver<'a, F> = &'a dyn Fn(&F);
 pub use modelica_builtins::*;
 pub use statement_rewriter::{FallibleStatementRewriter, StatementRewriter};
 pub use structured_domain::{

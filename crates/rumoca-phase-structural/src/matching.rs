@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use crate::live_trace::LiveTrace;
+use rumoca_core::FrameObserver;
 
 /// One step of the augmenting-path algorithm, recorded for animation replay.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,22 +42,22 @@ pub struct MatchingTraceResult {
 
 /// Like `maximum_matching`, but records every algorithmic step for animation.
 ///
-/// When `live` is `Some`, each frame is also sent through the
-/// [`LiveTrace`] channel — set a debugger breakpoint on
-/// [`live_trace_breakpoint`] to single-step through the algorithm while
-/// a UI thread renders each frame as it arrives.
+/// When `observer` is `Some`, each frame is handed to it as it is produced —
+/// the hook a live, debugger-stepped session parks on. See
+/// [`rumoca_core::FrameObserver`] for why this is a callback rather than a
+/// concrete tracer type.
 pub fn maximum_matching_with_trace(
     n_eq: usize,
     n_var: usize,
     eq_vars: &[HashSet<usize>],
-    live: Option<&LiveTrace<MatchingFrame>>,
+    observer: Option<FrameObserver<'_, MatchingFrame>>,
 ) -> MatchingTraceResult {
     let mut match_eq: Vec<Option<usize>> = vec![None; n_eq];
     let mut match_var: Vec<Option<usize>> = vec![None; n_var];
     let mut frames = Vec::new();
 
     for eq in 0..n_eq {
-        emit_matching_frame(&mut frames, live, MatchingFrame {
+        emit_matching_frame(&mut frames, observer, MatchingFrame {
             step: MatchingStep::TryEquation(eq),
             match_eq: match_eq.clone(),
         });
@@ -69,10 +69,10 @@ pub fn maximum_matching_with_trace(
             eq_vars,
             &mut visited,
             &mut frames,
-            live,
+            observer,
         );
         if !found {
-            emit_matching_frame(&mut frames, live, MatchingFrame {
+            emit_matching_frame(&mut frames, observer, MatchingFrame {
                 step: MatchingStep::EquationFailed(eq),
                 match_eq: match_eq.clone(),
             });
@@ -82,14 +82,16 @@ pub fn maximum_matching_with_trace(
     MatchingTraceResult { match_eq, match_var, frames }
 }
 
-/// Push a frame to the local vec and, if present, to the live trace buffer.
+/// Push a frame to the replay vec and, if anyone is watching, to the observer.
 fn emit_matching_frame(
     frames: &mut Vec<MatchingFrame>,
-    live: Option<&LiveTrace<MatchingFrame>>,
+    observer: Option<FrameObserver<'_, MatchingFrame>>,
     frame: MatchingFrame,
 ) {
-    if let Some(lt) = live {
-        lt.push(frame.clone());
+    // By reference, so an untraced run never clones and a watching one clones
+    // only if it decides to keep the frame.
+    if let Some(observe) = observer {
+        observe(&frame);
     }
     frames.push(frame);
 }
@@ -101,7 +103,7 @@ fn augment_traced(
     eq_vars: &[HashSet<usize>],
     visited: &mut [bool],
     frames: &mut Vec<MatchingFrame>,
-    live: Option<&LiveTrace<MatchingFrame>>,
+    observer: Option<FrameObserver<'_, MatchingFrame>>,
 ) -> bool {
     let mut vars: Vec<usize> = eq_vars[eq].iter().copied().collect();
     vars.sort_unstable();
@@ -110,26 +112,26 @@ fn augment_traced(
             continue;
         }
         visited[var] = true;
-        emit_matching_frame(frames, live, MatchingFrame {
+        emit_matching_frame(frames, observer, MatchingFrame {
             step: MatchingStep::Explore { eq, var },
             match_eq: match_eq.to_vec(),
         });
         let can_augment = match match_var[var] {
             None => {
-                emit_matching_frame(frames, live, MatchingFrame {
+                emit_matching_frame(frames, observer, MatchingFrame {
                     step: MatchingStep::FoundFree { eq, var },
                     match_eq: match_eq.to_vec(),
                 });
                 true
             }
             Some(holder) => {
-                emit_matching_frame(frames, live, MatchingFrame {
+                emit_matching_frame(frames, observer, MatchingFrame {
                     step: MatchingStep::TryDisplace { eq, var, holder },
                     match_eq: match_eq.to_vec(),
                 });
                 let ok =
-                    augment_traced(holder, match_eq, match_var, eq_vars, visited, frames, live);
-                emit_matching_frame(frames, live, MatchingFrame {
+                    augment_traced(holder, match_eq, match_var, eq_vars, visited, frames, observer);
+                emit_matching_frame(frames, observer, MatchingFrame {
                     step: if ok {
                         MatchingStep::DisplaceOk { eq, var }
                     } else {
@@ -145,7 +147,7 @@ fn augment_traced(
         }
         match_eq[eq] = Some(var);
         match_var[var] = Some(eq);
-        emit_matching_frame(frames, live, MatchingFrame {
+        emit_matching_frame(frames, observer, MatchingFrame {
             step: MatchingStep::Assign { eq, var },
             match_eq: match_eq.to_vec(),
         });
@@ -298,11 +300,20 @@ mod tests {
             HashSet::from([1, 2]),
             HashSet::from([0, 2]),
         ];
-        let (lt, rx) = LiveTrace::new();
-        let traced = maximum_matching_with_trace(3, 3, &eq_vars, Some(&lt));
-        let live_frames: Vec<_> = rx.try_iter().collect();
-        assert_eq!(traced.frames.len(), live_frames.len());
-        for (i, (ret, live)) in traced.frames.iter().zip(live_frames.iter()).enumerate() {
+        // The observer must see exactly what the returned buffer holds: a live
+        // session steps the observer, and playback afterwards reads the buffer,
+        // so a divergence would make stepping and replaying the same run show
+        // different things.
+        let observed = std::cell::RefCell::new(Vec::new());
+        let traced = maximum_matching_with_trace(
+            3,
+            3,
+            &eq_vars,
+            Some(&|f: &MatchingFrame| observed.borrow_mut().push(f.clone())),
+        );
+        let observed = observed.into_inner();
+        assert_eq!(traced.frames.len(), observed.len());
+        for (i, (ret, live)) in traced.frames.iter().zip(observed.iter()).enumerate() {
             assert_eq!(ret.step, live.step, "frame {i} step mismatch");
             assert_eq!(ret.match_eq, live.match_eq, "frame {i} match_eq mismatch");
         }

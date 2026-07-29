@@ -1880,7 +1880,7 @@ fn constrained_dummy_derivative_plan(
 /// algorithmic step for animation replay via [`IndexReductionFrame`].
 pub fn reduce_constrained_dummy_derivatives_with_trace(
     dae: &mut Dae,
-    live: Option<&crate::LiveTrace<state_row_reduction::IndexReductionFrame>>,
+    observer: Option<rumoca_core::FrameObserver<'_, state_row_reduction::IndexReductionFrame>>,
     frames: &mut Vec<state_row_reduction::IndexReductionFrame>,
     demoted_so_far: &mut Vec<String>,
 ) -> Result<usize, StructuralError> {
@@ -1908,7 +1908,7 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
                 continue;
             }
 
-            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
                 step: IndexReductionStep::BeginState { state: state_name.to_string() },
                 demoted_so_far: demoted_so_far.clone(),
                 round,
@@ -1923,7 +1923,7 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
                 &state_name_set,
                 &der_map,
             ) else {
-                emit_index_reduction_frame(frames, live, IndexReductionFrame {
+                emit_index_reduction_frame(frames, observer, IndexReductionFrame {
                     step: IndexReductionStep::CandidateExhausted {
                         state: state_name.to_string(),
                     },
@@ -1933,7 +1933,7 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
                 continue;
             };
 
-            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
                 step: IndexReductionStep::Differentiated {
                     state: state_name.to_string(),
                     before_rhs: Box::new(definition.defining_expr.clone()),
@@ -1947,7 +1947,7 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
             pin_structural_params(dae, &definition.structural_params);
 
             demoted_so_far.push(state_name.to_string());
-            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
                 step: IndexReductionStep::Demoted { state: state_name.to_string() },
                 demoted_so_far: demoted_so_far.clone(),
                 round,
@@ -1957,7 +1957,7 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
             break;
         }
 
-        emit_index_reduction_frame(frames, live, IndexReductionFrame {
+        emit_index_reduction_frame(frames, observer, IndexReductionFrame {
             step: IndexReductionStep::RoundComplete {
                 round,
                 demotions_this_round: if demoted_this_round { 1 } else { 0 },

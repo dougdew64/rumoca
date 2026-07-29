@@ -7,6 +7,24 @@
 //! The key debugging technique: set a breakpoint on [`live_trace_breakpoint`] —
 //! each time the debugger pauses there, the UI thread can read the latest
 //! frame and render the algorithm's current state.
+//!
+//! ## Not used by any phase
+//!
+//! As of 2026-07-29 the traced phases take [`rumoca_core::FrameObserver`] — a
+//! plain callback — rather than a `LiveTrace`. This type is one *implementation*
+//! of an observer, used by the consumer (HRW) which wires it up as
+//! `Some(&|frame| lt.push(frame.clone()))`.
+//!
+//! The change was forced by instrumenting `rumoca-phase-dae`: taking a
+//! `LiveTrace` would have meant DAE construction depending on
+//! `rumoca-phase-structural`, a dependency pointing the wrong way down the
+//! pipeline. A callback needs no dependency, and lets a consumer buffer, stream,
+//! count or step frames without any phase being changed to allow it.
+//!
+//! It stays here rather than moving out because [`live_trace_breakpoint`] is the
+//! debugger anchor, and both the `opt-level = 0` override and HRW's
+//! `bridge::find_live_trace_line` are keyed to this file. Moving it is a
+//! separate change with its own risks.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc};
@@ -18,8 +36,10 @@ use std::time::Duration;
 /// No lock is shared with the UI thread — `Sender::send()` takes `&self` and
 /// uses internal synchronization, so no `Mutex` wrapper is needed.
 ///
-/// Generic over the frame type `F` — works with `MatchingFrame`,
-/// `TarjanFrame`, `IndexReductionFrame`, or any future traced-algorithm type.
+/// Generic over the frame type `F` — works with `MatchingFrame`, `TarjanFrame`,
+/// `IndexReductionFrame`, `PreLoweringFrame`, or any future traced-algorithm
+/// type. Phases no longer name it: they take a [`rumoca_core::FrameObserver`],
+/// and this is what the consumer puts behind that callback.
 pub struct LiveTrace<F> {
     tx: mpsc::Sender<F>,
     len: Arc<AtomicUsize>,

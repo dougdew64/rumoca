@@ -702,11 +702,13 @@ pub struct IndexReductionTraceResult {
 
 pub fn emit_index_reduction_frame(
     frames: &mut Vec<IndexReductionFrame>,
-    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    observer: Option<rumoca_core::FrameObserver<'_, IndexReductionFrame>>,
     frame: IndexReductionFrame,
 ) {
-    if let Some(lt) = live {
-        lt.push(frame.clone());
+    // By reference, so an untraced run never clones and a watching one clones
+    // only if it decides to keep the frame.
+    if let Some(observe) = observer {
+        observe(&frame);
     }
     frames.push(frame);
 }
@@ -726,11 +728,11 @@ pub fn emit_index_reduction_frame(
 /// [`IndexReductionStep::Start`].
 pub fn emit_index_reduction_start(
     frames: &mut Vec<IndexReductionFrame>,
-    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    observer: Option<rumoca_core::FrameObserver<'_, IndexReductionFrame>>,
     dae: &Dae,
     demoted_so_far: &[String],
 ) {
-    emit_index_reduction_frame(frames, live, IndexReductionFrame {
+    emit_index_reduction_frame(frames, observer, IndexReductionFrame {
         step: IndexReductionStep::Start {
             states: dae
                 .variables
@@ -755,7 +757,7 @@ pub fn emit_index_reduction_start(
 /// replay can show what had been demoted at that point.
 pub fn index_reduce_missing_state_derivatives_with_trace(
     dae: &mut Dae,
-    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    observer: Option<rumoca_core::FrameObserver<'_, IndexReductionFrame>>,
     frames: &mut Vec<IndexReductionFrame>,
     demoted_so_far: &[String],
     round_offset: usize,
@@ -763,10 +765,9 @@ pub fn index_reduce_missing_state_derivatives_with_trace(
     let max_rounds = dae.variables.states.len().clamp(1, 8);
     let mut total_changed = 0usize;
     for round in 0..max_rounds {
-        let changed = index_reduce_missing_state_derivatives_once_with_trace(
-            dae, live, frames, demoted_so_far, round_offset + round,
+        let changed = index_reduce_missing_state_derivatives_once_with_trace(dae, observer, frames, demoted_so_far, round_offset + round,
         )?;
-        emit_index_reduction_frame(frames, live, IndexReductionFrame {
+        emit_index_reduction_frame(frames, observer, IndexReductionFrame {
             step: IndexReductionStep::RoundComplete {
                 round: round_offset + round,
                 demotions_this_round: changed,
@@ -784,7 +785,7 @@ pub fn index_reduce_missing_state_derivatives_with_trace(
 
 fn index_reduce_missing_state_derivatives_once_with_trace(
     dae: &mut Dae,
-    live: Option<&crate::LiveTrace<IndexReductionFrame>>,
+    observer: Option<rumoca_core::FrameObserver<'_, IndexReductionFrame>>,
     frames: &mut Vec<IndexReductionFrame>,
     demoted_so_far: &[String],
     round: usize,
@@ -808,7 +809,7 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             continue;
         }
 
-        emit_index_reduction_frame(frames, live, IndexReductionFrame {
+        emit_index_reduction_frame(frames, observer, IndexReductionFrame {
             step: IndexReductionStep::BeginState { state: state_name.to_string() },
             demoted_so_far: demoted_so_far.to_vec(),
             round,
@@ -843,7 +844,7 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             }
 
             let before_rhs = dae.continuous.equations[idx].rhs.clone();
-            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
                 step: IndexReductionStep::Differentiated {
                     state: state_name.to_string(),
                     before_rhs: Box::new(before_rhs),
@@ -870,7 +871,7 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             break;
         }
         if !found {
-            emit_index_reduction_frame(frames, live, IndexReductionFrame {
+            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
                 step: IndexReductionStep::CandidateExhausted { state: state_name.to_string() },
                 demoted_so_far: demoted_so_far.to_vec(),
                 round,
@@ -1119,31 +1120,32 @@ mod tests {
     }
 
     #[test]
-    fn emit_index_reduction_frame_pushes_to_both_vec_and_live_trace() {
-        let (lt, rx) = crate::LiveTrace::new();
+    fn emit_index_reduction_frame_pushes_to_both_vec_and_observer() {
+        let observed = std::cell::RefCell::new(Vec::new());
+        let observer = |f: &IndexReductionFrame| observed.borrow_mut().push(f.clone());
         let mut frames = Vec::new();
         let frame = IndexReductionFrame {
             step: IndexReductionStep::BeginState { state: "x".into() },
             demoted_so_far: vec![],
             round: 0,
         };
-        emit_index_reduction_frame(&mut frames, Some(&lt), frame);
+        emit_index_reduction_frame(&mut frames, Some(&observer), frame);
         let frame2 = IndexReductionFrame {
             step: IndexReductionStep::Demoted { state: "x".into() },
             demoted_so_far: vec!["x".into()],
             round: 0,
         };
-        emit_index_reduction_frame(&mut frames, Some(&lt), frame2);
+        emit_index_reduction_frame(&mut frames, Some(&observer), frame2);
 
         assert_eq!(frames.len(), 2);
-        let live_frames: Vec<_> = rx.try_iter().collect();
+        let live_frames = observed.into_inner();
         assert_eq!(live_frames.len(), 2);
         assert_eq!(frames[0].demoted_so_far, live_frames[0].demoted_so_far);
         assert_eq!(frames[1].demoted_so_far, live_frames[1].demoted_so_far);
     }
 
     #[test]
-    fn emit_index_reduction_frame_works_without_live_trace() {
+    fn emit_index_reduction_frame_works_without_an_observer() {
         let mut frames = Vec::new();
         let frame = IndexReductionFrame {
             step: IndexReductionStep::RoundComplete { round: 0, demotions_this_round: 1 },
@@ -1172,9 +1174,14 @@ mod tests {
             var_ref("v", span), span, "test",
         ));
 
-        let (lt, rx) = crate::LiveTrace::new();
+        let observed = std::cell::RefCell::new(Vec::new());
         let mut frames = Vec::new();
-        emit_index_reduction_start(&mut frames, Some(&lt), &dae, &["earlier".to_owned()]);
+        emit_index_reduction_start(
+            &mut frames,
+            Some(&|f: &IndexReductionFrame| observed.borrow_mut().push(f.clone())),
+            &dae,
+            &["earlier".to_owned()],
+        );
 
         assert_eq!(frames.len(), 1, "exactly one opening frame");
         let IndexReductionStep::Start { states, equations } = &frames[0].step else {
@@ -1188,9 +1195,12 @@ mod tests {
         assert_eq!(frames[0].demoted_so_far, vec!["earlier".to_owned()]);
         assert_eq!(frames[0].round, 0);
 
-        // The live consumer sees it too, so a debug session opens on it.
-        let live: Vec<_> = rx.try_iter().collect();
-        assert_eq!(live.len(), 1, "the opening frame must reach the live trace");
+        // The observer sees it too, so a debug session opens on it.
+        assert_eq!(
+            observed.into_inner().len(),
+            1,
+            "the opening frame must reach the observer",
+        );
     }
 
     #[test]

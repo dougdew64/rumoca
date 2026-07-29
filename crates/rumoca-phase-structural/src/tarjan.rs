@@ -1,6 +1,6 @@
 //! Tarjan's algorithm for strongly connected components.
 
-use crate::live_trace::LiveTrace;
+use rumoca_core::FrameObserver;
 
 /// One step of Tarjan's SCC algorithm, recorded for animation replay.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,14 +37,16 @@ pub struct TarjanTraceResult {
 
 /// Like `tarjan_scc`, but records every algorithmic step for animation.
 ///
-/// When `live` is `Some`, each frame is also pushed to the shared
-/// [`LiveTrace`] buffer for live debugger stepping.
+/// When `observer` is `Some`, each frame is handed to it as it is produced —
+/// the hook a live, debugger-stepped session parks on. See
+/// [`rumoca_core::FrameObserver`] for why this is a callback rather than a
+/// concrete tracer type.
 pub fn tarjan_scc_with_trace(
     n: usize,
     adj: &[Vec<usize>],
-    live: Option<&LiveTrace<TarjanFrame>>,
+    observer: Option<FrameObserver<'_, TarjanFrame>>,
 ) -> TarjanTraceResult {
-    let mut state = TracedTarjanState::new(n, live);
+    let mut state = TracedTarjanState::new(n, observer);
     for v in 0..n {
         if state.index[v].is_none() {
             state.strongconnect(v, adj);
@@ -138,11 +140,11 @@ struct TracedTarjanState<'a> {
     lowlink: Vec<usize>,
     sccs: Vec<Vec<usize>>,
     frames: Vec<TarjanFrame>,
-    live: Option<&'a LiveTrace<TarjanFrame>>,
+    observer: Option<FrameObserver<'a, TarjanFrame>>,
 }
 
 impl<'a> TracedTarjanState<'a> {
-    fn new(n: usize, live: Option<&'a LiveTrace<TarjanFrame>>) -> Self {
+    fn new(n: usize, observer: Option<FrameObserver<'a, TarjanFrame>>) -> Self {
         Self {
             index_counter: 0,
             stack: Vec::new(),
@@ -151,7 +153,7 @@ impl<'a> TracedTarjanState<'a> {
             lowlink: vec![0; n],
             sccs: Vec::new(),
             frames: Vec::new(),
-            live,
+            observer,
         }
     }
 
@@ -161,8 +163,10 @@ impl<'a> TracedTarjanState<'a> {
             stack: self.stack.clone(),
             sccs_so_far: self.sccs.clone(),
         };
-        if let Some(lt) = &self.live {
-            lt.push(frame.clone());
+        // By reference, so an untraced run never clones and a watching one
+        // clones only if it decides to keep the frame.
+        if let Some(observe) = self.observer {
+            observe(&frame);
         }
         self.frames.push(frame);
     }
@@ -284,11 +288,18 @@ mod tests {
     }
 
     #[test]
-    fn live_trace_receives_same_frames_as_returned() {
+    fn observer_receives_same_frames_as_returned() {
         let adj = vec![vec![1], vec![2], vec![0]];
-        let (lt, rx) = LiveTrace::new();
-        let traced = tarjan_scc_with_trace(3, &adj, Some(&lt));
-        let live_frames: Vec<_> = rx.try_iter().collect();
+        // A live session steps the observer; playback afterwards reads the
+        // returned buffer. If they diverged, stepping and replaying the same run
+        // would show different things.
+        let observed = std::cell::RefCell::new(Vec::new());
+        let traced = tarjan_scc_with_trace(
+            3,
+            &adj,
+            Some(&|f: &TarjanFrame| observed.borrow_mut().push(f.clone())),
+        );
+        let live_frames = observed.into_inner();
         assert_eq!(traced.frames.len(), live_frames.len());
         for (i, (ret, live)) in traced.frames.iter().zip(live_frames.iter()).enumerate() {
             assert_eq!(ret.step, live.step, "frame {i} step mismatch");
