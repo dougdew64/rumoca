@@ -147,15 +147,33 @@ Candidates, not commitments — consult when planning new work; promote items in
   branch was cut from the former pin `8cdc7419` (v0.9.20); "updating Rumoca" now means **rebasing the
   `hrw` branch on upstream**, per `docs/updating-rumoca.md` (compiler + tests drive the code fixes;
   `cargo run -p hrw --example gen_field_help` refreshes the generic field-help table;
-  `docs/compiler-phases` is refreshed only by Doug). This in-workspace move exists to enable
+  `docs/compiler-phases` is maintained by Claude — see below). This in-workspace move exists to enable
   **instrumenting Rumoca internals** (the public API exposes phase *results*, not the algorithms'
   *process*); build/run/test from the workspace root with `-p hrw`, or `cd hrw/`. See `DECISIONS.md`.
-- Doug's phase explanations: **`docs/compiler-phases/`** (in THIS repo) — top-level summary, one
-  subdirectory per compiler phase containing a phase description, some with drill-down documents
-  (e.g. Pantelides, tearing, BLT). These are Doug's own explanations, matching the pinned Rumoca
-  commit; treat them as authoritative context. **Before working on code that touches a compiler
-  phase, read that phase's description**; consult drill-downs when the work goes deep. (Distinct
-  from `docs/specimen-notebook/` — the specimen-driven lab notebook.)
+- **`docs/compiler-phases/` — Claude's teaching database.** One subdirectory per compiler phase,
+  with drill-downs (Pantelides, tearing, BLT, …). **Authorship corrected 2026-07-29: Claude wrote
+  100% of these**, on Doug's request months ago. CLAUDE.md previously called them "Doug's own
+  explanations… refreshed only by Doug", and that was wrong in a way that mattered — it made Claude's
+  own months-old prose look like an authoritative outside source.
+
+  **Audience: Claude, not Doug.** Doug reads them only indirectly, through answers. Their job is to
+  make Claude a better teacher over months and years, so Claude maintains them and commits them.
+
+  **What goes in** follows [[store what cannot be regenerated]]: Doug's *questions*, the confusion
+  behind them, and what finally made a thing click. **Not** Claude's explanations — those are
+  regenerable, and storing them builds an echo chamber that a later session mistakes for fact.
+  A question asked repeatedly is a signal: either the earlier explanation failed (try a different
+  angle) or the thing is not visible in HRW (a feature request, and a better one than Claude invents).
+
+  **Every claim carries provenance** — `verified` (checked against code or tools, with the file),
+  `cellier` (with a citation), or `inference`. Only the first two are trusted on re-read; `inference`
+  gets re-checked. Text predating this rule is `unverified` by default and upgrades **lazily**: when
+  a real question sends Claude into the source, the claims actually checked get promoted. The
+  database becomes trustworthy exactly where it is used most, with no audit project.
+
+  **Before working on code that touches a compiler phase, read that phase's description** — but treat
+  untagged prose as a lead, not a fact. (Distinct from `docs/specimen-notebook/` — the specimen lab
+  notebook, also Claude's.)
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
   Specification sections. Respect phase boundaries — IR crates are pure data.
 

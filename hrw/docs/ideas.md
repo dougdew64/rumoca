@@ -1370,7 +1370,9 @@ the animation debt ahead of this.
 
 The original capture follows.
 
-## 40. Instrument `pre()` lowering — the DAE-construction phase HRW cannot show
+## 40a. Original proposal text for #40, retained for its rationale
+
+*(Delivered — see #40 above. Kept because the reasoning is the record of why it was worth doing.)*
 
 Captured 2026-07-28 (Doug), after a debugging session that failed for reasons
 unrelated to the question being asked.
@@ -1447,3 +1449,98 @@ and the solver.
 **Relates to:** `LiveTrace` in `rumoca-phase-structural`, the three animation
 views, ideas #9 / #19–#22, and `DECISIONS.md` (2026-07-28) on where
 `__pre__.overSpeed` is created.
+
+---
+
+## 41. Claude's teaching database — infrastructure for answering Doug's questions
+
+Requested 2026-07-29 (Doug), after abandoning the end-to-end tour because its
+prose was worse than the live conversation, and after establishing that **no part
+of HRW needs to work without Claude**:
+
+> Design and implement whatever you need in order to make use of those documents
+> and any new documents however would best enable you to answer my questions so
+> that I can learn.
+
+**Unusual for this backlog:** every other item builds something Doug looks at.
+This one builds something *Claude* reads. Doug consumes it only indirectly,
+through better answers.
+
+### The governing rule
+
+`docs/compiler-phases/` is Claude's database (authorship corrected 2026-07-29 —
+Claude wrote 100% of it; CLAUDE.md had wrongly credited Doug). What goes in
+follows **store what cannot be regenerated**:
+
+- **Store:** Doug's questions, the confusion behind them, what finally made a
+  thing click, and decisions with rationale.
+- **Do not store:** Claude's explanations of what a phase does. Those regenerate
+  on demand, and writing them down builds an echo chamber a later session
+  mistakes for an authoritative outside source. This is not hypothetical — the
+  `end_to_end_tour.md` Stop 8 failure (describes a 7x7 incidence matrix on a tab
+  that shows 48 equations) is exactly this, and Claude nearly adopted the same
+  documents as trusted reference without noticing.
+
+### Staging — deliberately incremental
+
+The tour's mistake was building explanatory infrastructure ahead of real use.
+Do not repeat it here. Build in this order, and only advance when the previous
+stage has enough content to justify the next:
+
+**(A) The question ledger — start immediately, costs nothing.** Per phase (or one
+central file, decide when there is enough to retrieve from): date, the question
+*verbatim*, the HRW context it was asked in, what unlocked it, concepts touched.
+This is the irreplaceable content; everything below is machinery for reading it.
+
+Capture the HRW context from `.hrw-bridge/focus.json`, which already holds the
+assembled noun. Over months this answers the question Claude cannot otherwise
+ask: *what was Doug looking at when he got stuck?* That is a far better feature
+signal than "which tab was opened most".
+
+**(B) A citation checker — cheap, mechanical, do it early.** The docs cite
+`crates/**/*.rs` paths and named tests. An example binary (`cargo run -p hrw
+--example check_doc_citations`) that verifies every cited path and symbol still
+exists. An ad-hoc version of this run on 2026-07-29 found 16 of 17 paths resolve
+and one broken: `crates/rumoca-sim/src/diffsol/tests/scalarization_regressions.rs`.
+Catches the tour's failure mode mechanically, and is the "emitter correct,
+reasoner supplements" discipline applied to Claude's own memory.
+
+**(C) Provenance tags — a convention plus a lint.** Every claim marked `verified`
+(checked against code/tools, with the file), `cellier` (with a citation), or
+`inference`. Only the first two are trusted on re-read. Existing text is
+`unverified` and upgrades **lazily**: when a real question sends Claude into the
+source, the claims actually checked get promoted. No audit project — the database
+becomes trustworthy exactly where it is used most. A lint that reports untagged
+claims makes the coverage visible.
+
+**(D) A generated index — defer until (A) has content.** Concept -> where
+discussed -> question count -> last verified. **Generated, never hand-maintained**,
+or it rots like everything else here has.
+
+**(E) Repeat detection — falls out of (A) + (D).** A rising question count on one
+concept is a signal, and it splits two ways that call for opposite responses:
+the *concept* is hard (the earlier explanation failed — try a different angle),
+or the *thing is not visible in HRW* (a feature request, and a better one than
+Claude would invent).
+
+### Deliberately not yet: usage telemetry
+
+Doug raised `session.json`. Today's diagnostics log is a crash artifact with a
+rotating ring buffer — built to survive a panic, not to accumulate months of
+behaviour. Longitudinal usage would be a separate append-only artifact. Temper
+the expectation too: "opened the incidence matrix 40 times" is weak evidence next
+to "asked what a dummy derivative is three times". Questions are the signal;
+clicks are corroboration at best. Build after (A) has proven what it is missing.
+
+### Why this matters more than it looks
+
+The arrangement makes Claude the author, maintainer, primary reader, *and* judge
+of what is true enough to write down — four roles with no independent check.
+The mitigations are (1) provenance tags, (2) the citation checker, and (3) most
+importantly, **Cellier's problems**, which are the only part of the system where
+something outside the loop gets to say Claude was wrong.
+
+**Relates to:** the `hrw-works-with-claude-not-without` principle, `#9`
+(animations, for the replay/reveal distinction), `#35` (tour progress tracking —
+now largely superseded), `docs/context-assembly.md`, and the retirement of
+`end_to_end_tour.md`'s explanatory prose.
