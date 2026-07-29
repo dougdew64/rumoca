@@ -105,7 +105,8 @@ pub use errors::{ToDaeError, ToDaeResult};
 /// watched rather than inferred from its output. `lower_pre_operator` is
 /// unchanged in behaviour and now simply calls it with no observer.
 pub use pre_lowering::{
-    PreLoweringFrame, PreLoweringObserver, PreLoweringStep, lower_pre_operator_with_trace,
+    PreLoweringFrame, PreLoweringObserver, PreLoweringStep, lower_pre_operator,
+    lower_pre_operator_with_trace,
 };
 // Re-export moved functions so sibling modules can still use `super::`.
 pub(crate) use variable_analysis::{
@@ -239,6 +240,30 @@ pub fn to_dae_with_options(
     flat: &flat::Model,
     options: ToDaeOptions,
 ) -> Result<dae::Dae, ToDaeError> {
+    to_dae_with_options_traced(flat, options, None)
+}
+
+/// Like [`to_dae_with_options`], but reports every step of `pre()` lowering.
+///
+/// **Why the observer has to come in from out here.** `pre()` lowering runs
+/// *inside* DAE construction, so by the time a caller holds the finished DAE the
+/// slots already exist and the `pre()` calls are gone — re-running the pass on
+/// that DAE is a no-op and would trace nothing. Watching it therefore means
+/// watching the construction that contains it, which is why this entry point
+/// exists rather than a traced variant of the pass alone.
+///
+/// The observer fires **twice per call**: once from the main sequence and again
+/// from `finalize_lowered_dae`. Measured on `MotorWithBrake`, the second run
+/// creates no slots and only re-substitutes — worth seeing, because "the pass ran
+/// again and found nothing" is itself a fact about the algorithm. The
+/// `__pre__.c[…]` condition companions come from `condition_lowering`, not here.
+///
+/// Additive and observation-only: `to_dae_with_options` is this with `None`.
+pub fn to_dae_with_options_traced(
+    flat: &flat::Model,
+    options: ToDaeOptions,
+    pre_lowering_observer: Option<pre_lowering::PreLoweringObserver<'_>>,
+) -> Result<dae::Dae, ToDaeError> {
     let mut dae = dae::Dae::new();
     let todae_subphase_timing = todae_subphase_timing_enabled();
 
@@ -364,11 +389,18 @@ pub fn to_dae_with_options(
     // This must run after equation construction but before parameter sorting,
     // so that the new __pre__ parameters are included in dependency ordering.
     run_todae_phase(todae_subphase_timing, "pre_lowering", || {
-        pre_lowering::lower_pre_operator(&mut dae)
+        pre_lowering::lower_pre_operator_with_trace(&mut dae, pre_lowering_observer)
     })?;
 
     dae.symbols.functions = flat_to_dae_function_map(&flat.functions);
-    finalize_lowered_dae(&mut dae, flat, state_vars, todae_subphase_timing, options)?;
+    finalize_lowered_dae(
+        &mut dae,
+        flat,
+        state_vars,
+        todae_subphase_timing,
+        options,
+        pre_lowering_observer,
+    )?;
 
     Ok(dae)
 }
@@ -389,6 +421,7 @@ fn finalize_lowered_dae(
     state_vars: &IndexSet<rumoca_core::VarName>,
     todae_subphase_timing: bool,
     options: ToDaeOptions,
+    pre_lowering_observer: Option<pre_lowering::PreLoweringObserver<'_>>,
 ) -> Result<(), ToDaeError> {
     // Sort parameters so that start-value dependencies are satisfied in order.
     // If parameter A's start expression references parameter B, B must appear
@@ -425,7 +458,7 @@ fn finalize_lowered_dae(
         populate_runtime_precompute(dae)
     })?;
     run_todae_phase(todae_subphase_timing, "temporal_lowering_finalize", || {
-        pre_lowering::lower_pre_operator(dae)?;
+        pre_lowering::lower_pre_operator_with_trace(dae, pre_lowering_observer)?;
         sort_parameters_by_start_dependency(dae);
         Ok::<(), ToDaeError>(())
     })?;

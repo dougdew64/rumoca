@@ -31,6 +31,10 @@ rumoca-phase-instantiate = { path = "../crates/rumoca-phase-instantiate" }
 rumoca-phase-typecheck = { path = "../crates/rumoca-phase-typecheck" }
 # Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
 rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
+# Idea #40: replay `pre()` lowering. HRW already depended on this transitively
+# through rumoca-compile; naming it directly gives access to the observability
+# types (`PreLoweringFrame`, `to_dae_with_options_traced`).
+rumoca-phase-dae = { path = "../crates/rumoca-phase-dae" }
 rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # Arc 4: name the DAE type for the index-reduction funnel
 rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # Arc 7: DAE -> SolveModel (solve lowering)
 rumoca-solver = { path = "../crates/rumoca-solver" }  # Phase 3: SolverStepRecord for diagnostics plot

@@ -1327,16 +1327,28 @@ that maps directly onto animation frames:
    after.
 
 **The detail that makes it worth animating:** the pass **runs twice** — once from
-`to_dae_with_options`, and again from `finalize_lowered_dae` after canonical
-condition variables introduce `pre()` references of their own. On MotorWithBrake
-the first pass mints `__pre__.overSpeed`; the second mints `__pre__.c[1]`,
-`__pre__.c[2]`, `__pre__.load.w`, `__pre__.maxSpeed` — the companion cluster
-visible beside `__pre__.overSpeed` in Solve lowering's bindings. A static view
-cannot show that a phase ran twice on different input; an animation makes it the
-obvious feature of the trace. (Measured: `lower_pre_operator` entered twice,
-`pre_slot_name` called with `overSpeed` twice and `c` seven times.)
+`to_dae_with_options`, and again from `finalize_lowered_dae`.
 
-**Shape of the work.** Follow the existing pattern exactly —
+**Corrected 2026-07-29 by the instrumentation itself.** An earlier version of
+this paragraph claimed the second pass minted the `__pre__.c[…]` /
+`__pre__.load.w` / `__pre__.maxSpeed` cluster. It does not. The real trace on
+MotorWithBrake is 21 frames: pass 1 creates all three slots (`load.w`,
+`maxSpeed`, `overSpeed`), and pass 2 creates **none**, re-substituting only. The
+`__pre__.c[…]` companions come from
+`condition_lowering::declare_condition_pre_parameter` — a different pass.
+
+That error is the argument *for* this idea, not against it. It came from counting
+`pre_slot_name` calls and **inferring** which pass they belonged to, then
+recording the inference as though it were the measurement. A static view supports
+exactly that kind of plausible-but-wrong reasoning; a trace does not. And "the
+pass ran again and found nothing left to do" turns out to be a real fact about
+the algorithm that no static view could have shown.
+
+**Follow-up this turned up:** instrument
+`condition_lowering::declare_condition_pre_parameter` too, since that is where
+the `__pre__.c[…]` companions actually come from. Same shape, same observer type.
+
+**Shape of the work.** Follow the existing pattern —
 `rumoca-phase-structural`'s `LiveTrace<T>` plus a `*_with_trace` entry point,
 additive and observation-only, with a `PreLoweringStep` enum and frames carrying
 the DAE state. HRW renders it with the same `animation_controls` the matching,

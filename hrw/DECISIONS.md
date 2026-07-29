@@ -997,6 +997,7 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   keys adjacent to the hit. The first 40 keys of that map would have said nothing. Position is an
   exact fact, so this stays inside the emit-facts-not-interpretation rule. Verified against real IR:
   the window now contains `__pre__.c`, `__pre__.c[1..2]`, `__pre__.load.w`, `__pre__.maxSpeed`.
+  *(Where those slots come from was misattributed until 2026-07-29; see the idea #40 entry.)*
   (3) **`view`** — a point made in a tree and one made paused at animation frame 12 previously
   produced *identical* files, though in the second case the frame is most of the question.
   (4) **`phase_source`** — stage → crate + entry function, so the algorithm can be read rather than

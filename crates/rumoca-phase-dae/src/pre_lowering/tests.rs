@@ -1490,8 +1490,9 @@ fn traced_lowering_records_the_manufacture_of_a_slot() -> Result<(), ToDaeError>
         "when-equation hold branch".to_string(),
     ));
 
-    let mut frames = Vec::new();
-    lower_pre_operator_with_trace(&mut dae, &mut frames, None)?;
+    let frames = std::cell::RefCell::new(Vec::new());
+    lower_pre_operator_with_trace(&mut dae, Some(&|f| frames.borrow_mut().push(f.clone())))?;
+    let frames = frames.into_inner();
 
     // Opens and closes with the pass boundary — that is what separates the two
     // runs this pass makes per compile when a replay concatenates them.
@@ -1525,13 +1526,9 @@ fn traced_lowering_records_the_manufacture_of_a_slot() -> Result<(), ToDaeError>
     Ok(())
 }
 
-/// An observer sees exactly the frames the replay buffer keeps.
-///
-/// A live session steps the observer; playback afterwards reads the buffer. If
-/// the two diverged, stepping and replaying the same run would show different
-/// things — the drift this project keeps eliminating.
+/// An observer sees the whole sequence, bracketed by Start and Complete.
 #[test]
-fn the_observer_and_the_replay_buffer_see_the_same_frames() -> Result<(), ToDaeError> {
+fn an_observer_sees_the_whole_sequence() -> Result<(), ToDaeError> {
     use super::lower_pre_operator_with_trace;
     use std::cell::RefCell;
 
@@ -1546,16 +1543,18 @@ fn the_observer_and_the_replay_buffer_see_the_same_frames() -> Result<(), ToDaeE
         "update".to_string(),
     ));
 
+    // The observer is the only channel now, so "buffer vs observer" cannot
+    // disagree by construction. What is still worth pinning is that an untraced
+    // run costs nothing and a traced one sees the whole sequence.
     let observed = RefCell::new(Vec::new());
-    let mut frames = Vec::new();
     lower_pre_operator_with_trace(
         &mut dae,
-        &mut frames,
         Some(&|f| observed.borrow_mut().push(format!("{:?}", f.step))),
     )?;
-
-    let replayed: Vec<String> = frames.iter().map(|f| format!("{:?}", f.step)).collect();
-    assert_eq!(observed.into_inner(), replayed, "live and replay must agree frame for frame");
+    let seen = observed.into_inner();
+    assert!(seen.len() >= 4, "start, discover, name, materialize, substitute, complete: {seen:?}");
+    assert!(seen.first().is_some_and(|s| s.starts_with("Start")));
+    assert!(seen.last().is_some_and(|s| s.starts_with("Complete")));
     Ok(())
 }
 
@@ -1585,7 +1584,7 @@ fn tracing_does_not_change_the_result() -> Result<(), ToDaeError> {
     let mut untraced = build();
     lower_pre_operator(&mut untraced)?;
     let mut traced = build();
-    lower_pre_operator_with_trace(&mut traced, &mut Vec::new(), None)?;
+    lower_pre_operator_with_trace(&mut traced, None)?;
 
     assert_eq!(
         format!("{:?}", untraced.variables.parameters),

@@ -20,8 +20,8 @@ use crate::{ToDaeError, reference_validation::build_enum_literal_query_set};
 /// For each unique `pre(x)` reference:
 /// 1. Creates a parameter `__pre__.x` with the same dimensions and start value as `x`
 /// 2. Replaces the `BuiltinCall { Pre, [VarRef(x)] }` with `VarRef("__pre__.x")`
-pub(crate) fn lower_pre_operator(dae: &mut dae::Dae) -> Result<(), ToDaeError> {
-    lower_pre_operator_with_trace(dae, &mut Vec::new(), None)
+pub fn lower_pre_operator(dae: &mut dae::Dae) -> Result<(), ToDaeError> {
+    lower_pre_operator_with_trace(dae, None)
 }
 
 /// One step of `pre()` lowering, recorded for replay.
@@ -87,24 +87,28 @@ pub type PreLoweringObserver<'a> = &'a dyn Fn(&PreLoweringFrame);
 /// Like [`lower_pre_operator`], but records every step for replay.
 ///
 /// `observer`, when present, is called with each frame *as it is produced* —
-/// that is the hook a debugger-stepped live session parks on. `frames`
-/// accumulates the same sequence for recorded playback. Both are always fed, so
-/// a live session leaves a replayable trace behind when it finishes.
+/// that is the hook a debugger-stepped live session parks on. It is the only
+/// channel: a caller wanting a replay buffer pushes into one from the closure.
+/// An earlier draft also took a `&mut Vec<PreLoweringFrame>`, mirroring the
+/// structural phases, but with a callback that second path is redundant and
+/// gives two places for the same sequence to come from.
 ///
 /// **This pass runs twice per compile**, from `to_dae_with_options` and again
-/// from `finalize_lowered_dae` after canonical condition variables introduce
-/// `pre()` references of their own. On `MotorWithBrake` the first run creates
-/// `__pre__.overSpeed`; the second creates the `__pre__.c[…]`, `__pre__.load.w`
-/// and `__pre__.maxSpeed` companions. A static view cannot show that a phase ran
-/// twice on different input; a replay makes it the obvious feature of the trace.
+/// from `finalize_lowered_dae`. Measured on `MotorWithBrake`: the first run
+/// creates all three slots (`__pre__.load.w`, `__pre__.maxSpeed`,
+/// `__pre__.overSpeed`); the **second creates none** and only re-substitutes. A
+/// static view cannot show that a phase ran twice on different input, nor that
+/// the second run found nothing left to do — a replay shows both.
+///
+/// Note what this pass does **not** create: `__pre__.c[…]`, the companions of the
+/// canonical condition variables, come from
+/// `condition_lowering::declare_condition_pre_parameter`, a different pass.
 pub fn lower_pre_operator_with_trace(
     dae: &mut dae::Dae,
-    frames: &mut Vec<PreLoweringFrame>,
     observer: Option<PreLoweringObserver<'_>>,
 ) -> Result<(), ToDaeError> {
     let mut slots: Vec<String> = Vec::new();
     emit(
-        frames,
         observer,
         &slots,
         PreLoweringStep::Start {
@@ -117,32 +121,25 @@ pub fn lower_pre_operator_with_trace(
                 + dae.conditions.equations.len(),
         },
     );
-    lower_pre_operator_inner(dae, frames, observer, &mut slots)?;
+    lower_pre_operator_inner(dae, observer, &mut slots)?;
     let created = slots.len();
-    emit(frames, observer, &slots, PreLoweringStep::Complete { slots_created: created });
+    emit(observer, &slots, PreLoweringStep::Complete { slots_created: created });
     Ok(())
 }
 
-/// Push a frame to the replay buffer and, if watching, to the observer.
+/// Hand one frame to the observer, if anyone is watching.
 ///
 /// Mirrors `emit_matching_frame` in the structural phases, minus the coupling to
-/// a concrete tracer.
-fn emit(
-    frames: &mut Vec<PreLoweringFrame>,
-    observer: Option<PreLoweringObserver<'_>>,
-    slots: &[String],
-    step: PreLoweringStep,
-) {
-    let frame = PreLoweringFrame { step, slots_so_far: slots.to_vec() };
+/// a concrete tracer — and minus the replay buffer, which the observer can keep
+/// for itself. Costs nothing when untraced: no frame is built at all.
+fn emit(observer: Option<PreLoweringObserver<'_>>, slots: &[String], step: PreLoweringStep) {
     if let Some(observe) = observer {
-        observe(&frame);
+        observe(&PreLoweringFrame { step, slots_so_far: slots.to_vec() });
     }
-    frames.push(frame);
 }
 
 fn lower_pre_operator_inner(
     dae: &mut dae::Dae,
-    frames: &mut Vec<PreLoweringFrame>,
     observer: Option<PreLoweringObserver<'_>>,
     slots: &mut Vec<String>,
 ) -> Result<(), ToDaeError> {
@@ -173,14 +170,12 @@ fn lower_pre_operator_inner(
 
     for (target_name, target) in &pre_targets {
         emit(
-            frames,
             observer,
             slots,
             PreLoweringStep::Discovered { target: target.source_name.as_str().to_owned() },
         );
         let pre_param_name = rumoca_core::pre_slot_name(target.source_name.as_str());
         emit(
-            frames,
             observer,
             slots,
             PreLoweringStep::Named {
@@ -200,7 +195,6 @@ fn lower_pre_operator_inner(
         let pre_var = build_pre_parameter(&pre_param_name, var, target.source_name.as_str());
         slots.push(pre_param_name.as_str().to_owned());
         emit(
-            frames,
             observer,
             slots,
             PreLoweringStep::Materialized {
@@ -232,7 +226,6 @@ fn lower_pre_operator_inner(
             let n = $partition.len();
             rewrite_equations(&mut $partition, &pre_targets, &relation_memories)?;
             emit(
-                frames,
                 observer,
                 slots,
                 PreLoweringStep::Substituted { partition: $label, equations: n },

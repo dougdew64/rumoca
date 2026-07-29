@@ -3225,6 +3225,7 @@ dependencies = [
  "rumoca-core",
  "rumoca-ir-ast",
  "rumoca-ir-dae",
+ "rumoca-phase-dae",
  "rumoca-phase-instantiate",
  "rumoca-phase-parse",
  "rumoca-phase-solve",
