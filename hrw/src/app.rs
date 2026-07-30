@@ -3538,6 +3538,10 @@ impl App {
             } else if flatten_ready && self.flatten_view == FlattenView::Connections {
                 self.connection_anim_ui(ui);
             } else {
+                // Set when a `hrw://…/node/<path>` link names a path this stage does not
+                // have. Collected while `stage` is borrowed and acted on after, the same
+                // pattern as `FrameIntent`.
+                let mut bad_jump: Option<String> = None;
                 let stage = self.current_stage();
                 let has_error_data = stage.note_is_error
                     && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
@@ -3567,12 +3571,27 @@ impl App {
                                     ui.weak(format!("({n} in this model)"));
                                 }
                             });
+                            // A node link that does not resolve must SAY so. The tree
+                            // otherwise expands as far as it can and stops, which looks
+                            // like "it opened something" rather than "that path is
+                            // wrong" — the silent partial failure the aim and seek verbs
+                            // deliberately avoid.
+                            let jump_to = match &self.jump_target {
+                                Some(t) => match resolve_jump_target(value, t) {
+                                    Ok(()) => Some(t.clone()),
+                                    Err(msg) => {
+                                        bad_jump = Some(msg);
+                                        None
+                                    }
+                                },
+                                None => None,
+                            };
                             let opts = tree::TreeOptions {
                                 tracked: self.tracked_identifier.as_deref(),
                                 known_variables: self.known_variables.as_ref(),
                                 declaring_classes: Some(&self.declaring_classes),
                                 expand_trackable: intent.expand_trackable,
-                                jump_to: self.jump_target.as_deref(),
+                                jump_to: jump_to.as_deref(),
                             };
                             egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
                                 tree::tree_ui(ui, label, value, prev, &mut intent.tree, &self.def_index, &self.field_help, opts);
@@ -3583,6 +3602,11 @@ impl App {
                         }
                         None => {}
                     }
+                }
+                // The stage borrow ends here, so the notice can finally be posted.
+                if let Some(msg) = bad_jump {
+                    self.jump_target = None;
+                    self.notice = Some(msg);
                 }
             }
             } // end: non-Simulation stage rendering
@@ -5884,6 +5908,28 @@ fn purpose_placeholder(model: Option<&str>, selected: Option<&Path>) -> Vec<Stri
     }
 }
 
+/// Resolve a pending tree jump target against the stage's IR.
+///
+/// `Ok(target)` when it resolves; `Err(message)` naming the path when it does not.
+///
+/// A free function rather than a method because the caller holds an immutable borrow of
+/// the stage while rendering, so it cannot also take `&mut self`. The caller applies the
+/// message and clears the target.
+///
+/// **Why validate at all:** the tree otherwise expands as far as the path goes and stops,
+/// which reads as "it opened something" rather than "that path is wrong". The camera aim
+/// and the frame seek both refuse-and-report; this makes the third verb consistent. A
+/// link naming something that is not there is a bug in the tour, and must be visible.
+fn resolve_jump_target(stage_value: &Value, target: &[Seg]) -> Result<(), String> {
+    if target.is_empty() || bridge::navigate(stage_value, target).is_some() {
+        return Ok(());
+    }
+    Err(format!(
+        "no node at {} in this stage \u{2014} the link names a path that is not here",
+        bridge::describe_path(target),
+    ))
+}
+
 /// Cap markdown heading size to 1.15x body so rendered tour/narrative text stays compact.
 fn set_markdown_text_sizes(ui: &mut egui::Ui) {
     let body_size = ui.text_style_height(&egui::TextStyle::Body);
@@ -7656,6 +7702,55 @@ mod tests {
         assert!(app.cached_tour.is_some(), "the chosen fixture is loaded");
     }
 
+    /// Node paths in the **node-pointing** fixture resolve against the real IR.
+    ///
+    /// `fixture_tour_links_all_resolve` checks only the grammar — a path can parse
+    /// perfectly and point at nothing. A fixture tour with a made-up path is a broken
+    /// test that *looks* fine, which is the worst kind, so the paths are checked against
+    /// the specimen's own trace.
+    ///
+    /// Stop 5 is deliberately unresolvable (it belongs to `CapacitorLoop`, which fails
+    /// structurally); the tour expects a notice there, so it is excluded by name.
+    #[test]
+    fn node_pointing_fixture_paths_exist_in_the_real_ir() {
+        let trace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/specimen-notebook/RcCircuit/trace/structural.json");
+        let Ok(text) = std::fs::read_to_string(&trace) else {
+            return; // trace not generated in this checkout
+        };
+        let ir: Value = serde_json::from_str(&text).unwrap();
+
+        let tour = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/fixture-tours/node-pointing.md");
+        let Ok(md) = std::fs::read_to_string(&tour) else {
+            return;
+        };
+
+        // The one path the tour expects to fail, by design.
+        const DELIBERATELY_ABSENT: &str = "error.unmatched_unknowns[0]";
+        let mut checked = 0usize;
+        for link in extract_hrw_links(&md) {
+            let Some(raw) = link.split("/node/").nth(1) else {
+                continue;
+            };
+            let path = bridge::parse_path(raw).expect("fixture paths must be well-formed");
+            if raw == DELIBERATELY_ABSENT {
+                assert!(
+                    bridge::navigate(&ir, &path).is_none(),
+                    "Stop 5 relies on {raw} being absent from RcCircuit; if it now exists \
+                     the tour tests nothing",
+                );
+                continue;
+            }
+            assert!(
+                bridge::navigate(&ir, &path).is_some(),
+                "{raw} is in the fixture tour but not in RcCircuit's structural IR",
+            );
+            checked += 1;
+        }
+        assert!(checked >= 4, "expected the fixture's real paths to be checked, saw {checked}");
+    }
+
     #[test]
     fn fixture_tour_links_all_resolve() {
         let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
@@ -7780,6 +7875,36 @@ mod tests {
     /// This closes the last parity gap: `Focus::Node` is the capture's richest noun and
     /// no link could express it. The path grammar is not re-stated here — that is
     /// round-tripped in `bridge::tests` — this checks the link layer consumes it.
+    /// A node path that does not exist is reported, not half-followed.
+    ///
+    /// Without this the tree expands as far as the path goes and stops, which reads as
+    /// "it opened something" rather than "that path is wrong". The camera aim and the
+    /// frame seek both refuse-and-report; this is the third verb made consistent.
+    #[test]
+    fn an_unresolvable_node_path_is_reported() {
+        let stage = serde_json::json!({
+            "error": { "unmatched_unknowns": ["gnd.p.i"] },
+            "blocks": [{ "kind": "scalar" }],
+        });
+
+        // Paths that exist resolve silently.
+        for good in ["", "error", "error.unmatched_unknowns[0]", "blocks[0].kind"] {
+            let path = bridge::parse_path(good).expect("well-formed");
+            assert_eq!(resolve_jump_target(&stage, &path), Ok(()), "{good:?} should resolve");
+        }
+
+        // Well-formed but absent: parses fine, navigates to nothing, must be reported.
+        let path = bridge::parse_path("error.matched_unknowns[0]").expect("well-formed");
+        let Err(msg) = resolve_jump_target(&stage, &path) else {
+            panic!("a path that is not in the stage must be reported");
+        };
+        assert!(msg.contains("error.matched_unknowns[0]"), "the message names the path: {msg}");
+
+        // Past the end of a real array counts as absent too.
+        let path = bridge::parse_path("blocks[9]").expect("well-formed");
+        assert!(resolve_jump_target(&stage, &path).is_err());
+    }
+
     #[test]
     fn a_link_can_point_at_a_node() {
         let Some(HrwLink::PointAtNode(stage, sub, path)) =

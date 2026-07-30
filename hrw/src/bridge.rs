@@ -1511,7 +1511,11 @@ pub fn node_exists(root: &Value, path: &[Seg]) -> bool {
 // Returns `None` if any segment in the path doesn't exist (e.g., the key
 // is missing or the index is out of bounds). This is the inverse of the
 // path-accumulation done during tree traversal.
-fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
+/// Walk `path` from `root`, or `None` if any segment is missing.
+///
+/// `pub` since 2026-07-29 so the app can tell whether a `hrw://…/node/<path>` link
+/// actually resolves before honouring it — see `App::validate_jump_target`.
+pub fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
     let mut cur = root;
     for seg in path {
         cur = seg.get(cur)?;
