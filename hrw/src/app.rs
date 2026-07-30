@@ -1096,6 +1096,7 @@ impl App {
             .iter()
             .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_owned))
             .collect();
+        let mut scratch = Vec::new();
         for path in bridge::scratch_specimens() {
             let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
                 continue;
@@ -1105,8 +1106,19 @@ impl App {
                 continue;
             }
             self.scratch_specimens.insert(path.clone());
-            self.files.push(path);
+            scratch.push(path);
         }
+        // **Scratch first, matching the tour list** (Doug, 2026-07-29). The ephemeral,
+        // just-written thing is the one most likely to be wanted next — a probe exists
+        // because a question is open right now. Appending it after 18 curated specimens
+        // buried the common case, which is the same mistake the tour picker avoids by
+        // putting Claude's answer at the top.
+        //
+        // Safe to reorder because a scratch name colliding with a curated one is
+        // skipped above, so `files` never holds two entries with the same file name and
+        // `find_specimen`'s first-match cannot become ambiguous.
+        scratch.extend(std::mem::take(&mut self.files));
+        self.files = scratch;
         // Scan each specimen's `// purpose:` hint (cheap; no compile), so the list
         // can show what each one demonstrates.
         self.specimen_purposes = self
@@ -4911,39 +4923,50 @@ impl eframe::App for App {
             egui::Panel::left("tour_panel")
                 .exact_size(panel_width)
                 .show(ui, |ui| {
-                    section_header(ui, "Tour");
-
-                    // --- Picker, so a fixture tour can be chosen in-app ---
+                    // --- Top third: the tour list, laid out like the specimen list ---
                     //
-                    // Doug: "I want to be able to conveniently select a fixture tour
-                    // when I'm in HRW instead of having to copy a fixture tour before
-                    // starting HRW." The directory is part of the repo layout, so it is
-                    // hard-coded rather than a setting.
-                    if !self.tours.is_empty() {
-                        ui.horizontal_wrapped(|ui| {
-                            for source in &self.tours {
-                                let selected = self.selected_tour.as_ref() == Some(source);
-                                let resp = ui.selectable_label(selected, source.label());
-                                let resp = match source {
-                                    TourSource::AdHoc => resp.on_hover_text(
-                                        "Written by Claude to answer your last question. \
-                                         Ephemeral \u{2014} regenerated, never stored.",
-                                    ),
-                                    TourSource::Fixture(p) => resp.on_hover_text(format!(
-                                        "Fixture tour \u{2014} a test with expected outcomes, \
-                                         kept and versioned.\n{}",
-                                        p.display(),
-                                    )),
-                                };
-                                if resp.clicked() {
-                                    switch_to = Some(source.clone());
-                                }
+                    // A vertical list rather than a wrapped bar: Doug, 2026-07-29 —
+                    // "there are going to be too many fixture tours to fit into a bar."
+                    // One fixture per capability still accumulates, and a bar degrades
+                    // silently as it fills, which is the wrong failure mode for a list
+                    // meant to be browsed.
+                    let panel_height = ui.available_height();
+                    let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(ui.available_width(), list_height),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            section_header(ui, "Tours");
+                            ui.add_space(4.0);
+                            if self.tours.is_empty() {
+                                ui.weak("(no tours yet)");
+                                return;
                             }
-                        });
-                        ui.separator();
-                    }
+                            egui::ScrollArea::vertical().id_salt("tour_list").show(ui, |ui| {
+                                for source in &self.tours {
+                                    let selected = self.selected_tour.as_ref() == Some(source);
+                                    let resp = ui.selectable_label(selected, source.label());
+                                    let resp = match source {
+                                        TourSource::AdHoc => resp.on_hover_text(
+                                            "Written by Claude to answer your last question. \
+                                             Ephemeral: regenerated, never stored.",
+                                        ),
+                                        TourSource::Fixture(p) => resp.on_hover_text(format!(
+                                            "Fixture tour \u{2014} a test with expected \
+                                             outcomes, kept and versioned.\n{}",
+                                            p.display(),
+                                        )),
+                                    };
+                                    if resp.clicked() {
+                                        switch_to = Some(source.clone());
+                                    }
+                                }
+                            });
+                        },
+                    );
+                    ui.separator();
 
-                    egui::ScrollArea::vertical()
+                                        egui::ScrollArea::vertical()
                         .id_salt("tour")
                         .show(ui, |ui| {
                         set_markdown_text_sizes(ui);
@@ -7015,6 +7038,15 @@ mod tests {
             return; // no probe written in this checkout
         }
         assert!(app.files.contains(&probe), "scratch specimens join the list");
+        // Scratch sorts FIRST, matching the tour list: the just-written thing is the
+        // one most likely wanted next, and burying it under 18 curated specimens made
+        // the common case the awkward one.
+        assert_eq!(
+            app.files.first(),
+            Some(&probe),
+            "scratch specimens lead the list: {:?}",
+            app.files.iter().take(3).collect::<Vec<_>>(),
+        );
         assert!(app.scratch_specimens.contains(&probe), "and are marked as scratch");
         assert_eq!(
             app.find_specimen("ScratchProbe"),
