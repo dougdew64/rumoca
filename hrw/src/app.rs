@@ -78,6 +78,12 @@ const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis
 /// How often the scratch specimen directory is re-listed. Slower than the tour poll:
 /// a specimen appearing a second late is imperceptible, and a rescan re-reads every
 /// specimen's `// purpose:` line.
+/// How many paints a pending frame seek keeps trying for before giving up.
+///
+/// Two would do — the target view needs one paint to build its animation — but a small
+/// margin costs nothing and covers a view that defers construction one frame further.
+const SEEK_ATTEMPTS: u8 = 5;
+
 const SCRATCH_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1000);
 
 /// Default specimen directory: `specimens/` next to this crate's manifest.
@@ -554,9 +560,16 @@ pub struct App {
     /// is an *equation index*, and turning that into a world position needs the view's
     /// own layout — which only exists at paint time.
     aim_at_equation: Option<usize>,
-    /// A pending frame seek from `hrw://…/frame/<n>`, consumed by whichever animated
-    /// view paints next.
-    seek_frame: Option<usize>,
+    /// A pending frame seek from `hrw://…/frame/<n>`: the target frame and how many
+    /// more paints to keep trying for.
+    ///
+    /// **The budget is not decoration.** The animation for a newly-selected sub-view is
+    /// not built until that view paints, so the first attempt after navigation always
+    /// misses. Retrying unboundedly would be worse: a seek aimed at a view that *never*
+    /// has an animation (Stop 6 of the frame-seeking fixture) would sit armed until the
+    /// reader wandered into an animated view, and then fire there — a link taking effect
+    /// somewhere it was never pointed at.
+    seek_frame: Option<(usize, u8)>,
     /// When the scratch specimen directory was last polled, so a specimen Claude
     /// writes mid-conversation appears without restarting HRW — the same reason
     /// `tour.md` is polled.
@@ -1706,6 +1719,73 @@ impl App {
         }
     }
 
+
+    /// Act on a followed `hrw://` link.
+    ///
+    /// Extracted from `ui` 2026-07-29 so the ordering rules below can be tested — they
+    /// are subtle, and one of them was already wrong.
+    ///
+    /// **Every sub-view request goes through `pending_sub_view`, never
+    /// `apply_sub_view`.** The centre panel resets the sub-view whenever a report stage
+    /// is entered (forcing `Summary` for Index Reduction, `SpyPlot` for a non-singular
+    /// Structural), and that reset runs *after* this. Applying a sub-view here would be
+    /// silently overwritten, and the symptom is the one Doug hit: the link appears to do
+    /// nothing the first time and works the second, because the second click no longer
+    /// changes the stage and so skips the reset.
+    ///
+    /// `LoadAndSwitch` already did this correctly and its comment said why; the three
+    /// sibling verbs did not, which is the whole bug.
+    fn dispatch_hrw_link(&mut self, action: HrwLink) {
+        match action {
+            HrwLink::LoadSpecimen(name) => {
+                if let Some(path) = self.find_specimen(&name) {
+                    self.open(path);
+                } else {
+                    self.notice = Some(format!("specimen not found: {name}"));
+                }
+            }
+            HrwLink::ShowSource(line) => {
+                // The source lives in Specimen mode's Source detail, so getting there
+                // means setting both — a tour should not have to tell Doug which mode
+                // to be in.
+                self.ui_mode = UiMode::Specimen;
+                self.specimen_detail = SpecimenDetail::Source;
+                self.viewing_log = false;
+                self.source_scroll_target = line;
+            }
+            HrwLink::SwitchStage(kind, sub) => {
+                self.stage = kind;
+                self.viewing_log = false;
+                self.pending_sub_view = sub;
+            }
+            HrwLink::LoadAndSwitch(name, kind, sub) => {
+                if let Some(path) = self.find_specimen(&name) {
+                    self.open(path);
+                    self.pending_stage = Some(kind);
+                    self.pending_sub_view = sub;
+                } else {
+                    self.notice = Some(format!("specimen not found: {name}"));
+                }
+            }
+            HrwLink::AimAtEquation(kind, sub, equation) => {
+                self.stage = kind;
+                self.viewing_log = false;
+                self.pending_sub_view = Some(sub);
+                // Deferred: turning an equation index into a world position needs the
+                // view's own layout, which exists only at paint time.
+                self.aim_at_equation = Some(equation);
+            }
+            HrwLink::SeekFrame(kind, sub, frame) => {
+                self.stage = kind;
+                self.viewing_log = false;
+                self.pending_sub_view = Some(sub);
+                // Deferred for the same reason, plus one more: the animation for this
+                // sub-view may not be built until it paints.
+                self.seek_frame = Some((frame, SEEK_ATTEMPTS));
+            }
+        }
+    }
+
     /// The on-screen animation, mutably — the seeking twin of
     /// [`Self::on_screen_animation`].
     ///
@@ -1746,13 +1826,21 @@ impl App {
     /// build themselves, which is why it is deferred rather than applied at link
     /// dispatch.
     fn apply_pending_seek(&mut self) {
-        let Some(target) = self.seek_frame else {
+        let Some((target, attempts)) = self.seek_frame else {
             return;
         };
         // Probe first: `on_screen_animation_mut` borrows `self`, so the pending flag
-        // has to be cleared before the borrow starts.
+        // has to be settled before the borrow starts.
         if self.on_screen_animation().is_none() {
-            return; // this view has no animation yet; try again next frame
+            // Not built yet — or this view never has one. Spend an attempt rather than
+            // waiting forever; see `seek_frame` on why an unbounded retry is a bug.
+            // `saturating_sub` then test for zero, so exactly `SEEK_ATTEMPTS` paints
+            // are spent. `checked_sub` needed one *extra* call to clear, because it
+            // only returns `None` when already at zero — an off-by-one my own expiry
+            // test caught.
+            let left = attempts.saturating_sub(1);
+            self.seek_frame = (left > 0).then_some((target, left));
+            return;
         }
         self.seek_frame = None;
         let ok = self.on_screen_animation_mut().is_some_and(|a| a.seek(target));
@@ -3200,9 +3288,8 @@ impl App {
                     self.cached_tarjan_anim = None;
                     self.cached_tearing_anim = None;
                     self.cached_alias_anim = None;
-                self.cached_alias_anim = None;
-                self.cached_ic_plan_anim = None;
-                self.cached_connection_anim = None;
+                    self.cached_ic_plan_anim = None;
+                    self.cached_connection_anim = None;
                     self.cached_reduction_anim = None;
                     self.cached_before_incidence = None;
                     // Default sub-view: Summary for IndexReduction and
@@ -3228,6 +3315,11 @@ impl App {
                     let sub = self.pending_sub_view.take();
                     self.apply_sub_view(sub);
                 }
+                // Only now is the sub-view settled, so only now does looking up "the
+                // on-screen animation" mean the one the link named. Applying this
+                // before the block above would seek whichever animation happened to be
+                // showing beforehand.
+                self.apply_pending_seek();
                 let is_index_reduction = self.stage == StageKind::IndexReduction;
                 let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
                 let is_singular = note.contains("singular");
@@ -5232,66 +5324,8 @@ impl eframe::App for App {
 
         // ---- Dispatch hrw:// link actions ----
         if let Some(action) = hrw_link_action {
-            match action {
-                HrwLink::LoadSpecimen(name) => {
-                    if let Some(path) = self.find_specimen(&name) {
-                        self.open(path);
-                    } else {
-                        self.notice = Some(format!("specimen not found: {name}"));
-                    }
-                }
-                HrwLink::ShowSource(line) => {
-                    // The source lives in Specimen mode's Source detail, so getting
-                    // there means setting both — a tour should not have to tell Doug
-                    // which mode to be in.
-                    self.ui_mode = UiMode::Specimen;
-                    self.specimen_detail = SpecimenDetail::Source;
-                    self.viewing_log = false;
-                    self.source_scroll_target = line;
-                }
-                HrwLink::SwitchStage(kind, sub) => {
-                    self.stage = kind;
-                    self.viewing_log = false;
-                    self.apply_sub_view(sub);
-                }
-                HrwLink::SeekFrame(kind, sub, frame) => {
-                    self.stage = kind;
-                    self.viewing_log = false;
-                    self.apply_sub_view(Some(sub));
-                    // Deferred like the camera aim: the animation for this sub-view may
-                    // not be built until it paints.
-                    self.seek_frame = Some(frame);
-                }
-                HrwLink::AimAtEquation(kind, sub, node) => {
-                    self.stage = kind;
-                    self.viewing_log = false;
-                    self.apply_sub_view(Some(sub));
-                    // Recorded rather than applied here: the canvas that should aim
-                    // depends on which sub-view is now showing, and its world layout
-                    // is computed at paint time. The view consumes this on its next
-                    // frame, the same way `jump_target` works for the source view.
-                    self.aim_at_equation = Some(node);
-                }
-                HrwLink::LoadAndSwitch(name, kind, sub) => {
-                    if let Some(path) = self.find_specimen(&name) {
-                        self.open(path);
-                        self.pending_stage = Some(kind);
-                        // The stage switch waits for the compile to finish, so the
-                        // sub-view has to wait with it — applying it now would be
-                        // overwritten by the default-sub-view logic that runs when
-                        // the report first becomes ready.
-                        self.pending_sub_view = sub;
-                    } else {
-                        self.notice = Some(format!("specimen not found: {name}"));
-                    }
-                }
-            }
+            self.dispatch_hrw_link(action);
         }
-
-        // A pending `hrw://…/frame/<n>` seek. Applied here — after link dispatch has
-        // switched stage and sub-view, before the centre panel paints — so the lookup
-        // finds the animation the link actually named.
-        self.apply_pending_seek();
 
         // ---- Center panel: stage tabs + main content ----
         //
@@ -7548,6 +7582,80 @@ mod tests {
     }
 
     /// The frame-seek verb parses everywhere an animation lives.
+    /// **Every link that names a sub-view defers it, rather than applying it.**
+    ///
+    /// This is the bug Doug found by clicking the fixture tour in order: Stop 5's
+    /// `hrw://stage/IndexReduction/Animate/frame/2` showed the Index Reduction
+    /// *Summary* the first time, and the replay only on a second click.
+    ///
+    /// Cause: the centre panel resets the sub-view whenever a report stage is entered
+    /// — forcing `Summary` for Index Reduction — and that reset runs *after* link
+    /// dispatch. A sub-view applied during dispatch is therefore overwritten. The
+    /// second click works because the stage no longer changes, so the reset is skipped.
+    ///
+    /// `pending_sub_view` exists precisely to survive that reset, and `LoadAndSwitch`
+    /// already used it. The three sibling verbs did not. **The symptom to remember is
+    /// "works on the second click" — it almost always means set-then-overwritten.**
+    #[test]
+    fn every_sub_view_link_defers_through_pending_sub_view() {
+        let animate = SubView::Structural(StructuralView::Animate);
+
+        for (label, link) in [
+            ("switch", HrwLink::SwitchStage(StageKind::IndexReduction, Some(animate))),
+            (
+                "seek",
+                HrwLink::SeekFrame(StageKind::IndexReduction, animate, 2),
+            ),
+            (
+                "aim",
+                HrwLink::AimAtEquation(StageKind::IndexReduction, animate, 0),
+            ),
+        ] {
+            let mut app = App::test_default();
+            // A sub-view the reset would clobber, so the test cannot pass by accident.
+            app.structural_view = StructuralView::SpyPlot;
+            app.dispatch_hrw_link(link);
+
+            assert_eq!(app.stage, StageKind::IndexReduction, "{label}: stage switched");
+            assert_eq!(
+                app.pending_sub_view,
+                Some(animate),
+                "{label}: the sub-view must be DEFERRED so the stage-entry reset cannot \
+                 overwrite it",
+            );
+            assert_eq!(
+                app.structural_view,
+                StructuralView::SpyPlot,
+                "{label}: and must NOT be applied during dispatch",
+            );
+        }
+    }
+
+    /// A seek aimed at a view with no animation gives up instead of lingering armed.
+    ///
+    /// Without a budget it would sit pending until the reader wandered into an animated
+    /// view and then fire there — a link taking effect somewhere it was never pointed.
+    /// Stop 6 of the frame-seeking fixture is exactly this case.
+    #[test]
+    fn a_seek_that_never_lands_expires() {
+        let mut app = App::test_default();
+        // Incidence has no animation, ever.
+        app.dispatch_hrw_link(HrwLink::SeekFrame(
+            StageKind::Structural,
+            SubView::Structural(StructuralView::Incidence),
+            3,
+        ));
+        assert!(app.seek_frame.is_some(), "armed on dispatch");
+
+        for _ in 0..SEEK_ATTEMPTS {
+            app.apply_pending_seek();
+        }
+        assert!(
+            app.seek_frame.is_none(),
+            "the seek must expire rather than stay armed for a later view",
+        );
+    }
+
     #[test]
     fn a_link_can_seek_to_a_frame() {
         assert_eq!(
