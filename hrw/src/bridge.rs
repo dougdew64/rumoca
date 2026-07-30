@@ -1033,7 +1033,13 @@ fn build(ask: &Ask) -> Value {
         Focus::Specimen => "specimen",
         Focus::Nothing => "none",
     };
-    let stage_str = ask.stage.map_or("(navigated definition)", StageKind::name);
+    // **The slug, not the display name.** This used to emit `StageKind::name`, which
+    // reads "Index reduction" with a space — so the capture named a stage that
+    // `hrw://stage/<X>` could not parse, for two of the eleven stages. The capture is
+    // read by Claude in order to *act*, so the actionable form wins; `stage_display`
+    // carries the prose label alongside it.
+    let stage_str = ask.stage.map_or("(navigated definition)", StageKind::slug);
+    let stage_display = ask.stage.map_or("(navigated definition)", StageKind::name);
     let mut doc = json!({
         "instructions": INSTRUCTIONS,
         "seq": ask.seq,
@@ -1050,6 +1056,7 @@ fn build(ask: &Ask) -> Value {
         "specimen": ask.specimen.map(|p| p.to_string_lossy().into_owned()),
         "model": ask.model,
         "stage": stage_str,
+        "stage_display": stage_display,
         "libraries": ask.libraries,
         "def_resolutions": def_resolutions(ask.def_index),
         "view": ask.view.to_json(),

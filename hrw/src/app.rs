@@ -137,6 +137,23 @@ enum StructuralView {
     Tree,
 }
 
+impl StructuralView {
+    /// Every variant, so the noun/verb parity test can iterate without naming them.
+/// **Add new variants here** — that is what makes the omission loud instead of silent.
+    #[cfg(test)]
+    const ALL: &'static [StructuralView] = &[
+        StructuralView::Summary,
+        StructuralView::SpyPlot,
+        StructuralView::Incidence,
+        StructuralView::MatchingAnim,
+        StructuralView::TarjanAnim,
+        StructuralView::TearingAnim,
+        StructuralView::AliasAnim,
+        StructuralView::Animate,
+        StructuralView::Tree,
+    ];
+}
+
 /// Sub-tab selector for the Initialization stage: the IR tree, or a walk of the
 /// initial-condition solve plan.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -144,6 +161,15 @@ enum InitView {
     #[default]
     Tree,
     IcPlan,
+}
+
+impl InitView {
+    /// Every variant — see `StructuralView::ALL`.
+    #[cfg(test)]
+    const ALL: &'static [InitView] = &[
+        InitView::Tree,
+        InitView::IcPlan,
+    ];
 }
 
 fn init_view_name(v: InitView) -> &'static str {
@@ -163,6 +189,17 @@ enum FlattenView {
     /// equations come from.
     Connections,
     Tree,
+}
+
+impl FlattenView {
+    /// Every variant — see `StructuralView::ALL`.
+    #[cfg(test)]
+    const ALL: &'static [FlattenView] = &[
+        FlattenView::Equations,
+        FlattenView::SourceMap,
+        FlattenView::Connections,
+        FlattenView::Tree,
+    ];
 }
 
 /// The general rule for how context gets assembled — the empty bar's hover.
@@ -192,6 +229,15 @@ enum EventsView {
     #[default]
     Tree,
     PreLowering,
+}
+
+impl EventsView {
+    /// Every variant — see `StructuralView::ALL`.
+    #[cfg(test)]
+    const ALL: &'static [EventsView] = &[
+        EventsView::Tree,
+        EventsView::PreLowering,
+    ];
 }
 
 fn events_view_name(v: EventsView) -> &'static str {
@@ -6746,19 +6792,7 @@ mod tests {
     #[test]
     fn stage_kind_from_slug_round_trips() {
         for kind in StageKind::ALL {
-            let slug = match kind {
-                StageKind::Parse => "Parse",
-                StageKind::Resolve => "Resolve",
-                StageKind::Instantiate => "Instantiate",
-                StageKind::Typecheck => "Typecheck",
-                StageKind::Flatten => "Flatten",
-                StageKind::Structural => "Structural",
-                StageKind::IndexReduction => "IndexReduction",
-                StageKind::Initialization => "Initialization",
-                StageKind::Events => "Events",
-                StageKind::SolveLowering => "SolveLowering",
-                StageKind::Simulation => "Simulation",
-            };
+            let slug = kind.slug();
             assert_eq!(StageKind::from_slug(slug), Some(*kind));
         }
     }
@@ -7007,6 +7041,88 @@ mod tests {
 
     /// A sub-view slug is resolved **against its stage**, so the same word means
     /// different things in different stages and a wrong pairing does not navigate.
+    /// **The noun/verb parity audit, as a test.**
+    ///
+    /// #42's design principle is that `hrw://` must express any noun `focus.json` can
+    /// describe — same vocabulary, opposite directions. `SubView::from_slug`'s doc
+    /// comment asserted "the slugs are exactly the names the capture emits", and until
+    /// 2026-07-29 **nothing checked it**: an unverified claim about verification, which
+    /// is the failure this project keeps finding in its own records.
+    ///
+    /// Doug asked for the audit to be run "as often as necessary". A manual audit rots;
+    /// this one runs in the 7-second loop. It fails when a view variant is added to one
+    /// side only — which is exactly what happens when a new feature introduces a noun.
+    #[test]
+    fn every_capture_view_name_round_trips_as_a_link_slug() {
+        // (stage the sub-view belongs to, its capture name, the expected parse)
+        let mut checked = 0usize;
+
+        for v in StructuralView::ALL {
+            // Structural sub-views are reachable under both stages that share the enum.
+            for stage in [StageKind::Structural, StageKind::IndexReduction] {
+                let name = structural_view_name(*v);
+                assert_eq!(
+                    SubView::from_slug(stage, name),
+                    Some(SubView::Structural(*v)),
+                    "capture emits {name:?} for {v:?} under {stage:?}, but hrw:// cannot parse it \
+                     back — the two vocabularies have drifted",
+                );
+                checked += 1;
+            }
+        }
+        for v in FlattenView::ALL {
+            let name = flatten_view_name(*v);
+            assert_eq!(
+                SubView::from_slug(StageKind::Flatten, name),
+                Some(SubView::Flatten(*v)),
+                "Flatten: capture emits {name:?}, hrw:// cannot parse it",
+            );
+            checked += 1;
+        }
+        for v in EventsView::ALL {
+            let name = events_view_name(*v);
+            assert_eq!(
+                SubView::from_slug(StageKind::Events, name),
+                Some(SubView::Events(*v)),
+                "Events: capture emits {name:?}, hrw:// cannot parse it",
+            );
+            checked += 1;
+        }
+        for v in InitView::ALL {
+            let name = init_view_name(*v);
+            assert_eq!(
+                SubView::from_slug(StageKind::Initialization, name),
+                Some(SubView::Init(*v)),
+                "Initialization: capture emits {name:?}, hrw:// cannot parse it",
+            );
+            checked += 1;
+        }
+
+        assert!(checked >= 26, "expected every view variant covered, checked {checked}");
+    }
+
+    /// Every stage a capture can name is reachable by a link, and back.
+    ///
+    /// The other half of parity: `focus.json` carries a `stage`, so `hrw://stage/<X>`
+    /// must accept every one of them. A stage added to `StageKind` without a slug would
+    /// be describable but not navigable.
+    #[test]
+    fn every_stage_round_trips_between_capture_and_link() {
+        for kind in StageKind::ALL {
+            let slug = kind.slug();
+            assert_eq!(
+                StageKind::from_slug(slug),
+                Some(*kind),
+                "{kind:?} emits slug {slug:?} which does not parse back",
+            );
+            assert_eq!(
+                parse_hrw_link(&format!("hrw://stage/{slug}")),
+                Some(HrwLink::SwitchStage(*kind, None)),
+                "hrw://stage/{slug} must navigate to {kind:?}",
+            );
+        }
+    }
+
     #[test]
     fn sub_view_slugs_are_stage_scoped() {
         // `Tree` exists under four stages and means a different enum in each.

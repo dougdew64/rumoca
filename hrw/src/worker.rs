@@ -314,6 +314,33 @@ impl StageKind {
         }
     }
 
+    /// The PascalCase slug used in `hrw://stage/<Slug>` links and in the capture.
+    ///
+    /// **Distinct from [`name`], and that distinction caused a real break.** `name` is a
+    /// *display* label for tab text, so it reads "Index reduction" with a space. The
+    /// capture emitted `name`, which meant `focus.json` said `"stage": "Index reduction"`
+    /// while `from_slug` only accepts `"IndexReduction"` — so two of the eleven stages
+    /// were describable in a capture and **unreachable by the link built from it**.
+    /// Found 2026-07-29 by the noun/verb parity audit, before it bit anyone.
+    ///
+    /// This is the canonical inverse of [`from_slug`], and
+    /// `every_stage_round_trips_between_capture_and_link` holds them together.
+    pub fn slug(self) -> &'static str {
+        match self {
+            StageKind::Parse => "Parse",
+            StageKind::Resolve => "Resolve",
+            StageKind::Instantiate => "Instantiate",
+            StageKind::Typecheck => "Typecheck",
+            StageKind::Flatten => "Flatten",
+            StageKind::Structural => "Structural",
+            StageKind::IndexReduction => "IndexReduction",
+            StageKind::Initialization => "Initialization",
+            StageKind::Events => "Events",
+            StageKind::SolveLowering => "SolveLowering",
+            StageKind::Simulation => "Simulation",
+        }
+    }
+
     /// Parse a PascalCase slug (as used in `hrw://stage/<Slug>` URLs) into a stage kind.
     pub fn from_slug(s: &str) -> Option<Self> {
         match s {
