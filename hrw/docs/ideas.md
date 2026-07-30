@@ -2026,10 +2026,30 @@ robotics student modelling a mechanism will do it constantly.
 
   Test specimen: **`UnbalancedShaft.mo`**, marked DO NOT FIX per #46's convention.
 
-- **Resolve / typecheck / flatten — still unaudited.** A mistyped name, a dimension
-  mismatch, an incompatible connector. Quick grep suggested no source location in these
-  payloads; worth a careful pass now that the DAE-construction one has shown how much
-  can be sitting in scope unused.
+- **Resolve / typecheck / flatten — UNAUDITED.** A mistyped name, a dimension mismatch,
+  an incompatible connector. Nothing is claimed about these payloads here, deliberately:
+  an earlier version of this entry recorded that a "quick grep suggested no source
+  location" in them, which was an **unverified guess written down as a finding** — the
+  echo-chamber failure this whole arrangement is supposed to prevent. A future session
+  would have read it as established.
+
+  The DAE-construction audit is the reason to expect something: that arm had a full
+  error, a code and diagnostics sitting in scope, unused. But expecting is not knowing.
+
+### Audit policy (set 2026-07-29, after Doug asked which we were doing)
+
+**Audit narrowly and fix immediately. Never stockpile findings.**
+
+An audit is a mechanical scan of current code, so **it regenerates** — which by the
+project's own storage rule (`hrw-works-with-claude-not-without`) means recording its
+*conclusions* buys almost nothing and costs staleness. The durable artifact is the
+**fix**. And the priority order in `docs/tech-debt.md` says these are *pre-emptive*: the
+cheapest moment to close a gap is while nothing is blocked by it.
+
+When the scope is genuinely too large to close in one pass, record **the scope**
+("this path is unaudited") and **not the conclusions** ("this path lacks X"). A scope
+note is honest about being unverified; a recorded conclusion pretends to knowledge and
+is indistinguishable from a verified fact three months later.
 
 **Priority note:** a missing span forces Claude to guess *where* in Doug's source the
 problem is, which is priority 1 in `docs/tech-debt.md`'s ordering — above tour holes.
