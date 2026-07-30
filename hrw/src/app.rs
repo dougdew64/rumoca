@@ -2916,7 +2916,7 @@ impl App {
                 // identity is already visible in the specimen list and the
                 // tree breadcrumb. `self.model` itself is still maintained;
                 // it feeds the Claude bridge focus file, live-debug arming,
-                // capture gating, and the narrative lookup.
+                // capture gating, and the purpose-note lookup.
                 if self.compiling {
                     ui.spinner();
                 }
@@ -4776,7 +4776,7 @@ impl eframe::App for App {
 
         // ---- Left panel: content depends on UI mode ----
         // Tour and Specimen modes show a left panel (tour text or specimen list
-        // + narrative). Debug mode hides it so the stage tabs fill HRW's window
+        // + purpose). Debug mode hides it so the stage tabs fill HRW's window
         // (VS Code occupies the left half of the screen).
         let mut hrw_link_action: Option<HrwLink> = None;
 
@@ -4938,12 +4938,12 @@ impl eframe::App for App {
                 );
                 ui.add_space(4.0);
 
-                // -- Bottom two-thirds: source or narrative --
+                // -- Bottom two-thirds: source or purpose --
                 match self.specimen_detail {
                     SpecimenDetail::Source => self.specimen_source_ui(ui),
                     SpecimenDetail::Purpose => {
                         let model_name = self.model.as_deref();
-                        let narrative = model_name.and_then(|name| {
+                        let purpose = model_name.and_then(|name| {
                             let key = PathBuf::from(name);
                             let cached = self.cached_purpose_notes.entry(key).or_insert_with(|| {
                                 let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -4956,26 +4956,28 @@ impl eframe::App for App {
                             cached.as_deref()
                         });
 
-                        match narrative {
+                        match purpose {
                             Some(text) => {
-                                let narrative_links = extract_hrw_links(text);
-                                register_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
+                                let purpose_links = extract_hrw_links(text);
+                                register_hrw_hooks(&mut self.commonmark_cache, &purpose_links);
                                 egui::ScrollArea::vertical()
-                                    .id_salt("narrative")
+                                    .id_salt("purpose")
                                     .show(ui, |ui| {
                                     set_markdown_text_sizes(ui);
                                     egui_commonmark::CommonMarkViewer::new()
                                         .show(ui, &mut self.commonmark_cache, text);
                                 });
                                 if hrw_link_action.is_none() {
-                                    hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &narrative_links);
+                                    hrw_link_action =
+                                        drain_hrw_hooks(&mut self.commonmark_cache, &purpose_links);
                                 }
                             }
-                            None if model_name.is_some() => {
-                                ui.weak("(no narrative for this specimen)");
-                            }
                             None => {
-                                ui.weak("Select a specimen to see its narrative.");
+                                for line in
+                                    purpose_placeholder(model_name, self.selected.as_deref())
+                                {
+                                    ui.weak(line);
+                                }
                             }
                         }
                     }
@@ -5391,6 +5393,41 @@ fn drain_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String
         }
     }
     None
+}
+
+/// What the Purpose tab shows when there is no note to render.
+///
+/// Extracted from the view so the wording is testable. Both messages it replaced were
+/// wrong, and Doug found both by using the app (2026-07-29):
+///
+/// 1. They said **"narrative"**, a term retired when the narratives were. A renamed
+///    concept leaves its old name in the strings nobody greps for.
+/// 2. Worse, selecting a *second* specimen showed **"Select a specimen"** — advising
+///    Doug to do the thing he had just done. The note is keyed on the *model* name,
+///    which stays `None` until compilation finishes, so a selected-but-compiling
+///    specimen fell through to the nothing-selected arm. That was a **missing state**,
+///    not merely bad wording, which is why this returns three cases and not two.
+fn purpose_placeholder(model: Option<&str>, selected: Option<&Path>) -> Vec<String> {
+    match (model, selected) {
+        // Compiled, and this model has no note. Saying *where* one would live makes
+        // the absence actionable instead of a dead end.
+        (Some(name), _) => vec![
+            format!("No purpose note for {name}."),
+            format!(
+                "One would live at docs/specimen-notebook/{name}/purpose.md \u{2014} why the \
+                 specimen exists, and which questions it has answered.",
+            ),
+        ],
+        // Selected, still compiling. Name the file so the wait is legible.
+        (None, Some(path)) => {
+            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("specimen");
+            vec![
+                format!("Compiling {stem}\u{2026}"),
+                "Its purpose note appears once the model name is known.".to_owned(),
+            ]
+        }
+        (None, None) => vec!["Select a specimen to see its purpose.".to_owned()],
+    }
 }
 
 /// Cap markdown heading size to 1.15x body so rendered tour/narrative text stays compact.
@@ -6795,6 +6832,49 @@ mod tests {
         let _ = std::fs::remove_file(&clash);
     }
 
+    /// The Purpose tab's placeholder never says "narrative", and never tells Doug to
+    /// select a specimen he has already selected.
+    ///
+    /// Both were real bugs he hit by using the app (2026-07-29). The second is the
+    /// interesting one: it was a **missing state**, not a typo. The note is keyed on
+    /// the model name, which is unknown until compilation finishes, so selecting a
+    /// second specimen briefly showed "Select a specimen to see its narrative" — advice
+    /// to do the thing just done.
+    #[test]
+    fn the_purpose_placeholder_fits_the_actual_state() {
+        let path = std::path::Path::new("/x/CapacitorLoop.mo");
+
+        // Compiled, no note: says so, and says where one would go.
+        let compiled = purpose_placeholder(Some("CapacitorLoop"), Some(path));
+        assert!(compiled[0].contains("No purpose note for CapacitorLoop"), "{compiled:?}");
+        assert!(
+            compiled.iter().any(|l| l.contains("docs/specimen-notebook/CapacitorLoop/purpose.md")),
+            "the absence must be actionable: {compiled:?}",
+        );
+
+        // Selected but still compiling: names the file, does NOT ask for a selection.
+        let compiling = purpose_placeholder(None, Some(path));
+        assert!(compiling[0].contains("Compiling CapacitorLoop"), "{compiling:?}");
+        assert!(
+            !compiling.iter().any(|l| l.contains("Select a specimen")),
+            "must not advise selecting a specimen that IS selected: {compiling:?}",
+        );
+
+        // Genuinely nothing selected: the advice is now correct.
+        let idle = purpose_placeholder(None, None);
+        assert!(idle[0].contains("Select a specimen"), "{idle:?}");
+
+        // No state mentions the retired term.
+        for lines in [compiled, compiling, idle] {
+            for l in lines {
+                assert!(
+                    !l.to_lowercase().contains("narrative"),
+                    "retired term leaked into user-visible text: {l}",
+                );
+            }
+        }
+    }
+
     #[test]
     fn find_specimen_matches_by_filename() {
         let mut app = App::test_default();
@@ -7053,6 +7133,7 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         let notebook_dir =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
         let mut checked = 0usize;
+        let mut notes = std::collections::BTreeSet::new();
         for entry in std::fs::read_dir(&notebook_dir).unwrap() {
             let path = entry.unwrap().path();
             if !path.is_dir() {
@@ -7060,6 +7141,9 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
             }
             let purpose = path.join("purpose.md");
             assert!(purpose.exists(), "every specimen dir needs a purpose.md: {}", path.display());
+            notes.insert(
+                path.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_owned(),
+            );
             checked += 1;
             let text = std::fs::read_to_string(&purpose).unwrap();
             for link in extract_hrw_links(&text) {
@@ -7070,7 +7154,29 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
                 );
             }
         }
-        assert_eq!(checked, 14, "expected 14 specimen purpose notes, checked {checked}");
+        // Tied to the corpus rather than to a magic number. The literal `14` here
+        // failed the moment four diagnostic specimens were added (2026-07-29) — it was
+        // guarding the right property with the wrong constant, so it reported a
+        // *correct* corpus as broken. Every `specimens/*.mo` must have a note, and
+        // every note must belong to a specimen; both directions matter, because an
+        // orphaned note is prose about a model that no longer exists.
+        let specimen_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("specimens");
+        let specimens: std::collections::BTreeSet<String> = std::fs::read_dir(&specimen_dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("mo"))
+            .filter_map(|p| p.file_stem().and_then(|s| s.to_str()).map(str::to_owned))
+            .collect();
+
+        assert_eq!(
+            notes, specimens,
+            "every specimen needs a purpose note and every note needs a specimen; \
+             missing notes: {:?}; orphaned notes: {:?}",
+            specimens.difference(&notes).collect::<Vec<_>>(),
+            notes.difference(&specimens).collect::<Vec<_>>(),
+        );
+        assert_eq!(checked, specimens.len());
     }
 
     #[test]
