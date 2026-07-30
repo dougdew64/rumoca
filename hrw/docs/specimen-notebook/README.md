@@ -26,9 +26,21 @@ Each entry has two parts:
   `end_to_end_tour.md` described a 7x7 incidence matrix on a tab that shows 48
   equations, and nothing caught it because nothing checks prose.
 
-  What survives is the part that *cannot* be regenerated: the phenomenon the
-  specimen was authored to trigger, and the record of which of Doug's questions it
-  answered and what made them click (see `docs/ideas.md` #41).
+  **Narrowed again 2026-07-29**, after Doug asked what the Purpose tab was actually
+  for. The first conversion kept ~25 lines per specimen explaining the *mechanism* —
+  which is the same regenerable prose the narratives were retired for, surviving in
+  the file that replaced them. Evidence it was doing no work: when Doug asked why
+  `CapacitorLoop`'s structural phase failed, Claude never opened its `purpose.md`
+  and read the stage files instead. 630 lines became 317.
+
+  So each entry now answers exactly two questions:
+
+  - **Authored to trigger** — the phenomenon someone made this file *for*. Genuinely
+    unregenerable: the code never says what it is for.
+  - **Where it has been used** — **links into** [`../question-ledger.md`](../question-ledger.md),
+    never copies. The per-specimen log the first conversion created duplicated the
+    ledger, and two places to append means the forgotten one eventually becomes the
+    one somebody trusts.
 
 ## Adding / regenerating an entry
 
@@ -36,8 +48,11 @@ Each entry has two parts:
 cargo run --example gen_trace -- <Model>     # (re)writes docs/specimen-notebook/<Model>/trace/
 ```
 
-Then write `purpose.md` (start from [`_TEMPLATE.md`](_TEMPLATE.md)) — one
-paragraph on the phenomenon, no walkthrough.
+Then write `purpose.md` (start from [`_TEMPLATE.md`](_TEMPLATE.md)) — **intent only**:
+a few lines on the phenomenon it was authored to trigger, and no walkthrough, no
+mechanism, no numbers. Numbers live in `trace/`; mechanism is regenerated on demand.
+When the specimen answers a question, add a one-line *link* under "Where it has been
+used" and put the entry itself in the ledger.
 
 On a Rumoca pin bump, regenerate every entry's trace. **There is no longer prose
 to re-read against the diff**, which is the point: the trace is generated and the
