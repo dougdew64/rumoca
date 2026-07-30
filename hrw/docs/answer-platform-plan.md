@@ -61,6 +61,90 @@ while**, and let a period of use rather than a single trial decide what comes ne
 
 ---
 
+## Where things stand after 2026-07-29
+
+**Delivered:** four phase animations; the canvas refit fix; `ui()` 982 → 325 via
+`FrameIntent`; the notebook conversion; the question ledger (#41 stage A); runtime tour
+loading and sub-view links (#42 gaps 1–2); #44; **all of #45** (source locations, the
+DAE-construction payload, the `pipeline_failure` capture, the oracle); the front-end audit
+with its contamination fix; `docs/upstream-issues.md`; and the tech-debt trigger change.
+
+**The honest gap:** every one of those is *instrumentation*, and almost none of it has been
+used for its purpose. The ledger's four entries are all about this project's own design —
+**none about continuous-system mathematics.** That was the right call for one session
+(features are experimentable, and the yield was two upstream Rumoca bugs, a cross-specimen
+contamination bug, and a wrong number being displayed as fact). It is the wrong shape for
+two sessions running. **The instruments are now well ahead of the use.**
+
+So the next batch is deliberately **use-led with building attached**, and the ordering
+below reflects that rather than backlog numbering.
+
+---
+
+## Next batch (ordered)
+
+### A1. #46 continued — failure specimens, oracle-first  *(highest measured yield)*
+
+Three specimens on 2026-07-29 produced **two filable upstream bugs plus two HRW bugs.**
+That is the best yield-per-effort in the project, and the oracle-first practice (#43) makes
+the next round better than the last.
+
+Still unrepresented: **Parse**, **Instantiate**, **Events**, **Solve lowering**, and a
+*working* flatten case (`IncompatibleConnect` is now a bug report rather than a flatten
+specimen). Events and Solve lowering may have no authorable failure mode — a result either
+way. Simulation stays deferred (#22).
+
+This is testing wearing authoring's clothes, and it is **pre-emptive**: cheapest now, while
+nothing is blocked on it.
+
+### A2. #47 — the first cross-platform tour  *(small, target already identified)*
+
+Do not design cross-platform tours in the abstract; **the first one already has its
+question.** The `CapacitorLoop` tour ends by admitting HRW cannot show the one thing Stop 1
+rests on: a matrix with **full structural rank that is numerically singular**. Mathematica
+can, in a few lines, on a 3x3 Doug can perturb himself.
+
+That single tour exercises the whole of #47 — per-stop medium, a notebook handed over at a
+gitignored path, and Claude evaluating before delivering while Doug evaluates to learn. And
+it lands on the linear-algebra thread rather than on the compiler.
+
+### A3. #41 stage B — the citation checker  *(cheap, mechanical, slot anywhere)*
+
+`cargo run -p hrw --example check_doc_citations`. Verifies every `crates/**/*.rs` path and
+named test the docs cite. One broken citation is already known. No dependencies, so it
+fills any gap.
+
+### A4. Doug's alone: a real question
+
+**Phase 2 — a Cellier problem, or a model Doug writes that will not compile.** Claude
+cannot start this one; it needs Doug to read something and get stuck. It is also the only
+item that puts a *mathematics* entry in the ledger.
+
+Also Doug's alone: **filing the two upstream issues** (`docs/upstream-issues.md`).
+
+### Deliberately NOT next, with reasons
+
+- **#42's remainder** — animation *frame* addressing, `Canvas` camera aiming, and the
+  curated/scratch specimen split. **None has been needed.** Four specimens were authored by
+  hand on 2026-07-29 and the split never came up; no tour has yet wanted a specific node or
+  frame. Build when a tour asks.
+- **#41 stages D–E** (generated index, repeat detection) — four ledger entries is not enough
+  to retrieve from. Wait for content.
+- **#17 Jacobian** — rescoped by #47. When it happens it happens *as* a cross-platform tour,
+  not as HRW work.
+- **#5 four-bar** — large, and its gate is appetite for a known rabbit hole.
+- **`central_panel_ui` (664 lines) and `bridge.rs` (2365)** — both wait on #42's remainder,
+  which is not next. Per the sweep rule: skip what the next phase will rewrite.
+
+### The one guard on "implement all of those"
+
+No item above is wrong, and Doug is right to want them all. The risk is not a bad item — it
+is **another full session of building that leaves the ledger with no mathematics in it.**
+So: at least one real question answered per batch, and if a batch ends with no ledger entry
+about continuous-system modelling, that is the signal to stop building and start reading.
+
+---
+
 ## Phase 0 — done 2026-07-29
 
 - Scoped tech-debt sweep: `ui()` 982 → 325 via `FrameIntent`; `central_panel_ui`
