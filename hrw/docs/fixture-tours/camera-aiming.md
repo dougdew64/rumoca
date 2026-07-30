@@ -21,7 +21,9 @@ Doug asked for in-app selection once it was clear the fixtures would accumulate.
 23 equations, non-singular, so the BLT view is available and the graph is big enough
 that "centred on one node" looks different from "fitted to everything".
 
-**Expected:** the whole graph fitted in view, nothing particularly centred.
+**Expected:** the whole graph fitted in view, with **equation 0 at the top-left of the
+grid** — not at the centre of the canvas. That is the baseline the next two stops move
+away from.
 
 ## Stop 2 — Aim at the first equation
 

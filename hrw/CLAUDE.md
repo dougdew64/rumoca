@@ -243,9 +243,16 @@ Candidates, not commitments — consult when planning new work; promote items in
   about **explanation**, which rots because nothing checks it. A fixture tour has expected
   outcomes, so it fails loudly instead. **Only justified because something runs it:**
   `fixture_tour_links_all_resolve` parses every link on every test run — a saved tour nobody
-  runs is stored prose with extra steps. Pick one from the row at the top of Tour mode; the
+  runs is stored prose with extra steps. Pick one from the list at the top of Tour mode; the
   directory is hard-coded, not a setting. **One fixture tour per capability, not per change.**
   They cover what Claude cannot see: the rendered surface.
+
+  **Every `**Expected:**` line must be violable.** Doug found "mostly collapsed" where the
+  truth is *fully* collapsed (2026-07-30); an audit then found "nothing particularly
+  centred" in a second fixture. Neither could be contradicted by anything, so neither
+  tested anything — and hedged expectations teach Doug to read them loosely, which defeats
+  the point. Write what would be *different* if the feature broke: a number, a named field,
+  "nothing moves", "the counter goes down".
 - **[`docs/question-ledger.md`](docs/question-ledger.md) — started 2026-07-29.** The questions
   themselves: verbatim wording, what was on screen, which medium answered, and what actually made it
   click. **Scan it before answering in a familiar area.** A repeated question is the signal, and it

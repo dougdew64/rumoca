@@ -14,8 +14,12 @@ Pick it from the Tours list.
 
 [RcCircuit → Structural → Tree](hrw://load/RcCircuit/Structural/Tree)
 
-**Expected:** the Structural IR tree, mostly collapsed. Note how much is hidden — that is
-what the next stop has to get through.
+**Expected:** the Structural IR tree with **every header collapsed** — `blocks`,
+`incidence` and `matching` all show a twisty and no contents. Nothing opens by default:
+headers open only for a followed identifier, for Reveal identifiers, or for a jump
+target, and none of those is active yet.
+
+That is what the next stops have to get through.
 
 ## Stop 2 — Point at a shallow node
 
