@@ -25,8 +25,13 @@ That is what the next stops have to get through.
 
 [Point at `coupled_block_count`](hrw://stage/Structural/Tree/node/coupled_block_count)
 
-**Expected:** the tree scrolls to `coupled_block_count` and it is **highlighted as the
-jump target**. RcCircuit has none, so the value is `0`.
+**Expected:** the tree scrolls to `coupled_block_count`, centred, and its row carries a
+**cyan wash** — distinct from the gold of a *followed* identifier, because a jump target
+is one row for one link rather than a thread through every stage. RcCircuit has no
+coupled blocks, so the value reads `0`.
+
+The wash stays until you click a row or load something else. It answers "which row did
+that link mean?", and that question is open until you move on.
 
 ## Stop 3 — Point at something nested
 

@@ -629,6 +629,14 @@ pub struct App {
     // Set for ONE frame when the user asks to jump. See `TreeOptions::jump_to`
     // for why it must not persist.
     jump_target: Option<Vec<Seg>>,
+    /// The row a node link pointed at, kept **after** the scroll so it stays marked.
+    ///
+    /// Separate from `jump_target`, which lasts exactly one frame: a highlight that
+    /// lived and died with it would flash for 16ms and tell nobody anything. This
+    /// persists until Doug does something else — clicks a row, follows a link, loads a
+    /// specimen — because the question it answers ("which row did that link mean?")
+    /// stays open until he moves on.
+    jump_highlight: Option<Vec<Seg>>,
 
     // Per-line token classification for `cached_source`, built on demand.
     // Tokenizing is cheap but not free, and the source cannot change while it
@@ -1046,6 +1054,7 @@ impl App {
             jump_matches_key: None,
             jump_index: 0,
             jump_target: None,
+            jump_highlight: None,
             scrolled_source_for: None,
             pending_stage: None,
             pending_sub_view: None,
@@ -1241,6 +1250,7 @@ impl App {
         // asynchronously via `FromWorker::CompileProgress` and `FromWorker::Compiled`.
         // Recorded before the state changes, so the ring buffer reads in the
         // order the user acted. See `diagnostics.rs`.
+        self.jump_highlight = None;
         diagnostics::record_action("specimen", path.display().to_string());
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
@@ -1631,6 +1641,9 @@ impl App {
             return;
         }
         let seq = self.next_seq();
+        // A point of Doug's own supersedes the link's — the highlight answers "which
+        // row did that link mean?", and he has just answered a different question.
+        self.jump_highlight = None;
         diagnostics::record_action("point-at", format!("in {}", self.stage.name()));
         // Name what was captured, so the status confirms the *right* thing was
         // written — not just that some focus was.
@@ -1854,7 +1867,8 @@ impl App {
                 // `jump_target` already forces ancestors open and scrolls, and is
                 // consumed on the frame it is honoured — the same one-shot discipline
                 // as the camera aim and the frame seek.
-                self.jump_target = Some(path);
+                self.jump_target = Some(path.clone());
+                self.jump_highlight = Some(path);
             }
             HrwLink::Follow(name) => {
                 // Following is independent of what is pointed at: a stop may set one,
@@ -2070,6 +2084,11 @@ impl App {
     ///   IR. The capture includes the Parse and Resolve values so Claude can
     ///   diff across stages (e.g. "what did Typecheck change vs Instantiate?").
     fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: bridge::AskRequest) {
+        // Same rule as `emit_focus`: a point of Doug's own supersedes the link's mark.
+        // There are **two** capture paths — this one for nodes, `emit_focus` for stage
+        // and specimen — and clearing in only one is exactly the omission the test for
+        // this caught.
+        self.jump_highlight = None;
         let seq = self.next_seq();
         let target = bridge::describe_path(&key_path);
         let request_str = request.as_str();
@@ -3664,6 +3683,7 @@ impl App {
                                 declaring_classes: Some(&self.declaring_classes),
                                 expand_trackable: intent.expand_trackable,
                                 jump_to: jump_to.as_deref(),
+                                highlight: self.jump_highlight.as_deref(),
                             };
                             egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
                                 tree::tree_ui(ui, label, value, prev, &mut intent.tree, &self.def_index, &self.field_help, opts);
@@ -3718,8 +3738,10 @@ impl App {
                         expand_trackable: intent.expand_trackable,
                         // A navigated library class is a different IR, so a
                         // jump target addressed into the stage tree would
-                        // land on an unrelated node or nothing at all.
+                        // land on an unrelated node or nothing at all. The
+                        // highlight is suppressed for the same reason.
                         jump_to: None,
+                        highlight: None,
                     });
             });
         }
@@ -6232,6 +6254,7 @@ impl App {
             jump_matches_key: None,
             jump_index: 0,
             jump_target: None,
+            jump_highlight: None,
             scrolled_source_for: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
@@ -8155,6 +8178,45 @@ mod tests {
                 sub.slug(),
             );
         }
+    }
+
+    /// A node link marks the row it pointed at, and the mark outlives the scroll.
+    ///
+    /// Doug walked the node-pointing fixture and reported the node was not highlighted.
+    /// He was right twice over: the tour asserted a highlight, and **there was none** —
+    /// `scroll_if_jump_target` only ever scrolled. The tour was right about what should
+    /// happen, though: a row scrolled to the centre of a screen of near-identical rows,
+    /// unmarked, leaves the reader guessing which one was meant.
+    ///
+    /// `jump_target` lasts exactly one frame, so highlighting on that alone would flash
+    /// for 16ms. `jump_highlight` persists until Doug does something of his own.
+    #[test]
+    fn a_node_link_marks_the_row_until_doug_moves_on() {
+        let path = bridge::parse_path("incidence.rows[0].equation_text").expect("well-formed");
+
+        let mut app = App::test_default();
+        app.dispatch_hrw_link(HrwLink::PointAtNode(
+            StageKind::Structural,
+            SubView::Structural(StructuralView::Tree),
+            path.clone(),
+        ));
+        assert_eq!(app.jump_target.as_ref(), Some(&path), "scrolls to it");
+        assert_eq!(app.jump_highlight.as_ref(), Some(&path), "and marks it");
+
+        // The scroll is consumed after one frame; the mark is not.
+        app.jump_target = None;
+        assert_eq!(
+            app.jump_highlight.as_ref(),
+            Some(&path),
+            "the mark must outlive the one-frame scroll, or it flashes and tells nobody",
+        );
+
+        // A point of Doug's own answers a different question, so the mark goes.
+        app.emit_node_focus(vec![Seg::Key("blocks".into())], bridge::AskRequest::Explain);
+        assert!(
+            app.jump_highlight.is_none(),
+            "Doug pointing at something supersedes the link's mark",
+        );
     }
 
     #[test]

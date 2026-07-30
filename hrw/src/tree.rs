@@ -119,6 +119,12 @@ pub struct TreeOptions<'a> {
     /// headers out of the user's hands — the complaint that sank "Reveal
     /// identifiers" as a mode.
     pub jump_to: Option<&'a [Seg]>,
+    /// The row a node link pointed at, washed in [`colors::JUMP_FILL`] so it is
+    /// findable after the scroll.
+    ///
+    /// Distinct from `jump_to`, which lasts one frame and only scrolls. Highlighting on
+    /// that alone would flash for a single frame; this outlives it.
+    pub highlight: Option<&'a [Seg]>,
 }
 
 /// Render a `serde_json::Value` as a collapsible tree widget.
@@ -271,7 +277,12 @@ fn node_ui(
     // `bridge::mention_paths`, which addresses nodes rather than holding
     // references to them. `path` here is already this node's own path.
     let is_jump_target = opts.jump_to.is_some_and(|target| target == path.as_slice());
-    ui.push_id(salt, |ui| match value {
+    let is_highlighted = opts.highlight.is_some_and(|target| target == path.as_slice());
+    // A washed row has to be drawn *behind* the widget, and egui has no row
+    // background — so the highlight is a painted rect sized to the row after the fact.
+    // Cheaper and more reliable than restyling every widget kind the tree can emit.
+    let row_top = ui.cursor().top();
+    let painted = ui.push_id(salt, |ui| match value {
         Value::Object(map) => {
             let hint = format!("{{{}}}", map.len());
             let is_tracked = opts.tracked.is_some_and(|t| key == t);
@@ -341,6 +352,19 @@ fn node_ui(
             resp.clone().on_hover_text(row_hover(field_help.get(key), trackable.as_deref()));
         }
     });
+
+    // Wash the row a node link pointed at. Painted *behind* what was just drawn, using
+    // the vertical span the row actually occupied — a header with its children open
+    // covers many lines, and washing all of them would drown the tree, so only the
+    // header's own line is marked.
+    if is_highlighted {
+        let row = egui::Rect::from_min_max(
+            egui::pos2(ui.min_rect().left(), row_top),
+            egui::pos2(ui.min_rect().right(), row_top + ui.spacing().interact_size.y),
+        );
+        ui.painter().rect_filled(row, 2.0, crate::colors::JUMP_FILL);
+    }
+    let _ = painted;
 }
 
 /// Bring a jumped-to row into view.

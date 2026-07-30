@@ -95,6 +95,18 @@ const fn tint(r: u8, g: u8, b: u8, alpha: u8) -> Color32 {
 }
 
 /// Tracked-identifier background fill (subtle, alpha 0x30 ≈ 19%).
+/// Background wash on the row a `hrw://…/node/<path>` link pointed at.
+///
+/// **Cyan, deliberately not gold.** Gold means *followed* — a thread through every
+/// stage — and a jump target is a different thing: one row, one link, this moment.
+/// Reusing gold would make a tour stop look like it had set a follow.
+///
+/// Exists because scrolling a row to the centre of a screen full of near-identical
+/// rows, without marking it, leaves the reader guessing which one was the target.
+/// The node-pointing fixture tour asserted this highlight before it was built —
+/// Doug walked the tour and found the claim false (2026-07-30).
+pub const JUMP_FILL: Color32 = tint(0x42, 0xC5, 0xF5, 0x45);
+
 pub const TRACKED_FILL: Color32 = tint(0xFF, 0xD5, 0x4F, 0x30);
 
 /// Tracked-identifier background fill (medium, alpha 0x40 ≈ 25%).
