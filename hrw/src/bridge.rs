@@ -103,6 +103,37 @@ const BREAKPOINT_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw
 /// the algorithm thread (see `check_breakpoint_ack`).
 pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-ack.json");
 
+/// Scratch specimens written by Claude to answer a question (ideas #42).
+///
+/// **Why a second directory rather than `specimens/`.** The curated corpus has
+/// properties worth protecting: portable Modelica subset, a `// purpose:` line on every
+/// file, and the intent that each round-trips through System Modeler. Disposable probes
+/// — "here is the smallest model that shows the thing you asked about" — have none of
+/// those and would quietly degrade it. Doug offered `specimens/` for repurposing on
+/// 2026-07-29 and Claude recommended against; this is that split.
+///
+/// Living under the gitignored bridge directory makes them **ephemeral by
+/// construction**, the same rule as `tour.md`: what persists is the *question*, in
+/// `docs/question-ledger.md`. A probe worth keeping gets promoted into `specimens/`
+/// deliberately, with a `// purpose:` line — which is the moment it stops being a probe.
+pub const SCRATCH_SPECIMEN_DIR: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/specimens");
+
+/// List the scratch specimens, sorted. Empty when none have been written — the common
+/// case, and not an error.
+pub fn scratch_specimens() -> Vec<PathBuf> {
+    let Ok(entries) = fs::read_dir(SCRATCH_SPECIMEN_DIR) else {
+        return Vec::new();
+    };
+    let mut found: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("mo"))
+        .collect();
+    found.sort();
+    found
+}
+
 /// An ad hoc tour written by Claude, rendered by HRW's tour mode (ideas #42).
 ///
 /// The only bridge file that flows *into* HRW rather than out of it.

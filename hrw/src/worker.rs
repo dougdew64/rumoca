@@ -3318,6 +3318,38 @@ mod tests {
             "MotorWithBrake should produce index-reduction animation frames");
     }
 
+    /// A scratch specimen compiles like any other (ideas #42).
+    ///
+    /// The listing and marking are tested in `app`; this is the half that matters for
+    /// answering a question — Claude writes a probe mid-conversation and it goes
+    /// through the same pipeline as the curated corpus, with the same IR available.
+    #[test]
+    fn a_scratch_specimen_compiles_end_to_end() {
+        let path = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR)
+            .join("ScratchProbe.mo");
+        if !path.exists() {
+            return; // no probe written in this checkout
+        }
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let FromWorker::Compiled { stages, model, .. } = w.compile(&path, &|_: FromWorker| {})
+        else {
+            panic!("expected Compiled");
+        };
+        assert_eq!(model.as_deref(), Some("ScratchProbe"));
+        assert!(
+            stages.solve_lowering.value.is_some() && !stages.solve_lowering.note_is_error,
+            "a scratch probe reaches the end of the pipeline like any specimen",
+        );
+        // And its IR is real: one state, from `tau * der(x) = -x`.
+        let n_states = stages
+            .initialization
+            .value
+            .as_ref()
+            .and_then(|v| v.get("n_states"))
+            .and_then(serde_json::Value::as_u64);
+        assert_eq!(n_states, Some(1), "the probe has exactly one state");
+    }
+
     /// A resolve failure names the offending reference **and its line**, with the
     /// library noise separated out.
     ///

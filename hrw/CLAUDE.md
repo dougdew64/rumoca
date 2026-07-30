@@ -260,6 +260,16 @@ can be set inside a Rumoca phase while it processes a specimen.
 - Specimens live in `specimens/`, authored in Wolfram System Modeler, written to the
   **portable Modelica subset** — no Wolfram-flavored extensions. Definition of done: compiles
   and runs equivalently in System Modeler and Rumoca.
+- **Scratch specimens (2026-07-29, ideas #42) live in `.hrw-bridge/specimens/` instead.** Claude
+  writes them mid-conversation to answer a question — *"here is the smallest model that shows the
+  thing you asked about"* — and HRW lists them (marked, in the explore colour) within a second, no
+  restart. They are **not** held to the rules above and must never be promoted casually: the
+  gitignored bridge directory makes them **ephemeral by construction**, the same rule as `tour.md`.
+  A probe worth keeping gets moved into `specimens/` deliberately, with a `// purpose:` line and a
+  notebook entry — which is the moment it stops being a probe.
+  **A scratch name may not shadow a curated one:** the collision is reported in the panel and the
+  scratch file skipped, because silently loading a different model than the name says would have
+  Claude reason confidently about source Doug is not looking at.
 - **No MSL MultiBody.** Mechanical components come from our own small planar (2D) mechanics
   library, hand-built in the portable subset (revolute joint, rigid link, ideal motor,
   friction, contact).

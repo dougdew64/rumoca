@@ -75,6 +75,11 @@ const DEFAULT_ZOOM: f32 = 2.0;
 /// under human notice and keeps filesystem work out of the paint path.
 const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
 
+/// How often the scratch specimen directory is re-listed. Slower than the tour poll:
+/// a specimen appearing a second late is imperceptible, and a rescan re-reads every
+/// specimen's `// purpose:` line.
+const SCRATCH_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1000);
+
 /// Default specimen directory: `specimens/` next to this crate's manifest.
 const DEFAULT_SPECIMEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
 
@@ -314,6 +319,14 @@ pub struct App {
     // Per-specimen one-line purpose hint (the `// purpose:` comment), scanned at
     // rescan so the specimen list reads as an index of what each one teaches.
     specimen_purposes: HashMap<PathBuf, String>,
+    /// Which entries of `files` came from the gitignored scratch directory rather
+    /// than the curated corpus (ideas #42). Held as a set rather than a flag on the
+    /// path so `files` stays a plain `Vec<PathBuf>` that everything else can use.
+    scratch_specimens: HashSet<PathBuf>,
+    /// Scratch specimens skipped because a curated specimen already owns the name.
+    /// Reported rather than silently resolved: loading the wrong model would have
+    /// Claude reason confidently about source Doug is not looking at.
+    shadowed_specimens: Vec<String>,
     scan_error: Option<String>,
 
     // ---- 4. Current selection + compilation results ----
@@ -481,6 +494,10 @@ pub struct App {
     /// conventions rule out; a few polls a second is indistinguishable to a
     /// reader and keeps the render path clean.
     tour_polled_at: Option<std::time::Instant>,
+    /// When the scratch specimen directory was last polled, so a specimen Claude
+    /// writes mid-conversation appears without restarting HRW — the same reason
+    /// `tour.md` is polled.
+    scratch_polled_at: Option<std::time::Instant>,
     // Specimen purpose notes, loaded on demand from
     // docs/specimen-notebook/<Model>/purpose.md.
     cached_purpose_notes: HashMap<PathBuf, Option<String>>,
@@ -868,6 +885,8 @@ impl App {
             specimen_dir: DEFAULT_SPECIMEN_DIR.to_owned(),
             files: Vec::new(),
             specimen_purposes: HashMap::new(),
+            scratch_specimens: HashSet::new(),
+            shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
             compiling: false,
@@ -932,6 +951,7 @@ impl App {
             source_scroll_target: None,
             cached_tour: None,
             tour_polled_at: None,
+            scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
@@ -986,6 +1006,8 @@ impl App {
     /// when the user changes the directory in Settings.
     fn rescan(&mut self) {
         self.files.clear();
+        self.scratch_specimens.clear();
+        self.shadowed_specimens.clear();
         self.scan_error = None;
         match std::fs::read_dir(&self.specimen_dir) {
             Ok(entries) => {
@@ -998,6 +1020,29 @@ impl App {
                 self.files.sort();
             }
             Err(e) => self.scan_error = Some(format!("{}: {e}", self.specimen_dir)),
+        }
+
+        // Scratch specimens Claude wrote to answer a question (ideas #42). Appended
+        // after the curated corpus and **never allowed to shadow it**: a name
+        // collision would silently load a different model than the one Doug named,
+        // and Claude would then reason confidently about source Doug is not looking
+        // at. That is the "makes Claude guess" failure, so the collision is reported
+        // and the scratch file is skipped rather than winning or losing quietly.
+        let curated: HashSet<String> = self
+            .files
+            .iter()
+            .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_owned))
+            .collect();
+        for path in bridge::scratch_specimens() {
+            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                continue;
+            };
+            if curated.contains(name) {
+                self.shadowed_specimens.push(name.to_owned());
+                continue;
+            }
+            self.scratch_specimens.insert(path.clone());
+            self.files.push(path);
         }
         // Scan each specimen's `// purpose:` hint (cheap; no compile), so the list
         // can show what each one demonstrates.
@@ -3430,6 +3475,31 @@ impl App {
         }
     }
 
+    /// Re-scan when the set of scratch specimens changes.
+    ///
+    /// Cheaper than it looks: a `read_dir` of a directory that is usually empty, at
+    /// most once per [`SCRATCH_POLL_INTERVAL`]. A full `rescan()` only runs when the
+    /// *set of paths* actually differs, so the per-file `// purpose:` reads are not
+    /// repeated for an unchanged directory.
+    fn poll_scratch_specimens(&mut self) {
+        let due = self
+            .scratch_polled_at
+            .is_none_or(|last| last.elapsed() >= SCRATCH_POLL_INTERVAL);
+        if !due {
+            return;
+        }
+        self.scratch_polled_at = Some(std::time::Instant::now());
+
+        let found: HashSet<PathBuf> = bridge::scratch_specimens().into_iter().collect();
+        // Compare against what was *accepted* plus what was shadowed, so a scratch
+        // file appearing under a curated name still triggers a rescan and gets
+        // reported rather than being invisible until the next restart.
+        let known = self.scratch_specimens.len() + self.shadowed_specimens.len();
+        if found.len() != known || !found.iter().all(|p| self.scratch_specimens.contains(p)) {
+            self.rescan();
+        }
+    }
+
     /// What tour mode shows when Claude has not written a tour.
     ///
     /// Deliberately **not** `end_to_end_tour.md`, which used to be compiled in
@@ -4760,6 +4830,19 @@ impl eframe::App for App {
                             return;
                         }
 
+                        self.poll_scratch_specimens();
+                        // A scratch name that collides with a curated one is skipped,
+                        // and said so out loud — silently loading a different model
+                        // than the one named is the failure this guards against.
+                        if !self.shadowed_specimens.is_empty() {
+                            ui.colored_label(
+                                crate::colors::ANIM_FAIL,
+                                format!(
+                                    "\u{26a0} ignored scratch specimen(s) shadowing curated names: {}",
+                                    self.shadowed_specimens.join(", "),
+                                ),
+                            );
+                        }
                         egui::ScrollArea::vertical()
                             .id_salt("specimen_list")
                             .show(ui, |ui| {
@@ -4772,8 +4855,24 @@ impl eframe::App for App {
                                 let can_capture = selected && !self.compiling && self.model.is_some();
                                 let can_recompile = selected && !self.compiling;
                                 let purpose = self.specimen_purposes.get(path);
-                                let mut resp = ui.selectable_label(selected, name);
-                                if let Some(hint) = purpose {
+                                // Scratch specimens are marked: "a probe Claude wrote for
+                                // one question" and "part of the curated corpus" carry very
+                                // different weight, and the list is where that shows.
+                                let is_scratch = self.scratch_specimens.contains(path);
+                                let label = if is_scratch {
+                                    egui::RichText::new(format!("\u{270e} {name}"))
+                                        .color(crate::colors::ANIM_EXPLORE)
+                                } else {
+                                    egui::RichText::new(name)
+                                };
+                                let mut resp = ui.selectable_label(selected, label);
+                                if is_scratch {
+                                    resp = resp.on_hover_text(purpose.map(String::as_str).unwrap_or(
+                                        "Scratch specimen \u{2014} written by Claude to answer a \
+                                         question. Ephemeral: it lives in the gitignored bridge \
+                                         directory and is not part of the curated corpus.",
+                                    ));
+                                } else if let Some(hint) = purpose {
                                     resp = resp.on_hover_text(hint);
                                 }
                                 resp.context_menu(|ui| {
@@ -5369,6 +5468,8 @@ impl App {
             specimen_dir: String::new(),
             files: Vec::new(),
             specimen_purposes: HashMap::new(),
+            scratch_specimens: HashSet::new(),
+            shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
             compiling: false,
@@ -5433,6 +5534,7 @@ impl App {
             source_scroll_target: None,
             cached_tour: None,
             tour_polled_at: None,
+            scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
             cached_highlight: None,
@@ -6622,6 +6724,75 @@ mod tests {
             };
             assert_eq!(StageKind::from_slug(slug), Some(*kind));
         }
+    }
+
+    /// A scratch specimen is listed, marked, and findable by name (ideas #42).
+    ///
+    /// The point of the split is that Claude can write "here is the smallest model
+    /// that shows the thing you asked about" and have it appear in HRW without
+    /// touching the curated corpus — whose portable-subset, `// purpose:` and
+    /// System-Modeler-round-trip properties a disposable probe would degrade.
+    #[test]
+    fn a_scratch_specimen_is_listed_and_marked() {
+        let mut app = App::test_default();
+        app.specimen_dir = DEFAULT_SPECIMEN_DIR.to_owned();
+        app.rescan();
+
+        let probe = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR)
+            .join("ScratchProbe.mo");
+        if !probe.exists() {
+            return; // no probe written in this checkout
+        }
+        assert!(app.files.contains(&probe), "scratch specimens join the list");
+        assert!(app.scratch_specimens.contains(&probe), "and are marked as scratch");
+        assert_eq!(
+            app.find_specimen("ScratchProbe"),
+            Some(probe),
+            "and are reachable by name, so `hrw://load/ScratchProbe` works",
+        );
+
+        // The curated corpus is untouched and still unmarked.
+        let curated = app
+            .files
+            .iter()
+            .find(|p| p.file_name().and_then(|n| n.to_str()) == Some("BouncingBall.mo"))
+            .expect("BouncingBall is curated");
+        assert!(!app.scratch_specimens.contains(curated));
+    }
+
+    /// A scratch specimen may not shadow a curated one.
+    ///
+    /// Loading a different model than the name says is the "makes Claude guess"
+    /// failure: Claude would reason confidently about source Doug is not looking at.
+    /// So the collision is reported and the scratch file skipped, rather than either
+    /// one silently winning.
+    #[test]
+    fn a_scratch_specimen_cannot_shadow_a_curated_one() {
+        let dir = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR);
+        if std::fs::create_dir_all(dir).is_err() {
+            return;
+        }
+        let clash = dir.join("BouncingBall.mo");
+        if std::fs::write(&clash, "model BouncingBall end BouncingBall;
+").is_err() {
+            return;
+        }
+
+        let mut app = App::test_default();
+        app.specimen_dir = DEFAULT_SPECIMEN_DIR.to_owned();
+        app.rescan();
+
+        assert!(
+            app.shadowed_specimens.iter().any(|n| n == "BouncingBall.mo"),
+            "the collision is reported: {:?}",
+            app.shadowed_specimens,
+        );
+        assert!(!app.scratch_specimens.contains(&clash), "and the scratch file is skipped");
+        // The curated one still wins, and is what the name resolves to.
+        let found = app.find_specimen("BouncingBall").expect("still findable");
+        assert!(found.starts_with(DEFAULT_SPECIMEN_DIR), "curated wins: {found:?}");
+
+        let _ = std::fs::remove_file(&clash);
     }
 
     #[test]
