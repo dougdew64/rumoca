@@ -139,6 +139,30 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
 /// The only bridge file that flows *into* HRW rather than out of it.
 pub const TOUR_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/tour.md");
 
+/// Fixture tours — kept, versioned, and executed by `fixture_tour_links_all_resolve`.
+///
+/// Hard-coded rather than configurable: the directory is part of the repository layout,
+/// not a user preference, and one fewer setting is one fewer thing to be wrong.
+pub const FIXTURE_TOURS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-tours");
+
+/// List the fixture tours, sorted by file name.
+///
+/// Distinct from the ad hoc tour in [`TOUR_FILE`]: an ad hoc tour answers one question
+/// and is regenerated, a fixture tour is a **test** with a pass/fail criterion and is
+/// kept. See `docs/fixture-tours/camera-aiming.md` for the shape.
+pub fn fixture_tours() -> Vec<PathBuf> {
+    let Ok(entries) = fs::read_dir(FIXTURE_TOURS_DIR) else {
+        return Vec::new();
+    };
+    let mut found: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("md"))
+        .collect();
+    found.sort();
+    found
+}
+
 /// Read the ad hoc tour, with the modification time it was read at.
 ///
 /// Returns `None` when no tour has been written — the common case, and not an

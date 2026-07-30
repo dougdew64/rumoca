@@ -8,7 +8,9 @@ fixture tour is **kept and versioned**, because it has a pass/fail criterion rat
 prose that would rot. `fixture_tour_links_all_resolve` parses every link below on every
 test run, so a vocabulary change breaks the build instead of breaking this file quietly.
 
-**To run it:** copy this file over `.hrw-bridge/tour.md`, open Tour mode, and walk it.
+**To run it:** open Tour mode and pick **camera-aiming** from the row of tours at the top
+of the panel. (Before 2026-07-29 this had to be copied over `.hrw-bridge/tour.md` first;
+Doug asked for in-app selection once it was clear the fixtures would accumulate.)
 
 ---
 

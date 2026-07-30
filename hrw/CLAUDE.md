@@ -237,6 +237,15 @@ Candidates, not commitments — consult when planning new work; promote items in
   (`project-engage-rumoca-community`). Where an independent implementation can adjudicate,
   use it first: "System Modeler rejects this and you accept it" beats "I think the spec
   says…". Two entries as of 2026-07-29, both found by auditing failure paths.
+- **[`docs/fixture-tours/`](docs/fixture-tours/) — tours that are *tests*, not
+  explanations.** Kept and versioned, unlike an ad hoc tour (`.hrw-bridge/tour.md`,
+  gitignored, regenerated per question). The ephemerality rule was never about tours; it was
+  about **explanation**, which rots because nothing checks it. A fixture tour has expected
+  outcomes, so it fails loudly instead. **Only justified because something runs it:**
+  `fixture_tour_links_all_resolve` parses every link on every test run — a saved tour nobody
+  runs is stored prose with extra steps. Pick one from the row at the top of Tour mode; the
+  directory is hard-coded, not a setting. **One fixture tour per capability, not per change.**
+  They cover what Claude cannot see: the rendered surface.
 - **[`docs/question-ledger.md`](docs/question-ledger.md) — started 2026-07-29.** The questions
   themselves: verbatim wording, what was on screen, which medium answered, and what actually made it
   click. **Scan it before answering in a familiar area.** A repeated question is the signal, and it

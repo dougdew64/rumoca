@@ -535,6 +535,13 @@ pub struct App {
     /// without restarting HRW. `None` means no tour has been written — the
     /// common case, not an error.
     cached_tour: Option<(String, std::time::SystemTime)>,
+    /// Tours available to pick: the ad hoc one when it exists, then the fixtures.
+    /// Rebuilt by the poll, so a fixture Claude adds mid-session appears without a
+    /// restart — the same reason the scratch specimen list is polled.
+    tours: Vec<TourSource>,
+    /// Which of `tours` is showing. Defaults to the ad hoc tour when one exists,
+    /// because that is the answer to the question just asked.
+    selected_tour: Option<TourSource>,
     /// When the tour file was last polled. Stat-ing once per frame would be
     /// cheap but puts filesystem work in the paint path, which the debugging
     /// conventions rule out; a few polls a second is indistinguishable to a
@@ -1003,6 +1010,8 @@ impl App {
             problem_lines: Vec::new(),
             source_scroll_target: None,
             cached_tour: None,
+            tours: Vec::new(),
+            selected_tour: None,
             tour_polled_at: None,
             aim_at_equation: None,
             scratch_polled_at: None,
@@ -3527,19 +3536,62 @@ impl App {
         }
         self.tour_polled_at = Some(std::time::Instant::now());
 
-        match bridge::read_tour() {
-            Some((text, mtime)) => {
+        // --- Rebuild the pick list ---
+        //
+        // Ad hoc first when it exists: it is the answer to the question just asked,
+        // and burying it under the fixtures would make the common case the awkward one.
+        let mut tours = Vec::new();
+        if std::path::Path::new(bridge::TOUR_FILE).exists() {
+            tours.push(TourSource::AdHoc);
+        }
+        tours.extend(bridge::fixture_tours().into_iter().map(TourSource::Fixture));
+        let list_changed = tours != self.tours;
+        self.tours = tours;
+
+        // A selection that no longer exists (the ad hoc tour was deleted, a fixture
+        // renamed) must not leave stale text on screen attributed to a live file.
+        if self.selected_tour.as_ref().is_some_and(|t| !self.tours.contains(t)) {
+            self.selected_tour = None;
+            self.cached_tour = None;
+        }
+        // Default to the ad hoc tour when one appears and nothing is chosen.
+        if self.selected_tour.is_none() && self.tours.contains(&TourSource::AdHoc) {
+            self.select_tour(TourSource::AdHoc);
+        }
+
+        // --- Re-read the selected tour if it changed on disk ---
+        let Some(selected) = self.selected_tour.clone() else {
+            self.cached_tour = None;
+            return;
+        };
+        let path = selected.path();
+        let mtime = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok());
+        match mtime {
+            Some(mtime) => {
                 let unchanged =
                     self.cached_tour.as_ref().is_some_and(|(_, seen)| *seen == mtime);
-                if !unchanged {
-                    self.cached_tour = Some((text, mtime));
+                if !unchanged || list_changed {
+                    self.cached_tour =
+                        std::fs::read_to_string(&path).ok().map(|text| (text, mtime));
                 }
             }
-            // The tour was deleted, or none was ever written. Drop it rather
-            // than keep a stale copy on screen: a tour is ephemeral by design
-            // (ideas #42) and its absence is the normal state.
-            None => self.cached_tour = None,
+            // The file vanished between listing and reading. Drop the text rather
+            // than keep a stale copy: for an ad hoc tour, absence is the normal state.
+            None => {
+                self.cached_tour = None;
+                self.selected_tour = None;
+            }
         }
+    }
+
+    /// Switch the Tour panel to `source`, discarding the previous text.
+    ///
+    /// Clears `cached_tour` rather than letting the poll notice: without this the old
+    /// tour stays on screen until the next mtime comparison, and a reader who just
+    /// clicked a different tour would see the previous one for up to a poll interval.
+    fn select_tour(&mut self, source: TourSource) {
+        self.selected_tour = Some(source);
+        self.cached_tour = None;
     }
 
     /// Re-scan when the set of scratch specimens changes.
@@ -3587,7 +3639,9 @@ impl App {
              where a sequence of places beats a paragraph.",
         );
         ui.add_space(10.0);
-        ui.weak(format!("Claude writes it to {}", bridge::TOUR_FILE));
+        ui.weak("Fixture tours \u{2014} tests with expected outcomes \u{2014} can be picked above \
+                 when any exist.");
+        ui.weak(format!("Claude writes an ad hoc tour to {}", bridge::TOUR_FILE));
         ui.weak("It appears here within a moment, and a rewrite is picked up live.");
     }
 
@@ -4853,10 +4907,42 @@ impl eframe::App for App {
             let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
             register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
             let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
+            let mut switch_to: Option<TourSource> = None;
             egui::Panel::left("tour_panel")
                 .exact_size(panel_width)
                 .show(ui, |ui| {
                     section_header(ui, "Tour");
+
+                    // --- Picker, so a fixture tour can be chosen in-app ---
+                    //
+                    // Doug: "I want to be able to conveniently select a fixture tour
+                    // when I'm in HRW instead of having to copy a fixture tour before
+                    // starting HRW." The directory is part of the repo layout, so it is
+                    // hard-coded rather than a setting.
+                    if !self.tours.is_empty() {
+                        ui.horizontal_wrapped(|ui| {
+                            for source in &self.tours {
+                                let selected = self.selected_tour.as_ref() == Some(source);
+                                let resp = ui.selectable_label(selected, source.label());
+                                let resp = match source {
+                                    TourSource::AdHoc => resp.on_hover_text(
+                                        "Written by Claude to answer your last question. \
+                                         Ephemeral \u{2014} regenerated, never stored.",
+                                    ),
+                                    TourSource::Fixture(p) => resp.on_hover_text(format!(
+                                        "Fixture tour \u{2014} a test with expected outcomes, \
+                                         kept and versioned.\n{}",
+                                        p.display(),
+                                    )),
+                                };
+                                if resp.clicked() {
+                                    switch_to = Some(source.clone());
+                                }
+                            }
+                        });
+                        ui.separator();
+                    }
+
                     egui::ScrollArea::vertical()
                         .id_salt("tour")
                         .show(ui, |ui| {
@@ -4870,6 +4956,13 @@ impl eframe::App for App {
                         }
                     });
                 });
+            if let Some(source) = switch_to {
+                self.select_tour(source);
+                // Re-read now rather than waiting up to a poll interval: a click that
+                // appears to do nothing for a quarter second reads as a broken button.
+                self.tour_polled_at = None;
+                self.poll_tour_file();
+            }
             hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &tour_links);
         }
         if self.ui_mode == UiMode::Specimen {
@@ -5387,6 +5480,46 @@ impl SubView {
     }
 }
 
+/// Which tour the Tour panel is showing.
+///
+/// Two kinds, with different lifetimes and different jobs:
+///
+/// - **`AdHoc`** — `.hrw-bridge/tour.md`, written by Claude to answer the question just
+///   asked. Gitignored, regenerated, ephemeral by construction.
+/// - **`Fixture`** — a file in `docs/fixture-tours/`, kept and versioned because it is a
+///   *test* with a pass/fail criterion rather than an explanation that would rot.
+///
+/// Keeping them in one list (rather than one panel each) is deliberate: from the
+/// reader's side both are "a sequence of stops to walk", and the distinction is about
+/// where the file lives, not about how it is used.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum TourSource {
+    AdHoc,
+    Fixture(PathBuf),
+}
+
+impl TourSource {
+    fn path(&self) -> PathBuf {
+        match self {
+            Self::AdHoc => PathBuf::from(bridge::TOUR_FILE),
+            Self::Fixture(p) => p.clone(),
+        }
+    }
+
+    /// Label for the picker. The ad hoc tour is named by what it *is* rather than by
+    /// its filename, which is an implementation detail nobody should have to know.
+    fn label(&self) -> String {
+        match self {
+            Self::AdHoc => "\u{2728} Claude's answer".to_owned(),
+            Self::Fixture(p) => p
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("fixture")
+                .to_owned(),
+        }
+    }
+}
+
 /// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
 #[derive(Debug, PartialEq, Eq)]
 enum HrwLink {
@@ -5680,6 +5813,8 @@ impl App {
             problem_lines: Vec::new(),
             source_scroll_target: None,
             cached_tour: None,
+            tours: Vec::new(),
+            selected_tour: None,
             tour_polled_at: None,
             aim_at_equation: None,
             scratch_polled_at: None,
@@ -7200,6 +7335,57 @@ mod tests {
     ///
     /// Checks the links only. Whether the camera *looks* right is Doug's half — that is
     /// the whole reason the fixture exists.
+    /// The picker names each tour by what it *is*, not by where it lives.
+    #[test]
+    fn tour_labels_name_what_the_tour_is() {
+        assert!(
+            TourSource::AdHoc.label().contains("Claude's answer"),
+            "the ad hoc tour is named by its role; its filename is an implementation \
+             detail nobody should need to know",
+        );
+        let fixture = TourSource::Fixture(PathBuf::from("/x/docs/fixture-tours/camera-aiming.md"));
+        assert_eq!(fixture.label(), "camera-aiming");
+        assert_eq!(fixture.path(), PathBuf::from("/x/docs/fixture-tours/camera-aiming.md"));
+        assert_eq!(TourSource::AdHoc.path(), PathBuf::from(crate::bridge::TOUR_FILE));
+    }
+
+    /// The list offers the fixtures, ad hoc first when one exists.
+    ///
+    /// Doug asked for in-app selection so a fixture tour no longer has to be copied over
+    /// `.hrw-bridge/tour.md` before starting HRW. Ad hoc goes first because it answers
+    /// the question just asked; burying it under the fixtures would make the common case
+    /// the awkward one.
+    #[test]
+    fn the_tour_list_offers_fixtures_with_ad_hoc_first() {
+        let mut app = App::test_default();
+        app.poll_tour_file();
+
+        assert!(
+            app.tours.iter().any(|t| matches!(t, TourSource::Fixture(_))),
+            "the checked-in fixture tours should be listed: {:?}",
+            app.tours.iter().map(TourSource::label).collect::<Vec<_>>(),
+        );
+        if app.tours.contains(&TourSource::AdHoc) {
+            assert_eq!(app.tours[0], TourSource::AdHoc, "ad hoc sorts first");
+            assert_eq!(app.selected_tour, Some(TourSource::AdHoc), "and is selected by default");
+        }
+
+        // Selecting a fixture drops the previous text immediately rather than leaving
+        // it on screen until the next poll.
+        let fixture = app
+            .tours
+            .iter()
+            .find(|t| matches!(t, TourSource::Fixture(_)))
+            .cloned()
+            .expect("a fixture exists");
+        app.select_tour(fixture.clone());
+        assert!(app.cached_tour.is_none(), "old text cleared on switch");
+        app.tour_polled_at = None;
+        app.poll_tour_file();
+        assert_eq!(app.selected_tour, Some(fixture));
+        assert!(app.cached_tour.is_some(), "the chosen fixture is loaded");
+    }
+
     #[test]
     fn fixture_tour_links_all_resolve() {
         let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
