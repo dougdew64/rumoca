@@ -32,6 +32,22 @@ use crate::incidence_view::IncidenceMatrix;
 use crate::truncate_label;
 
 /// Animation state for Tarjan SCC discovery — supports recorded and live modes.
+/// Where equation `i` sits in world space, for a graph of `n_nodes` equations.
+///
+/// **The single source of truth for this view's layout.** Drawing and camera aiming both
+/// call it, so they cannot disagree about where an equation is — a link that aimed at a
+/// position the renderer did not use would land near-but-wrong, which is worse than not
+/// aiming at all because nothing on screen says it missed.
+pub fn equation_world_pos(i: usize, n_nodes: usize) -> egui::Pos2 {
+    let cols = grid_cols(n_nodes);
+    egui::pos2((i % cols) as f32 + 0.5, (i / cols) as f32 + 0.5)
+}
+
+/// Columns in the square-ish grid the nodes are laid out on.
+fn grid_cols(n_nodes: usize) -> usize {
+    (n_nodes as f32).sqrt().ceil().max(1.0) as usize
+}
+
 /// Seconds between auto-advance frames.
 const FRAME_INTERVAL: f64 = 0.5;
 
@@ -167,6 +183,21 @@ impl TarjanAnimation {
     /// Exists for the crash log (`diagnostics.rs`). "Which animation, at which
     /// frame" is one of the first things worth knowing about a crash in an
     /// animated view, and both fields are otherwise private.
+    /// Aim this view's camera at equation `i`, if it exists.
+    ///
+    /// Out-of-range indices are ignored rather than clamped: a tour naming an equation
+    /// this model does not have is a **bug in the tour**, and silently aiming somewhere
+    /// plausible would hide it. Returns whether the aim was taken, so the caller can
+    /// tell "aimed" from "that equation is not here".
+    #[must_use]
+    pub fn aim_at_equation(&self, canvas: &mut Canvas, i: usize) -> bool {
+        if i >= self.n_nodes {
+            return false;
+        }
+        canvas.request_center_on(equation_world_pos(i, self.n_nodes));
+        true
+    }
+
     pub fn is_empty(&self) -> bool {
         self.playback.is_empty()
     }
@@ -329,7 +360,7 @@ impl TarjanAnimation {
 
     fn draw_graph(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         // Lay out nodes in a grid arrangement.
-        let cols = (self.n_nodes as f32).sqrt().ceil() as usize;
+        let cols = grid_cols(self.n_nodes);
         let grid_rows = (self.n_nodes + cols - 1) / cols;
         let bounds = egui::Rect::from_min_size(
             egui::pos2(-1.0, -1.0),
@@ -358,11 +389,8 @@ impl TarjanAnimation {
 
         let scc_colors = crate::colors::SCC_PALETTE;
 
-        let node_pos = |i: usize| -> egui::Pos2 {
-            let col = i % cols;
-            let row = i / cols;
-            egui::pos2(col as f32 + 0.5, row as f32 + 0.5)
-        };
+        // Same function the camera aims with — see `equation_world_pos`.
+        let node_pos = |i: usize| equation_world_pos(i, self.n_nodes);
 
         // Draw edges (dependency arrows).
         let edge_color = visuals.weak_text_color().gamma_multiply(0.3);
@@ -479,6 +507,52 @@ fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Equations land on a square-ish grid, one world unit apart, centred in their cell.
+    ///
+    /// This is the arithmetic camera aiming depends on. Claude cannot see whether the
+    /// view then *looks* right — that is what the fixture tour is for — but it can
+    /// check that aiming and drawing compute the same place, which is the failure that
+    /// would be near-invisible: a camera landing one cell off looks plausible.
+    #[test]
+    fn equation_positions_tile_a_square_grid() {
+        // 9 nodes -> 3 columns.
+        assert_eq!(grid_cols(9), 3);
+        assert_eq!(equation_world_pos(0, 9), egui::pos2(0.5, 0.5));
+        assert_eq!(equation_world_pos(2, 9), egui::pos2(2.5, 0.5));
+        assert_eq!(equation_world_pos(3, 9), egui::pos2(0.5, 1.5));
+        assert_eq!(equation_world_pos(8, 9), egui::pos2(2.5, 2.5));
+
+        // 10 nodes -> 4 columns (ceil(sqrt(10)) = 4), so the grid is ragged.
+        assert_eq!(grid_cols(10), 4);
+        assert_eq!(equation_world_pos(4, 10), egui::pos2(0.5, 1.5));
+
+        // A single node must not divide by zero.
+        assert_eq!(grid_cols(1), 1);
+        assert_eq!(equation_world_pos(0, 1), egui::pos2(0.5, 0.5));
+    }
+
+    /// Aiming past the end is refused, not clamped.
+    ///
+    /// A tour naming an equation the model does not have is a bug *in the tour*.
+    /// Clamping would aim somewhere plausible and hide it; refusing surfaces it, and
+    /// the caller turns the `false` into a visible notice.
+    #[test]
+    fn aiming_past_the_last_equation_is_refused() {
+        let anim = TarjanAnimation {
+            playback: Playback::recorded(Vec::new(), FRAME_INTERVAL),
+            n_nodes: 4,
+            node_names: vec!["a".into(), "b".into(), "c".into(), "d".into()],
+            rows: vec![Vec::new(); 4],
+            unknown_names: Vec::new(),
+            adj: vec![Vec::new(); 4],
+        };
+        let mut canvas = Canvas::default();
+        assert!(anim.aim_at_equation(&mut canvas, 3), "the last equation is aimable");
+        assert!(!anim.aim_at_equation(&mut canvas, 4), "one past the end is not");
+        assert!(!anim.aim_at_equation(&mut canvas, 999));
+    }
+
     use serde_json::json;
 
     fn sample_report() -> serde_json::Value {

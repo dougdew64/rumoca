@@ -69,6 +69,19 @@ fn should_refit(fitted: egui::Vec2, current: egui::Vec2) -> bool {
     current.x != fitted.x
         || (current.y - fitted.y).abs() > fitted.y * HEIGHT_REFIT_FRACTION
 }
+/// The `pan` that puts world point `target` at the centre of a `size`-pixel viewport.
+///
+/// `pan` is the world coordinate shown at the **top-left** corner, so centring means
+/// backing off by half a viewport, converted to world units by `zoom`.
+///
+/// Split out of [`Canvas::show`] for the same reason as [`should_refit`]: it is the
+/// whole of the aiming logic, and a `Ui` is not needed to check it. Claude cannot see
+/// the rendered result, so the arithmetic is the part that *can* be verified here — see
+/// `docs/ideas.md` #42 on camera aiming.
+fn pan_to_center(target: egui::Pos2, size: egui::Vec2, zoom: f32) -> egui::Vec2 {
+    target.to_vec2() - size / (2.0 * zoom)
+}
+
 const SCROLL_ZOOM_SENSITIVITY: f32 = 0.002;
 
 /// Persistent camera state for a pan/zoom canvas.
@@ -91,6 +104,15 @@ pub struct Canvas {
     pan: egui::Vec2,
     zoom: f32,
     fit: bool,
+    /// A one-shot request to centre the view on a world point, set by
+    /// [`Canvas::request_center_on`] and consumed by the next [`Canvas::show`].
+    ///
+    /// **Processed after `fit`, deliberately.** Both write `pan`, so when a link
+    /// arrives in the same frame as a resize the two would fight; aiming is the more
+    /// specific intent and wins. It also survives the fit rather than being erased by
+    /// it, which is what makes `hrw://…/node/25` land even on a freshly-opened view
+    /// that has not been fitted yet.
+    center_on: Option<egui::Pos2>,
     /// Fraction of view height reserved as top margin when fitting content.
     /// 0.0 = content at top, 0.1 = 10% gap above content for labels.
     /// Matrix views use 0.1 so column labels sit near the view top.
@@ -115,6 +137,7 @@ impl Default for Canvas {
             pan: egui::Vec2::ZERO,
             zoom: 20.0,
             fit: true,
+            center_on: None,
             fit_vertical_bias: 0.0,
             fitted_rect_size: egui::Vec2::ZERO,
         }
@@ -291,6 +314,66 @@ mod tests {
         assert!((back_max.y - world_rect.max.y).abs() < 1e-4);
     }
 
+    /// Centring puts the target in the middle of the viewport, in world terms.
+    ///
+    /// The arithmetic half of camera aiming — the half Claude can verify. Whether the
+    /// node then *looks* centred needs Doug's eyes; that is what the fixture tour is
+    /// for.
+    #[test]
+    fn pan_to_center_puts_the_target_in_the_middle() {
+        let size = egui::vec2(400.0, 200.0);
+        let zoom = 20.0;
+        let target = egui::pos2(7.0, 3.0);
+
+        let pan = pan_to_center(target, size, zoom);
+
+        // Re-derive where the target lands on screen: (world - pan) * zoom.
+        let on_screen = (target.to_vec2() - pan) * zoom;
+        assert!(
+            (on_screen.x - size.x / 2.0).abs() < 1e-3,
+            "target should sit at half the width: {on_screen:?} vs {size:?}",
+        );
+        assert!(
+            (on_screen.y - size.y / 2.0).abs() < 1e-3,
+            "target should sit at half the height: {on_screen:?} vs {size:?}",
+        );
+    }
+
+    /// Zoom is preserved: aiming says *where* to look, not how far in.
+    ///
+    /// Changing zoom on a link would silently discard whatever the reader had set up
+    /// while exploring, which is the opposite of helpful mid-tour.
+    #[test]
+    fn centring_at_different_zooms_keeps_the_target_centred() {
+        let size = egui::vec2(300.0, 300.0);
+        let target = egui::pos2(-4.0, 11.5);
+        for zoom in [1.0_f32, 5.0, 20.0, 90.0] {
+            let pan = pan_to_center(target, size, zoom);
+            let on_screen = (target.to_vec2() - pan) * zoom;
+            assert!(
+                (on_screen.x - 150.0).abs() < 1e-2 && (on_screen.y - 150.0).abs() < 1e-2,
+                "zoom {zoom}: target landed at {on_screen:?}, expected the centre",
+            );
+        }
+    }
+
+    /// A pending aim is consumed once, and does not linger to re-pin the view.
+    ///
+    /// The same discipline as `jump_target` in the source view: a one-shot that stayed
+    /// set would fight the scrollbar every frame — which is exactly the bug the
+    /// 2026-07-29 sideways-drift fix was about, in a different guise.
+    #[test]
+    fn an_aim_request_is_one_shot() {
+        let mut canvas = Canvas::default();
+        assert!(canvas.center_on.is_none(), "nothing pending by default");
+        canvas.request_center_on(egui::pos2(1.0, 2.0));
+        assert_eq!(canvas.center_on, Some(egui::pos2(1.0, 2.0)));
+        // `show` consumes it via `.take()`; emulate that without a Ui.
+        let taken = canvas.center_on.take();
+        assert!(taken.is_some());
+        assert!(canvas.center_on.is_none(), "consumed, so it cannot re-pin next frame");
+    }
+
     #[test]
     fn canvas_default_requests_fit() {
         let canvas = Canvas::default();
@@ -398,6 +481,16 @@ impl Canvas {
         self
     }
 
+    /// Aim the camera: centre the view on a world point at the next paint.
+    ///
+    /// One-shot, like [`request_fit`], and applied *after* it — see `center_on`.
+    /// Zoom is left alone: a link that says "look at node 25" is about *where* the
+    /// camera points, not how far in it is, and silently changing the zoom would
+    /// discard whatever the reader had set up.
+    pub fn request_center_on(&mut self, target: egui::Pos2) {
+        self.center_on = Some(target);
+    }
+
     /// Request a fit-to-content on the next paint.
     ///
     /// Call this when the drawn data changes — e.g., a new specimen compiled,
@@ -471,6 +564,13 @@ impl Canvas {
             let pad_x = (rect.width() - world_bounds.width() * self.zoom) / 2.0;
             self.pan = world_bounds.min.to_vec2() - egui::vec2(pad_x, top_reserve) / self.zoom;
             self.fit = false;
+        }
+
+        // --- Aim (one-shot), after the fit so the more specific intent wins ---
+        if let Some(target) = self.center_on.take()
+            && rect.area() > 0.0
+        {
+            self.pan = pan_to_center(target, rect.size(), self.zoom);
             self.fitted_rect_size = rect.size();
         }
 

@@ -540,6 +540,13 @@ pub struct App {
     /// conventions rule out; a few polls a second is indistinguishable to a
     /// reader and keeps the render path clean.
     tour_polled_at: Option<std::time::Instant>,
+    /// A pending camera aim from `hrw://…/equation/<n>`, consumed by whichever canvas
+    /// view paints next. `None` means no link asked for one.
+    ///
+    /// Held on the app rather than pushed straight into a `Canvas` because the target
+    /// is an *equation index*, and turning that into a world position needs the view's
+    /// own layout — which only exists at paint time.
+    aim_at_equation: Option<usize>,
     /// When the scratch specimen directory was last polled, so a specimen Claude
     /// writes mid-conversation appears without restarting HRW — the same reason
     /// `tour.md` is polled.
@@ -997,6 +1004,7 @@ impl App {
             source_scroll_target: None,
             cached_tour: None,
             tour_polled_at: None,
+            aim_at_equation: None,
             scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
@@ -2431,6 +2439,19 @@ impl App {
         self.cached_tarjan_anim = Some(
             inc.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
         );
+    }
+    // Consume a pending camera aim from `hrw://…/equation/<n>`. Taken here rather than
+    // at link-dispatch time because turning an equation index into a world position
+    // needs this view's own layout, which exists only at paint time.
+    if let Some(target) = self.aim_at_equation
+        && let Some(Some(anim)) = &self.cached_tarjan_anim
+    {
+        self.aim_at_equation = None;
+        if !anim.aim_at_equation(&mut self.tarjan_anim_canvas, target) {
+            self.notice = Some(format!(
+                "no equation {target} in this model \u{2014} the link names one that is not here",
+            ));
+        }
     }
     if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
         if ir_split {
@@ -5055,6 +5076,16 @@ impl eframe::App for App {
                     self.viewing_log = false;
                     self.apply_sub_view(sub);
                 }
+                HrwLink::AimAtEquation(kind, sub, node) => {
+                    self.stage = kind;
+                    self.viewing_log = false;
+                    self.apply_sub_view(Some(sub));
+                    // Recorded rather than applied here: the canvas that should aim
+                    // depends on which sub-view is now showing, and its world layout
+                    // is computed at paint time. The view consumes this on its next
+                    // frame, the same way `jump_target` works for the source view.
+                    self.aim_at_equation = Some(node);
+                }
                 HrwLink::LoadAndSwitch(name, kind, sub) => {
                     if let Some(path) = self.find_specimen(&name) {
                         self.open(path);
@@ -5374,12 +5405,35 @@ enum HrwLink {
     /// one. Quoting is a prose workaround, which is the quiet-hole species that
     /// accumulates unnoticed — see the tour-holes table in `docs/tech-debt.md`.
     ShowSource(Option<u32>),
+    /// `hrw://stage/<Stage>/<SubView>/equation/<n>` — go to a canvas view and **aim
+    /// the camera** at equation `n`, so a stop can say "watch this equation" and put it
+    /// in front of the reader.
+    ///
+    /// **The noun is `equation`, not `node`.** Tarjan's view draws equations as graph
+    /// nodes, so "node" was the tempting word — but the matrix views index the same
+    /// thing as a row, and the IR calls it `f_x[n]`. A verb shared by four views needs
+    /// the vocabulary they share, or the capture and the link drift apart exactly as
+    /// the stage slug did.
+    ///
+    /// Added 2026-07-29. Until then a tour could name a *view* but not a place inside
+    /// it, which is where a canvas view's content actually lives: `ideas.md` #42 listed
+    /// camera aiming as the biggest missing capability for canvas-backed stops.
+    ///
+    /// Only meaningful for the canvas-backed views. A text or grid view has no camera,
+    /// so the link still navigates and the aim is simply ignored rather than failing
+    /// the stop — a tour degrading to "the right view, not aimed" beats one that
+    /// silently does nothing.
+    AimAtEquation(StageKind, SubView, usize),
 }
 
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
 fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     let path = url.strip_prefix("hrw://")?;
-    let parts: Vec<&str> = path.splitn(4, '/').collect();
+    // 5, not 4: the node form (`stage/<Stage>/<View>/node/<n>`) is five segments.
+    // With a cap of 4 the trailing `node/<n>` glommed into one segment and the link
+    // silently failed to parse — a link that does nothing is the worst outcome in a
+    // tour, since nothing on screen says why.
+    let parts: Vec<&str> = path.splitn(5, '/').collect();
     match parts.as_slice() {
         ["load", specimen, stage, view] => {
             let kind = StageKind::from_slug(stage)?;
@@ -5399,6 +5453,16 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["stage", stage] => {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::SwitchStage(kind, None))
+        }
+        // Longest patterns first: `splitn` caps the segment count, so the node form
+        // must be matched before the shorter stage forms can swallow it.
+        ["stage", stage, view, "equation", n] => {
+            let kind = StageKind::from_slug(stage)?;
+            Some(HrwLink::AimAtEquation(
+                kind,
+                SubView::from_slug(kind, view)?,
+                n.parse().ok()?,
+            ))
         }
         ["source", line] => Some(HrwLink::ShowSource(Some(line.parse().ok()?))),
         ["source"] => Some(HrwLink::ShowSource(None)),
@@ -5617,6 +5681,7 @@ impl App {
             source_scroll_target: None,
             cached_tour: None,
             tour_polled_at: None,
+            aim_at_equation: None,
             scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
@@ -7121,6 +7186,82 @@ mod tests {
                 "hrw://stage/{slug} must navigate to {kind:?}",
             );
         }
+    }
+
+    /// The camera-aiming verb parses, and only where it makes sense.
+    /// Every link in every **fixture tour** resolves against the current parser.
+    ///
+    /// A fixture tour is kept and versioned — unlike an ad hoc tour, which is gitignored
+    /// and regenerated per question. The ephemerality rule was never about tours; it was
+    /// about *explanation*, which rots because nothing checks it. A fixture tour has a
+    /// pass/fail criterion, and **this test is what makes that true**: without something
+    /// executing it, a saved tour is stored prose with extra steps, and would drift from
+    /// the app exactly as `end_to_end_tour.md`'s 7x7 matrix did.
+    ///
+    /// Checks the links only. Whether the camera *looks* right is Doug's half — that is
+    /// the whole reason the fixture exists.
+    #[test]
+    fn fixture_tour_links_all_resolve() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            return; // no fixture tours in this checkout
+        };
+        let mut tours = 0usize;
+        let mut links = 0usize;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            tours += 1;
+            let text = std::fs::read_to_string(&path).unwrap();
+            let found = extract_hrw_links(&text);
+            assert!(
+                !found.is_empty(),
+                "a fixture tour with no links tests nothing: {}",
+                path.display(),
+            );
+            for link in found {
+                assert!(
+                    parse_hrw_link(&link).is_some(),
+                    "unresolvable link in {}: {link}",
+                    path.display(),
+                );
+                links += 1;
+            }
+        }
+        assert!(tours > 0 && links > 0, "expected at least one fixture tour with links");
+    }
+
+    #[test]
+    fn a_link_can_aim_at_an_equation() {
+        assert_eq!(
+            parse_hrw_link("hrw://stage/Structural/TarjanAnim/equation/13"),
+            Some(HrwLink::AimAtEquation(
+                StageKind::Structural,
+                SubView::Structural(StructuralView::TarjanAnim),
+                13,
+            )),
+        );
+        // Works on the other stage that shares the sub-view enum.
+        assert!(matches!(
+            parse_hrw_link("hrw://stage/IndexReduction/MatchingAnim/equation/0"),
+            Some(HrwLink::AimAtEquation(StageKind::IndexReduction, _, 0)),
+        ));
+
+        // A sub-view the stage does not have still fails, rather than aiming blindly.
+        assert!(parse_hrw_link("hrw://stage/Events/TarjanAnim/equation/1").is_none());
+        // A non-numeric index fails rather than silently becoming 0.
+        assert!(parse_hrw_link("hrw://stage/Structural/TarjanAnim/equation/x").is_none());
+        // The shorter forms still parse — raising `splitn` to 5 must not break them.
+        assert!(matches!(
+            parse_hrw_link("hrw://stage/Structural/Incidence"),
+            Some(HrwLink::SwitchStage(StageKind::Structural, Some(_))),
+        ));
+        assert!(matches!(
+            parse_hrw_link("hrw://load/CapacitorLoop/Structural/Summary"),
+            Some(HrwLink::LoadAndSwitch(_, StageKind::Structural, Some(_))),
+        ));
     }
 
     #[test]
