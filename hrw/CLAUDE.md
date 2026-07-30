@@ -247,6 +247,21 @@ Candidates, not commitments — consult when planning new work; promote items in
   directory is hard-coded, not a setting. **One fixture tour per capability, not per change.**
   They cover what Claude cannot see: the rendered surface.
 
+  **Narrow, one feature each — deliberately** (Doug, 2026-07-30). Claude proposed *wider*
+  tours after noticing that half of one walk's bugs came from outside the stops, and had
+  the evidence backwards: those bugs were found *because* the tour was short enough to
+  leave attention to spare. **The scarce resource is Doug's attention per expectation, not
+  his walks**, so a wide tour consumes the surplus that produced the off-stop findings
+  rather than multiplying them. Narrow also means a stop failure implicates one feature,
+  and means Claude authors the tour while it still knows exactly what should happen —
+  both "mostly collapsed" and the phantom highlight were written about behaviour Claude
+  had *not* just built.
+
+  Past ten or so fixtures this needs a **selection principle** (walk the tour for whatever
+  just changed, plus one stale one) and **visible staleness** — nothing currently catches a
+  tour whose *expectations* rot, only its links. "Last walked" is derivable from the
+  `tour-link` entries in the action trail.
+
   **Every `**Expected:**` line must be violable.** Doug found "mostly collapsed" where the
   truth is *fully* collapsed (2026-07-30); an audit then found "nothing particularly
   centred" in a second fixture. Neither could be contradicted by anything, so neither
