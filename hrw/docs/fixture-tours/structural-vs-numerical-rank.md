@@ -63,11 +63,18 @@ and the tour proves nothing.
 
 ## 📐 Stop 4 — Back to HRW, and what it would say
 
-[Structural → Summary](hrw://stage/Structural/Summary)
+[Structural → Spy-plot](hrw://stage/Structural/SpyPlot)
 
-**Expected:** no error. `ProportionalLoop` is structurally non-singular — and it would
-report exactly the same at loop gain −1, because **nothing in this view can tell the
-difference.**
+**Expected:** the block structure, with the 3×3 coupled block on the diagonal and no
+error anywhere. `ProportionalLoop` is structurally non-singular.
+
+**It would look identical at loop gain −1.** Same pattern, same blocks, same tearing —
+because **nothing in this view can tell the difference.**
+
+*(This stop linked to `Structural/Summary` until Doug walked the tour: that tab exists
+only when a model is* singular*, so the link named a view with no tab. HRW now refuses
+such a link and says so, rather than selecting it and rendering the singular summary for
+a non-singular model.)*
 
 That is not a defect. It is the boundary of what a structural phase is for, and knowing
 where the boundary lies is the point of the tour.

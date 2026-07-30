@@ -1795,6 +1795,42 @@ impl App {
         format!("{model}: reached {}", self.last_successful_stage().name())
     }
 
+    /// Whether a structural sub-view has a tab right now.
+    ///
+    /// **One predicate, used by the tab bar and by the link guard**, so a link cannot
+    /// select a view that has no tab. Doug hit exactly that: the cross-platform tour
+    /// linked to `Structural/Summary`, which exists only when a model is *singular* —
+    /// `ProportionalLoop` is not, so the link selected a view with no tab and the panel
+    /// rendered the singular summary for a non-singular model.
+    ///
+    /// Availability depends on the *model*, not just the stage, which is why
+    /// `SubView::from_slug` cannot catch it: that validates a slug against a stage, and
+    /// this is a question about what the compile produced.
+    fn structural_view_available(&self, v: StructuralView) -> bool {
+        let is_index_reduction = self.stage == StageKind::IndexReduction;
+        let is_singular = self
+            .stages
+            .get(self.stage)
+            .note
+            .as_deref()
+            .is_some_and(|n| n.contains("singular"));
+        match v {
+            // Summary is the singular-system explanation, plus Index Reduction's report.
+            StructuralView::Summary => is_index_reduction || is_singular,
+            StructuralView::Animate => {
+                is_index_reduction && !self.index_reduction_frames.is_empty()
+            }
+            StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations(),
+            // These need a complete matching to mean anything.
+            StructuralView::SpyPlot | StructuralView::TarjanAnim | StructuralView::TearingAnim => {
+                !is_singular || is_index_reduction
+            }
+            // Always available: the incidence pattern, the matching *search* (whose
+            // failure is the point on a singular system), and the raw tree.
+            StructuralView::Incidence | StructuralView::MatchingAnim | StructuralView::Tree => true,
+        }
+    }
+
     /// Show a notice **and record it**.
     ///
     /// Every notice is something HRW is telling Doug went wrong — an unresolvable node
@@ -3419,6 +3455,9 @@ impl App {
                 matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
             let report_ready = report_stage && self.current_stage().value.is_some();
             if report_ready {
+                // Set when a link names a sub-view this model has no tab for. Collected
+                // here and posted after the borrows end, as `FrameIntent` does.
+                let mut bad_sub_view: Option<String> = None;
                 // Invalidate caches when switching between Structural
                 // and IndexReduction — each has different report data.
                 if self.cached_report_stage != Some(self.stage) {
@@ -3452,19 +3491,39 @@ impl App {
                 // report stage is entered singular. A link saying "show me the
                 // matching animation" has to win over the default saying "show
                 // the summary first".
-                if self.pending_sub_view.is_some() {
-                    let sub = self.pending_sub_view.take();
-                    self.apply_sub_view(sub);
+                if let Some(sub) = self.pending_sub_view.take() {
+                    // Refuse a sub-view this model does not have a tab for, rather than
+                    // selecting it and rendering something misleading — the same rule as
+                    // aiming at an equation that is not there. The link named a real
+                    // slug; whether it is *available* depends on what the compile
+                    // produced, which only this point knows.
+                    let available = match sub {
+                        SubView::Structural(v) => self.structural_view_available(v),
+                        _ => true,
+                    };
+                    if available {
+                        self.apply_sub_view(Some(sub));
+                    } else {
+                        let msg = format!(
+                            "{} has no {} view for this model \u{2014} the link names one \
+                             that is not here",
+                            self.stage.name(),
+                            sub.slug(),
+                        );
+                        bad_sub_view = Some(msg);
+                    }
                 }
                 // Only now is the sub-view settled, so only now does looking up "the
                 // on-screen animation" mean the one the link named. Applying this
                 // before the block above would seek whichever animation happened to be
                 // showing beforehand.
                 self.apply_pending_seek();
+                if let Some(msg) = bad_sub_view.take() {
+                    self.notify(msg);
+                }
                 let is_index_reduction = self.stage == StageKind::IndexReduction;
                 let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
                 let is_singular = note.contains("singular");
-                let has_summary = is_index_reduction || is_singular;
 
                 // Status banner
                 if is_index_reduction {
@@ -3490,17 +3549,20 @@ impl App {
 
                 // Sub-tab bar
                 ui.horizontal(|ui| {
-                    if has_summary {
+                    // Availability comes from `structural_view_available`, the same
+                    // predicate the link guard uses — a tab that exists and a link that
+                    // is honoured must not be able to disagree.
+                    if self.structural_view_available(StructuralView::Summary) {
                         ui.selectable_value(&mut self.structural_view, StructuralView::Summary, "Summary");
                         ui.separator();
                     }
-                    if is_index_reduction && !self.index_reduction_frames.is_empty() {
+                    if self.structural_view_available(StructuralView::Animate) {
                         ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
                     }
                     // Alias elimination is reported by this stage only, and
                     // only when something was actually eliminated -- a model
                     // with no aliases must not show an empty tab.
-                    if is_index_reduction && self.has_alias_eliminations() {
+                    if self.structural_view_available(StructuralView::AliasAnim) {
                         ui.selectable_value(&mut self.structural_view, StructuralView::AliasAnim, "Aliases \u{25b6}")
                             .on_hover_text(
                                 "Watch variables be substituted away. Every connection \
@@ -3511,7 +3573,7 @@ impl App {
                     }
                     // Spy-plot, Matching, BLT require a full matching —
                     // hide them when the Structural stage is singular.
-                    if !is_singular || is_index_reduction {
+                    if self.structural_view_available(StructuralView::SpyPlot) {
                         ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
                     }
                     ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
@@ -3727,7 +3789,7 @@ impl App {
                         None => {}
                     }
                 }
-                // The stage borrow ends here, so the notice can finally be posted.
+                // The stage borrow ends here, so the notices can finally be posted.
                 if let Some(msg) = bad_jump {
                     self.jump_target = None;
                     self.notify(msg);
@@ -8433,6 +8495,50 @@ mod tests {
     /// fixture reference test duly reported as a missing notebook called "". Two small
     /// faults met there: the extractor did not stop at a backtick, and the grammar
     /// accepted an empty name.
+    /// Sub-view availability depends on the model, not only the stage.
+    ///
+    /// Doug found the cross-platform tour linking to `Structural/Summary` on
+    /// `ProportionalLoop`. The slug is valid for the stage, so `SubView::from_slug`
+    /// accepts it — but Summary only has a tab when a model is **singular**, and
+    /// ProportionalLoop is not. The link selected a view with no tab and the panel
+    /// rendered the singular summary for a non-singular model.
+    ///
+    /// One predicate now answers this for both the tab bar and the link guard, so a
+    /// tab that exists and a link that is honoured cannot disagree.
+    #[test]
+    fn a_sub_view_is_available_only_when_its_tab_is() {
+        let clean = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+        let singular = Stage {
+            value: Some(serde_json::json!({ "error": {} })),
+            note: Some("singular".into()),
+            note_is_error: true,
+        };
+
+        // A non-singular Structural stage: no Summary, but the pattern views are there.
+        let mut app = App::test_default();
+        app.stage = StageKind::Structural;
+        app.stages.structural = clean.clone();
+        assert!(!app.structural_view_available(StructuralView::Summary), "no Summary here");
+        assert!(app.structural_view_available(StructuralView::SpyPlot));
+        assert!(app.structural_view_available(StructuralView::TearingAnim));
+        assert!(app.structural_view_available(StructuralView::Incidence));
+
+        // Singular: Summary appears, and the views needing a full matching vanish.
+        app.stages.structural = singular;
+        assert!(app.structural_view_available(StructuralView::Summary));
+        assert!(!app.structural_view_available(StructuralView::SpyPlot));
+        assert!(!app.structural_view_available(StructuralView::TearingAnim));
+        // ...except Matching, whose *failure* is the point on a singular system (#44).
+        assert!(app.structural_view_available(StructuralView::MatchingAnim));
+        assert!(app.structural_view_available(StructuralView::Tree));
+
+        // Index Reduction always has a Summary, and the reduction replay only with frames.
+        app.stage = StageKind::IndexReduction;
+        app.stages.index_reduction = clean;
+        assert!(app.structural_view_available(StructuralView::Summary));
+        assert!(!app.structural_view_available(StructuralView::Animate), "no frames yet");
+    }
+
     #[test]
     fn the_notebook_verb_needs_a_name() {
         assert_eq!(
