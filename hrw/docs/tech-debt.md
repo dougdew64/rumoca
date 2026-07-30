@@ -92,7 +92,16 @@ Two kinds, and both count:
 |---|---|---|---|---|
 | `Matching ▶` hidden when Structural is singular — the one view that shows *why* a rank deficiency exists is unavailable exactly when it matters | 2026-07-29, "what does a rank deficiency of 1 mean?" | Tour Stop 3 was an admission rather than a stop | [ideas #44](ideas.md) | ✅ **fixed 2026-07-29** |
 | `hrw://` cannot address a **sub-tab** — only stage tabs. Every animation and every custom view lives one level below what a link can reach | 2026-07-29, same tour | 4 navigation moments degraded to "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶** yourself" | [ideas #42](ideas.md) gap 2 | ✅ **fixed 2026-07-29** |
+| `hrw://` cannot point at a **source line**, so a tour must *quote* one instead | 2026-07-29, both tours | "reported at line 9, `connect(src.n, gnd.p);`" and "lines 7–8" — quoted because nothing could point | [ideas #45](ideas.md) | ✅ **fixed 2026-07-29** |
 | `Canvas` cannot centre on a node — a stop cannot make Doug *look at* node 25 | *predicted, not yet hit* | Would bite if a stop needed a specific node; see the `should_refit` fragility | [ideas #42](ideas.md) gap 3 | open (unconfirmed) |
+
+**Under-logged twice, and the pattern is the lesson.** The source-line row above was
+added only after Doug asked whether it was time to build highlighting — two tours had
+already worked around it in prose and Claude had logged neither. That is the *second*
+quiet hole missed this way (sub-tab links was the first). **Loud holes get logged
+because they are embarrassing; quiet ones get absorbed.** When writing a tour, treat
+every "click this yourself" and every quoted-instead-of-linked reference as a row here,
+mechanically, without judging whether it feels worth mentioning.
 
 **Closed 2026-07-29, both pre-emptively** — no question was waiting on either, which is
 the point: Doug's deadlines are real, and the cheapest moment to fix a hole is while

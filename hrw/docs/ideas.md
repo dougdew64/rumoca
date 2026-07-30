@@ -2062,6 +2062,26 @@ accepts is exactly a filable issue.
    failure path whose payload has *not* been audited yet. Start step 2 there.
 2. **Audit the other failure payloads** for source location; add spans where Rumoca
    has them and widen visibility where it does not.
+2b. ✅ **Highlight the blamed source line** — **DONE 2026-07-29.** The specimen source
+   view tints a blamed line and colours its line number, with a hover saying why. Plus
+   `hrw://source[/<line>]`, so a tour can *point* at the line instead of quoting it.
+
+   **The design condition is the interesting part: only a model index reduction cannot
+   rescue gets its source blamed.** `MotorWithBrake` is structurally singular too, has
+   an unmatched unknown, and has a source line for it — and it is a perfectly good
+   model. Painting its `connect()` as a problem would teach the exact opposite of the
+   lesson the Structural/IndexReduction contrast exists to teach.
+   `only_an_unrescuable_model_gets_its_source_blamed` pins it, including the case where
+   an unknown has no span at all (manufactured and solver-vector variables) and so
+   contributes no blamed line rather than a bogus one.
+
+   Rendering choices made *because Claude cannot see the result*: the highlight is
+   painted **over** the row at low alpha rather than behind it (a `Frame` fill looks
+   cleaner but adds margins), and a blamed line is marked by **colouring its line
+   number** rather than adding a gutter glyph (which would widen the column and shift
+   every line). Both alternatives risk a layout regression, which is precisely the class
+   of defect Claude has no way to notice — see `project-tours-multiply-testing`.
+
 3. **A "why did this fail?" capture** — when a stage carries an error, `focus.json`
    should say so prominently with the failing stage's payload, so Claude does not have
    to be told which stage broke.

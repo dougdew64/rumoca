@@ -462,6 +462,15 @@ pub struct App {
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
     // purpose-note rendering so heading IDs and image state persist across frames.
     commonmark_cache: egui_commonmark::CommonMarkCache,
+    /// Source lines the compiler blamed, as `(1-based line, why)`.
+    ///
+    /// Populated **only when the model is genuinely ill-posed** — see
+    /// [`Self::compute_problem_lines`]. Recomputed once per compile, never per frame.
+    problem_lines: Vec<(u32, String)>,
+    /// A line the source view should scroll to, set by an `hrw://source/<line>` link.
+    /// Consumed on the frame it is honoured, like `jump_target`, so it cannot re-scroll
+    /// every frame and pin the view.
+    source_scroll_target: Option<u32>,
     /// The ad hoc tour from `.hrw-bridge/tour.md` (ideas #42), with the mtime it
     /// was read at, so a tour Claude rewrites mid-conversation is picked up
     /// without restarting HRW. `None` means no tour has been written — the
@@ -919,6 +928,8 @@ impl App {
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
+            problem_lines: Vec::new(),
+            source_scroll_target: None,
             cached_tour: None,
             tour_polled_at: None,
             cached_purpose_notes: HashMap::new(),
@@ -1227,6 +1238,8 @@ impl App {
                     } else {
                         self.stage = self.last_successful_stage();
                     }
+                    // Which source lines the compiler blamed. Once per compile.
+                    self.compute_problem_lines();
                     // Publish every stage's full IR so Claude can diff any pair.
                     if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
                         self.notice = Some(format!("write_stages failed: {e}"));
@@ -3276,6 +3289,61 @@ impl App {
         }
     }
 
+    /// Work out which source lines the compiler blamed, from the stage errors.
+    ///
+    /// **Only fills in when the model is genuinely ill-posed**, meaning the Structural
+    /// stage failed *and* index reduction could not rescue it. That condition is the
+    /// whole point rather than caution: `MotorWithBrake` is structurally singular too,
+    /// with unmatched unknowns and source lines to match, and it is a perfectly good
+    /// model — high-index, not broken. Index reduction demotes a state and it solves.
+    /// Painting its `connect()` line as a problem would teach something false.
+    ///
+    /// `CapacitorLoop` is the other case: states 1 → 1, nothing demoted, still
+    /// singular. Nothing downstream can save it, so the blame is real.
+    ///
+    /// Reads the **index reduction** payload rather than the structural one, because
+    /// that is the stage whose failure means "unrescuable". Both name the same unknown
+    /// here, but the reduced system is the one actually stuck.
+    fn compute_problem_lines(&mut self) {
+        self.problem_lines.clear();
+        let structural_failed =
+            self.stages.structural.value.as_ref().is_some_and(|v| v.get("error").is_some());
+        if !structural_failed {
+            return;
+        }
+        // Index reduction succeeding means high-index at worst, never ill-posed.
+        let Some(err) =
+            self.stages.index_reduction.value.as_ref().and_then(|v| v.get("error"))
+        else {
+            return;
+        };
+        let Some(locs) = err.get("unmatched_unknown_locations").and_then(|v| v.as_array())
+        else {
+            return;
+        };
+        for entry in locs {
+            // No source provenance means a manufactured or solver-vector variable.
+            // There is no line to blame, and inventing one would be worse than silence.
+            let Some(line) = entry
+                .get("location")
+                .and_then(|l| l.get("line"))
+                .and_then(serde_json::Value::as_u64)
+            else {
+                continue;
+            };
+            let unknown =
+                entry.get("unknown").and_then(serde_json::Value::as_str).unwrap_or("?");
+            self.problem_lines.push((
+                line as u32,
+                format!(
+                    "No equation determines `{unknown}`, and index reduction could not fix \
+                     it \u{2014} this model is ill-posed, not merely high-index. See the \
+                     Structural and Index Reduction tabs."
+                ),
+            ));
+        }
+    }
+
     /// Point the current stage's sub-view selector at `sub`, if one was requested.
     ///
     /// Each stage keeps its own selector enum, so this is a small dispatch rather
@@ -3466,12 +3534,23 @@ egui::Panel::top("bar").show(ui, |ui| {
                     if scroll_to.is_some() || self.tracked_identifier.is_none() {
                         self.scrolled_source_for = self.tracked_identifier.clone();
                     }
+                    // A link-driven scroll, taken once so it cannot re-scroll every
+                    // frame and pin the view — the same discipline as `jump_target`.
+                    let source_scroll_to = self.source_scroll_target.take();
                     // Tokenized once per specimen, not per frame.
                     let highlight = self.cached_highlight.get_or_insert_with(
                         || crate::source_view::SourceHighlight::new(text)
                     );
                     for (i, line) in text.lines().enumerate() {
                         let line_1 = (i + 1) as u32;
+                        // Why this line was blamed, if it was. `problem_lines` is only
+                        // non-empty for a model index reduction could not rescue, so a
+                        // high-index model like MotorWithBrake is never marked.
+                        let blamed = self
+                            .problem_lines
+                            .iter()
+                            .find(|(l, _)| *l == line_1)
+                            .map(|(_, why)| why.as_str());
                         let line_tokens = highlight.line(i);
                         let spans = self.identifier_index.as_ref()
                             .map(|idx| idx.clickable_spans(line_1, line, line_tokens))
@@ -3484,11 +3563,18 @@ egui::Panel::top("bar").show(ui, |ui| {
                         );
                         let row = ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 0.0;
-                            ui.label(
-                                egui::RichText::new(format!("{:>4} ", line_1))
-                                    .monospace()
-                                    .weak()
-                            );
+                            // A blamed line's number is coloured rather than
+                            // gutter-marked: a marker glyph would widen this column and
+                            // shift every line, and a layout regression is precisely the
+                            // class of defect Claude cannot see.
+                            let mut num = egui::RichText::new(format!("{:>4} ", line_1))
+                                .monospace();
+                            num = if blamed.is_some() {
+                                num.color(crate::colors::ANIM_FAIL).strong()
+                            } else {
+                                num.weak()
+                            };
+                            ui.label(num);
                             for seg in &segments {
                                 match seg.link {
                                     Some(name) => {
@@ -3530,7 +3616,19 @@ egui::Panel::top("bar").show(ui, |ui| {
                                 }
                             }
                         });
-                        if scroll_to == Some(line_1) {
+                        if let Some(why) = blamed {
+                            // Painted *over* the row at low alpha rather than behind it.
+                            // A `Frame` fill would be cleaner-looking but adds margins,
+                            // and any layout shift here is a rendered defect Claude has
+                            // no way to notice. An overpaint cannot move anything.
+                            ui.painter().rect_filled(
+                                row.response.rect,
+                                egui::CornerRadius::ZERO,
+                                crate::colors::ANIM_FAIL.gamma_multiply(0.18),
+                            );
+                            row.response.clone().on_hover_text(why);
+                        }
+                        if scroll_to == Some(line_1) || source_scroll_to == Some(line_1) {
                             row.response.scroll_to_me(
                                 Some(egui::Align::Center),
                             );
@@ -4759,6 +4857,15 @@ impl eframe::App for App {
                         self.notice = Some(format!("specimen not found: {name}"));
                     }
                 }
+                HrwLink::ShowSource(line) => {
+                    // The source lives in Specimen mode's Source detail, so getting
+                    // there means setting both — a tour should not have to tell Doug
+                    // which mode to be in.
+                    self.ui_mode = UiMode::Specimen;
+                    self.specimen_detail = SpecimenDetail::Source;
+                    self.viewing_log = false;
+                    self.source_scroll_target = line;
+                }
                 HrwLink::SwitchStage(kind, sub) => {
                     self.stage = kind;
                     self.viewing_log = false;
@@ -5075,6 +5182,14 @@ enum HrwLink {
     SwitchStage(StageKind, Option<SubView>),
     /// `hrw://load/<Specimen>/<Stage>[/<SubView>]` — load a specimen, then switch.
     LoadAndSwitch(String, StageKind, Option<SubView>),
+    /// `hrw://source[/<line>]` — show the Modelica source, optionally scrolled to a
+    /// 1-based line.
+    ///
+    /// Added 2026-07-29 to close a tour hole: two tours had to *quote* a source line
+    /// ("reported at line 9, `connect(src.n, gnd.p);`") because nothing could point at
+    /// one. Quoting is a prose workaround, which is the quiet-hole species that
+    /// accumulates unnoticed — see the tour-holes table in `docs/tech-debt.md`.
+    ShowSource(Option<u32>),
 }
 
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
@@ -5101,6 +5216,8 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::SwitchStage(kind, None))
         }
+        ["source", line] => Some(HrwLink::ShowSource(Some(line.parse().ok()?))),
+        ["source"] => Some(HrwLink::ShowSource(None)),
         _ => None,
     }
 }
@@ -5275,6 +5392,8 @@ impl App {
             cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
+            problem_lines: Vec::new(),
+            source_scroll_target: None,
             cached_tour: None,
             tour_polled_at: None,
             cached_purpose_notes: HashMap::new(),
@@ -6492,6 +6611,79 @@ mod tests {
         let mut app = App::test_default();
         app.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
         assert!(app.find_specimen("Bouncing").is_none());
+    }
+
+    /// A link can point at the source, with or without a line.
+    ///
+    /// Closes the second quiet tour hole: two tours *quoted* a source line because
+    /// nothing could point at one.
+    #[test]
+    fn a_link_can_point_at_a_source_line() {
+        assert_eq!(parse_hrw_link("hrw://source/9"), Some(HrwLink::ShowSource(Some(9))));
+        assert_eq!(parse_hrw_link("hrw://source"), Some(HrwLink::ShowSource(None)));
+        // A non-numeric line is malformed, not line 0 and not "the whole file".
+        assert!(parse_hrw_link("hrw://source/nine").is_none());
+    }
+
+    /// **A high-index model must never have its source blamed.**
+    ///
+    /// This is the design condition, not a nicety. `MotorWithBrake` is structurally
+    /// singular, has an unmatched unknown, and has a source line for it — and it is a
+    /// perfectly good model that index reduction solves by demoting a state. Painting
+    /// its `connect()` as a problem would teach the opposite of the lesson the
+    /// Structural/IndexReduction contrast exists to teach.
+    ///
+    /// `CapacitorLoop` is the case where blame is real: states 1 → 1, nothing demoted,
+    /// still singular, so nothing downstream can save it.
+    #[test]
+    fn only_an_unrescuable_model_gets_its_source_blamed() {
+        // Structural failed, index reduction rescued it → no blame.
+        let mut app = App::test_default();
+        // Struct literals rather than `Stage::ok`/`recovered`: those constructors are
+        // the worker's own, and the UI consumes stages read-only.
+        let stage = |v: serde_json::Value| Stage {
+            value: Some(v),
+            note: None,
+            note_is_error: false,
+        };
+        app.stages.structural = stage(serde_json::json!({ "error": { "kind": "singular" } }));
+        app.stages.index_reduction = stage(serde_json::json!({ "blocks": [] }));
+        app.compute_problem_lines();
+        assert!(
+            app.problem_lines.is_empty(),
+            "a high-index model that index reduction fixed must not be blamed",
+        );
+
+        // Structural failed AND index reduction failed → blame, with the line.
+        app.stages.index_reduction = stage(serde_json::json!({
+            "error": {
+                "kind": "singular",
+                "unmatched_unknown_locations": [
+                    { "unknown": "gnd.p.i", "location": { "line": 9 } }
+                ]
+            }
+        }));
+        app.compute_problem_lines();
+        assert_eq!(app.problem_lines.len(), 1);
+        assert_eq!(app.problem_lines[0].0, 9);
+        assert!(
+            app.problem_lines[0].1.contains("ill-posed"),
+            "the hover must say why: {}",
+            app.problem_lines[0].1,
+        );
+
+        // An unknown with no source provenance contributes no blamed line rather than
+        // a bogus one — manufactured and solver-vector variables have no source.
+        app.stages.index_reduction = stage(serde_json::json!({
+            "error": {
+                "kind": "singular",
+                "unmatched_unknown_locations": [
+                    { "unknown": "__solver_y_3", "location": null }
+                ]
+            }
+        }));
+        app.compute_problem_lines();
+        assert!(app.problem_lines.is_empty(), "no span means no line to blame");
     }
 
     /// A link can address a sub-view, on both the load and the switch forms.
