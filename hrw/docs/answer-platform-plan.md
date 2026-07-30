@@ -63,85 +63,98 @@ while**, and let a period of use rather than a single trial decide what comes ne
 
 ## Where things stand after 2026-07-29
 
-**Delivered:** four phase animations; the canvas refit fix; `ui()` 982 → 325 via
-`FrameIntent`; the notebook conversion; the question ledger (#41 stage A); runtime tour
-loading and sub-view links (#42 gaps 1–2); #44; **all of #45** (source locations, the
-DAE-construction payload, the `pipeline_failure` capture, the oracle); the front-end audit
-with its contamination fix; `docs/upstream-issues.md`; and the tech-debt trigger change.
+**The day's real output was a change of project philosophy, not a batch of features.**
 
-**The honest gap:** every one of those is *instrumentation*, and almost none of it has been
-used for its purpose. The ledger's four entries are all about this project's own design —
-**none about continuous-system mathematics.** That was the right call for one session
-(features are experimentable, and the yield was two upstream Rumoca bugs, a cross-specimen
-contamination bug, and a wrong number being displayed as fact). It is the wrong shape for
-two sessions running. **The instruments are now well ahead of the use.**
+An earlier version of this section measured the day by code written and ledger entries
+added, and concluded the instruments had run ahead of their use. Doug rejected that framing,
+correctly:
 
-So the next batch is deliberately **use-led with building attached**, and the ordering
-below reflects that rather than backlog numbering.
+> I would describe this day as a breakthrough change of project philosophy. Exhibit A is the
+> concept of ad hoc tours which you create to answer questions. [...] I want very much to
+> complete our paradigm change for HRW [...] while today's discussion is still fresh in my
+> head.
+
+**The wrong yardstick.** Counting code misses what actually changed, and what changed will
+govern hundreds of future decisions:
+
+- **HRW stopped being a tool Doug uses and became a medium both parties write to.** The
+  inbound noun channel (Context Bar) gained a return path (#42).
+- **Store what cannot be regenerated** — which retired 1,632 lines of narrative, re-aimed
+  `docs/compiler-phases` at Claude, and killed the tour's prose.
+- **Features are experimentable; stored prose is not** (Doug's correction of Claude's
+  over-generalisation).
+- **Tours multiply user testing**, and holes in tours are the signal.
+- **Three platforms, three questions**, with System Modeler as an *adjudicator* that
+  corrects Claude's bias toward blaming its own specimen.
+- **Deadlines are real**, so gaps get fixed pre-emptively; and **audit narrowly, fix
+  immediately.**
+
+A second mismeasurement: "the ledger has no mathematics in it" narrowed the ledger to a
+mathematics-only instrument. Its stated purpose is *what Doug asked and what made it click*,
+and today taught him a great deal about what software can be when built to work with a
+reasoner. That is learning.
+
+**So the ordering below is by what the paradigm shift needs, not by yield.** Momentum on a
+coherent design is real value: the design of #41-#47 is in Doug's head *now*, and deferring
+half of it means re-deriving it worse in three weeks.
 
 ---
 
-## Next batch (ordered)
+## Next batch — complete the paradigm shift  *(ordered)*
 
-### A1. #46 continued — failure specimens, oracle-first  *(highest measured yield)*
+### B1. Finish the answer channel (#42's remainder)  *(was deferred; promoted)*
 
-Three specimens on 2026-07-29 produced **two filable upstream bugs plus two HRW bugs.**
-That is the best yield-per-effort in the project, and the oracle-first practice (#43) makes
-the next round better than the last.
+Claude deferred these as "not needed yet", which was yield-thinking. Under the paradigm
+framing they are **load-bearing**:
 
-Still unrepresented: **Parse**, **Instantiate**, **Events**, **Solve lowering**, and a
-*working* flatten case (`IncompatibleConnect` is now a bug report rather than a flatten
-specimen). Events and Solve lowering may have no authorable failure mode — a result either
-way. Simulation stays deferred (#22).
+- **Ad hoc specimens.** *"Here is the smallest model that exhibits the thing you asked
+  about"* is a core capability of the new paradigm — a teacher's basic move, and one Claude
+  cannot currently make. **Split, do not repurpose** `specimens/`: the curated corpus has
+  properties (portable subset, `// purpose:` comments, System Modeler round-trip intent) that
+  scratch models would degrade. Note that 2026-07-29's four hand-authored specimens are
+  *durable* and correctly belong in the curated set; the split is for disposable probes.
+- **`Canvas` camera aiming.** A tour that cannot make Doug *look at* node 25 is an incomplete
+  channel. Read `should_refit` and its tests first — the sideways-drift bug shows how fragile
+  that camera is.
+- **Animation frame addressing.** A stop can name a view but not the moment inside it, and
+  the moment is where a replay's content lives.
+- **`bridge.rs` decomposition (2365 lines)** — now *in scope* rather than deferred: it owns
+  `focus.json`, so it owns half of noun parity. The tech debt gets paid **as** paradigm work.
+- **`central_panel_ui` (664 lines)** — its four near-parallel sub-tab bars are exactly what
+  frame addressing reworks. Same reasoning.
 
-This is testing wearing authoring's clothes, and it is **pre-emptive**: cheapest now, while
-nothing is blocked on it.
+### B2. #47 — tours that span platforms  *(the structural completion)*
 
-### A2. #47 — the first cross-platform tour  *(small, target already identified)*
+Without this the paradigm is "HRW plus chat" rather than three platforms. Per-stop medium, a
+gitignored path for notebooks, and Claude evaluating before delivering while **Doug**
+evaluates to learn.
 
-Do not design cross-platform tours in the abstract; **the first one already has its
-question.** The `CapacitorLoop` tour ends by admitting HRW cannot show the one thing Stop 1
-rests on: a matrix with **full structural rank that is numerically singular**. Mathematica
-can, in a few lines, on a 3x3 Doug can perturb himself.
+**The first one already has its question**, so do not design it in the abstract: the
+`CapacitorLoop` tour ends by admitting HRW cannot show a matrix with full *structural* rank
+that is numerically singular. Mathematica can, on a 3x3 Doug can perturb himself.
 
-That single tour exercises the whole of #47 — per-stop medium, a notebook handed over at a
-gitignored path, and Claude evaluating before delivering while Doug evaluates to learn. And
-it lands on the linear-algebra thread rather than on the compiler.
+### B3. #41 stages B-C — make the database trustworthy
 
-### A3. #41 stage B — the citation checker  *(cheap, mechanical, slot anywhere)*
+- **B: the citation checker.** Mechanical, no dependencies, one known broken citation.
+- **C: provenance tags**, upgrading lazily through use. Without them the database is Claude's
+  own unverified prose, which is the echo chamber the arrangement exists to avoid.
 
-`cargo run -p hrw --example check_doc_citations`. Verifies every `crates/**/*.rs` path and
-named test the docs cite. One broken citation is already known. No dependencies, so it
-fills any gap.
+Stages **D-E** (generated index, repeat detection) still wait: four ledger entries is not
+enough to retrieve from. A content dependency, not a priority judgement.
 
-### A4. Doug's alone: a real question
+### B4. #46 — failure specimens for the remaining phases
 
-**Phase 2 — a Cellier problem, or a model Doug writes that will not compile.** Claude
-cannot start this one; it needs Doug to read something and get stuck. It is also the only
-item that puts a *mathematics* entry in the ledger.
+The testing loop, now with every channel available. Three specimens on 2026-07-29 produced
+**four bugs** (two filable upstream), so the yield is established and oracle-first will
+improve it. Parse, Instantiate, Events, Solve lowering, and a *working* flatten case remain.
 
-Also Doug's alone: **filing the two upstream issues** (`docs/upstream-issues.md`).
+### Then, in their own time
 
-### Deliberately NOT next, with reasons
+**#17** as a cross-platform tour rather than as HRW work. **#5** (four-bar) when there is
+appetite for the rabbit hole. **The mathematics** — Cellier, or a model that will not
+compile — when Doug is ready; that one only he can start.
 
-- **#42's remainder** — animation *frame* addressing, `Canvas` camera aiming, and the
-  curated/scratch specimen split. **None has been needed.** Four specimens were authored by
-  hand on 2026-07-29 and the split never came up; no tour has yet wanted a specific node or
-  frame. Build when a tour asks.
-- **#41 stages D–E** (generated index, repeat detection) — four ledger entries is not enough
-  to retrieve from. Wait for content.
-- **#17 Jacobian** — rescoped by #47. When it happens it happens *as* a cross-platform tour,
-  not as HRW work.
-- **#5 four-bar** — large, and its gate is appetite for a known rabbit hole.
-- **`central_panel_ui` (664 lines) and `bridge.rs` (2365)** — both wait on #42's remainder,
-  which is not next. Per the sweep rule: skip what the next phase will rewrite.
-
-### The one guard on "implement all of those"
-
-No item above is wrong, and Doug is right to want them all. The risk is not a bad item — it
-is **another full session of building that leaves the ledger with no mathematics in it.**
-So: at least one real question answered per batch, and if a batch ends with no ledger entry
-about continuous-system modelling, that is the signal to stop building and start reading.
+**Doug's alone regardless:** filing the two entries in `docs/upstream-issues.md`.
 
 ---
 
