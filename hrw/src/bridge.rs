@@ -337,6 +337,58 @@ impl Seg {
 ///
 /// Used in the UI status bar to show what was captured, and in the bridge
 /// focus file as a human-readable path alongside the machine-readable key array.
+/// Parse a path written by [`describe_path`] back into segments.
+///
+/// **The documented inverse**, so `hrw://…/node/<path>` accepts exactly the string a
+/// capture emits. That is #42's parity principle at its sharpest: a node path is the
+/// capture's richest noun, and a link that could not consume the capture's own spelling
+/// of it would be a vocabulary that agrees with itself and nothing else.
+///
+/// Grammar, matching `describe_path` exactly:
+///
+/// ```text
+/// error.unmatched_unknowns[0]   ->  [Key("error"), Key("unmatched_unknowns"), Index(0)]
+/// blocks[2].equations[0]        ->  [Key("blocks"), Index(2), Key("equations"), Index(0)]
+/// (tree root)  or  <empty>      ->  []            (the root itself)
+/// ```
+///
+/// Returns `None` on anything malformed rather than guessing: a link that silently
+/// pointed at the wrong node would be worse than one that visibly does nothing, because
+/// the reader would take the wrong subtree for the answer.
+pub fn parse_path(s: &str) -> Option<Vec<Seg>> {
+    if s.is_empty() || s == "(tree root)" {
+        return Some(Vec::new());
+    }
+    let mut out = Vec::new();
+    let mut rest = s;
+    loop {
+        // A key runs to the next '.' or '[' — but an index may come first, when a
+        // previous segment ended with one (`blocks[2][0]`).
+        if let Some(after) = rest.strip_prefix('[') {
+            let (digits, tail) = after.split_once(']')?;
+            out.push(Seg::Index(digits.parse().ok()?));
+            rest = tail;
+        } else {
+            let end = rest.find(['.', '[']).unwrap_or(rest.len());
+            let key = &rest[..end];
+            if key.is_empty() {
+                return None; // ".." or a leading '.', neither of which describe_path emits
+            }
+            out.push(Seg::Key(key.to_owned()));
+            rest = &rest[end..];
+        }
+        match rest.chars().next() {
+            None => return Some(out),
+            Some('.') => rest = &rest[1..],
+            Some('[') => {}
+            Some(_) => return None,
+        }
+        if rest.is_empty() {
+            return None; // trailing '.', which describe_path never produces
+        }
+    }
+}
+
 pub fn describe_path(path: &[Seg]) -> String {
     if path.is_empty() {
         return "(tree root)".to_owned();
@@ -1602,6 +1654,45 @@ fn shape(v: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `parse_path` is exactly `describe_path`'s inverse.
+    ///
+    /// The property that matters for #42's parity principle: a link must consume the
+    /// capture's own spelling of a node path. Tested by round-tripping rather than by
+    /// restating either format, so it fails if either side moves — the same shape as
+    /// the stage-slug and frame-counter tests.
+    #[test]
+    fn a_node_path_round_trips_between_capture_and_link() {
+        let cases: Vec<Vec<Seg>> = vec![
+            vec![],
+            vec![Seg::Key("error".into())],
+            vec![Seg::Key("error".into()), Seg::Key("unmatched_unknowns".into()), Seg::Index(0)],
+            vec![Seg::Key("blocks".into()), Seg::Index(2), Seg::Key("equations".into()), Seg::Index(0)],
+            // Consecutive indices, which `describe_path` writes without a separator.
+            vec![Seg::Key("rows".into()), Seg::Index(3), Seg::Index(1)],
+            // A leading index is unusual but expressible.
+            vec![Seg::Index(7)],
+        ];
+        for path in cases {
+            let written = describe_path(&path);
+            assert_eq!(
+                parse_path(&written).as_deref(),
+                Some(path.as_slice()),
+                "{path:?} wrote as {written:?} and did not parse back",
+            );
+        }
+    }
+
+    /// Malformed paths are refused, not guessed at.
+    ///
+    /// A link that silently pointed at the *wrong* node would be worse than one that
+    /// visibly does nothing: the reader would take the wrong subtree for the answer.
+    #[test]
+    fn a_malformed_node_path_is_refused() {
+        for bad in ["a..b", ".a", "a.", "a[", "a[]", "a[x]", "a]0[", "a[0]b"] {
+            assert!(parse_path(bad).is_none(), "{bad:?} should not parse");
+        }
+    }
 
     /// A neutral `View` for tests that are not about the view section.
     ///

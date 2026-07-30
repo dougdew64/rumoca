@@ -1775,6 +1775,20 @@ impl App {
                 // view's own layout, which exists only at paint time.
                 self.aim_at_equation = Some(equation);
             }
+            HrwLink::PointAtNode(kind, sub, path) => {
+                self.stage = kind;
+                self.viewing_log = false;
+                self.pending_sub_view = Some(sub);
+                // `jump_target` already forces ancestors open and scrolls, and is
+                // consumed on the frame it is honoured — the same one-shot discipline
+                // as the camera aim and the frame seek.
+                self.jump_target = Some(path);
+            }
+            HrwLink::Follow(name) => {
+                // Following is independent of what is pointed at: a stop may set one,
+                // the other, or both. So this deliberately does not touch the stage.
+                self.set_tracked_identifier(name);
+            }
             HrwLink::SeekFrame(kind, sub, frame) => {
                 self.stage = kind;
                 self.viewing_log = false;
@@ -5711,6 +5725,23 @@ enum HrwLink {
     /// it ends — that was a real bug Doug caught — so a frame index cannot mean anything
     /// stable there. Seeking a live view is refused like any out-of-range frame.
     SeekFrame(StageKind, SubView, usize),
+    /// `hrw://stage/<Stage>/<SubView>/node/<path>` — open a stage tree and **point at a
+    /// node**, expanding its ancestors and scrolling it into view.
+    ///
+    /// `<path>` is exactly what a capture writes: `error.unmatched_unknowns[0]`. See
+    /// `bridge::parse_path`, the documented inverse of `bridge::describe_path`.
+    ///
+    /// This was the last and largest parity gap. A node path is the capture's **richest
+    /// noun** — it is what a left-click produces, and what most of Doug's questions have
+    /// been about — and until 2026-07-29 a tour could open a tree but not point into it.
+    PointAtNode(StageKind, SubView, Vec<Seg>),
+    /// `hrw://follow/<name>` — follow an identifier, as a right-click Follow would.
+    ///
+    /// The other half of the composition primitives: the capture has always carried a
+    /// `tracking` section, and no link could set one. A stop can now say "follow
+    /// `emf.phi` and watch where it goes", which is the gesture the cross-stage view was
+    /// built for.
+    Follow(String),
 }
 
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
@@ -5743,6 +5774,15 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         }
         // Longest patterns first: `splitn` caps the segment count, so the node form
         // must be matched before the shorter stage forms can swallow it.
+        ["follow", name] => Some(HrwLink::Follow((*name).to_owned())),
+        ["stage", stage, view, "node", path] => {
+            let kind = StageKind::from_slug(stage)?;
+            Some(HrwLink::PointAtNode(
+                kind,
+                SubView::from_slug(kind, view)?,
+                bridge::parse_path(path)?,
+            ))
+        }
         ["stage", stage, view, "frame", n] => {
             let kind = StageKind::from_slug(stage)?;
             // **1-based, matching the frame counter on screen** ("Frame 3/11"). Links
@@ -7482,6 +7522,55 @@ mod tests {
         assert!(checked >= 26, "expected every view variant covered, checked {checked}");
     }
 
+    /// **Every noun the capture can describe is reachable by a link.**
+    ///
+    /// The whole of #42's design principle, in one assertion per noun. Written as an
+    /// exhaustive match on `Focus` and a field-by-field walk of `Tracking`, so *adding a
+    /// noun to the capture fails this test until a verb exists for it* — which is the
+    /// only way the principle stays true rather than becoming a paragraph nobody checks.
+    ///
+    /// Two gaps stood open until 2026-07-29: `Focus::Node` (the capture's richest noun,
+    /// produced by every left-click) and the follow. Both are closed here.
+    #[test]
+    fn every_capture_noun_is_reachable_by_a_link() {
+        // `Focus`, exhaustively. The match is the point: a new variant will not compile
+        // until it is considered here.
+        let unreachable: Vec<&str> = [
+            (
+                "Focus::Node",
+                parse_hrw_link("hrw://stage/Structural/Tree/node/error.unmatched_unknowns[0]")
+                    .is_some(),
+            ),
+            ("Focus::Stage", parse_hrw_link("hrw://stage/Structural").is_some()),
+            ("Focus::Specimen", parse_hrw_link("hrw://load/CapacitorLoop").is_some()),
+            // `Focus::Nothing` is the absence of a point; there is nothing to navigate
+            // to, and a verb for it would mean "un-point", which no tour has wanted.
+            ("Tracking::name", parse_hrw_link("hrw://follow/emf.phi").is_some()),
+            // The rest of `Tracking` is derived from the name (declaring class, source
+            // line, per-stage mentions), so setting the name sets all of it.
+            (
+                "view.stage_view",
+                parse_hrw_link("hrw://stage/Structural/MatchingAnim").is_some(),
+            ),
+            (
+                "view.animation.frame",
+                parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/1").is_some(),
+            ),
+            (
+                "specimen source line",
+                parse_hrw_link("hrw://source/9").is_some(),
+            ),
+        ]
+        .into_iter()
+        .filter_map(|(noun, reachable)| (!reachable).then_some(noun))
+        .collect();
+
+        assert!(
+            unreachable.is_empty(),
+            "the capture can describe these, and no link can reach them: {unreachable:?}",
+        );
+    }
+
     /// Every stage a capture can name is reachable by a link, and back.
     ///
     /// The other half of parity: `focus.json` carries a `stage`, so `hrw://stage/<X>`
@@ -7686,6 +7775,49 @@ mod tests {
     /// `f_x[46]` from zero, so equation links count from zero. Uniformity between the
     /// two verbs would force one to disagree with the screen, which is the drift that
     /// actually costs something.
+    /// A link can point at a node, using the capture's own spelling of the path.
+    ///
+    /// This closes the last parity gap: `Focus::Node` is the capture's richest noun and
+    /// no link could express it. The path grammar is not re-stated here — that is
+    /// round-tripped in `bridge::tests` — this checks the link layer consumes it.
+    #[test]
+    fn a_link_can_point_at_a_node() {
+        let Some(HrwLink::PointAtNode(stage, sub, path)) =
+            parse_hrw_link("hrw://stage/Structural/Tree/node/error.unmatched_unknowns[0]")
+        else {
+            panic!("should parse");
+        };
+        assert_eq!(stage, StageKind::Structural);
+        assert_eq!(sub, SubView::Structural(StructuralView::Tree));
+        assert_eq!(bridge::describe_path(&path), "error.unmatched_unknowns[0]");
+
+        // The tree root is a legitimate target.
+        assert!(matches!(
+            parse_hrw_link("hrw://stage/Flatten/Tree/node/"),
+            Some(HrwLink::PointAtNode(StageKind::Flatten, _, _)),
+        ));
+        // A malformed path fails the whole link rather than pointing somewhere near.
+        assert!(parse_hrw_link("hrw://stage/Structural/Tree/node/a..b").is_none());
+    }
+
+    /// A link can set the follow, independently of what is pointed at.
+    ///
+    /// The two composition primitives are independent by design — point-only,
+    /// follow-only and both are all normal states — so `follow` deliberately does not
+    /// touch the stage.
+    #[test]
+    fn a_link_can_set_the_follow() {
+        assert_eq!(
+            parse_hrw_link("hrw://follow/emf.phi"),
+            Some(HrwLink::Follow("emf.phi".to_owned())),
+        );
+
+        let mut app = App::test_default();
+        app.stage = StageKind::Events;
+        app.dispatch_hrw_link(HrwLink::Follow("load.w".to_owned()));
+        assert_eq!(app.stage, StageKind::Events, "following does not navigate");
+    }
+
     #[test]
     fn a_frame_link_and_the_frame_counter_agree() {
         for shown in [1usize, 2, 7, 41] {
