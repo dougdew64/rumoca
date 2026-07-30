@@ -2163,3 +2163,77 @@ appears — in the tour-holes table for HRW gaps, and upstream for Rumoca ones.
 **Relates to:** #45 (diagnostic mode — this is how it gets exercised), #43 (the oracle),
 #42 (tours, and the curated/scratch split), #4 (the differential test), and
 `docs/tech-debt.md`'s priority order.
+
+---
+
+## 47. Cross-platform tours — Wolfram Desktop and System Modeler as tour destinations
+
+Requested 2026-07-29 (Doug), extending #42 and #43:
+
+> Add to the ideas backlog a way to enable you to use Wolfram desktop and SystemModeler
+> for tours. You should not be limited to HRW. I want very much to make HRW great. But,
+> I do not want to duplicate in HRW functionality that is already in Wolfram desktop and
+> that would always be best used in Wolfram desktop. For example, your answer to one of
+> my questions might be entirely about a linear algebra concept and might be best
+> explained in Wolfram desktop.
+
+### The scoping test this gives HRW
+
+**HRW should only hold what nothing else can hold.**
+
+| Platform | What it uniquely has |
+|---|---|
+| **HRW / Rumoca** | *This compiler's process on this model.* Nothing else has it. |
+| **Wolfram Desktop** | Mathematics — symbolic, exact, interactive, plotted. HRW must never compete. |
+| **System Modeler** | An independent Modelica implementation. The oracle. |
+
+**This retroactively rescopes #17** (Jacobian sparsity and conditioning). As written it
+implies building a Jacobian heatmap and condition-number display *in HRW*. But
+`MatrixRank`, `SingularValueList` and `MatrixPlot` already exist, are exact, and are
+interactive, and the structural-vs-numerical rank distinction #17 exists to teach is a
+**linear algebra** lesson, not a compiler one. HRW's contribution is the *sparsity
+pattern from the real model*; Wolfram's is everything numerical done to it. Revisit #17
+under this split before building any of it.
+
+### A notebook already *is* a tour
+
+A sequence of cells evaluated in order is structurally the same artifact as a sequence
+of stops. `mcp__Wolfram__WriteNotebook` exists and was verified working 2026-07-29. So
+the capability is **present**; what is missing is only that a tour cannot *span*
+platforms.
+
+### What to build (small)
+
+1. **Per-stop medium in the tour format.** A stop declares where it happens — HRW,
+   notebook, System Modeler — so a single tour can route across all three. Mostly a
+   convention in the markdown plus a clear visual marker, not new machinery.
+2. **A path a notebook can be handed over at.** Notebooks go in the **gitignored**
+   bridge area (`.hrw-bridge/notebooks/`), *not* the repo. **Same ephemerality rule as
+   tours** (#42): a stored notebook rots exactly like the retired specimen narratives
+   did, and the durable artifact is the *question*, in `docs/question-ledger.md`. A
+   plain path in the tour markdown is enough to start — Doug opens it.
+3. **Later, optionally:** HRW launching a notebook, and a `wolfram://`-style return
+   link. Neither is needed for the first cross-platform tour, so neither should be built
+   before one exists.
+
+### Disciplines — extending the medium rule rather than replacing it
+
+- **Text first, always** (the medium rule, `docs/question-ledger.md`), and **one
+  non-text medium at a time.** A three-platform answer to a small question is worse
+  than a paragraph.
+- **The bias risk grows with each platform.** Claude already noted that composing a tour
+  is more interesting work than writing a sentence; building a Mathematica notebook is
+  more interesting still. The mitigation is unchanged and it is Doug's: he asks.
+- **Never hand over unevaluated Wolfram code** (#43). But deliver a notebook whose cells
+  **Doug** evaluates — Claude evaluates first to know it works, then ships cells for him
+  to run. The first tour's Stop 2 taught this: the stop that landed was the one where
+  Doug verified something himself rather than being told it. Pre-evaluated output would
+  throw that away.
+- **A notebook must not silently become the answer to a compiler question.** If the
+  question is about what Rumoca did, the notebook can only supplement — Wolfram has no
+  access to Rumoca's internals, and a mathematically elegant answer to the wrong
+  question is still wrong.
+
+**Relates to:** #42 (tours), #43 (the platforms, and the verified capability), #17
+(rescoped by this), #46 (System Modeler as arbiter for failure specimens),
+`user-linear-algebra-learning`.
