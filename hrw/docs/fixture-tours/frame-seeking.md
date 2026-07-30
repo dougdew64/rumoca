@@ -7,6 +7,11 @@ made* rather than at the view containing it.
 Pick it from the Tours list. Every link below is parsed on every test run by
 `fixture_tour_links_all_resolve`.
 
+**Frame numbers in links match the counter on screen.** `frame/41` puts the view on
+"Frame 41". They were 0-based until 2026-07-29, and this file *documented* the
+off-by-one in a parenthetical rather than treating it as the bug it was — Doug spotted
+that while walking the stops in order.
+
 ---
 
 ## Stop 1 — A replay, unstarted
@@ -20,18 +25,19 @@ part, and the reason this view is reachable at all (`ideas.md` #44).
 
 ## Stop 2 — Jump into the middle
 
-[Seek to frame 40](hrw://stage/Structural/MatchingAnim/frame/40)
+[Seek to frame 41](hrw://stage/Structural/MatchingAnim/frame/41)
 
-**Expected:** the frame counter reads **41** (frames are 0-based in links, 1-based in the
-display) and the matrix shows a partly-built matching. Playback is **paused** — if it
-starts running, the seek is not holding.
+**Expected:** the frame counter reads **41/…** — the same number as the link — and the
+matrix shows a partly-built matching. Playback is **paused**; if it starts running, the
+seek is not holding.
 
 ## Stop 3 — Jump backwards
 
-[Seek to frame 5](hrw://stage/Structural/MatchingAnim/frame/5)
+[Seek to frame 6](hrw://stage/Structural/MatchingAnim/frame/6)
 
-**Expected:** the counter goes **down**. A seek is not "advance to"; it is "go to". If
-Stops 2 and 3 both land forward, the cursor is being clamped rather than set.
+**Expected:** the counter reads **6/…** — down from 41. A seek is not "advance to", it
+is "go to". If Stops 2 and 3 both land forward, the cursor is being clamped rather than
+set.
 
 ## Stop 4 — Seek past the end
 
@@ -43,15 +49,17 @@ frame would look deliberate and hide it.
 
 ## Stop 5 — Seek in a different animation
 
-[Index Reduction → Reduction replay, frame 2](hrw://stage/IndexReduction/Animate/frame/2)
+[Index Reduction → Reduction replay, frame 3](hrw://stage/IndexReduction/Animate/frame/3)
 
-**Expected:** the stage switches, the reduction replay opens, and it sits on frame 3 of
-its own trace. All eight animated views share one `Playback::seek`, so this exercises
+**Expected:** the stage switches, the reduction replay opens **on the first click**, and
+it sits on **frame 3** of its own trace. All eight animated views share one `Playback::seek`, so this exercises
 that they are genuinely the same mechanism rather than eight lookalikes.
 
 ## Stop 6 — Seek a view that has no animation
 
 [Structural → Incidence, frame 2](hrw://stage/Structural/Incidence/frame/2)
+
+*(Incidence has no replay, so there is no counter to match.)*
 
 **Expected:** the Incidence view opens and **nothing else happens** — no notice, no
 error. The link still navigates; the seek is simply not applicable. Degrading to "the

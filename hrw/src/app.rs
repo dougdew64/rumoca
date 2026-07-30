@@ -1846,8 +1846,12 @@ impl App {
         let ok = self.on_screen_animation_mut().is_some_and(|a| a.seek(target));
         if !ok {
             let (_, total) = self.on_screen_animation().map_or((0, 0), Animated::position);
+            // Report the number Doug typed, not the internal cursor: the link is
+            // 1-based to match the on-screen counter, so quoting `target` raw would be
+            // off by one — the very bug this change fixes.
             self.notice = Some(format!(
-                "no frame {target} in this replay \u{2014} it has {total}",
+                "no frame {} in this replay \u{2014} it has {total}",
+                target + 1,
             ));
         }
     }
@@ -5674,6 +5678,12 @@ enum HrwLink {
     /// the camera** at equation `n`, so a stop can say "watch this equation" and put it
     /// in front of the reader.
     ///
+    /// **0-based, unlike `frame`** — deliberately. Each verb matches how *its* thing is
+    /// displayed: equations appear as `f_x[46]` counting from zero, frames appear as
+    /// "Frame 3/11" counting from one. Making the two verbs uniform would force one of
+    /// them to disagree with the screen. Agreeing with the display is the rule; agreeing
+    /// with each other is not.
+    ///
     /// **The noun is `equation`, not `node`.** Tarjan's view draws equations as graph
     /// nodes, so "node" was the tempting word — but the matrix views index the same
     /// thing as a row, and the IR calls it `f_x[n]`. A verb shared by four views needs
@@ -5735,10 +5745,19 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         // must be matched before the shorter stage forms can swallow it.
         ["stage", stage, view, "frame", n] => {
             let kind = StageKind::from_slug(stage)?;
+            // **1-based, matching the frame counter on screen** ("Frame 3/11"). Links
+            // were 0-based until 2026-07-29, so a tour saying `frame/40` landed on a
+            // view reading "41" — the link vocabulary and the display disagreeing about
+            // the same noun, which is the drift the parity audit exists to catch. The
+            // fixture tour had the discrepancy *written into it* as a parenthetical,
+            // which is documenting a bug rather than fixing it.
+            //
+            // `checked_sub(1)` rejects `frame/0` for free: under 1-based numbering there
+            // is no frame zero, and a link saying so is a mistake worth surfacing.
             Some(HrwLink::SeekFrame(
                 kind,
                 SubView::from_slug(kind, view)?,
-                n.parse().ok()?,
+                n.parse::<usize>().ok()?.checked_sub(1)?,
             ))
         }
         ["stage", stage, view, "equation", n] => {
@@ -7656,6 +7675,33 @@ mod tests {
         );
     }
 
+    /// A link's frame number is the one on screen — the two must not be off by one.
+    ///
+    /// Doug walked the fixture tour and found the link and the counter disagreeing.
+    /// The fixture had even *documented* the discrepancy ("frames are 0-based in links,
+    /// 1-based in the display"), which is writing a bug down instead of fixing it.
+    ///
+    /// The rule this pins: **each verb matches how its own thing is displayed.** Frames
+    /// read "Frame 3/11" from one, so frame links count from one; equations read
+    /// `f_x[46]` from zero, so equation links count from zero. Uniformity between the
+    /// two verbs would force one to disagree with the screen, which is the drift that
+    /// actually costs something.
+    #[test]
+    fn a_frame_link_and_the_frame_counter_agree() {
+        for shown in [1usize, 2, 7, 41] {
+            let link = format!("hrw://stage/Structural/MatchingAnim/frame/{shown}");
+            let Some(HrwLink::SeekFrame(_, _, cursor)) = parse_hrw_link(&link) else {
+                panic!("{link} should parse");
+            };
+            // What the label would render for that cursor.
+            let label = crate::frame_label(cursor, 100, crate::LiveState::Idle);
+            assert!(
+                label.starts_with(&format!("Frame {shown}/")),
+                "{link} should land on a view reading \"Frame {shown}/…\", got {label:?}",
+            );
+        }
+    }
+
     #[test]
     fn a_link_can_seek_to_a_frame() {
         assert_eq!(
@@ -7663,7 +7709,7 @@ mod tests {
             Some(HrwLink::SeekFrame(
                 StageKind::Structural,
                 SubView::Structural(StructuralView::MatchingAnim),
-                7,
+                6, // 1-based link, 0-based cursor
             )),
         );
         // The non-structural animated views too — one per stage that has one.
@@ -7674,15 +7720,20 @@ mod tests {
         ] {
             let link = format!("hrw://stage/{stage}/{view}/frame/3");
             assert!(
-                matches!(parse_hrw_link(&link), Some(HrwLink::SeekFrame(_, _, 3))),
+                matches!(parse_hrw_link(&link), Some(HrwLink::SeekFrame(_, _, 2))),
                 "{link} should seek",
             );
         }
-        // Frame 0 is a real frame, not a falsy nothing.
+        // Links are **1-based**, matching the on-screen counter, so `frame/1` is the
+        // first frame and `frame/0` does not exist.
         assert!(matches!(
-            parse_hrw_link("hrw://stage/Structural/TarjanAnim/frame/0"),
+            parse_hrw_link("hrw://stage/Structural/TarjanAnim/frame/1"),
             Some(HrwLink::SeekFrame(_, _, 0)),
         ));
+        assert!(
+            parse_hrw_link("hrw://stage/Structural/TarjanAnim/frame/0").is_none(),
+            "there is no frame zero when the counter starts at one",
+        );
         // Garbage still fails rather than defaulting.
         assert!(parse_hrw_link("hrw://stage/Structural/TarjanAnim/frame/last").is_none());
         assert!(parse_hrw_link("hrw://stage/Structural/Tree/frame/1").is_some());
