@@ -31,6 +31,18 @@ file, and it is the only artifact here that gets more valuable with time.
   - the **concept** is hard → a different explanation, probably a more concrete one
   - the **thing is not visible in HRW** → this is a feature request, and a better
     one than Claude would invent. Log it in `docs/ideas.md` and say so.
+- **Asked again to RE-TEST a capability that just landed** — added 2026-07-29, because
+  the two branches above did not cover it and a naive reading of them gives the *wrong*
+  response. Doug re-asked "why did the structural phase fail for CapacitorLoop?"
+  immediately after source-line highlighting shipped, having asked it before source
+  spans existed at all. The explanation had not failed; the *answer channel* had
+  changed.
+
+  **Tell it apart by what shipped between the two askings.** If a relevant capability
+  landed in between, the question is a re-test. Then: **keep the explanation, lead with
+  what is newly possible, and be shorter** — Doug has heard the reasoning and is
+  checking the delivery. Hunting for a fresh angle would waste the turn and imply he
+  had failed to understand something he understood the first time.
 
 **If composing a tour hits an HRW gap** — you cannot get somewhere, or you work
 around it with prose ("same tab → now click X") — record it in the **tour holes**
@@ -80,6 +92,32 @@ them. Doug also expects to request follow-up tours on his own initiative.
 ---
 
 ## Entries
+
+### 2026-07-29 (second asking) — "Why did the structural phase fail for the CapacitorLoop specimen?"
+
+- **Context:** `focus.json` seq 1, stage `Structural`, `stage_view: Summary`,
+  `specimen_detail: Source`, specimen `CapacitorLoop.mo` — **he had the source view
+  open**, which is itself the evidence for the re-test reading.
+- **Medium:** text, short. No tour: one already exists for this question and nothing
+  about it needed regenerating.
+- **Repeat?** **Third asking of this concept, and a *re-test*** — the first was before
+  source spans existed, the second produced the contrast tour, this one followed
+  source-line highlighting shipping.
+- **Concepts:** structural singularity; high-index vs ill-posed; where blame belongs.
+
+**What made the difference this time:** nothing about the explanation. The answer that
+had been *"reported at line 9"* became *"line 9 should be tinted right now."* Same
+diagnosis, delivered by pointing instead of quoting.
+
+**The ledger gained a category because of this entry.** "Repeat" had two branches —
+concept-is-hard and not-visible-in-HRW — and neither fits. Following either would have
+had Claude change an explanation that worked. See the third bullet under *How to use it*.
+
+**Still worth saying every time these witnesses come up:** `gnd.p.i` is the visible
+casualty, not the cause. The cause is lines 7–8 pinning the capacitor voltage; the
+shortage surfaces at `gnd.p.i` because it has the least slack in the matching. Claude
+got this wrong once already (called it "a single point of failure") and had to correct
+it after checking `RcCircuit`, where the same one-mark column matches fine.
 
 ### 2026-07-29 — "Remind me again, what is the replay/reveal test?"
 
