@@ -2072,3 +2072,94 @@ accepts is exactly a filable issue.
 motivated), #42 (a diagnostic answer will often want a tour), the priority order in
 `docs/tech-debt.md`, and `project-engage-rumoca-community` — Rumoca-only failures are
 upstream issues.
+
+---
+
+## 46. A failure specimen + tour for every compiler phase
+
+Requested 2026-07-29 (Doug), after the `CapacitorLoop`/`RcCircuit` contrast tour:
+
+> I could imagine giving you a task of creating a bunch of new specimens and tours to
+> demonstrate failure in each compiler phase. I'd bet that you would identify and fix
+> gaps and bugs while completing that task.
+
+### Why this works — the mechanism, stated exactly
+
+**A bug is a violated expectation.** A tour supplies Doug's expectation, which is why
+he catches *rendered* defects while being led (#42). **Authoring a specimen supplies
+Claude's expectation**, which is why Claude catches *logical* ones: writing a model
+means predicting where and how it should fail, and a prediction is falsifiable in a way
+that reading code is not.
+
+Evidence, all from 2026-07-29 and all found this way rather than by inspection:
+
+| Finding | The expectation that exposed it |
+| --- | --- |
+| `rank_deficiency` reported **7** where the truth was **1** | an 8/8/7 system must be one short; the emitted number contradicted arithmetic |
+| A missing-equation model fails at **DAE construction**, not structural analysis | `UnderdeterminedShaft` was authored expecting a structural failure |
+| Claude's "single-nonzero column is a single point of failure" claim was **wrong** | the same column in `RcCircuit` has one nonzero and matches fine |
+
+**Two of those three were Claude's errors, not HRW's.** That is the point rather than a
+caveat: Claude's confident wrong answers are the failure mode Doug can least easily
+catch, and this task attacks them.
+
+### What to build
+
+A specimen per failure mode, each with a `purpose.md` and a tour that walks its
+diagnosis. Known coverage as of 2026-07-29:
+
+| Phase | Failure to exhibit | Status |
+|---|---|---|
+| Parse | syntax error | to author (trivial) |
+| Resolve | unresolvable name | to author |
+| Instantiate | conditional / inner-outer problem | to author, shape unclear |
+| Typecheck | dimension or unit mismatch | to author |
+| Flatten | incompatible connectors (`strict_connection_validation`) | to author |
+| DAE construction | unbalanced — a declared variable with no equation | **shape known** (see #45); no specimen yet |
+| Structural | singular *and unrescuable* | ✅ `CapacitorLoop` |
+| Index reduction | still singular after the funnel | ✅ `CapacitorLoop` (same specimen, later stage) |
+| Initialization | over-determined initial conditions | ✅ `OverInitRc` |
+| Events | ? | **may be impossible to fail deliberately — finding either way** |
+| Solve lowering | ? | same |
+| Simulation | divergence / convergence failure | **deferred** — simulator maturity (#22) |
+
+"One per phase" is a coverage sketch, **not a quota.** A phase that turns out to have no
+authorable failure mode is a *result*: it means either the phase cannot fail
+independently, or its failures are always reported by a neighbour.
+
+### Three things this task must get right
+
+1. **A specimen landing on the wrong phase is a finding, not a failed attempt.**
+   `UnderdeterminedShaft` was written to fail at structural analysis and failed at DAE
+   construction instead — good compiler behaviour, and a fact about Rumoca that Claude
+   would have guessed wrong. **Record it; do not silently retry until the specimen
+   lands where predicted.** Silently retrying converts findings into wasted effort.
+
+2. **Failure specimens are corpus liabilities and need marking.** A deliberately broken
+   model in `specimens/` invites a future session to "fix" it, and breaks any
+   "everything compiles" expectation. They belong in the **curated** set (they are
+   durable and deliberate, not scratch — see #42's split), but each needs its
+   `purpose.md` and its `// purpose:` line to say **DO NOT FIX** and name the phase it
+   is meant to break. `UnderdeterminedShaft` was deleted on 2026-07-29 partly for want
+   of this convention.
+
+3. **#43's oracle is a prerequisite, not an extra.** Deliberately writing invalid models
+   raises the question every time: *is the model invalid for the reason intended, or is
+   Rumoca simply rejecting something valid?* Claude cannot settle that from inside HRW.
+   Doug: *"in case you doubt your expectations, you have available to you SystemModeler
+   and Wolfram desktop to check your specimen."* Compile each specimen in System
+   Modeler: a model **SM accepts and Rumoca rejects** is a Rumoca bug and a filable
+   upstream issue (`project-engage-rumoca-community`); a model both reject is a good
+   failure specimen. Do this **before** writing the tour, or the tour may teach a
+   Rumoca defect as though it were Modelica semantics.
+
+### Expected yield
+
+Gaps in the failure payloads (#45 step 2), wrong or missing numbers of the
+`rank_deficiency` species, absent source spans on the resolve/typecheck/flatten paths,
+and tour holes wherever a diagnosis needs a view that does not exist. Log each as it
+appears — in the tour-holes table for HRW gaps, and upstream for Rumoca ones.
+
+**Relates to:** #45 (diagnostic mode — this is how it gets exercised), #43 (the oracle),
+#42 (tours, and the curated/scratch split), #4 (the differential test), and
+`docs/tech-debt.md`'s priority order.
