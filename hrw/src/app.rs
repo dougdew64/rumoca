@@ -5484,6 +5484,19 @@ impl eframe::App for App {
         // change — and would keep those headers forced open, which is the
         // "Reveal identifiers" complaint all over again.
         self.jump_target = None;
+
+        // ---- End of frame: publish diagnostics ----
+        //
+        // Refresh the snapshot and only then write `session.json`, so its `app` block
+        // describes the state the frame's actions *produced*. The top-of-frame snapshot
+        // is still set (a crash mid-frame reports where the user was), but it is the
+        // wrong thing to pair with an action that just fired: on 2026-07-30 that
+        // combination made Claude report three phantom bugs from correct values.
+        //
+        // `flush_session` is a no-op unless an action was recorded, so an idle frame
+        // costs one bool check.
+        diagnostics::set_snapshot(self.diagnostic_snapshot());
+        diagnostics::flush_session();
     }
 }
 

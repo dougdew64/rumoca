@@ -121,6 +121,9 @@ struct Diag {
     /// a crash during startup is real and must still produce a file.
     snapshot: Option<Value>,
     actions: VecDeque<Event>,
+    /// An action was recorded and `session.json` has not been rewritten since.
+    /// Cleared by [`flush_session`] at end of frame.
+    session_dirty: bool,
     log: VecDeque<Event>,
     /// Set once the panic hook has written a file, so a *second* panic while
     /// unwinding does not overwrite the first — the first is the interesting one.
@@ -161,6 +164,7 @@ pub fn init() {
             build: build_info(),
             snapshot: None,
             actions: VecDeque::new(),
+            session_dirty: false,
             log: VecDeque::new(),
             crash_written: false,
         });
@@ -190,11 +194,40 @@ pub fn init() {
 /// the paint path.
 pub fn record_action(kind: &str, detail: impl Into<String>) {
     let event = Event { at_ms: now_millis(), kind: kind.to_owned(), detail: detail.into() };
-    let session = with_diag(|d| {
+    // Append now (so the ring reads in the order the user acted) but **do not write
+    // yet** — see `flush_session`.
+    with_diag(|d| {
         push_capped(&mut d.actions, event, MAX_ACTIONS);
-        d.report(None)
+        d.session_dirty = true;
     });
-    if let Some(report) = session {
+}
+
+/// Write `session.json` if an action was recorded this frame.
+///
+/// **Called at the very end of the frame, after the snapshot is refreshed**, and that
+/// ordering is the whole point. `record_action` used to write the file itself, which
+/// meant the `app` block described the state *before* the action — while reading exactly
+/// like the state after it.
+///
+/// That cost something real on 2026-07-30, the first time the trail was used in anger:
+/// Claude read `specimen: null, model: null, stage_tab: Resolve` after a specimen-load
+/// link and flagged three phantom bugs. All three values were correct for the instant
+/// captured, two lines before `self.selected` was assigned. **A diagnostic that misleads
+/// its only consumer is worse than no diagnostic**, because it is trusted.
+///
+/// Splitting append-from-write keeps both properties: actions stay in the order they
+/// happened, and the state block describes what those actions *did*.
+pub fn flush_session() {
+    let session = with_diag(|d| {
+        if !d.session_dirty {
+            return None;
+        }
+        d.session_dirty = false;
+        Some(d.report(None))
+    });
+    // `with_diag` gives `Option<Option<Value>>`: outer for "diagnostics are live",
+    // inner for "there was anything to write".
+    if let Some(report) = session.flatten() {
         let _ = write_json(&dir().join("session.json"), &report);
     }
 }
@@ -412,6 +445,55 @@ fn civil_from_millis(ms: u128) -> (i64, u32, u32, u32, u32, u32, u32) {
 mod tests {
     use super::*;
 
+    /// Recording an action does not write; flushing does.
+    ///
+    /// The whole point of the split. `record_action` used to write `session.json`
+    /// itself, which pinned the `app` block to the state *before* the action — while
+    /// reading exactly like the state after it. On 2026-07-30, the first time the trail
+    /// was read in anger, that made Claude report three phantom bugs from three correct
+    /// values (`specimen: null` two lines before `self.selected` was assigned).
+    ///
+    /// A diagnostic that misleads its only consumer is worse than none, because it is
+    /// trusted.
+    #[test]
+    fn recording_defers_the_write_until_flush() {
+        // Seed the global directly. `init()` also rotates files and installs a panic
+        // hook, neither of which this test wants, and `with_diag` is a no-op while the
+        // global is `None` — which is what made the first version of this test pass
+        // vacuously until it asserted on the flag.
+        *DIAG.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Diag {
+            build: build_info(),
+            snapshot: None,
+            actions: VecDeque::new(),
+            session_dirty: false,
+            log: VecDeque::new(),
+            crash_written: true, // never write a crash file from a test
+        });
+
+        assert!(!with_diag(|d| d.session_dirty).unwrap_or(false), "clean to begin with");
+
+        record_action("tour-link", "stage/Structural/Tree");
+        assert!(
+            with_diag(|d| d.session_dirty).unwrap_or(false),
+            "recording marks the session dirty rather than writing",
+        );
+        assert_eq!(
+            with_diag(|d| d.actions.len()).unwrap_or(0),
+            1,
+            "and the action is appended immediately, so ordering is preserved",
+        );
+
+        flush_session();
+        assert!(
+            !with_diag(|d| d.session_dirty).unwrap_or(true),
+            "flushing clears the flag, so an idle frame does not rewrite the file",
+        );
+
+        // A second flush with nothing recorded is a no-op.
+        flush_session();
+        assert!(!with_diag(|d| d.session_dirty).unwrap_or(true));
+    }
+
     #[test]
     fn civil_conversion_matches_known_instants() {
         // The epoch itself.
@@ -452,6 +534,7 @@ mod tests {
             build: build_info(),
             snapshot: None,
             actions: VecDeque::new(),
+            session_dirty: false,
             log: VecDeque::new(),
             crash_written: false,
         };
