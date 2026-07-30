@@ -1389,7 +1389,41 @@ impl App {
             focus,
             tracking: self.tracking_context(stage_values),
             view: self.view_context(),
+            failure: self.failure_context(),
         }
+    }
+
+    /// The first pipeline stage that failed, for the capture (ideas #45 step 3).
+    ///
+    /// **First, not current.** A failure cascades — every later stage reports "not
+    /// reached" — so the earliest error is the cause and the rest are consequences.
+    /// Naming whichever stage Doug happens to be looking at would often name a
+    /// consequence, which is exactly the wrong thing to hand a question like "why
+    /// doesn't this work?".
+    ///
+    /// Returns `None` for a clean compile, so the section is absent rather than
+    /// present-and-empty: a `pipeline_failure` key that exists always would make
+    /// "nothing failed" indistinguishable from "the field was not populated".
+    fn failure_context(&self) -> Option<bridge::PipelineFailure<'_>> {
+        // `COMPILATION`, not `ALL`: `ALL` ends with `Simulation`, which is a tab rather
+        // than a compilation stage, and `StageBundle::get()` panics on it.
+        let first =
+            StageKind::COMPILATION.iter().copied().find(|&k| self.stages.get(k).note_is_error)?;
+        let stage = self.stages.get(first);
+        let after = StageKind::COMPILATION
+            .iter()
+            .copied()
+            .skip_while(|&k| k != first)
+            .skip(1)
+            .filter(|&k| self.stages.get(k).value.is_none())
+            .map(StageKind::name)
+            .collect();
+        Some(bridge::PipelineFailure {
+            stage: first.name(),
+            note: stage.note.as_deref().unwrap_or(""),
+            error: stage.value.as_ref().and_then(|v| v.get("error")),
+            not_reached: after,
+        })
     }
 
     /// The ambient half of the emitted context — what is being followed.
@@ -1696,6 +1730,7 @@ impl App {
                 // so there are no stages to sweep for the followed identifier.
                 tracking: None,
                 view: self.view_context(),
+                failure: self.failure_context(),
             };
             status_line(seq, &target, request_str, bridge::write(&ask))
         } else {
@@ -3688,6 +3723,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 focus: Focus::Nothing,
                 tracking,
                 view: self.view_context(),
+                failure: self.failure_context(),
             };
             self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
             return;
@@ -3728,6 +3764,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             focus,
             tracking,
             view: self.view_context(),
+            failure: self.failure_context(),
         };
         self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }
@@ -5982,6 +6019,7 @@ mod tests {
                 viewing_log: false,
                 animation: None,
             },
+            failure: None,
         };
         let doc = bridge::build_for_test(&ask);
 

@@ -2002,11 +2002,34 @@ robotics student modelling a mechanism will do it constantly.
   is traceable back to source", and **HRW does not emit it.** Rumoca hands over the
   source traceability and HRW drops it on the floor. That is the single cheapest fix
   here and the one that turns "unknown `emf.p.v`" into "line N of your model".
-- **Resolve / typecheck / flatten — no source location in the payload.** These are the
-  failures a hand-authored model hits *most* often: a mistyped name, a dimension
-  mismatch, an incompatible connector. So the diagnostics are weakest exactly where
-  authoring goes wrong. Worth a careful audit rather than the quick grep behind this
-  entry.
+- **DAE construction — ✅ AUDITED AND FIXED 2026-07-29.** It was the worst of the lot:
+  the arm returned a bare `Stage::info("flatten succeeded; DAE construction failed
+  (later arc)")` **while `error`, `error_code` and `diagnostics` sat in scope, unused.**
+  Rumoca says *"unbalanced model: 2 equations, 3 unknowns (balance = -1)"* with code
+  `rumoca::todae::ED001`, and HRW said none of it — making the **most common Modelica
+  authoring error** the least informative failure in the pipeline.
+
+  Now emits `kind: "dae_construction"` with the message verbatim, the error code, any
+  diagnostics, and — parsed defensively — `n_equations`, `n_unknowns`, `balance`, plus a
+  `reading` saying which *direction* the imbalance runs (the actionable half). Promoted
+  from `info` to a real error, since `last_successful_stage` keys on `note_is_error` and
+  flatten was otherwise still counting as the furthest good stage.
+
+  **The counts are parsed from the display string**, because `rumoca-compile`
+  stringifies the typed `ToDaeError::Unbalanced { equations, unknowns, balance }` at its
+  boundary (`error: format!("{error}")`). The parse yields **absent, never wrong** — a
+  reworded message loses the extras and cannot invent a number — and
+  `an_unbalanced_model_reports_its_balance` fails loudly if the wording moves.
+  **Upstream candidate:** preserve the typed error through that boundary. A compiler
+  discarding its own structured error data is worse for every consumer, not just HRW
+  (`project-engage-rumoca-community`).
+
+  Test specimen: **`UnbalancedShaft.mo`**, marked DO NOT FIX per #46's convention.
+
+- **Resolve / typecheck / flatten — still unaudited.** A mistyped name, a dimension
+  mismatch, an incompatible connector. Quick grep suggested no source location in these
+  payloads; worth a careful pass now that the DAE-construction one has shown how much
+  can be sitting in scope unused.
 
 **Priority note:** a missing span forces Claude to guess *where* in Doug's source the
 problem is, which is priority 1 in `docs/tech-debt.md`'s ordering — above tour holes.
@@ -2082,9 +2105,26 @@ accepts is exactly a filable issue.
    every line). Both alternatives risk a layout regression, which is precisely the class
    of defect Claude has no way to notice — see `project-tours-multiply-testing`.
 
-3. **A "why did this fail?" capture** — when a stage carries an error, `focus.json`
-   should say so prominently with the failing stage's payload, so Claude does not have
-   to be told which stage broke.
+3. ✅ **A "why did this fail?" capture** — **DONE 2026-07-29.** `focus.json` gains a
+   `pipeline_failure` section carrying the failing stage, its summary, its full `error`
+   payload, and the downstream stages that will read as "not reached".
+
+   **The first failing stage, not the current one.** A failure cascades, so the earliest
+   error is the cause and everything after it is a consequence. A capture naming
+   whichever stage Doug happens to be looking at would routinely name a consequence —
+   the wrong answer to "why doesn't this work?". Both askings of the CapacitorLoop
+   question were answered by reading stage files directly, because the capture never
+   mentioned that anything had failed; it worked only because Doug named the stage
+   himself. Someone under deadline pressure says "it doesn't work".
+
+   Absent rather than present-and-empty on a clean compile, so "nothing failed" cannot
+   be confused with "the field was not populated".
+
+   **Bug found and fixed while doing it:** `failure_context` walked `StageKind::ALL`,
+   which ends with `Simulation` — a tab, not a compilation stage, and
+   `StageBundle::get()` *panics* on it. Three existing tests caught it. There is now a
+   `StageKind::COMPILATION` list with a comment on the trap, because it is easy to fall
+   into and silent until something calls `get`.
 4. **Oracle comparison on demand** — "does System Modeler accept this?" as a question
    Claude can answer, which needs nothing built beyond what #43 verified.
 

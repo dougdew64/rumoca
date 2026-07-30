@@ -788,6 +788,33 @@ pub struct Ask<'a> {
     /// What HRW was showing. See [`View`] — a point made in a tree and one made
     /// mid-animation used to produce identical files.
     pub view: View<'a>,
+    /// The first pipeline stage that failed, if any. See [`PipelineFailure`].
+    pub failure: Option<PipelineFailure<'a>>,
+}
+
+/// The first stage of the pipeline that failed, and what it said.
+///
+/// Added 2026-07-29 (ideas #45 step 3). Until then a capture never mentioned that
+/// anything had *failed* — it described what Doug was pointing at and left Claude to
+/// discover the failure by reading the stage files. That worked because Doug named the
+/// stage in his question ("why did the **structural** phase fail?"). Someone under
+/// deadline pressure says "it doesn't work", and then the capture has to know.
+///
+/// **First failing stage, not the current one.** A failure cascades: everything
+/// downstream reports "not reached", so the *earliest* error is the cause and the rest
+/// are consequences. Naming the stage Doug happens to be looking at would often name a
+/// consequence.
+pub struct PipelineFailure<'a> {
+    /// Stage name, as `StageKind::name` reports it.
+    pub stage: &'static str,
+    /// The stage's note — the one-line summary already shown in the UI.
+    pub note: &'a str,
+    /// The stage's structured `error` payload, when it has one. This is where the
+    /// diagnosis lives: counts, unmatched names, source locations, guidance.
+    pub error: Option<&'a Value>,
+    /// Stages after the failing one, which will all say "not reached". Named so Claude
+    /// does not read their emptiness as a second problem.
+    pub not_reached: Vec<&'static str>,
 }
 
 /// Write the focus file to `.hrw-bridge/focus.json`.
@@ -1005,6 +1032,18 @@ fn build(ask: &Ask) -> Value {
             "files": STAGE_FILE_NAMES,
         },
     });
+    // A failure outranks everything else in the file: if the pipeline broke, that is
+    // the answer to almost any question about this specimen. Emitted before the
+    // point-specific sections for that reason.
+    if let Some(f) = &ask.failure {
+        doc["pipeline_failure"] = json!({
+            "note": "the FIRST stage that failed. A failure cascades, so stages after it                      report \"not reached\" and are consequences rather than problems.                      `error` carries the diagnosis: counts, unmatched names, source                      locations, guidance. Full IR for every stage is under `stages.dir`.",
+            "stage": f.stage,
+            "summary": f.note,
+            "error": f.error,
+            "downstream_not_reached": f.not_reached,
+        });
+    }
     if let Focus::Node { key_path, stage_value } = &ask.focus {
         doc["node"] = build_node(key_path, stage_value, ask.specimen);
         doc["cross_stage"] = build_cross_stage(ask, key_path);
@@ -1517,6 +1556,83 @@ mod tests {
     }
 
 
+    /// A capture names the **first** failing stage, not the current one.
+    ///
+    /// #45 step 3. A failure cascades: everything downstream reports "not reached", so
+    /// the earliest error is the cause and the rest are consequences. A capture that
+    /// named whichever stage Doug happened to be looking at would routinely name a
+    /// consequence — the wrong answer to "why doesn't this work?".
+    #[test]
+    fn a_capture_names_the_first_failing_stage_and_its_diagnosis() {
+        let empty = BTreeMap::new();
+        let error = json!({
+            "kind": "dae_construction",
+            "message": "unbalanced model: 2 equations, 3 unknowns (balance = -1)",
+            "balance": -1,
+        });
+        let ask = Ask {
+            seq: 1,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("UnbalancedShaft"),
+            // Doug is looking at Structural, which is downstream of the real failure.
+            stage: Some(StageKind::Structural),
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Stage,
+            tracking: None,
+            view: test_view(),
+            failure: Some(PipelineFailure {
+                stage: StageKind::Flatten.name(),
+                note: "unbalanced model: 2 equations, 3 unknowns (balance = -1)",
+                error: Some(&error),
+                not_reached: vec![StageKind::Structural.name(), StageKind::Events.name()],
+            }),
+        };
+        let doc = build(&ask);
+
+        let f = &doc["pipeline_failure"];
+        assert!(!f.is_null(), "a failure must be stated prominently, not left to be found");
+        assert_eq!(f["stage"], json!(StageKind::Flatten.name()));
+        assert_eq!(f["error"]["balance"], json!(-1), "the diagnosis travels with it");
+        assert!(
+            f["downstream_not_reached"]
+                .as_array()
+                .is_some_and(|a| a.contains(&json!(StageKind::Structural.name()))),
+            "downstream emptiness must be labelled as a consequence: {f:?}",
+        );
+        // The stage Doug is *looking at* is still reported, separately — it is where he
+        // is, and it must not be confused with what broke.
+        assert_eq!(doc["stage"], json!(StageKind::Structural.name()));
+    }
+
+    /// A clean compile emits **no** failure section.
+    ///
+    /// Absent rather than present-and-empty: a key that always exists would make
+    /// "nothing failed" indistinguishable from "the field was not populated".
+    #[test]
+    fn a_clean_compile_has_no_failure_section() {
+        let empty = BTreeMap::new();
+        let ask = Ask {
+            seq: 1,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("RcCircuit"),
+            stage: Some(StageKind::Structural),
+            libraries: vec![],
+            def_index: &empty,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Stage,
+            tracking: None,
+            view: test_view(),
+            failure: None,
+        };
+        assert!(build(&ask).get("pipeline_failure").is_none());
+    }
+
     /// Span-ascent picks the *tightest* enclosing location, and the slice is
     /// expanded to whole source lines. The clicked node is a bare string leaf
     /// with no location of its own — provenance must come from its ancestor.
@@ -1605,6 +1721,7 @@ mod tests {
             focus: Focus::Node { key_path: key_path.clone(), stage_value: &resolve },
             tracking: None,
             view: test_view(),
+            failure: None,
         };
 
         let cs = build(&ask)["cross_stage"].clone();
@@ -1646,6 +1763,7 @@ mod tests {
                 stage_values: stages,
             }),
             view: test_view(),
+            failure: None,
         }
     }
 
@@ -1722,6 +1840,7 @@ mod tests {
             focus: Focus::Stage,
             tracking: None,
             view: test_view(),
+            failure: None,
         };
         assert!(build(&ask).get("tracking").is_none());
     }
@@ -1986,6 +2105,7 @@ mod tests {
                     frame_context: Some(json!({ "step": "Round 0: state emf.phi" })),
                 }),
             },
+            failure: None,
         };
         let doc = build(&ask);
 
@@ -2061,6 +2181,7 @@ mod tests {
             focus: Focus::Node { key_path: vec![Seg::Key("within".into())], stage_value: &parse },
             tracking: None,
             view: test_view(),
+            failure: None,
         };
         assert_eq!(build(&ask)["cross_stage"]["applicable"], json!(false));
     }
@@ -2084,6 +2205,7 @@ mod tests {
             focus: Focus::Specimen,
             tracking: None,
             view: test_view(),
+            failure: None,
         };
         let doc = build(&ask);
         let files = doc["stages"]["files"]
@@ -2191,6 +2313,7 @@ mod tests {
             },
             tracking: None,
             view: test_view(),
+            failure: None,
         };
         let doc = build(&ask);
         let cs = &doc["cross_stage"];
@@ -2224,6 +2347,7 @@ mod tests {
             focus: Focus::Specimen,
             tracking: None,
             view: test_view(),
+            failure: None,
         };
         let doc = build(&ask);
         assert_eq!(doc["stage"], json!("(navigated definition)"));
@@ -2344,6 +2468,7 @@ mod tests {
             },
             tracking: None,
             view: test_view(),
+            failure: None,
         };
         let path = write(&ask).expect("write focus");
         assert!(path.exists(), "focus.json should exist");

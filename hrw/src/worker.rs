@@ -282,6 +282,21 @@ impl StageKind {
         StageKind::SolveLowering, StageKind::Simulation,
     ];
 
+    /// The compilation stages, in pipeline order — [`Self::ALL`] **without
+    /// `Simulation`**.
+    ///
+    /// `Simulation` is in `ALL` because it is a tab, but it is not a compilation stage:
+    /// `StageBundle::get()` *panics* on it. So any code that walks stages and asks the
+    /// bundle for each one must use this list, not `ALL`. Added 2026-07-29 after
+    /// `failure_context` walked `ALL` and hit that panic in three tests — the trap is
+    /// easy to fall into and silent until something calls `get`.
+    pub const COMPILATION: &[StageKind] = &[
+        StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
+        StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
+        StageKind::IndexReduction, StageKind::Initialization, StageKind::Events,
+        StageKind::SolveLowering,
+    ];
+
     /// Human-readable name for this stage, matching the tab labels in the UI.
     pub fn name(self) -> &'static str {
         match self {
@@ -1452,6 +1467,86 @@ fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
     }
 }
 
+/// Structured JSON for a DAE-construction (`ToDae`) failure.
+///
+/// The balance figures are **parsed out of the message** because `rumoca-compile`
+/// stringifies the typed error at its boundary (`error: format!("{error}")` in
+/// `compile_support.rs`), so `ToDaeError::Unbalanced { equations, unknowns, balance }`
+/// is gone by the time HRW sees it. Preserving the type through that boundary is the
+/// better fix and is logged as an upstream candidate; parsing is what is available now.
+///
+/// **The parse can only ever be absent, never wrong.** Structured fields appear only on
+/// an unambiguous match, and `message` is always emitted verbatim, so a Rumoca wording
+/// change loses the extras and never invents a number. That discipline was earned the
+/// hard way by the `rank_deficiency` bug: a wrong number reads as authoritative.
+/// `an_unbalanced_model_reports_its_balance` fails loudly if the wording moves, rather
+/// than letting it degrade in silence.
+fn dae_construction_error_to_json(
+    error: &str,
+    error_code: &Option<String>,
+    diagnostics: &[rumoca_core::Diagnostic],
+) -> serde_json::Value {
+    let mut json = serde_json::json!({
+        "kind": "dae_construction",
+        "message": error,
+        "error_code": error_code,
+        "guidance": "DAE construction turns the flat model into equations plus unknowns \
+            and checks that the two counts agree (MLS \u{00a7}4.9). An unbalanced model is \
+            usually a declared variable with no equation to determine it, or one equation \
+            too many. This check runs *before* structural analysis, so a missing equation \
+            is reported here rather than as a structural singularity.",
+    });
+    let obj = json.as_object_mut().expect("built as an object");
+
+    if !diagnostics.is_empty() {
+        obj.insert(
+            "diagnostics".to_owned(),
+            serde_json::Value::Array(
+                diagnostics
+                    .iter()
+                    .map(|d| {
+                        serde_json::json!({
+                            "severity": format!("{:?}", d.severity),
+                            "code": d.code,
+                            "message": d.message,
+                            "notes": d.notes,
+                        })
+                    })
+                    .collect(),
+            ),
+        );
+    }
+
+    if let Some((n_eq, n_unk, balance)) = parse_unbalanced(error) {
+        obj.insert("n_equations".to_owned(), n_eq.into());
+        obj.insert("n_unknowns".to_owned(), n_unk.into());
+        obj.insert("balance".to_owned(), balance.into());
+        // Which *direction* the imbalance runs is the actionable half, and it is not
+        // obvious from a signed number alone.
+        obj.insert(
+            "reading".to_owned(),
+            serde_json::json!(if balance < 0 {
+                "fewer equations than unknowns \u{2014} some variable has nothing to determine it"
+            } else {
+                "more equations than unknowns \u{2014} something is determined twice"
+            }),
+        );
+    }
+    json
+}
+
+/// Pull `(equations, unknowns, balance)` out of Rumoca's unbalanced-model message.
+///
+/// Matches `"unbalanced model: {e} equations, {u} unknowns (balance = {b})"`. Returns
+/// `None` on any deviation — see the caller on why absent beats wrong.
+fn parse_unbalanced(message: &str) -> Option<(usize, usize, i64)> {
+    let rest = message.strip_prefix("unbalanced model: ")?;
+    let (eq, rest) = rest.split_once(" equations, ")?;
+    let (unk, rest) = rest.split_once(" unknowns (balance = ")?;
+    let bal = rest.strip_suffix(')')?;
+    Some((eq.trim().parse().ok()?, unk.trim().parse().ok()?, bal.trim().parse().ok()?))
+}
+
 /// Turn a Rumoca `Span` into a source location Claude can quote back at Doug.
 ///
 /// A span is byte offsets into the specimen source. On its own that is useless in an
@@ -2347,7 +2442,22 @@ fn flatten_stage(result: Option<&PhaseResult>) -> Stage {
                     }), msg)
                 }
                 FailedPhase::ToDae => {
-                    Stage::info("flatten succeeded; DAE construction failed (later arc)")
+                    // Until 2026-07-29 this arm discarded everything and returned a
+                    // bare `Stage::info("...DAE construction failed (later arc)")` —
+                    // while `error`, `error_code` and `diagnostics` sat in scope,
+                    // unused. That made the **most common Modelica authoring error**
+                    // (declare a variable, forget its equation) the *least* informative
+                    // failure in the pipeline: Rumoca says "unbalanced model: 2
+                    // equations, 3 unknowns (balance = -1)" and HRW said nothing.
+                    //
+                    // Promoted from `info` to a real error too. It *is* one, and
+                    // `last_successful_stage` keys on `note_is_error`, so flatten no
+                    // longer looks like the furthest good stage when DAE construction
+                    // has failed.
+                    Stage::err_with_details(
+                        dae_construction_error_to_json(error, error_code, diagnostics),
+                        msg,
+                    )
                 }
                 other => Stage::info(format!("not reached ({other} failed earlier)")),
             }
@@ -3080,6 +3190,60 @@ mod tests {
         };
         assert!(!index_reduction_frames.is_empty(),
             "MotorWithBrake should produce index-reduction animation frames");
+    }
+
+    /// An unbalanced model reports its balance, not just "DAE construction failed".
+    ///
+    /// #45 step 2. Until 2026-07-29 this failure path returned a bare informational
+    /// note while `error`, `error_code` and `diagnostics` sat in scope unused — making
+    /// the **most common Modelica authoring error** (declare a variable, forget its
+    /// equation) the least informative failure in the pipeline.
+    ///
+    /// **This test is also the tripwire for the message-format parse.** The structured
+    /// counts are recovered from Rumoca's display string, because `rumoca-compile`
+    /// stringifies the typed `ToDaeError::Unbalanced` at its boundary. If that wording
+    /// changes, this fails loudly instead of the fields silently disappearing.
+    #[test]
+    fn an_unbalanced_model_reports_its_balance() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("UnbalancedShaft")
+        else {
+            panic!("expected Compiled");
+        };
+
+        let flatten = &stages.flatten;
+        assert!(flatten.note_is_error, "a failed DAE construction is an error, not an info note");
+        let err = flatten
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .expect("the failure must carry a structured payload");
+
+        assert_eq!(err["kind"], "dae_construction");
+        assert_eq!(err["error_code"], "rumoca::todae::ED001");
+        // 2 equations for 3 unknowns: `tau` is declared and never determined.
+        assert_eq!(err["n_equations"], 2, "parsed from the message: {}", err["message"]);
+        assert_eq!(err["n_unknowns"], 3, "parsed from the message: {}", err["message"]);
+        assert_eq!(err["balance"], -1);
+        assert!(
+            err["reading"].as_str().is_some_and(|r| r.contains("nothing to determine it")),
+            "the direction of the imbalance is the actionable half: {}",
+            err["reading"],
+        );
+    }
+
+    /// The balance parse yields nothing rather than something wrong.
+    #[test]
+    fn the_balance_parse_is_absent_rather_than_wrong() {
+        assert_eq!(
+            parse_unbalanced("unbalanced model: 2 equations, 3 unknowns (balance = -1)"),
+            Some((2, 3, -1)),
+        );
+        // Any deviation returns None, so a reworded message loses the structured
+        // fields and never invents them. A wrong number reads as authoritative — the
+        // lesson of the `rank_deficiency` bug.
+        assert!(parse_unbalanced("internal todae error: something else").is_none());
+        assert!(parse_unbalanced("unbalanced model: two equations, 3 unknowns (balance = -1)").is_none());
+        assert!(parse_unbalanced("unbalanced model: 2 equations, 3 unknowns balance = -1").is_none());
     }
 
     /// A structural failure is reported **in terms of Doug's source** (ideas #45).
