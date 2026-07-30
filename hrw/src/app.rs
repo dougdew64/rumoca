@@ -1196,6 +1196,32 @@ impl App {
         // Mark as compiling — this disables stage tab highlighting and shows a
         // spinner.
         self.compiling = true;
+        self.clear_specimen_state(same_specimen);
+        // Start with the log view so the user sees compilation progress.
+        self.log_entries.clear();
+        self.viewing_log = true;
+        // Send the compile command to the worker thread. Results will arrive
+        // asynchronously via `FromWorker::CompileProgress` and `FromWorker::Compiled`.
+        // Recorded before the state changes, so the ring buffer reads in the
+        // order the user acted. See `diagnostics.rs`.
+        self.jump_highlight = None;
+        diagnostics::record_action("specimen", path.display().to_string());
+        self.worker.send(ToWorker::Compile(path.clone()));
+        self.selected = Some(path);
+    }
+
+    /// Clear everything that belonged to the previously loaded specimen.
+    ///
+    /// Shared by [`Self::open`] and by switching tours, because both need "forget the
+    /// last model" and **two copies of a thirty-field reset would drift**. That is not
+    /// hypothetical: on 2026-07-30 clearing the jump highlight in one of two capture
+    /// paths and not the other produced a real bug within the hour.
+    ///
+    /// `keep_context` is true when the *same* specimen is being reloaded: a key-path
+    /// addresses one model's IR and means nothing in another's, but on a reselect the IR
+    /// is normally identical, so the point still resolves. It is validated against the
+    /// new IR on arrival rather than assumed to survive.
+    fn clear_specimen_state(&mut self, keep_context: bool) {
         // Clear all previous results. Every field that could hold stale data
         // from the last specimen is reset to its default.
         self.model = None;
@@ -1209,7 +1235,7 @@ impl App {
         self.declaring_classes.clear();
         // A point addresses IR that no longer exists once the stages are
         // replaced — but only when the specimen changed. See `same_specimen`.
-        if !same_specimen {
+        if !keep_context {
             self.pointed_at = None;
             self.tracked_identifier = None;
         }
@@ -1243,17 +1269,6 @@ impl App {
         // LoadAndSwitch calls open() first, then sets pending_stage.
         self.pending_stage = None;
         self.pending_sub_view = None;
-        // Start with the log view so the user sees compilation progress.
-        self.log_entries.clear();
-        self.viewing_log = true;
-        // Send the compile command to the worker thread. Results will arrive
-        // asynchronously via `FromWorker::CompileProgress` and `FromWorker::Compiled`.
-        // Recorded before the state changes, so the ring buffer reads in the
-        // order the user acted. See `diagnostics.rs`.
-        self.jump_highlight = None;
-        diagnostics::record_action("specimen", path.display().to_string());
-        self.worker.send(ToWorker::Compile(path.clone()));
-        self.selected = Some(path);
     }
 
     /// Fetch a class by qualified name for navigation (async; pushed on arrival).
@@ -3047,6 +3062,13 @@ impl App {
                     if let Some(path) = switch_to {
                         self.open(path);
                     }
+                } else if self.ui_mode == UiMode::Tour {
+                    // **Tour mode has no specimen list to select from**, so telling Doug
+                    // to select one is advice he cannot take — the same species as the
+                    // Purpose tab telling him to select a specimen he had just selected.
+                    // In Tour mode the specimen arrives from a stop.
+                    ui.weak("Walk a tour \u{2014} its first stop loads a specimen.");
+                    ui.weak("Pick one from the list on the left.");
                 } else {
                     ui.weak("Select a specimen to compile.");
                 }
@@ -3892,6 +3914,21 @@ impl App {
     /// tour stays on screen until the next mtime comparison, and a reader who just
     /// clicked a different tour would see the previous one for up to a poll interval.
     fn select_tour(&mut self, source: TourSource) {
+        // **Switching tours re-initialises the right-hand side.** A tour is a
+        // self-contained sequence starting from its own first stop, which normally
+        // loads a specimen. Leaving the previous tour's model on screen invites reading
+        // the new tour's stops against the old tour's state — and worse, makes Stop 1
+        // look as though it has already been done.
+        //
+        // Only on an actual change: re-clicking the tour already showing should not
+        // throw away a specimen the reader is partway through.
+        if self.selected_tour.as_ref() != Some(&source) {
+            self.clear_specimen_state(false);
+            self.selected = None;
+            self.stage = StageKind::Parse;
+            self.viewing_log = false;
+            self.compiling = false;
+        }
         self.selected_tour = Some(source);
         self.cached_tour = None;
     }
@@ -7836,6 +7873,40 @@ mod tests {
     /// `.hrw-bridge/tour.md` before starting HRW. Ad hoc goes first because it answers
     /// the question just asked; burying it under the fixtures would make the common case
     /// the awkward one.
+    /// Switching tours re-initialises the right-hand side; re-selecting does not.
+    ///
+    /// Doug: clicking a link in one tour and then choosing a second tour left the first
+    /// tour's specimen on screen. A tour is a self-contained sequence whose first stop
+    /// loads a specimen, so the leftover state invites reading the new tour's stops
+    /// against the old tour's model — and makes Stop 1 look already done.
+    ///
+    /// The reset reuses `open`'s own field list via `clear_specimen_state`, rather than
+    /// a second copy that would drift from it.
+    #[test]
+    fn switching_tours_resets_the_stage_side() {
+        let a = TourSource::Fixture(PathBuf::from("/x/a.md"));
+        let b = TourSource::Fixture(PathBuf::from("/x/b.md"));
+
+        let mut app = App::test_default();
+        app.select_tour(a.clone());
+        // Simulate having walked a stop: a specimen loaded, a stage reached.
+        app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
+        app.model = Some("RcCircuit".to_owned());
+        app.stage = StageKind::Structural;
+
+        // Re-selecting the SAME tour must not throw away work in progress.
+        app.select_tour(a.clone());
+        assert_eq!(app.selected, Some(PathBuf::from("/x/RcCircuit.mo")), "reselect keeps state");
+        assert_eq!(app.model.as_deref(), Some("RcCircuit"));
+
+        // A different tour starts clean.
+        app.select_tour(b.clone());
+        assert_eq!(app.selected, None, "the specimen is cleared");
+        assert_eq!(app.model, None, "and so is the model");
+        assert_eq!(app.stage, StageKind::Parse, "and the stage returns to the start");
+        assert_eq!(app.selected_tour, Some(b));
+    }
+
     #[test]
     fn the_tour_list_offers_fixtures_with_ad_hoc_first() {
         let mut app = App::test_default();
