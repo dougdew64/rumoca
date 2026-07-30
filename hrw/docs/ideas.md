@@ -2515,3 +2515,80 @@ the property memoization could hide, and it is the kind of silent coverage loss 
 
 **Relates to:** the `slow-tests` gate in `Cargo.toml`, `README.md`'s two test commands,
 and `shared_worker()` in `worker.rs`.
+
+---
+
+## 49. A narrow fixture tour per HRW feature
+
+Doug's plan, 2026-07-30, after one fixture-tour walk produced four bugs:
+
+> I'm the bottleneck for UI testing. In particular, my ability to focus on expected
+> results during UI testing is the real limiting factor. Narrowly scoped tours are more
+> aligned than broad tours with my human focus limitation. So, I envision us implementing
+> a bunch of narrowly focused tours, each targeting an HRW feature.
+
+### Why narrow, and why Claude was wrong about it
+
+Claude proposed the opposite — *wider* tours — on noticing that **half** of that walk's
+bugs came from outside the stops (Tour mode's wrong empty-state message, found by starting
+HRW and clicking nothing; and the stage side not resetting between tours, which lives in
+the gap *between* tours). That read the evidence backwards.
+
+Those two were found **because the tour was short enough to leave attention to spare.** A
+wider tour spends that surplus on more stops: it consumes what produced the off-stop
+findings rather than multiplying them. **The scarce resource is Doug's attention per
+expectation, not the number of walks.**
+
+Two further arguments, less obvious:
+
+- **A failed stop in a narrow tour implicates one feature.** In a wide one a stop can fail
+  for reasons unrelated to its subject, and Doug ends up triaging instead of testing.
+- **Claude authors a narrow tour while it still knows what should happen** — right after
+  building the thing. Both tour errors found on 2026-07-30 ("mostly collapsed"; a
+  highlight asserted before it existed) were written about behaviour Claude had *not* just
+  built.
+
+### The rationale for the whole scheme
+
+These cover **what no test can reach**: every one of that walk's four bugs was HRW being
+internally consistent and *wrong about what it should do*. A test encodes Claude's model of
+correct behaviour — the same model that produced the bug — so it cannot find a fault in it.
+A tour states the expectation in prose Doug reads against reality.
+
+### Coverage today: 3 of roughly 20
+
+Have one: **camera aiming**, **frame seeking**, **node pointing**.
+
+Have none — a rough enumeration of the surface, to be firmed up when the work starts:
+
+| Area | Features wanting a fixture |
+|---|---|
+| Modes | Tour, Specimen, Debug — and the transitions between them |
+| Specimen view | source syntax highlighting, identifier click-to-follow, blamed-line highlight, the Purpose tab |
+| Stage views | IR tree, stage diff highlighting, per-stage error summaries |
+| Structural | incidence matrix, BLT spy plot |
+| Animations (8) | matching, Tarjan, tearing, alias, reduction, `pre()` lowering, IC plan, connections — *and* their shared playback controls |
+| Context Bar | point-at, follow, clearing, the composition of both |
+| Other panes | log view, equation sheet, source map, simulation plot |
+| Live trace | arming, stepping, the debugger handshake |
+| Tour mode itself | the tour list, ad-hoc-vs-fixture, switching |
+
+### What the suite needs past ten or so fixtures
+
+Neither is worth building at three.
+
+1. **A selection principle.** Doug cannot walk twenty. Suggested: *the tour for whatever
+   just changed, plus one stale one* — regressions caught immediately, coverage swept
+   slowly.
+2. **Visible staleness, and this is the one that matters.** Nothing currently catches a
+   tour whose **expectations** rot; `fixture_tour_links_all_resolve` checks only that its
+   links parse. "Mostly collapsed" was wrong for weeks with every test passing. At three
+   fixtures Claude can eyeball them; at twenty-five it cannot.
+
+   **Nearly free already:** every `tour-link` click is in the action trail, so "last
+   walked" is derivable from data HRW already writes. Showing it in the tour list makes
+   "this covers a feature changed since it was last walked" visible at a glance.
+
+**Relates to:** #42 (fixture tours as an artifact, and the ephemerality rule that exempts
+them), `project-tours-multiply-testing` in Claude's memory, and `hrw/CLAUDE.md`'s
+fixture-tour rules — including that every `**Expected:**` line must be **violable**.
