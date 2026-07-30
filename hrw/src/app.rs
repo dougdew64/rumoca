@@ -1381,18 +1381,48 @@ impl App {
                     if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
                         self.notify(format!("write_stages failed: {e}"));
                     }
+                    // **Close the loop on the load.** Without this the trail ended at
+                    // "specimen sent to the worker", so the app block stayed frozen at
+                    // `compiling: true, model: null` — accurate for the last *action*,
+                    // and increasingly wrong about *now* the longer Doug paused. He
+                    // caught exactly that by reloading a tour and asking what the trail
+                    // said an hour later.
+                    //
+                    // Says where the pipeline got to, so a failure is legible without
+                    // opening the stage files: the failing stage is the diagnostic.
+                    diagnostics::record_action("compiled", self.compile_outcome());
                 }
                 FromWorker::Simulated { path, result } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result for a different specimen
                     }
                     self.sim_running = false;
+                    // Same gap as the compile: without this the trail ends at "started
+                    // simulating" and the app block stays frozen mid-run.
                     match result {
                         Ok(data) => {
+                            diagnostics::record_action(
+                                "simulated",
+                                format!(
+                                    "{}: {} variables, {} points",
+                                    self.model.as_deref().unwrap_or("<unnamed>"),
+                                    data.names.len(),
+                                    data.times.len(),
+                                ),
+                            );
                             self.sim_data = Some(data);
                             self.sim_error = None;
                         }
                         Err(e) => {
+                            // The failure text itself, because a simulation that will
+                            // not run is exactly the case Doug would be asking about.
+                            diagnostics::record_action(
+                                "simulated",
+                                format!(
+                                    "{}: FAILED \u{2014} {e}",
+                                    self.model.as_deref().unwrap_or("<unnamed>"),
+                                ),
+                            );
                             self.sim_data = None;
                             self.sim_error = Some(e);
                         }
@@ -1719,6 +1749,23 @@ impl App {
         }
     }
 
+
+    /// One line saying how far the pipeline got, for the action trail.
+    ///
+    /// Reports the **first failing stage** when there is one, because that is the
+    /// diagnostic — everything after it is "not reached" and says nothing. On success
+    /// it reports the furthest stage reached, which is how a partial pipeline (a model
+    /// that compiles but will not lower) is told apart from a complete one.
+    fn compile_outcome(&self) -> String {
+        let model = self.model.as_deref().unwrap_or("<unnamed>");
+        for kind in StageKind::COMPILATION {
+            let stage = self.stages.get(*kind);
+            if stage.note_is_error {
+                return format!("{model}: FAILED at {}", kind.name());
+            }
+        }
+        format!("{model}: reached {}", self.last_successful_stage().name())
+    }
 
     /// Show a notice **and record it**.
     ///
@@ -8010,6 +8057,54 @@ mod tests {
     ///
     /// Round-tripped rather than pinned to literals: `describe` and `parse_hrw_link`
     /// must agree, which is the same parity rule as everywhere else.
+    /// The compile outcome names the first failing stage, or how far it got.
+    ///
+    /// Doug found the gap by reloading a tour and asking what the trail said an hour
+    /// later: it still read `compiling: true, model: null`, because the trail ended at
+    /// "specimen sent to the worker" and nothing recorded the finish. The app block was
+    /// accurate for the last *action* and increasingly wrong about *now*.
+    ///
+    /// The **first** failing stage is what gets reported, because everything after it
+    /// says "not reached" and carries no information.
+    #[test]
+    fn the_compile_outcome_names_the_first_failure() {
+        let ok = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+        let failed = Stage {
+            value: Some(serde_json::json!({ "error": {} })),
+            note: Some("boom".into()),
+            note_is_error: true,
+        };
+
+        // A clean run reports how far it reached.
+        let mut app = App::test_default();
+        app.model = Some("RcCircuit".to_owned());
+        app.stages = StageBundle {
+            parse: ok.clone(), resolve: ok.clone(), instantiate: ok.clone(),
+            typecheck: ok.clone(), flatten: ok.clone(), structural: ok.clone(),
+            index_reduction: ok.clone(), initialization: ok.clone(), events: ok.clone(),
+            solve_lowering: ok.clone(),
+        };
+        let outcome = app.compile_outcome();
+        assert!(outcome.starts_with("RcCircuit: reached "), "{outcome}");
+
+        // A failure names the stage, and names the FIRST one.
+        let mut app = App::test_default();
+        app.model = Some("UnbalancedShaft".to_owned());
+        app.stages = StageBundle {
+            parse: ok.clone(), resolve: ok.clone(), instantiate: ok.clone(),
+            typecheck: ok.clone(),
+            flatten: failed.clone(),
+            // A later stage also "fails" (not reached); it must not be the one named.
+            structural: failed.clone(),
+            ..StageBundle::default()
+        };
+        let outcome = app.compile_outcome();
+        assert_eq!(
+            outcome, "UnbalancedShaft: FAILED at Flatten",
+            "the first failure is the diagnostic; later stages are just not reached",
+        );
+    }
+
     #[test]
     fn a_recorded_link_round_trips_to_the_same_link() {
         for url in [
