@@ -1857,6 +1857,23 @@ Note also that a short horizon can return all zeros legitimately (that model's
 step source starts late); check against a horizon where the response is
 non-trivial before concluding anything is broken.
 
+**Asking the oracle "does System Modeler accept this model?" (recorded 2026-07-29,
+after four wrong attempts).**
+
+```wolfram
+Import["C:\...\hrw\specimens\IncompatibleConnect.mo"]  (* -> SystemModel["IncompatibleConnect", True] *)
+SystemModelSimulate["IncompatibleConnect", {0, 1}]
+(* Head is SystemModelSimulationData -> accepted.
+   Head stays SystemModelSimulate + a ::bld message -> rejected, and the
+   ::bldl message carries SM's reason. *)
+```
+
+Dead ends, so nobody repeats them: `SystemModel[sourceString]` fails (it takes a
+model *name*, not source — `Import` is what registers a `.mo` file), and
+`SystemModelValidate[name]` returns **unevaluated** rather than a verdict. The
+practical oracle is "does it build", read off `SystemModelSimulate`'s head plus its
+messages.
+
 ### Two consequences
 
 **It unblocks the differential test.** The charter's System Modeler round-trip has
@@ -2203,8 +2220,32 @@ accepts is exactly a filable issue.
    `StageBundle::get()` *panics* on it. Three existing tests caught it. There is now a
    `StageKind::COMPILATION` list with a comment on the trap, because it is easy to fall
    into and silent until something calls `get`.
-4. **Oracle comparison on demand** — "does System Modeler accept this?" as a question
-   Claude can answer, which needs nothing built beyond what #43 verified.
+4. ✅ **Oracle comparison on demand** — **DONE 2026-07-29**, and it settled a real
+   question on its first use. Needed no HRW code, exactly as predicted; what it needed
+   was the working incantation, now recorded in #43.
+
+   **First verdict: a Rumoca bug.** `IncompatibleConnect` connects `PinA` (members `v`
+   and a flow `i`) to `PinB` (member `v` only). MLS §9.3 requires connected connectors
+   to be type-compatible.
+
+   - **System Modeler: REJECTS.** `SystemModelSimulate` fails to build with
+     `"Incompatible types. 'a ... 'b' has type 'PinB'."`
+   - **Rumoca: ACCEPTS.** The model flattens, and the problem only surfaces later as a
+     structural singularity — a misleading diagnosis for what is a type error at the
+     `connect()`.
+
+   So the specimen was right and Rumoca is wrong. **Note the validation already
+   exists** — `validate_type_compatibility` in
+   `crates/rumoca-phase-flatten/src/connections/mod.rs:671`, reached when
+   `strict_connection_validation` is on, which HRW sets. So this is not a missing check
+   but a check that **did not fire for this case**; the likely suspects are
+   `get_validation_var_info` returning `None` for one side, or `canonical_type_id`
+   collapsing the two connector types together.
+
+   **Upstream issue #2 for `project-engage-rumoca-community`** (the first being the
+   resolved-state cache not clearing on `remove_document`). Both were found by auditing,
+   both adjudicated rather than guessed, and this one has an independent implementation
+   as the witness — which is the strongest form of bug report available.
 
 **Relates to:** #43 (the oracle, now load-bearing), #4 (the differential test, now
 motivated), #42 (a diagnostic answer will often want a tour), the priority order in
