@@ -2454,3 +2454,64 @@ platforms.
 **Relates to:** #42 (tours), #43 (the platforms, and the verified capability), #17
 (rescoped by this), #46 (System Modeler as arbiter for failure specimens),
 `user-linear-algebra-learning`.
+
+---
+
+## 48. Memoize compiled specimens across tests
+
+Split out 2026-07-29, when Doug asked how to run the test suite in parallel and the
+measurement said parallelism was the wrong lever.
+
+### What the measurement said
+
+| | |
+|---|---|
+| 49 tests taking over 1s | **180.3s** |
+| The other 353 tests | **~2.7s** |
+| Of those 49, worker tests | **47** |
+
+Every worker test acquires `shared_worker()` — a global `Mutex<WorkerState>`, needed
+because Rumoca's `Session` is not thread-safe and because loading the MSL once is worth
+a great deal. **So they serialize regardless of `--test-threads`.** Going parallel would
+have taken 183s to roughly 181s.
+
+**Doug ruled out the concurrency work on that basis** (per-test bridge directories,
+fixing the process-global stdout capture, per-thread workers each loading the MSL). Do
+not revisit it: the cost is high, the machine has limited memory, and the return is two
+seconds.
+
+**Delivered instead:** the `slow-tests` feature gate (#1 of that discussion), which took
+the between-edits loop from 183s to **7.3s** across 353 tests. That solved the *inner
+loop*. This item is what shortens the *full* run.
+
+### The actual cost: the same specimens, compiled over and over
+
+**37 `compile_specimen_shared` call sites cover only 12 distinct specimens**, plus two
+"all healthy specimens" tests that compile ten each. `Drivetrain` is compiled from
+scratch five or six times per run. And each compile is deliberately **uncached**
+(`compile_model_strict_reachable_uncached_with_recovery`) because HRW is an observatory
+and the phases must actually run — right for the app, expensive for a test suite.
+
+### Sketch
+
+A `OnceLock<Mutex<HashMap<String, FromWorker>>>` beside the existing shared worker:
+compile each specimen once per test process, hand out clones. The payload types
+(`StageBundle`, `DefInfo`, `EquationSheet`, `IdentifierIndex`, `Dae`, flat `Model`) are
+all `Clone` — checked 2026-07-29.
+
+Tests that need a genuinely fresh compile **opt out explicitly** via the existing
+uncached path: `a_broken_specimen_does_not_poison_the_next_compile` (whose entire subject
+is cross-compile contamination), and anything arming a breakpoint.
+
+Estimated 180s → 60-70s.
+
+### The caveat worth building in
+
+Memoizing **weakens the suite**: the second test to ask for `Drivetrain` no longer
+verifies that compiling it is *reproducible*. Cheap mitigation — keep one test that
+compiles a specimen fresh and compares against the memoized result. That checks precisely
+the property memoization could hide, and it is the kind of silent coverage loss that
+`project-tours-multiply-testing` warns about (a detector that quietly stops detecting).
+
+**Relates to:** the `slow-tests` gate in `Cargo.toml`, `README.md`'s two test commands,
+and `shared_worker()` in `worker.rs`.

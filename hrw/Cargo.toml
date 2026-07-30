@@ -11,6 +11,23 @@ edition = "2024"
 excessive_nesting = "allow"
 too_many_arguments = "allow"
 
+# Compile-heavy integration tests, gated so the inner loop stays fast.
+#
+# Measured 2026-07-29: 49 of 402 tests account for 180 of the suite's 183 seconds
+# — nearly all of them compiling a specimen against the MSL. The other 352 finish
+# in 2.7s. Gating the 49 gives a 3-second check between edits and keeps the full
+# run for pre-commit.
+#
+#   cargo test -p hrw --lib                          # ~3s   (between edits)
+#   cargo test -p hrw --lib --features slow-tests    # ~3min (before committing)
+#
+# NOT a parallelism fix. Those 49 hold a global `Mutex<WorkerState>` (Rumoca's
+# `Session` is not thread-safe), so they serialize whatever `--test-threads` says;
+# removing `--test-threads=1` would save about two seconds. See `docs/ideas.md` #48
+# for the fix that actually shortens them.
+[features]
+slow-tests = []
+
 [dependencies]
 libc = "0.2"
 anyhow = "1.0.103"

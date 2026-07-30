@@ -2764,6 +2764,7 @@ mod tests {
     /// End-to-end: after resolving `RotationalInertia` against the MSL, the
     /// component *types* (`type_def_id`) must resolve to their MSL classes.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn resolves_def_ids_against_msl() {
         let FromWorker::Compiled { def_index, stages, .. } = compile_specimen_shared("RotationalInertia") else {
             panic!("expected Compiled");
@@ -2788,6 +2789,7 @@ mod tests {
     /// Navigation: after compiling the specimen, opening a class the model
     /// points at (the MSL `Inertia`) returns its IR and its own DefId index.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn open_def_extracts_a_navigated_class() {
         let name = "Modelica.Mechanics.Rotational.Components.Inertia";
         let result = {
@@ -2810,6 +2812,7 @@ mod tests {
     /// crosses electrical → rotational → translational, so this exercises
     /// connector expansion / flow-sum generation across domains).
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn drivetrain_compiles_through_flatten() {
         let FromWorker::Compiled { model, stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -2824,6 +2827,7 @@ mod tests {
 
     /// The structural stage builds a matching + BLT report for an index-1 model.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn structural_report_for_rotational_inertia() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RotationalInertia") else {
             panic!("expected Compiled");
@@ -2840,6 +2844,7 @@ mod tests {
     /// SCC) — the case the BLT spy-plot draws as a box. This is the specimen's
     /// whole reason for existing, so guard it.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn proportional_loop_has_a_coupled_block() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("ProportionalLoop") else {
             panic!("expected Compiled");
@@ -2872,6 +2877,7 @@ mod tests {
     /// MixedLoop brackets an algebraic loop with scalar solves, so its BLT must
     /// contain BOTH scalar and coupled blocks — the mixed spy-plot case.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn mixed_loop_has_scalar_and_coupled_blocks() {
         let v = structural_report_for("MixedLoop");
         assert_eq!(v["coupled_block_count"], serde_json::json!(1));
@@ -2885,6 +2891,7 @@ mod tests {
     /// TwoLoops chains two algebraic loops, so structural analysis must report
     /// TWO coupled blocks (two orange boxes).
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn two_loops_has_two_coupled_blocks() {
         let v = structural_report_for("TwoLoops");
         assert_eq!(v["coupled_block_count"], serde_json::json!(2));
@@ -2893,6 +2900,7 @@ mod tests {
     /// NonlinearLoop is structurally identical to ProportionalLoop (structure is
     /// blind to the nonlinearity) — still one coupled block.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn nonlinear_loop_has_a_coupled_block() {
         let v = structural_report_for("NonlinearLoop");
         assert_eq!(v["coupled_block_count"], serde_json::json!(1));
@@ -2941,6 +2949,7 @@ mod tests {
     /// Drivetrain, index reduction can NOT rescue it: both Structural and Index
     /// reduction stay singular (an observable initialization blow-up).
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn capacitor_loop_is_singular_and_irreducible() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop") else {
             panic!("expected Compiled");
@@ -2958,6 +2967,7 @@ mod tests {
     /// The Initialization stage plans a consistent initial state for the RC
     /// circuit — a non-empty IC plan plus the ground-current relaxation hint.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn rc_circuit_has_an_ic_plan() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
             panic!("expected Compiled");
@@ -2974,6 +2984,7 @@ mod tests {
     /// Initialization stage reports an over-determined init (surplus > 0) with a
     /// red note — the pure init blow-up `build_ic_plan` alone doesn't catch.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn over_init_rc_is_flagged_over_determined() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("OverInitRc") else {
             panic!("expected Compiled");
@@ -3022,6 +3033,7 @@ mod tests {
     /// between the fast winding (L/R ~ 1e-4 s) and the slow rotor (J = 0.05). The
     /// current is driven high and the load spins up.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn bench_actuator_simulates_stiff_spinup() {
         let d = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
@@ -3064,6 +3076,7 @@ mod tests {
     /// breaks into several segments (one per bounce) while its height stays one
     /// continuous curve.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn bouncing_ball_velocity_plots_as_discontinuous() {
         let data = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
@@ -3089,6 +3102,7 @@ mod tests {
     /// hybrid model — BouncingBall — and returns trajectories. Exercises event
     /// handling in the solver (the ball must stay ~above the floor).
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn worker_simulate_runs_bouncing_ball() {
         let data = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
@@ -3108,6 +3122,7 @@ mod tests {
     /// The Solve-lowering stage (phase 8) lowers the DAE to a `SolveModel`
     /// (the solvable form the simulator consumes) and renders it.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn single_inertia_lowers_to_a_solve_model() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
@@ -3121,6 +3136,7 @@ mod tests {
     /// condition (`h <= 0`) + discrete update (the `reinit`). A smooth model
     /// (SingleInertia) reports none.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn bouncing_ball_has_events_smooth_model_has_none() {
         let total_events = |v: &serde_json::Value| -> u64 {
             v["summary"].as_object().into_iter().flatten()
@@ -3158,6 +3174,7 @@ mod tests {
     /// (no IR), but the `index_reduction` stage recovers a solvable report — the
     /// before/after the two tabs show side by side.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn drivetrain_index_reduction_stage_recovers_singular() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -3180,6 +3197,7 @@ mod tests {
     /// and unknown counts, rank deficiency, unmatched names) plus the
     /// incidence matrix and partial matching for UI rendering.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn singular_structural_carries_summary_data() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -3205,6 +3223,7 @@ mod tests {
     /// constrained-dummy reduction finds multiple demotions, each emitting
     /// BeginState, Differentiated, and Demoted frames.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn drivetrain_index_reduction_produces_trace_frames() {
         let FromWorker::Compiled { index_reduction_frames, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -3228,6 +3247,7 @@ mod tests {
     /// an intention and reads as though reduction had already happened — and no
     /// frame anywhere shows the unreduced system.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn index_reduction_trace_opens_on_the_starting_system() {
         let FromWorker::Compiled { index_reduction_frames, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -3251,6 +3271,7 @@ mod tests {
     /// The index reduction stage embeds a "before" report with the raw
     /// (pre-reduction) DAE's incidence matrix and partial matching.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn drivetrain_index_reduction_has_before_report() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -3270,6 +3291,7 @@ mod tests {
     /// The "before" report is parseable by `IncidenceMatrix::from_report`,
     /// enabling the Before/After split view on the Index Reduction tab.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn drivetrain_before_report_parseable_as_incidence() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -3310,6 +3332,7 @@ mod tests {
     /// MotorWithBrake produces trace frames from the missing-derivative path
     /// (index_reduce_missing_state_derivatives) — 1 EMF demotion.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn motor_with_brake_index_reduction_produces_trace_frames() {
         let FromWorker::Compiled { index_reduction_frames, .. } = compile_specimen_shared("MotorWithBrake") else {
             panic!("expected Compiled");
@@ -3324,6 +3347,7 @@ mod tests {
     /// answering a question — Claude writes a probe mid-conversation and it goes
     /// through the same pipeline as the curated corpus, with the same IR available.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn a_scratch_specimen_compiles_end_to_end() {
         let path = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR)
             .join("ScratchProbe.mo");
@@ -3365,6 +3389,7 @@ mod tests {
     /// and partitions them by **severity** — so nothing is pattern-matched out of message
     /// text and no real error can be filtered away by a wording change.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn a_resolve_failure_names_the_reference_and_its_line() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("UndefinedRef")
         else {
@@ -3406,6 +3431,7 @@ mod tests {
 
     /// A typecheck failure names its line too, through the same shared helper.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn a_typecheck_failure_names_its_line() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("DimensionMismatch")
         else {
@@ -3449,6 +3475,7 @@ mod tests {
     /// Uses a **fresh** `WorkerState` rather than the shared one, so this cannot pass or
     /// fail because of what other tests happened to compile first.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn a_broken_specimen_does_not_poison_the_next_compile() {
         let mut w = WorkerState::new();
         w.load_libraries(msl_roots()).expect("load MSL");
@@ -3496,6 +3523,7 @@ mod tests {
     /// stringifies the typed `ToDaeError::Unbalanced` at its boundary. If that wording
     /// changes, this fails loudly instead of the fields silently disappearing.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn an_unbalanced_model_reports_its_balance() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("UnbalancedShaft")
         else {
@@ -3550,6 +3578,7 @@ mod tests {
     /// source is genuinely ill-posed, not merely high-index. `MotorWithBrake` and
     /// `Drivetrain` are also singular but get rescued, so neither is a diagnostic case.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn a_structural_failure_names_the_source_line() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop")
         else {
@@ -3595,6 +3624,7 @@ mod tests {
     /// A wrong number is worse than a missing one: it reads as authoritative, and
     /// Claude would have quoted it straight into an answer.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn rank_deficiency_is_consistent_with_its_own_counts() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop")
         else {
@@ -3631,6 +3661,7 @@ mod tests {
     /// carries an `error`, and the trace stopping short instead of recording the
     /// give-up.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn a_singular_report_still_animates_and_ends_on_the_failure() {
         use rumoca_phase_structural::matching::MatchingStep;
 
@@ -3675,6 +3706,7 @@ mod tests {
     /// and the result is silently zero frames, or frames describing a flatten
     /// that never happened. A unit test on the animation type cannot catch it.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn the_connection_replay_reaches_hrw_with_real_frames() {
         use rumoca_phase_flatten::connections::trace::ConnectionStep;
 
@@ -3742,6 +3774,7 @@ mod tests {
     /// `cr.flat` to see anything. A unit test on the animation type would not
     /// have caught getting that wrong — it would just have shown zero frames.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn the_pre_lowering_replay_reaches_hrw_with_real_frames() {
         use rumoca_phase_dae::PreLoweringStep;
 
@@ -3793,6 +3826,7 @@ mod tests {
     /// is ASCII. Only prose written by the compiler reaches the lexer with an
     /// em dash in it, and only because following searches IR strings.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn following_an_identifier_walks_every_stage_without_panicking() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("MotorWithBrake") else {
             panic!("expected Compiled");
@@ -3833,6 +3867,7 @@ mod tests {
     /// CapacitorLoop (structurally singular, irreducible) and OverInitRc
     /// (over-determined init) still produce partial pipelines.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn all_healthy_specimens_compile_through_solve_lowering() {
         let healthy = [
             "SingleInertia", "RotationalInertia", "ProportionalLoop", "NonlinearLoop",
@@ -3861,6 +3896,7 @@ mod tests {
     /// RcCircuit is excluded: it compiles but the BDF solver hits a step-size
     /// floor (stiff RC with the default tolerances).
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn all_healthy_specimens_simulate() {
         let healthy = [
             "SingleInertia", "RotationalInertia", "ProportionalLoop", "NonlinearLoop",
@@ -3882,6 +3918,7 @@ mod tests {
     /// The headless `compile_specimen` path (used by gen_trace) produces the
     /// same result as compiling through the shared worker.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn compile_specimen_headless_matches_worker() {
         let result = compile_specimen(
             Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo")),
@@ -3901,6 +3938,7 @@ mod tests {
     /// The headless `simulate_specimen` path (used by gen_trace) runs and
     /// produces trajectories.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn simulate_specimen_headless_produces_trajectories() {
         let data = simulate_specimen(
             Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo")),
@@ -3921,6 +3959,7 @@ mod tests {
     /// The Flatten stage IR for a simple model has the expected top-level
     /// structure: variables, equations, and the flat model fields.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn flatten_ir_has_expected_structure() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
@@ -3932,6 +3971,7 @@ mod tests {
 
     /// The Events stage IR has the expected summary structure.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn events_ir_has_expected_summary_keys() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
             panic!("expected Compiled");
@@ -3946,6 +3986,7 @@ mod tests {
 
     /// The Solve-lowering IR has the expected top-level fields.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn solve_lowering_ir_has_expected_fields() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
@@ -3957,6 +3998,7 @@ mod tests {
 
     /// The Structural stage IR has matching, blocks, and incidence matrix.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn structural_ir_has_incidence_matrix() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("ProportionalLoop") else {
             panic!("expected Compiled");
@@ -3971,6 +4013,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn structural_incidence_has_equation_text_labels() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
             panic!("expected Compiled");
@@ -3988,6 +4031,7 @@ mod tests {
 
     /// The Index-reduction stage IR includes the reduction report.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn index_reduction_ir_has_reduction_report() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
@@ -4003,6 +4047,7 @@ mod tests {
 
     /// The Initialization stage IR includes the determinacy check.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn initialization_ir_has_determinacy() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
             panic!("expected Compiled");
@@ -4041,6 +4086,7 @@ mod tests {
 
     /// Compilation produces log entries with the expected stage structure.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn compilation_emits_log_entries() {
         let logs = std::sync::Mutex::new(Vec::new());
         {
@@ -4071,6 +4117,7 @@ mod tests {
 
     /// Simulation also emits log entries with timing.
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn simulation_emits_log_entries() {
         let logs = std::sync::Mutex::new(Vec::new());
         {

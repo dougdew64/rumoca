@@ -47,9 +47,27 @@ worker-side live-debug path (`docs/ideas.md` #9). New Rumoca instrumentation: `r
 (`pub mod blt`, `block_local_incidence`) and `rumoca-phase-flatten` (`connections::trace`,
 `flatten_ref_with_options_traced`) — the first non-structural, non-DAE crate instrumented.
 
-**Note on running HRW's tests: use `--test-threads=1`.** Two pre-existing tests race on
-process-global stdout and on `focus.json`; they fail or hang under the default parallel harness, on a
-clean tree as well.
+**Running HRW's tests — two commands, and always `--test-threads=1`:**
+
+```text
+cargo test -p hrw --lib -- --test-threads=1                        # ~7s,  353 tests — between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~3min, 402 tests — before committing
+```
+
+**Use the fast one between edits and the full one before every commit.** Measured 2026-07-29:
+**49 of 402 tests accounted for 180 of the suite's 183 seconds**, nearly all compiling a specimen
+against the MSL; the other 353 finish in seconds. The 49 are gated by the `slow-tests` feature, and
+`cargo test` reports them as ignored *with a reason* rather than silently skipping them.
+
+**This is not a parallelism fix, and parallelism is not the answer here.** Those 49 all acquire a
+global `Mutex<WorkerState>` (Rumoca's `Session` is not thread-safe), so they serialize regardless of
+`--test-threads` — dropping to parallel would save about *two seconds*. Doug ruled out the
+concurrency work on 2026-07-29 after that measurement. `docs/ideas.md` **#48** is the fix that
+actually shortens the full run: memoize compiled specimens, since 37 call sites cover only 12
+distinct models.
+
+`--test-threads=1` is still required regardless: two pre-existing tests race on process-global stdout
+and on `focus.json`, and fail or hang under the default parallel harness on a clean tree.
 
 **Current plan: [`docs/answer-platform-plan.md`](docs/answer-platform-plan.md)** (2026-07-29).
 Five phases sequencing #41 (Claude's teaching database), #42 (ad hoc tours), #43 (Wolfram + System

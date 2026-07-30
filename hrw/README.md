@@ -68,8 +68,24 @@ the library list in [`src/app.rs`](src/app.rs).
 
 ```powershell
 cargo build -p hrw
-cargo test -p hrw -- --test-threads=1
+
+# Between edits — 353 tests, about 7 seconds.
+cargo test -p hrw --lib -- --test-threads=1
+
+# Before committing — all 402, about 3 minutes.
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1
 ```
+
+**Two commands, because 49 tests hold 98% of the runtime.** Measured 2026-07-29: 49 of 402
+tests took 180 of the suite's 183 seconds, nearly all of them compiling a specimen against the
+MSL. They are gated behind the `slow-tests` feature so the loop between edits stays fast;
+`cargo test` lists them as ignored *with a reason*, so a skipped test never looks like a passing
+one. **Run the full command before every commit** — the fast suite deliberately does not cover
+compilation.
+
+Parallelism would not help: those 49 all acquire a global `Mutex<WorkerState>` (Rumoca's
+`Session` is not thread-safe) and serialize whatever `--test-threads` says. The fix that would
+shorten the full run is memoizing compiled specimens (`docs/ideas.md` #48).
 
 **`--test-threads=1` is required.** Two independent causes, both of which reproduce on a clean
 checkout:

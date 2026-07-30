@@ -507,6 +507,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn build_on_real_specimen() {
         let specimen = std::path::PathBuf::from(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -543,6 +544,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn gear_with_brake_all_equations_linked_to_source() {
         let specimen = std::path::PathBuf::from(concat!(
             env!("CARGO_MANIFEST_DIR"),
