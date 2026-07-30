@@ -554,6 +554,9 @@ pub struct App {
     /// is an *equation index*, and turning that into a world position needs the view's
     /// own layout — which only exists at paint time.
     aim_at_equation: Option<usize>,
+    /// A pending frame seek from `hrw://…/frame/<n>`, consumed by whichever animated
+    /// view paints next.
+    seek_frame: Option<usize>,
     /// When the scratch specimen directory was last polled, so a specimen Claude
     /// writes mid-conversation appears without restarting HRW — the same reason
     /// `tour.md` is polled.
@@ -1014,6 +1017,7 @@ impl App {
             selected_tour: None,
             tour_polled_at: None,
             aim_at_equation: None,
+            seek_frame: None,
             scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
@@ -1699,6 +1703,64 @@ impl App {
                 Some(self.cached_connection_anim.as_ref()?.as_ref()?)
             }
             _ => None,
+        }
+    }
+
+    /// The on-screen animation, mutably — the seeking twin of
+    /// [`Self::on_screen_animation`].
+    ///
+    /// Two functions rather than one generic over mutability because the immutable one
+    /// serves the **capture**, and a capture must never move what it describes. Keeping
+    /// them separate makes that a type-level fact rather than a convention.
+    ///
+    /// The duplicated match is deliberate and small; if a third caller appears, the
+    /// sub-view-to-animation mapping should become a table instead.
+    fn on_screen_animation_mut(&mut self) -> Option<&mut dyn Animated> {
+        match self.stage {
+            StageKind::Structural => match self.structural_view {
+                StructuralView::MatchingAnim => {
+                    Some(self.cached_matching_anim.as_mut()?.as_mut()?)
+                }
+                StructuralView::TarjanAnim => Some(self.cached_tarjan_anim.as_mut()?.as_mut()?),
+                StructuralView::TearingAnim => Some(self.cached_tearing_anim.as_mut()?.as_mut()?),
+                StructuralView::AliasAnim => Some(self.cached_alias_anim.as_mut()?.as_mut()?),
+                _ => None,
+            },
+            StageKind::IndexReduction => Some(self.cached_reduction_anim.as_mut()?.as_mut()?),
+            StageKind::Events if self.events_view == EventsView::PreLowering => {
+                Some(self.cached_pre_lowering_anim.as_mut()?.as_mut()?)
+            }
+            StageKind::Initialization if self.init_view == InitView::IcPlan => {
+                Some(self.cached_ic_plan_anim.as_mut()?.as_mut()?)
+            }
+            StageKind::Flatten if self.flatten_view == FlattenView::Connections => {
+                Some(self.cached_connection_anim.as_mut()?.as_mut()?)
+            }
+            _ => None,
+        }
+    }
+
+    /// Apply a pending `hrw://…/frame/<n>` seek, if the on-screen animation can take it.
+    ///
+    /// Called from the paint path *after* the animation views have had a chance to
+    /// build themselves, which is why it is deferred rather than applied at link
+    /// dispatch.
+    fn apply_pending_seek(&mut self) {
+        let Some(target) = self.seek_frame else {
+            return;
+        };
+        // Probe first: `on_screen_animation_mut` borrows `self`, so the pending flag
+        // has to be cleared before the borrow starts.
+        if self.on_screen_animation().is_none() {
+            return; // this view has no animation yet; try again next frame
+        }
+        self.seek_frame = None;
+        let ok = self.on_screen_animation_mut().is_some_and(|a| a.seek(target));
+        if !ok {
+            let (_, total) = self.on_screen_animation().map_or((0, 0), Animated::position);
+            self.notice = Some(format!(
+                "no frame {target} in this replay \u{2014} it has {total}",
+            ));
         }
     }
 
@@ -5192,6 +5254,14 @@ impl eframe::App for App {
                     self.viewing_log = false;
                     self.apply_sub_view(sub);
                 }
+                HrwLink::SeekFrame(kind, sub, frame) => {
+                    self.stage = kind;
+                    self.viewing_log = false;
+                    self.apply_sub_view(Some(sub));
+                    // Deferred like the camera aim: the animation for this sub-view may
+                    // not be built until it paints.
+                    self.seek_frame = Some(frame);
+                }
                 HrwLink::AimAtEquation(kind, sub, node) => {
                     self.stage = kind;
                     self.viewing_log = false;
@@ -5217,6 +5287,11 @@ impl eframe::App for App {
                 }
             }
         }
+
+        // A pending `hrw://…/frame/<n>` seek. Applied here — after link dispatch has
+        // switched stage and sub-view, before the centre panel paints — so the lookup
+        // finds the animation the link actually named.
+        self.apply_pending_seek();
 
         // ---- Center panel: stage tabs + main content ----
         //
@@ -5580,6 +5655,18 @@ enum HrwLink {
     /// the stop — a tour degrading to "the right view, not aimed" beats one that
     /// silently does nothing.
     AimAtEquation(StageKind, SubView, usize),
+    /// `hrw://stage/<Stage>/<SubView>/frame/<n>` — go to an animated view and **stop on
+    /// frame `n`**, so a tour can point at the moment a decision is made rather than at
+    /// the view containing it.
+    ///
+    /// The moment is where a replay's content lives: "the algorithm gives up here",
+    /// "this is the tear that cascades". Naming only the view leaves the reader to find
+    /// it by scrubbing.
+    ///
+    /// **Recorded playback only.** A live session has no meaningful frame count until
+    /// it ends — that was a real bug Doug caught — so a frame index cannot mean anything
+    /// stable there. Seeking a live view is refused like any out-of-range frame.
+    SeekFrame(StageKind, SubView, usize),
 }
 
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
@@ -5612,6 +5699,14 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         }
         // Longest patterns first: `splitn` caps the segment count, so the node form
         // must be matched before the shorter stage forms can swallow it.
+        ["stage", stage, view, "frame", n] => {
+            let kind = StageKind::from_slug(stage)?;
+            Some(HrwLink::SeekFrame(
+                kind,
+                SubView::from_slug(kind, view)?,
+                n.parse().ok()?,
+            ))
+        }
         ["stage", stage, view, "equation", n] => {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::AimAtEquation(
@@ -5840,6 +5935,7 @@ impl App {
             selected_tour: None,
             tour_polled_at: None,
             aim_at_equation: None,
+            seek_frame: None,
             scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
@@ -7449,6 +7545,40 @@ mod tests {
             }
         }
         assert!(tours > 0 && links > 0, "expected at least one fixture tour with links");
+    }
+
+    /// The frame-seek verb parses everywhere an animation lives.
+    #[test]
+    fn a_link_can_seek_to_a_frame() {
+        assert_eq!(
+            parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/7"),
+            Some(HrwLink::SeekFrame(
+                StageKind::Structural,
+                SubView::Structural(StructuralView::MatchingAnim),
+                7,
+            )),
+        );
+        // The non-structural animated views too — one per stage that has one.
+        for (stage, view) in [
+            ("Events", "PreLowering"),
+            ("Initialization", "IcPlan"),
+            ("Flatten", "Connections"),
+        ] {
+            let link = format!("hrw://stage/{stage}/{view}/frame/3");
+            assert!(
+                matches!(parse_hrw_link(&link), Some(HrwLink::SeekFrame(_, _, 3))),
+                "{link} should seek",
+            );
+        }
+        // Frame 0 is a real frame, not a falsy nothing.
+        assert!(matches!(
+            parse_hrw_link("hrw://stage/Structural/TarjanAnim/frame/0"),
+            Some(HrwLink::SeekFrame(_, _, 0)),
+        ));
+        // Garbage still fails rather than defaulting.
+        assert!(parse_hrw_link("hrw://stage/Structural/TarjanAnim/frame/last").is_none());
+        assert!(parse_hrw_link("hrw://stage/Structural/Tree/frame/1").is_some());
+        assert!(parse_hrw_link("hrw://stage/Events/TarjanAnim/frame/1").is_none());
     }
 
     #[test]

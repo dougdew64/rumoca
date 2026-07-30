@@ -250,6 +250,12 @@ impl Animated for TearingAnimation {
                 .collect::<Vec<_>>(),
         }))
     }
+
+    /// Seek is delegated to [`Playback`], so all eight views agree on what a frame
+    /// index means and on refusing an out-of-range one.
+    fn seek(&mut self, n: usize) -> bool {
+        self.playback.seek(n)
+    }
 }
 
 /// Look a block-local index back up, degrading to the index itself rather than

@@ -234,6 +234,12 @@ impl Animated for TarjanAnimation {
             "n_nodes": self.n_nodes,
         }))
     }
+
+    /// Seek is delegated to [`Playback`], so all eight views agree on what a frame
+    /// index means and on refusing an out-of-range one.
+    fn seek(&mut self, n: usize) -> bool {
+        self.playback.seek(n)
+    }
 }
 
 impl TarjanAnimation {

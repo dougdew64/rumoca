@@ -78,6 +78,13 @@ pub trait Animated {
     /// What the frame under the cursor shows. `None` before the first frame of
     /// a live session has arrived — a real state, not a failure.
     fn current_frame_context(&self) -> Option<Value>;
+
+    /// Jump to frame `n`, for `hrw://…/frame/<n>`. `false` when the frame does not
+    /// exist, so the caller can say so instead of landing somewhere plausible.
+    ///
+    /// Takes `&mut self`, which is why the app looks animations up mutably to seek and
+    /// immutably to report position — the capture must never move what it describes.
+    fn seek(&mut self, n: usize) -> bool;
 }
 
 /// Cursor, timing and live-session state for a sequence of algorithm frames.
@@ -135,6 +142,26 @@ impl<T> Playback<T> {
     /// Where playback stands: `(cursor, frame count)`.
     pub fn position(&self) -> (usize, usize) {
         (self.cursor, self.frames.len())
+    }
+
+    /// Jump the cursor to frame `n`, pausing playback. Returns `false` — and changes
+    /// nothing — when `n` is past the end.
+    ///
+    /// **Refuses rather than clamps**, the same rule as camera aiming: a tour naming a
+    /// frame this trace does not have is a bug *in the tour*, and landing on the last
+    /// frame instead would look deliberate and hide it.
+    ///
+    /// **Pauses**, because a link that seeks into a running animation would be
+    /// overtaken by the next tick before the reader's eyes arrived. A stop that says
+    /// "watch this moment" has to hold still on it.
+    pub fn seek(&mut self, n: usize) -> bool {
+        if n >= self.frames.len() {
+            return false;
+        }
+        self.cursor = n;
+        self.playing = false;
+        self.elapsed = 0.0;
+        true
     }
 
     pub fn frames(&self) -> &[T] {
@@ -247,6 +274,38 @@ pub struct PlaybackControls<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Seeking lands on the frame, pauses, and refuses to go past the end.
+    ///
+    /// All three matter for a tour stop. **Landing** is the point. **Pausing** is what
+    /// makes it hold still — a link that seeks into a running animation would be
+    /// overtaken by the next tick before the reader's eyes arrived. **Refusing** keeps a
+    /// tour bug visible: clamping to the last frame would look deliberate.
+    #[test]
+    fn seeking_lands_pauses_and_refuses_to_overshoot() {
+        let mut p = Playback::recorded(vec![10, 20, 30, 40], 0.5);
+        assert!(p.seek(2), "frame 2 exists");
+        assert_eq!(p.position(), (2, 4));
+
+        assert!(p.seek(0), "the first frame is seekable");
+        assert_eq!(p.position(), (0, 4));
+
+        assert!(p.seek(3), "the last frame is seekable");
+        assert!(!p.seek(4), "one past the end is refused");
+        assert!(!p.seek(999));
+        assert_eq!(p.position(), (3, 4), "a refused seek changes nothing");
+    }
+
+    /// An empty replay accepts no seek at all, rather than panicking on frame 0.
+    ///
+    /// Live sessions start empty, which is exactly when a stray link is most likely.
+    #[test]
+    fn seeking_an_empty_replay_is_refused() {
+        let mut p: Playback<u8> = Playback::recorded(Vec::new(), 0.5);
+        assert!(!p.seek(0));
+        assert_eq!(p.position(), (0, 0));
+    }
+
 
     fn recorded(n: usize) -> Playback<usize> {
         Playback::recorded((0..n).collect(), 0.5)

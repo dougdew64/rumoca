@@ -196,6 +196,12 @@ impl Animated for AliasAnimation {
             "eliminations_total": total,
         }))
     }
+
+    /// Seek is delegated to [`Playback`], so all eight views agree on what a frame
+    /// index means and on refusing an out-of-range one.
+    fn seek(&mut self, n: usize) -> bool {
+        self.playback.seek(n)
+    }
 }
 
 /// The one-line description of a step — **shared by the view and the capture**,

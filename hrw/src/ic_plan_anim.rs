@@ -303,6 +303,12 @@ impl Animated for IcPlanAnimation {
             "pinned_unknowns": self.context.pinned_unknowns,
         }))
     }
+
+    /// Seek is delegated to [`Playback`], so all eight views agree on what a frame
+    /// index means and on refusing an out-of-range one.
+    fn seek(&mut self, n: usize) -> bool {
+        self.playback.seek(n)
+    }
 }
 
 fn parse_block(v: &serde_json::Value) -> Option<IcBlock> {
