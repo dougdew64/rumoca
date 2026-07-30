@@ -2026,15 +2026,45 @@ robotics student modelling a mechanism will do it constantly.
 
   Test specimen: **`UnbalancedShaft.mo`**, marked DO NOT FIX per #46's convention.
 
-- **Resolve / typecheck / flatten — UNAUDITED.** A mistyped name, a dimension mismatch,
-  an incompatible connector. Nothing is claimed about these payloads here, deliberately:
-  an earlier version of this entry recorded that a "quick grep suggested no source
-  location" in them, which was an **unverified guess written down as a finding** — the
-  echo-chamber failure this whole arrangement is supposed to prevent. A future session
-  would have read it as established.
+- **Resolve / typecheck / flatten — ✅ AUDITED 2026-07-29.** Three specimens authored to
+  break each path (`UndefinedRef`, `DimensionMismatch`, `IncompatibleConnect`, all marked
+  DO NOT FIX). The audit found something far more serious than a missing span, plus the
+  missing spans.
 
-  The DAE-construction audit is the reason to expect something: that arm had a full
-  error, a code and diagnostics sitting in scope, unused. But expecting is not knowing.
+  **1. A broken specimen poisoned the next compile — FIXED.** Name resolution runs over
+  the *whole session*, not the requested model, and a specimen that failed to resolve
+  leaves errors in the session's resolved-state cache. Reproduced with a fresh session
+  and MSL loaded: `CapacitorLoop` clean, then `UndefinedRef`, then `CapacitorLoop`
+  again — and the third compile reported `unresolved component reference: 'missingGain'`,
+  a name appearing **only in `UndefinedRef.mo`**, byte-identical to the second run's
+  error. In the app: load a broken model, then a good one, and the good one looks broken
+  *with the other file's error*. **That is the priority-1 failure** — it would have
+  Claude diagnosing the wrong model.
+
+  `remove_document` does **not** clear it, despite
+  `apply_document_removal_at_revision` calling
+  `invalidate_resolved_state(CacheInvalidationCause::DocumentRemoval)`. Rebuilding the
+  session does. Mitigation: rebuild when the previous compile failed to resolve — the
+  only mechanism *measured* to work, and guarded so the MSL reparse is paid only when it
+  buys correctness. `a_broken_specimen_does_not_poison_the_next_compile` pins it with a
+  fresh `WorkerState` so it cannot pass by accident of test ordering.
+
+  **Upstream issue:** the root cause is inside Rumoca's resolved-state cache —
+  `remove_document` invalidates and yet a stale resolve failure survives. Reproduction
+  above; filable for `project-engage-rumoca-community`. Not guessed at here.
+
+  **2. `Diagnostic::labels` is dropped by every diagnostic emitter.** `rumoca_core::Diagnostic`
+  carries `labels: Vec<Label>`, each with a `Span` and an optional message marking
+  exactly where the error is. HRW's typecheck and flatten emitters serialize `severity`,
+  `code`, `message`, `notes` — and **not `labels`.** Same species as the dropped
+  structural spans. Still open; `span_to_location` already exists to convert them.
+
+  **3. The resolve message is ~99% MSL noise.** `format!("{e:#}")` concatenates ~39
+  semicolon-separated items, almost all library deprecation warnings ("external function
+  'constructor' should declare `pure` or `impure`", "Evaluate=true on 'factor' has no
+  effect"), with the actual error — `unresolved component reference: 'missingGain'` — last.
+  The signal is the final 2% of a 2000-character string. Still open: the payload should
+  separate the model's own errors from library warnings.
 
 ### Audit policy (set 2026-07-29, after Doug asked which we were doing)
 

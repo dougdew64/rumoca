@@ -685,6 +685,32 @@ struct WorkerState {
     /// specimen. Each `compile()` call updates the specimen's document in the
     /// session and re-resolves incrementally.
     session: Session,
+    /// URI of the specimen document added by the previous compile, and whether that
+    /// compile failed to resolve.
+    ///
+    /// **Guards against one broken specimen poisoning every later compile.** Name
+    /// resolution runs over the *whole session*, not just the requested model, so a
+    /// previously-loaded specimen with an unresolved reference makes a perfectly good
+    /// model report that other file's error.
+    ///
+    /// Verified 2026-07-29 with a fresh session and the MSL loaded: `CapacitorLoop`
+    /// resolved clean; then `UndefinedRef`; then `CapacitorLoop` again — and the third
+    /// compile reported `unresolved component reference: 'missingGain'`, a name that
+    /// appears **only** in `UndefinedRef.mo`. Byte-identical error to the second run.
+    ///
+    /// **`remove_document` does not clear it**, even though
+    /// `apply_document_removal_at_revision` calls
+    /// `invalidate_resolved_state(CacheInvalidationCause::DocumentRemoval)`. Rebuilding
+    /// the session does. The root cause is inside Rumoca's resolved-state cache and is
+    /// logged as an upstream issue rather than guessed at; see `docs/ideas.md` #45.
+    ///
+    /// So the mitigation is the mechanism that was *measured* to work: rebuild the
+    /// session, and only after a compile that actually failed to resolve. A clean
+    /// specimen cannot poison anything, so the reparse cost is paid exactly when it
+    /// buys something.
+    last_specimen_uri: Option<String>,
+    /// Whether the previous compile failed at resolve — see `last_specimen_uri`.
+    last_resolve_failed: bool,
     /// Library roots currently loaded, so a specimen compile knows they're ready.
     libraries: Vec<PathBuf>,
     /// Guard for the thread-local tracing subscriber. This is an RAII guard —
@@ -715,6 +741,8 @@ impl WorkerState {
     fn new() -> Self {
         WorkerState {
             session: Session::new(SessionConfig::default()),
+            last_specimen_uri: None,
+            last_resolve_failed: false,
             libraries: Vec::new(),
             tracing_guard: None,
         }
@@ -982,6 +1010,10 @@ impl WorkerState {
             );
         }
         self.session = session;
+        // A fresh session holds no specimen document and no stale resolved state, so
+        // both trackers reset with it.
+        self.last_specimen_uri = None;
+        self.last_resolve_failed = false;
         self.libraries = roots;
         Ok(total)
     }
@@ -1130,11 +1162,35 @@ impl WorkerState {
         // definitions in the class tree.
         log(LogLevel::StageStart, "Resolve".to_owned());
         let t_stage = Instant::now();
+        // A previous compile that failed to resolve leaves errors in the session's
+        // resolved-state cache that `remove_document` does not clear, so a good model
+        // compiled next reports the *broken* one's error. Rebuilding the session is the
+        // only mechanism measured to clear it. See `last_specimen_uri` for the
+        // reproduction and the upstream note.
+        //
+        // Guarded on the previous compile having actually failed: a clean specimen
+        // poisons nothing, so the MSL reparse is paid only when it buys correctness.
+        if self.last_resolve_failed && self.last_specimen_uri.as_deref() != Some(uri.as_str()) {
+            let roots = self.libraries.clone();
+            log(
+                LogLevel::Info,
+                "rebuilding session (previous specimen failed to resolve)".to_owned(),
+            );
+            if let Err(e) = self.load_libraries(roots) {
+                log(LogLevel::Warn, format!("session rebuild failed: {e}"));
+            }
+        }
+        if let Some(prev) = self.last_specimen_uri.take()
+            && prev != uri
+        {
+            self.session.remove_document(&prev);
+        }
         // Remove then re-add the specimen so the session treats it as new — without
         // this, `update_document` sees identical source text and short-circuits,
         // returning cached results (the registration code never re-runs).
         self.session.remove_document(&uri);
         self.session.update_document(&uri, &source);
+        self.last_specimen_uri = Some(uri.clone());
         let mut def_index = BTreeMap::new();
         let mut instantiate = Stage::default();
         let mut typecheck = Stage::default();
@@ -1212,6 +1268,12 @@ impl WorkerState {
                 ..Default::default()
             },
         });
+
+        // Remember a resolve failure so the *next* compile rebuilds the session before
+        // trusting it — see `last_resolve_failed`. Set here rather than inside the match
+        // above so a recovered-from-cache resolve still counts as failed: the session's
+        // resolved state is poisoned either way.
+        self.last_resolve_failed = resolve.note_is_error;
 
         // =====================================================================
         // Stages 5-10: DAE pipeline (Flatten → Solve lowering)
@@ -3190,6 +3252,59 @@ mod tests {
         };
         assert!(!index_reduction_frames.is_empty(),
             "MotorWithBrake should produce index-reduction animation frames");
+    }
+
+    /// **A broken specimen must not poison the next compile.**
+    ///
+    /// Found 2026-07-29 by auditing the front-end failure payloads. Name resolution runs
+    /// over the *whole session*, not just the requested model, and a specimen that failed
+    /// to resolve leaves errors in the session's resolved-state cache. So loading a broken
+    /// model and then a good one made the good one report **the other file's error** --
+    /// which would have Claude diagnosing the wrong model entirely, the priority-1
+    /// failure in `docs/tech-debt.md`.
+    ///
+    /// `remove_document` does *not* clear it, despite
+    /// `apply_document_removal_at_revision` calling `invalidate_resolved_state`.
+    /// Rebuilding the session does; that is the mitigation, guarded on the previous
+    /// compile having actually failed so the reparse is paid only when it buys something.
+    /// The root cause is inside Rumoca's cache and is logged as an upstream issue.
+    ///
+    /// Uses a **fresh** `WorkerState` rather than the shared one, so this cannot pass or
+    /// fail because of what other tests happened to compile first.
+    #[test]
+    fn a_broken_specimen_does_not_poison_the_next_compile() {
+        let mut w = WorkerState::new();
+        w.load_libraries(msl_roots()).expect("load MSL");
+        let dir = format!("{}/specimens", env!("CARGO_MANIFEST_DIR"));
+        let resolve_note = |w: &mut WorkerState, name: &str| -> (bool, String) {
+            let path = PathBuf::from(format!("{dir}/{name}.mo"));
+            match w.compile(&path, &|_: FromWorker| {}) {
+                FromWorker::Compiled { stages, .. } => {
+                    let st = stages.get(StageKind::Resolve);
+                    (st.note_is_error, st.note.clone().unwrap_or_default())
+                }
+                _ => panic!("expected Compiled for {name}"),
+            }
+        };
+
+        let (failed, _) = resolve_note(&mut w, "CapacitorLoop");
+        assert!(!failed, "CapacitorLoop resolves cleanly on its own");
+
+        let (failed, note) = resolve_note(&mut w, "UndefinedRef");
+        assert!(failed, "UndefinedRef references an undeclared name");
+        assert!(note.contains("missingGain"), "and says which one: {note}");
+
+        // The moment of truth: the same good specimen, compiled after the broken one.
+        let (failed, note) = resolve_note(&mut w, "CapacitorLoop");
+        assert!(
+            !failed,
+            "a good model must not inherit the previous specimen's failure: {note}",
+        );
+        assert!(
+            !note.contains("missingGain"),
+            "`missingGain` appears only in UndefinedRef.mo; leaking it here would have \
+             Claude diagnosing the wrong file: {note}",
+        );
     }
 
     /// An unbalanced model reports its balance, not just "DAE construction failed".
