@@ -247,6 +247,14 @@ Candidates, not commitments — consult when planning new work; promote items in
   directory is hard-coded, not a setting. **One fixture tour per capability, not per change.**
   They cover what Claude cannot see: the rendered surface.
 
+  **Cross-platform stops** (2026-07-30, ideas #47): a tour may route through Wolfram
+  Desktop or System Modeler when the point cannot be made in HRW. Each stop marks its
+  medium. A **fixture** notebook is versioned in `docs/fixture-tours/notebooks/` — an *ad
+  hoc* notebook is ephemeral like an ad hoc tour, but a fixture has expected outcomes, so a
+  test that vanishes on a fresh checkout is not a test. Claude evaluates every result
+  through the kernel first, then ships cells for **Doug** to evaluate: the stop that lands
+  is the one he checks himself.
+
   **Narrow, one feature each — deliberately** (Doug, 2026-07-30). Claude proposed *wider*
   tours after noticing that half of one walk's bugs came from outside the stops, and had
   the evidence backwards: those bugs were found *because* the tour was short enough to

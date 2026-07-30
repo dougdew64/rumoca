@@ -7987,6 +7987,45 @@ mod tests {
         assert!(checked >= 4, "expected the fixture's real paths to be checked, saw {checked}");
     }
 
+    /// A fixture tour's referenced files exist.
+    ///
+    /// The cross-platform tour points at a Wolfram notebook, and a stop referencing a
+    /// file that is not there tests nothing while looking fine — the same failure as a
+    /// made-up node path. Fixture notebooks are therefore **versioned beside their
+    /// tour**, not written to the gitignored bridge directory: an *ad hoc* notebook is
+    /// ephemeral like an ad hoc tour, but a fixture has expected outcomes, and a test
+    /// that vanishes on a fresh checkout is not a test.
+    #[test]
+    fn fixture_tours_reference_files_that_exist() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            return;
+        };
+        let mut checked = 0usize;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap();
+            // Relative markdown links, excluding the hrw:// scheme and anchors.
+            for target in text.split("](").skip(1).filter_map(|t| t.split(')').next()) {
+                if target.starts_with("hrw://") || target.starts_with('#') || target.contains("://")
+                {
+                    continue;
+                }
+                let resolved = dir.join(target);
+                assert!(
+                    resolved.exists(),
+                    "{} references {target}, which does not exist",
+                    path.display(),
+                );
+                checked += 1;
+            }
+        }
+        assert!(checked > 0, "expected at least one file reference across the fixtures");
+    }
+
     #[test]
     fn fixture_tour_links_all_resolve() {
         let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");

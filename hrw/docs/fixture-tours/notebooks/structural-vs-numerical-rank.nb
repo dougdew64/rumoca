@@ -1,0 +1,499 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 15.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     20659,        490]
+NotebookOptionsPosition[     15736,        428]
+NotebookOutlinePosition[     16058,        442]
+CellTagsIndexPosition[     16015,        439]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["Structural rank vs numerical rank", "Title",ExpressionUUID->"fd574977-ea13-5744-8072-e2aa68de2f18"],
+
+Cell[TextData[{
+ "Companion to the HRW fixture tour of the same name. ",
+ StyleBox["Evaluate the cells yourself",
+  FontWeight->Bold],
+ " \[LongDash]"
+}], "Text",ExpressionUUID->"5137f0ba-dda9-6c48-8ea2-bdcc3532a0bb"],
+
+Cell["\<\
+each one is a claim you can check, and a couple of them are meant to surprise.\
+\>", "Text",ExpressionUUID->"87852ad7-9d0b-bb4e-b693-bea4bbba13f6"],
+
+Cell[TextData[{
+ "The matrix below is not invented. It is ",
+ Cell[BoxData[Cell["ProportionalLoop",
+   Background->None,ExpressionUUID->"f26a2b59-9e79-c84f-9a85-88113ca10153"]], 
+  "InlineCode",ExpressionUUID->"f458ed1d-dd0e-b04e-9c41-b9aef2146046"],
+ "'s coupled block, exactly as"
+}], "Text",ExpressionUUID->"0abb5d0d-9e70-044b-a4bc-e831347f77da"],
+
+Cell["HRW's Incidence view shows it. ", "Text",ExpressionUUID->"9ca8a475-70e1-f046-9b46-cb2cfcb4daef"],
+
+Cell["1. The pattern HRW works with", "Section",ExpressionUUID->"84d1f0f7-e4b7-b343-abb8-40b9da95d656"],
+
+Cell["\<\
+Structural analysis never looks at a coefficient. It asks one question per \
+cell: *is this\
+\>", "Text",ExpressionUUID->"51f0ed92-19a5-0148-b855-fd26a51f0b50"],
+
+Cell["entry nonzero?* That is the whole of the incidence matrix.", "Text",ExpressionUUID->"06cb8ed7-33c0-8e4a-8826-aa9381cc333b"],
+
+Cell[TextData[{
+ "Rows are equations, columns are the unknowns ",
+ StyleBox["error", "TI"],
+ ", ",
+ StyleBox["command", "TI"],
+ ", ",
+ StyleBox["measurement", "TI"],
+ ". "
+}], "Text",ExpressionUUID->"e84dda01-2982-0f4d-a152-97bfd7593c9e"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"pattern", "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"1", ",", "0", ",", "1"}], "}"}], ",", "\[IndentingNewLine]", 
+     "           ", 
+     RowBox[{"{", 
+      RowBox[{"1", ",", "1", ",", "0"}], "}"}], ",", "\[IndentingNewLine]", 
+     "           ", 
+     RowBox[{"{", 
+      RowBox[{"0", ",", "1", ",", "1"}], "}"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"MatrixForm", "[", "pattern", "]"}]}], "Input",ExpressionUUID->\
+"95965f51-d485-2b4c-88a9-1088defc8e1d"],
+
+Cell["\<\
+Each equation touches exactly two of the three unknowns, and no unknown is \
+missed. That\
+\>", "Text",ExpressionUUID->"2575acbf-6b17-0d46-a6e4-bac50c58e97e"],
+
+Cell["is the 3-cycle you can see in HRW's Incidence view. ", "Text",ExpressionUUID->"c5ee0d03-6128-9049-b01c-3c706b0d12a4"],
+
+Cell["2. Structural rank: a property of the pattern alone", "Section",ExpressionUUID->"3983118b-1427-5d4d-822c-d2101dec9844"],
+
+Cell["\<\
+Structural rank is the size of a maximum matching between equations and \
+unknowns \[LongDash]\
+\>", "Text",ExpressionUUID->"15b4f6b3-878a-e448-91df-cbf500aec66c"],
+
+Cell["\<\
+graph theory, not arithmetic. Full rank means every equation can be assigned \
+its own\
+\>", "Text",ExpressionUUID->"e7f5d924-6c6a-0b47-928c-057ced0909b2"],
+
+Cell["unknown to solve for. ", "Text",ExpressionUUID->"b8f9470e-134f-f742-a33d-ffbaf5c42489"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"edges", "=", 
+   RowBox[{"Flatten", " ", "@", " ", 
+    RowBox[{"Table", "[", "\[IndentingNewLine]", "   ", 
+     RowBox[{
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"pattern", "[", 
+          RowBox[{"[", 
+           RowBox[{"i", ",", "j"}], "]"}], "]"}], "==", "1"}], ",", 
+        RowBox[{
+         RowBox[{"\"\<eq\>\"", " ", "<>", " ", 
+          RowBox[{"ToString", "[", "i", "]"}]}], " ", "<->", " ", 
+         RowBox[{"\"\<v\>\"", " ", "<>", " ", 
+          RowBox[{"ToString", "[", "j", "]"}]}]}], ",", "Nothing"}], "]"}], ",",
+       "\[IndentingNewLine]", "   ", 
+      RowBox[{"{", 
+       RowBox[{"i", ",", "3"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"j", ",", "3"}], "}"}]}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Length", " ", "@", " ", 
+  RowBox[{"FindIndependentEdgeSet", " ", "@", " ", 
+   RowBox[{"Graph", "[", "edges", "]"}]}]}]}], "Input",ExpressionUUID->\
+"ee3a8f8b-7300-c34b-a9ba-f71aede94de2"],
+
+Cell[TextData[{
+ StyleBox["3",
+  FontWeight->Bold],
+ " \[LongDash] full. This is the number HRW reports, and the reason ",
+ Cell[BoxData[Cell["ProportionalLoop",
+   Background->None,ExpressionUUID->"93143c65-8d62-6543-995b-784d2fcacd0f"]], 
+  "InlineCode",ExpressionUUID->"9374704b-66a3-f842-907f-f65222918a9c"],
+ " gets past"
+}], "Text",ExpressionUUID->"506e5d5f-635d-444a-a2fb-48ff6aab829d"],
+
+Cell["structural analysis. ", "Text",ExpressionUUID->"846e47b4-c66d-d84a-83ad-4ee2b958fd8f"],
+
+Cell["3. The actual coefficients", "Section",ExpressionUUID->"d07a71df-5940-d54a-8321-c858f54c2fe0"],
+
+Cell["Now put the real numbers in. The equations are ", "Text",ExpressionUUID->"62966823-51ea-3940-b350-e8cbda900415"],
+
+Cell[TextData[Cell[BoxData[Cell["error = reference - measurement",
+  Background->None,ExpressionUUID->
+  "1864e3da-4e5d-b640-a2ea-5d24aec03236"]], \
+"InlineCode",ExpressionUUID->"4cf09453-2c58-834c-bca7-4675ee7f6bb8"]], "Item",\
+ExpressionUUID->"24a4fed0-4b84-5040-a259-eea15f17bf57"],
+
+Cell[TextData[Cell[BoxData[Cell["command = k * error",
+  Background->None,ExpressionUUID->
+  "852384c3-2249-c24a-a27c-5f3eb73ba16f"]], \
+"InlineCode",ExpressionUUID->"8627ffa1-14f0-e942-add2-2a48c4231ed3"]], "Item",\
+ExpressionUUID->"c1f80ba4-1344-1149-bc6e-93451fcce739"],
+
+Cell[TextData[Cell[BoxData[Cell["measurement = p * command",
+  Background->None,ExpressionUUID->
+  "fc18abe5-533d-4049-aed0-90d2cc435286"]], \
+"InlineCode",ExpressionUUID->"53d65e00-005a-0846-b2c7-c322147a6352"]], "Item",\
+ExpressionUUID->"87096c08-eeb3-404e-8913-456d34b8b0c4"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"A", "[", 
+    RowBox[{"k_", ",", "p_"}], "]"}], ":=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", " ", 
+      RowBox[{"1", ",", "0", ",", "1"}], "}"}], ",", "\[IndentingNewLine]", 
+     "              ", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"-", "k"}], ",", "1", ",", "0"}], "}"}], ",", 
+     "\[IndentingNewLine]", "              ", 
+     RowBox[{"{", " ", 
+      RowBox[{"0", ",", 
+       RowBox[{"-", "p"}], ",", "1"}], "}"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"MatrixForm", " ", "@", " ", 
+  RowBox[{"A", "[", 
+   RowBox[{"k", ",", "p"}], "]"}]}]}], "Input",ExpressionUUID->"902b74c6-e8ed-\
+714c-84cd-41ba8872102d"],
+
+Cell[TextData[{
+ "Note the pattern is unchanged \[LongDash] the same cells are nonzero, \
+whatever ",
+ StyleBox["k", "TI"],
+ " and ",
+ StyleBox["p", "TI"],
+ " are. "
+}], "Text",ExpressionUUID->"b41de964-1e41-db42-8f4b-fc591b4f1c43"],
+
+Cell["4. The determinant, symbolically", "Section",ExpressionUUID->"64321467-a07b-374e-a716-5d04b22beb1a"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Det", " ", "@", " ", 
+   RowBox[{"A", "[", 
+    RowBox[{"k", ",", "p"}], "]"}]}], " ", "//", " ", "Simplify"}]], "Input",E\
+xpressionUUID->"1f124fc8-aad4-c640-9173-2206a1780dc7"],
+
+Cell[TextData[{
+ "**",
+ Cell[BoxData[Cell["1 + k p",
+   Background->None,ExpressionUUID->"7ad7201a-7299-434b-93e4-fb2617745fe4"]], 
+  "InlineCode",ExpressionUUID->"02b5f55c-018d-3340-afc9-bcef218aa90c"],
+ ".** The whole behaviour of this block is in that one expression, and ",
+ Cell[BoxData[Cell["k p",
+   Background->None,ExpressionUUID->"2ae4d6c3-a353-ff4e-9f7a-498c30d71f98"]], 
+  "InlineCode",ExpressionUUID->"0d4a6eae-e2dd-4640-9440-3226a1926b42"],
+ " is"
+}], "Text",ExpressionUUID->"350ebb6f-9fc9-c848-b920-bb8c937e35bf"],
+
+Cell[TextData[{
+ "the ",
+ StyleBox["loop gain",
+  FontWeight->Bold],
+ ". "
+}], "Text",ExpressionUUID->"ce3bdd78-903a-cc4e-aa1a-8de1c30fb95f"],
+
+Cell["5. At the specimen's own gains", "Section",ExpressionUUID->"2df0bcbb-e510-584a-8cf2-c4adb9782779"],
+
+Cell[TextData[{
+ Cell[BoxData[Cell["ProportionalLoop",
+   Background->None,ExpressionUUID->"af5608c0-6220-154f-9ab7-c325d5d1a271"]], 
+  "InlineCode",ExpressionUUID->"ab695760-6afe-e345-a07f-bf5350617e52"],
+ " uses ",
+ Cell[BoxData[Cell["controllerGain = 10",
+   Background->None,ExpressionUUID->"2b8e0763-2175-7641-ac39-1a9f3436b436"]], 
+  "InlineCode",ExpressionUUID->"c52dad02-7bc8-ea44-b3bc-21016b1099c3"],
+ ", ",
+ Cell[BoxData[Cell["plantGain = 2",
+   Background->None,ExpressionUUID->"2d662d69-7855-bb4e-9e95-57eabb8d97f6"]], 
+  "InlineCode",ExpressionUUID->"92362652-4f43-0242-bc3c-03c78e05d503"],
+ ". "
+}], "Text",ExpressionUUID->"947a5cd8-76fa-3442-83d9-ee188090f286"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"Det", " ", "@", " ", 
+    RowBox[{"A", "[", 
+     RowBox[{"10", ",", "2"}], "]"}]}], ",", 
+   RowBox[{"MatrixRank", " ", "@", " ", 
+    RowBox[{"A", "[", 
+     RowBox[{"10", ",", "2"}], "]"}]}]}], "}"}]], "Input",ExpressionUUID->\
+"393fa5c5-a062-254b-ba7d-c1fcf6dc5cc4"],
+
+Cell["\<\
+Determinant 21, rank 3. Solvable, and HRW's tearing view shows exactly how. \
+\>", "Text",ExpressionUUID->"93771471-d25a-214f-bae3-ce3a8d59fa1e"],
+
+Cell["6. The point of the whole tour", "Section",ExpressionUUID->"fcf4c1a9-16a3-ae48-a2fb-e1bd3a4f1a3c"],
+
+Cell[TextData[{
+ "Choose gains whose product is ",
+ StyleBox["\[Minus]1",
+  FontWeight->Bold],
+ ". Nothing about the ",
+ StyleBox["pattern",
+  FontSlant->Italic],
+ " changes. "
+}], "Text",ExpressionUUID->"b7025bb4-83f7-b44f-95c2-78f328c00585"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"sing", "=", 
+   RowBox[{"A", "[", 
+    RowBox[{"10", ",", 
+     RowBox[{
+      RowBox[{"-", "1"}], "/", "10"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"{", "\[IndentingNewLine]", "  ", 
+  RowBox[{
+   RowBox[{"\"\<same sparsity pattern?\>\"", "->", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"Map", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"#", "===", "0"}], ",", "0", ",", "1"}], "]"}], " ", "&"}],
+         ",", "sing", ",", 
+        RowBox[{"{", "2", "}"}]}], "]"}], "===", "pattern"}], ")"}]}], ",", 
+   "\[IndentingNewLine]", "  ", 
+   RowBox[{"\"\<structural rank\>\"", "        ", "->", "3"}], ",", 
+   "\[IndentingNewLine]", "  ", 
+   RowBox[{"\"\<determinant\>\"", "            ", "->", 
+    RowBox[{"Det", "[", "sing", "]"}]}], ",", "\[IndentingNewLine]", "  ", 
+   RowBox[{"\"\<numerical rank\>\"", "         ", "->", 
+    RowBox[{"MatrixRank", "[", "sing", "]"}]}]}], "\[IndentingNewLine]", 
+  "}"}]}], "Input",ExpressionUUID->"2abb0dcf-0e23-064f-92e7-939dfd24e863"],
+
+Cell[TextData[{
+ StyleBox["Same pattern. Structural rank 3. Numerical rank 2.",
+  FontWeight->Bold],
+ "The matrix is singular while every structural test still passes. HRW would \
+report this"
+}], "Text",ExpressionUUID->"6eebacf3-1989-8e43-a7c7-0a61f7a91a00"],
+
+Cell[TextData[{
+ "model as perfectly well-posed, because from the incidence matrix it ",
+ StyleBox["is",
+  FontSlant->Italic],
+ ". "
+}], "Text",ExpressionUUID->"71341221-6486-b74d-a86d-b23e0c6294e6"],
+
+Cell["7. What that costs you", "Section",ExpressionUUID->"897d4ce3-588c-fd46-9532-16cfe8e568e5"],
+
+Cell[BoxData[{
+ RowBox[{"NullSpace", " ", "@", " ", "sing"}], "\[IndentingNewLine]", 
+ RowBox[{"Solve", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"e", "==", 
+      RowBox[{"r", "-", "m"}]}], ",", 
+     RowBox[{"c", "==", 
+      RowBox[{"10", " ", "e"}]}], ",", 
+     RowBox[{"m", "==", 
+      RowBox[{
+       RowBox[{"-", 
+        RowBox[{"(", 
+         RowBox[{"1", "/", "10"}], ")"}]}], " ", "c"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"e", ",", "c", ",", "m"}], "}"}]}], "]"}]}], "Input",ExpressionUUI\
+D->"aee04654-b3e3-0147-9e61-f643bd7a6101"],
+
+Cell[TextData[{
+ "A one-dimensional null space, and ",
+ StyleBox["no solution at all",
+  FontWeight->Bold],
+ ". Physically: with loop gain \[Minus]1, ",
+ Cell[BoxData[Cell["measurement (1 + k p) = k p \[CenterDot] reference",
+   Background->None,ExpressionUUID->"dc6f0cc5-999b-544f-9e20-9185ca524194"]], 
+  "InlineCode",ExpressionUUID->"6ecb7080-339c-9f46-9fc6-b4ba0a83ee99"],
+ " becomes ",
+ Cell[BoxData[Cell["0 = -reference",
+   Background->None,ExpressionUUID->"bea3c2b7-2072-014e-adf5-4a4ec8e93919"]], 
+  "InlineCode",ExpressionUUID->"ae6d3098-7bad-4f4d-9a5b-ea7878dec9a1"],
+ ", which nothing"
+}], "Text",ExpressionUUID->"9fbfa9dc-f458-e440-b39e-6e8e02be181d"],
+
+Cell["satisfies. ", "Text",ExpressionUUID->"3fc4598d-e343-c846-9278-c7dc8b95f0f0"],
+
+Cell["8. Perturb it yourself", "Section",ExpressionUUID->"f6094076-751c-b042-bb11-838b00ccb33a"],
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", "  ", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"\"\<det\>\"", "->", 
+      RowBox[{"N", " ", "@", " ", 
+       RowBox[{"Det", " ", "@", " ", 
+        RowBox[{"A", "[", 
+         RowBox[{"10", ",", "p"}], "]"}]}]}]}], ",", 
+     RowBox[{"\"\<rank\>\"", "->", 
+      RowBox[{"MatrixRank", " ", "@", " ", 
+       RowBox[{"A", "[", 
+        RowBox[{"10", ",", "p"}], "]"}]}]}]}], "}"}], ",", 
+   "\[IndentingNewLine]", "  ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"p", ",", 
+       RowBox[{"-", "0.1"}], ",", "\"\<plant gain\>\""}], "}"}], ",", 
+     RowBox[{"-", "0.5"}], ",", "0.5", ",", "0.001"}], "}"}]}], 
+  "\[IndentingNewLine]", "]"}]], "Input",ExpressionUUID->"bb38ea98-218a-a843-\
+a7f8-a7dbbc7fa68e"],
+
+Cell[TextData[{
+ "Drag through ",
+ Cell[BoxData[Cell["p = -0.1",
+   Background->None,ExpressionUUID->"414d90c7-121f-114c-ac86-ac4c13ab8112"]], 
+  "InlineCode",ExpressionUUID->"af8ba0a7-a605-f34d-8d73-43bdba189caa"],
+ ". The rank drops for exactly one value and recovers immediately \
+\[LongDash]"
+}], "Text",ExpressionUUID->"096143a1-e290-754a-90ce-67b85d9807fe"],
+
+Cell[TextData[{
+ "which is why ",
+ StyleBox["numerical",
+  FontSlant->Italic],
+ " rank cannot be read off a pattern, and why a structurally sound"
+}], "Text",ExpressionUUID->"90f9642b-7ab3-3d43-8632-9871a3a4fe78"],
+
+Cell["model can still fail at one operating point. ", "Text",ExpressionUUID->"036737d8-6e3e-8d4e-bd31-8613c6476542"],
+
+Cell["What HRW can and cannot tell you", "Section",ExpressionUUID->"b8699b3a-a5b7-1148-ab3d-6721fd2db0a9"],
+
+Cell[BoxData[
+ PaneBox[
+  StyleBox[
+   TagBox[GridBox[{
+      {
+       StyleBox["HRW",
+        FontWeight->
+         Bold], "\<\"the sparsity pattern from the real compiled model, and \
+everything graph-theoretic built on it \[LongDash] matching, BLT, \
+tearing\"\>"},
+      {
+       StyleBox["here",
+        FontWeight->Bold], "\<\"what happens when the values are put in\"\>"}
+     },
+     GridBoxAlignment->{"Columns" -> {Left, {Left}}, "Rows" -> {{Baseline}}},
+     GridBoxSpacings->{"Columns" -> {
+         Offset[0.27999999999999997`], {
+          Offset[2.0999999999999996`]}, 
+         Offset[0.27999999999999997`]}, "Rows" -> {
+         Offset[0.2], {
+          Offset[0.4]}, 
+         Offset[0.2]}}],
+    Function[BoxForm`e$, 
+     TableForm[BoxForm`e$]]], "Text",
+   StripOnInput->False,
+   ShowStringCharacters->False],
+  ImageMargins->{{0, 0}, {5, 5}}]], "TextTableForm", \
+"Text",ExpressionUUID->"3b028c21-3872-9b4a-8d19-7826f069c473"],
+
+Cell[TextData[{
+ "Neither is redundant. HRW cannot show you this, and Mathematica does not \
+know what ",
+ Cell[BoxData[Cell["ProportionalLoop",
+   Background->None,ExpressionUUID->"ebd75b3d-10d6-ac40-8b63-76878e6150b0"]], 
+  "InlineCode",ExpressionUUID->"003a2493-a089-224c-a791-b6fb0234c39b"],
+ " compiles to."
+}], "Text",ExpressionUUID->"eeb7eb97-3682-0742-be80-cd68489a326d"]
+},
+FrontEndVersion->"15.0 for Microsoft Windows (64-bit) (May 19, 2026)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"c092b592-a042-234a-a2b5-a00ab7a3e9d8"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[554, 20, 105, 0, 70, "Title",ExpressionUUID->"fd574977-ea13-5744-8072-e2aa68de2f18"],
+Cell[662, 22, 222, 5, 70, "Text",ExpressionUUID->"5137f0ba-dda9-6c48-8ea2-bdcc3532a0bb"],
+Cell[882, 29, 159, 2, 70, "Text",ExpressionUUID->"87852ad7-9d0b-bb4e-b693-bea4bbba13f6"],
+Cell[1042, 33, 355, 6, 70, "Text",ExpressionUUID->"0abb5d0d-9e70-044b-a4bc-e831347f77da"],
+Cell[1394, 41, 102, 0, 70, "Text",ExpressionUUID->"9ca8a475-70e1-f046-9b46-cb2cfcb4daef"],
+Cell[1499, 43, 103, 0, 70, "Section",ExpressionUUID->"84d1f0f7-e4b7-b343-abb8-40b9da95d656"],
+Cell[1605, 45, 173, 3, 70, "Text",ExpressionUUID->"51f0ed92-19a5-0148-b855-fd26a51f0b50"],
+Cell[1778, 50, 129, 0, 70, "Text",ExpressionUUID->"06cb8ed7-33c0-8e4a-8826-aa9381cc333b"],
+Cell[1910, 52, 246, 8, 70, "Text",ExpressionUUID->"e84dda01-2982-0f4d-a152-97bfd7593c9e"],
+Cell[2151, 62, 552, 14, 70, "Input",ExpressionUUID->"95965f51-d485-2b4c-88a9-1088defc8e1d"],
+Cell[2692, 78, 171, 3, 70, "Text",ExpressionUUID->"2575acbf-6b17-0d46-a6e4-bac50c58e97e"],
+Cell[2863, 83, 123, 0, 70, "Text",ExpressionUUID->"c5ee0d03-6128-9049-b01c-3c706b0d12a4"],
+Cell[2989, 85, 125, 0, 70, "Section",ExpressionUUID->"3983118b-1427-5d4d-822c-d2101dec9844"],
+Cell[3117, 87, 176, 3, 70, "Text",ExpressionUUID->"15b4f6b3-878a-e448-91df-cbf500aec66c"],
+Cell[3293, 92, 168, 3, 70, "Text",ExpressionUUID->"e7f5d924-6c6a-0b47-928c-057ced0909b2"],
+Cell[3461, 97, 93, 0, 70, "Text",ExpressionUUID->"b8f9470e-134f-f742-a33d-ffbaf5c42489"],
+Cell[3557, 99, 1035, 25, 70, "Input",ExpressionUUID->"ee3a8f8b-7300-c34b-a9ba-f71aede94de2"],
+Cell[4570, 126, 401, 8, 70, "Text",ExpressionUUID->"506e5d5f-635d-444a-a2fb-48ff6aab829d"],
+Cell[4966, 136, 92, 0, 70, "Text",ExpressionUUID->"846e47b4-c66d-d84a-83ad-4ee2b958fd8f"],
+Cell[5061, 138, 100, 0, 70, "Section",ExpressionUUID->"d07a71df-5940-d54a-8321-c858f54c2fe0"],
+Cell[5164, 140, 118, 0, 70, "Text",ExpressionUUID->"62966823-51ea-3940-b350-e8cbda900415"],
+Cell[5285, 142, 288, 4, 70, "Item",ExpressionUUID->"24a4fed0-4b84-5040-a259-eea15f17bf57"],
+Cell[5572, 148, 276, 4, 70, "Item",ExpressionUUID->"c1f80ba4-1344-1149-bc6e-93451fcce739"],
+Cell[5847, 154, 282, 4, 70, "Item",ExpressionUUID->"87096c08-eeb3-404e-8913-456d34b8b0c4"],
+Cell[6128, 160, 722, 20, 70, "Input",ExpressionUUID->"902b74c6-e8ed-714c-84cd-41ba8872102d"],
+Cell[6833, 182, 239, 7, 70, "Text",ExpressionUUID->"b41de964-1e41-db42-8f4b-fc591b4f1c43"],
+Cell[7068, 191, 106, 0, 70, "Section",ExpressionUUID->"64321467-a07b-374e-a716-5d04b22beb1a"],
+Cell[7177, 193, 218, 5, 70, "Input",ExpressionUUID->"1f124fc8-aad4-c640-9173-2206a1780dc7"],
+Cell[7393, 200, 538, 10, 70, "Text",ExpressionUUID->"350ebb6f-9fc9-c848-b920-bb8c937e35bf"],
+Cell[7924, 212, 146, 5, 70, "Text",ExpressionUUID->"ce3bdd78-903a-cc4e-aa1a-8de1c30fb95f"],
+Cell[8068, 219, 104, 0, 70, "Section",ExpressionUUID->"2df0bcbb-e510-584a-8cf2-c4adb9782779"],
+Cell[8175, 221, 689, 13, 70, "Text",ExpressionUUID->"947a5cd8-76fa-3442-83d9-ee188090f286"],
+Cell[8854, 236, 331, 9, 70, "Input",ExpressionUUID->"393fa5c5-a062-254b-ba7d-c1fcf6dc5cc4"],
+Cell[9179, 247, 157, 2, 70, "Text",ExpressionUUID->"93771471-d25a-214f-bae3-ce3a8d59fa1e"],
+Cell[9337, 251, 104, 0, 70, "Section",ExpressionUUID->"fcf4c1a9-16a3-ae48-a2fb-e1bd3a4f1a3c"],
+Cell[9444, 253, 251, 8, 70, "Text",ExpressionUUID->"b7025bb4-83f7-b44f-95c2-78f328c00585"],
+Cell[9690, 263, 1121, 27, 70, "Input",ExpressionUUID->"2abb0dcf-0e23-064f-92e7-939dfd24e863"],
+Cell[10787, 292, 264, 5, 70, "Text",ExpressionUUID->"6eebacf3-1989-8e43-a7c7-0a61f7a91a00"],
+Cell[11049, 299, 204, 5, 70, "Text",ExpressionUUID->"71341221-6486-b74d-a86d-b23e0c6294e6"],
+Cell[11251, 306, 96, 0, 70, "Section",ExpressionUUID->"897d4ce3-588c-fd46-9532-16cfe8e568e5"],
+Cell[11350, 308, 592, 17, 70, "Input",ExpressionUUID->"aee04654-b3e3-0147-9e61-f643bd7a6101"],
+Cell[11928, 327, 677, 13, 70, "Text",ExpressionUUID->"9fbfa9dc-f458-e440-b39e-6e8e02be181d"],
+Cell[12595, 342, 82, 0, 70, "Text",ExpressionUUID->"3fc4598d-e343-c846-9278-c7dc8b95f0f0"],
+Cell[12680, 344, 96, 0, 70, "Section",ExpressionUUID->"f6094076-751c-b042-bb11-838b00ccb33a"],
+Cell[12779, 346, 831, 22, 70, "Input",ExpressionUUID->"bb38ea98-218a-a843-a7f8-a7dbbc7fa68e"],
+Cell[13591, 370, 370, 7, 70, "Text",ExpressionUUID->"096143a1-e290-754a-90ce-67b85d9807fe"],
+Cell[13957, 379, 218, 5, 70, "Text",ExpressionUUID->"90f9642b-7ab3-3d43-8632-9871a3a4fe78"],
+Cell[14173, 386, 116, 0, 70, "Text",ExpressionUUID->"036737d8-6e3e-8d4e-bd31-8613c6476542"],
+Cell[14292, 388, 106, 0, 70, "Section",ExpressionUUID->"b8699b3a-a5b7-1148-ab3d-6721fd2db0a9"],
+Cell[14401, 390, 976, 27, 70, "TextTableForm",ExpressionUUID->"3b028c21-3872-9b4a-8d19-7826f069c473"],
+Cell[15353, 419, 386, 7, 70, "Text",ExpressionUUID->"eeb7eb97-3682-0742-be80-cd68489a326d"]
+}
+]
+*)
+
+(* End of internal cache information *)
