@@ -34,13 +34,19 @@ Everything you just watched was decided from the pattern alone. HRW never evalua
 
 ## 🧮 Stop 3 — Where the values go in
 
-Open **[`notebooks/structural-vs-numerical-rank.nb`](notebooks/structural-vs-numerical-rank.nb)**
-in Wolfram Desktop and evaluate the cells in order.
+[Open the notebook in Wolfram Desktop](hrw://notebook/structural-vs-numerical-rank.nb)
 
-*(Versioned beside this tour, not written to the gitignored bridge directory. An **ad hoc**
-notebook — one Claude writes to answer a question — is ephemeral like an ad hoc tour. A
-**fixture** notebook has expected outcomes, so it is a test, and a test that vanishes on a
-fresh checkout tests nothing.)*
+**Expected:** Wolfram Desktop opens the notebook — **not** a web browser. Then evaluate
+the cells in order.
+
+*(A plain markdown link to a `.nb` gets handed to the browser, which does nothing useful
+with it; Doug hit that walking this tour on 2026-07-30. The **notebook verb** hands the
+file to the OS association instead, so HRW never needs to know where Wolfram is
+installed.)*
+
+*(The notebook is versioned beside this tour rather than written to the gitignored bridge
+directory. An **ad hoc** notebook is ephemeral like an ad hoc tour; a **fixture** notebook
+has expected outcomes, and a test that vanishes on a fresh checkout is not a test.)*
 
 **Expected, in the notebook:**
 

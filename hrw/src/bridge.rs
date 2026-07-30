@@ -145,6 +145,39 @@ pub const TOUR_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/to
 /// not a user preference, and one fewer setting is one fewer thing to be wrong.
 pub const FIXTURE_TOURS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-tours");
 
+/// Notebooks belonging to fixture tours — versioned, because a fixture has expected
+/// outcomes and a test that vanishes on a fresh checkout is not a test.
+pub const FIXTURE_NOTEBOOKS_DIR: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-tours/notebooks");
+
+/// Notebooks Claude writes to answer one question — ephemeral, like `tour.md`.
+pub const SCRATCH_NOTEBOOKS_DIR: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/notebooks");
+
+/// Resolve a `hrw://notebook/<name>` target to a file on disk.
+///
+/// Looks in the fixture directory first, then the scratch one, so a fixture tour keeps
+/// working even when an ad hoc notebook of the same name exists.
+///
+/// **Rejects anything with a path separator or `..`.** A tour is authored by Claude and
+/// versioned, but the verb hands a path to the operating system's file association — so
+/// the set of things it can open stays a *file name in one of two known directories*,
+/// rather than whatever a link happens to spell.
+pub fn resolve_notebook(name: &str) -> Option<PathBuf> {
+    if name.is_empty()
+        || name.contains('/')
+        || name.contains('\\')
+        || name.contains("..")
+        || !name.ends_with(".nb")
+    {
+        return None;
+    }
+    [FIXTURE_NOTEBOOKS_DIR, SCRATCH_NOTEBOOKS_DIR]
+        .into_iter()
+        .map(|dir| Path::new(dir).join(name))
+        .find(|p| p.is_file())
+}
+
 /// List the fixture tours, sorted by file name.
 ///
 /// Distinct from the ad hoc tour in [`TOUR_FILE`]: an ad hoc tour answers one question
@@ -1658,6 +1691,41 @@ fn shape(v: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `hrw://notebook/<name>` resolves only to a notebook in a known directory.
+    ///
+    /// The verb hands a path to the operating system's file association, so the set of
+    /// things a link can open stays "a file name in one of two directories" rather than
+    /// whatever a link happens to spell. Traversal and separators are refused outright —
+    /// not sanitised, because a rejected link is visible and a quietly rewritten one is
+    /// not.
+    #[test]
+    fn a_notebook_name_cannot_escape_its_directory() {
+        for bad in [
+            "",
+            "..",
+            "../secrets.nb",
+            r"..\secrets.nb",
+            "sub/dir.nb",
+            r"sub\dir.nb",
+            r"C:\Windows\notepad.exe",
+            "notes.txt",                 // must be a notebook
+            "structural-vs-numerical-rank",  // ...with the extension
+        ] {
+            assert!(resolve_notebook(bad).is_none(), "{bad:?} must be refused");
+        }
+
+        // The real fixture notebook resolves, if this checkout has it.
+        let real = "structural-vs-numerical-rank.nb";
+        if Path::new(FIXTURE_NOTEBOOKS_DIR).join(real).is_file() {
+            let found = resolve_notebook(real).expect("the fixture notebook should resolve");
+            assert!(found.ends_with(real));
+            assert!(found.starts_with(FIXTURE_NOTEBOOKS_DIR), "resolved inside the fixture dir");
+        }
+
+        // A name that is well-formed but absent still resolves to nothing.
+        assert!(resolve_notebook("no-such-notebook.nb").is_none());
+    }
 
     /// `parse_path` is exactly `describe_path`'s inverse.
     ///

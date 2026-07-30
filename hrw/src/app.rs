@@ -1885,6 +1885,16 @@ impl App {
                 self.jump_target = Some(path.clone());
                 self.jump_highlight = Some(path);
             }
+            HrwLink::OpenNotebook(name) => match bridge::resolve_notebook(&name) {
+                Some(path) => {
+                    if let Err(e) = open_with_os(&path) {
+                        self.notify(format!("could not open {name}: {e}"));
+                    }
+                }
+                None => self.notify(format!(
+                    "no notebook {name} \u{2014} the link names one that is not here",
+                )),
+            },
             HrwLink::Follow(name) => {
                 // Following is independent of what is pointed at: a stop may set one,
                 // the other, or both. So this deliberately does not touch the stage.
@@ -5930,6 +5940,16 @@ enum HrwLink {
     /// `emf.phi` and watch where it goes", which is the gesture the cross-stage view was
     /// built for.
     Follow(String),
+    /// `hrw://notebook/<name.nb>` — open a Wolfram notebook in Wolfram Desktop.
+    ///
+    /// The cross-platform tours route through a notebook, and a plain markdown link to
+    /// one is handed to the *browser* — which does nothing useful with a `.nb`. Doug hit
+    /// exactly that on the first cross-platform tour (2026-07-30). A tour should drive
+    /// the reader to the stop, not tell him to go and find the file.
+    ///
+    /// The name is resolved by `bridge::resolve_notebook`, which restricts it to a file
+    /// name in one of two known directories.
+    OpenNotebook(String),
 }
 
 impl HrwLink {
@@ -5965,6 +5985,7 @@ impl HrwLink {
                 bridge::describe_path(path),
             ),
             Self::Follow(name) => format!("follow/{name}"),
+            Self::OpenNotebook(name) => format!("notebook/{name}"),
         }
     }
 }
@@ -6000,6 +6021,11 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         // Longest patterns first: `splitn` caps the segment count, so the node form
         // must be matched before the shorter stage forms can swallow it.
         ["follow", name] => Some(HrwLink::Follow((*name).to_owned())),
+        // A non-empty name: `hrw://notebook/` alone names nothing, and accepting it
+        // meant a prose mention of the verb parsed as a link to an unnamed file.
+        ["notebook", name] if !name.is_empty() => {
+            Some(HrwLink::OpenNotebook((*name).to_owned()))
+        }
         ["stage", stage, view, "node", path] => {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::PointAtNode(
@@ -6045,7 +6071,13 @@ fn extract_hrw_links(text: &str) -> Vec<String> {
     for cap in text.match_indices("hrw://") {
         let start = cap.0;
         let rest = &text[start..];
-        let end = rest.find(|c: char| c == ')' || c == ' ' || c == '\n' || c == '"' || c == '>')
+        // A backtick ends a URL too: `hrw://notebook/` written in a **code span** is
+        // prose *about* the verb, not a link. Without it the extractor captured the
+        // backtick as part of the name and registered a hook that could never fire —
+        // found 2026-07-30 by the fixture file-reference test, which duly reported a
+        // notebook named "`" as missing.
+        let end = rest
+            .find(|c: char| matches!(c, ')' | ' ' | '\n' | '"' | '>' | '`'))
             .unwrap_or(rest.len());
         let url = &rest[..end];
         if !links.contains(&url.to_owned()) {
@@ -6107,6 +6139,30 @@ fn purpose_placeholder(model: Option<&str>, selected: Option<&Path>) -> Vec<Stri
         }
         (None, None) => vec!["Select a specimen to see its purpose.".to_owned()],
     }
+}
+
+/// Hand a file to the operating system's association for its type.
+///
+/// A `.nb` opens in Wolfram Desktop, because that is what Windows associates it with —
+/// HRW does not need to know where Wolfram lives, and would be wrong the moment it moved.
+///
+/// `cmd /C start` rather than a crate: adding a dependency needs asking first, and this
+/// is four lines. The empty string after `start` is **required** — `start` treats a lone
+/// quoted argument as a window title, so omitting it opens a console instead of the file.
+#[cfg(target_os = "windows")]
+fn open_with_os(path: &Path) -> std::io::Result<()> {
+    std::process::Command::new("cmd")
+        .args(["/C", "start", "", &path.display().to_string()])
+        .spawn()
+        .map(|_| ())
+}
+
+/// Non-Windows fallback. HRW is Windows-only in practice (charter Decision 5 rules out
+/// other targets), but a `cfg` that silently compiles to nothing would be worse than one
+/// that says so.
+#[cfg(not(target_os = "windows"))]
+fn open_with_os(path: &Path) -> std::io::Result<()> {
+    std::process::Command::new("xdg-open").arg(path).spawn().map(|_| ())
 }
 
 /// Resolve a pending tree jump target against the stage's IR.
@@ -8008,21 +8064,37 @@ mod tests {
                 continue;
             }
             let text = std::fs::read_to_string(&path).unwrap();
-            // Relative markdown links, excluding the hrw:// scheme and anchors.
+
+            // Relative markdown links, excluding schemes and anchors.
             for target in text.split("](").skip(1).filter_map(|t| t.split(')').next()) {
-                if target.starts_with("hrw://") || target.starts_with('#') || target.contains("://")
-                {
+                if target.starts_with('#') || target.contains("://") {
                     continue;
                 }
-                let resolved = dir.join(target);
                 assert!(
-                    resolved.exists(),
+                    dir.join(target).exists(),
                     "{} references {target}, which does not exist",
                     path.display(),
                 );
                 checked += 1;
             }
+
+            // And `hrw://notebook/<name>` targets, which are references too — the link
+            // parses whatever the name, so grammar alone proves nothing about the file.
+            for link in extract_hrw_links(&text) {
+                let Some(name) = link.strip_prefix("hrw://notebook/") else {
+                    continue;
+                };
+                assert!(
+                    bridge::resolve_notebook(name).is_some(),
+                    "{} opens notebook {name}, which does not resolve",
+                    path.display(),
+                );
+                checked += 1;
+            }
         }
+        // Non-vacuity. The first version of this test asserted only on relative links,
+        // and converting the notebook link to `hrw://notebook/` left it with nothing to
+        // check — it failed rather than passing empty, which is the behaviour to keep.
         assert!(checked > 0, "expected at least one file reference across the fixtures");
     }
 
@@ -8354,6 +8426,41 @@ mod tests {
     /// The two composition primitives are independent by design — point-only,
     /// follow-only and both are all normal states — so `follow` deliberately does not
     /// touch the stage.
+    /// The notebook verb parses a real name and refuses an empty one.
+    ///
+    /// `hrw://notebook/` alone names nothing. Accepting it meant a **prose mention** of
+    /// the verb inside a code span parsed as a link to an unnamed file — which the
+    /// fixture reference test duly reported as a missing notebook called "". Two small
+    /// faults met there: the extractor did not stop at a backtick, and the grammar
+    /// accepted an empty name.
+    #[test]
+    fn the_notebook_verb_needs_a_name() {
+        assert_eq!(
+            parse_hrw_link("hrw://notebook/structural-vs-numerical-rank.nb"),
+            Some(HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned())),
+        );
+        assert!(parse_hrw_link("hrw://notebook/").is_none(), "a bare verb names nothing");
+        assert!(parse_hrw_link("hrw://notebook").is_none());
+    }
+
+    /// A verb written in prose, inside a code span, is not a link.
+    ///
+    /// Documentation about `hrw://` belongs in tours and doc comments, and writing it in
+    /// backticks is how one writes it. The extractor must not turn that into a hook.
+    #[test]
+    fn a_code_span_mention_is_not_extracted_as_a_link() {
+        let md = "Use the [notebook verb](hrw://notebook/x.nb). \
+                  Writing `hrw://notebook/` in prose must not register a hook.";
+        let links = extract_hrw_links(md);
+        assert_eq!(
+            links,
+            vec!["hrw://notebook/x.nb", "hrw://notebook/"],
+            "the code-span mention stops at the backtick rather than swallowing it",
+        );
+        // ...and the truncated mention does not parse, so nothing acts on it.
+        assert!(parse_hrw_link("hrw://notebook/").is_none());
+    }
+
     #[test]
     fn a_link_can_set_the_follow() {
         assert_eq!(
