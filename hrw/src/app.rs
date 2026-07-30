@@ -1379,7 +1379,7 @@ impl App {
                     self.compute_problem_lines();
                     // Publish every stage's full IR so Claude can diff any pair.
                     if let Err(e) = bridge::write_stages(&self.stages.as_stage_pairs()) {
-                        self.notice = Some(format!("write_stages failed: {e}"));
+                        self.notify(format!("write_stages failed: {e}"));
                     }
                 }
                 FromWorker::Simulated { path, result } => {
@@ -1720,6 +1720,20 @@ impl App {
     }
 
 
+    /// Show a notice **and record it**.
+    ///
+    /// Every notice is something HRW is telling Doug went wrong — an unresolvable node
+    /// path, a frame that does not exist, a specimen not found. Those are exactly the
+    /// events Claude needs when Doug reports "there seem to be several bugs", and until
+    /// 2026-07-30 they existed only on screen for a few seconds.
+    ///
+    /// One function so the shown text and the recorded text cannot drift apart.
+    fn notify(&mut self, message: impl Into<String>) {
+        let message = message.into();
+        diagnostics::record_action("notice", message.clone());
+        self.notice = Some(message);
+    }
+
     /// Act on a followed `hrw://` link.
     ///
     /// Extracted from `ui` 2026-07-29 so the ordering rules below can be tested — they
@@ -1736,12 +1750,23 @@ impl App {
     /// `LoadAndSwitch` already did this correctly and its comment said why; the three
     /// sibling verbs did not, which is the whole bug.
     fn dispatch_hrw_link(&mut self, action: HrwLink) {
+        // **Record every followed link.** Doug clicking a tour stop is the single most
+        // informative thing that happens in a session, and it was invisible: when he
+        // reported bugs in a fixture tour, `session.json` showed the specimen load and
+        // nothing after. Now the trail names each stop in order, so a bug report can
+        // start from what was actually clicked rather than from a reconstruction.
+        //
+        // Deliberately **not** written to `focus.json`. That file is the noun Doug
+        // *assembles*; overwriting it on every click would destroy what he is pointing
+        // at and break the composition primitives. This is a different question —
+        // "what did I do", not "what should you look at".
+        diagnostics::record_action("tour-link", action.describe());
         match action {
             HrwLink::LoadSpecimen(name) => {
                 if let Some(path) = self.find_specimen(&name) {
                     self.open(path);
                 } else {
-                    self.notice = Some(format!("specimen not found: {name}"));
+                    self.notify(format!("specimen not found: {name}"));
                 }
             }
             HrwLink::ShowSource(line) => {
@@ -1764,7 +1789,7 @@ impl App {
                     self.pending_stage = Some(kind);
                     self.pending_sub_view = sub;
                 } else {
-                    self.notice = Some(format!("specimen not found: {name}"));
+                    self.notify(format!("specimen not found: {name}"));
                 }
             }
             HrwLink::AimAtEquation(kind, sub, equation) => {
@@ -1863,7 +1888,7 @@ impl App {
             // Report the number Doug typed, not the internal cursor: the link is
             // 1-based to match the on-screen counter, so quoting `target` raw would be
             // off by one — the very bug this change fixes.
-            self.notice = Some(format!(
+            self.notify(format!(
                 "no frame {} in this replay \u{2014} it has {total}",
                 target + 1,
             ));
@@ -2637,7 +2662,7 @@ impl App {
     {
         self.aim_at_equation = None;
         if !anim.aim_at_equation(&mut self.tarjan_anim_canvas, target) {
-            self.notice = Some(format!(
+            self.notify(format!(
                 "no equation {target} in this model \u{2014} the link names one that is not here",
             ));
         }
@@ -3606,7 +3631,7 @@ impl App {
                 // The stage borrow ends here, so the notice can finally be posted.
                 if let Some(msg) = bad_jump {
                     self.jump_target = None;
-                    self.notice = Some(msg);
+                    self.notify(msg);
                 }
             }
             } // end: non-Simulation stage rendering
@@ -3914,10 +3939,11 @@ egui::Panel::top("bar").show(ui, |ui| {
                 )
                 .clicked()
             {
-                self.notice = Some(match diagnostics::write_on_demand() {
+                let msg = match diagnostics::write_on_demand() {
                     Ok(path) => format!("diagnostic written: {}", path.display()),
                     Err(e) => format!("diagnostic FAILED: {e}"),
-                });
+                };
+                self.notify(msg);
                 ui.close();
             }
         });
@@ -4217,7 +4243,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             let target = self.pointed_at.take().map(|p| p.target).unwrap_or_default();
             // Said out loud. Silently dropping it would leave the user believing
             // Claude still has a node that has vanished from the bar.
-            self.notice = Some(format!(
+            self.notify(format!(
                 "point dropped \u{2014} {target} no longer exists in the recompiled IR",
             ));
             diagnostics::record_action("point-dropped", target);
@@ -5609,6 +5635,25 @@ enum SubView {
 }
 
 impl SubView {
+    /// The slug this sub-view is written as in an `hrw://` link.
+    ///
+    /// **The canonical inverse of [`Self::from_slug`]**, and it dispatches to the very
+    /// functions the *capture* uses (`structural_view_name` and friends) rather than
+    /// repeating the strings. That is what makes "the link vocabulary equals the capture
+    /// vocabulary" true by construction instead of by assertion.
+    ///
+    /// Added 2026-07-30. `from_slug` had existed without an inverse — the same gap that
+    /// let the stage vocabulary drift into four hand-written copies, one of which
+    /// disagreed with the other three.
+    fn slug(&self) -> &'static str {
+        match self {
+            Self::Structural(v) => structural_view_name(*v),
+            Self::Flatten(v) => flatten_view_name(*v),
+            Self::Events(v) => events_view_name(*v),
+            Self::Init(v) => init_view_name(*v),
+        }
+    }
+
     /// Resolve a slug against the stage it appears under.
     ///
     /// Stage-scoped rather than global because the same slug means different things
@@ -5766,6 +5811,43 @@ enum HrwLink {
     /// `emf.phi` and watch where it goes", which is the gesture the cross-stage view was
     /// built for.
     Follow(String),
+}
+
+impl HrwLink {
+    /// One line naming what this link does, for the action trail.
+    ///
+    /// Reconstructs the canonical URL rather than `Debug`-printing the enum: the trail
+    /// is read by Claude alongside the tour markdown, and matching the tour's own text
+    /// is what makes "Doug clicked Stop 3" legible at a glance.
+    fn describe(&self) -> String {
+        match self {
+            Self::LoadSpecimen(name) => format!("load/{name}"),
+            Self::SwitchStage(kind, None) => format!("stage/{}", kind.slug()),
+            Self::SwitchStage(kind, Some(sub)) => {
+                format!("stage/{}/{}", kind.slug(), sub.slug())
+            }
+            Self::LoadAndSwitch(name, kind, None) => format!("load/{name}/{}", kind.slug()),
+            Self::LoadAndSwitch(name, kind, Some(sub)) => {
+                format!("load/{name}/{}/{}", kind.slug(), sub.slug())
+            }
+            Self::ShowSource(None) => "source".to_owned(),
+            Self::ShowSource(Some(line)) => format!("source/{line}"),
+            Self::AimAtEquation(kind, sub, n) => {
+                format!("stage/{}/{}/equation/{n}", kind.slug(), sub.slug())
+            }
+            Self::SeekFrame(kind, sub, n) => {
+                // +1 back to the 1-based form the link was written in.
+                format!("stage/{}/{}/frame/{}", kind.slug(), sub.slug(), n + 1)
+            }
+            Self::PointAtNode(kind, sub, path) => format!(
+                "stage/{}/{}/node/{}",
+                kind.slug(),
+                sub.slug(),
+                bridge::describe_path(path),
+            ),
+            Self::Follow(name) => format!("follow/{name}"),
+        }
+    }
 }
 
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
@@ -7903,6 +7985,68 @@ mod tests {
         // Past the end of a real array counts as absent too.
         let path = bridge::parse_path("blocks[9]").expect("well-formed");
         assert!(resolve_jump_target(&stage, &path).is_err());
+    }
+
+    /// A link's trail entry is the link, so the trail can be read against the tour.
+    ///
+    /// Doug asked whether Claude can see him click a tour link. It could not — the
+    /// action trail showed the specimen load and nothing after, so a report of "several
+    /// bugs in the node-pointing tour" had to be reconstructed by asking. Now every
+    /// followed link is recorded, and recorded as its **canonical URL** rather than a
+    /// `Debug` dump, so it lines up with the tour's own text at a glance.
+    ///
+    /// Round-tripped rather than pinned to literals: `describe` and `parse_hrw_link`
+    /// must agree, which is the same parity rule as everywhere else.
+    #[test]
+    fn a_recorded_link_round_trips_to_the_same_link() {
+        for url in [
+            "hrw://load/CapacitorLoop",
+            "hrw://stage/Structural",
+            "hrw://stage/Structural/Incidence",
+            "hrw://load/RcCircuit/Structural/Tree",
+            "hrw://source",
+            "hrw://source/9",
+            "hrw://stage/Structural/TarjanAnim/equation/13",
+            "hrw://stage/Structural/MatchingAnim/frame/41",
+            "hrw://stage/Structural/Tree/node/incidence.rows[0].equation_text",
+            "hrw://follow/C.v",
+        ] {
+            let link = parse_hrw_link(url).unwrap_or_else(|| panic!("{url} should parse"));
+            assert_eq!(
+                format!("hrw://{}", link.describe()),
+                url,
+                "a recorded link must read back as the link that was clicked",
+            );
+        }
+    }
+
+    /// `SubView::slug` is `from_slug`'s inverse, for every variant.
+    ///
+    /// The missing-inverse gap again: `from_slug` existed alone, which is exactly how
+    /// the stage vocabulary drifted into four copies. `slug` dispatches to the same
+    /// functions the capture uses, so the two vocabularies are equal by construction.
+    #[test]
+    fn every_sub_view_slug_round_trips() {
+        let cases: Vec<(StageKind, SubView)> = StructuralView::ALL
+            .iter()
+            .map(|v| (StageKind::Structural, SubView::Structural(*v)))
+            .chain(FlattenView::ALL.iter().map(|v| (StageKind::Flatten, SubView::Flatten(*v))))
+            .chain(EventsView::ALL.iter().map(|v| (StageKind::Events, SubView::Events(*v))))
+            .chain(
+                InitView::ALL
+                    .iter()
+                    .map(|v| (StageKind::Initialization, SubView::Init(*v))),
+            )
+            .collect();
+
+        for (stage, sub) in cases {
+            assert_eq!(
+                SubView::from_slug(stage, sub.slug()),
+                Some(sub),
+                "{sub:?} writes slug {:?} which does not parse back under {stage:?}",
+                sub.slug(),
+            );
+        }
     }
 
     #[test]
