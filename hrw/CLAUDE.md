@@ -211,6 +211,14 @@ Candidates, not commitments — consult when planning new work; promote items in
   **Before working on code that touches a compiler phase, read that phase's description** — but treat
   untagged prose as a lead, not a fact. (Distinct from `docs/specimen-notebook/` — the specimen lab
   notebook, also Claude's.)
+- **[`docs/upstream-issues.md`](docs/upstream-issues.md) — Rumoca bugs found through HRW,
+  written ready to file.** Doug files them when the time is right; **Claude adds entries and
+  never files them itself.** Only *reproduced* bugs go in, with reproduction, expected vs
+  actual, and suspect code marked as unverified — a confident wrong diagnosis in a bug
+  report wastes a maintainer's time and costs the credibility this project is building
+  (`project-engage-rumoca-community`). Where an independent implementation can adjudicate,
+  use it first: "System Modeler rejects this and you accept it" beats "I think the spec
+  says…". Two entries as of 2026-07-29, both found by auditing failure paths.
 - **[`docs/question-ledger.md`](docs/question-ledger.md) — started 2026-07-29.** The questions
   themselves: verbatim wording, what was on screen, which medium answered, and what actually made it
   click. **Scan it before answering in a familiar area.** A repeated question is the signal, and it

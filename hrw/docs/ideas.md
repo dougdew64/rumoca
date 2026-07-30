@@ -2066,7 +2066,7 @@ robotics student modelling a mechanism will do it constantly.
   buys correctness. `a_broken_specimen_does_not_poison_the_next_compile` pins it with a
   fresh `WorkerState` so it cannot pass by accident of test ordering.
 
-  **Upstream issue:** the root cause is inside Rumoca's resolved-state cache —
+  **Upstream issue ([#1](upstream-issues.md)):** the root cause is inside Rumoca's resolved-state cache —
   `remove_document` invalidates and yet a stale resolve failure survives. Reproduction
   above; filable for `project-engage-rumoca-community`. Not guessed at here.
 
@@ -2242,7 +2242,7 @@ accepts is exactly a filable issue.
    `get_validation_var_info` returning `None` for one side, or `canonical_type_id`
    collapsing the two connector types together.
 
-   **Upstream issue #2 for `project-engage-rumoca-community`** (the first being the
+   **Upstream issue [#2](upstream-issues.md)** (the first being the
    resolved-state cache not clearing on `remove_document`). Both were found by auditing,
    both adjudicated rather than guessed, and this one has an independent implementation
    as the witness — which is the strongest form of bug report available.
