@@ -1903,6 +1903,41 @@ explicit link to Doug's Fall 2026 linear algebra course.
    computation" are different facts about how Doug learns, and a ledger that
    drops the medium loses half of "what unlocked it".
 
+### Standing practice: oracle first, then Rumoca
+
+Set 2026-07-29 (Doug), after the failure-path audit produced two upstream bugs:
+
+> Please make full use of that SystemModeler oracle in any way which might help you.
+> Likewise for using Wolfram desktop.
+
+**The reason that matters most is a bias, not a check.** Without an independent
+implementation, Claude's default when an authored specimen behaves unexpectedly is to
+**blame the specimen** — which reads as humility and *systematically destroys findings*,
+because every Rumoca bug then looks like a bad specimen. `IncompatibleConnect` failed at
+the wrong phase and the tempting move was "my specimen must be wrong, adjust it", which
+would have deleted upstream issue #2. **The oracle corrects Claude's error attribution.**
+
+1. **Before concluding anything from Rumoca's behaviour on an authored specimen**, ask
+   System Modeler whether it accepts the model (recipe above).
+2. **Read SM's message for *which kind* of error it is** — a second opinion on which phase
+   *should* catch it. `UnderdeterminedShaft` was authored expecting a structural failure,
+   failed at DAE construction, and SM was never asked where it thought the error was.
+3. **Interpret the disagreement.** The readings are not interchangeable:
+
+   | System Modeler | Rumoca | Reading |
+   |---|---|---|
+   | rejects | accepts | **Rumoca bug** — file it (`docs/upstream-issues.md`) |
+   | accepts | rejects | **Rumoca bug**, other direction — a valid model refused |
+   | accepts | accepts | the specimen is valid Modelica and **tests nothing** |
+   | rejects | rejects | a **good failure specimen** — now compare the two diagnoses |
+
+**Wolfram Desktop, same spirit — and one use not yet tried.** Beyond computing claims
+instead of asserting them: **derive the ground truth symbolically and check Rumoca against
+it.** For a constrained mechanism, work out the constraint equations and the
+differentiation index in Mathematica, then see whether Pantelides arrives at the same
+answer. That is an oracle for the *mathematics* rather than for another implementation, and
+it aims straight at the robotics and linear-algebra goals. Pairs naturally with #5.
+
 ### Caveat
 
 The Wolfram MCP connection is interactive-session-bound and may be absent in
@@ -2322,9 +2357,12 @@ independently, or its failures are always reported by a neighbour.
    is meant to break. `UnderdeterminedShaft` was deleted on 2026-07-29 partly for want
    of this convention.
 
-3. **#43's oracle is a prerequisite, not an extra.** Deliberately writing invalid models
-   raises the question every time: *is the model invalid for the reason intended, or is
-   Rumoca simply rejecting something valid?* Claude cannot settle that from inside HRW.
+3. **#43's oracle is a prerequisite, not an extra — and it runs FIRST.** Deliberately
+   writing invalid models raises the question every time: *is the model invalid for the
+   reason intended, or is Rumoca simply rejecting something valid?* Claude cannot settle
+   that from inside HRW, and its default when it cannot is to blame its own specimen —
+   destroying exactly the findings this task exists to produce. See #43's "oracle first,
+   then Rumoca" for the practice and the four readings of a disagreement.
    Doug: *"in case you doubt your expectations, you have available to you SystemModeler
    and Wolfram desktop to check your specimen."* Compile each specimen in System
    Modeler: a model **SM accepts and Rumoca rejects** is a Rumoca bug and a filable
