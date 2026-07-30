@@ -1216,7 +1216,7 @@ impl WorkerState {
                         // and dimensions.
                         log(LogLevel::StageStart, "Instantiate + Typecheck".to_owned());
                         let t_sub = Instant::now();
-                        let (i, t) = instantiate_and_typecheck(&rt.0, &qualified);
+                        let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source);
                         // Connection expansion (MLS §9) records its own replay.
                         // It re-runs flatten, so it is timed inside this block
                         // rather than pretending to be free.
@@ -1232,23 +1232,32 @@ impl WorkerState {
                         // from a previous successful compile). `resolved_cached()`
                         // returns the last good result without re-resolving.
                         let note = format!("{e:#}");
+                        // Model-scoped, structured diagnostics rather than only the
+                        // concatenated anyhow chain. `compile_model_diagnostics` returns
+                        // real `Diagnostic`s with severities and labels, so the model's
+                        // own error can be separated from the library warnings that
+                        // otherwise bury it — see `model_diagnostics_to_json`.
+                        //
+                        // `note` is still emitted verbatim as `message`: never lossy.
+                        let diag = model_diagnostics_to_json(
+                            &self.session.compile_model_diagnostics(&qualified).diagnostics,
+                            &source,
+                        );
+                        let resolve_err = |note: &str| serde_json::json!({
+                            "kind": "resolve",
+                            "message": note,
+                            "diagnostics": diag,
+                            "guidance": "Name resolution binds every reference to a definition.                                 Read `diagnostics.errors` first: those are this model's problems,                                 each with the source location of the reference that failed.                                 `diagnostics.warnings` are library-level and almost never the                                 cause.",
+                        });
                         match self.session.resolved_cached() {
                             Some(rt) => match extract_class(&rt.0, &qualified) {
                                 Stage { value: Some(v), .. } => {
                                     def_index = build_def_index(&rt.0, &v);
                                     Stage::recovered(v, note)
                                 }
-                                _ => Stage::err_with_details(serde_json::json!({
-                                    "kind": "resolve",
-                                    "message": note,
-                                    "guidance": "Check that all referenced types, components, and packages exist in the loaded libraries.",
-                                }), note),
+                                _ => Stage::err_with_details(resolve_err(&note), note),
                             },
-                            None => Stage::err_with_details(serde_json::json!({
-                                "kind": "resolve",
-                                "message": note,
-                                "guidance": "Check that all referenced types, components, and packages exist in the loaded libraries.",
-                            }), note),
+                            None => Stage::err_with_details(resolve_err(&note), note),
                         }
                     }
                 }
@@ -1360,7 +1369,7 @@ impl WorkerState {
                     }};
                 }
 
-                let flatten = run_stage!("Flatten", flatten_stage(result), flatten);
+                let flatten = run_stage!("Flatten", flatten_stage(result, &source), flatten);
                 let structural = run_stage!("Structural analysis", structural_stage(result, &source), structural);
                 let (index_reduction, ir_frames) = {
                     log(LogLevel::StageStart, "Index reduction".to_owned());
@@ -1529,6 +1538,82 @@ fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
     }
 }
 
+/// Serialize diagnostics **with their labels resolved to source locations**.
+///
+/// `rumoca_core::Diagnostic` carries `labels: Vec<Label>`, each a `Span` plus an optional
+/// message marking exactly where the error is ("equation assignment here", "add `pure` or
+/// `impure` to the function declaration"). Every diagnostic emitter in HRW dropped
+/// `labels` until 2026-07-29 — the same species as the dropped structural spans, on the
+/// phases a hand-authored model fails in most.
+///
+/// A label whose span points into a *library* file resolves to `null`: the offsets are
+/// into that file, not the specimen, and `span_to_location` refuses rather than inventing
+/// a line. That is why MSL warnings carry no location here and the model's own error does.
+fn diagnostics_to_json(diags: &[rumoca_core::Diagnostic], source: &str) -> serde_json::Value {
+    serde_json::Value::Array(
+        diags
+            .iter()
+            .map(|d| {
+                serde_json::json!({
+                    "severity": format!("{:?}", d.severity),
+                    "code": d.code,
+                    "message": d.message,
+                    "notes": d.notes,
+                    "labels": d.labels.iter().map(|l| serde_json::json!({
+                        "message": l.message,
+                        "primary": l.primary,
+                        "location": span_to_location(source, &l.span),
+                    })).collect::<Vec<_>>(),
+                })
+            })
+            .collect(),
+    )
+}
+
+/// Split a model's diagnostics into the signal and the noise.
+///
+/// **Why this exists.** The resolve stage used to emit `format!("{e:#}")` — about 39
+/// semicolon-separated items of which ~38 were MSL deprecation warnings ("external
+/// function 'constructor' should declare `pure` or `impure`", "Evaluate=true on 'factor'
+/// has no effect"), with the model's actual error *last*. The signal was the final 2% of
+/// a 2000-character string.
+///
+/// **`severity` does the classification, so nothing is guessed.** No pattern-matching on
+/// message text: `DiagnosticSeverity::Error` is the model's problem and everything else
+/// is context. Measured on `UndefinedRef`: 34 diagnostics in, **one** error out —
+/// `ER002 unresolved component reference: 'missingGain'`, with an in-range span.
+///
+/// Warnings are kept but **deduplicated and counted** rather than listed: the same MSL
+/// deprecation repeats dozens of times and repeating it dozens of times helps nobody.
+fn model_diagnostics_to_json(
+    diags: &[rumoca_core::Diagnostic],
+    source: &str,
+) -> serde_json::Value {
+    let (errors, warnings): (Vec<_>, Vec<_>) = diags
+        .iter()
+        .cloned()
+        .partition(|d| matches!(d.severity, rumoca_core::DiagnosticSeverity::Error));
+
+    let mut seen = std::collections::BTreeMap::<String, usize>::new();
+    for w in &warnings {
+        *seen.entry(w.message.clone()).or_insert(0) += 1;
+    }
+    let distinct: Vec<serde_json::Value> = seen
+        .into_iter()
+        .map(|(message, count)| serde_json::json!({ "message": message, "occurrences": count }))
+        .collect();
+
+    serde_json::json!({
+        "errors": diagnostics_to_json(&errors, source),
+        "warnings": {
+            "note": "library-level warnings, deduplicated. Almost always about the MSL rather \
+                     than the model, and not the reason the compile failed.",
+            "total": warnings.len(),
+            "distinct": distinct,
+        },
+    })
+}
+
 /// Structured JSON for a DAE-construction (`ToDae`) failure.
 ///
 /// The balance figures are **parsed out of the message** because `rumoca-compile`
@@ -1547,6 +1632,7 @@ fn dae_construction_error_to_json(
     error: &str,
     error_code: &Option<String>,
     diagnostics: &[rumoca_core::Diagnostic],
+    source: &str,
 ) -> serde_json::Value {
     let mut json = serde_json::json!({
         "kind": "dae_construction",
@@ -1561,22 +1647,8 @@ fn dae_construction_error_to_json(
     let obj = json.as_object_mut().expect("built as an object");
 
     if !diagnostics.is_empty() {
-        obj.insert(
-            "diagnostics".to_owned(),
-            serde_json::Value::Array(
-                diagnostics
-                    .iter()
-                    .map(|d| {
-                        serde_json::json!({
-                            "severity": format!("{:?}", d.severity),
-                            "code": d.code,
-                            "message": d.message,
-                            "notes": d.notes,
-                        })
-                    })
-                    .collect(),
-            ),
-        );
+        // Shared helper so labels resolve to source lines here as well.
+        obj.insert("diagnostics".to_owned(), diagnostics_to_json(diagnostics, source));
     }
 
     if let Some((n_eq, n_unk, balance)) = parse_unbalanced(error) {
@@ -2414,7 +2486,13 @@ fn record_connection_frames(
     frames.into_inner()
 }
 
-fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) -> (Stage, Stage) {
+/// `source` is the specimen text, so a diagnostic's labels can be reported as line
+/// numbers rather than byte offsets (ideas #45).
+fn instantiate_and_typecheck(
+    tree: &rumoca_ir_ast::ClassTree,
+    model_name: &str,
+    source: &str,
+) -> (Stage, Stage) {
     match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
         Ok(mut overlay) => {
             let instantiate = Stage::from_ser(&overlay);
@@ -2422,20 +2500,12 @@ fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) 
                 Ok(()) => Stage::from_ser(&overlay),
                 Err(diags) => {
                     let mut json = ser_value(&overlay);
-                    let diag_json: Vec<serde_json::Value> = diags.iter().map(|d| {
-                        let mut dj = serde_json::json!({
-                            "severity": format!("{:?}", d.severity),
-                            "message": d.message,
-                        });
-                        if let Some(code) = &d.code {
-                            dj["code"] = serde_json::Value::String(code.clone());
-                        }
-                        if !d.notes.is_empty() {
-                            dj["notes"] = serde_json::json!(d.notes);
-                        }
-                        dj
-                    }).collect();
-                    let n = diag_json.len();
+                    // Shared helper, so `labels` — the source location of each problem —
+                    // survives here as it does everywhere else. This block used to build
+                    // its own diagnostic JSON and drop them.
+                    let collected: Vec<rumoca_core::Diagnostic> = diags.iter().cloned().collect();
+                    let diag_json = diagnostics_to_json(&collected, source);
+                    let n = collected.len();
                     json.as_object_mut().unwrap().insert("error".to_owned(), serde_json::json!({
                         "kind": "typecheck",
                         "message": format!("Typecheck reported {n} diagnostic(s)"),
@@ -2469,7 +2539,8 @@ fn instantiate_and_typecheck(tree: &rumoca_ir_ast::ClassTree, model_name: &str) 
 /// construction failed) and other earlier failures. It also handles
 /// `NeedsInner` (the model references inner declarations that weren't
 /// provided — a rare Modelica feature).
-fn flatten_stage(result: Option<&PhaseResult>) -> Stage {
+/// `source` is the specimen text, so diagnostic labels become line numbers.
+fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
     match result {
         Some(PhaseResult::Success(cr)) => match serde_json::to_value(&cr.flat) {
             Ok(v) => Stage::ok(v),
@@ -2483,17 +2554,10 @@ fn flatten_stage(result: Option<&PhaseResult>) -> Stage {
             };
             match phase {
                 FailedPhase::Flatten => {
-                    let diag_json: Vec<serde_json::Value> = diagnostics.iter().map(|d| {
-                        let mut dj = serde_json::json!({
-                            "severity": format!("{:?}", d.severity),
-                            "code": d.code,
-                            "message": d.message,
-                        });
-                        if !d.notes.is_empty() {
-                            dj["notes"] = serde_json::json!(d.notes);
-                        }
-                        dj
-                    }).collect();
+                    // Shared helper, so `labels` — the source location of each problem —
+                    // survives. This block used to build its own diagnostic JSON and
+                    // drop them.
+                    let diag_json = diagnostics_to_json(diagnostics, source);
                     Stage::err_with_details(serde_json::json!({
                         "kind": "flatten",
                         "message": error,
@@ -2517,7 +2581,7 @@ fn flatten_stage(result: Option<&PhaseResult>) -> Stage {
                     // longer looks like the furthest good stage when DAE construction
                     // has failed.
                     Stage::err_with_details(
-                        dae_construction_error_to_json(error, error_code, diagnostics),
+                        dae_construction_error_to_json(error, error_code, diagnostics, source),
                         msg,
                     )
                 }
@@ -3252,6 +3316,87 @@ mod tests {
         };
         assert!(!index_reduction_frames.is_empty(),
             "MotorWithBrake should produce index-reduction animation frames");
+    }
+
+    /// A resolve failure names the offending reference **and its line**, with the
+    /// library noise separated out.
+    ///
+    /// Two problems fixed together 2026-07-29:
+    ///
+    /// 1. `Diagnostic::labels` — the `Span` marking exactly where the error is — was
+    ///    dropped by every diagnostic emitter in HRW.
+    /// 2. The resolve payload was `format!("{e:#}")`: ~39 semicolon-separated items of
+    ///    which ~38 were MSL deprecation warnings, the model's real error last. The
+    ///    signal was the final 2% of a 2000-character string.
+    ///
+    /// The fix uses `compile_model_diagnostics` for structured, model-scoped diagnostics
+    /// and partitions them by **severity** — so nothing is pattern-matched out of message
+    /// text and no real error can be filtered away by a wording change.
+    #[test]
+    fn a_resolve_failure_names_the_reference_and_its_line() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("UndefinedRef")
+        else {
+            panic!("expected Compiled");
+        };
+        let err = stages
+            .resolve
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .expect("a resolve failure must carry a structured payload");
+
+        let errors = err["diagnostics"]["errors"].as_array().expect("errors array");
+        assert_eq!(errors.len(), 1, "one error, not 34 items of library noise: {errors:?}");
+        assert_eq!(errors[0]["code"], "ER002");
+        assert!(
+            errors[0]["message"].as_str().is_some_and(|m| m.contains("missingGain")),
+            "{}",
+            errors[0]["message"],
+        );
+
+        // The label is the point: a line Doug can look at.
+        let loc = &errors[0]["labels"][0]["location"];
+        assert_eq!(loc["line"], 9, "the reference is on line 9: {loc}");
+        assert!(
+            loc["line_text"].as_str().is_some_and(|t| t.contains("missingGain")),
+            "line_text must be quotable: {loc}",
+        );
+
+        // Warnings are kept, deduplicated, and clearly not the cause.
+        let warnings = &err["diagnostics"]["warnings"];
+        let total = warnings["total"].as_u64().expect("total");
+        let distinct = warnings["distinct"].as_array().expect("distinct").len();
+        assert!(total > distinct as u64, "{total} warnings collapse to {distinct} distinct");
+
+        // Never lossy: the original concatenated message survives verbatim.
+        assert!(err["message"].as_str().is_some_and(|m| m.contains("missingGain")));
+    }
+
+    /// A typecheck failure names its line too, through the same shared helper.
+    #[test]
+    fn a_typecheck_failure_names_its_line() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("DimensionMismatch")
+        else {
+            panic!("expected Compiled");
+        };
+        let err = stages
+            .typecheck
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .expect("a typecheck failure must carry a structured payload");
+
+        let diags = err["diagnostics"].as_array().expect("diagnostics array");
+        assert_eq!(diags.len(), 1);
+        assert_eq!(diags[0]["code"], "ET002");
+        assert!(
+            diags[0]["message"].as_str().is_some_and(|m| m.contains("dimension mismatch")),
+            "{}",
+            diags[0]["message"],
+        );
+        let loc = &diags[0]["labels"][0]["location"];
+        assert_eq!(loc["line"], 11, "the offending equation is on line 11: {loc}");
+        assert!(loc["line_text"].as_str().is_some_and(|t| t.contains("small = big")), "{loc}");
     }
 
     /// **A broken specimen must not poison the next compile.**

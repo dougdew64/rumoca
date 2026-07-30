@@ -2053,18 +2053,46 @@ robotics student modelling a mechanism will do it constantly.
   `remove_document` invalidates and yet a stale resolve failure survives. Reproduction
   above; filable for `project-engage-rumoca-community`. Not guessed at here.
 
-  **2. `Diagnostic::labels` is dropped by every diagnostic emitter.** `rumoca_core::Diagnostic`
-  carries `labels: Vec<Label>`, each with a `Span` and an optional message marking
-  exactly where the error is. HRW's typecheck and flatten emitters serialize `severity`,
-  `code`, `message`, `notes` — and **not `labels`.** Same species as the dropped
-  structural spans. Still open; `span_to_location` already exists to convert them.
+  **2. `Diagnostic::labels` was dropped by every diagnostic emitter — FIXED.**
+  `rumoca_core::Diagnostic` carries `labels: Vec<Label>`, each a `Span` plus a message
+  marking exactly where the error is ("equation assignment here"). Every emitter
+  serialized `severity`, `code`, `message`, `notes` and **not `labels`.** One shared
+  `diagnostics_to_json(diags, source)` now resolves them through `span_to_location`, used
+  by resolve, typecheck, flatten *and* DAE construction — four emitters, one helper,
+  three of which previously had their own copy of the serialization.
 
-  **3. The resolve message is ~99% MSL noise.** `format!("{e:#}")` concatenates ~39
-  semicolon-separated items, almost all library deprecation warnings ("external function
-  'constructor' should declare `pure` or `impure`", "Evaluate=true on 'factor' has no
-  effect"), with the actual error — `unresolved component reference: 'missingGain'` — last.
-  The signal is the final 2% of a 2000-character string. Still open: the payload should
-  separate the model's own errors from library warnings.
+  A label pointing into a *library* file resolves to `null` rather than a wrong line,
+  which is why MSL warnings carry no location and the model's own error does.
+
+  **3. The resolve payload was ~99% MSL noise — FIXED.** `format!("{e:#}")` concatenated
+  ~39 items, ~38 of them library deprecation warnings, the model's real error **last**:
+  the signal was the final 2% of a 2000-character string.
+
+  Now uses **`compile_model_diagnostics`** — a public, model-scoped API returning real
+  `Diagnostic`s — partitioned by **`severity`**. Nothing is pattern-matched out of message
+  text, so no wording change can filter away a real error. Measured on `UndefinedRef`:
+  **34 diagnostics in, 1 error out** — `ER002 unresolved component reference:
+  'missingGain'` at **line 9, column 7**, `y = missingGain * time;`. Warnings are kept but
+  deduplicated: 33 collapse to 13 distinct. `message` is still emitted verbatim, so
+  nothing is lost.
+
+  `DimensionMismatch` likewise: **line 11**, `small = big;`, `ET002 array dimension
+  mismatch: expected [2], found [3]`.
+
+  **4. A specimen landed on the wrong phase — recorded, not tweaked away.**
+  `IncompatibleConnect` was authored for the *flatten* path: `connect()` between
+  connectors whose member sets differ (`PinA` has `v` and a flow `i`; `PinB` has only
+  `v`), which MLS §9.3 makes a type-compatibility error. **Rumoca accepts it** and the
+  model instead fails at *structural analysis* as singular.
+
+  Per #46 that is a finding rather than a specimen to keep adjusting. But it is also
+  exactly the case that cannot be adjudicated from inside HRW: either MLS permits this and
+  the specimen is wrong, or **Rumoca is missing a validation** and this is an upstream
+  bug. **System Modeler is the arbiter** — see #45 step 4.
+
+  *(An earlier version of the specimen had the connectors at file scope, making three
+  top-level classes, and the reachable-closure pipeline then returned **no result at
+  all** — exercising nothing. Nesting them fixed that; the note is in the specimen.)*
 
 ### Audit policy (set 2026-07-29, after Doug asked which we were doing)
 
