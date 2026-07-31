@@ -2726,6 +2726,19 @@ structural singularity high-index models hit. Claude would have reported a scand
 trusting its own output. **1,656 models will produce hundreds of ERRs and each needs a
 judgement Claude has just shown it can get wrong.**
 
+**The cause, found when Doug asked what "ERR" meant:** it was the probe's own label for
+`Stage::note_is_error`, and **that flag is set by three constructors meaning different
+things** — `err` (nothing produced), `err_with_details` (failed, with a diagnosis), and
+`recovered` (**singular but produced a usable report anyway**). `recovered` is what the
+structural stage uses for a *high-index* model, which is normal and is fixed by Index
+Reduction next. The probe also printed `ERR` *instead of* the byte count, hiding that all
+four stages still had values.
+
+So a one-line formatting choice in a throwaway probe manufactured a finding that was not
+there. **A census must classify these three apart** — anything reading `note_is_error`,
+including `last_successful_stage`, currently treats "recovered" as "failed", which is
+defensible for choosing a tab and wrong for counting outcomes.
+
 That is the argument for clustering rather than a caveat about it: the census is worth
 building **only if failures are grouped by message**, so one investigation explains fifty
 models instead of one.
