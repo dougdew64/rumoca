@@ -4887,7 +4887,11 @@ struct ReductionReport {
 /// DAE (the tearing replay) therefore needs the reduced DAE when it is showing
 /// the Index Reduction tab. Re-running the funnel is cheap and pure, which
 /// beats caching a second DAE that the two tabs would have to keep in sync.
-pub(crate) fn index_reduce_in_place(dae: &mut rumoca_ir_dae::Dae) {
+/// `pub` rather than `pub(crate)` so `examples/survey_msl.rs` runs the **same**
+/// funnel HRW does. A second copy in the survey would drift from this one, and
+/// the funnel's step ORDER mirrors rumoca-sim's internals — `docs/updating-rumoca.md`
+/// step 3 exists because a reordering upstream is invisible to the compiler.
+pub fn index_reduce_in_place(dae: &mut rumoca_ir_dae::Dae) {
     let _ = index_reduce_for_structural_analysis(dae);
 }
 

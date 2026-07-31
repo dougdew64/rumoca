@@ -64,6 +64,7 @@ pub mod tearing_anim;
 pub mod test_support;
 pub mod reduction_view;
 pub mod source_view;
+pub mod survey;
 pub mod spyplot;
 pub mod tarjan_anim;
 pub mod tree;

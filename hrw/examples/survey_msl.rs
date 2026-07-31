@@ -45,6 +45,9 @@ use rumoca_compile::compile::{PhaseResult, SourceRootKind};
 use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_source_set_key};
 use rumoca_compile::{Session, SessionConfig};
 
+use hrw::survey::{SurveyRow, Summary, classify, package_of};
+use hrw::worker::index_reduce_in_place;
+
 fn msl_roots() -> Vec<PathBuf> {
     let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
     vec![
@@ -111,22 +114,26 @@ fn main() {
     }
 
     let t_compile = Instant::now();
-    let mut outcomes: HashMap<String, usize> = HashMap::new();
-    let mut rows = vec![Row::HEADER.to_owned()];
+    let mut rows: Vec<SurveyRow> = Vec::new();
 
     for (i, name) in names.iter().enumerate() {
         if i % 100 == 0 && i > 0 {
             eprintln!("  {i}/{} ({:.0}s elapsed)", names.len(), t_compile.elapsed().as_secs_f64());
         }
-        let row = survey_one(&mut session, name);
-        *outcomes.entry(row.outcome.clone()).or_default() += 1;
-        rows.push(row.to_csv());
+        rows.push(survey_one(&mut session, name));
     }
 
     let total = t_compile.elapsed().as_secs_f64();
-    if let Err(e) = std::fs::write(&out, rows.join("\n") + "\n") {
+    let mut csv = vec![SurveyRow::HEADER.to_owned()];
+    csv.extend(rows.iter().map(SurveyRow::to_csv));
+    if let Err(e) = std::fs::write(&out, csv.join("\n") + "\n") {
         eprintln!("could not write {out}: {e}");
     }
+
+    // Computed through the same `Summary` the Test-mode panel will use, so the
+    // console tally and the rendered one cannot disagree.
+    let summary = Summary::of(&rows);
+    let outcomes: HashMap<String, usize> = summary.outcomes.iter().cloned().collect();
 
     // Provenance, as a sidecar rather than CSV comment lines, which strict
     // readers and spreadsheets both mishandle.
@@ -175,82 +182,26 @@ fn main() {
         total / names.len() as f64,
     );
     eprintln!("outcomes: {}", summarize(&outcomes));
+    eprintln!(
+        "solvable: {} of {} — {} reached a sound system directly or after reduction;          {} rescued by index reduction, {} still singular, {} with no equations",
+        summary.solvable, summary.total, summary.solvable,
+        summary.rescued_by_reduction, summary.still_singular, summary.empty,
+    );
+    eprintln!("top failure causes:");
+    for (c, n) in summary.causes.iter().take(5) {
+        eprintln!("  {n:>5}  {c}");
+    }
     eprintln!("wrote {out}");
 }
 
-/// One model's row. **Every field is either measured or empty** — never a
-/// default standing in for a measurement, because a `0` that means "not
-/// applicable" would be indistinguishable from a `0` that means "measured zero"
-/// once this is a published table.
-#[derive(Default)]
-struct Row {
-    name: String,
-    /// `Examples` / `Interfaces` / `BaseClasses` / … from the qualified name.
-    ///
-    /// A rough proxy for intent, and it is **load-bearing for fairness**: an
-    /// `Interfaces` class is usually partial and not meant to compile on its own,
-    /// so counting its failure against Rumoca would be the misattribution
-    /// `docs/upstream-strategy.md` warns turns a capability map into a scorecard.
-    /// Kept as raw data rather than a verdict — the analysis decides, and shows
-    /// its working.
-    kind: String,
-    outcome: String,
-    /// First line only: enough to cluster failures, short enough for a table.
-    message: String,
-    secs: f64,
-    // --- shape, when the compile succeeded ---
-    n_equations: Option<usize>,
-    n_states: Option<usize>,
-    n_algebraic: Option<usize>,
-    n_discrete: Option<usize>,
-    n_parameters: Option<usize>,
-    /// Structural analysis of the raw DAE: `ok`, `singular`, or an error kind.
-    structural: String,
-    n_blocks: Option<usize>,
-    n_coupled: Option<usize>,
-    /// Largest coupled block — one enormous algebraic loop and many small ones
-    /// are different rendering problems, and F4's partition sees them alike.
-    largest_coupled: Option<usize>,
-    /// Any variable name carrying a subscript. Array IR is a shape our authored
-    /// specimens barely contain.
-    has_arrays: bool,
-    /// Deepest component path, by dots in a flat name. Deep hierarchies stress
-    /// the tree, and dotted names are what broke F7.
-    max_depth: usize,
-    n_functions: Option<usize>,
-}
-
-impl Row {
-    const HEADER: &'static str = "name,kind,outcome,message,secs,n_equations,n_states,\
-        n_algebraic,n_discrete,n_parameters,structural,n_blocks,n_coupled,largest_coupled,\
-        has_arrays,max_depth,n_functions";
-
-    fn to_csv(&self) -> String {
-        let n = |v: Option<usize>| v.map_or(String::new(), |x| x.to_string());
-        format!(
-            "{},{},{},{},{:.3},{},{},{},{},{},{},{},{},{},{},{},{}",
-            csv_field(&self.name), csv_field(&self.kind), csv_field(&self.outcome),
-            csv_field(&self.message), self.secs,
-            n(self.n_equations), n(self.n_states), n(self.n_algebraic), n(self.n_discrete),
-            n(self.n_parameters), csv_field(&self.structural),
-            n(self.n_blocks), n(self.n_coupled), n(self.largest_coupled),
-            self.has_arrays, self.max_depth, n(self.n_functions),
-        )
-    }
-}
-
-/// The MSL sub-package a name sits in, as a fairness signal — see [`Row::kind`].
-fn classify(name: &str) -> String {
-    for marker in ["Examples", "Interfaces", "BaseClasses", "Internal", "Types", "Icons", "Tests"] {
-        if name.split('.').any(|seg| seg == marker) {
-            return marker.to_owned();
-        }
-    }
-    "Component".to_owned()
-}
-
-fn survey_one(session: &mut Session, name: &str) -> Row {
-    let mut row = Row { name: name.to_owned(), kind: classify(name), ..Default::default() };
+/// Survey one model: compile it, then measure its shape.
+fn survey_one(session: &mut Session, name: &str) -> SurveyRow {
+    let mut row = SurveyRow {
+        name: name.to_owned(),
+        kind: classify(name),
+        package: package_of(name),
+        ..Default::default()
+    };
     let t = Instant::now();
     let report = session.compile_model_strict_reachable_uncached_with_recovery(name);
     row.secs = t.elapsed().as_secs_f64();
@@ -284,6 +235,27 @@ fn survey_one(session: &mut Session, name: &str) -> Row {
     row.n_parameters = Some(v.parameters.len());
     row.n_functions = Some(cr.dae.symbols.functions.len());
 
+    // Phenomena HRW has views for, counted from each equation's recorded
+    // `origin` — the same field `equation_sheet::categorize_origin` reads. Free,
+    // where re-running flatten to trace connection expansion would need the
+    // whole resolved MSL again.
+    let mut connect = 0usize;
+    let mut flow = 0usize;
+    let mut event = 0usize;
+    for eq in &cr.dae.continuous.equations {
+        let o = eq.origin.trim();
+        if o.starts_with("connection equation") {
+            connect += 1;
+        } else if o.starts_with("flow sum") || o.starts_with("unconnected flow") {
+            flow += 1;
+        } else if o.contains("when") || o.contains("reinit") {
+            event += 1;
+        }
+    }
+    row.n_connect_eq = Some(connect);
+    row.n_flow_eq = Some(flow);
+    row.n_event_eq = Some(event);
+
     let all_names = || {
         v.states.keys().chain(v.algebraics.keys()).chain(v.parameters.keys())
             .chain(v.discrete_reals.keys()).chain(v.discrete_valued.keys())
@@ -295,46 +267,58 @@ fn survey_one(session: &mut Session, name: &str) -> Row {
     match rumoca_phase_structural::build_structural_report(&cr.dae) {
         Ok(rep) => {
             row.structural = "ok".to_owned();
-            row.n_blocks = Some(rep.blocks.len());
-            let coupled: Vec<usize> = rep
-                .blocks
-                .iter()
-                .filter_map(|b| match b {
-                    rumoca_phase_structural::BlockReport::Coupled { unknowns, .. } => {
-                        Some(unknowns.len())
-                    }
-                    rumoca_phase_structural::BlockReport::Scalar { .. } => None,
-                })
-                .collect();
-            row.n_coupled = Some(coupled.len());
-            row.largest_coupled = Some(coupled.into_iter().max().unwrap_or(0));
+            fill_blocks(&mut row, &rep);
         }
         Err(e) => {
-            // Singular here is NOT a failure — a high-index model is singular by
-            // construction and index reduction fixes it. Recorded as a shape,
-            // because it is one: it decides which DAE the Index Reduction tab
-            // animates, the distinction that broke F1's first draft.
             row.structural = match e {
                 rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
                 other => format!("error:{}", first_line(&other.to_string())),
             };
+            // **Run the reduction funnel and record whether it rescues the
+            // system.** Without this, `singular` conflates a healthy high-index
+            // model with a genuinely ill-posed one, and the first survey could
+            // characterise neither. Uses HRW's own `index_reduce_in_place`, so
+            // the survey and the app cannot disagree about what reduction means.
+            if row.structural == "singular" {
+                let mut reduced = cr.dae.clone();
+                index_reduce_in_place(&mut reduced);
+                match rumoca_phase_structural::build_structural_report(&reduced) {
+                    Ok(rep) => {
+                        row.index_reduced = "ok".to_owned();
+                        fill_blocks(&mut row, &rep);
+                    }
+                    Err(rumoca_phase_structural::StructuralError::Singular { .. }) => {
+                        row.index_reduced = "singular".to_owned();
+                    }
+                    Err(other) => {
+                        row.index_reduced = format!("error:{}", first_line(&other.to_string()));
+                    }
+                }
+            }
         }
     }
     row
+}
+
+/// Block counts from whichever structural report is the solvable one.
+fn fill_blocks(row: &mut SurveyRow, rep: &rumoca_phase_structural::StructuralReport) {
+    row.n_blocks = Some(rep.blocks.len());
+    let coupled: Vec<usize> = rep
+        .blocks
+        .iter()
+        .filter_map(|b| match b {
+            rumoca_phase_structural::BlockReport::Coupled { unknowns, .. } => Some(unknowns.len()),
+            rumoca_phase_structural::BlockReport::Scalar { .. } => None,
+        })
+        .collect();
+    row.n_coupled = Some(coupled.len());
+    row.largest_coupled = Some(coupled.into_iter().max().unwrap_or(0));
 }
 
 fn first_line(s: &str) -> String {
     s.lines().next().unwrap_or("").chars().take(200).collect()
 }
 
-/// RFC-4180 quoting, since messages carry commas and quotes freely.
-fn csv_field(s: &str) -> String {
-    if s.contains([',', '"', '\n']) {
-        format!("\"{}\"", s.replace('"', "\"\""))
-    } else {
-        s.to_owned()
-    }
-}
 
 fn arg_value(args: &[String], flag: &str) -> Option<String> {
     let i = args.iter().position(|a| a == flag)?;
