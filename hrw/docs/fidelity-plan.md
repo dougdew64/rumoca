@@ -33,6 +33,43 @@ Two consequences that changed this plan after it was first written:
   Several of those were fixed by hand on 2026-07-29–30 and nothing checks them at scale.
   See **F9**.
 
+## Why the bar is higher than "correct enough for Doug"
+
+Doug, 2026-07-30, on what this is ultimately for:
+
+> I need HRW to provide a tour of the Rumoca malfunction which I can capture as a video or
+> screenshot to link in the PR description [...] to demonstrate to Rumoca PR reviewers that
+> HRW is useful and therefore worthy of being merged. [...] I need HRW to faithfully
+> represent Rumoca so that the Rumoca PR reviewers don't dismiss HRW as junk.
+
+**The audience changes the bar.** Until now HRW's reader has been Doug, who trusts it. A
+Rumoca maintainer knows the compiler better than Claude does, will spot a wrong number in a
+screenshot instantly, and has no investment in HRW succeeding while being asked to take on
+maintenance burden. **One visible misrepresentation does not merely fail to persuade — it
+discredits.**
+
+That re-ranks the checks by *what a maintainer would catch in a demo*, which is not the
+same as what would most mislead Doug:
+
+| Noticed in a demo? | Checks |
+|---|---|
+| **Immediately** | F1 (they know what tearing should decide), F2 (a transposed matrix is obvious), F3 (a wrong count is checkable at a glance) |
+| **It is the demo path** | **F9** — a bug PR demo shows Rumoca *failing* |
+| Invisible | F6, F7 — internal quality only |
+
+**The convergence worth noticing:** a bug-PR demo runs entirely through the
+failure-representation path, which is exactly where every hand-found bug of 2026-07-29–30
+clustered. **F9 protects the thing HRW would be judged on**, and has the demonstrated bug
+density. Start there.
+
+### A note on how to use the demo
+
+Let the tour **be** the bug report rather than accompany it. A report that doubles as a
+pitch can read as using a maintainer's review time for promotion; "here is the malfunction,
+walked stop by stop" is simply the clearest explanation they will receive, and HRW's
+usefulness is then demonstrated **implicitly**. `docs/fixture-tours/the-oracle.md` is
+already this shape — it explains a real Rumoca defect and never argues that HRW is good.
+
 ## The one-sentence property
 
 **HRW must invent nothing and omit nothing.** Every value it displays should be traceable
