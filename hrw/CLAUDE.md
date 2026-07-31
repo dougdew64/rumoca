@@ -47,12 +47,24 @@ worker-side live-debug path (`docs/ideas.md` #9). New Rumoca instrumentation: `r
 (`pub mod blt`, `block_local_incidence`) and `rumoca-phase-flatten` (`connections::trace`,
 `flatten_ref_with_options_traced`) — the first non-structural, non-DAE crate instrumented.
 
-**Running HRW's tests — two commands, and always `--test-threads=1`:**
+**Running HRW's tests — and always `--test-threads=1`:**
 
 ```text
 cargo test -p hrw --lib -- --test-threads=1                        # ~7s,  353 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~3min, 402 tests — before committing
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~6min, 454 tests — before committing
+cargo build -p hrw --bin hrw                                       # the binary — SEE BELOW
 ```
+
+**`cargo test` does not build the binary, and that gap is not theoretical.** On 2026-07-31 a
+`#[cfg(test)]` attribute was placed above the first of three lifted helpers — the attribute
+applies to *one* item — so two of them compiled into `--bin hrw` referencing imports that
+existed only under `cfg(test)`. Every test passed; **Doug's debugger launch failed.** Test
+builds have everything, so they cannot see this class at all.
+
+`cargo clippy -p hrw --all-targets` does cover the bin — **but check its exit code, not its
+output.** The same breakage survived a clippy run that was piped to `grep -c "^warning: "`,
+which counts warnings and silently ignores a compile error. `cargo clippy … ; echo $?` or
+just let it print.
 
 **Use the fast one between edits and the full one before every commit.** Measured 2026-07-29:
 **49 of 402 tests accounted for 180 of the suite's 183 seconds**, nearly all compiling a specimen

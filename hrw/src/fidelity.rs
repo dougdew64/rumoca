@@ -62,7 +62,8 @@ mod tests {
     use super::*;
     use std::collections::{BTreeMap, BTreeSet};
 
-    use crate::worker::{FromWorker, StageBundle, compile_specimen_shared, index_reduce_in_place};
+    use crate::worker::test_msl::compile_specimen_shared;
+    use crate::worker::{FromWorker, StageBundle, index_reduce_in_place};
 
     /// The specimens the invariants run over.
     ///
