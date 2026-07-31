@@ -2838,6 +2838,51 @@ readers and spreadsheets both mishandle. Test mode uses it to caption a loaded r
 Rumoca, which MSL, how many models, when. A report that cannot say what it describes is
 neither reproducible nor safely readable months later.
 
+### Layout, fonts and colours — conform, do not invent (Doug, 2026-07-31)
+
+> The layout for test mode should be the same as for tour mode and specimen mode. And,
+> other details such as font choices and colors should be the same.
+
+Read against the code, that requirement mostly *determines* the design, which is the good
+news: there is very little to decide.
+
+`UiMode` today is `{ Tour, Specimen, Debug }` — **three** modes, not two. `Debug`
+deliberately **hides** the LHS so the stage tabs fill the window with VS Code alongside, so
+"the same as tour and specimen" means the two *panelled* modes.
+
+**The structural observation: Test mode is Specimen mode with a different list source.**
+
+| | Specimen mode | Test mode |
+|---|---|---|
+| LHS panel | `Panel::left`, `LEFT_PANEL_WIDTH_FRACTION` (0.4) | identical |
+| Top third | specimen list (`SPECIMEN_LIST_HEIGHT_FRACTION` = 1/3) | report rows |
+| Rest | purpose / source for the selected specimen | detail for the selected row |
+| Click a row | loads that model into the RHS | **the same** |
+| RHS | stage tabs | **unchanged** |
+
+So the reuse is: `section_header` for the bars (it already pins weight and size 13.0 through
+`section_style`), the same panel fractions, and `colors.rs` for every colour. **Outcome
+colouring must come from the existing constants** — `ok_color(dark_mode)`, `WARN_AMBER`,
+`ANIM_FAIL` — rather than a new palette, or Test mode's "failed" will not be the red the
+rest of HRW already means by it.
+
+That makes this a much smaller feature than it sounds. The genuinely new parts are only:
+**loading and parsing a report**, **rendering a row**, and **compile-by-qualified-name**.
+
+### Wiring a new MODE — the checklist a new stage already has
+
+`hrw-stage-diff-highlight-extend` records that a new *stage* must be wired into every
+per-stage system. A new **mode** has its own list, and it is shorter but not empty:
+
+- `UiMode` variant, and the **View menu** entry beside Tour / Specimen / Debug
+- `view_context`'s `ui_mode` match — exhaustive, so the compiler catches this one
+- `specimen_detail` and the other `ui_mode ==` guards, which are *not* exhaustive matches
+  and therefore **will not** be caught: grep `ui_mode ==` and decide each site deliberately
+- the idle-hint text (Tour mode's wrong hint was a bug Doug reported on 2026-07-30)
+- `clear_specimen_state` / mode-switch reset — the second bug from that same walk was state
+  surviving a switch
+- a fixture tour for the mode, per `docs/ideas.md` #49
+
 ### What Test mode is really for
 
 Note the sequence Doug describes: **a report finds something, and the observatory explains
