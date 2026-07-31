@@ -11,6 +11,8 @@ test run, so a vocabulary change breaks the build instead of breaking this file 
 **To run it:** open Tour mode and pick **camera-aiming** from the row of tours at the top
 of the panel. (Before 2026-07-29 this had to be copied over `.hrw-bridge/tour.md` first;
 Doug asked for in-app selection once it was clear the fixtures would accumulate.)
+**Notices appear in the status bar**, along the bottom of the HRW window. Several stops below expect one; that is where to look.
+
 
 ---
 
@@ -45,7 +47,7 @@ Stops 2 and 3 look identical, aiming is not being applied.
 
 [Aim at equation 999](hrw://stage/Structural/TarjanAnim/equation/999)
 
-**Expected:** the view does **not** move, and a notice appears saying there is no
+**Expected:** the view does **not** move, and a notice in the status bar says there is no
 equation 999. A tour that names a missing equation is a bug in the tour, so it must be
 visible rather than silently aiming somewhere plausible.
 

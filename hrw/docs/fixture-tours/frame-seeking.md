@@ -6,6 +6,8 @@ made* rather than at the view containing it.
 
 Pick it from the Tours list. Every link below is parsed on every test run by
 `fixture_tour_links_all_resolve`.
+**Notices appear in the status bar**, along the bottom of the HRW window. Several stops below expect one; that is where to look.
+
 
 **Frame numbers in links match the counter on screen.** `frame/41` puts the view on
 "Frame 41". They were 0-based until 2026-07-29, and this file *documented* the
@@ -22,7 +24,7 @@ to a different tour and back.)
 
 [Seek frame 5 — with nothing loaded](hrw://stage/Structural/MatchingAnim/frame/5)
 
-**Expected:** a notice saying no specimen is loaded and to start at the first stop.
+**Expected:** a notice in the status bar saying no specimen is loaded and to start at the first stop.
 
 **And nothing else happens.** No stage change, no view change. Then click Stop 1 below:
 it must behave normally, **not** jump to frame 5 — a refused stop leaves nothing armed to
@@ -61,7 +63,7 @@ set.
 
 [Seek to frame 99999](hrw://stage/Structural/MatchingAnim/frame/99999)
 
-**Expected:** nothing moves, and a notice says how many frames the replay actually has.
+**Expected:** nothing moves, and a notice in the status bar says how many frames the replay actually has.
 A tour naming a frame that does not exist is a bug *in the tour*; landing on the last
 frame would look deliberate and hide it.
 

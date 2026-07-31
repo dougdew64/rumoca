@@ -5320,7 +5320,12 @@ impl eframe::App for App {
             // Success is silent. The Context Bar states what Claude has; this
             // line is for things that happen and then are over.
             match &self.notice {
-                Some(s) => ui.weak(s),
+                // **Not `weak`.** A notice is something that just happened — often a
+                // refusal — and rendering it in the same de-emphasised grey as the idle
+                // hint made it read as background chrome. Doug clicked a link that was
+                // correctly refused, with the reason on screen, and reported that
+                // nothing happened (2026-07-30).
+                Some(s) => ui.label(s),
                 None => ui.weak(
                     "Left-click a tree node to point at it, then ask about it in the chat                      (right-click to follow an identifier, or for more actions).",
                 ),

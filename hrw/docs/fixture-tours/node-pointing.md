@@ -7,6 +7,8 @@ Every path below was read from `docs/specimen-notebook/RcCircuit/trace/structura
 not invented — a fixture tour with a made-up path is a broken test that looks fine.
 
 Pick it from the Tours list.
+**Notices appear in the status bar**, along the bottom of the HRW window. Several stops below expect one; that is where to look.
+
 
 ---
 
@@ -56,7 +58,7 @@ lands without them, the verb works.
 That path is real — but it belongs to `CapacitorLoop`, which *fails* structurally.
 RcCircuit succeeds, so it has no `error` at all.
 
-**Expected:** nothing moves, and a notice says there is no node at that path. It must
+**Expected:** nothing moves, and a notice in the status bar says there is no node at that path. It must
 **not** expand partway and stop, which would read as "it opened something" rather than
 "that path is wrong."
 
@@ -67,7 +69,7 @@ RcCircuit succeeds, so it has no `error` at all.
 The **Summary** tab exists only when a model is *singular*. `RcCircuit` compiles cleanly,
 so it has no Summary — look at the sub-tab row and you will not find one.
 
-**Expected:** nothing changes, and a notice says this stage has no Summary view for this
+**Expected:** nothing changes, and a notice in the status bar says this stage has no Summary view for this
 model. It must **not** select the tab silently and render the singular-system summary for
 a model that is not singular.
 

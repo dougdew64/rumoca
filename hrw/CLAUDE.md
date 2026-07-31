@@ -278,6 +278,12 @@ Candidates, not commitments — consult when planning new work; promote items in
   tour whose *expectations* rot, only its links. "Last walked" is derivable from the
   `tour-link` entries in the action trail.
 
+  **An expectation must say WHERE to look**, not only what to look for. Doug clicked a
+  stop that was correctly refused, with the reason on screen, and reported that nothing
+  happened — the tour said "a notice appears" and never said notices live in the status
+  bar (2026-07-30). A reader who does not know where to look cannot check an expectation,
+  so it is not violable in practice however precise its wording.
+
   **Every `**Expected:**` line must be violable.** Doug found "mostly collapsed" where the
   truth is *fully* collapsed (2026-07-30); an audit then found "nothing particularly
   centred" in a second fixture. Neither could be contradicted by anything, so neither
