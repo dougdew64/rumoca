@@ -232,6 +232,26 @@ impl IncidenceMatrix {
     pub fn unknown_names(&self) -> &[String] { &self.unknown_names }
     pub fn rows(&self) -> &[Vec<usize>] { &self.rows }
 
+    /// **What Rumoca said the matching is**, per equation row, resolved from the
+    /// report's names to column indices. `None` = that equation is unmatched.
+    ///
+    /// Exists for `docs/fidelity-plan.md` **F1**: the animations *re-run*
+    /// matching rather than reading this, so the two need comparing. Note the
+    /// comparison is only meaningful because both sides index the same
+    /// row/column order — if the JSON round trip permuted anything, this is
+    /// where it shows up.
+    pub fn reported_matching(&self) -> &[Option<usize>] { &self.matched_col }
+
+    /// **What Rumoca said the BLT blocks are**, as equation-index sets in report
+    /// order. F1 compares these against Tarjan's re-derived SCCs.
+    ///
+    /// Index sets rather than the `(start, size)` ranges the overlay draws with,
+    /// because a strongly connected component is a *set* — comparing rendered
+    /// geometry would test the drawing code instead of the decision.
+    pub fn reported_blocks(&self) -> Vec<Vec<usize>> {
+        self.blt_blocks.iter().map(|b| b.eq_indices.clone()).collect()
+    }
+
     // Does equation `row` reference unknown `col`?
     //
     // Uses binary search on the sorted column-index list for O(log n) lookup.

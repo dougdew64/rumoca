@@ -190,6 +190,31 @@ impl TarjanAnimation {
     /// plausible would hide it. Returns whether the aim was taken, so the caller can
     /// tell "aimed" from "that equation is not here".
     #[must_use]
+    /// **The strongly connected components this animation ends on** — the
+    /// blocks HRW re-derived, as opposed to the ones Rumoca reported.
+    ///
+    /// `docs/fidelity-plan.md` **F1**. Compare against
+    /// [`IncidenceMatrix::reported_blocks`], as *sets*: Tarjan emits components
+    /// in reverse topological order, and the report lists them in solve order,
+    /// so the sequences legitimately differ while the partition must not.
+    ///
+    /// Collected from the `SccFound` steps, **not** from the last frame's
+    /// `sccs_so_far`, which lags by one: `tarjan.rs` records the frame *before*
+    /// pushing the component onto `self.sccs`, so the component a frame
+    /// announces is precisely the one missing from its own snapshot. On a graph
+    /// that is a single SCC — `ProportionalLoop` — reading the last frame
+    /// therefore yields an empty partition, which is how this was found.
+    pub fn final_sccs(&self) -> Vec<Vec<usize>> {
+        self.playback
+            .frames()
+            .iter()
+            .filter_map(|f| match &f.step {
+                TarjanStep::SccFound { members, .. } => Some(members.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
     pub fn aim_at_equation(&self, canvas: &mut Canvas, i: usize) -> bool {
         if i >= self.n_nodes {
             return false;

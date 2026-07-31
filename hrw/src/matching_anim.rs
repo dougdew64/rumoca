@@ -82,6 +82,25 @@ impl MatchingAnimation {
         (matched, self.n_eq)
     }
 
+    /// **The matching this animation ends on**, per equation row — the answer
+    /// HRW re-derived, as opposed to the one Rumoca reported.
+    ///
+    /// `docs/fidelity-plan.md` **F1**. `match_progress` already reads the last
+    /// frame, but returns only a *count*: two different matchings of the same
+    /// size are indistinguishable through it, and a permutation is exactly the
+    /// failure worth catching. Compare against
+    /// [`IncidenceMatrix::reported_matching`].
+    ///
+    /// Empty frames yield an all-`None` vector rather than a short one, so the
+    /// comparison stays index-aligned instead of failing on length.
+    pub fn final_matching(&self) -> Vec<Option<usize>> {
+        self.playback
+            .frames()
+            .last()
+            .map(|f| f.match_eq.clone())
+            .unwrap_or_else(|| vec![None; self.n_eq])
+    }
+
     /// Every step in the trace, in order.
     pub fn steps(&self) -> Vec<MatchingStep> {
         self.playback.frames().iter().map(|f| f.step.clone()).collect()

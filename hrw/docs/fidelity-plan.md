@@ -122,6 +122,30 @@ Same shape for `matching_anim` (final matching vs the report's `matching`) and
 
 **If this fails, an animation is teaching a decision the compiler did not make.**
 
+**Status 2026-07-31: all three halves built and passing** over ten specimens
+(`worker::tests::F1_MODELS`). Compared per *tab*, against the DAE that tab animates —
+Structural shows the raw system and Index Reduction the reduced one, so a single
+comparison against "the report" tests nothing and fails on models that are singular
+before reduction.
+
+**F1 found one real bug on its first run**, of exactly the class it was built for.
+`partial_matching_to_json` labelled equations with the bare `EquationRef` while
+`incidence_to_json` used the labelled form Rumoca's report uses, so on any model whose
+equations carry origins the two never correlated and the singular incidence view showed
+**nothing** as matched — `Drivetrain` rendering 0 of 97 when Rumoca had matched 93. The
+cause was a reimplementation of `equation_label`; the fix made that function `pub`
+upstream and deleted both copies. `before_report_json` had the same defect.
+
+Two other F1 failures on that run were **the test's fault, not HRW's**, and both are worth
+recording because they are the shape of a false finding:
+
+- Tarjan's `sccs_so_far` lags by one — `tarjan.rs` records the frame *before* pushing the
+  component — so reading the last frame yields an empty partition on a graph that is a
+  single SCC. `final_sccs` collects `SccFound` steps instead.
+- The tearing check compared the raw DAE's re-derivation against whichever report existed,
+  and singular stages hide the tearing view anyway (`structural_view_available`). A
+  re-derivation the UI never shows is not a misrepresentation.
+
 ### F2. Incidence is faithful
 
 HRW's `incidence` JSON against a fresh `build_incidence(&dae)`: same `n_eq`, same `n_var`,
@@ -199,12 +223,14 @@ than 500 from one.
 
 ## Sequencing
 
-1. **Fix outcome classification first.** `Stage::note_is_error` is set by three
+1. ~~**Fix outcome classification first.**~~ **Done 2026-07-31** —
+   `Outcome::{Ok, Flagged, Failed}`, with `note_is_error()` derived from it so no
+   colour or branch changed. `Stage::note_is_error` was set by three
    constructors meaning "nothing produced", "failed with a diagnosis", and **"singular but
    perfectly usable"**. Anything counting outcomes on that boolean will miscount, and it
    already produced one false finding (see #51). A three-way `Stage::outcome()` comes
    before any harness reads it.
-2. **F1 on the existing 18 specimens.** If the re-derivations already disagree with the
+2. ~~**F1 on the existing 18 specimens.**~~ **Done 2026-07-31**, on ten of them. If the re-derivations already disagree with the
    report on models we know, that is the bug of the day and the MSL work can wait.
 3. **The sample list**, checked in, with why each model was chosen.
 4. **F2–F7 as invariants**, run over the sample.

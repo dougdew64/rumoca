@@ -1853,7 +1853,7 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             let mut json = structural_to_json(&rep);
             json.as_object_mut()
                 .unwrap()
-                .insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae.continuous.equations)));
+                .insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae)));
             Stage::ok(json)
         }
         Err(e) => {
@@ -1861,10 +1861,10 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             let (match_eq, _) = rumoca_phase_structural::matching::maximum_matching(
                 inc.n_eq, inc.n_var, &inc.eq_unknowns,
             );
-            let matching_json = partial_matching_to_json(&inc, &match_eq);
+            let matching_json = partial_matching_to_json(&inc, &match_eq, &cr.dae);
             let mut json = serde_json::json!({});
             let obj = json.as_object_mut().unwrap();
-            obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae.continuous.equations)));
+            obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&cr.dae)));
             obj.insert("matching".to_owned(), matching_json);
             obj.insert("error".to_owned(), structural_error_to_json(&e, source));
             let note = match &e {
@@ -1915,9 +1915,9 @@ fn index_reduction_stage(
             };
             let mut json = structural_to_json(&rep);
             let obj = json.as_object_mut().expect("structural_to_json returns an object");
-            obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&reduced.continuous.equations)));
+            obj.insert("incidence".to_owned(), incidence_to_json(&inc, Some(&reduced)));
             obj.insert("before".to_owned(), before_report_json(
-                &before_inc, &before_match_eq, Some(&cr.dae.continuous.equations),
+                &before_inc, &before_match_eq, Some(&cr.dae),
             ));
             obj.insert("reduction".to_owned(), reduction.to_json());
             (Stage::ok_with_note(json, note), frames)
@@ -1928,10 +1928,10 @@ fn index_reduction_stage(
             let obj = json.as_object_mut().unwrap();
             obj.insert("incidence".to_owned(), incidence_to_json(
                 &rumoca_phase_structural::build_incidence(&reduced),
-                Some(&reduced.continuous.equations),
+                Some(&reduced),
             ));
             obj.insert("before".to_owned(), before_report_json(
-                &before_inc, &before_match_eq, Some(&cr.dae.continuous.equations),
+                &before_inc, &before_match_eq, Some(&cr.dae),
             ));
             obj.insert("reduction".to_owned(), reduction.to_json());
             obj.insert("error".to_owned(), structural_error_to_json(&e, source));
@@ -2217,10 +2217,10 @@ fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_
 /// expression (e.g. `der(w) - tau / J`), for human-readable labels.
 fn incidence_to_json(
     inc: &rumoca_phase_structural::Incidence,
-    equations: Option<&[rumoca_ir_dae::Equation]>,
+    dae: Option<&rumoca_ir_dae::Dae>,
 ) -> serde_json::Value {
-    let eq_texts: Vec<String> = equations
-        .map(|eqs| crate::expr_format::equation_labels(eqs))
+    let eq_texts: Vec<String> = dae
+        .map(|d| crate::expr_format::equation_labels(&d.continuous.equations))
         .unwrap_or_default();
     let rows: Vec<serde_json::Value> = inc
         .eq_unknowns
@@ -2229,13 +2229,16 @@ fn incidence_to_json(
         .map(|(i, cols)| {
             let mut sorted: Vec<usize> = cols.iter().copied().collect();
             sorted.sort_unstable();
-            // Use the same labeled name as `structural_to_json` so matching
-            // lookups in `IncidenceMatrix::from_report` resolve correctly.
-            let eq_name = match equations.and_then(|eqs| eqs.get(inc.equation_refs[i].0)) {
-                Some(eq) if !eq.origin.trim().is_empty() => {
-                    format!("{} ({})", inc.equation_refs[i], eq.origin.trim())
-                }
-                _ => inc.equation_refs[i].to_string(),
+            // **Rumoca's own labelling function**, not a copy of it. Matching
+            // lookups in `IncidenceMatrix::from_report` correlate by this exact
+            // string, so a reimplementation that drifts silently unmatches
+            // everything — which is what happened here (see
+            // `partial_matching_to_json`). Without a DAE there is no origin to
+            // look up, and the bare ref is what `equation_label` would return
+            // anyway.
+            let eq_name = match dae {
+                Some(d) => rumoca_phase_structural::equation_label(d, &inc.equation_refs[i]),
+                None => inc.equation_refs[i].to_string(),
             };
             let mut row = serde_json::json!({
                 "equation": eq_name,
@@ -2268,36 +2271,36 @@ fn incidence_to_json(
 fn before_report_json(
     inc: &rumoca_phase_structural::Incidence,
     match_eq: &[Option<usize>],
-    equations: Option<&[rumoca_ir_dae::Equation]>,
+    dae: Option<&rumoca_ir_dae::Dae>,
 ) -> serde_json::Value {
-    let matching: Vec<serde_json::Value> = match_eq
-        .iter()
-        .enumerate()
-        .filter_map(|(eq_idx, var_idx)| {
-            var_idx.map(|v| {
-                serde_json::json!({
-                    "equation": inc.equation_refs[eq_idx].to_string(),
-                    "unknown": inc.unknown_names[v].to_string(),
-                })
-            })
-        })
-        .collect();
-    let n_matched = matching.len();
+    let matching = match dae {
+        Some(d) => partial_matching_to_json(inc, match_eq, d),
+        None => serde_json::Value::Array(Vec::new()),
+    };
+    let n_matched = matching.as_array().map_or(0, Vec::len);
     serde_json::json!({
         "n_equations": inc.n_eq,
         "n_unknowns": inc.n_var,
         "n_matched": n_matched,
         "matching": matching,
-        "incidence": incidence_to_json(inc, equations),
+        "incidence": incidence_to_json(inc, dae),
     })
 }
 
 /// Build a JSON array of matched (equation, unknown) pairs from a partial
 /// matching result — the same shape as the structural report's `"matching"`
 /// array so `IncidenceMatrix::from_report` can parse it.
+/// Labels equations with `rumoca_phase_structural::equation_label`, the same
+/// function the successful report uses. It used to emit the **bare**
+/// `EquationRef` while `incidence_to_json` emitted the labelled form, so on any
+/// model whose equations carry origins the two never matched and the singular
+/// incidence view showed *nothing* as matched — `Drivetrain` rendering 0 of 97
+/// when Rumoca had matched 93. Found by `docs/fidelity-plan.md` F1 on
+/// 2026-07-31; see that file for why re-derivation checks catch this class.
 fn partial_matching_to_json(
     inc: &rumoca_phase_structural::Incidence,
     match_eq: &[Option<usize>],
+    dae: &rumoca_ir_dae::Dae,
 ) -> serde_json::Value {
     let pairs: Vec<serde_json::Value> = match_eq
         .iter()
@@ -2305,7 +2308,9 @@ fn partial_matching_to_json(
         .filter_map(|(eq_idx, var_idx)| {
             var_idx.map(|v| {
                 serde_json::json!({
-                    "equation": inc.equation_refs[eq_idx].to_string(),
+                    "equation": rumoca_phase_structural::equation_label(
+                        dae, &inc.equation_refs[eq_idx],
+                    ),
                     "unknown": inc.unknown_names[v].to_string(),
                 })
             })
@@ -3561,26 +3566,25 @@ mod tests {
     /// animation teaching a decision the compiler never made, which is the worst failure
     /// available to a tool whose purpose is explanation.
     ///
-    /// The non-vacuity guard is not decoration: `Drivetrain` has no coupled block, so it
-    /// reports `[]` and derives `[]` — agreement on nothing. Without the guard a
-    /// corpus of such models would pass while testing nothing at all.
+    /// The non-vacuity guard is not decoration: a model with no coupled block reports
+    /// `[]` and derives `[]` — agreement on nothing. Without the guard a corpus of such
+    /// models would pass while testing nothing at all.
+    ///
+    /// **Compared per tab, against the DAE that tab animates.** The Structural and Index
+    /// Reduction tabs describe *different systems* (`App::tearing_dae` re-runs the
+    /// reduction funnel for the latter), so comparing one tab's re-derivation against the
+    /// other's report tests nothing and fails on models that are singular before
+    /// reduction. Singular stages are skipped because `structural_view_available` hides
+    /// the tearing view there — a re-derivation the UI never shows is not a
+    /// misrepresentation.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn hrw_rederived_tearing_matches_rumocas_report() {
-        let mut models_with_tears = 0usize;
-
-        for name in ["ProportionalLoop", "MixedLoop", "TwoLoops", "NonlinearLoop", "Drivetrain"] {
-            let FromWorker::Compiled { stages, dae, .. } = compile_specimen_shared(name) else {
-                panic!("{name}: expected Compiled");
-            };
-            let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
-
-            // What Rumoca's own structural report says was torn.
-            let reported: Vec<String> = stages
-                .structural
-                .value
-                .as_ref()
-                .and_then(|v| v.get("blocks"))
+        /// The tear variables Rumoca's report lists, flattened across blocks in
+        /// report order — the same order `tear_variable_names` walks.
+        fn reported_tears(report: &serde_json::Value) -> Vec<String> {
+            report
+                .get("blocks")
                 .and_then(serde_json::Value::as_array)
                 .map(|blocks| {
                     blocks
@@ -3591,25 +3595,176 @@ mod tests {
                         .map(str::to_owned)
                         .collect()
                 })
-                .unwrap_or_default();
+                .unwrap_or_default()
+        }
 
-            // What HRW re-derives to animate it.
-            let derived = crate::tearing_anim::TearingAnimation::record(&dae).tear_variable_names();
+        let mut tabs_with_tears = 0usize;
 
-            assert_eq!(
-                derived, reported,
-                "{name}: the tearing animation re-derives a different answer than the \
-                 compiler reported — it would be teaching a decision Rumoca never made",
-            );
-            if !reported.is_empty() {
-                models_with_tears += 1;
+        for name in F1_MODELS {
+            let FromWorker::Compiled { stages, dae, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
+
+            // (tab, the DAE HRW animates there, the report it shows beside it)
+            let mut reduced = dae.clone();
+            index_reduce_in_place(&mut reduced);
+            let cases: [(&str, &rumoca_ir_dae::Dae, &Stage); 2] = [
+                ("Structural", &dae, &stages.structural),
+                ("IndexReduction", &reduced, &stages.index_reduction),
+            ];
+
+            for (tab, tab_dae, stage) in cases {
+                // Singular stages hide the tearing view entirely.
+                if stage.outcome != Outcome::Ok {
+                    continue;
+                }
+                let Some(report) = stage.value.as_ref() else { continue };
+
+                let reported = reported_tears(report);
+                let derived =
+                    crate::tearing_anim::TearingAnimation::record(tab_dae).tear_variable_names();
+
+                assert_eq!(
+                    derived, reported,
+                    "{name} / {tab}: the tearing animation re-derives a different answer \
+                     than the compiler reported — it would be teaching a decision Rumoca \
+                     never made",
+                );
+                if !reported.is_empty() {
+                    tabs_with_tears += 1;
+                }
             }
         }
 
         assert!(
-            models_with_tears >= 4,
-            "only {models_with_tears} models actually tore anything; the rest agreed on \
-             an empty list, which tests nothing",
+            tabs_with_tears >= 4,
+            "only {tabs_with_tears} tabs actually tore anything; the rest agreed on an \
+             empty list, which tests nothing",
+        );
+    }
+
+    /// The specimens F1 re-derives on. Shared by the three checks so a model
+    /// added here is covered by all of them at once.
+    #[cfg(test)]
+    const F1_MODELS: &[&str] = &[
+        "ProportionalLoop", "MixedLoop", "TwoLoops", "NonlinearLoop", "Drivetrain",
+        "RcCircuit", "SingleInertia", "CapacitorLoop", "BouncingBall", "MotorWithBrake",
+    ];
+
+    /// **HRW's re-derived matching matches Rumoca's own report.**
+    ///
+    /// `docs/fidelity-plan.md` F1, second of three. The incidence view renders the
+    /// matching overlay from the report, but [`MatchingAnimation`] **re-runs Kuhn's
+    /// algorithm** on the parsed matrix to produce its frames — so the green circles
+    /// the animation walks through could in principle end somewhere the compiler
+    /// never went.
+    ///
+    /// The comparison is exact rather than by size, because a maximum matching is
+    /// not unique: two matchings of equal cardinality are equally *valid* and still
+    /// mean the animation is narrating a different transversal than the one the
+    /// solve order was built from. `match_progress` cannot see that difference,
+    /// which is why `final_matching` exists.
+    ///
+    /// What this really exercises is the **JSON round trip** — report → names →
+    /// indices → re-run. Both sides call the same Rumoca function, so a divergence
+    /// means the row or column order did not survive it.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn hrw_rederived_matching_matches_rumocas_report() {
+        let mut compared = 0usize;
+
+        for name in F1_MODELS {
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            let Some(report) = stages.structural.value.as_ref() else { continue };
+            let Some(mat) = crate::incidence_view::IncidenceMatrix::from_report(report) else {
+                continue;
+            };
+            if mat.n_eq() == 0 {
+                continue;
+            }
+
+            let derived = crate::matching_anim::MatchingAnimation::from_incidence(&mat).final_matching();
+            let reported = mat.reported_matching();
+
+            assert_eq!(
+                derived.len(), reported.len(),
+                "{name}: re-derived matching covers {} equations, the report {}",
+                derived.len(), reported.len(),
+            );
+            assert_eq!(
+                derived, reported,
+                "{name}: the matching animation ends on a different transversal than \
+                 Rumoca reported — the overlay and the animation would disagree",
+            );
+            compared += 1;
+        }
+
+        assert!(
+            compared >= 5,
+            "only {compared} models produced an incidence matrix to compare; F1's matching \
+             check is testing almost nothing",
+        );
+    }
+
+    /// **HRW's re-derived BLT blocks match Rumoca's own report.**
+    ///
+    /// `docs/fidelity-plan.md` F1, third of three. [`TarjanAnimation`] re-runs
+    /// matching *and* Tarjan to build its graph, so it is the furthest-removed
+    /// re-derivation in HRW — two algorithms deep from anything the compiler said.
+    ///
+    /// Compared as a **partition**, not a sequence: Tarjan emits components in
+    /// reverse topological order while the report lists them in solve order, so
+    /// requiring equal ordering would fail on a difference that means nothing.
+    /// Requiring equal *sets* still catches the thing that matters — an equation
+    /// placed in the wrong block, which is a different solve order and a different
+    /// algebraic loop.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn hrw_rederived_blocks_match_rumocas_report() {
+        use std::collections::BTreeSet;
+
+        let mut compared = 0usize;
+        let mut saw_a_coupled_block = false;
+
+        for name in F1_MODELS {
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            let Some(report) = stages.structural.value.as_ref() else { continue };
+            let Some(mat) = crate::incidence_view::IncidenceMatrix::from_report(report) else {
+                continue;
+            };
+            let reported = mat.reported_blocks();
+            if reported.is_empty() {
+                continue;
+            }
+            let Some(anim) = crate::tarjan_anim::TarjanAnimation::from_incidence(&mat) else {
+                continue;
+            };
+
+            let as_sets = |bs: Vec<Vec<usize>>| -> BTreeSet<BTreeSet<usize>> {
+                bs.into_iter().map(|b| b.into_iter().collect()).collect()
+            };
+            if reported.iter().any(|b| b.len() > 1) {
+                saw_a_coupled_block = true;
+            }
+
+            assert_eq!(
+                as_sets(anim.final_sccs()), as_sets(reported),
+                "{name}: Tarjan re-derives a different block partition than Rumoca \
+                 reported — the animation would show the wrong solve order",
+            );
+            compared += 1;
+        }
+
+        assert!(compared >= 5, "only {compared} models had blocks to compare");
+        assert!(
+            saw_a_coupled_block,
+            "every model compared had only singleton blocks; the partition check never \
+             had a chance to be wrong",
         );
     }
 
