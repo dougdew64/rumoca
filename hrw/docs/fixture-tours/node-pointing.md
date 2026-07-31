@@ -60,6 +60,21 @@ RcCircuit succeeds, so it has no `error` at all.
 **not** expand partway and stop, which would read as "it opened something" rather than
 "that path is wrong."
 
+## Stop 5b — A view this model does not have
+
+[Structural → Summary](hrw://stage/Structural/Summary)
+
+The **Summary** tab exists only when a model is *singular*. `RcCircuit` compiles cleanly,
+so it has no Summary — look at the sub-tab row and you will not find one.
+
+**Expected:** nothing changes, and a notice says this stage has no Summary view for this
+model. It must **not** select the tab silently and render the singular-system summary for
+a model that is not singular.
+
+*(That is precisely what happened before 2026-07-30: the cross-platform tour linked here
+and HRW obliged. The slug is valid for the stage — availability depends on what the
+compile produced, which only the panel knows.)*
+
 ## Stop 6 — Follow an identifier
 
 [Follow `C.v`](hrw://follow/C.v)

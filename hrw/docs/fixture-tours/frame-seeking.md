@@ -14,6 +14,24 @@ that while walking the stops in order.
 
 ---
 
+## Stop 0 — A stop clicked out of order
+
+**Do this before Stop 1**, with no specimen loaded. (Arriving here from another tour
+clears the previous one, so that is already true. If you have walked a stop since, switch
+to a different tour and back.)
+
+[Seek frame 5 — with nothing loaded](hrw://stage/Structural/MatchingAnim/frame/5)
+
+**Expected:** a notice saying no specimen is loaded and to start at the first stop.
+
+**And nothing else happens.** No stage change, no view change. Then click Stop 1 below:
+it must behave normally, **not** jump to frame 5 — a refused stop leaves nothing armed to
+fire later.
+
+*(Doug found this by clicking a tour's fourth stop first: the link silently did nothing,
+because with no specimen the stage area returns early. Silence is indistinguishable from
+a broken link, which is the one outcome a tour cannot survive.)*
+
 ## Stop 1 — A replay, unstarted
 
 [MotorWithBrake → Structural → Matching](hrw://load/MotorWithBrake/Structural/MatchingAnim)
