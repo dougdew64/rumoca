@@ -3002,3 +3002,83 @@ Keep it on the right side of that line.
 
 **Relates to:** #51 (the corpus), #52 (Test mode), #46 (failure specimens),
 `docs/reports.md`, and the specimen rules in `CLAUDE.md` that this narrows.
+
+---
+
+## 54. Where the time goes — a performance profile, for a maintainer AND for Doug
+
+Doug, 2026-07-31, watching the survey and fidelity runs produce timing data as a byproduct:
+
+> We're gathering lots of useful statistics which a rumoca maintainer might appreciate having
+> in a performance report of some kind. […] Also, some of the statistics are interesting to me
+> as a student of this stuff. I would be grateful to gain an understanding of where the
+> performance costs are in the phases and their algorithms.
+
+**Two reports from one measurement, and the difference is not the data — it is the framing.**
+
+### The framing inversion, which is the whole reason this is one idea and not two
+
+HRW deliberately calls `compile_model_strict_reachable_uncached_with_recovery`: an observatory
+must actually *run* the phases, so the cache is off by design. That single fact points in
+opposite directions for the two audiences:
+
+| | Cold compile is… |
+|---|---|
+| **For a maintainer** | a **caveat** that must lead the report. Their users hit a warm cache; our numbers are worst case by construction, and a report that omits this deserves to be dismissed. |
+| **For Doug** | the **point**. He wants to know what the *algorithm* costs, not what the cache saves. |
+
+Same measurement, opposite emphasis. Neither report can quietly reuse the other's prose.
+
+### Part A — the upstream performance profile (a zero-adoption-cost gift)
+
+Three findings worth a maintainer's afternoon, per `docs/upstream-strategy.md`'s ordering:
+
+- **A performance cliff with a named cause.** The whole MSL compiles in ~38 minutes; adding
+  index reduction made **four models consume 97 minutes** (the Spice3 four-bit-adder family,
+  2,477-10,175 equations). Superlinear in system size, with the models to reproduce it. That
+  is actionable in a way "Rumoca is slow" is not.
+- **Session memory growth across compiles** — likely the most valuable, because nobody finds
+  it without a batch run. One session reached **8.3 GB committed over 2,626 compiles**.
+  `Session` is plainly built for language-server use (`update_document`,
+  `namespace_index_query`, incremental caches), where growth across compiles matters a great
+  deal. **Record it as an observation needing their confirmation, not a measured leak rate**:
+  committed memory was watched, allocations were not.
+- **Nondeterministic diagnostics** — already `docs/upstream-issues.md` #3.
+
+**What to exclude:** stage IR sizes. `BalancingDelta` at 17.2 MB is *HRW's serialisation* of
+their IR, not their cost. Including it would be measuring ourselves and billing them — the
+same attribution discipline the capability map needs.
+
+### Part B — the student's version: measured cost against theoretical complexity
+
+The half Doug asked for, and the more interesting one. **HRW already logs per-stage
+milliseconds** (`worker.rs`, `LogLevel::StageEnd`), so this is *aggregation*, not new
+instrumentation — the numbers are being thrown away, not missing.
+
+Per-phase cost across a corpus answers "where does the time go". But the sharper exercise is
+one level down, comparing **what the algorithm is supposed to cost** against **what it does
+cost**:
+
+| Algorithm | Theoretical | What measuring it would teach |
+|---|---|---|
+| Matching (Kuhn) | O(V·E) worst case | how close real incidence matrices get to the worst case — usually nowhere near, and *why* is the lesson |
+| Tarjan SCC | O(V+E) | should be flatly linear; a deviation means the graph build dominates, not the SCC |
+| Tearing | greedy per coupled block | cost follows block size, and the largest block in the MSL is **64** — so tearing is cheap *because the blocks are small*, which is itself a fact about physical models |
+| Pantelides / index reduction | iterative, superlinear here | the measured cliff. Why it is superlinear is a real question with a real answer |
+
+**This is a way to learn the algorithms that reading cannot give**: a complexity bound is a
+claim about behaviour, and the corpus is 2,626 chances to check it. It also sits correctly
+with `feedback-curriculum-emerges-from-reading` — Doug asked the question, so it is emergent,
+not front-run.
+
+### What to build (small, and mostly already there)
+
+1. **Aggregate the per-stage timings the worker already logs** into the survey row or a
+   sibling report. No new instrumentation.
+2. **Plot cost against a shape column** — `n_equations`, `largest_coupled`, `n_functions` —
+   which is how a complexity claim becomes checkable.
+3. **Separate the two reports** at the point of writing, never by editing one into the other.
+
+**Relates to:** #51 (the corpus), #53 (lookup and the ladder — the same data, ordered for
+teaching), `docs/upstream-strategy.md` (deliverable ordering, attribution),
+`docs/upstream-issues.md` #3.

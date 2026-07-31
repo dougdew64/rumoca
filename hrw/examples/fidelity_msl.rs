@@ -133,9 +133,17 @@ fn main() {
         };
 
         // F8: every stage serialises, and the sizes are on the record.
+        //
+        // **Counted, not materialised.** `v.to_string().len()` builds the whole
+        // stage IR as a String just to measure it — fine at 3 MB, ruinous on
+        // `Media.Examples.TwoPhaseWater.TestTwoPhaseStates`, which has only 48
+        // equations but **110 functions** and whose inlined bodies pushed this
+        // to 4.5 GB resident and 100% CPU for over an hour. The survey compiled
+        // that same model in under 5 seconds, which is what proved the cost was
+        // the check rather than the compile.
         let bytes: usize = StageKind::COMPILATION
             .iter()
-            .map(|k| stages.get(*k).value.as_ref().map_or(0, |v| v.to_string().len()))
+            .map(|k| stages.get(*k).value.as_ref().map_or(0, json_bytes))
             .sum();
         sizes.push((bytes, row.name.clone()));
 
@@ -261,6 +269,25 @@ fn report_row(name: &str, violations: &[Violation]) -> String {
         f(&checks.join(" ")),
         violations.len(),
     )
+}
+
+/// Serialised size of a JSON value **without building it**.
+///
+/// `serde_json::to_writer` streams into a sink that counts and discards, so the
+/// peak allocation is a small buffer rather than the whole document.
+fn json_bytes(v: &serde_json::Value) -> usize {
+    struct Counting(usize);
+    impl std::io::Write for Counting {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0 += buf.len();
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut c = Counting(0);
+    serde_json::to_writer(&mut c, v).map_or(0, |()| c.0)
 }
 
 fn open_sink(out: &str) -> std::io::Result<BufWriter<File>> {
