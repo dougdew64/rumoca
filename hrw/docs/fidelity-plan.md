@@ -9,6 +9,36 @@ He is right, and nothing in the 444 tests addresses it. They check HRW's **own**
 (link parsing, playback, layout) and that specimens **compile**. Neither asks whether what
 HRW *shows* is what Rumoca *decided*.
 
+## The goal, stated exactly
+
+Doug, 2026-07-30:
+
+> I want us to gain confidence that HRW tells the truth about Rumoca, **even if Rumoca is
+> wrong.**
+
+That last clause is the whole scope. **A Rumoca bug faithfully rendered is a PASS here.**
+Finding compiler bugs is a different effort with a different instrument (#43's oracle), and
+mixing them would make every failure ambiguous again — which is the cost #51 could not pay.
+
+Two consequences that changed this plan after it was first written:
+
+- **Stratify by IR shape, not by physics domain.** The first draft said "cover every MSL
+  top-level package". But if the question is fidelity, the domain is a *proxy* — a `Fluid`
+  model and an `Electrical` model with the same IR shape test HRW identically. What
+  stresses the representation is **arrays, function calls, records, deep hierarchies, huge
+  incidence matrices, many small blocks vs one large one**.
+- **Failures are in scope.** F1–F7 as first written all assume a *successful* compile. But
+  "even if Rumoca is wrong" means a Rumoca **failure** must be faithfully represented too:
+  the error payload, the unmatched equation and unknown lists, the blamed source spans.
+  Several of those were fixed by hand on 2026-07-29–30 and nothing checks them at scale.
+  See **F9**.
+
+## The one-sentence property
+
+**HRW must invent nothing and omit nothing.** Every value it displays should be traceable
+to Rumoca's output, and every decision Rumoca made should be recoverable from what HRW
+shows. The checks below are that property, made checkable one piece at a time.
+
 ## Why this is the dangerous gap
 
 HRW does two different things with Rumoca's output, and only one of them is safe:
@@ -95,15 +125,37 @@ The stress test, as a **byproduct** rather than the goal. `Media.Examples.WaterI
 produced a 3.2 MB flatten stage without panicking; that was previously unknown. Record
 size and time per stage per model so a regression in either is visible.
 
+### F9. Failures are represented faithfully too
+
+For every model where a phase **fails**, the error payload must carry what Rumoca actually
+reported — not a paraphrase, and not less:
+
+- the counts in a structural singularity match `StructuralError::Singular`'s own fields
+- `unmatched_equations` / `unmatched_unknowns` match the error's lists, in order
+- a blamed source span resolves to a real line in the specimen, and to *that* variable
+- a diagnostic's `labels` survive into the JSON with their spans intact
+- the message is emitted **verbatim** somewhere, so nothing is lost to summarising
+
+This is where 2026-07-29–30's hand-found bugs clustered: `rank_deficiency` computed as 7
+when the truth was 1, spans that Rumoca supplied and HRW dropped, labels dropped by every
+emitter, a `ToDae` failure reduced to a bare informational note. **Every one was HRW
+failing to tell the truth about a Rumoca failure** — exactly the case Doug's clause is
+about, and the one the first draft omitted.
+
 ## The sample
 
 **Not all 1,656.** A stratified sample of **40–60**, chosen to cover:
 
-- every MSL top-level package (Electrical, Mechanics, Thermal, Fluid, Media, Magnetic,
-  Blocks, Clocked, StateGraph, Math, Utilities)
-- the phenomena HRW has views for: high index, algebraic loops, events, arrays, functions,
-  clocked/synchronous
-- the extremes — the largest models available, and the smallest
+- **IR shapes** that stress the representation: array variables, function calls, records
+  and nested types, deep component hierarchies, very large incidence matrices, many small
+  BLT blocks versus one enormous coupled block
+- the phenomena HRW has **views** for: high index, algebraic loops, events, alias
+  elimination, connection expansion, `pre()` lowering
+- **models that fail**, in each phase that can fail — F9 has no data otherwise
+- the extremes: the largest models available, and the smallest
+
+Package coverage is worth *sampling* for variety, but it is not the criterion. Two models
+from different packages with identical IR shape test HRW once, not twice.
 
 Stratification matters more than count: 50 models spread across packages will find more
 than 500 from one.
