@@ -101,6 +101,100 @@ By the end of the end-to-end tour (the spine), Doug should be able to:
 
 These goals are revisable as Doug's understanding deepens.
 
+## The platform — the general shape this is becoming
+
+Recorded 2026-07-31, from Doug:
+
+> When reading Cellier or other textbooks, I might encounter a topic which baffles me and so
+> turn to hrw for help. […] You are going to be a just-in-time author's assistant for whichever
+> textbook I might be struggling with. I might ask you a thermodynamics question one day, a
+> linear algebra question the next day and a CS question the following day. HRW, Wolfram
+> Desktop, System Modeler will be part of your platform for teaching me. And, because you are
+> able to consume other tools via MCP, if I need to make other tools available to you so that
+> you can best help me, I will.
+
+**The near-term focus does not change.** Doug's words the same day: *"My initial focus is
+understanding how rumoca works. That doesn't change. But, we are building something more
+general."* Everything above this section stands. What follows describes the shape the work is
+taking, not a change of direction.
+
+### What actually generalises: the subject
+
+Until now the **subject** was Rumoca and HRW was the instrument. In the general form, the
+subject is *whatever Doug is reading*, and Rumoca becomes one instrument among several —
+sharply valuable when a question has a computational instantiation, irrelevant when it does
+not.
+
+That makes **instrument selection** a primary skill rather than an afterthought. A linear
+algebra question wants Wolfram; a thermodynamics question wants an MSL model and System
+Modeler; a performance question wants HRW's phase timings. Choosing wrong wastes Doug's time
+in a way that being slightly wrong about content does not.
+
+### The MSL is a physics library, not only a test corpus
+
+The most consequential consequence, and it took three reframes in one day to see:
+
+| Stage | What the 2,626 models were |
+|---|---|
+| morning | a test corpus for fidelity checking |
+| after the survey | a searchable catalogue of specimens by IR shape |
+| **now** | **a reference library of physics that runs** |
+
+`Modelica.Thermal`, `Modelica.Media`, `Modelica.Fluid`, `Modelica.Magnetic`,
+`Modelica.Mechanics` are peer-reviewed formulations of physics, expressed as equations, that
+compile and simulate. So a thermodynamics question is **not** off-topic for HRW: *"here is
+`Modelica.Thermal.HeatTransfer`, here are its actual equations, here is what System Modeler
+does with it"* is an answer a textbook alone cannot give.
+
+### The discipline that has to transfer, and the safety net that does not
+
+For Rumoca questions there is an **oracle**: System Modeler adjudicates, which is what turned
+`docs/upstream-issues.md` #2 from an opinion into evidence, and what has repeatedly caught
+Claude being confidently wrong.
+
+**Cross-domain, that net is gone.** The adjudicator for a thermodynamics claim is the
+textbook, and Claude cannot read it unless Doug shows it. So the provenance rule
+(`docs/provenance.md`) sharpens into a working rule for teaching:
+
+> **Prefer claims a tool can demonstrate over claims Claude can only assert — and when only
+> assertion is available, say what would check it.**
+
+*"Here is the entropy relation"* is an assertion. *"Here is `Modelica.Media.Water`, here is
+the equation it uses, here is a simulation of the behaviour, and here is where it would
+disagree with your textbook's assumption"* is a demonstration. **Converting assertions into
+demonstrations is what the platform is for.**
+
+### What must NOT be built
+
+The same rule as the ad hoc curriculum (`docs/ideas.md` #53), one level up:
+
+- **No domain-specific features.** No thermodynamics view, no linear-algebra view. The
+  platform stays general — query surface, exact context, composable instruments.
+- **No stored lessons, per domain or otherwise.** Domain knowledge is Claude's and is
+  regenerable; a stored version rots, which is what retired 1,632 lines of specimen narrative
+  and the end-to-end tour's prose.
+
+What *is* worth building is whatever widens the query surface or sharpens the context: the
+filters of #53, the timings of #54, better nouns.
+
+### Admitting a new instrument
+
+Doug will add tools via MCP as needs appear. The bar a new instrument must clear is the one
+`focus.json` already meets:
+
+**It must emit exact context, never approximate.** A tool that hands Claude plausible-looking
+summaries is *worse than no tool*, because Claude will reason confidently over them and the
+error is unrecoverable downstream (`feedback-emitter-correct-reasoner-supplements`). Exactness
+is the admission criterion; convenience is not.
+
+### The north star, restated for the general case
+
+`observatory-goal-context-and-explanation` says HRW maximises **convenient
+context-identification × context-sensitive explanation**, a multiplicative pair. That survives
+intact; only the sources widen. Context may now come from any admitted instrument, and the
+explanation is still Claude's — which is why the platform grows by adding *nouns*, never by
+adding stored *verbs*.
+
 ## Principles
 
 - **Problem before solution.** Every explanation, tour stop, and narrative leads with
