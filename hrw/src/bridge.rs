@@ -382,8 +382,24 @@ impl Seg {
 /// ```text
 /// error.unmatched_unknowns[0]   ->  [Key("error"), Key("unmatched_unknowns"), Index(0)]
 /// blocks[2].equations[0]        ->  [Key("blocks"), Index(2), Key("equations"), Index(0)]
+/// enum_ordinals["StateSelect.never"]
+///                               ->  [Key("enum_ordinals"), Key("StateSelect.never")]
 /// (tree root)  or  <empty>      ->  []            (the root itself)
 /// ```
+///
+/// # Quoted keys
+///
+/// A JSON object key may contain the separators this grammar uses. Modelica IR is
+/// full of them — `enum_literal_ordinals` is keyed by qualified names like
+/// `StateSelect.never`, and flat variable names are dotted throughout. Written
+/// bare, such a key splits into two segments and lands on a node that does not
+/// exist. **`docs/fidelity-plan.md` F7 found this on 2026-07-31**, across every
+/// model in the corpus.
+///
+/// So a key containing `.`, `[`, `]` or `"` — or an empty key — is written
+/// `["…"]` with `\` and `"` backslash-escaped, and no `.` before it. Keys without
+/// those characters are unchanged, so every path emitted before this existed
+/// still parses to the same segments.
 ///
 /// Returns `None` on anything malformed rather than guessing: a link that silently
 /// pointed at the wrong node would be worse than one that visibly does nothing, because
@@ -395,9 +411,14 @@ pub fn parse_path(s: &str) -> Option<Vec<Seg>> {
     let mut out = Vec::new();
     let mut rest = s;
     loop {
-        // A key runs to the next '.' or '[' — but an index may come first, when a
-        // previous segment ended with one (`blocks[2][0]`).
-        if let Some(after) = rest.strip_prefix('[') {
+        // A key runs to the next '.' or '[' — but a bracket may come first, when a
+        // previous segment ended with one (`blocks[2][0]`) or when the key itself
+        // needed quoting (`a["b.c"]`).
+        if let Some(after) = rest.strip_prefix("[\"") {
+            let (key, tail) = parse_quoted_key(after)?;
+            out.push(Seg::Key(key));
+            rest = tail;
+        } else if let Some(after) = rest.strip_prefix('[') {
             let (digits, tail) = after.split_once(']')?;
             out.push(Seg::Index(digits.parse().ok()?));
             rest = tail;
@@ -422,6 +443,33 @@ pub fn parse_path(s: &str) -> Option<Vec<Seg>> {
     }
 }
 
+/// Read a `["key"]` segment, starting just after the opening quote.
+///
+/// Returns the unescaped key and the remainder after the closing `"]`. `None` on
+/// an unterminated quote or a dangling escape — malformed input never guesses.
+fn parse_quoted_key(after_quote: &str) -> Option<(String, &str)> {
+    let mut key = String::new();
+    let mut chars = after_quote.char_indices();
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '\\' => key.push(chars.next()?.1),
+            '"' => {
+                let tail = after_quote.get(i + 1..)?.strip_prefix(']')?;
+                return Some((key, tail));
+            }
+            _ => key.push(c),
+        }
+    }
+    None
+}
+
+/// Does this key need `["…"]` rather than a bare `.key`?
+///
+/// Empty keys too: a bare empty key produces `a..b`, which `parse_path` rejects.
+fn key_needs_quoting(k: &str) -> bool {
+    k.is_empty() || k.contains(['.', '[', ']', '"', '\\'])
+}
+
 pub fn describe_path(path: &[Seg]) -> String {
     if path.is_empty() {
         return "(tree root)".to_owned();
@@ -429,6 +477,19 @@ pub fn describe_path(path: &[Seg]) -> String {
     let mut s = String::new();
     for seg in path {
         match seg {
+            // A key carrying this grammar's own separators is bracketed and
+            // quoted, and takes no leading `.` — see `parse_path`'s note on why
+            // Modelica IR makes this the common case rather than an edge one.
+            Seg::Key(k) if key_needs_quoting(k) => {
+                s.push_str("[\"");
+                for c in k.chars() {
+                    if c == '"' || c == '\\' {
+                        s.push('\\');
+                    }
+                    s.push(c);
+                }
+                s.push_str("\"]");
+            }
             Seg::Key(_) => {
                 if !s.is_empty() {
                     s.push('.');
@@ -1744,6 +1805,30 @@ mod tests {
             vec![Seg::Key("rows".into()), Seg::Index(3), Seg::Index(1)],
             // A leading index is unusual but expressible.
             vec![Seg::Index(7)],
+            // --- Keys carrying this grammar's own separators. ---
+            //
+            // NOT an edge case in Modelica IR. `enum_literal_ordinals` is keyed by
+            // qualified names, and before 2026-07-31 `StateSelect.never` was written
+            // bare, split into two segments on the way back, and landed on a node
+            // that does not exist. `docs/fidelity-plan.md` F7 found it on every model
+            // in the corpus at once — 6,169 broken paths.
+            vec![Seg::Key("enum_literal_ordinals".into()), Seg::Key("StateSelect.never".into())],
+            // Modelica's single-quoted identifiers, which appear beside the plain ones.
+            vec![Seg::Key("enum_literal_ordinals".into()), Seg::Key("StateSelect.'never'".into())],
+            // A dotted key followed by more path, so the closing `"]` must hand back
+            // the remainder correctly rather than swallowing it.
+            vec![
+                Seg::Key("m".into()),
+                Seg::Key("gear.flange_b.tau".into()),
+                Seg::Index(2),
+                Seg::Key("v".into()),
+            ],
+            // The quoting characters themselves.
+            vec![Seg::Key(r#"a"b"#.into())],
+            vec![Seg::Key(r"a\b".into())],
+            vec![Seg::Key("has[bracket]".into())],
+            // An empty key: legal JSON, and bare it would produce `a..b`.
+            vec![Seg::Key("a".into()), Seg::Key(String::new()), Seg::Key("b".into())],
         ];
         for path in cases {
             let written = describe_path(&path);
@@ -1761,8 +1846,33 @@ mod tests {
     /// visibly does nothing: the reader would take the wrong subtree for the answer.
     #[test]
     fn a_malformed_node_path_is_refused() {
-        for bad in ["a..b", ".a", "a.", "a[", "a[]", "a[x]", "a]0[", "a[0]b"] {
+        for bad in [
+            "a..b", ".a", "a.", "a[", "a[]", "a[x]", "a]0[", "a[0]b",
+            // Quoted-key forms that are not closed properly. `a["b"` and
+            // `a["b"x` must fail rather than silently yielding key `b`.
+            r#"a["b"#, r#"a["b""#, r#"a["b"x"#, r#"a["b\"#,
+        ] {
             assert!(parse_path(bad).is_none(), "{bad:?} should not parse");
+        }
+    }
+
+    /// **Ordinary paths are spelled exactly as before the quoting rule existed.**
+    ///
+    /// Quoting had to be additive: `hrw://` links live in checked-in fixture
+    /// tours and in every `focus.json` written so far, so a key that never needed
+    /// escaping must still render byte-identically or those links break.
+    #[test]
+    fn quoting_did_not_change_how_ordinary_paths_are_written() {
+        let cases: Vec<(Vec<Seg>, &str)> = vec![
+            (vec![Seg::Key("error".into()), Seg::Key("unmatched_unknowns".into()), Seg::Index(0)],
+             "error.unmatched_unknowns[0]"),
+            (vec![Seg::Key("blocks".into()), Seg::Index(2), Seg::Key("equations".into())],
+             "blocks[2].equations"),
+            (vec![], "(tree root)"),
+        ];
+        for (path, want) in cases {
+            assert_eq!(describe_path(&path), want, "spelling changed for {path:?}");
+            assert_eq!(parse_path(want).as_deref(), Some(path.as_slice()));
         }
     }
 

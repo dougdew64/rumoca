@@ -392,6 +392,172 @@ mod tests {
         v
     }
 
+    // ---------------------------------------------------------------- F6
+
+    /// **F6 — the derived views cover their source.**
+    ///
+    /// The equation sheet and the identifier index are *rebuilt* from the DAE
+    /// rather than read from a stage, so they can silently cover less than the
+    /// thing they claim to describe. An equation sheet missing an equation does
+    /// not look broken — it looks like a shorter model.
+    fn check_f6(
+        sheet: Option<&crate::equation_sheet::EquationSheet>,
+        index: Option<&crate::identifier_index::IdentifierIndex>,
+        dae: &rumoca_ir_dae::Dae,
+    ) -> Vec<String> {
+        let mut v = Vec::new();
+        let n_eq = dae.continuous.equations.len();
+
+        if let Some(sheet) = sheet {
+            if sheet.n_equations != n_eq {
+                v.push(format!(
+                    "equation sheet reports {} equations, the DAE has {n_eq}",
+                    sheet.n_equations,
+                ));
+            }
+            // Every equation exactly once, by index — a sheet that grouped one
+            // equation twice and dropped another would keep the count right.
+            let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
+            for (_, eqs) in &sheet.groups {
+                for e in eqs {
+                    *seen.entry(e.index).or_default() += 1;
+                }
+            }
+            let missing: Vec<usize> = (0..n_eq).filter(|i| !seen.contains_key(i)).collect();
+            if !missing.is_empty() {
+                v.push(format!("equation sheet omits equation indices {missing:?}"));
+            }
+            for (i, c) in seen.iter().filter(|(_, c)| **c > 1) {
+                v.push(format!("equation sheet lists equation {i} {c} times"));
+            }
+            for i in seen.keys().filter(|i| **i >= n_eq) {
+                v.push(format!("equation sheet lists equation {i}, beyond the DAE's {n_eq}"));
+            }
+        }
+
+        if let Some(index) = index {
+            // Keyed by the `kind` the index itself recorded, so this check does
+            // not merely re-list the DAE's partitions and drift. The first draft
+            // did exactly that — it omitted the two discrete partitions and
+            // reported `BouncingBall`'s `c` as a phantom variable. A partition
+            // added later lands in the `_` arm and says so, instead of
+            // masquerading as a fidelity violation.
+            let vars = &dae.variables;
+            let set = |ks: Vec<String>| -> BTreeSet<String> { ks.into_iter().collect() };
+            let partitions: BTreeMap<&str, BTreeSet<String>> = [
+                ("state", set(vars.states.keys().map(ToString::to_string).collect())),
+                ("algebraic", set(vars.algebraics.keys().map(ToString::to_string).collect())),
+                ("input", set(vars.inputs.keys().map(ToString::to_string).collect())),
+                ("output", set(vars.outputs.keys().map(ToString::to_string).collect())),
+                ("parameter", set(vars.parameters.keys().map(ToString::to_string).collect())),
+                ("constant", set(vars.constants.keys().map(ToString::to_string).collect())),
+                ("discrete real", set(vars.discrete_reals.keys().map(ToString::to_string).collect())),
+                ("discrete valued", set(vars.discrete_valued.keys().map(ToString::to_string).collect())),
+            ]
+            .into_iter()
+            .collect();
+
+            for (name, iv) in &index.variables {
+                let Some(partition) = partitions.get(iv.kind) else {
+                    v.push(format!(
+                        "identifier index uses partition {:?}, which this check does not \
+                         know — extend check_f6 rather than trusting it",
+                        iv.kind,
+                    ));
+                    continue;
+                };
+                if !partition.contains(name) {
+                    v.push(format!(
+                        "identifier index names {name:?} as a {} , which the DAE's {} \
+                         partition does not contain — a click on it resolves to nothing",
+                        iv.kind, iv.kind,
+                    ));
+                }
+            }
+            // The line map must agree with the variables it indexes.
+            for (line, names) in &index.line_to_variables {
+                for n in names {
+                    if !index.variables.contains_key(n) {
+                        v.push(format!("line {line} maps to {n:?}, absent from the index"));
+                    }
+                }
+            }
+        }
+        v
+    }
+
+    // ---------------------------------------------------------------- F7
+
+    /// Up to `cap` node paths from a JSON tree, breadth-first.
+    ///
+    /// Breadth-first on purpose: depth-first on real IR spends the whole budget
+    /// inside the first equation's expression tree and never reaches a sibling
+    /// stage field, so the sample would not represent what a user can click.
+    fn sample_paths(root: &Value, cap: usize) -> Vec<Vec<crate::bridge::Seg>> {
+        use crate::bridge::Seg;
+        let mut out: Vec<Vec<Seg>> = Vec::new();
+        let mut queue: std::collections::VecDeque<Vec<Seg>> = std::collections::VecDeque::new();
+        queue.push_back(Vec::new());
+        while let Some(path) = queue.pop_front() {
+            if out.len() >= cap {
+                break;
+            }
+            let Some(node) = crate::bridge::navigate(root, &path) else { continue };
+            match node {
+                Value::Object(map) => {
+                    for k in map.keys() {
+                        let mut p = path.clone();
+                        p.push(Seg::Key(k.clone()));
+                        out.push(p.clone());
+                        queue.push_back(p);
+                    }
+                }
+                Value::Array(items) => {
+                    for i in 0..items.len().min(4) {
+                        let mut p = path.clone();
+                        p.push(Seg::Index(i));
+                        out.push(p.clone());
+                        queue.push_back(p);
+                    }
+                }
+                _ => {}
+            }
+        }
+        out.truncate(cap);
+        out
+    }
+
+    /// **F7 — every capture noun survives the round trip on real IR.**
+    ///
+    /// `describe_path` renders a node path into an `hrw://` link; `parse_path`
+    /// reads it back. The two have only ever been exercised on hand-built values
+    /// and short specimens, and they are what *every* question Doug asks depends
+    /// on — a noun that does not round-trip points Claude at the wrong subtree
+    /// while looking perfectly well-formed.
+    ///
+    /// Compares the **navigated subtree**, not the rendered string: a path may
+    /// legitimately render differently as long as it still lands on the same
+    /// node, and comparing strings would flag that as a failure.
+    fn check_f7(label: &str, root: &Value) -> Vec<String> {
+        let mut v = Vec::new();
+        for path in sample_paths(root, 400) {
+            let described = crate::bridge::describe_path(&path);
+            let Some(parsed) = crate::bridge::parse_path(&described) else {
+                v.push(format!("{label}: {described:?} does not parse back"));
+                continue;
+            };
+            let want = crate::bridge::navigate(root, &path);
+            let got = crate::bridge::navigate(root, &parsed);
+            if want != got {
+                v.push(format!(
+                    "{label}: {described:?} round-trips to a different node \
+                     (path {path:?} vs parsed {parsed:?})",
+                ));
+            }
+        }
+        v
+    }
+
     // ---------------------------------------------------------------- harness
 
     /// **F2–F5 over the corpus, one compile per model.**
@@ -409,13 +575,37 @@ mod tests {
         let mut with_matching = 0usize;
         let mut with_singular_error = 0usize;
 
+        let mut stage_values = 0usize;
+
         for name in MODELS {
-            let FromWorker::Compiled { stages, dae, .. } = compile_specimen_shared(name) else {
+            let FromWorker::Compiled {
+                stages, dae, equation_sheet, identifier_index, ..
+            } = compile_specimen_shared(name)
+            else {
                 panic!("{name}: expected Compiled");
             };
             let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
             let mut reduced = dae.clone();
             index_reduce_in_place(&mut reduced);
+
+            // F6 — the views rebuilt from the DAE, against the DAE.
+            violations.extend(
+                check_f6(equation_sheet.as_ref(), identifier_index.as_ref(), &dae)
+                    .into_iter()
+                    .map(|msg| format!("{name} / F6: {msg}")),
+            );
+
+            // F7 — the capture vocabulary, on every stage's real IR.
+            for kind in crate::worker::StageKind::COMPILATION {
+                if let Some(root) = stages.get(*kind).value.as_ref() {
+                    stage_values += 1;
+                    violations.extend(
+                        check_f7(&format!("{kind:?}"), root)
+                            .into_iter()
+                            .map(|msg| format!("{name} / F7: {msg}")),
+                    );
+                }
+            }
 
             for s in subjects(&stages, &dae, &reduced) {
                 subjects_checked += 1;
@@ -438,9 +628,10 @@ mod tests {
         // without knowing how much was looked at, and a corpus that quietly
         // stopped producing subjects would otherwise read as a clean bill.
         println!(
-            "fidelity F2-F5: {} models, {subjects_checked} incidence-bearing reports \
+            "fidelity F2-F7: {} models, {subjects_checked} incidence-bearing reports \
              ({with_blocks} with blocks, {with_matching} with a matching, \
-             {with_singular_error} singular), {} violations",
+             {with_singular_error} singular), {stage_values} stage IRs walked, \
+             {} violations",
             MODELS.len(),
             violations.len(),
         );
@@ -455,11 +646,245 @@ mod tests {
         // Each check silently skips what it does not apply to, so prove each one
         // had something to look at.
         assert!(subjects_checked >= 20, "only {subjects_checked} incidence-bearing reports (F2, F3)");
+        assert!(stage_values >= 50, "only {stage_values} stage IRs walked (F7)");
         assert!(with_blocks >= 5, "only {with_blocks} reports had BLT blocks (F4)");
         assert!(with_matching >= 5, "only {with_matching} reports had a matching (F5)");
         assert!(
             with_singular_error >= 1,
             "no singular error in the corpus; F3's rank-deficiency arithmetic never ran",
+        );
+    }
+
+    /// Specimens authored to **fail**, and the corpus F8/F9 add to `MODELS`.
+    ///
+    /// F9 has no data without them, which is why the plan calls out failure
+    /// coverage as its own gap (`docs/ideas.md` #46 tracks the phases still
+    /// missing a failing specimen).
+    const FAILING_MODELS: &[&str] = &[
+        "UndefinedRef", "IncompatibleConnect", "DimensionMismatch",
+        "CapacitorLoop", "OverInitRc", "UnbalancedShaft",
+    ];
+
+    /// **F8 — no stage panics, and the sizes are on the record.**
+    ///
+    /// The stress test as a *byproduct* rather than the goal: every model in both
+    /// corpora is compiled and every stage serialized, so a panic anywhere in the
+    /// pipeline or in HRW's own JSON construction fails the test by existing.
+    ///
+    /// Sizes are printed rather than bounded tightly. A tight bound on unfamiliar
+    /// models would fail on a legitimately large one, which is the triage cost the
+    /// invariant design exists to avoid — but a runaway (a cyclic structure, a
+    /// stage serializing the whole MSL) is a different animal, and the loose
+    /// ceiling catches it.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn every_stage_serializes_without_panicking() {
+        /// Beyond this, something is structurally wrong rather than merely big.
+        /// `Media.Examples.WaterIF97`'s flatten stage measured 3.2 MB.
+        const CEILING: usize = 64 * 1024 * 1024;
+
+        let mut rows: Vec<(String, usize, usize)> = Vec::new();
+        let mut oversize = Vec::new();
+
+        for name in MODELS.iter().chain(FAILING_MODELS) {
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            let mut total = 0usize;
+            let mut largest = 0usize;
+            for kind in crate::worker::StageKind::COMPILATION {
+                let stage = stages.get(*kind);
+                // Serializing here is the check: a stage whose JSON cannot be
+                // rendered would panic or produce nothing.
+                let bytes = stage.value.as_ref().map_or(0, |v| v.to_string().len());
+                total += bytes;
+                largest = largest.max(bytes);
+                if bytes > CEILING {
+                    oversize.push(format!("{name} / {kind:?}: {bytes} bytes"));
+                }
+            }
+            rows.push(((*name).to_owned(), total, largest));
+        }
+
+        rows.sort_by_key(|(_, total, _)| std::cmp::Reverse(*total));
+        println!("fidelity F8 — stage IR size per model (total, largest stage):");
+        for (name, total, largest) in &rows {
+            println!("  {name:<20} {total:>9} {largest:>9}");
+        }
+
+        assert!(oversize.is_empty(), "stage IR beyond the sanity ceiling:\n  {}", oversize.join("\n  "));
+        assert_eq!(
+            rows.len(),
+            MODELS.len() + FAILING_MODELS.len(),
+            "a model produced no row, so the loop exited early",
+        );
+    }
+
+    /// **F9 — a Rumoca failure is represented faithfully too.**
+    ///
+    /// The plan's scope is "HRW tells the truth about Rumoca **even if Rumoca is
+    /// wrong**", so a failure is as much in scope as a success — and it is where
+    /// every hand-found bug of 2026-07-29–30 clustered: `rank_deficiency`
+    /// computed as 7 when the truth was 1, spans Rumoca supplied and HRW dropped,
+    /// labels dropped by every emitter, a `ToDae` failure reduced to a bare note.
+    ///
+    /// It is also the path a bug-PR demo runs through end to end, which is why
+    /// `docs/fidelity-plan.md` ranks it first among the checks a Rumoca
+    /// maintainer would notice.
+    ///
+    /// What is asserted, for each stage that did not reach `Outcome::Ok`:
+    ///
+    /// - **a note exists** — a failure with nothing to say is unusable
+    /// - **a stage with no value has a note that is a real diagnosis**, since the
+    ///   note is then all there is. This is the `"ToDae"` regression guard.
+    /// - **a stage with a value carries real structure**, not an empty husk
+    /// - **an `error` payload carries its message**, not a paraphrase
+    /// - **every source location resolves** to a real line of the specimen, and
+    ///   `line_text` is really that line
+    ///
+    /// # Two things the first draft got wrong, both worth keeping written down
+    ///
+    /// It demanded a structured payload from *every* abnormal stage. But
+    /// `UndefinedRef`'s six downstream stages say "the pipeline produced no
+    /// result", and Rumoca supplied **nothing** for them — so carrying nothing is
+    /// faithful, not lossy. F9's property is that HRW must not *lose* structure
+    /// Rumoca gave, which is only checkable where there was some.
+    ///
+    /// It also looked for that structure under `"error"` alone. `OverInitRc`'s
+    /// over-determined initialization publishes a full IC plan with a
+    /// `determinacy` verdict and no `error` key at all. A check that knows only
+    /// one shape reports the other as missing.
+    ///
+    /// Both were the check inventing violations — which is the same failure mode
+    /// as HRW inventing a decision, on the instrument rather than the subject.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_rumoca_failure_is_represented_faithfully() {
+        let mut violations = Vec::new();
+        let mut abnormal_stages = 0usize;
+        let mut with_payload = 0usize;
+        let mut locations_checked = 0usize;
+
+        for name in FAILING_MODELS {
+            let source = std::fs::read_to_string(format!(
+                "{}/specimens/{name}.mo",
+                env!("CARGO_MANIFEST_DIR"),
+            ))
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+
+            for kind in crate::worker::StageKind::COMPILATION {
+                let stage = stages.get(*kind);
+                if stage.outcome == crate::worker::Outcome::Ok {
+                    continue;
+                }
+                abnormal_stages += 1;
+                let at = format!("{name} / {kind:?}");
+
+                let Some(note) = stage.note.as_deref() else {
+                    violations.push(format!("{at}: abnormal outcome with no note at all"));
+                    continue;
+                };
+
+                let Some(value) = stage.value.as_ref() else {
+                    // Nothing but the note, so the note has to carry the whole
+                    // diagnosis. `"ToDae"` — a bare variant name — did not, and
+                    // that is the regression this guards.
+                    if note.trim().len() < 12 || !note.contains(' ') {
+                        violations.push(format!(
+                            "{at}: no value, and the note {note:?} is a label rather than \
+                             a diagnosis — there is nothing else for the user to read",
+                        ));
+                    }
+                    continue;
+                };
+
+                // A value must be real structure, not an empty husk that makes the
+                // stage *look* diagnosed.
+                match value.as_object() {
+                    Some(o) if !o.is_empty() => with_payload += 1,
+                    _ => violations.push(format!(
+                        "{at}: note {note:?} with a value carrying no fields — the spans, \
+                         labels and counts Rumoca reported would have nowhere to live",
+                    )),
+                }
+
+                // Where there IS an error payload, it must carry its message
+                // rather than a summary of it.
+                if let Some(err) = stage.error_json()
+                    && err["message"].as_str().unwrap_or_default().is_empty()
+                {
+                    violations.push(format!("{at}: an error payload with no message field"));
+                }
+
+                // Every location anywhere in the value must be a real line of
+                // *this* specimen — not only inside `error`, since a determinacy
+                // verdict or a diagnostic label carries them too.
+                let lines: Vec<&str> = source.lines().collect();
+                let mut stack = vec![value];
+                while let Some(node) = stack.pop() {
+                    match node {
+                        Value::Array(items) => stack.extend(items),
+                        Value::Object(map) => {
+                            let is_location = map.contains_key("line") && map.contains_key("line_text");
+                            if is_location {
+                                locations_checked += 1;
+                                let line = map["line"].as_u64().unwrap_or(0) as usize;
+                                let text = map["line_text"].as_str().unwrap_or_default();
+                                match lines.get(line.wrapping_sub(1)) {
+                                    None => violations.push(format!(
+                                        "{at}: blames line {line}, but the specimen has {} lines",
+                                        lines.len(),
+                                    )),
+                                    Some(actual) if actual.trim_end() != text => {
+                                        violations.push(format!(
+                                            "{at}: line {line} quoted as {text:?}, the specimen \
+                                             has {:?}",
+                                            actual.trim_end(),
+                                        ));
+                                    }
+                                    Some(_) => {}
+                                }
+                            }
+                            stack.extend(map.values());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
+        println!(
+            "fidelity F9: {} failing specimens, {abnormal_stages} abnormal stages, \
+             {with_payload} with a structured payload, {locations_checked} source \
+             locations verified, {} violations",
+            FAILING_MODELS.len(),
+            violations.len(),
+        );
+
+        assert!(
+            violations.is_empty(),
+            "{} failure-representation violations:\n  {}",
+            violations.len(),
+            violations.join("\n  "),
+        );
+        // Floors set just under the measured values (14 / 8 / 6 at 2026-07-31), so a
+        // real drop is loud while ordinary variation is not. Every assertion above
+        // skips what it does not apply to, and a corpus that quietly stopped failing
+        // would otherwise read as a clean bill of health.
+        assert!(abnormal_stages >= 10, "only {abnormal_stages} abnormal stages; F9 barely ran");
+        assert!(
+            with_payload >= 5,
+            "only {with_payload} abnormal stages carried structure; the payload checks \
+             had almost nothing to inspect",
+        );
+        assert!(
+            locations_checked >= 5,
+            "only {locations_checked} source locations in the failure payloads — either \
+             the specimens stopped failing the way they used to, or spans have been \
+             dropped again, which is the ideas #45 regression",
         );
     }
 

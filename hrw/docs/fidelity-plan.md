@@ -226,6 +226,52 @@ emitter, a `ToDae` failure reduced to a bare informational note. **Every one was
 failing to tell the truth about a Rumoca failure** — exactly the case Doug's clause is
 about, and the one the first draft omitted.
 
+## Status — F1-F9 all built, 2026-07-31
+
+`src/fidelity.rs` (F2-F9) and `worker.rs` (F1). Coverage on the current corpus:
+
+| | |
+|---|---|
+| F2-F7 | 10 models, 30 incidence-bearing reports, 100 stage IRs walked, **0 violations** |
+| F8 | 16 models serialized; largest total 1.88 MB (`Drivetrain`), largest single stage 536 KB |
+| F9 | 6 failing specimens, 14 abnormal stages, 8 with structure, 6 source locations verified |
+
+**F7 found the second real bug**, and a large one: JSON object keys containing `.`
+were written bare into node paths, so `parse_path` split them and landed on nothing.
+`enum_literal_ordinals` is keyed by qualified names like `StateSelect.never`, so this hit
+**every model in the corpus — 6,169 broken paths**. Every `hrw://` link and every
+`focus.json` naming such a node pointed Claude at a subtree that does not exist. Fixed by
+quoting keys that carry the grammar's own separators (`a["b.c"]`), additively: a key that
+never needed escaping still renders byte-identically, so existing links keep working.
+
+### What the false alarms taught, which is most of the value
+
+Of 12 violations across F6-F9's first runs, **9 were the check's fault**. Recording the
+pattern because it is the same failure mode as HRW inventing a decision, one level up:
+
+- **F6** re-listed the DAE's variable partitions by hand, omitted the two discrete ones,
+  and reported `BouncingBall`'s `c` as a phantom. Now keyed by the `kind` the index itself
+  recorded, so an unrecognised partition says so instead of masquerading as a violation.
+- **F9** demanded structure from stages where Rumoca supplied none (`UndefinedRef`'s six
+  downstream "no result" stages). Carrying nothing is *faithful* there — the property is
+  that HRW must not **lose** structure, which is only checkable where there was some.
+- **F9** looked for that structure under `"error"` alone, and `OverInitRc` publishes a
+  full IC plan with a `determinacy` verdict and no `error` key.
+- **F1's** Tarjan accessor read `sccs_so_far`, which lags by one component.
+
+The recurring shape: **a check that knows one form of the truth reports every other form
+as a defect.** Cheap to write, expensive to trust. Hence the discipline of reading the
+data before believing an assertion message.
+
+### The "no result" bucket, triaged
+
+`not_reached_stage` has three branches, and they are **not** equivalent. `Failed { phase }`
+and `NeedsInner` produce `Stage::info` — neutral, correct, since a stage that never ran is
+not a failed stage. `None` produces `Stage::err`, which renders six tabs red for one
+resolve failure. That is not a *fidelity* violation (Rumoca really did supply nothing, and
+HRW says so) but it is a **legibility** one, and it is Doug's call because it changes what
+he sees. Left as-is, recorded here.
+
 ## The sample
 
 **Not all 1,656.** A stratified sample of **40–60**, chosen to cover:
@@ -257,7 +303,7 @@ than 500 from one.
    report on models we know, that is the bug of the day and the MSL work can wait.
 3. **The sample list**, checked in, with why each model was chosen.
 4. ~~**F2-F5 as invariants.**~~ **Done 2026-07-31** on the F1 corpus; the harness takes any list of model names, so pointing it at the sample is a one-line change. **F6-F7** remain.
-5. **F8 recorded**, with a baseline that must not regress.
+5. ~~**F8 recorded.**~~ **Done 2026-07-31** — printed per model, with a loose ceiling that catches a runaway rather than a tight bound that would fail on a legitimately large model.
 
 Step 2 is deliberately first and deliberately small: it is the cheapest possible test of
 the plan's central hypothesis, and if it passes on 18 models the same harness runs on 50
