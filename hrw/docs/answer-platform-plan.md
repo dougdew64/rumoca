@@ -102,7 +102,18 @@ half of it means re-deriving it worse in three weeks.
 
 ## Next batch — complete the paradigm shift  *(ordered)*
 
-### B1. Finish the answer channel (#42's remainder)  *(was deferred; promoted)*
+**B1–B3 delivered 2026-07-30**, and all five fixture tours walked clean by Doug. The
+answer channel now reaches every noun the capture can describe, spans three platforms,
+and the teaching database is mechanically checked.
+
+What that cost in bugs is the part worth remembering: **fourteen defects**, of which Doug
+found nine by walking tours and the tests and clippy found five. Not one was found by
+Claude reading its own code. Several were in the artifacts *describing* HRW rather than in
+HRW — a tour asserting a highlight that had never been built, a diagnostic file describing
+the state before an action, two tour expectations that nothing could contradict.
+
+
+### B1. Finish the answer channel (#42's remainder)  ✅ **DONE 2026-07-30**
 
 Claude deferred these as "not needed yet", which was yield-thinking. Under the paradigm
 framing they are **load-bearing**:
@@ -123,7 +134,7 @@ framing they are **load-bearing**:
 - **`central_panel_ui` (664 lines)** — its four near-parallel sub-tab bars are exactly what
   frame addressing reworks. Same reasoning.
 
-### B2. #47 — tours that span platforms  *(the structural completion)*
+### B2. #47 — tours that span platforms  ✅ **DONE 2026-07-30**
 
 Without this the paradigm is "HRW plus chat" rather than three platforms. Per-stop medium, a
 gitignored path for notebooks, and Claude evaluating before delivering while **Doug**
@@ -133,7 +144,7 @@ evaluates to learn.
 `CapacitorLoop` tour ends by admitting HRW cannot show a matrix with full *structural* rank
 that is numerically singular. Mathematica can, on a 3x3 Doug can perturb himself.
 
-### B3. #41 stages B-C — make the database trustworthy
+### B3. #41 stages B-C — make the database trustworthy  ✅ **DONE 2026-07-30**
 
 - **B: the citation checker.** Mechanical, no dependencies, one known broken citation.
 - **C: provenance tags**, upgrading lazily through use. Without them the database is Claude's
