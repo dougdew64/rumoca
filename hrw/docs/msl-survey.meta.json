@@ -9,6 +9,6 @@
   "largest_reduction_attempted": 799,
   "reductions_skipped": 71,
   "seconds": null,
-  "generated_unix": 1785528144,
+  "generated_unix": 1785529736,
   "outcomes": {"failed:Flatten": 182, "failed:Instantiate": 20, "failed:ToDae": 170, "failed:Typecheck": 17, "success": 2237}
 }
