@@ -2514,8 +2514,32 @@ compiles a specimen fresh and compares against the memoized result. That checks 
 the property memoization could hide, and it is the kind of silent coverage loss that
 `project-tours-multiply-testing` warns about (a detector that quietly stops detecting).
 
+### Do NOT reach for this for the fidelity sample (2026-07-31)
+
+Claude recommended #48 after F1 took 148s, then withdrew it the same hour. The 148s came
+from *structure*, not from missing memoization: three F1 checks each looped over the same
+ten specimens, so ten models cost thirty compiles. Memoization rescues that shape — but
+it is a shape not worth choosing.
+
+For the `docs/fidelity-plan.md` sample, memoization and a **harness** are substitutes,
+and the harness wins on the axis that matters here:
+
+| | 9 checks x 50 models | memory held |
+|---|---|---|
+| Separate tests | 450 compiles | one model |
+| Separate tests + #48 | 50 compiles | **all 50 at once** |
+| One harness (compile once, apply every invariant, drop) | 50 compiles | one model |
+
+This item already notes the machine has limited memory, and the memoized payload is the
+*entire* compiled state — `Media.Examples.WaterIF97`'s flatten stage alone was 3.2 MB.
+Trading memory for time at 40-60 MSL models runs the trade backwards.
+
+**So #48 stays scoped to the existing 12-specimen suite**, where the payload is bounded
+and the 289s full run is the pre-commit gate. It is test-speed work, not fidelity work.
+
 **Relates to:** the `slow-tests` gate in `Cargo.toml`, `README.md`'s two test commands,
-and `shared_worker()` in `worker.rs`.
+and `shared_worker()` in `worker.rs` — which already shares the *MSL load* via a
+`OnceLock`, but recompiles the specimen on every call.
 
 ---
 
