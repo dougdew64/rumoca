@@ -28,6 +28,29 @@
 //!
 //! # Reduction is capped, models are not excluded
 //!
+//! # Bounded by process lifetime, and why that is not paranoia
+//!
+//! On 2026-07-31 an unbounded run of 53 models **made Doug's machine
+//! unusable** and forced a hard power-cycle. The runner rebuilt its session
+//! every 200 models, so on a 53-model corpus **no rebuild ever fired**, and the
+//! session accumulated across the largest systems in the MSL — including a
+//! 10,175-equation model and one with 110 functions whose inlined bodies are
+//! enormous.
+//!
+//! **A session rebuild cannot be the guarantee.** It releases what the session
+//! holds; it cannot release what the allocator has fragmented or what any other
+//! cache retains. **Only process exit does**, because the OS reclaims
+//! everything unconditionally.
+//!
+//! So `--max-models` (default **25**) processes a chunk and exits; `--resume`
+//! skips rows already in the report and the sink appends. A driver loop runs
+//! chunks until nothing is left, and peak memory is bounded by one chunk rather
+//! than by the whole corpus. `--rebuild-every` (default 10) reduces growth
+//! *within* a chunk, but it is the belt, not the braces.
+//!
+//! **Never run this unbounded.** The cost of being wrong is not a slow run, it
+//! is someone's machine.
+//!
 //! `--max-reduce-eq` mirrors the survey, for the same reason: reduction cost
 //! explodes on large systems. Above the cap the `IndexReduction` subjects are
 //! absent and their checks skip — so a 10,175-equation model still contributes
@@ -77,6 +100,15 @@ fn main() {
         .unwrap_or_else(|| format!("{}/docs/fidelity-report.csv", env!("CARGO_MANIFEST_DIR")));
     let max_reduce_eq: usize =
         arg(&args, "--max-reduce-eq").and_then(|v| v.parse().ok()).unwrap_or(800);
+    let resume = args.iter().any(|a| a == "--resume");
+    // **Process lifetime is the only hard memory bound.** A session rebuild
+    // releases what the session holds; it cannot release what the allocator has
+    // fragmented or what any other cache retains. Exiting does, because the OS
+    // reclaims everything. See the note on `--max-models` in the module docs.
+    let max_models: usize =
+        arg(&args, "--max-models").and_then(|v| v.parse().ok()).unwrap_or(25);
+    let rebuild_every: usize =
+        arg(&args, "--rebuild-every").and_then(|v| v.parse().ok()).unwrap_or(10);
 
     let mut rows = corpus();
     eprintln!("survey corpus: {} models", rows.len());
@@ -103,13 +135,45 @@ fn main() {
         eprintln!("--slice {i}/{n}: {} models", rows.len());
     }
 
+    // Rows already reported, when resuming a chunked run.
+    let done: std::collections::BTreeSet<String> = if resume {
+        std::fs::read_to_string(&out)
+            .map(|t| {
+                hrw::report::parse(&t)
+                    .rows
+                    .into_iter()
+                    .filter(|r| !r.name.is_empty() && !r.outcome.is_empty())
+                    .map(|r| r.name)
+                    .collect()
+            })
+            .unwrap_or_default()
+    } else {
+        std::collections::BTreeSet::new()
+    };
+    if !done.is_empty() {
+        rows.retain(|r| !done.contains(&r.name));
+        eprintln!("--resume: {} already done, {} remaining", done.len(), rows.len());
+    }
+    let total_remaining = rows.len();
+    if rows.len() > max_models {
+        rows.truncate(max_models);
+        eprintln!(
+            "--max-models {max_models}: doing {} of {total_remaining}, then exiting so the OS              reclaims. Re-run with --resume for the next chunk.",
+            rows.len(),
+        );
+    }
+    if rows.is_empty() {
+        eprintln!("[done] nothing left to do");
+        return;
+    }
+
     eprintln!("loading MSL…");
     let t0 = Instant::now();
     let mut w = WorkerState::new();
     w.load_libraries(msl_roots()).expect("load MSL");
     eprintln!("loaded in {:.1}s", t0.elapsed().as_secs_f64());
 
-    let mut sink = open_sink(&out).expect("open the report");
+    let mut sink = open_sink(&out, done.is_empty()).expect("open the report");
     let mut all: Vec<Violation> = Vec::new();
     let mut checked = 0usize;
     let mut skipped_reduction = 0usize;
@@ -119,7 +183,7 @@ fn main() {
     let t_run = Instant::now();
 
     for (i, row) in rows.iter().enumerate() {
-        if i > 0 && i % 200 == 0 {
+        if i > 0 && i % rebuild_every == 0 {
             w = WorkerState::new();
             w.load_libraries(msl_roots()).expect("reload MSL");
             eprintln!("  [rebuild] fresh session after {i} models");
@@ -290,12 +354,14 @@ fn json_bytes(v: &serde_json::Value) -> usize {
     serde_json::to_writer(&mut c, v).map_or(0, |()| c.0)
 }
 
-fn open_sink(out: &str) -> std::io::Result<BufWriter<File>> {
+fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
     let mut f = BufWriter::new(
-        OpenOptions::new().create(true).write(true).truncate(true).open(out)?,
+        OpenOptions::new().create(true).write(true).truncate(fresh).append(!fresh).open(out)?,
     );
-    writeln!(f, "name,kind,outcome,message,checks_failed,n_violations")?;
-    f.flush()?;
+    if fresh {
+        writeln!(f, "name,kind,outcome,message,checks_failed,n_violations")?;
+        f.flush()?;
+    }
     Ok(f)
 }
 
