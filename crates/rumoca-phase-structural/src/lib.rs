@@ -411,7 +411,15 @@ fn tear_loop(
 
 /// Human label for a continuous equation: its `f_x` slot plus origin (when the
 /// origin carries useful context).
-fn equation_label(dae: &dae::Dae, equation: &EquationRef) -> String {
+/// The canonical display label for an equation in a [`StructuralReport`] —
+/// `f_x[3] (resistor.v)` when the equation records an origin, else `f_x[3]`.
+///
+/// **Public because the report identifies equations by this string.** Anything
+/// correlating a report's `matching` or `blocks` back to an incidence row has to
+/// reproduce it exactly, and a consumer that reimplements it drifts silently the
+/// moment the format changes. Exposing the one definition is cheaper than every
+/// consumer keeping a copy in sync.
+pub fn equation_label(dae: &dae::Dae, equation: &EquationRef) -> String {
     match dae.continuous.equations.get(equation.0) {
         Some(eq) if !eq.origin.trim().is_empty() => {
             format!("{equation} ({})", eq.origin.trim())
