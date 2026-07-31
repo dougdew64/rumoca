@@ -181,6 +181,39 @@ pub fn discontinuity_segments(values: &[f64]) -> Vec<std::ops::Range<usize>> {
     segments
 }
 
+/// What actually became of a stage — **three outcomes, not two.**
+///
+/// This replaces a `note_is_error: bool` that three different constructors set
+/// to `true` for three different reasons: "produced nothing", "failed with a
+/// structured diagnosis", and **"reported a problem but produced usable IR the
+/// pipeline went on to consume"**. That third one is not a failure at all.
+/// `Drivetrain` is *structurally singular* on purpose — it is a high-index
+/// model, and index reduction fixes it two stages later — so anything counting
+/// errors on the old boolean calls a healthy compile a failure.
+///
+/// That miscount is not hypothetical: it produced a false finding on
+/// 2026-07-29 (`docs/ideas.md` #51), which is why `docs/fidelity-plan.md`
+/// sequences this split *before* any harness reads outcomes at scale.
+///
+/// The UI's red/neutral colouring is unchanged — see [`Stage::note_is_error`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Outcome {
+    /// The stage produced its IR and Rumoca reported nothing about it. Also the
+    /// `Default`, which is the "not yet computed" state.
+    #[default]
+    Ok,
+    /// The stage produced **usable IR** and Rumoca reported something alongside
+    /// it — a structurally singular system, typecheck diagnostics, a recovered
+    /// parse tree, surplus initial conditions. The pipeline continued.
+    ///
+    /// Rendered red like a failure, because the user should see it. Counted
+    /// separately from one, because it is not one.
+    Flagged,
+    /// The stage produced no IR of its own. `value` is either `None` or holds
+    /// *only* the error payload under `"error"`. The pipeline stopped here.
+    Failed,
+}
+
 /// One pipeline stage's outcome for the selected model: the serialized IR node
 /// (if the stage produced one) plus an optional note (error or status).
 ///
@@ -189,45 +222,50 @@ pub fn discontinuity_segments(values: &[f64]) -> Vec<std::ops::Range<usize>> {
 /// - `value`: the JSON IR tree (if the stage produced one), displayed in the
 ///   generic tree inspector
 /// - `note`: an optional status/error message shown above the tree
-/// - `note_is_error`: controls colour (red = error, neutral = info)
+/// - `outcome`: [`Outcome`] — drives colour, and lets a census tell a *flagged*
+///   stage apart from a *failed* one
 ///
 /// `#[derive(Clone, Default)]` — `Clone` because the progressive-streaming
 /// pattern sends clones mid-compile; `Default` gives "not yet computed"
-/// (all `None`/`false`).
+/// (`None`/`None`/`Ok`).
 #[derive(Clone, Default)]
 pub struct Stage {
     pub value: Option<serde_json::Value>,
     pub note: Option<String>,
-    /// True when `note` is an error (rendered red); false = an informational
-    /// status like "succeeded" or "not reached" (rendered neutral).
-    pub note_is_error: bool,
+    /// Which of the three outcomes this stage reached. Prefer the constructors
+    /// below to setting this by hand.
+    pub outcome: Outcome,
 }
 
-/// Constructors for the four possible stage outcomes. These are `pub(crate)` —
-/// only the worker builds stages; the UI consumes them read-only.
+/// Constructors for the possible stage outcomes. `pub(crate)` — only the worker
+/// builds stages in production; the UI consumes them read-only, and tests build
+/// them through these rather than by struct literal so a new field cannot be
+/// forgotten at one site.
 impl Stage {
     /// Stage succeeded and produced an IR tree to display.
-    fn ok(value: serde_json::Value) -> Self {
-        Stage { value: Some(value), note: None, note_is_error: false }
+    pub(crate) fn ok(value: serde_json::Value) -> Self {
+        Stage { value: Some(value), note: None, outcome: Outcome::Ok }
     }
     /// Stage failed — no IR, just an error message (rendered red).
     /// `impl Into<String>` accepts both `String` and `&str` — a Rust ergonomic
     /// pattern so callers can pass either without explicit conversion.
-    fn err(note: impl Into<String>) -> Self {
-        Stage { value: None, note: Some(note.into()), note_is_error: true }
+    pub(crate) fn err(note: impl Into<String>) -> Self {
+        Stage { value: None, note: Some(note.into()), outcome: Outcome::Failed }
     }
     /// A non-error status note for a stage with no IR of its own to show.
-    fn info(note: impl Into<String>) -> Self {
-        Stage { value: None, note: Some(note.into()), note_is_error: false }
+    pub(crate) fn info(note: impl Into<String>) -> Self {
+        Stage { value: None, note: Some(note.into()), outcome: Outcome::Ok }
     }
-    /// A best-effort IR plus an error note (e.g. resolve recovered a partial tree).
-    fn recovered(value: serde_json::Value, note: impl Into<String>) -> Self {
-        Stage { value: Some(value), note: Some(note.into()), note_is_error: true }
+    /// A best-effort IR plus an error note — a recovered parse tree, a singular
+    /// structural analysis, surplus initial conditions. [`Outcome::Flagged`]:
+    /// **the value is real and downstream stages consume it.**
+    pub(crate) fn recovered(value: serde_json::Value, note: impl Into<String>) -> Self {
+        Stage { value: Some(value), note: Some(note.into()), outcome: Outcome::Flagged }
     }
     /// A successful IR plus an informational (non-error) note — e.g. the
     /// index-reduction stage's "already index-1" / "reduced from singular".
-    fn ok_with_note(value: serde_json::Value, note: impl Into<String>) -> Self {
-        Stage { value: Some(value), note: Some(note.into()), note_is_error: false }
+    pub(crate) fn ok_with_note(value: serde_json::Value, note: impl Into<String>) -> Self {
+        Stage { value: Some(value), note: Some(note.into()), outcome: Outcome::Ok }
     }
 
     /// Serialize a value to JSON and wrap in a successful Stage, or return an
@@ -242,9 +280,38 @@ impl Stage {
     /// Stage failed with structured error data. The error is embedded in the
     /// value JSON under `"error"` so the UI can render a rich summary, and the
     /// note carries a short message for the stage tab label.
-    fn err_with_details(error: serde_json::Value, note: impl Into<String>) -> Self {
-        let json = serde_json::json!({ "error": error });
-        Stage::recovered(json, note)
+    ///
+    /// [`Outcome::Failed`], **not** `Flagged: the `value` here is the error
+    /// payload rather than IR, so nothing downstream can consume it. It shares
+    /// a shape with `recovered` and not a meaning — which is precisely the
+    /// conflation this enum exists to end.
+    pub(crate) fn err_with_details(error: serde_json::Value, note: impl Into<String>) -> Self {
+        Stage {
+            value: Some(serde_json::json!({ "error": error })),
+            note: Some(note.into()),
+            outcome: Outcome::Failed,
+        }
+    }
+
+    /// Should the note render red? True for both abnormal outcomes.
+    ///
+    /// **Preserves the old field's behaviour exactly**, so this split changed no
+    /// pixel and no control flow: every reader of the former `note_is_error`
+    /// field now calls this and sees what it saw before. The three-way truth is
+    /// available to whoever wants it via [`Stage::outcome`] — which, for now, is
+    /// the fidelity harness rather than the UI.
+    pub fn note_is_error(&self) -> bool {
+        self.outcome != Outcome::Ok
+    }
+
+    /// The structured error payload Rumoca supplied, if this stage carries one.
+    ///
+    /// Both `Failed` (via `err_with_details`) and `Flagged` (via `recovered`)
+    /// may embed one under `"error"`. **F9 asks whether it is there at all**: a
+    /// stage that failed with nothing but a formatted string has lost the
+    /// spans, labels and counts Rumoca actually reported.
+    pub fn error_json(&self) -> Option<&serde_json::Value> {
+        self.value.as_ref()?.get("error")
     }
 }
 
@@ -1309,7 +1376,7 @@ impl WorkerState {
         // trusting it — see `last_resolve_failed`. Set here rather than inside the match
         // above so a recovered-from-cache resolve still counts as failed: the session's
         // resolved state is poisoned either way.
-        self.last_resolve_failed = resolve.note_is_error;
+        self.last_resolve_failed = resolve.note_is_error();
 
         // =====================================================================
         // Stages 5-10: DAE pipeline (Flatten → Solve lowering)
@@ -2982,10 +3049,10 @@ mod tests {
             panic!("expected Compiled");
         };
         assert!(stages.flatten.value.is_some(), "CapacitorLoop should still flatten");
-        assert!(stages.structural.note_is_error, "expected singular Structural");
+        assert!(stages.structural.note_is_error(), "expected singular Structural");
         assert!(stages.structural.value.as_ref().unwrap().get("error").is_some(),
             "singular Structural should carry error details");
-        assert!(stages.index_reduction.note_is_error,
+        assert!(stages.index_reduction.note_is_error(),
             "index reduction should NOT rescue a capacitor-across-source loop");
         assert!(stages.index_reduction.value.as_ref().unwrap().get("error").is_some(),
             "irreducible index reduction should carry error details");
@@ -3016,10 +3083,15 @@ mod tests {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("OverInitRc") else {
             panic!("expected Compiled");
         };
-        let v = stages.initialization.value.expect("IC plan");
+        let init = &stages.initialization;
+        let v = init.value.as_ref().expect("IC plan");
         assert_eq!(v["determinacy"]["verdict"], serde_json::json!("over-determined"));
         assert!(v["determinacy"]["surplus_over_states"].as_i64().unwrap_or(0) >= 1);
-        assert!(stages.initialization.note_is_error, "over-determined init should be flagged red");
+        // `Flagged`, not `Failed` — and the distinction is the point of the enum.
+        // The IC plan above is real; Rumoca simply also reported that it is
+        // over-determined. Asserting `note_is_error()` here would pass equally for
+        // a stage that produced nothing at all.
+        assert_eq!(init.outcome, Outcome::Flagged, "over-determined init is flagged, not failed");
     }
 
 
@@ -3198,15 +3270,22 @@ mod tests {
     }
 
     /// For the high-index Drivetrain, the raw `structural` stage is singular
-    /// (no IR), but the `index_reduction` stage recovers a solvable report — the
-    /// before/after the two tabs show side by side.
+    /// **and still produces IR**, and `index_reduction` then makes it solvable —
+    /// the before/after the two tabs show side by side.
+    ///
+    /// The comment here used to say "singular (no IR)" while the line below
+    /// asserted the IR was there. That contradiction is the one
+    /// [`Outcome::Flagged`] exists to end.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
     fn drivetrain_index_reduction_stage_recovers_singular() {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
             panic!("expected Compiled");
         };
-        assert!(stages.structural.note_is_error, "raw Structural should be singular for Drivetrain");
+        assert_eq!(
+            stages.structural.outcome, Outcome::Flagged,
+            "raw Structural is singular for Drivetrain — flagged, not failed",
+        );
         assert!(stages.structural.value.as_ref().unwrap().get("error").is_some(),
             "singular Structural should carry error details");
         let v = stages.index_reduction.value.unwrap_or_else(|| {
@@ -3218,6 +3297,76 @@ mod tests {
         let steps = red["steps"].as_array().expect("steps array");
         assert!(!steps.is_empty(), "should have logged funnel steps");
         assert!(red["n_states_before"].as_u64().unwrap() > 0);
+    }
+
+    /// **Every constructor maps to exactly one outcome, and `note_is_error()`
+    /// still says what the old boolean field said.**
+    ///
+    /// The second half is what makes this split safe to land: it changed no
+    /// colour and no control flow, because every former reader of the field now
+    /// calls the method and sees the identical answer. Only code that asks for
+    /// [`Stage::outcome`] can tell `Flagged` from `Failed`.
+    #[test]
+    fn each_constructor_reaches_one_outcome_and_colour_is_unchanged() {
+        let v = || serde_json::json!({ "ir": true });
+        let cases = [
+            (Stage::ok(v()), Outcome::Ok, false),
+            (Stage::ok_with_note(v(), "already index-1"), Outcome::Ok, false),
+            (Stage::info("not reached"), Outcome::Ok, false),
+            (Stage::recovered(v(), "singular"), Outcome::Flagged, true),
+            (Stage::err("boom"), Outcome::Failed, true),
+            (Stage::err_with_details(serde_json::json!({"kind": "singular"}), "boom"),
+             Outcome::Failed, true),
+        ];
+        for (stage, want, red) in cases {
+            assert_eq!(stage.outcome, want, "note: {:?}", stage.note);
+            assert_eq!(
+                stage.note_is_error(), red,
+                "colour must match the pre-split boolean for {want:?}",
+            );
+        }
+
+        // `recovered` keeps the caller's IR; `err_with_details` replaces it with
+        // the error payload. Same JSON *shape*, opposite meaning — the conflation
+        // that motivated the enum.
+        assert_eq!(Stage::recovered(v(), "n").value.unwrap()["ir"], serde_json::json!(true));
+        assert!(Stage::err_with_details(v(), "n").error_json().is_some());
+        assert!(Stage::ok(v()).error_json().is_none(), "a clean stage carries no error payload");
+    }
+
+    /// **The miscount, pinned.** `Drivetrain` compiles all the way through, yet
+    /// two of its stages set the old `note_is_error` flag — so a census counting
+    /// that boolean would report a healthy high-index model as broken.
+    ///
+    /// This is not hypothetical: it produced a false finding on 2026-07-29
+    /// (`docs/ideas.md` #51), which is why `docs/fidelity-plan.md` sequences the
+    /// three-way split ahead of any harness that counts outcomes at scale.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_healthy_high_index_compile_has_no_failed_stage() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
+            panic!("expected Compiled");
+        };
+
+        let failed: Vec<_> = StageKind::COMPILATION
+            .iter()
+            .filter(|&&k| stages.get(k).outcome == Outcome::Failed)
+            .map(|&k| (k, stages.get(k).note.clone()))
+            .collect();
+        assert!(failed.is_empty(), "Drivetrain should reach the end of the pipeline; failed: {failed:?}");
+
+        let flagged: Vec<_> = StageKind::COMPILATION
+            .iter()
+            .filter(|&&k| stages.get(k).outcome == Outcome::Flagged)
+            .collect();
+        assert!(
+            !flagged.is_empty(),
+            "Drivetrain is high-index — at least Structural must be flagged, or this test \
+             has stopped guarding anything",
+        );
+
+        // And the pipeline really did finish, rather than merely not failing.
+        assert!(stages.solve_lowering.value.is_some(), "solve lowering should have produced a model");
     }
 
     /// A singular Structural stage carries structured error data (equation
@@ -3388,7 +3537,7 @@ mod tests {
         };
         assert_eq!(model.as_deref(), Some("ScratchProbe"));
         assert!(
-            stages.solve_lowering.value.is_some() && !stages.solve_lowering.note_is_error,
+            stages.solve_lowering.value.is_some() && !stages.solve_lowering.note_is_error(),
             "a scratch probe reaches the end of the pipeline like any specimen",
         );
         // And its IR is real: one state, from `tau * der(x) = -x`.
@@ -3575,7 +3724,7 @@ mod tests {
             match w.compile(&path, &|_: FromWorker| {}) {
                 FromWorker::Compiled { stages, .. } => {
                     let st = stages.get(StageKind::Resolve);
-                    (st.note_is_error, st.note.clone().unwrap_or_default())
+                    (st.note_is_error(), st.note.clone().unwrap_or_default())
                 }
                 _ => panic!("expected Compiled for {name}"),
             }
@@ -3621,7 +3770,7 @@ mod tests {
         };
 
         let flatten = &stages.flatten;
-        assert!(flatten.note_is_error, "a failed DAE construction is an error, not an info note");
+        assert!(flatten.note_is_error(), "a failed DAE construction is an error, not an info note");
         let err = flatten
             .value
             .as_ref()
@@ -4244,7 +4393,7 @@ mod tests {
         let FromWorker::Compiled { stages, .. } = result else {
             panic!("expected Compiled");
         };
-        assert!(stages.parse.note_is_error, "parse stage should flag an error for a missing file");
+        assert!(stages.parse.note_is_error(), "parse stage should flag an error for a missing file");
         assert!(
             stages.parse.note.as_deref().unwrap_or("").contains("read error"),
             "parse note should mention a read error, got: {:?}",
@@ -4270,7 +4419,7 @@ mod tests {
             panic!("expected Compiled");
         };
         assert!(
-            stages.parse.note_is_error,
+            stages.parse.note_is_error(),
             "parse stage should flag an error for invalid syntax"
         );
         assert!(
@@ -4297,7 +4446,7 @@ mod tests {
     fn extract_class_missing_name_reports_error() {
         let empty_tree = rumoca_ir_ast::ClassTree::default();
         let stage = extract_class(&empty_tree, "NonExistent.Model.Name");
-        assert!(stage.note_is_error, "extract_class should flag an error for a missing name");
+        assert!(stage.note_is_error(), "extract_class should flag an error for a missing name");
         assert!(stage.value.is_none(), "extract_class should produce no value for a missing name");
         assert!(
             stage.note.as_deref().unwrap_or("").contains("not found"),

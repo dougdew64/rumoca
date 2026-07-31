@@ -1517,7 +1517,7 @@ impl App {
     /// The furthest-along stage that produced clean IR (value present, no error
     /// note) — where the tabs should land after a compile. Falls back to Parse.
     fn last_successful_stage(&self) -> StageKind {
-        let ok = |s: &Stage| s.value.is_some() && !s.note_is_error;
+        let ok = |s: &Stage| s.value.is_some() && !s.note_is_error();
         if ok(&self.stages.solve_lowering) {
             StageKind::SolveLowering
         } else if ok(&self.stages.events) {
@@ -1600,7 +1600,7 @@ impl App {
         // `COMPILATION`, not `ALL`: `ALL` ends with `Simulation`, which is a tab rather
         // than a compilation stage, and `StageBundle::get()` panics on it.
         let first =
-            StageKind::COMPILATION.iter().copied().find(|&k| self.stages.get(k).note_is_error)?;
+            StageKind::COMPILATION.iter().copied().find(|&k| self.stages.get(k).note_is_error())?;
         let stage = self.stages.get(first);
         let after = StageKind::COMPILATION
             .iter()
@@ -1788,7 +1788,7 @@ impl App {
         let model = self.model.as_deref().unwrap_or("<unnamed>");
         for kind in StageKind::COMPILATION {
             let stage = self.stages.get(*kind);
-            if stage.note_is_error {
+            if stage.note_is_error() {
                 return format!("{model}: FAILED at {}", kind.name());
             }
         }
@@ -3384,14 +3384,14 @@ impl App {
                 // Stages with structured error data show their own summary
                 // below; Structural/IndexReduction with singular/index-1
                 // notes show a status banner. Skip the generic note for both.
-                let has_error_summary = stage.note_is_error
+                let has_error_summary = stage.note_is_error()
                     && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
                 let has_custom_banner = matches!(
                     self.stage, StageKind::Structural | StageKind::IndexReduction
                 ) && stage.note.as_deref().map_or(false, |n| n.contains("singular") || n.contains("index-1"));
                 if let Some(note) = &stage.note {
                     if !has_custom_banner && !has_error_summary {
-                        let color = if stage.note_is_error {
+                        let color = if stage.note_is_error() {
                             ui.visuals().error_fg_color
                         } else {
                             ui.visuals().weak_text_color()
@@ -3749,7 +3749,7 @@ impl App {
                 // pattern as `FrameIntent`.
                 let mut bad_jump: Option<String> = None;
                 let stage = self.current_stage();
-                let has_error_data = stage.note_is_error
+                let has_error_data = stage.note_is_error()
                     && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
                 if has_error_data {
                     let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
@@ -6355,7 +6355,7 @@ fn tab_label(
     err_color: egui::Color32,
 ) -> egui::RichText {
     let text = egui::RichText::new(label);
-    if stage.note_is_error {
+    if stage.note_is_error() {
         text.color(err_color)
     } else if stage.value.is_some() {
         text.color(ok_color)
@@ -6951,16 +6951,12 @@ mod tests {
         use crate::equation_sheet::{ClassifiedVariable, EquationSheet};
 
         let mut stages = StageBundle::default();
-        stages.resolve = Stage {
-            value: Some(serde_json::json!({
-                "components": {
-                    "src": { "type_def_id": 6005 },
-                    "plain": { "type_def_id": 4047 },
-                }
-            })),
-            note: None,
-            note_is_error: false,
-        };
+        stages.resolve = Stage::ok(serde_json::json!({
+            "components": {
+                "src": { "type_def_id": 6005 },
+                "plain": { "type_def_id": 4047 },
+            }
+        }));
         let mut def_index = BTreeMap::new();
         def_index.insert(6005u64, DefInfo {
             name: "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
@@ -7134,7 +7130,7 @@ mod tests {
     }
 
     fn make_app_with_stages(ok_through: StageKind) -> App {
-        let ok_stage = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+        let ok_stage = Stage::ok(serde_json::json!({}));
         let empty = Stage::default();
         let stages_in_order = [
             StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
@@ -7178,7 +7174,7 @@ mod tests {
     #[test]
     fn last_successful_stage_skips_errored() {
         let mut app = make_app_with_stages(StageKind::Structural);
-        app.stages.structural = Stage { value: Some(serde_json::json!({})), note: Some("singular".into()), note_is_error: true };
+        app.stages.structural = Stage::recovered(serde_json::json!({}), "singular");
         assert_eq!(app.last_successful_stage(), StageKind::Flatten);
     }
 
@@ -7344,7 +7340,7 @@ mod tests {
         app.selected = Some(path.clone());
         let stages = {
             let mut b = StageBundle::default();
-            b.parse = Stage { value: Some(serde_json::json!({"parsed": true})), note: None, note_is_error: false };
+            b.parse = Stage::ok(serde_json::json!({"parsed": true}));
             b
         };
         tx.send(FromWorker::CompileProgress { path, stages }).unwrap();
@@ -7358,7 +7354,7 @@ mod tests {
         app.selected = Some(PathBuf::from("/test/current.mo"));
         let stages = {
             let mut b = StageBundle::default();
-            b.parse = Stage { value: Some(serde_json::json!({"parsed": true})), note: None, note_is_error: false };
+            b.parse = Stage::ok(serde_json::json!({"parsed": true}));
             b
         };
         tx.send(FromWorker::CompileProgress { path: PathBuf::from("/test/stale.mo"), stages }).unwrap();
@@ -7379,7 +7375,7 @@ mod tests {
 
         let stages = {
             let mut b = StageBundle::default();
-            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.parse = Stage::ok(serde_json::json!({}));
             b
         };
         tx.send(FromWorker::Compiled {
@@ -7440,8 +7436,8 @@ mod tests {
 
         let stages = {
             let mut b = StageBundle::default();
-            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
-            b.resolve = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.parse = Stage::ok(serde_json::json!({}));
+            b.resolve = Stage::ok(serde_json::json!({}));
             b
         };
         tx.send(FromWorker::Compiled {
@@ -7474,8 +7470,8 @@ mod tests {
 
         let stages = {
             let mut b = StageBundle::default();
-            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
-            b.resolve = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.parse = Stage::ok(serde_json::json!({}));
+            b.resolve = Stage::ok(serde_json::json!({}));
             b
         };
         tx.send(FromWorker::Compiled {
@@ -7506,8 +7502,8 @@ mod tests {
 
         let stages = {
             let mut b = StageBundle::default();
-            b.parse = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
-            b.resolve = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
+            b.parse = Stage::ok(serde_json::json!({}));
+            b.resolve = Stage::ok(serde_json::json!({}));
             b
         };
         tx.send(FromWorker::Compiled {
@@ -7811,11 +7807,7 @@ mod tests {
         let mut app = App::test_default();
         // Struct literals rather than `Stage::ok`/`recovered`: those constructors are
         // the worker's own, and the UI consumes stages read-only.
-        let stage = |v: serde_json::Value| Stage {
-            value: Some(v),
-            note: None,
-            note_is_error: false,
-        };
+        let stage = Stage::ok;
         app.stages.structural = stage(serde_json::json!({ "error": { "kind": "singular" } }));
         app.stages.index_reduction = stage(serde_json::json!({ "blocks": [] }));
         app.compute_problem_lines();
@@ -8397,12 +8389,10 @@ mod tests {
     /// says "not reached" and carries no information.
     #[test]
     fn the_compile_outcome_names_the_first_failure() {
-        let ok = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
-        let failed = Stage {
-            value: Some(serde_json::json!({ "error": {} })),
-            note: Some("boom".into()),
-            note_is_error: true,
-        };
+        let ok = Stage::ok(serde_json::json!({}));
+        // `err_with_details` = Outcome::Failed: the value holds the error payload,
+        // not IR, so nothing downstream can consume it.
+        let failed = Stage::err_with_details(serde_json::json!({}), "boom");
 
         // A clean run reports how far it reached.
         let mut app = App::test_default();
@@ -8626,12 +8616,11 @@ mod tests {
 
     #[test]
     fn a_sub_view_is_available_only_when_its_tab_is() {
-        let clean = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
-        let singular = Stage {
-            value: Some(serde_json::json!({ "error": {} })),
-            note: Some("singular".into()),
-            note_is_error: true,
-        };
+        let clean = Stage::ok(serde_json::json!({}));
+        // `recovered` = Outcome::Flagged, which is what the worker really builds for
+        // a singular structural analysis: real IR *plus* an error, and the pipeline
+        // carries on into index reduction.
+        let singular = Stage::recovered(serde_json::json!({ "error": {} }), "singular");
 
         // A non-singular Structural stage: no Summary, but the pattern views are there.
         let mut app = App::test_default();
