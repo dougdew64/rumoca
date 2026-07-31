@@ -1872,6 +1872,19 @@ impl App {
         // at and break the composition primitives. This is a different question —
         // "what did I do", not "what should you look at".
         diagnostics::record_action("tour-link", action.describe());
+
+        // A link that needs a specimen, with none loaded, is refused rather than
+        // half-applied. Setting `pending_stage` here and returning would be worse than
+        // doing nothing: it would linger and fire when a specimen arrived later, sending
+        // the reader somewhere no link had pointed — the same trap the frame-seek budget
+        // exists to close.
+        if action.requires_specimen() && self.selected.is_none() {
+            self.notify(
+                "no specimen loaded \u{2014} this stop needs one. Start at the tour's first \
+                 stop, which loads it.",
+            );
+            return;
+        }
         match action {
             HrwLink::LoadSpecimen(name) => {
                 if let Some(path) = self.find_specimen(&name) {
@@ -1930,6 +1943,14 @@ impl App {
                 None => self.notify(format!(
                     "no notebook {name} \u{2014} the link names one that is not here",
                 )),
+            },
+            HrwLink::OpenInSystemModeler(name) => match self.find_specimen(&name) {
+                Some(path) => {
+                    if let Err(e) = open_with_os(&path) {
+                        self.notify(format!("could not open {name} in System Modeler: {e}"));
+                    }
+                }
+                None => self.notify(format!("specimen not found: {name}")),
             },
             HrwLink::Follow(name) => {
                 // Following is independent of what is pointed at: a stop may set one,
@@ -6012,6 +6033,17 @@ enum HrwLink {
     /// The name is resolved by `bridge::resolve_notebook`, which restricts it to a file
     /// name in one of two known directories.
     OpenNotebook(String),
+    /// `hrw://systemmodeler/<Specimen>` — open a specimen in Wolfram System Modeler.
+    ///
+    /// **The adjudicator verb.** System Modeler is an independent Modelica
+    /// implementation, so "SM rejects this model that Rumoca accepts" is the strongest
+    /// claim a tour can make — see `docs/upstream-issues.md` #2, which exists because of
+    /// exactly that comparison.
+    ///
+    /// No new mechanism: the System Modeler installer already associates `.mo` with
+    /// `ModelCenter.exe` (verified 2026-07-30), so this is the same OS hand-off that
+    /// opens a notebook. HRW never learns where System Modeler lives.
+    OpenInSystemModeler(String),
 }
 
 impl HrwLink {
@@ -6020,6 +6052,25 @@ impl HrwLink {
     /// Reconstructs the canonical URL rather than `Debug`-printing the enum: the trail
     /// is read by Claude alongside the tour markdown, and matching the tour's own text
     /// is what makes "Doug clicked Stop 3" legible at a glance.
+    /// Whether this link needs a specimen already loaded.
+    ///
+    /// Doug clicked a tour's *fourth* stop first, without the first three, and nothing
+    /// happened. With no specimen the whole stage area returns early, so a stage link
+    /// set state that nothing consumed — silently, which is the failure mode every other
+    /// verb has been taught to avoid.
+    ///
+    /// The three that do **not** need one are the three that make sense on their own: the
+    /// two load verbs, and opening a notebook.
+    fn requires_specimen(&self) -> bool {
+        !matches!(
+            self,
+            Self::LoadSpecimen(_)
+                | Self::LoadAndSwitch(..)
+                | Self::OpenNotebook(_)
+                | Self::OpenInSystemModeler(_)
+        )
+    }
+
     fn describe(&self) -> String {
         match self {
             Self::LoadSpecimen(name) => format!("load/{name}"),
@@ -6048,6 +6099,7 @@ impl HrwLink {
             ),
             Self::Follow(name) => format!("follow/{name}"),
             Self::OpenNotebook(name) => format!("notebook/{name}"),
+            Self::OpenInSystemModeler(name) => format!("systemmodeler/{name}"),
         }
     }
 }
@@ -6085,6 +6137,9 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["follow", name] => Some(HrwLink::Follow((*name).to_owned())),
         // A non-empty name: `hrw://notebook/` alone names nothing, and accepting it
         // meant a prose mention of the verb parsed as a link to an unnamed file.
+        ["systemmodeler", name] if !name.is_empty() => {
+            Some(HrwLink::OpenInSystemModeler((*name).to_owned()))
+        }
         ["notebook", name] if !name.is_empty() => {
             Some(HrwLink::OpenNotebook((*name).to_owned()))
         }
@@ -8224,6 +8279,7 @@ mod tests {
             ),
         ] {
             let mut app = App::test_default();
+            app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
             // A sub-view the reset would clobber, so the test cannot pass by accident.
             app.structural_view = StructuralView::SpyPlot;
             app.dispatch_hrw_link(link);
@@ -8251,6 +8307,7 @@ mod tests {
     #[test]
     fn a_seek_that_never_lands_expires() {
         let mut app = App::test_default();
+        app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
         // Incidence has no animation, ever.
         app.dispatch_hrw_link(HrwLink::SeekFrame(
             StageKind::Structural,
@@ -8439,6 +8496,9 @@ mod tests {
         let path = bridge::parse_path("incidence.rows[0].equation_text").expect("well-formed");
 
         let mut app = App::test_default();
+        // These verbs now require a loaded specimen — clicking a stop out of order is
+        // refused rather than half-applied. Give it one so dispatch proceeds.
+        app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
         app.dispatch_hrw_link(HrwLink::PointAtNode(
             StageKind::Structural,
             SubView::Structural(StructuralView::Tree),
@@ -8505,6 +8565,60 @@ mod tests {
     ///
     /// One predicate now answers this for both the tab bar and the link guard, so a
     /// tab that exists and a link that is honoured cannot disagree.
+    /// A stop clicked out of order says so, instead of doing nothing.
+    ///
+    /// Doug clicked a tour's fourth stop first. Nothing happened: with no specimen the
+    /// stage area returns early, so the link set state nothing consumed. Silence is the
+    /// one outcome a tour cannot survive, because there is no way to tell it from a
+    /// broken link.
+    ///
+    /// The state is **not** left pending. Setting it and returning would be worse than
+    /// doing nothing — it would fire when a specimen arrived later, sending the reader
+    /// somewhere no link had pointed.
+    #[test]
+    fn a_stop_needing_a_specimen_refuses_without_one() {
+        let needs = [
+            HrwLink::SwitchStage(StageKind::Structural, None),
+            HrwLink::ShowSource(Some(9)),
+            HrwLink::Follow("C.v".to_owned()),
+            HrwLink::PointAtNode(
+                StageKind::Structural,
+                SubView::Structural(StructuralView::Tree),
+                vec![Seg::Key("blocks".into())],
+            ),
+            HrwLink::SeekFrame(
+                StageKind::Structural,
+                SubView::Structural(StructuralView::MatchingAnim),
+                0,
+            ),
+            HrwLink::AimAtEquation(
+                StageKind::Structural,
+                SubView::Structural(StructuralView::TarjanAnim),
+                0,
+            ),
+        ];
+        for link in needs {
+            assert!(link.requires_specimen(), "{link:?} needs a specimen");
+            let mut app = App::test_default();
+            app.dispatch_hrw_link(link);
+            assert!(app.notice.is_some(), "it must say so");
+            assert!(app.pending_stage.is_none(), "and leave nothing armed to fire later");
+            assert!(app.pending_sub_view.is_none());
+            assert!(app.seek_frame.is_none());
+            assert!(app.aim_at_equation.is_none());
+            assert!(app.jump_target.is_none());
+        }
+
+        // The three that stand alone are unaffected.
+        for link in [
+            HrwLink::LoadSpecimen("RcCircuit".to_owned()),
+            HrwLink::LoadAndSwitch("RcCircuit".to_owned(), StageKind::Structural, None),
+            HrwLink::OpenNotebook("x.nb".to_owned()),
+        ] {
+            assert!(!link.requires_specimen(), "{link:?} makes sense on its own");
+        }
+    }
+
     #[test]
     fn a_sub_view_is_available_only_when_its_tab_is() {
         let clean = Stage { value: Some(serde_json::json!({})), note: None, note_is_error: false };
@@ -8537,6 +8651,27 @@ mod tests {
         app.stages.index_reduction = clean;
         assert!(app.structural_view_available(StructuralView::Summary));
         assert!(!app.structural_view_available(StructuralView::Animate), "no frames yet");
+    }
+
+    /// The System Modeler verb parses, needs a name, and stands alone.
+    ///
+    /// It needs no specimen *loaded* — like the load verbs, it makes sense on its own,
+    /// which matters because the adjudicator case is often "open this in SM and see that
+    /// it refuses", reached without walking a tour first.
+    #[test]
+    fn the_system_modeler_verb_stands_alone() {
+        assert_eq!(
+            parse_hrw_link("hrw://systemmodeler/IncompatibleConnect"),
+            Some(HrwLink::OpenInSystemModeler("IncompatibleConnect".to_owned())),
+        );
+        assert!(parse_hrw_link("hrw://systemmodeler/").is_none(), "a bare verb names nothing");
+        assert!(
+            !HrwLink::OpenInSystemModeler("X".to_owned()).requires_specimen(),
+            "opening a specimen in another tool does not need one loaded here",
+        );
+        // Round-trips into the action trail like every other verb.
+        let link = parse_hrw_link("hrw://systemmodeler/CapacitorLoop").unwrap();
+        assert_eq!(format!("hrw://{}", link.describe()), "hrw://systemmodeler/CapacitorLoop");
     }
 
     #[test]
