@@ -181,6 +181,31 @@ pub fn discontinuity_segments(values: &[f64]) -> Vec<std::ops::Range<usize>> {
     segments
 }
 
+/// What a compile was asked to compile.
+///
+/// The two differ in exactly three places — where the source comes from, what
+/// names the model, and whether the document is registered with the session —
+/// and are identical in the ten stages after that. Keeping them one function
+/// rather than two is what stops the pipeline drifting into two versions, which
+/// is the defect the fidelity work found twice on 2026-07-31.
+#[derive(Clone, Copy)]
+enum CompileTarget<'a> {
+    /// A specimen file on disk.
+    File(&'a Path),
+    /// A model already present in a loaded library, named in full.
+    #[allow(dead_code, reason = "constructed by compile_model_by_name; see there")]
+    Library(&'a str),
+}
+
+/// A resolved compile target: where the source is, and what to call the model.
+struct Located {
+    uri: String,
+    source: String,
+    /// `Some` for a library model, whose name the caller supplied in full.
+    /// `None` for a specimen, whose model name comes from parsing it.
+    qualified: Option<String>,
+}
+
 /// What actually became of a stage — **three outcomes, not two.**
 ///
 /// This replaces a `note_is_error: bool` that three different constructors set
@@ -1150,10 +1175,78 @@ impl WorkerState {
     /// Typecheck is deferred: a clean, model-scoped typecheck needs
     /// instantiation; the pre-instantiation whole-tree typecheck fails
     /// on the full MSL.
+    /// Find the document declaring `qualified`, and hand back its source.
+    ///
+    /// **`ClassDef::location.file_name` is the document URI**, not a bare
+    /// basename — verified against `Session::get_document` for models in three
+    /// different MSL packages, including one nested 1,498 lines into a
+    /// multi-class file. So no path guessing, no scan of 2,553 documents, and no
+    /// heuristic name matching (which `docs/source-tooling-plan.md` rules out
+    /// anyway).
+    fn locate_library_model(&mut self, qualified: &str) -> Result<Located, String> {
+        let tree = self
+            .session
+            .resolved()
+            .map_err(|e| format!("cannot resolve the library to find `{qualified}`: {e:#}"))?;
+        let class = tree
+            .0
+            .get_class_by_qualified_name(qualified)
+            .ok_or_else(|| format!("`{qualified}` is not a class in the loaded libraries"))?;
+        let uri = class.location.file_name.clone();
+        // Reported rather than shrugged off: a class whose declaring document the
+        // session cannot produce is a broken assumption, not an empty pane.
+        let source = self
+            .session
+            .get_document(&uri)
+            .ok_or_else(|| {
+                format!("`{qualified}` is declared in `{uri}`, which the session has no document for")
+            })?
+            .content
+            .to_string();
+        Ok(Located { uri, source, qualified: Some(qualified.to_owned()) })
+    }
+
+    /// Compile a **specimen file** — read it from disk, register it with the
+    /// session, and take its first class as the model.
     fn compile(&mut self, path: &Path, emit: &impl Fn(FromWorker)) -> FromWorker {
+        self.compile_target(CompileTarget::File(path), emit)
+    }
+
+    /// Compile a model **already present in a loaded library**, by qualified
+    /// name — `Modelica.Electrical.Analog.Basic.Resistor`.
+    ///
+    /// The entry point Test mode needs to open a row of a report
+    /// (`docs/reports.md`), and the one fidelity testing at MSL scale needs:
+    /// checking HRW's representation of an MSL model means compiling it
+    /// *through HRW's own path*, which is the thing under test.
+    ///
+    /// # Why this cannot just call [`Self::compile`] with the library file
+    ///
+    /// Two reasons, and the second is the one that bites. A library file may
+    /// declare **many** classes — `Blocks/Continuous.mo` holds
+    /// `CriticalDamping` at lines 1498-1620 among others — so "the first class
+    /// in the file" is the wrong model. And registering a source-root file as a
+    /// workspace document would have the session hold it twice.
+    ///
+    /// So the document is **located, not added**: `ClassDef::location.file_name`
+    /// *is* the document URI, verified against `Session::get_document`.
+    // Unused outside tests until Test mode lands (`docs/ideas.md` #52). Kept
+    // `pub(crate)` like the rest of `WorkerState`'s surface — the struct is
+    // private and app.rs drives it over a channel — so the allow is the honest
+    // marker rather than a visibility widening that would not make it reachable
+    // anyway.
+    #[allow(dead_code, reason = "the Test-mode entry point; used by tests until #52 lands")]
+    pub(crate) fn compile_model_by_name(
+        &mut self,
+        qualified: &str,
+        emit: &impl Fn(FromWorker),
+    ) -> FromWorker {
+        self.compile_target(CompileTarget::Library(qualified), emit)
+    }
+
+    fn compile_target(&mut self, target: CompileTarget<'_>, emit: &impl Fn(FromWorker)) -> FromWorker {
         use std::time::Instant;
         let t0 = Instant::now();
-        let path_owned = path.to_owned();
         let log = make_log(&t0, emit);
 
         // Start capturing stdout/stderr from Rumoca library calls.
@@ -1182,17 +1275,42 @@ impl WorkerState {
             }
         };
 
-        log(LogLevel::Info, format!("compiling {}", path.file_name().and_then(|n| n.to_str()).unwrap_or("?")));
+        log(
+            LogLevel::Info,
+            match target {
+                CompileTarget::File(p) => format!(
+                    "compiling {}",
+                    p.file_name().and_then(|n| n.to_str()).unwrap_or("?"),
+                ),
+                CompileTarget::Library(name) => format!("compiling library model {name}"),
+            },
+        );
 
-        let source = match std::fs::read_to_string(path) {
-            Ok(s) => s,
-            Err(e) => {
+        // Where the source comes from, and what to name the model, are the ONLY
+        // things the two targets disagree about. Everything downstream is shared.
+        let located = match target {
+            CompileTarget::File(path) => std::fs::read_to_string(path)
+                .map(|source| Located {
+                    uri: path.to_string_lossy().to_string(),
+                    source,
+                    // Derived from the parse below: a specimen names its own model.
+                    qualified: None,
+                })
+                .map_err(|e| format!("read error: {e}")),
+            CompileTarget::Library(name) => self.locate_library_model(name),
+        };
+        let Located { uri, source, qualified: given_qualified } = match located {
+            Ok(l) => l,
+            Err(msg) => {
                 drop(output_capture.take());
                 return FromWorker::Compiled {
-                    path: path_owned.clone(),
+                    path: PathBuf::from(match target {
+                        CompileTarget::File(p) => p.to_string_lossy().to_string(),
+                        CompileTarget::Library(n) => n.to_owned(),
+                    }),
                     model: None,
                     stages: StageBundle {
-                        parse: Stage::err(format!("read error: {e}")),
+                        parse: Stage::err(msg),
                         ..Default::default()
                     },
                     def_index: BTreeMap::new(),
@@ -1206,8 +1324,13 @@ impl WorkerState {
                 };
             }
         };
-        let uri = path.to_string_lossy().to_string();
-        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("buffer.mo");
+        let path_owned = PathBuf::from(&uri);
+        let file_name = path_owned
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("buffer.mo")
+            .to_owned();
+        let file_name = file_name.as_str();
 
         // =====================================================================
         // Stage 1: PARSE — source text to AST
@@ -1219,10 +1342,15 @@ impl WorkerState {
         let t_stage = Instant::now();
         let (parse, model) = match rumoca_phase_parse::parse_to_ast(&source, file_name) {
             Ok(ast) => {
-                // `ast.classes` is a BTreeMap<String, ClassDef>. `.keys().next()`
-                // gets the first (alphabetically) class name. For a specimen file
-                // with one model, this is the model we want.
-                let model = ast.classes.keys().next().cloned();
+                // For a specimen, `ast.classes.keys().next()` is the model: the
+                // file declares one. For a **library** model the name was given,
+                // and taking the file's first class would be wrong — a library
+                // file commonly declares many, and the requested one is rarely
+                // the first.
+                let model = match &given_qualified {
+                    Some(q) => q.rsplit('.').next().map(str::to_owned),
+                    None => ast.classes.keys().next().cloned(),
+                };
                 (Stage::from_ser(&ast), model)
             }
             Err(e) => {
@@ -1264,27 +1392,33 @@ impl WorkerState {
         //
         // Guarded on the previous compile having actually failed: a clean specimen
         // poisons nothing, so the MSL reparse is paid only when it buys correctness.
-        if self.last_resolve_failed && self.last_specimen_uri.as_deref() != Some(uri.as_str()) {
-            let roots = self.libraries.clone();
-            log(
-                LogLevel::Info,
-                "rebuilding session (previous specimen failed to resolve)".to_owned(),
-            );
-            if let Err(e) = self.load_libraries(roots) {
-                log(LogLevel::Warn, format!("session rebuild failed: {e}"));
+        // **Only a specimen is registered.** A library model's document is
+        // already in a durable source root; adding it as a workspace document
+        // would have the session hold the same file twice, and removing it later
+        // would evict part of the library.
+        if given_qualified.is_none() {
+            if self.last_resolve_failed && self.last_specimen_uri.as_deref() != Some(uri.as_str()) {
+                let roots = self.libraries.clone();
+                log(
+                    LogLevel::Info,
+                    "rebuilding session (previous specimen failed to resolve)".to_owned(),
+                );
+                if let Err(e) = self.load_libraries(roots) {
+                    log(LogLevel::Warn, format!("session rebuild failed: {e}"));
+                }
             }
+            if let Some(prev) = self.last_specimen_uri.take()
+                && prev != uri
+            {
+                self.session.remove_document(&prev);
+            }
+            // Remove then re-add the specimen so the session treats it as new — without
+            // this, `update_document` sees identical source text and short-circuits,
+            // returning cached results (the registration code never re-runs).
+            self.session.remove_document(&uri);
+            self.session.update_document(&uri, &source);
+            self.last_specimen_uri = Some(uri.clone());
         }
-        if let Some(prev) = self.last_specimen_uri.take()
-            && prev != uri
-        {
-            self.session.remove_document(&prev);
-        }
-        // Remove then re-add the specimen so the session treats it as new — without
-        // this, `update_document` sees identical source text and short-circuits,
-        // returning cached results (the registration code never re-runs).
-        self.session.remove_document(&uri);
-        self.session.update_document(&uri, &source);
-        self.last_specimen_uri = Some(uri.clone());
         let mut def_index = BTreeMap::new();
         let mut instantiate = Stage::default();
         let mut typecheck = Stage::default();
@@ -1292,7 +1426,13 @@ impl WorkerState {
         let resolve = match &model {
             None => Stage::err("parse produced no model to resolve"),
             Some(simple_name) => {
-                let qualified = self.session.qualify_model_name(&uri, simple_name);
+                // A library model was named in full by the caller. Qualifying its
+                // simple name against the library file's URI would re-derive it,
+                // and a file declaring several packages could re-derive it wrong.
+                let qualified = match &given_qualified {
+                    Some(q) => q.clone(),
+                    None => self.session.qualify_model_name(&uri, simple_name),
+                };
                 // Rumoca API: `session.resolved()` triggers (or reuses) full
                 // name resolution and returns the resolved `ClassTree`.
                 match self.session.resolved() {
@@ -1400,7 +1540,13 @@ impl WorkerState {
                 (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None)
             }
             Some(simple_name) => {
-                let qualified = self.session.qualify_model_name(&uri, simple_name);
+                // A library model was named in full by the caller. Qualifying its
+                // simple name against the library file's URI would re-derive it,
+                // and a file declaring several packages could re-derive it wrong.
+                let qualified = match &given_qualified {
+                    Some(q) => q.clone(),
+                    None => self.session.qualify_model_name(&uri, simple_name),
+                };
 
                 log(LogLevel::StageStart, "DAE pipeline (flatten → solve lowering)".to_owned());
                 let t_pipeline = Instant::now();
@@ -3667,6 +3813,106 @@ mod tests {
             "only {tabs_with_tears} tabs actually tore anything; the rest agreed on an \
              empty list, which tests nothing",
         );
+    }
+
+    /// **A library model compiles by name, all the way through.**
+    ///
+    /// The entry point Test mode needs to open a report row, and the one
+    /// fidelity testing at MSL scale needs — checking HRW's representation of an
+    /// MSL model means compiling it *through HRW's own path*.
+    ///
+    /// Deliberately picks a model nested deep inside a **multi-class** file:
+    /// `CriticalDamping` sits at lines 1498-1620 of `Blocks/Continuous.mo`. The
+    /// specimen path takes "the first class in the file" as the model, which
+    /// would silently compile something else entirely here — so this is the case
+    /// that proves the by-name path is not the file path in disguise.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_library_model_compiles_by_qualified_name() {
+        const NAME: &str = "Modelica.Blocks.Continuous.CriticalDamping";
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let FromWorker::Compiled { model, stages, dae, identifier_index, .. } =
+            w.compile_model_by_name(NAME, &|_: FromWorker| {})
+        else {
+            panic!("expected Compiled");
+        };
+
+        assert_eq!(
+            model.as_deref(),
+            Some("CriticalDamping"),
+            "the requested model, not the first class in a file of many",
+        );
+        let dae = dae.expect("a library model should reach a DAE");
+        assert!(
+            !dae.continuous.equations.is_empty(),
+            "CriticalDamping is a real block; an empty DAE means the wrong class was compiled",
+        );
+
+        // Every compilation stage produced something — the by-name path is the
+        // whole pipeline, not a shortcut to one phase.
+        for kind in StageKind::COMPILATION {
+            let stage = stages.get(*kind);
+            assert!(
+                stage.value.is_some() || stage.note.is_some(),
+                "{kind:?} produced neither IR nor a note",
+            );
+        }
+        assert_eq!(stages.parse.outcome, Outcome::Ok, "parse: {:?}", stages.parse.note);
+        assert_eq!(stages.flatten.outcome, Outcome::Ok, "flatten: {:?}", stages.flatten.note);
+
+        // Source-linked features work too, which is the half that needs the
+        // declaring document rather than merely the name.
+        let index = identifier_index.expect("identifier index");
+        assert!(
+            !index.variables.is_empty(),
+            "no identifiers indexed — the library document's source text did not reach the index",
+        );
+    }
+
+    /// A name that is not a class is refused with a message that says so, rather
+    /// than compiling something adjacent or panicking.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn an_unknown_qualified_name_is_refused() {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let FromWorker::Compiled { stages, dae, .. } =
+            w.compile_model_by_name("Modelica.Nope.NotAClass", &|_: FromWorker| {})
+        else {
+            panic!("expected Compiled");
+        };
+        assert!(dae.is_none(), "nothing should have been compiled");
+        let note = stages.parse.note.unwrap_or_default();
+        assert!(
+            note.contains("not a class in the loaded libraries"),
+            "the refusal should name the problem; got {note:?}",
+        );
+    }
+
+    /// **Compiling a library model does not disturb the session.**
+    ///
+    /// The by-name path deliberately does not register the document — it is
+    /// already in a durable source root. If it did, the session would hold the
+    /// file twice and a later removal would evict part of the library. This
+    /// checks the observable consequence: a specimen compiled afterwards is
+    /// unaffected.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_library_compile_leaves_the_session_usable_for_specimens() {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let before = w.session.document_uris().len();
+        let _ = w.compile_model_by_name("Modelica.Blocks.Continuous.CriticalDamping", &|_| {});
+        let after = w.session.document_uris().len();
+        assert_eq!(after, before, "a library compile must not add or remove documents");
+
+        // And a specimen still compiles against the same session.
+        let path = PathBuf::from(format!(
+            "{}/specimens/ProportionalLoop.mo",
+            env!("CARGO_MANIFEST_DIR"),
+        ));
+        let FromWorker::Compiled { dae, .. } = w.compile(&path, &|_: FromWorker| {}) else {
+            panic!("expected Compiled");
+        };
+        assert!(dae.is_some(), "a specimen must still compile after a library model did");
     }
 
     /// The specimens F1 re-derives on. Shared by the three checks so a model
