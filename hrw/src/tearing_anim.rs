@@ -171,6 +171,24 @@ impl TearingAnimation {
         Some(Self { playback: Playback::live(rx, done, FRAME_INTERVAL), blocks })
     }
 
+    /// The tear variables this replay decided on, by name, across every block.
+    ///
+    /// Exists so the re-derivation can be compared against Rumoca's own report: HRW
+    /// re-runs tearing to animate it, and until 2026-07-30 nothing checked that its
+    /// answer matched the compiler's. See `docs/fidelity-plan.md` F1.
+    pub fn tear_variable_names(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        for (i, names) in self.blocks.iter().enumerate() {
+            // The final frame of each block carries the complete tear set.
+            if let Some(last) = self.playback.frames().iter().rfind(|f| f.block == i) {
+                for &v in &last.frame.tears_so_far {
+                    out.push(name_of(&names.unknowns, v));
+                }
+            }
+        }
+        out
+    }
+
     pub fn is_empty(&self) -> bool {
         self.playback.is_empty()
     }

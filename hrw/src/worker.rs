@@ -3401,6 +3401,69 @@ mod tests {
         assert_eq!(n_states, Some(1), "the probe has exactly one state");
     }
 
+    /// **HRW's re-derived tearing matches Rumoca's own report.**
+    ///
+    /// `docs/fidelity-plan.md` F1, and the first test of the question Doug raised: does
+    /// HRW represent what Rumoca *decided*, or something of its own?
+    ///
+    /// The tearing animation does not read the compiler's result — it **re-runs the
+    /// algorithm** on each coupled block to produce frames. Until 2026-07-30 nothing
+    /// compared the two, so they agreed by assumption. A divergence here would mean an
+    /// animation teaching a decision the compiler never made, which is the worst failure
+    /// available to a tool whose purpose is explanation.
+    ///
+    /// The non-vacuity guard is not decoration: `Drivetrain` has no coupled block, so it
+    /// reports `[]` and derives `[]` — agreement on nothing. Without the guard a
+    /// corpus of such models would pass while testing nothing at all.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn hrw_rederived_tearing_matches_rumocas_report() {
+        let mut models_with_tears = 0usize;
+
+        for name in ["ProportionalLoop", "MixedLoop", "TwoLoops", "NonlinearLoop", "Drivetrain"] {
+            let FromWorker::Compiled { stages, dae, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
+
+            // What Rumoca's own structural report says was torn.
+            let reported: Vec<String> = stages
+                .structural
+                .value
+                .as_ref()
+                .and_then(|v| v.get("blocks"))
+                .and_then(serde_json::Value::as_array)
+                .map(|blocks| {
+                    blocks
+                        .iter()
+                        .filter_map(|b| b.get("tearing")?.get("tear_vars")?.as_array())
+                        .flatten()
+                        .filter_map(serde_json::Value::as_str)
+                        .map(str::to_owned)
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            // What HRW re-derives to animate it.
+            let derived = crate::tearing_anim::TearingAnimation::record(&dae).tear_variable_names();
+
+            assert_eq!(
+                derived, reported,
+                "{name}: the tearing animation re-derives a different answer than the \
+                 compiler reported — it would be teaching a decision Rumoca never made",
+            );
+            if !reported.is_empty() {
+                models_with_tears += 1;
+            }
+        }
+
+        assert!(
+            models_with_tears >= 4,
+            "only {models_with_tears} models actually tore anything; the rest agreed on \
+             an empty list, which tests nothing",
+        );
+    }
+
     /// A resolve failure names the offending reference **and its line**, with the
     /// library noise separated out.
     ///
