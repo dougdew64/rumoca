@@ -1521,6 +1521,20 @@ value after every chunk.
 **Never run this unbounded.** The cost of being wrong is not a slow run; it is someone's
 machine.
 
+**And chunking alone is NOT sufficient — measured, not assumed.** The first chunked re-run
+took free RAM from 13 GB to 6.5 GB in a single 10-model chunk, and the next chunk reached
+4.28 GB resident with 3.5 GB free before it was killed. Two things were wrong:
+
+- **A single chunk is unbounded.** Chunking bounds accumulation *across* chunks; it does
+  nothing about ten expensive models inside one.
+- **The free-RAM floor checks at the wrong moment.** It runs *between* chunks, so it can
+  never stop a chunk already in flight — which is the only moment that matters.
+
+The per-model footprint is the real quantity, and it is not yet measured. Until it is,
+**chunk size must be small enough that one chunk cannot exhaust RAM**, and the honest
+statement is that this harness has a known, unquantified memory cost per model — not that it
+is safe.
+
 There is a second lesson worth keeping, because it is about process rather than memory: the
 survey had already taught all of this that same morning — `--slice`, `--resume`,
 `--rebuild-every` and incremental writes were built for exactly this failure — and none of it
