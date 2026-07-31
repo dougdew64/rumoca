@@ -20,6 +20,30 @@ adjudicated by an independent Modelica implementation rather than argued from th
 
 ---
 
+## Which to file first
+
+**Issue 2 (connector validation).** Doug's plan (2026-07-30) is to open one bug PR with a
+screen-capture video of a self-playing HRW tour attached — no campaigning, just something
+likely to prompt a reviewer to ask what it is.
+
+Issue 2 suits that far better than issue 1:
+
+- **The reproduction is one 20-line model**, where issue 1 needs three compiles in a
+  particular order within one session.
+- **It is independently adjudicated.** System Modeler rejects the same source, so there is
+  nothing to argue about.
+- **The narrative is visual and short**: flatten *succeeds*, structural then fails as a
+  *singularity*, System Modeler says "Incompatible types". A misleading diagnosis is
+  exactly the thing a phase-by-phase view makes obvious.
+- **HRW's usefulness is the point of the story rather than an aside**, so nobody has to
+  claim it.
+
+`docs/fixture-tours/the-oracle.md` already walks this narrative and would want tightening
+for a recording — a demo tour is a third kind after ad hoc and fixture: few stops, no
+scrolling, deterministic start, nothing needing a second read.
+
+---
+
 ## 1. `Session::remove_document` leaves a stale resolve failure in the resolved-state cache
 
 **Severity:** high for any multi-document consumer. A model that resolves cleanly can be
