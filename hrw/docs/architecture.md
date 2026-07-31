@@ -1484,6 +1484,72 @@ shape was decided by measurement rather than design taste:
   3× its median so far, or a success rate collapsing to half the run's average — rather than
   against thresholds someone guessed.
 
+### Running the checks at scale — two callers, one definition
+
+The F1-F9 checks have **two callers**, and that is deliberate:
+
+| Caller | Corpus | Role |
+|---|---|---|
+| `fidelity::tests` | the 10 curated specimens | fast pre-commit gate |
+| `examples/fidelity_msl.rs` | any named subset of the MSL survey | the scale runs |
+
+The checks themselves are ordinary module functions in `src/fidelity.rs`, not test-only code.
+They were test-only until 2026-07-31; moving them out was necessary for the second caller and
+is *right* for a reason beyond that — **a check that exists twice is a check that drifts**,
+which is the exact defect F1 and F7 each found in HRW itself.
+
+### Bounded by process lifetime, and why that is not paranoia
+
+**An unbounded 53-model run made the development machine unusable and forced a hard
+power-cycle** (2026-07-31). The runner rebuilt its session every 200 models; the corpus was
+53, so **no rebuild ever fired**, and one session accumulated across the largest systems in
+the MSL — a 10,175-equation model and one with 110 functions whose inlined bodies are
+enormous.
+
+**The lesson is not "rebuild more often".** It is:
+
+> A session rebuild releases what the *session* holds. It cannot release what the allocator
+> has fragmented or what any other cache retains. **Only process exit is a memory bound**,
+> because the OS reclaims unconditionally.
+
+So the runner processes `--max-models` (default 25) and **exits**; `--resume` skips rows
+already in the report and the sink appends. `run-fidelity.ps1` drives chunks in a loop and
+**refuses to start one below a free-RAM floor**, so the failure mode is *"stops early and says
+so"* rather than *"takes the desktop down"*. Verified by watching free RAM return to the same
+value after every chunk.
+
+**Never run this unbounded.** The cost of being wrong is not a slow run; it is someone's
+machine.
+
+There is a second lesson worth keeping, because it is about process rather than memory: the
+survey had already taught all of this that same morning — `--slice`, `--resume`,
+`--rebuild-every` and incremental writes were built for exactly this failure — and none of it
+was carried across to a runner that does *more* per model. **A lesson learned in one tool is
+not learned until it is applied to the next one.**
+
+### Staged corpora — small first, deliberately
+
+Nine of twelve violations in F6-F9's first runs were the *check's* fault. Running the full
+corpus first would produce a flood dominated by the instrument's own bugs, and triaging that
+is miserable. So the corpus grows in stages, each one's failures fixed before the next:
+
+| Stage | Corpus | What it is for |
+|---|---|---|
+| **A** | 10 curated specimens | the baseline; already green |
+| **B** | ~20 MSL, spread | shakes out *"my check assumes a shape MSL does not have"* |
+| **C** | ~50, **stratified by IR shape** | the extremes, where the bugs are; measures real cost |
+| **D** | the full sample | the run that produces the artifact |
+
+**Stage C is not cheaper per model than a random sample — it is more expensive**, because
+stratification deliberately selects the tails. That is the point of it: stage C found the F8
+materialisation bug precisely because it selected a model with 110 functions, a shape neither
+the curated specimens nor a 20-model spread contained.
+
+A stratified selection must be checked for *empty strata*. The first stage-C selection
+returned 37 models with **zero failures** in it, because failure rows carry no `n_equations`
+and a "skip zero-valued" guard silently dropped every failure bucket — leaving F9 with no data
+at all. A stratum that quietly vanishes looks exactly like one that was covered.
+
 ### What has actually gone wrong — the instructive part
 
 **Of 12 violations across F6-F9's first runs, nine were the check's fault**, and they share

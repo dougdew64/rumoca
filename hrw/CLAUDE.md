@@ -102,6 +102,18 @@ output.** The same breakage survived a clippy run that was piped to `grep -c "^w
 which counts warnings and silently ignores a compile error. `cargo clippy … ; echo $?` or
 just let it print.
 
+**Running the fidelity checks at MSL scale — NEVER unbounded.** An unbounded 53-model run
+made Doug's machine unusable and forced a hard power-cycle (2026-07-31). Use the driver:
+
+```powershell
+./run-fidelity.ps1 -Out C:/tmp/fid.csv -Models (Get-Content C:/tmp/stage-c.txt)
+```
+
+It runs `examples/fidelity_msl.rs` in chunks of 25 that **exit** between batches, resumes from
+the report, and **refuses to start a chunk below a free-RAM floor**. A session rebuild is not a
+memory bound — it releases what the session holds, not what the allocator fragmented. **Only
+process exit is.** See `docs/architecture.md` §11.
+
 **Fidelity checks — when they run** (policy agreed with Doug 2026-07-31; full reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). F1–F9 ask whether HRW faithfully
 represents Rumoca, and they come in two scales answering *different* questions:
