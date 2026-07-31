@@ -1386,7 +1386,142 @@ their call sites. The regression test suite (270 tests) guards against silent
 regressions during a rebase.
 
 
-## 11. Build and run
+## 11. The testing architecture
+
+**Five different questions, five instruments.** The clarifying frame is that these are not
+layers of one suite — they answer *different* questions, and conflating them is how a
+project acquires a false sense of coverage.
+
+| Question | Instrument | Who can run it | Lives in |
+|---|---|---|---|
+| Does HRW's own code work? | ~411 fast unit tests (~7s) | Claude | every `src/*.rs` |
+| Does HRW work against a real compile? | ~59 slow tests, `slow-tests` feature | Claude | `src/worker.rs`, `src/fidelity.rs` |
+| **Does the rendered UI work?** | fixture tours | **only Doug** | `docs/fixture-tours/` |
+| **Does HRW tell the truth about Rumoca?** | F1-F9 fidelity checks | Claude | `src/fidelity.rs`, `src/worker.rs` |
+| **Does Rumoca tell the truth about Modelica?** | the oracle (System Modeler) | Doug's tools | not built (`ideas.md` #43) |
+| How much of Modelica does Rumoca handle? | the MSL survey | Claude | `examples/survey_msl.rs` |
+| Do the docs still point at real code? | citation checker, provenance tags | Claude | `src/doc_citations.rs` |
+
+Row 3 is the one to stare at. **Claude cannot see pixels.** Every other row is
+machine-verifiable; that one is structurally Doug's, which is why the tours are narrow, why
+their expectations must be violable, and why they must say *where* to look and not only what
+to look for.
+
+### When each runs
+
+Policy in `docs/fidelity-plan.md`, summarised: the fast loop every edit; the pre-commit run
+— which **includes the small-scale fidelity checks** — every commit; the large-scale suite
+on three triggers: after a Rumoca rebase, before an upstream PR, and when HRW changes how it
+emits or reads stage JSON. That third trigger is code-shaped rather than judgement-shaped on
+purpose, because "when a change gives reason to doubt fidelity" is exactly the judgement
+that has already failed twice.
+
+### The design decisions that make it affordable
+
+**Invariants, not expected answers.** The load-bearing decision. Over thousands of
+unfamiliar models, *"is this the right answer for this model?"* is an investigation per row
+— the triage cost that ruled out a compile census (`ideas.md` #51). An invariant asks
+instead whether a property holds for *every* model, so a violation is definitionally a bug
+with nothing to adjudicate. F4 — *the BLT blocks partition the equations* — needs no
+knowledge of the model at all.
+
+**Reading is safe; re-deriving is not.** HRW does two things with Rumoca's output:
+
+| | Failure mode |
+|---|---|
+| Reads a phase result and renders it | **distortion** — a dropped field, a transposed index |
+| **Re-runs the algorithm** to animate it | **divergence** — a *different answer*, presented as the compiler's |
+
+`tearing_anim`, `matching_anim` and `tarjan_anim` all re-run. **F1 exists entirely for that
+second row**, because an animation teaching a decision Rumoca never made is the worst
+failure available to a tool whose purpose is explanation.
+
+**Non-vacuity guards.** Every check skips subjects it does not apply to, so a corpus
+producing no blocks and no matchings would pass in silence. Hence the floors ("at least 5
+reports had a matching") and the printed coverage line: **"0 violations" means nothing
+without "over how much".**
+
+**The checkers are themselves tested.** Each of F2-F5 is handed a report that violates it
+alone (`fidelity::tests::each_invariant_catches_its_own_violation`). A clean run is then
+evidence rather than an absence of evidence.
+
+**Attribution discipline.** `examples/survey_msl.rs` calls `Session` directly rather than
+going through `WorkerState::compile`. Routed through HRW, a bug in HRW's stage extraction
+would be recorded as a *Rumoca* failure — the misattribution that turns a capability map
+into an unfair scorecard (`docs/upstream-strategy.md`).
+
+**The reports compose.** `docs/reports.md` is the authority: an oracle mismatch is an
+admissible upstream finding **only if that model is also fidelity-green**, since otherwise
+the mismatch may be HRW lying rather than Rumoca erring. **Survey → eligible; fidelity →
+trustworthy; oracle → findings.** All three reports share their first four columns and are
+joined on `name`, read by the single loader in `src/report.rs`.
+
+### The survey, and why it looks the way it does
+
+`examples/survey_msl.rs` compiles every MSL model and records outcome plus IR shape. Its
+shape was decided by measurement rather than design taste:
+
+- **Reduction is capped** (`--max-reduce-eq`, default 800). A full run reached model 1,400
+  of 2,626 in 29 minutes, then spent **97 more on four models** — the Spice3 four-bit-adder
+  family, 2,477 to 10,175 equations. The median model needing reduction has **24**
+  equations, so the cap skips 5.9% of reductions and removes ~93% of the cost. Skipped rows
+  are recorded, never omitted: **a stated bound is honest; an unfinishable run is not.**
+- **Sharded by process** (`--slice i/N`). `Session` is not thread-safe, and separate
+  processes make the question moot: each has its own session, one shard crashing does not
+  take the run, and memory is observable per worker. Slicing indexes the sorted name list
+  and `--merge` sorts, so output is byte-identical whatever the shard count — which is what
+  keeps it reproducible for a maintainer.
+- **Sessions are rebuilt periodically** (`--rebuild-every`). One session accumulated 8.3 GB
+  of committed memory over 2,626 compiles. Rebuilding bounds that, and is what lets several
+  shards fit in RAM at once. It also bounds exposure to `upstream-issues.md` #1, where a
+  failed resolve can poison a later compile in the same session.
+- **Written incrementally, and instrumented.** Rows are appended and flushed as produced, so
+  a run is resumable and watchable — the first full run wrote nothing until the end and was
+  piped through `tail`, which buffers to EOF, so a kill at 96% would have discarded
+  everything with no progress ever shown. A health line every window now reports rate,
+  outcome mix and the slowest model; any model over `--slow-secs` is named immediately with
+  its equation count. **Anomalies are judged against the run's own history** — a window over
+  3× its median so far, or a success rate collapsing to half the run's average — rather than
+  against thresholds someone guessed.
+
+### What has actually gone wrong — the instructive part
+
+**Of 12 violations across F6-F9's first runs, nine were the check's fault**, and they share
+one shape:
+
+> **A check that knows one form of the truth reports every other form as a defect.**
+
+F6 re-listed the DAE's variable partitions by hand, omitted the two discrete ones, and
+reported `BouncingBall`'s `c` as a phantom variable. F9 demanded structure from stages where
+Rumoca supplied none — carrying nothing is *faithful* there — and then looked for it under
+`"error"` when `OverInitRc` publishes a determinacy verdict and no error key at all. That is
+the same failure mode as HRW inventing a decision, one level up: on the instrument rather
+than the subject.
+
+The three **real** bugs, by contrast:
+
+| Check | Bug |
+|---|---|
+| F1 | the singular matching resolved **0 of 97** equations on `Drivetrain` — `partial_matching_to_json` reimplemented `equation_label` and drifted from it |
+| F7 | **6,169 broken node paths** — object keys containing `.` were written bare, split into segments on the way back, and navigated to nothing |
+| F5 | would have caught F1's bug independently, from a different direction |
+
+All three were **HRW-internal drift**: weeks old, introduced by ordinary work, and none
+suspected by anyone. That is why the small-scale checks sit in the pre-commit run rather
+than behind a trigger.
+
+**And one the whole suite could not see:** F1-F9 were green while `cargo build -p hrw --bin
+hrw` was broken, because `cargo test` never builds the binary. A green suite describes only
+what it covers.
+
+### The honest limit
+
+**F1-F9 establish that HRW agrees with Rumoca. They do not establish that Rumoca is right,
+and they do not test the rendered UI.** Every published document must carry that
+qualification, for the reason `docs/upstream-strategy.md` gives: one visible overreach costs
+more than several missing checks.
+
+## 12. Build and run
 
 ```sh
 # Build and run the observatory
@@ -1407,7 +1542,7 @@ build (which would pull in all Rumoca crates, including platform-specific ones
 like `libudev-sys` that may not be needed).
 
 
-## 12. Key design decisions explained
+## 13. Key design decisions explained
 
 ### Why `serde_json::Value` everywhere?
 
