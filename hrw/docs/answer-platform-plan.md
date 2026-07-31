@@ -268,7 +268,7 @@ durable artifact is not (see #42's ephemerality rule).
 `cargo run -p hrw --example check_doc_citations` — verify every `crates/**/*.rs`
 path and named test cited in `docs/` still resolves. An ad-hoc run on 2026-07-29
 found 16 of 17 paths good and one broken
-(`crates/rumoca-sim/src/diffsol/tests/scalarization_regressions.rs`).
+(a test file that had moved to `crates/rumoca-sim/src/solve_lowering/tests.rs`).
 
 Cheap, mechanical, and it is the "emitter correct, reasoner supplements" discipline
 applied to Claude's own memory. **Slot it in whenever there is a gap** — it has no

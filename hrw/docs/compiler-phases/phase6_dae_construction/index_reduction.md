@@ -726,7 +726,7 @@ change the DAE for a given model.
 ## Worked Example: The Regression Test
 
 From
-`crates/rumoca-sim/src/diffsol/tests/scalarization_regressions.rs`:
+`crates/rumoca-sim/src/solve_lowering/tests.rs`:
 
 **Input DAE:**
 

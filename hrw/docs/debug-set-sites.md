@@ -156,7 +156,7 @@ current state. When the user continues (F5), the next frame is pushed and the UI
 | **All** (recommended) | `crates/rumoca-phase-structural/src/live_trace.rs` | `live_trace_breakpoint` | the `LAST_FRAME_INDEX.store` line |
 | **Matching** (per-frame) | `crates/rumoca-phase-structural/src/matching.rs` | `emit_matching_frame` | `frames.push(frame)` (after the `lt.push` call) |
 | **Tarjan** (SCC discovery) | `crates/rumoca-phase-structural/src/tarjan.rs` | `TracedTarjanState::record` | `self.frames.push(frame)` (after the `lt.push` call) |
-| **Reduction** (per-step) | `crates/rumoca-phase-structural/src/dae_prepare.rs` | reduction trace call sites | after each `lt.push` call |
+| **Reduction** (per-step) | `crates/rumoca-phase-structural/src/dae_prepare/mod.rs` | reduction trace call sites | after each `lt.push` call |
 
 The recommended site is `live_trace_breakpoint` — it is `#[inline(never)]` and non-generic, so the
 debugger resolves it to a single unambiguous address (unlike `Vec::push` calls that can share

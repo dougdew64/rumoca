@@ -1526,7 +1526,8 @@ signal than "which tab was opened most".
 `crates/**/*.rs` paths and named tests. An example binary (`cargo run -p hrw
 --example check_doc_citations`) that verifies every cited path and symbol still
 exists. An ad-hoc version of this run on 2026-07-29 found 16 of 17 paths resolve
-and one broken: `crates/rumoca-sim/src/diffsol/tests/scalarization_regressions.rs`.
+and one broken, since fixed: a test file that had moved to 
+`crates/rumoca-sim/src/solve_lowering/tests.rs`.
 Catches the tour's failure mode mechanically, and is the "emitter correct,
 reasoner supplements" discipline applied to Claude's own memory.
 

@@ -54,6 +54,7 @@ pub mod modelica_lex;
 pub mod alias_anim;
 pub mod connection_anim;
 pub mod ic_plan_anim;
+pub mod doc_citations;
 pub mod playback;
 pub mod pre_lowering_anim;
 pub mod reduction_anim;
