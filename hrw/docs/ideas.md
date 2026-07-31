@@ -2648,3 +2648,71 @@ measured yield of nine bugs in a day.
 
 **Relates to:** #49 (narrow fixture tours), `project-tours-multiply-testing` in Claude's
 memory, and `docs/tech-debt.md`'s priority order.
+
+---
+
+## 51. The MSL example corpus — 1,656 known-good models, already vendored
+
+Doug asked 2026-07-30 whether a public specimen source exists, so Claude need not author
+every one. It does, and it is **already on the machine**: `hrw/vendor/msl/Modelica 4.1.0`
+contains **618 example files** declaring roughly **1,656 models**, loaded by every test run
+already.
+
+### Why these are different from authored specimens
+
+**They are known-good.** System Modeler compiles all of MSL; it is the reference library.
+So a Rumoca failure on one is unambiguously a Rumoca limitation, **with no adjudication
+step** — which is the expensive part of #46's authored-specimen loop (see #43's oracle).
+
+But they carry **no expectation**. Authoring a specimen means predicting where it will
+fail, and the *surprise* is the finding (#46). An MSL example predicts nothing, so a pass
+teaches nothing. The two mechanisms therefore do different jobs and neither replaces the
+other:
+
+| | Authored specimen | MSL example |
+|---|---|---|
+| Cost | Claude writes it | free, already here |
+| Yield | **insight** — the surprise corrects Claude's model of the compiler | **breadth** — reach across the input space |
+| Needs the oracle? | Yes, to tell "my specimen is wrong" from "Rumoca is wrong" | **No** — known-good by construction |
+| Count | 18 | ~1,656 |
+
+### Measured reach: far better than expected
+
+A 20-model sample, the second half chosen from domains Claude expected to *fail*:
+
+- **14 compiled**, including `Clocked` (synchronous), `StateGraph`, `MultiBody.Pendulum`
+  and `Media.WaterIF97` — every one of which Claude predicted would fail.
+- **1 real diagnosed failure**: `Fluid.Examples.HeatExchanger.HeatExchangerSimulation` —
+  *unbalanced model: 3848 equations, 3150 unknowns (balance = 698)*. A candidate upstream
+  finding on its own.
+- **5 "no result"**, needing triage: at least two are Claude's error (`Utilities.Examples.
+  calculator` is a **function**, not a model), so the true failure rate is lower still.
+
+**Claude's prior was badly wrong** — it expected most of MSL to fail and wrote a
+recommendation around that ("a capability census, not a test suite") before measuring.
+Twenty models overturned it. Record the prior alongside the result, because the same
+instinct will recur.
+
+### What to build
+
+1. **A census run** — every example, recorded as compiles / fails-with-diagnosis /
+   no-result, with failures **clustered by message**. Raw pass-fail over 1,656 is noise;
+   clustered failures are a **capability map**: what Doug can model, and what upstream
+   might build next.
+2. **A baseline that must not regress.** Once the number is known, a drop means something
+   broke — the one kind of regression the authored corpus is too small to catch.
+3. **Triage "no result" first.** It currently conflates "not a model" with a real gap, and
+   that ambiguity makes the whole census less useful than it should be.
+
+**Cost:** far too slow for any existing suite — each compile is seconds against full MSL,
+so ~1,656 is an hour or more. This is an **occasional run**, not part of `slow-tests`.
+
+### The bigger prize
+
+Paired with #43's oracle this becomes the **differential test** deferred since Arcs 1–2
+(#4): 1,656 known-good models, no authoring, and no adjudication ambiguity. "Compiles" is
+not "correct" — only comparison with System Modeler establishes that, and this is the
+corpus to do it on.
+
+**Relates to:** #46 (authored specimens — complementary, not superseded), #43 (the oracle),
+#4 (the differential test), #22 (simulation, deferred on maturity).
