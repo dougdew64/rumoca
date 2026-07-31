@@ -169,6 +169,29 @@ partition is easy to check and impossible to satisfy accidentally.
 Injective: no equation matched to two unknowns, no unknown claimed twice, every index in
 range.
 
+**Status 2026-07-31: F2-F5 built and passing** as one harness in `src/fidelity.rs` —
+30 incidence-bearing reports across 10 models (16 with blocks, 29 with a matching, 4
+singular), 0 violations.
+
+Three things the build settled that the plan had not:
+
+- **A "subject" is not "the structural report".** It is *every* report HRW publishes that
+  carries an incidence — today Structural, Index Reduction, and the `before` report nested
+  inside the latter, so three per model. Walking them generically matters: `before`
+  carried the same labelling bug F1 found in the singular matching, and a check written
+  against "structural" alone would have missed it.
+- **F5's teeth are the incidence-nonzero check**, not injectivity. An equation matched to
+  a variable it does not reference is not a wrong choice among valid ones — it is not a
+  matching at all. That check would have caught F1's bug independently.
+- **Non-vacuity guards are load-bearing here**, more than in F1. Every check skips
+  subjects it does not apply to (no blocks, no matching, no error), so without the guards a
+  corpus that stopped producing them would pass in silence. The harness prints its
+  coverage for the same reason: "0 violations" means nothing without "over how much".
+
+Cost: **32s for 10 models**, against 148s for F1's three checks over the same 10 — the
+harness shape (compile once, apply every invariant, drop) rather than any optimisation.
+See `docs/ideas.md` #48 for why memoization is the wrong lever at sample scale.
+
 ### F6. Derived views cover their source
 
 The equation sheet names every continuous equation; the identifier index's variables are a
@@ -233,7 +256,7 @@ than 500 from one.
 2. ~~**F1 on the existing 18 specimens.**~~ **Done 2026-07-31**, on ten of them. If the re-derivations already disagree with the
    report on models we know, that is the bug of the day and the MSL work can wait.
 3. **The sample list**, checked in, with why each model was chosen.
-4. **F2–F7 as invariants**, run over the sample.
+4. ~~**F2-F5 as invariants.**~~ **Done 2026-07-31** on the F1 corpus; the harness takes any list of model names, so pointing it at the sample is a one-line change. **F6-F7** remain.
 5. **F8 recorded**, with a baseline that must not regress.
 
 Step 2 is deliberately first and deliberately small: it is the cheapest possible test of

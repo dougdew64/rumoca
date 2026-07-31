@@ -2790,6 +2790,74 @@ fn build_def_index(
 // `cargo test` — it doesn't exist in the release binary. `mod tests` creates
 // a child module with access to the parent module's private items (via
 // `use super::*`).
+/// Test-only helpers shared beyond this module's own tests.
+///
+/// Lifted out of `mod tests` on 2026-07-31 so `crate::fidelity` can compile
+/// specimens through the same MSL-loaded worker. Keeping a second copy would
+/// have meant a second ~430MB MSL load in the same test process.
+#[cfg(test)]
+use std::sync::OnceLock;
+
+#[cfg(test)]
+/// Returns the three MSL (Modelica Standard Library) root paths needed
+/// to compile any specimen that uses standard components.
+pub(crate) fn msl_roots() -> Vec<PathBuf> {
+    let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+    vec![
+        PathBuf::from(format!("{base}/Modelica 4.1.0")),
+        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+        PathBuf::from(format!("{base}/Complex.mo")),
+    ]
+}
+
+/// One MSL-loaded worker, built once and shared across the worker tests behind
+/// a mutex. Each test needs the full MSL (~430MB resolved); loading it per-test
+/// OOMs / thrashes when cargo runs them in parallel. So tests lock this shared,
+/// already-loaded worker and run serially against it — MSL is parsed once, and
+/// peak memory stays at a single session.
+///
+/// # Why `&'static Mutex<WorkerState>`?
+///
+/// - `&'static` — the returned reference lives for the entire program lifetime
+///   (it's backed by a `static` variable, not the stack).
+/// - `OnceLock::new()` — creates an uninitialized lock. `get_or_init()` lazily
+///   initializes it on first access, thread-safely. Subsequent calls return the
+///   same value without re-running the init closure.
+/// - `Mutex<WorkerState>` — wraps the worker in a mutex so only one test at a
+///   time can access it. `lock().unwrap()` blocks until the mutex is available.
+///
+/// # Why tests run serially
+///
+/// `cargo test` runs test functions in parallel by default. Without the mutex,
+/// multiple tests would try to use the `Session` concurrently (which isn't
+/// thread-safe). The mutex serializes access. The session accumulates each
+/// specimen's document (distinct URIs), which is fine: `compile` qualifies the
+/// requested model by its own URI.
+/// Stays private: it hands out `WorkerState`, which is private itself. Other
+/// modules get at it through [`compile_specimen_shared`], which returns only the
+/// compile result — the narrower door is the one worth opening.
+fn shared_worker() -> &'static Mutex<WorkerState> {
+    static WORKER: OnceLock<Mutex<WorkerState>> = OnceLock::new();
+    WORKER.get_or_init(|| {
+        let mut state = WorkerState::new();
+        state.load_libraries(msl_roots()).expect("load MSL once for tests");
+        Mutex::new(state)
+    })
+}
+
+/// Compile `specimens/<name>.mo` against the shared MSL worker.
+///
+/// `unwrap_or_else(|e| e.into_inner())` — if a previous test panicked while
+/// holding the mutex, the mutex is "poisoned" (marked as potentially in an
+/// inconsistent state). `into_inner()` recovers from the poison by taking
+/// the inner value anyway — we accept the risk because our WorkerState is
+/// still usable after a panic (it's just a Session, not half-modified data).
+pub(crate) fn compile_specimen_shared(name: &str) -> FromWorker {
+    let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
+    let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+    w.compile(&path, &|_: FromWorker| {})
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2802,63 +2870,6 @@ mod tests {
     // Used here for lazy one-time initialization of the shared worker.
     // `OnceLock` is the thread-safe equivalent of `OnceCell` (or Python's
     // `functools.lru_cache` with `maxsize=1` conceptually).
-    use std::sync::{Mutex, OnceLock};
-
-    /// Returns the three MSL (Modelica Standard Library) root paths needed
-    /// to compile any specimen that uses standard components.
-    fn msl_roots() -> Vec<PathBuf> {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        vec![
-            PathBuf::from(format!("{base}/Modelica 4.1.0")),
-            PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{base}/Complex.mo")),
-        ]
-    }
-
-    /// One MSL-loaded worker, built once and shared across the worker tests behind
-    /// a mutex. Each test needs the full MSL (~430MB resolved); loading it per-test
-    /// OOMs / thrashes when cargo runs them in parallel. So tests lock this shared,
-    /// already-loaded worker and run serially against it — MSL is parsed once, and
-    /// peak memory stays at a single session.
-    ///
-    /// # Why `&'static Mutex<WorkerState>`?
-    ///
-    /// - `&'static` — the returned reference lives for the entire program lifetime
-    ///   (it's backed by a `static` variable, not the stack).
-    /// - `OnceLock::new()` — creates an uninitialized lock. `get_or_init()` lazily
-    ///   initializes it on first access, thread-safely. Subsequent calls return the
-    ///   same value without re-running the init closure.
-    /// - `Mutex<WorkerState>` — wraps the worker in a mutex so only one test at a
-    ///   time can access it. `lock().unwrap()` blocks until the mutex is available.
-    ///
-    /// # Why tests run serially
-    ///
-    /// `cargo test` runs test functions in parallel by default. Without the mutex,
-    /// multiple tests would try to use the `Session` concurrently (which isn't
-    /// thread-safe). The mutex serializes access. The session accumulates each
-    /// specimen's document (distinct URIs), which is fine: `compile` qualifies the
-    /// requested model by its own URI.
-    fn shared_worker() -> &'static Mutex<WorkerState> {
-        static WORKER: OnceLock<Mutex<WorkerState>> = OnceLock::new();
-        WORKER.get_or_init(|| {
-            let mut state = WorkerState::new();
-            state.load_libraries(msl_roots()).expect("load MSL once for tests");
-            Mutex::new(state)
-        })
-    }
-
-    /// Compile `specimens/<name>.mo` against the shared MSL worker.
-    ///
-    /// `unwrap_or_else(|e| e.into_inner())` — if a previous test panicked while
-    /// holding the mutex, the mutex is "poisoned" (marked as potentially in an
-    /// inconsistent state). `into_inner()` recovers from the poison by taking
-    /// the inner value anyway — we accept the risk because our WorkerState is
-    /// still usable after a panic (it's just a Session, not half-modified data).
-    fn compile_specimen_shared(name: &str) -> FromWorker {
-        let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        w.compile(&path, &|_: FromWorker| {})
-    }
 
     /// End-to-end: after resolving `RotationalInertia` against the MSL, the
     /// component *types* (`type_def_id`) must resolve to their MSL classes.
