@@ -2593,3 +2593,58 @@ Neither is worth building at three.
 **Relates to:** #42 (fixture tours as an artifact, and the ephemerality rule that exempts
 them), `project-tours-multiply-testing` in Claude's memory, and `hrw/CLAUDE.md`'s
 fixture-tour rules — including that every `**Expected:**` line must be **violable**.
+
+---
+
+## 50. ~~Measure test code coverage~~ — CONSIDERED AND DECLINED
+
+Raised by Doug 2026-07-30, examined, and **not pursued**. Recorded so it is not proposed
+afresh, and so the reasoning is available if circumstances change.
+
+### The evidence that settled it
+
+Fourteen defects found on 2026-07-30, classified by whether coverage could have found
+them — that is, "code that exists, no test executes it, and it is wrong":
+
+| Category | Count | Found by coverage? |
+|---|---|---|
+| Missing code — a guard or feature that did not exist | 5 | **No.** Coverage cannot measure absent code |
+| Executed code doing the wrong thing | 5 | **No.** All ran every frame |
+| Documentation and tour text | 2 | No |
+| A `#[test]` attribute silently lost | 1 | No — the clippy count caught it |
+| Claude's own new tool being wrong | 1 | No |
+
+**Zero in the only category coverage detects.**
+
+### Two reasons it is structurally misleading *here*
+
+1. **`app.rs` is ~9,000 lines of egui paint closures Claude cannot drive.** Coverage would
+   report them uncovered, correctly, and unactionably — their real testing mechanism is
+   the fixture tours, which no coverage tool can see. The figure would be permanently
+   depressed by design.
+2. **Coverage measures execution, not verification.** A line run by a test that asserts
+   nothing counts as covered. A coverage *target* would push toward the tests that raise
+   it cheapest, which are exactly the vacuous ones this project keeps having to catch.
+
+### The carve-out that defeated itself
+
+Claude wanted one measurement to check whether its frequent *"test-verified"* claims are
+honest. Coverage answers that **badly**, for the reason just given. The instrument that
+actually answers it is **stating the verification boundary explicitly** — "this is
+test-verified, that is not, and here is which" — which is already standard practice on
+every commit. A percentage would be a worse answer to the one question it was wanted for.
+
+### The honest limit of this decision
+
+The sample is biased: 2026-07-30 was **new-feature work**, where missing-code bugs
+dominate. Coverage's category — *old code, never exercised, silently wrong* — is a slow
+failure mode a one-day sample cannot show, and there is some evidence it is live here (a
+`#[test]` attribute vanished, the sibling of code quietly ceasing to be tested).
+
+**Revisit if** the project shifts from building to maintaining, or if a bug is ever traced
+to logic no test had run. Until then, Doug's own rule decides it: attention is the scarce
+resource, and a coverage report competes directly with walking a tour — which has a
+measured yield of nine bugs in a day.
+
+**Relates to:** #49 (narrow fixture tours), `project-tours-multiply-testing` in Claude's
+memory, and `docs/tech-debt.md`'s priority order.
