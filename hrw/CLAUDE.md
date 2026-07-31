@@ -43,8 +43,15 @@ considered and deliberately not built — **do not re-propose them from first pr
 2. **Fidelity testing at scale** — F1-F9 (`src/fidelity.rs`, `worker.rs`) over that sample.
 3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open
    it compiled in the RHS (`docs/ideas.md` **#52**).
-4. **Design and run the oracle test** — Rumoca vs System Modeler (#43).
-5. **Oracle-report support in Test mode.**
+4. **Design and run the oracle test** — Rumoca vs System Modeler (#43). **Constrained by
+   [`docs/reports.md`](docs/reports.md):** it must emit the same `name` join key, because a
+   mismatch is only an admissible upstream finding when that model is *fidelity-green*.
+5. **Oracle-report support in Test mode**, including per-item state (unfiled / filed / fixed
+   upstream) that regeneration merges rather than overwrites.
+
+**[`docs/reports.md`](docs/reports.md) is the design authority for steps 3-5.** Its
+load-bearing claim: **survey → eligible, fidelity → trustworthy, oracle → findings.** Read it
+before building Test mode or designing the oracle test.
 
 **Two dependencies this sequence hides, both worth knowing before starting step 2:**
 

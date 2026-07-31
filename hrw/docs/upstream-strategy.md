@@ -91,6 +91,10 @@ Concrete implications for testing and implementation decisions:
    not establish"* section, for the same reason the bug-PR demo does: **one visible overreach
    costs more than several missing checks** (`docs/fidelity-plan.md`).
 4. **Fidelity work is instrumental, not only defensive.** It is what makes the questions good.
-   Weigh it accordingly when it competes with feature work.
+   Weigh it accordingly when it competes with feature work. **And it is more instrumental
+   than that**: `docs/reports.md` establishes that an oracle mismatch is only an admissible
+   upstream finding when the same model is *fidelity-green* — otherwise the mismatch may be
+   HRW lying rather than Rumoca erring. Fidelity is what makes oracle findings cheap enough
+   to be worth having.
 5. **When a piece of work could produce something upstreamable, say so at planning time** —
    not after it is built in a shape that cannot be handed over.

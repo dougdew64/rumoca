@@ -2812,6 +2812,21 @@ Easy to conflate, because the first one exists and the others do not:
 Test mode has one loader and one list widget, and the report-specific columns simply extend
 to the right. Diverging here costs a second implementation of everything.
 
+**And `name` is a join key, not merely a label** — see `docs/reports.md`, which is the design
+authority for how the three compose. A model that is oracle-mismatched is only an admissible
+upstream finding if it is *fidelity-green*, and that judgement is computed by joining the
+reports on the qualified model name.
+
+**Same loader and layout, different default filter**, because their steady states differ:
+survey **browses** (full list), fidelity shows **exceptions** (usually empty, and empty is
+success), oracle is a **worklist** (unfiled first). A fidelity report rendering 2,600 green
+rows would bury its own good news.
+
+**The oracle report also carries state the run did not produce** — unfiled / filed / fixed
+upstream / won't-file — so its regeneration must *merge* with a side file rather than
+overwrite it. And clicking a mismatch **generates a draft, it does not file**; the reasoning
+is in `docs/reports.md`.
+
 ### The gap that has to close before clicking a row can work
 
 `WorkerState::compile` takes a **file path** and reads it as the specimen source. An MSL
