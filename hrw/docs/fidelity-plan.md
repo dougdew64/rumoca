@@ -272,6 +272,45 @@ resolve failure. That is not a *fidelity* violation (Rumoca really did supply no
 HRW says so) but it is a **legibility** one, and it is Doug's call because it changes what
 he sees. Left as-is, recorded here.
 
+## When these run — policy, agreed with Doug 2026-07-31
+
+Fidelity checks are **not** a thing to run constantly. But they split in two, because they
+answer different questions, and the split is not by cost.
+
+| Tier | Cost | Question it answers | When |
+|---|---|---|---|
+| Fast loop | 7s | did I break the code | every edit |
+| Pre-commit, **incl. small-scale fidelity** | ~6 min | **did HRW drift from itself** | every commit |
+| **Large scale**, own feature gate | minutes | **did Rumoca change; does an unseen IR shape break us** | on the triggers below |
+
+### Why small-scale stays in the pre-commit run
+
+Doug's first framing was that fidelity tests detect *changes in Rumoca*. That is the large
+suite's job, but it is not where the evidence points. **Neither bug found on 2026-07-31 came
+from Rumoca:**
+
+- F1's — the singular matching resolving 0 of 97 — was HRW's `partial_matching_to_json`
+  reimplementing `equation_label` and drifting from it.
+- F7's — 6,169 broken node paths — was HRW's path grammar meeting real IR keys containing `.`.
+
+Both were **HRW-internal drift**, present for weeks, introduced by ordinary HRW work. Neither
+would have been caught by a trigger, because neither was suspected. So the ~90s the 16-specimen
+checks cost inside the pre-commit run is buying the failure mode that actually occurs.
+
+### Triggers for the large suite
+
+1. **After rebasing on upstream Rumoca** — a step in `docs/updating-rumoca.md`, not something
+   to remember. "Remembered" is the property that has failed every time here.
+2. **Before submitting a PR to CogniPilot/rumoca.**
+3. **When HRW changes how it emits or reads stage JSON** — the `*_to_json` functions in
+   `worker.rs`, the path grammar in `bridge.rs`, `IncidenceMatrix::from_report`, or any
+   animation's re-derivation.
+
+Trigger 3 is deliberately **code-shaped rather than judgement-shaped**. Doug's original list
+had "if code changes give reason to doubt HRW's fidelity", and that is precisely the judgement
+that failed twice already — Claude would not have flagged either bug's originating change.
+A diff can be checked; a suspicion has to occur to someone.
+
 ## The sample
 
 **Not all 1,656.** A stratified sample of **40–60**, chosen to cover:

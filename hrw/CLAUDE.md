@@ -66,6 +66,27 @@ output.** The same breakage survived a clippy run that was piped to `grep -c "^w
 which counts warnings and silently ignores a compile error. `cargo clippy … ; echo $?` or
 just let it print.
 
+**Fidelity checks — when they run** (policy agreed with Doug 2026-07-31; full reasoning in
+[`docs/fidelity-plan.md`](docs/fidelity-plan.md)). F1–F9 ask whether HRW faithfully
+represents Rumoca, and they come in two scales answering *different* questions:
+
+- **Small scale** (the 16 curated specimens, `src/fidelity.rs` + `worker.rs`) **stays in the
+  pre-commit run**, costing ~90s of it. It answers *"did HRW drift from itself?"* — and that
+  is not a rare event. **Both bugs found on 2026-07-31 were HRW-internal drift**, weeks old,
+  introduced by ordinary work, and neither was suspected by anyone.
+- **Large scale** (the stratified MSL sample) gets its **own feature gate** so it never runs
+  by accident. It answers *"did Rumoca change; does an unseen IR shape break us?"*
+
+Run the large suite: **(1)** after rebasing on upstream — a step in
+`docs/updating-rumoca.md`, not a thing to remember; **(2)** before submitting a PR to
+CogniPilot/rumoca; **(3)** when HRW changes how it **emits or reads stage JSON** — the
+`*_to_json` functions in `worker.rs`, the path grammar in `bridge.rs`,
+`IncidenceMatrix::from_report`, or any animation's re-derivation.
+
+Trigger 3 is **code-shaped, not judgement-shaped**, deliberately: "when a change gives reason
+to doubt fidelity" is exactly the judgement that already failed twice. A diff can be checked;
+a suspicion has to occur to someone.
+
 **Use the fast one between edits and the full one before every commit.** Measured 2026-07-29:
 **49 of 402 tests accounted for 180 of the suite's 183 seconds**, nearly all compiling a specimen
 against the MSL; the other 353 finish in seconds. The 49 are gated by the `slow-tests` feature, and

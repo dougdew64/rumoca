@@ -33,6 +33,17 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
   renamed/removed `dae_prepare` fns; a **reordering** it won't — but this test will (before = singular,
   after = solvable). If it fails, re-diff the funnel against that rumoca-sim source and update the order.
 
+## 3b. Run the large-scale fidelity suite
+
+- This is **trigger 1** of the fidelity policy (`docs/fidelity-plan.md`), and it lives here
+  rather than in anyone's memory on purpose.
+- The pre-commit suite already carries the small-scale checks over the 16 curated specimens.
+  The large suite adds the stratified MSL sample — IR shapes those 16 do not reach.
+- **What a failure means here is different from usual.** These checks compare HRW's output
+  against Rumoca's *on the same input*, so a failure after a rebase says Rumoca's own answer
+  moved. That is information about the upstream change, not necessarily a bug in HRW — read
+  the diff before "fixing" anything.
+
 ## 4. Regenerate the generic field-help table
 - `cargo run --example gen_field_help` — re-extracts `///` field docs from the new
   `rumoca-ir-ast` into `src/field_help.json` (see `src/field_help.rs`).
