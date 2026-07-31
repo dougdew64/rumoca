@@ -36,6 +36,35 @@ a standalone tool.
 practical scenario demonstrates a need. Multiple `follow` items and a third "compare" primitive were
 considered and deliberately not built — **do not re-propose them from first principles.**
 
+**Current sequence (Doug, 2026-07-31) — each step's output is the next step's input:**
+
+1. **The MSL survey** — `examples/survey_msl.rs`, first full run 2026-07-31. Rumoca's reach
+   across all 2,626 MSL models, plus the IR-shape metrics that stratify the sample.
+2. **Fidelity testing at scale** — F1-F9 (`src/fidelity.rs`, `worker.rs`) over that sample.
+3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open
+   it compiled in the RHS (`docs/ideas.md` **#52**).
+4. **Design and run the oracle test** — Rumoca vs System Modeler (#43).
+5. **Oracle-report support in Test mode.**
+
+**Two dependencies this sequence hides, both worth knowing before starting step 2:**
+
+- **Step 2 needs a compile-by-qualified-name path in the worker**, not just step 3.
+  `WorkerState::compile` takes a *file path* and reads it as the specimen source, but an MSL
+  model has no such file. #52 records this as a Test-mode prerequisite; it is really a
+  step-2 one, because testing HRW's representation of an MSL model means compiling it
+  *through HRW's own path*, which is the very thing under test.
+- **Step 2 must EMIT a report, not only assert.** F1-F9 currently assert and produce
+  nothing loadable. Step 3 has nothing to open unless step 2 writes a file — so the harness
+  becomes *assert **and** emit*: the assertion keeps it a test, the emission makes it a
+  deliverable (`docs/upstream-strategy.md` planning rule 5).
+
+**One risk in the ordering, and its cheap insurance.** Test mode is built at step 3 with only
+*one* real report to load, then asked to take a second at step 5 — an abstraction fitted to
+n=1. Mitigation is already half-made: all three reports share the first four columns
+(`name`, `kind`, `outcome`, `message`). The other half is to **sketch the oracle report's
+columns during step 3**, without building the oracle, so the loader is shaped by two
+consumers even though only one exists.
+
 **Delivered 2026-07-29 — four more phase animations.** Tearing, alias elimination, initial-condition
 planning and connection expansion now have animated views, bringing the total to eight. Building them
 established a distinction to preserve: **not every phase hides a search.** Tearing and connection
