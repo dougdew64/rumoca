@@ -377,6 +377,8 @@ separate "analysis" of an already-finished one.
 
 ## The Index-Reduction Algorithm
 
+*Verified 2026-07-30 against `crates/rumoca-phase-structural/src/dae_prepare/mod.rs`* and against a live reduction report: on `MotorWithBrake` the funnel demotes `emf.phi` (4 states to 3) via `reduce_constrained_dummy_derivatives`, with **no** rows differentiated. Textbook Pantelides differentiates a constraint; this path does not, and the difference matters when reading a report.
+
 ### The outer driver
 
 ```rust

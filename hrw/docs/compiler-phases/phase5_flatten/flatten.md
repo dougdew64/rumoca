@@ -68,6 +68,8 @@ Array subscripts are appended: `"sensors[1].v"`.
 
 ## Connection Expansion (MLS §9.2)
 
+*Verified 2026-07-30 against `crates/rumoca-phase-flatten/src/connections/mod.rs`* — read while instrumenting it. Note that `validate_type_compatibility` exists there and does **not** fire for connectors with differing member sets: see `docs/upstream-issues.md` #2.
+
 Each `connect(c1, c2)` statement is expanded into equations during flattening.
 Connections are gathered into a **connection graph** first, then expanded.
 

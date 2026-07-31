@@ -161,6 +161,150 @@ mod tests {
         assert!(found.contains("hrw/src/app.rs"), "{found:?}");
     }
 
+    /// Provenance tags found in a document: `(kind, cited path or None)`.
+    ///
+    /// The convention is in `docs/provenance.md`. Recognised on a line of its own,
+    /// immediately under the heading it governs:
+    ///
+    /// ```markdown
+    /// *Verified 2026-07-30 against `crates/rumoca-phase-structural/src/tearing.rs`.*
+    /// *Inference — not checked against the source.*
+    /// *Cellier & Kofman, CSM §9.3.*
+    /// ```
+    fn provenance_tags(text: &str) -> Vec<(String, Option<String>)> {
+        let mut out = Vec::new();
+        for line in text.lines() {
+            let line = line.trim();
+            // A tag *starts* an italic run; it need not be the whole line. The useful
+            // tags say what was checked and how, in roman after the italic marker —
+            // requiring the entire line to be italic rejected every real one written,
+            // which is how this mismatch was found.
+            // A tag opens with a SINGLE asterisk. `**Bold**` prose is not a tag, and
+            // stripping all leading asterisks read `**Verified 2026-07-28 under
+            // cppvsdbg**` — an ordinary emphasised sentence — as one.
+            if line.starts_with("**") {
+                continue;
+            }
+            let Some(inner) = line.strip_prefix('*') else {
+                continue;
+            };
+            let kind = if inner.starts_with("Verified") {
+                "verified"
+            } else if inner.starts_with("Inference") {
+                "inference"
+            } else if inner.starts_with("Cellier")
+                || inner.starts_with("Hairer")
+                || inner.starts_with("Brenan")
+                || inner.starts_with("MLS ")
+            {
+                "citation"
+            } else {
+                continue;
+            };
+            // A `Verified` tag names the file it was checked against.
+            let path = inner
+                .split('`')
+                .nth(1)
+                .filter(|p| p.ends_with(".rs"))
+                .map(str::to_owned);
+            out.push((kind.to_owned(), path));
+        }
+        out
+    }
+
+    /// Provenance tags are well-formed, and a `Verified` tag's file still exists.
+    ///
+    /// **Deliberately does not fail on untagged prose.** Upgrading is lazy by design
+    /// (`docs/ideas.md` #41, `docs/provenance.md`): tagging 9,000 lines up front would
+    /// produce tags nobody had checked, which is the tour-prose mistake again. Low
+    /// coverage is expected; a *wrong* tag is not, because a tag is a claim about
+    /// trustworthiness and a false one is worse than silence.
+    ///
+    /// A `Verified` path is also checked by `every_documented_source_path_exists`, so a
+    /// tag cannot outlive the thing it points at.
+    #[test]
+    fn provenance_tags_are_well_formed() {
+        let mut verified = 0usize;
+        let mut inference = 0usize;
+        let mut citation = 0usize;
+        let mut tagged_docs = 0usize;
+        let mut total_docs = 0usize;
+        let mut problems: Vec<String> = Vec::new();
+
+        for doc in doc_files() {
+            total_docs += 1;
+            let text = std::fs::read_to_string(&doc).unwrap_or_default();
+            let tags = provenance_tags(&text);
+            if !tags.is_empty() {
+                tagged_docs += 1;
+            }
+            for (kind, path) in tags {
+                match kind.as_str() {
+                    "verified" => {
+                        verified += 1;
+                        match path {
+                            Some(p) if !resolves(&p) => problems.push(format!(
+                                "{}: Verified against {p}, which does not exist",
+                                doc.display(),
+                            )),
+                            None => problems.push(format!(
+                                "{}: a Verified tag must name the file it was checked \
+                                 against, in backticks",
+                                doc.display(),
+                            )),
+                            Some(_) => {}
+                        }
+                    }
+                    "inference" => inference += 1,
+                    _ => citation += 1,
+                }
+            }
+        }
+
+        println!(
+            "provenance: {tagged_docs}/{total_docs} docs tagged \
+             ({verified} verified, {citation} citations, {inference} inference)",
+        );
+        assert!(
+            problems.is_empty(),
+            "malformed or stale provenance tags:\n  {}",
+            problems.join("\n  "),
+        );
+    }
+
+    /// The tag parser recognises each form, and nothing else.
+    #[test]
+    fn provenance_tags_are_recognised_by_form() {
+        let md = "\
+## A heading
+
+*Verified 2026-07-30 against `crates/rumoca-phase-structural/src/tearing.rs`.*
+
+Some prose.
+
+## Another
+
+*Inference — not checked against the source.*
+
+## A third
+
+*Cellier & Kofman, CSM §9.3.*
+
+*This italic line is ordinary emphasis, not a tag.*
+";
+        let tags = provenance_tags(md);
+        assert_eq!(tags.len(), 3, "three tags, and the plain italics is not one: {tags:?}");
+        assert_eq!(tags[0].0, "verified");
+        assert_eq!(
+            tags[0].1.as_deref(),
+            Some("crates/rumoca-phase-structural/src/tearing.rs"),
+            "a Verified tag yields the path it names, so the citation checker can validate it",
+        );
+        assert_eq!(tags[1].0, "inference");
+        assert_eq!(tags[1].1, None);
+        assert_eq!(tags[2].0, "citation");
+    }
+
     /// A citation that does not exist is caught.
     ///
     /// A checker reporting zero problems is exactly when to prove it can still report

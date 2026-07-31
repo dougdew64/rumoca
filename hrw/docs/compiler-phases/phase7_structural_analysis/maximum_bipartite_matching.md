@@ -133,6 +133,8 @@ iterations, so the loop terminates quickly.
 
 ## Kuhn's Algorithm
 
+*Verified 2026-07-30 against `crates/rumoca-phase-structural/src/matching.rs`* — read while building the animation. `MatchingStep::EquationFailed` records the give-up, which is what makes a rank deficiency watchable rather than merely reported.
+
 Kuhn's algorithm is the classical implementation of the above idea, and it is
 exactly what `matching.rs` does. It iterates over equations in index order,
 and for each unmatched equation, performs a depth-first search to find an

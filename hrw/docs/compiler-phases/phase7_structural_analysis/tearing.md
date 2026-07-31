@@ -197,6 +197,8 @@ tear-variable selector consumes this map.
 
 ## The Main Algorithm
 
+*Verified 2026-07-30 against `crates/rumoca-phase-structural/src/tearing.rs`* — read while instrumenting it with `tear_algebraic_loop_with_trace`. The greedy rule (tear the variable appearing in the most unsolved equations, then propagate) and the appearance/competitor counts are as described.
+
 ```rust
 pub fn tear_algebraic_loop(n: usize, eq_unknowns: &[HashSet<usize>]) -> Option<TearingResult> {
     if n == 0 { return None; }

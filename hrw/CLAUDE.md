@@ -220,6 +220,14 @@ Candidates, not commitments — consult when planning new work; promote items in
   A question asked repeatedly is a signal: either the earlier explanation failed (try a different
   angle) or the thing is not visible in HRW (a feature request, and a better one than Claude invents).
 
+  **Provenance, and how it is enforced** (`docs/provenance.md`, `docs/ideas.md` #41 C).
+  Two tests in `src/doc_citations.rs` run in the fast loop: every source path the docs cite
+  must exist, and every `*Verified … against `<path>`*` tag must name a file that still
+  does. **Upgrading is lazy on purpose** — no audit project; when a real question sends
+  Claude into the source, the claims it actually checked get tagged on the way past. Low
+  coverage is expected and does not fail; a *wrong* tag does, because a tag is a claim
+  about trustworthiness. Coverage is printed each run (5 of 62 docs at 2026-07-30).
+
   **Every claim carries provenance** — `verified` (checked against code or tools, with the file),
   `cellier` (with a citation), or `inference`. Only the first two are trusted on re-read; `inference`
   gets re-checked. Text predating this rule is `unverified` by default and upgrades **lazily**: when
