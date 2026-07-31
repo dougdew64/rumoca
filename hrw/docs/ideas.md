@@ -2707,6 +2707,35 @@ instinct will recur.
 **Cost:** far too slow for any existing suite — each compile is seconds against full MSL,
 so ~1,656 is an hour or more. This is an **occasional run**, not part of `slow-tests`.
 
+### What it tests in **HRW**, not just Rumoca
+
+Asked directly by Doug 2026-07-30 — is there real value here, or only breadth?
+
+**Yes, and the strongest HRW-specific reason had been understated: HRW's extraction code
+has only ever run against 18 hand-picked specimens.** A four-model probe against MSL:
+
+- `Media.Examples.WaterIF97` produced a **3.2 MB** flatten stage; `MultiBody.Pendulum`
+  1.2 MB. **No panics.** Whether the JSON builders survive a model thirty times larger
+  than anything they had seen was simply unknown before.
+- All four reported `structural=ERR` *and* `initialization=ERR`, including
+  `CauerLowPassAnalog` — which System Modeler simulates happily.
+
+**And the probe demonstrated the cost in the same breath.** Those ERRs are uninterpretable
+because the probe **omitted `index_reduction`**, the stage that resolves exactly the
+structural singularity high-index models hit. Claude would have reported a scandal by
+trusting its own output. **1,656 models will produce hundreds of ERRs and each needs a
+judgement Claude has just shown it can get wrong.**
+
+That is the argument for clustering rather than a caveat about it: the census is worth
+building **only if failures are grouped by message**, so one investigation explains fifty
+models instead of one.
+
+**Why this does not replace #46's authored specimens** — and not for the reason first
+given ("a pass teaches nothing", which conflated *Claude's learning* with *testing
+value*). The real reason: **an MSL failure costs triage and an authored failure does
+not.** Authoring means already knowing what should happen, so a surprise is immediately
+meaningful. With MSL, every failure is a small investigation.
+
 ### The bigger prize
 
 Paired with #43's oracle this becomes the **differential test** deferred since Arcs 1–2
