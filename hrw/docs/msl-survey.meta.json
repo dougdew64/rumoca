@@ -5,7 +5,10 @@
   "models_surveyed": 2626,
   "models_available": 2626,
   "partial_survey": false,
-  "seconds": 2267.8,
-  "generated_unix": 1785517983,
+  "max_reduce_equations": null,
+  "largest_reduction_attempted": 799,
+  "reductions_skipped": 71,
+  "seconds": null,
+  "generated_unix": 1785528144,
   "outcomes": {"failed:Flatten": 182, "failed:Instantiate": 20, "failed:ToDae": 170, "failed:Typecheck": 17, "success": 2237}
 }

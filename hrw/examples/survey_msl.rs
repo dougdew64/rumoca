@@ -265,7 +265,7 @@ fn run(cfg: Config) {
     rewrite(&cfg.out, &rows);
 
     let summary = Summary::of(&rows);
-    write_meta(&cfg, &rows, &summary, available, total);
+    write_meta(&cfg, &rows, &summary, available, Some(total));
     health.finish(&summary, total);
 }
 
@@ -547,7 +547,27 @@ fn merge(list: &str, out: &str) {
     }
     rows.sort_by(|a, b| a.name.cmp(&b.name));
     rewrite(out, &rows);
-    eprintln!("merged {} rows into {out}", rows.len());
+    // The merged file is the published artifact, so it needs its OWN provenance:
+    // the shards each wrote a sidecar describing only their slice, and a report
+    // that cannot say what it describes is not reproducible (planning rule 2).
+    let summary = Summary::of(&rows);
+    let cfg = Config {
+        out: out.to_owned(),
+        limit: None,
+        resume: false,
+        only_skipped: false,
+        slice: None,
+        // The merge cannot know the shards' configured cap, and guessing one
+        // would put a number nobody set into a published artifact. The
+        // observable `largest_reduction_attempted` carries the real information.
+        max_reduce_eq: 0,
+        rebuild_every: 0,
+        slow_secs: 0.0,
+        window: 0,
+    };
+    let n = rows.len();
+    write_meta(&cfg, &rows, &summary, n, None);
+    eprintln!("merged {n} rows into {out}");
 }
 
 fn rewrite(out: &str, rows: &[SurveyRow]) {
@@ -558,15 +578,16 @@ fn rewrite(out: &str, rows: &[SurveyRow]) {
     }
 }
 
-fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: usize, secs: f64) {
+fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: usize, secs: Option<f64>) {
     let mut tally: Vec<(&String, &usize)> =
         summary.outcomes.iter().map(|(k, v)| (k, v)).collect();
     tally.sort_by_key(|(k, _)| k.as_str());
     let meta = format!(
         "{{\n  \"rumoca_version\": \"{}\",\n  \"hrw_version\": \"{}\",\n  \
          \"msl_roots\": [{}],\n  \"models_surveyed\": {},\n  \"models_available\": {},\n  \
-         \"partial_survey\": {},\n  \"max_reduce_equations\": {},\n  \"reductions_skipped\": {},\n  \
-         \"seconds\": {:.1},\n  \"generated_unix\": {},\n  \"outcomes\": {{{}}}\n}}\n",
+         \"partial_survey\": {},\n  \"max_reduce_equations\": {},
+  \"largest_reduction_attempted\": {},\n  \"reductions_skipped\": {},\n  \
+         \"seconds\": {},\n  \"generated_unix\": {},\n  \"outcomes\": {{{}}}\n}}\n",
         env!("HRW_RUMOCA_VERSION"),
         env!("CARGO_PKG_VERSION"),
         msl_roots()
@@ -577,9 +598,21 @@ fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: us
         rows.len(),
         available,
         rows.len() < available,
-        cfg.max_reduce_eq,
+        // Null when the writer does not know it — a merge cannot. `0` would
+        // read as a cap of zero, which is the same class of mistake as the
+        // derived value it replaced.
+        if cfg.max_reduce_eq == 0 { "null".to_owned() } else { cfg.max_reduce_eq.to_string() },
+        // A lower bound on the cap that was actually in force, observable from
+        // the data alone: the largest system reduction was ATTEMPTED on.
+        // Distinct from `max_reduce_equations`, which is the configured cap —
+        // conflating them would read as a cap nobody set.
+        rows.iter()
+            .filter(|r| r.index_reduced == "ok" || r.index_reduced == "singular")
+            .filter_map(|r| r.n_equations)
+            .max()
+            .unwrap_or(0),
         rows.iter().filter(|r| r.index_reduced == SKIPPED).count(),
-        secs,
+        secs.map_or("null".to_owned(), |v| format!("{v:.1}")),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_secs()),
