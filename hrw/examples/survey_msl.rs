@@ -267,6 +267,19 @@ fn run(cfg: Config) {
     let summary = Summary::of(&rows);
     write_meta(&cfg, &rows, &summary, available, Some(total));
     health.finish(&summary, total);
+
+    // **A column measuring nothing is a defect, and nothing used to ask.**
+    // `n_event_eq` was zero across a whole corpus, survived a commit, and
+    // reached a published artifact. Reported rather than fatal: on a small or
+    // filtered corpus an all-zero column can be legitimate.
+    let dead = hrw::survey::all_zero_columns(&rows);
+    if !dead.is_empty() && rows.len() > 100 {
+        eprintln!(
+            "[WARNING] {} column(s) are zero for every row: {} — a column that never              fires looks exactly like one that works",
+            dead.len(),
+            dead.join(", "),
+        );
+    }
 }
 
 /// Per-window health, judged **against the run's own history**.
@@ -429,15 +442,18 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
         Some(PhaseResult::Failed { phase, error, .. }) => {
             row.outcome = format!("failed:{phase}");
             row.message = first_line(&error);
+            row.compile_cost = SurveyRow::cost_bucket(row.secs).to_owned();
             return row;
         }
         Some(PhaseResult::NeedsInner { .. }) => {
             row.outcome = "needs_inner".to_owned();
+            row.compile_cost = SurveyRow::cost_bucket(row.secs).to_owned();
             return row;
         }
         None => {
             row.outcome = "no_result".to_owned();
             row.message = first_line(&report.failure_summary(0));
+            row.compile_cost = SurveyRow::cost_bucket(row.secs).to_owned();
             return row;
         }
     };
@@ -454,20 +470,30 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
     // Phenomena HRW has views for, from each equation's recorded `origin` — the
     // field `equation_sheet::categorize_origin` reads. Free, where re-running
     // flatten to trace connection expansion would need the resolved MSL again.
-    let (mut connect, mut flow, mut event) = (0usize, 0usize, 0usize);
+    let (mut connect, mut flow) = (0usize, 0usize);
     for eq in &cr.dae.continuous.equations {
         let o = eq.origin.trim();
         if o.starts_with("connection equation") {
             connect += 1;
         } else if o.starts_with("flow sum") || o.starts_with("unconnected flow") {
             flow += 1;
-        } else if o.contains("when") || o.contains("reinit") {
-            event += 1;
         }
     }
     row.n_connect_eq = Some(connect);
     row.n_flow_eq = Some(flow);
-    row.n_event_eq = Some(event);
+
+    // **Events do not live in `continuous.equations`.** They live in three
+    // separate structures, which `events_to_json` reads and the first version of
+    // this counter did not — so `n_event_eq` was zero for all 2,237 successes
+    // while 1,089 models had discrete variables.
+    row.n_event_conditions = Some(
+        cr.dae.conditions.equations.len()
+            + cr.dae.conditions.relations.len()
+            + cr.dae.events.synthetic_root_conditions.len()
+            + cr.dae.events.scheduled_time_events.len(),
+    );
+    row.n_discrete_updates =
+        Some(cr.dae.discrete.real_updates.len() + cr.dae.discrete.valued_updates.len());
 
     let all_names = || {
         v.states.keys().chain(v.algebraics.keys()).chain(v.parameters.keys())
@@ -514,6 +540,7 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
         }
     }
     row.secs = t.elapsed().as_secs_f64();
+    row.compile_cost = SurveyRow::cost_bucket(row.secs).to_owned();
     row
 }
 

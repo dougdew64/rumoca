@@ -2905,3 +2905,100 @@ it.** That is the same shape as the answer platform — the report is a *noun-fi
 scale no human browses, and HRW is the explanation. It also happens to be exactly the
 workflow a Rumoca maintainer would want for triage, which is `upstream-strategy`'s overlap
 argument arriving from a different direction.
+
+---
+
+## 53. The corpus shift — MSL as the example source, and what it does to specimens, lookup and curriculum
+
+Agreed with Doug 2026-07-31, once the survey existed and it became clear what it enables.
+**#51 predicted the corpus; this is what having it measured actually changes.**
+
+The survey (`examples/survey_msl.rs`, `docs/msl-survey.csv`) records outcome and IR shape for
+all **2,626** MSL models, of which **557 reach a solvable system**. That turns the corpus from
+"a pile of models we could compile" into **a catalogue searchable by the thing we care about**.
+
+### Do specimens still belong in the repo? Yes — with a narrowed role
+
+They are **no longer the breadth corpus**; MSL is. But four things MSL structurally cannot do:
+
+- **Carry an expectation.** #51's insight, and it survives: an MSL example *predicts nothing*,
+  so a pass teaches nothing. An authored specimen predicts where it will fail, and **the
+  surprise is the finding**. Breadth and insight are different products.
+- **Fail on purpose.** MSL is known-good and contains no model authored to fail at flatten
+  with a connector mismatch. `IncompatibleConnect`, `UndefinedRef`, `DimensionMismatch` and
+  `OverInitRc` are deliberate failures, and **F9 has no data without them**.
+- **Be minimal.** `ProportionalLoop` has 3 equations. Learning tearing, a 3-equation loop is
+  comprehensible; MSL's largest coupled block has **64 variables** and teaches nothing on
+  first encounter. Pedagogical minimality is a property MSL does not offer at all.
+- **Stay still.** A specimen does not change when MSL is upgraded, which matters for a
+  reproducer attached to an upstream issue.
+
+**So the policy is a burden of proof, not a purge.** A *new* specimen must answer *"why can
+MSL not provide this?"*, and there are exactly three good answers: it must fail, it must be
+minimal, or it is a bug reproducer. Existing specimens stay.
+
+### Lookup: query the catalogue by IR shape
+
+The columns already support it. Real answers from the first full survey:
+
+| Want to study | The data answers |
+|---|---|
+| a large algebraic loop (tearing) | `Electrical.Machines.…SwitchingDcDc`, `PowerConverters.…HBridge_R` — 64-variable blocks |
+| connection expansion at scale | `Electrical.Analog.Examples.Lines.SmoothStep` — **365** connection equations |
+| the Pantelides funnel firing | 78 models; largest `DCMachines.DCPM_Drive` at 666 equations |
+| a deep component hierarchy | `StateGraph.Examples.ControlledTanks` — depth 6 |
+
+**This changes the working relationship with the corpus.** "Show me a real model where index
+reduction does something" stops being a request Claude fulfils by *authoring* one, and becomes
+a **query**. That is a large reduction in Claude's ability to bias the evidence by choosing
+convenient examples.
+
+### The specimen list and the example list are the same widget
+
+#52 already noted Test mode is Specimen mode with a different list source. **Lookup makes that
+literal:** a "specimen" stops being *a file in the repo* and becomes *a row you can open*,
+which `WorkerState::compile_model_by_name` now makes possible.
+
+One list widget, three sources:
+
+1. `specimens/` — curated, minimal, some deliberately failing
+2. `.hrw-bridge/specimens/` — Claude's scratch probes, ephemeral by construction
+3. **the survey — 2,626 MSL models**, filterable by shape
+
+Worth building the filter *before* deciding the two modes should merge: the merge may turn out
+to be obvious once the list is shared, or obviously wrong.
+
+### A difficulty ladder, ordered by measured complexity
+
+The most interesting consequence. For any phenomenon HRW has a view for, the survey can order
+examples by how hard they are:
+
+| Rung | Model | Largest coupled block |
+|---|---|---|
+| 1 | `ProportionalLoop` (authored, minimal) | 3 |
+| … | MSL models, measured | 8, 15, 30 |
+| top | `SwitchingDcDc` | 64 |
+
+**Ordered by measured IR complexity rather than by Claude's guess about what is hard.** That is
+the same shift as everywhere else in this work: from judgement to measurement.
+
+**And the tension it must not cross.** `feedback-curriculum-emerges-from-reading` says do not
+front-run the curriculum — it emerges from Doug reading Cellier and from Q&A finding friction.
+A generated ladder does **not** violate that, and the distinction is worth keeping sharp:
+
+> The ladder does not choose **what** to teach. It orders **examples** for a topic already
+> chosen.
+
+A syllabus generated from IR statistics would be exactly the front-running that rule forbids.
+An ordering of candidate models, once Doug has decided he is studying tearing, is a lookup aid.
+Keep it on the right side of that line.
+
+### What to build (small, in this order)
+
+1. **A filter/sort over the survey rows** in Test mode's list — no new data, just a view.
+2. **A saved-query notion**, so "models with a coupled block between 8 and 20" is nameable and
+   re-runnable rather than retyped.
+3. **The ladder** as a sort order plus a picked rung, only once a real topic needs it.
+
+**Relates to:** #51 (the corpus), #52 (Test mode), #46 (failure specimens),
+`docs/reports.md`, and the specimen rules in `CLAUDE.md` that this narrows.

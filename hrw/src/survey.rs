@@ -38,7 +38,17 @@ pub struct SurveyRow {
     /// Top-level MSL package (`Electrical`, `Fluid`, …) — the grouping the LHS
     /// list needs, and cheaper to store than to re-derive per frame.
     pub package: String,
+    /// Wall-clock seconds for this model. **Runtime only — not serialised**, so
+    /// not round-tripped: raw timings differ every run, and a column that churns
+    /// 2,595 of 2,626 rows destroys the one property a checked-in report needs,
+    /// which is that a diff means something.
     pub secs: f64,
+    /// `fast` / `slow` / `very_slow` — the *stable* form of [`Self::secs`].
+    ///
+    /// Keeps what a reader needs (do not casually click a model that takes a
+    /// minute to compile) without the churn. A model changes bucket only when
+    /// its cost genuinely moves, which is itself worth seeing in a diff.
+    pub compile_cost: String,
 
     // --- shape, when the compile succeeded ---
     pub n_equations: Option<usize>,
@@ -68,8 +78,18 @@ pub struct SurveyRow {
     pub n_connect_eq: Option<usize>,
     /// Flow-sum equations, the other half of connection expansion.
     pub n_flow_eq: Option<usize>,
-    /// `when` / `reinit` equations — the Events tab's subject.
-    pub n_event_eq: Option<usize>,
+    /// What *triggers* an event: zero-crossing root conditions, condition
+    /// equations and relations.
+    ///
+    /// **Replaces an `n_event_eq` that was always zero.** That column counted
+    /// `when`/`reinit` in `continuous.equations`, and events do not live there —
+    /// they live in `dae.conditions`, `dae.discrete` and `dae.events`. It
+    /// silently asserted that no MSL model has events while 1,089 models had
+    /// discrete variables, and survived because nothing checked that a column
+    /// was ever non-zero. See `all_zero_columns`.
+    pub n_event_conditions: Option<usize>,
+    /// What *happens* at an event: real (`f_z`) and valued (`f_m`) updates.
+    pub n_discrete_updates: Option<usize>,
 
     pub has_arrays: bool,
     pub max_depth: usize,
@@ -77,22 +97,39 @@ pub struct SurveyRow {
 }
 
 impl SurveyRow {
-    pub const HEADER: &'static str = "name,kind,outcome,message,package,secs,n_equations,\
-        n_states,n_algebraic,n_discrete,n_parameters,structural,index_reduced,n_blocks,\
-        n_coupled,largest_coupled,n_connect_eq,n_flow_eq,n_event_eq,has_arrays,max_depth,\
-        n_functions";
+    pub const HEADER: &'static str = "name,kind,outcome,message,package,compile_cost,\
+        n_equations,n_states,n_algebraic,n_discrete,n_parameters,structural,index_reduced,\
+        n_blocks,n_coupled,largest_coupled,n_connect_eq,n_flow_eq,n_event_conditions,\
+        n_discrete_updates,has_arrays,max_depth,n_functions";
+
+    /// The stable bucket for a wall-clock measurement.
+    ///
+    /// Thresholds picked from the corpus: at 800-equation reduction the median
+    /// model is under a second, and the handful worth warning about run tens of
+    /// seconds.
+    pub fn cost_bucket(secs: f64) -> &'static str {
+        if secs >= 30.0 {
+            "very_slow"
+        } else if secs >= 5.0 {
+            "slow"
+        } else {
+            "fast"
+        }
+    }
 
     pub fn to_csv(&self) -> String {
         let n = |v: Option<usize>| v.map_or(String::new(), |x| x.to_string());
         format!(
-            "{},{},{},{},{},{:.3},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
             csv_field(&self.name), csv_field(&self.kind), csv_field(&self.outcome),
-            csv_field(&self.message), csv_field(&self.package), self.secs,
+            csv_field(&self.message), csv_field(&self.package),
+            csv_field(&self.compile_cost),
             n(self.n_equations), n(self.n_states), n(self.n_algebraic),
             n(self.n_discrete), n(self.n_parameters),
             csv_field(&self.structural), csv_field(&self.index_reduced),
             n(self.n_blocks), n(self.n_coupled), n(self.largest_coupled),
-            n(self.n_connect_eq), n(self.n_flow_eq), n(self.n_event_eq),
+            n(self.n_connect_eq), n(self.n_flow_eq),
+            n(self.n_event_conditions), n(self.n_discrete_updates),
             self.has_arrays, self.max_depth, n(self.n_functions),
         )
     }
@@ -250,6 +287,62 @@ impl Summary {
     }
 }
 
+/// Numeric columns that are **zero for every row that has a value** — a column
+/// measuring nothing.
+///
+/// **The generalised fix for `n_event_eq`.** That column counted `when` and
+/// `reinit` in `continuous.equations`, where events do not live, so it was zero
+/// across all 2,237 successes — silently asserting that no MSL model has events
+/// while 1,089 had discrete variables. It survived a full run, a commit, and a
+/// published artifact because **nothing checked that a column was ever
+/// non-zero**.
+///
+/// That is the non-vacuity lesson the fidelity checks already learned
+/// (`docs/architecture.md` §11), applied to the survey: a check — or a column —
+/// that can never fire looks exactly like one that passes.
+///
+/// Reported rather than asserted, because a legitimately all-zero column is
+/// possible on a small or filtered corpus. On the full MSL it is a defect.
+pub fn all_zero_columns(rows: &[SurveyRow]) -> Vec<&'static str> {
+    let probes: [(&'static str, fn(&SurveyRow) -> Option<usize>); 10] = [
+        ("n_equations", |r| r.n_equations),
+        ("n_states", |r| r.n_states),
+        ("n_algebraic", |r| r.n_algebraic),
+        ("n_discrete", |r| r.n_discrete),
+        ("n_parameters", |r| r.n_parameters),
+        ("n_blocks", |r| r.n_blocks),
+        ("n_coupled", |r| r.n_coupled),
+        ("largest_coupled", |r| r.largest_coupled),
+        ("n_connect_eq", |r| r.n_connect_eq),
+        ("n_flow_eq", |r| r.n_flow_eq),
+    ];
+    let mut dead: Vec<&'static str> = probes
+        .iter()
+        .filter(|(_, get)| {
+            let vals: Vec<usize> = rows.iter().filter_map(|r| get(r)).collect();
+            !vals.is_empty() && vals.iter().all(|v| *v == 0)
+        })
+        .map(|(name, _)| *name)
+        .collect();
+    // The two event columns, checked the same way.
+    for (name, get) in [
+        ("n_event_conditions", (|r: &SurveyRow| r.n_event_conditions) as fn(&SurveyRow) -> Option<usize>),
+        ("n_discrete_updates", |r: &SurveyRow| r.n_discrete_updates),
+    ] {
+        let vals: Vec<usize> = rows.iter().filter_map(get).collect();
+        if !vals.is_empty() && vals.iter().all(|v| *v == 0) {
+            dead.push(name);
+        }
+    }
+    if !rows.is_empty() && rows.iter().all(|r| !r.has_arrays) {
+        dead.push("has_arrays");
+    }
+    if !rows.is_empty() && rows.iter().all(|r| r.max_depth == 0) {
+        dead.push("max_depth");
+    }
+    dead
+}
+
 /// RFC-4180 quoting — messages carry commas and quotes freely.
 pub fn csv_field(s: &str) -> String {
     if s.contains([',', '"', '\n']) {
@@ -307,7 +400,9 @@ pub fn parse_csv(text: &str) -> Vec<SurveyRow> {
                 outcome: get("outcome"),
                 message: get("message"),
                 package: get("package"),
-                secs: get("secs").parse().unwrap_or(0.0),
+                // Not carried by the CSV — see the field docs.
+                secs: 0.0,
+                compile_cost: get("compile_cost"),
                 n_equations: num("n_equations"),
                 n_states: num("n_states"),
                 n_algebraic: num("n_algebraic"),
@@ -320,7 +415,8 @@ pub fn parse_csv(text: &str) -> Vec<SurveyRow> {
                 largest_coupled: num("largest_coupled"),
                 n_connect_eq: num("n_connect_eq"),
                 n_flow_eq: num("n_flow_eq"),
-                n_event_eq: num("n_event_eq"),
+                n_event_conditions: num("n_event_conditions"),
+                n_discrete_updates: num("n_discrete_updates"),
                 has_arrays: get("has_arrays") == "true",
                 max_depth: num("max_depth").unwrap_or(0),
                 n_functions: num("n_functions"),
@@ -451,6 +547,41 @@ mod tests {
             rows.iter().filter(|r| !r.name.is_empty() && !r.outcome.is_empty()).collect();
         assert_eq!(complete.len(), 1, "the torn row must not survive the filter");
         assert_eq!(complete[0].name, "Modelica.A");
+    }
+
+    /// **A column that measures nothing is reported.**
+    ///
+    /// This is the `n_event_eq` defect, generalised: that column was zero across
+    /// 2,237 successes because it counted events where events do not live, and
+    /// it survived into a published artifact because nothing asked whether any
+    /// column ever fired.
+    #[test]
+    fn a_column_that_is_always_zero_is_reported() {
+        let mut a = row("M.A", "success", "ok", "");
+        let mut b = row("M.B", "success", "ok", "");
+        for r in [&mut a, &mut b] {
+            r.n_equations = Some(7);
+            r.n_coupled = Some(3);
+            // The defect's shape: present on every row, and always zero.
+            r.n_event_conditions = Some(0);
+            r.n_discrete_updates = Some(0);
+        }
+        let dead = all_zero_columns(&[a.clone(), b.clone()]);
+        assert!(dead.contains(&"n_event_conditions"), "{dead:?}");
+        assert!(dead.contains(&"n_discrete_updates"), "{dead:?}");
+        assert!(!dead.contains(&"n_equations"), "a measuring column must not be flagged: {dead:?}");
+        assert!(!dead.contains(&"n_coupled"), "{dead:?}");
+
+        // One non-zero row is enough to clear it — the check asks whether the
+        // column *can* fire, not whether it usually does.
+        b.n_event_conditions = Some(1);
+        let dead = all_zero_columns(&[a, b]);
+        assert!(!dead.contains(&"n_event_conditions"), "{dead:?}");
+
+        // A column nobody measured is absent, not dead: `None` everywhere means
+        // "not applicable to this corpus", which is different from "always zero".
+        let bare = row("M.C", "failed:Flatten", "", "");
+        assert!(!all_zero_columns(&[bare]).contains(&"n_equations"));
     }
 
     #[test]

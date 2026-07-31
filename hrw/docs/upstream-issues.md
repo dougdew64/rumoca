@@ -186,6 +186,57 @@ home for a member-set comparison that is not happening.
 
 ---
 
+## 3. Cyclic-dependency diagnostics are nondeterministic across runs
+
+**Severity:** low for a user, **real for CI**. A diagnostic whose text changes between
+identical runs breaks golden-file tests and makes log diffs noisy.
+
+**Found:** 2026-07-31, by running the full MSL survey twice and diffing. Not the kind of
+thing a single run reveals.
+
+### Reproduction
+
+Compile any of these twice, in separate processes, and compare the error text:
+
+- `Modelica.StateGraph.PartialCompositeStep`
+- `Modelica.StateGraph.Examples.Utilities.CompositeStep`
+- `Modelica.StateGraph.Examples.Utilities.CompositeStep2`
+- `Modelica.StateGraph.Examples.Utilities.MakeProduct`
+- `Modelica.Fluid.Examples.ControlledTankSystem.Utilities.NormalOperation`
+
+### Expected
+
+The same diagnostic text on every run.
+
+### Actual
+
+The **outcome is stable** (`failed:ToDae` every time, same error class) but the cycle is
+reported **starting from a different member each run**:
+
+```text
+run 1: ... cyclic dependency: outerState.subgraphStatePort.suspend -> ...
+run 2: ... cyclic dependency: stateGraphRoot.subgraphStatePort.suspend -> ...
+```
+
+```text
+run 1: ... cyclic dependency: fillTank2.outerStatePort.subgraphStatePort.suspend -> ...
+run 2: ... cyclic dependency: wait2.outerStatePort.subgraphStatePort.suspend -> ...
+```
+
+### Why it matters
+
+Only 5 of 2,626 models are affected, so the practical impact on a user is small. But a
+consumer that stores diagnostics — a golden-file test, a CI log diff, or a checked-in
+capability report like `docs/msl-survey.csv` — sees spurious changes with no behaviour
+change behind them, which is exactly the noise that trains people to ignore diffs.
+
+**Suspect, unverified:** the cycle is detected over a hash-ordered collection, so the
+traversal entry point varies while the cycle's membership does not. A deterministic entry
+point — the lexicographically smallest member, say — would fix the text without changing
+the analysis.
+
+---
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
