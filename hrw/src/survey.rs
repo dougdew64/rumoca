@@ -429,6 +429,30 @@ mod tests {
         assert_eq!(cause("something nobody predicted"), "other");
     }
 
+    /// **A torn final line is recognisable**, which is what `--resume` relies on.
+    ///
+    /// Rows are flushed individually, so a kill mid-write can leave a partial
+    /// last line. The survey's `load_partial` drops any row missing its `name` or
+    /// `outcome` and re-surveys it — a resumed run that trusted a half-written
+    /// row would carry a corrupt row into a published report.
+    #[test]
+    fn a_truncated_final_line_parses_as_incomplete_rather_than_plausible() {
+        let text = format!(
+            "{}\nModelica.A,Component,success,,Blocks,0.5,3,1,0,0,8,ok,,3,0,0,0,0,0,false,0,0\n\
+             Modelica.B,Compon",
+            SurveyRow::HEADER,
+        );
+        let rows = parse_csv(&text);
+        assert_eq!(rows.len(), 2, "both lines parse; the torn one is filtered by its emptiness");
+        assert_eq!(rows[0].outcome, "success");
+        assert_eq!(rows[0].n_equations, Some(3));
+
+        let complete: Vec<&SurveyRow> =
+            rows.iter().filter(|r| !r.name.is_empty() && !r.outcome.is_empty()).collect();
+        assert_eq!(complete.len(), 1, "the torn row must not survive the filter");
+        assert_eq!(complete[0].name, "Modelica.A");
+    }
+
     #[test]
     fn names_yield_their_package_and_kind() {
         assert_eq!(package_of("Modelica.Fluid.Examples.Tank"), "Fluid");

@@ -31,13 +31,31 @@
 //! and diff it. See `docs/upstream-strategy.md` planning rule 2.
 //!
 //! ```text
-//! cargo run -p hrw --release --example survey_msl -- [--limit N] [--out PATH]
+//! cargo run -p hrw --release --example survey_msl -- [--limit N] [--out PATH] [--resume]
 //! ```
 //!
-//! `--limit` surveys the first N models only, for a quick check that the run
-//! works before committing an hour to it.
+//! `--limit N` surveys N models spread across the alphabet — a quick check that
+//! the run works before committing an hour to it. `--resume` continues an
+//! interrupted run from the rows already in the CSV.
+//!
+//! # Written incrementally, and why
+//!
+//! Each row is appended and flushed as it is produced. The 2026-07-31 run took
+//! **72 minutes** and wrote nothing until the end, so a kill at 96% would have
+//! discarded all of it — and, having been piped through `tail`, it showed no
+//! progress either, since `tail` buffers to EOF.
+//!
+//! Three things fall out of appending instead: the run is **resumable**, the
+//! file is **watchable** while it proceeds (`wc -l`), and a partial file is a
+//! usable report rather than nothing. **Do not pipe this through `tail`** —
+//! read the CSV, or watch stderr directly.
+//!
+//! Cost is negligible beside a 0.9s-per-model compile, and the flush is the
+//! point: an unflushed buffer is exactly the work a kill would discard.
 
 use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -80,6 +98,7 @@ fn load_msl() -> Session {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let limit = arg_value(&args, "--limit").and_then(|v| v.parse::<usize>().ok());
+    let resume = args.iter().any(|a| a == "--resume");
     let out = arg_value(&args, "--out").unwrap_or_else(|| {
         format!("{}/docs/msl-survey.csv", env!("CARGO_MANIFEST_DIR"))
     });
@@ -113,22 +132,59 @@ fn main() {
         eprintln!("--limit {n}: surveying {} models, every {step}th", names.len());
     }
 
-    let t_compile = Instant::now();
+    // **Rows already surveyed, when resuming.** A run costs over an hour, so
+    // being killed at 96% must not throw the work away — the 2026-07-31 run
+    // reached that point with nothing on disk, because the CSV was written only
+    // at the end.
     let mut rows: Vec<SurveyRow> = Vec::new();
-
-    for (i, name) in names.iter().enumerate() {
-        if i % 100 == 0 && i > 0 {
-            eprintln!("  {i}/{} ({:.0}s elapsed)", names.len(), t_compile.elapsed().as_secs_f64());
+    if resume {
+        rows = load_partial(&out);
+        if !rows.is_empty() {
+            eprintln!("--resume: {} rows already surveyed in {out}", rows.len());
         }
-        rows.push(survey_one(&mut session, name));
+    }
+    let done: std::collections::BTreeSet<String> =
+        rows.iter().map(|r| r.name.clone()).collect();
+    let todo: Vec<&String> = names.iter().filter(|n| !done.contains(*n)).collect();
+
+    // Open for append and write each row as it is produced. Two things this
+    // buys beyond crash-safety: the file is watchable while the run proceeds,
+    // and a partial file is a usable report rather than nothing.
+    let mut sink = match open_sink(&out, rows.is_empty()) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("cannot write {out}: {e}");
+            return;
+        }
+    };
+
+    let t_compile = Instant::now();
+    for (i, name) in todo.iter().enumerate() {
+        let row = survey_one(&mut session, name);
+        if let Err(e) = writeln!(sink, "{}", row.to_csv()).and_then(|()| sink.flush()) {
+            // Flushed per row on purpose: an unflushed buffer is exactly the
+            // work a kill would discard.
+            eprintln!("write failed after {} rows: {e}", rows.len());
+            break;
+        }
+        rows.push(row);
+        if i % 100 == 99 || i + 1 == todo.len() {
+            let s = Summary::of(&rows);
+            eprintln!(
+                "  {}/{} ({:.0}s) — {}",
+                rows.len(),
+                names.len(),
+                t_compile.elapsed().as_secs_f64(),
+                s.outcomes
+                    .iter()
+                    .map(|(k, n)| format!("{k}={n}"))
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            );
+        }
     }
 
     let total = t_compile.elapsed().as_secs_f64();
-    let mut csv = vec![SurveyRow::HEADER.to_owned()];
-    csv.extend(rows.iter().map(SurveyRow::to_csv));
-    if let Err(e) = std::fs::write(&out, csv.join("\n") + "\n") {
-        eprintln!("could not write {out}: {e}");
-    }
 
     // Computed through the same `Summary` the Test-mode panel will use, so the
     // console tally and the rendered one cannot disagree.
@@ -319,6 +375,37 @@ fn first_line(s: &str) -> String {
     s.lines().next().unwrap_or("").chars().take(200).collect()
 }
 
+
+/// Open the CSV for appending, writing the header only on a fresh run.
+fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
+    let mut f = BufWriter::new(
+        OpenOptions::new().create(true).write(true).truncate(fresh).append(!fresh).open(out)?,
+    );
+    if fresh {
+        writeln!(f, "{}", SurveyRow::HEADER)?;
+        f.flush()?;
+    }
+    Ok(f)
+}
+
+/// Rows already in a partial CSV, **dropping a torn final line**.
+///
+/// Per-row flushing makes a half-written line unlikely but not impossible, and
+/// a resumed run that trusted one would carry a corrupt row into the report. A
+/// row missing its name or outcome cannot have been written completely, so it is
+/// discarded and re-surveyed. The file is then rewritten from what survived, so
+/// the torn line does not persist.
+fn load_partial(out: &str) -> Vec<SurveyRow> {
+    let Ok(text) = std::fs::read_to_string(out) else { return Vec::new() };
+    let rows: Vec<SurveyRow> = hrw::survey::parse_csv(&text)
+        .into_iter()
+        .filter(|r| !r.name.is_empty() && !r.outcome.is_empty())
+        .collect();
+    let mut csv = vec![SurveyRow::HEADER.to_owned()];
+    csv.extend(rows.iter().map(SurveyRow::to_csv));
+    let _ = std::fs::write(out, csv.join("\n") + "\n");
+    rows
+}
 
 fn arg_value(args: &[String], flag: &str) -> Option<String> {
     let i = args.iter().position(|a| a == flag)?;
