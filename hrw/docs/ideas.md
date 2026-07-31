@@ -2782,3 +2782,66 @@ corpus to do it on.
 
 **Relates to:** #46 (authored specimens — complementary, not superseded), #43 (the oracle),
 #4 (the differential test), #22 (simulation, deferred on maturity).
+
+---
+
+## 52. A "Test" mode — load a report, click a model, investigate it
+
+Doug, 2026-07-31, while the first full MSL survey was running:
+
+> Ultimately, we're going to consider adding a new "Test" mode to HRW. The test mode will
+> enable the user to load either the fidelity report or the oracle report. Once either
+> report is loaded, it will be visible in the LHS of HRW. When a user clicks on a model in
+> the LHS, we'll open the compiled model in the RHS for further investigation.
+
+He raised it early **so the report formats are designed for consumption rather than
+retrofitted** — `docs/upstream-strategy.md` planning rule 5. What follows is what that
+implies, recorded before the formats harden.
+
+### There are THREE reports, not one, and they should share a row shape
+
+Easy to conflate, because the first one exists and the others do not:
+
+| Report | Question | Produced by | Status |
+|---|---|---|---|
+| **Survey / capability map** | how much of MSL does *Rumoca* compile, and where does it stop | `examples/survey_msl.rs` | first full run 2026-07-31 |
+| **Fidelity report** | does *HRW* agree with Rumoca, per model | F1-F9 harness (`src/fidelity.rs`) | emits nothing yet — only asserts |
+| **Oracle report** | does *Rumoca* agree with *System Modeler*, per model | not built (`docs/ideas.md` #43) | not started |
+
+**Give all three the same first four columns — `name`, `kind`, `outcome`, `message`** — so
+Test mode has one loader and one list widget, and the report-specific columns simply extend
+to the right. Diverging here costs a second implementation of everything.
+
+### The gap that has to close before clicking a row can work
+
+`WorkerState::compile` takes a **file path** and reads it as the specimen source. An MSL
+model has no such file — it lives inside a package the library already loaded. So Test mode
+needs a **compile-by-qualified-name** entry point in the worker.
+
+The survey already proves the call works
+(`session.compile_model_strict_reachable_uncached_with_recovery(name)`); what is missing is a
+worker path that produces a full `FromWorker::Compiled` from a name rather than a path. That
+is a prerequisite for Test mode and worth doing on its own — it would also let a scratch
+question point at any MSL model, not only at specimens.
+
+### Format: CSV stays, and HRW parses it
+
+CSV is right for the **published** artifact — diffable in git, openable in a spreadsheet by
+a maintainer who will not install anything. Emitting a second JSON copy for HRW would create
+two sources of truth for one table.
+
+So HRW gets a small RFC-4180 reader (~30 lines, quoted fields carry commas and quotes
+freely). **No new dependency** — and adding one needs Doug's approval anyway.
+
+Provenance rides in a **sidecar** `*.meta.json`, not in CSV comment lines, which strict
+readers and spreadsheets both mishandle. Test mode uses it to caption a loaded report: which
+Rumoca, which MSL, how many models, when. A report that cannot say what it describes is
+neither reproducible nor safely readable months later.
+
+### What Test mode is really for
+
+Note the sequence Doug describes: **a report finds something, and the observatory explains
+it.** That is the same shape as the answer platform — the report is a *noun-finder* at a
+scale no human browses, and HRW is the explanation. It also happens to be exactly the
+workflow a Rumoca maintainer would want for triage, which is `upstream-strategy`'s overlap
+argument arriving from a different direction.

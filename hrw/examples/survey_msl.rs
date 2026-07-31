@@ -92,6 +92,7 @@ fn main() {
         .to_vec();
     names.sort();
     names.dedup();
+    let available = names.len();
     eprintln!(
         "loaded in {:.1}s — {} models among {} classes by type: {}",
         t0.elapsed().as_secs_f64(),
@@ -125,6 +126,47 @@ fn main() {
     let total = t_compile.elapsed().as_secs_f64();
     if let Err(e) = std::fs::write(&out, rows.join("\n") + "\n") {
         eprintln!("could not write {out}: {e}");
+    }
+
+    // Provenance, as a sidecar rather than CSV comment lines, which strict
+    // readers and spreadsheets both mishandle.
+    //
+    // **A survey that cannot say what it describes is not reproducible**, and
+    // reproducibility is what makes it publishable (`docs/upstream-strategy.md`
+    // planning rule 2). It is also what HRW's planned Test mode needs to caption
+    // a loaded report: which Rumoca, which MSL, how much of it, and when.
+    let mut tally: Vec<(&String, &usize)> = outcomes.iter().collect();
+    tally.sort_by_key(|(k, _)| k.as_str());
+    let meta = format!(
+        "{{\n  \"rumoca_version\": \"{}\",\n  \"hrw_version\": \"{}\",\n  \
+         \"msl_roots\": [{}],\n  \"models_surveyed\": {},\n  \"models_available\": {},\n  \
+         \"partial_survey\": {},\n  \"seconds\": {:.1},\n  \"generated_unix\": {},\n  \
+         \"outcomes\": {{{}}}\n}}\n",
+        env!("HRW_RUMOCA_VERSION"),
+        env!("CARGO_PKG_VERSION"),
+        msl_roots()
+            .iter()
+            .map(|r| format!("\"{}\"", r.file_name().unwrap_or_default().to_string_lossy()))
+            .collect::<Vec<_>>()
+            .join(", "),
+        names.len(),
+        available,
+        limit.is_some(),
+        total,
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_secs()),
+        tally
+            .iter()
+            .map(|(k, n)| format!("\"{k}\": {n}"))
+            .collect::<Vec<_>>()
+            .join(", "),
+    );
+    let meta_path = out.replace(".csv", ".meta.json");
+    if let Err(e) = std::fs::write(&meta_path, meta) {
+        eprintln!("could not write {meta_path}: {e}");
+    } else {
+        eprintln!("wrote {meta_path}");
     }
 
     eprintln!(
