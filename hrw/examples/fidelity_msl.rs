@@ -1,0 +1,283 @@
+//! **The fidelity checks at scale** — F1-F9 over an MSL corpus.
+//!
+//! The scale counterpart to the test in `src/fidelity.rs`. Same check
+//! functions, two callers: that test is the fast pre-commit gate over the
+//! curated specimens, this is the run that produces the report
+//! (`docs/reports.md`). **A check that exists twice is a check that drifts**,
+//! which is the exact defect F1 and F7 both found on 2026-07-31.
+//!
+//! # Staged, because most first-run violations are the CHECK's fault
+//!
+//! Of twelve violations across F6-F9's first runs, **nine were the check's
+//! fault**, all of one shape: a check that knows one form of the truth reports
+//! every other form as a defect. Running the full corpus first would produce a
+//! flood dominated by my own bugs. So:
+//!
+//! | stage | `--limit` | for |
+//! |---|---|---|
+//! | B | ~20 | shake out "my check assumes a shape MSL does not have" |
+//! | C | ~60 | measure real per-model cost; shape bugs B missed |
+//! | D | full | the run that produces the artifact |
+//!
+//! # Violations are grouped, not listed
+//!
+//! F7's first run produced **6,169** violations and was diagnosable only because
+//! the first few lines happened to be representative. At corpus scale that is
+//! luck. Output is grouped by check with counts and examples, so a flood reads
+//! as *"F7: 6,169, all of one shape"*.
+//!
+//! # Reduction is capped, models are not excluded
+//!
+//! `--max-reduce-eq` mirrors the survey, for the same reason: reduction cost
+//! explodes on large systems. Above the cap the `IndexReduction` subjects are
+//! absent and their checks skip — so a 10,175-equation model still contributes
+//! F2, F3, F5, F6 and F7 rather than being dropped. **F8 explicitly wants the
+//! largest models**, so excluding them would cost the scale coverage that is
+//! most of the point.
+//!
+//! ```text
+//! cargo run -p hrw --release --example fidelity_msl -- [--limit N] [--slice i/N]
+//!                                    [--models a,b,c] [--out PATH] [--max-reduce-eq N]
+//! ```
+
+use std::collections::BTreeMap;
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
+use std::time::Instant;
+
+use hrw::fidelity::{Coverage, Violation, check_model, group_by_check};
+use hrw::survey::{SurveyRow, classify};
+use hrw::worker::{FromWorker, Outcome, StageKind, WorkerState, index_reduce_in_place};
+
+fn msl_roots() -> Vec<PathBuf> {
+    let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
+    vec![
+        PathBuf::from(format!("{base}/Modelica 4.1.0")),
+        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
+        PathBuf::from(format!("{base}/Complex.mo")),
+    ]
+}
+
+/// Candidate models, read from the survey rather than re-derived.
+///
+/// **The survey is the corpus definition.** Re-enumerating from a session here
+/// would be a second definition of "which models exist", and the two would
+/// drift the moment MSL moves.
+fn corpus() -> Vec<SurveyRow> {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/msl-survey.csv");
+    let text = std::fs::read_to_string(path)
+        .unwrap_or_else(|e| panic!("run the survey first: cannot read {path}: {e}"));
+    hrw::survey::parse_csv(&text)
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let out = arg(&args, "--out")
+        .unwrap_or_else(|| format!("{}/docs/fidelity-report.csv", env!("CARGO_MANIFEST_DIR")));
+    let max_reduce_eq: usize =
+        arg(&args, "--max-reduce-eq").and_then(|v| v.parse().ok()).unwrap_or(800);
+
+    let mut rows = corpus();
+    eprintln!("survey corpus: {} models", rows.len());
+
+    // An explicit list beats any sampling when chasing a specific failure.
+    if let Some(list) = arg(&args, "--models") {
+        let want: Vec<&str> = list.split(',').map(str::trim).collect();
+        rows.retain(|r| want.contains(&r.name.as_str()));
+        eprintln!("--models: {} matched", rows.len());
+    }
+    if let Some(n) = arg(&args, "--limit").and_then(|v| v.parse::<usize>().ok()) {
+        // Spread across the corpus, not a prefix: the first N are all
+        // `Modelica.Blocks.*` and would test one package's shapes.
+        let step = rows.len().div_ceil(n.max(1));
+        rows = rows.into_iter().step_by(step.max(1)).collect();
+        eprintln!("--limit {n}: {} models, every {step}th", rows.len());
+    }
+    if let Some((i, n)) = arg(&args, "--slice").and_then(|s| {
+        let (a, b) = s.split_once('/')?;
+        Some((a.parse::<usize>().ok()?, b.parse::<usize>().ok()?))
+    }) {
+        assert!(n > 0 && i < n, "--slice i/N needs 0 <= i < N");
+        rows = rows.into_iter().skip(i).step_by(n).collect();
+        eprintln!("--slice {i}/{n}: {} models", rows.len());
+    }
+
+    eprintln!("loading MSL…");
+    let t0 = Instant::now();
+    let mut w = WorkerState::new();
+    w.load_libraries(msl_roots()).expect("load MSL");
+    eprintln!("loaded in {:.1}s", t0.elapsed().as_secs_f64());
+
+    let mut sink = open_sink(&out).expect("open the report");
+    let mut all: Vec<Violation> = Vec::new();
+    let mut checked = 0usize;
+    let mut skipped_reduction = 0usize;
+    let mut no_dae = 0usize;
+    let mut sizes: Vec<(usize, String)> = Vec::new();
+    let mut cov = Coverage::default();
+    let t_run = Instant::now();
+
+    for (i, row) in rows.iter().enumerate() {
+        if i > 0 && i % 200 == 0 {
+            w = WorkerState::new();
+            w.load_libraries(msl_roots()).expect("reload MSL");
+            eprintln!("  [rebuild] fresh session after {i} models");
+        }
+
+        let t = Instant::now();
+        let FromWorker::Compiled { stages, dae, equation_sheet, identifier_index, .. } =
+            w.compile_model_by_name(&row.name, &|_: FromWorker| {})
+        else {
+            continue;
+        };
+
+        // F8: every stage serialises, and the sizes are on the record.
+        let bytes: usize = StageKind::COMPILATION
+            .iter()
+            .map(|k| stages.get(*k).value.as_ref().map_or(0, |v| v.to_string().len()))
+            .sum();
+        sizes.push((bytes, row.name.clone()));
+
+        let mut violations = Vec::new();
+        if let Some(dae) = dae.as_ref() {
+            let n_eq = dae.continuous.equations.len();
+            let reduced = if n_eq > max_reduce_eq {
+                skipped_reduction += 1;
+                None
+            } else {
+                let mut r = dae.clone();
+                index_reduce_in_place(&mut r);
+                Some(r)
+            };
+            violations = check_model(
+                &stages,
+                dae,
+                reduced.as_ref(),
+                equation_sheet.as_ref(),
+                identifier_index.as_ref(),
+                &mut cov,
+            );
+            checked += 1;
+        } else {
+            no_dae += 1;
+        }
+        violations.extend(check_failures(&stages));
+
+        let secs = t.elapsed().as_secs_f64();
+        if secs >= 10.0 {
+            eprintln!("  [slow] {secs:.1}s  {}", row.name);
+        }
+        let _ = writeln!(sink, "{}", report_row(&row.name, &violations)).and_then(|()| sink.flush());
+        all.extend(violations);
+
+        if (i + 1) % 25 == 0 || i + 1 == rows.len() {
+            eprintln!(
+                "  {}/{} ({:.0}s) — {} violations so far",
+                i + 1,
+                rows.len(),
+                t_run.elapsed().as_secs_f64(),
+                all.len(),
+            );
+        }
+    }
+
+    sizes.sort_by_key(|(b, _)| std::cmp::Reverse(*b));
+    eprintln!(
+        "\n[done] {} models in {:.0}s; {checked} with a DAE, {no_dae} without, \
+         {skipped_reduction} with reduction capped",
+        rows.len(),
+        t_run.elapsed().as_secs_f64(),
+    );
+    eprintln!(
+        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs walked,          {} equation sheets, {} identifier indexes",
+        cov.subjects, cov.with_blocks, cov.with_matching, cov.stage_irs,
+        cov.with_sheet, cov.with_index,
+    );
+    eprintln!("largest stage IR:");
+    for (b, n) in sizes.iter().take(3) {
+        eprintln!("  {:>9} bytes  {n}", b);
+    }
+
+    // **The triage view.** Grouped by check, largest first, with examples —
+    // the difference between a diagnosis and a wall of text.
+    eprintln!("\n=== {} violations ===", all.len());
+    for (check, n, examples) in group_by_check(&all, 3) {
+        eprintln!("{check}  {n} violations");
+        for e in examples {
+            eprintln!("      {}", e.chars().take(160).collect::<String>());
+        }
+    }
+    eprintln!("\nwrote {out}");
+}
+
+/// F9, which needs the whole bundle rather than a subject.
+fn check_failures(stages: &hrw::worker::StageBundle) -> Vec<Violation> {
+    let mut v = Vec::new();
+    for kind in StageKind::COMPILATION {
+        let stage = stages.get(*kind);
+        if stage.outcome == Outcome::Ok {
+            continue;
+        }
+        let Some(note) = stage.note.as_deref() else {
+            v.push(Violation { check: "F9", detail: format!("{kind:?}: abnormal with no note") });
+            continue;
+        };
+        match stage.value.as_ref() {
+            None => {
+                if note.trim().len() < 12 || !note.contains(' ') {
+                    v.push(Violation {
+                        check: "F9",
+                        detail: format!("{kind:?}: no value and note {note:?} is a label"),
+                    });
+                }
+            }
+            Some(value) => {
+                if value.as_object().is_none_or(serde_json::Map::is_empty) {
+                    v.push(Violation {
+                        check: "F9",
+                        detail: format!("{kind:?}: note {note:?} with a value carrying no fields"),
+                    });
+                }
+            }
+        }
+    }
+    v
+}
+
+/// One row of the fidelity report, sharing its first four columns with every
+/// other report so one loader serves all three (`docs/reports.md`).
+fn report_row(name: &str, violations: &[Violation]) -> String {
+    let mut checks: Vec<&str> = violations.iter().map(|v| v.check).collect();
+    checks.sort_unstable();
+    checks.dedup();
+    let f = hrw::survey::csv_field;
+    format!(
+        "{},{},{},{},{},{}",
+        f(name),
+        f(&classify(name)),
+        if violations.is_empty() { "ok" } else { "violations" },
+        f(violations.first().map_or("", |v| v.detail.as_str())),
+        f(&checks.join(" ")),
+        violations.len(),
+    )
+}
+
+fn open_sink(out: &str) -> std::io::Result<BufWriter<File>> {
+    let mut f = BufWriter::new(
+        OpenOptions::new().create(true).write(true).truncate(true).open(out)?,
+    );
+    writeln!(f, "name,kind,outcome,message,checks_failed,n_violations")?;
+    f.flush()?;
+    Ok(f)
+}
+
+fn arg(args: &[String], flag: &str) -> Option<String> {
+    let i = args.iter().position(|a| a == flag)?;
+    args.get(i + 1).cloned()
+}
+
+/// Unused today; keeps the map type available for per-kind grouping if a
+/// stage-B run shows one check producing two genuinely different failures.
+#[allow(dead_code, reason = "reserved for per-kind grouping; see fidelity::Violation")]
+type ByKind = BTreeMap<String, usize>;

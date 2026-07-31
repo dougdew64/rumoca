@@ -798,7 +798,12 @@ impl Worker {
 /// This is intentionally a plain `struct` (not wrapped in `Arc<Mutex<...>>`)
 /// because the worker thread is the sole owner. Shared-state concurrency
 /// is harder to reason about and unnecessary here.
-struct WorkerState {
+/// **Public because a scale runner needs it.** `examples/fidelity_msl.rs`
+/// compiles MSL models through HRW's own path — which is the thing under test —
+/// so it needs the same engine the app uses rather than a second copy. Fields
+/// stay private; only `new`, `load_libraries` and `compile_model_by_name` are
+/// exposed.
+pub struct WorkerState {
     /// The Rumoca incremental compilation session. Persists across compiles —
     /// library source roots (the MSL) are loaded once and reused for every
     /// specimen. Each `compile()` call updates the specimen's document in the
@@ -857,7 +862,7 @@ fn make_log<'a>(
 }
 
 impl WorkerState {
-    fn new() -> Self {
+    pub fn new() -> Self {
         WorkerState {
             session: Session::new(SessionConfig::default()),
             last_specimen_uri: None,
@@ -1114,7 +1119,7 @@ impl WorkerState {
     ///   session, returning the count of documents loaded.
     /// - `SourceRootKind::DurableExternal` — marks these as library sources
     ///   that outlive any single compile.
-    fn load_libraries(&mut self, roots: Vec<PathBuf>) -> Result<usize, String> {
+    pub fn load_libraries(&mut self, roots: Vec<PathBuf>) -> Result<usize, String> {
         let mut session = Session::new(SessionConfig::default());
         let mut total = 0usize;
         for root in &roots {
@@ -1230,13 +1235,7 @@ impl WorkerState {
     ///
     /// So the document is **located, not added**: `ClassDef::location.file_name`
     /// *is* the document URI, verified against `Session::get_document`.
-    // Unused outside tests until Test mode lands (`docs/ideas.md` #52). Kept
-    // `pub(crate)` like the rest of `WorkerState`'s surface — the struct is
-    // private and app.rs drives it over a channel — so the allow is the honest
-    // marker rather than a visibility widening that would not make it reachable
-    // anyway.
-    #[allow(dead_code, reason = "the Test-mode entry point; used by tests until #52 lands")]
-    pub(crate) fn compile_model_by_name(
+    pub fn compile_model_by_name(
         &mut self,
         qualified: &str,
         emit: &impl Fn(FromWorker),

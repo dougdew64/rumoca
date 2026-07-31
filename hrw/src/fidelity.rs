@@ -39,8 +39,19 @@
 //! bug F1 found in the singular matching, and a check written against
 //! "structural" alone would have missed it.
 
-#[cfg(test)]
+//! # Why the checks are not test-only code
+//!
+//! They were, until 2026-07-31. Running them over hundreds of MSL models needs a
+//! second caller — `examples/fidelity_msl.rs` — and a check that exists twice is
+//! a check that drifts, which is the exact defect F1 and F7 both found. So the
+//! checks are ordinary module functions with **two** callers: the fast test over
+//! the curated specimens, and the scale runner.
+
+use std::collections::{BTreeMap, BTreeSet};
+
 use serde_json::Value;
+
+use crate::worker::StageBundle;
 
 /// A report HRW publishes that carries an incidence matrix, together with the
 /// DAE it claims to describe.
@@ -48,22 +59,617 @@ use serde_json::Value;
 /// `dae` is `None` when the subject's system is not one we hold — nothing in
 /// the bundle is like that today, but F2 skips rather than guesses if it
 /// appears, because comparing against the wrong DAE would manufacture failures.
-#[cfg(test)]
-struct Subject<'a> {
+pub struct Subject<'a> {
     /// Where this report lives, for a violation message: `Structural`,
     /// `IndexReduction`, `IndexReduction.before`.
-    label: String,
-    report: &'a Value,
-    dae: Option<&'a rumoca_ir_dae::Dae>,
+    pub label: String,
+    pub report: &'a Value,
+    pub dae: Option<&'a rumoca_ir_dae::Dae>,
 }
+
+/// One violation, tagged with the check that raised it.
+///
+/// **Tagging is what makes a large run triageable.** F7's first run produced
+/// 6,169 violations and was diagnosable only because the first few lines
+/// happened to be representative — luck that does not survive a corpus of
+/// hundreds. Grouped by check, a flood becomes "F7: 6,169, all of one shape".
+///
+/// Grouping is by *check* rather than by message template, deliberately: a
+/// template needs every push site to name its kind, and per-check proved
+/// sufficient for every real finding so far. Revisit if a stage-B run produces
+/// two genuinely different failures inside one check.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Violation {
+    /// `"F2"` … `"F7"`.
+    pub check: &'static str,
+    pub detail: String,
+}
+
+/// Run every subject-based and view-based check on one compiled model.
+///
+/// `reduced` is `Option` and that is the point: **index reduction is capped by
+/// system size**, exactly as the survey caps it, because the cost is the same
+/// cost. Passing `None` omits the `IndexReduction` subjects and the checks skip
+/// them — which they already do for singular models — so a 10,175-equation model
+/// still contributes F2, F3, F5, F6 and F7 on its `Structural` subject rather
+/// than being excluded from the corpus entirely.
+///
+/// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
+/// function's: they need the whole bundle rather than a subject.
+pub fn check_model(
+    stages: &StageBundle,
+    dae: &rumoca_ir_dae::Dae,
+    reduced: Option<&rumoca_ir_dae::Dae>,
+    sheet: Option<&crate::equation_sheet::EquationSheet>,
+    index: Option<&crate::identifier_index::IdentifierIndex>,
+    coverage: &mut Coverage,
+) -> Vec<Violation> {
+    let mut out = Vec::new();
+    let tag = |check: &'static str, v: Vec<String>| {
+        v.into_iter().map(move |detail| Violation { check, detail })
+    };
+
+    for s in subjects(stages, dae, reduced.unwrap_or(dae)) {
+        // Without a reduced DAE the IndexReduction subjects would describe the
+        // raw system while claiming to be the reduced one — the raw-vs-reduced
+        // confusion that broke F1's first draft. Skip them instead.
+        if reduced.is_none() && s.label.starts_with("IndexReduction") {
+            continue;
+        }
+        coverage.subjects += 1;
+        if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
+            coverage.with_blocks += 1;
+        }
+        if s.report["matching"].as_array().is_some_and(|m| !m.is_empty()) {
+            coverage.with_matching += 1;
+        }
+        out.extend(tag("F2", check_f2(&s)));
+        out.extend(tag("F3", check_f3(&s)));
+        out.extend(tag("F4", check_f4(&s)));
+        out.extend(tag("F5", check_f5(&s)));
+    }
+    if sheet.is_some() {
+        coverage.with_sheet += 1;
+    }
+    if index.is_some() {
+        coverage.with_index += 1;
+    }
+    out.extend(tag("F6", check_f6(sheet, index, dae)));
+    for kind in crate::worker::StageKind::COMPILATION {
+        if let Some(root) = stages.get(*kind).value.as_ref() {
+            coverage.stage_irs += 1;
+            out.extend(tag("F7", check_f7(&format!("{kind:?}"), root)));
+        }
+    }
+    out
+}
+
+/// **What the checks actually looked at.**
+///
+/// "0 violations" means nothing without "over how much". Every check skips
+/// subjects it does not apply to, so a corpus that produced no blocks and no
+/// matchings would pass in silence — and that is not hypothetical: the survey
+/// shipped a column that was zero everywhere because nothing asked whether it
+/// ever fired.
+#[derive(Debug, Default, Clone)]
+pub struct Coverage {
+    pub subjects: usize,
+    pub with_blocks: usize,
+    pub with_matching: usize,
+    pub with_sheet: usize,
+    pub with_index: usize,
+    pub stage_irs: usize,
+}
+
+/// Violations grouped by check, most numerous first — the triage view.
+///
+/// Returns `(check, count, up to `examples` details)`.
+pub fn group_by_check(violations: &[Violation], examples: usize) -> Vec<(&'static str, usize, Vec<String>)> {
+    let mut by: BTreeMap<&'static str, Vec<&str>> = BTreeMap::new();
+    for v in violations {
+        by.entry(v.check).or_default().push(&v.detail);
+    }
+    let mut out: Vec<(&'static str, usize, Vec<String>)> = by
+        .into_iter()
+        .map(|(check, ds)| {
+            let n = ds.len();
+            (check, n, ds.into_iter().take(examples).map(str::to_owned).collect())
+        })
+        .collect();
+    out.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+    out
+}
+
+/// Every incidence-bearing report in the bundle, with the DAE it describes.
+///
+/// The Structural stage describes the **raw** system and Index Reduction the
+/// **reduced** one — the distinction that made F1's first tearing check fail
+/// for the wrong reason. `before` is the raw system again, published inside
+/// the reduced stage.
+pub fn subjects<'a>(
+    stages: &'a StageBundle,
+    dae: &'a rumoca_ir_dae::Dae,
+    reduced: &'a rumoca_ir_dae::Dae,
+) -> Vec<Subject<'a>> {
+    let mut out = Vec::new();
+    let mut push = |label: &str, report: Option<&'a Value>, d: &'a rumoca_ir_dae::Dae| {
+        if let Some(r) = report
+            && r.get("incidence").is_some()
+        {
+            out.push(Subject { label: label.to_owned(), report: r, dae: Some(d) });
+        }
+    };
+    push("Structural", stages.structural.value.as_ref(), dae);
+    push("IndexReduction", stages.index_reduction.value.as_ref(), reduced);
+    push(
+        "IndexReduction.before",
+        stages.index_reduction.value.as_ref().and_then(|v| v.get("before")),
+        dae,
+    );
+    out
+}
+
+/// `rows[i]["equation"]` — the published row labels, in row order.
+fn row_labels(report: &Value) -> Vec<String> {
+    report["incidence"]["rows"]
+        .as_array()
+        .map(|rows| {
+            rows.iter()
+                .map(|r| r["equation"].as_str().unwrap_or_default().to_owned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn unknown_names(report: &Value) -> Vec<String> {
+    report["incidence"]["unknown_names"]
+        .as_array()
+        .map(|ns| ns.iter().map(|n| n.as_str().unwrap_or_default().to_owned()).collect())
+        .unwrap_or_default()
+}
+
+/// `rows[i]["unknowns"]` as sets, in row order.
+fn row_sets(report: &Value) -> Vec<BTreeSet<usize>> {
+    report["incidence"]["rows"]
+        .as_array()
+        .map(|rows| {
+            rows.iter()
+                .map(|r| {
+                    r["unknowns"]
+                        .as_array()
+                        .map(|u| u.iter().filter_map(Value::as_u64).map(|v| v as usize).collect())
+                        .unwrap_or_default()
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// A name → index map, reporting duplicates rather than silently keeping the
+/// last. Duplicate row labels would make every name-keyed lookup in the UI
+/// ambiguous, which is worth knowing about on its own.
+fn index_of(names: &[String]) -> (BTreeMap<&str, usize>, Vec<String>) {
+    let mut map = BTreeMap::new();
+    let mut dups = Vec::new();
+    for (i, n) in names.iter().enumerate() {
+        if let Some(prev) = map.insert(n.as_str(), i) {
+            dups.push(format!("duplicate name {n:?} at rows {prev} and {i}"));
+        }
+    }
+    (map, dups)
+}
+
+// ---------------------------------------------------------------- F2
+
+/// **F2 — the published incidence is what Rumoca builds.**
+///
+/// Compared against a fresh `build_incidence` on the DAE the subject
+/// describes: same dimensions, same unknown order, same row labels, and the
+/// same column set per row.
+///
+/// Order matters and is checked as order. Every downstream view indexes into
+/// these arrays, so a permutation would leave the matrix looking entirely
+/// plausible while every label sat against the wrong row.
+pub fn check_f2(s: &Subject) -> Vec<String> {
+    let Some(dae) = s.dae else { return Vec::new() };
+    let mut v = Vec::new();
+    let inc = rumoca_phase_structural::build_incidence(dae);
+
+    let (n_eq, n_var) = (
+        s.report["incidence"]["n_eq"].as_u64().unwrap_or(u64::MAX) as usize,
+        s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
+    );
+    if n_eq != inc.n_eq {
+        v.push(format!("{}: n_eq {n_eq} published, {} from build_incidence", s.label, inc.n_eq));
+    }
+    if n_var != inc.n_var {
+        v.push(format!("{}: n_var {n_var} published, {} from build_incidence", s.label, inc.n_var));
+    }
+
+    let published_unknowns = unknown_names(s.report);
+    let real_unknowns: Vec<String> = inc.unknown_names.iter().map(ToString::to_string).collect();
+    if published_unknowns != real_unknowns {
+        v.push(format!(
+            "{}: unknown_names differ from build_incidence (first difference at {:?})",
+            s.label,
+            published_unknowns
+                .iter()
+                .zip(&real_unknowns)
+                .position(|(a, b)| a != b)
+                .map_or_else(|| "length".to_owned(), |i| i.to_string()),
+        ));
+    }
+
+    let published_labels = row_labels(s.report);
+    let real_labels: Vec<String> = (0..inc.n_eq)
+        .map(|i| rumoca_phase_structural::equation_label(dae, &inc.equation_refs[i]))
+        .collect();
+    if published_labels != real_labels {
+        v.push(format!("{}: row equation labels differ from equation_label", s.label));
+    }
+
+    let published_rows = row_sets(s.report);
+    for (i, real) in inc.eq_unknowns.iter().enumerate() {
+        let real: BTreeSet<usize> = real.iter().copied().collect();
+        match published_rows.get(i) {
+            Some(pub_row) if *pub_row == real => {}
+            Some(pub_row) => v.push(format!(
+                "{}: row {i} publishes {pub_row:?}, build_incidence says {real:?}",
+                s.label,
+            )),
+            None => v.push(format!("{}: row {i} missing; only {} published", s.label, published_rows.len())),
+        }
+    }
+    v
+}
+
+// ---------------------------------------------------------------- F3
+
+/// **F3 — the counts agree with each other and with the incidence.**
+///
+/// The `rank_deficiency: 7` bug of 2026-07-29 (true value 1) is exactly this
+/// class and was found by eye: the error described the *reduced* system while
+/// the incidence beside it described the raw one. A wrong number reads as
+/// authoritative, so it is worse than a missing one.
+pub fn check_f3(s: &Subject) -> Vec<String> {
+    let mut v = Vec::new();
+    let n_eq = s.report["incidence"]["n_eq"].as_u64().unwrap_or_default() as usize;
+    let n_var = s.report["incidence"]["n_var"].as_u64().unwrap_or_default() as usize;
+
+    for key in ["n_equations", "n_unknowns"] {
+        let expect = if key == "n_equations" { n_eq } else { n_var };
+        if let Some(got) = s.report[key].as_u64()
+            && got as usize != expect
+        {
+            v.push(format!("{}: {key} = {got}, incidence says {expect}", s.label));
+        }
+    }
+
+    let n_matched = s.report["matching"].as_array().map(Vec::len);
+    if let (Some(m), Some(published)) = (n_matched, s.report["n_matched"].as_u64())
+        && m != published as usize
+    {
+        v.push(format!("{}: n_matched = {published}, but matching has {m} pairs", s.label));
+    }
+    if let Some(m) = n_matched
+        && m > n_eq.min(n_var)
+    {
+        v.push(format!(
+            "{}: {m} matched pairs exceeds min(n_eq {n_eq}, n_var {n_var})",
+            s.label,
+        ));
+    }
+
+    // A singular error's own counts must describe the same system as the
+    // incidence published beside it — the 2026-07-29 defect exactly.
+    let err = &s.report["error"];
+    if err["kind"] == "singular" {
+        for (key, expect) in [("n_equations", n_eq), ("n_unknowns", n_var)] {
+            if let Some(got) = err[key].as_u64()
+                && got as usize != expect
+            {
+                v.push(format!(
+                    "{}: error.{key} = {got} but the incidence beside it says {expect} \
+                     — the error and the matrix describe different systems",
+                    s.label,
+                ));
+            }
+        }
+        if let (Some(rd), Some(nm), Some(ne), Some(nu)) = (
+            err["rank_deficiency"].as_u64(),
+            err["n_matched"].as_u64(),
+            err["n_equations"].as_u64(),
+            err["n_unknowns"].as_u64(),
+        ) && rd != ne.max(nu) - nm
+        {
+            v.push(format!("{}: rank_deficiency {rd} != max({ne},{nu}) - {nm}", s.label));
+        }
+    }
+    v
+}
+
+// ---------------------------------------------------------------- F4
+
+/// **F4 — the BLT blocks partition the equations.**
+///
+/// Every equation in exactly one block, and every block equation resolvable
+/// to a real row. A partition is impossible to satisfy by accident, so a
+/// violation is a genuine defect with no adjudication needed.
+///
+/// Reports with no `blocks` are skipped rather than failed: a singular system
+/// legitimately has none, because the analysis stopped before BLT ran.
+pub fn check_f4(s: &Subject) -> Vec<String> {
+    let Some(blocks) = s.report["blocks"].as_array() else { return Vec::new() };
+    let mut v = Vec::new();
+    let labels = row_labels(s.report);
+    let (index, dups) = index_of(&labels);
+    v.extend(dups.into_iter().map(|d| format!("{}: {d}", s.label)));
+
+    let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
+    for (bi, b) in blocks.iter().enumerate() {
+        let names: Vec<&str> = match (&b["equation"], &b["equations"]) {
+            (Value::String(one), _) => vec![one.as_str()],
+            (_, Value::Array(many)) => many.iter().filter_map(Value::as_str).collect(),
+            _ => {
+                v.push(format!("{}: block {bi} names no equations", s.label));
+                continue;
+            }
+        };
+        for n in names {
+            match index.get(n) {
+                Some(&row) => *seen.entry(row).or_default() += 1,
+                None => v.push(format!(
+                    "{}: block {bi} names equation {n:?}, which is not an incidence row",
+                    s.label,
+                )),
+            }
+        }
+    }
+
+    for (row, count) in &seen {
+        if *count > 1 {
+            v.push(format!("{}: equation row {row} appears in {count} blocks", s.label));
+        }
+    }
+    if seen.len() != labels.len() {
+        let missing: Vec<usize> = (0..labels.len()).filter(|i| !seen.contains_key(i)).collect();
+        v.push(format!(
+            "{}: blocks cover {} of {} equations; missing rows {missing:?}",
+            s.label,
+            seen.len(),
+            labels.len(),
+        ));
+    }
+    v
+}
+
+// ---------------------------------------------------------------- F5
+
+/// **F5 — the matching is a matching.**
+///
+/// Injective both ways, in range, and — the check with real teeth — every
+/// matched pair must be a **non-zero of the incidence**. An equation paired
+/// with a variable it does not contain is not a wrong choice among valid
+/// ones; it is not a matching at all, and every solve order built on it is
+/// meaningless.
+pub fn check_f5(s: &Subject) -> Vec<String> {
+    let Some(pairs) = s.report["matching"].as_array() else { return Vec::new() };
+    let mut v = Vec::new();
+    let labels = row_labels(s.report);
+    let unknowns = unknown_names(s.report);
+    let (eq_index, _) = index_of(&labels);
+    let (var_index, _) = index_of(&unknowns);
+    let rows = row_sets(s.report);
+
+    let mut used_eq: BTreeMap<usize, usize> = BTreeMap::new();
+    let mut used_var: BTreeMap<usize, usize> = BTreeMap::new();
+
+    for (i, p) in pairs.iter().enumerate() {
+        let (Some(e), Some(u)) = (p["equation"].as_str(), p["unknown"].as_str()) else {
+            v.push(format!("{}: matching pair {i} is not a (equation, unknown) pair", s.label));
+            continue;
+        };
+        let (Some(&er), Some(&uc)) = (eq_index.get(e), var_index.get(u)) else {
+            v.push(format!(
+                "{}: matching pair {i} names {e:?} / {u:?}, which do not both resolve \
+                 against the incidence — the overlay would silently show nothing",
+                s.label,
+            ));
+            continue;
+        };
+        *used_eq.entry(er).or_default() += 1;
+        *used_var.entry(uc).or_default() += 1;
+
+        if !rows.get(er).is_some_and(|r| r.contains(&uc)) {
+            v.push(format!(
+                "{}: equation {e:?} is matched to {u:?}, which it does not reference \
+                 — that is not a matching",
+                s.label,
+            ));
+        }
+    }
+
+    for (what, used) in [("equation", &used_eq), ("unknown", &used_var)] {
+        for (idx, count) in used.iter().filter(|(_, c)| **c > 1) {
+            v.push(format!("{}: {what} {idx} matched {count} times", s.label));
+        }
+    }
+    v
+}
+
+// ---------------------------------------------------------------- F6
+
+/// **F6 — the derived views cover their source.**
+///
+/// The equation sheet and the identifier index are *rebuilt* from the DAE
+/// rather than read from a stage, so they can silently cover less than the
+/// thing they claim to describe. An equation sheet missing an equation does
+/// not look broken — it looks like a shorter model.
+pub fn check_f6(
+    sheet: Option<&crate::equation_sheet::EquationSheet>,
+    index: Option<&crate::identifier_index::IdentifierIndex>,
+    dae: &rumoca_ir_dae::Dae,
+) -> Vec<String> {
+    let mut v = Vec::new();
+    let n_eq = dae.continuous.equations.len();
+
+    if let Some(sheet) = sheet {
+        if sheet.n_equations != n_eq {
+            v.push(format!(
+                "equation sheet reports {} equations, the DAE has {n_eq}",
+                sheet.n_equations,
+            ));
+        }
+        // Every equation exactly once, by index — a sheet that grouped one
+        // equation twice and dropped another would keep the count right.
+        let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
+        for (_, eqs) in &sheet.groups {
+            for e in eqs {
+                *seen.entry(e.index).or_default() += 1;
+            }
+        }
+        let missing: Vec<usize> = (0..n_eq).filter(|i| !seen.contains_key(i)).collect();
+        if !missing.is_empty() {
+            v.push(format!("equation sheet omits equation indices {missing:?}"));
+        }
+        for (i, c) in seen.iter().filter(|(_, c)| **c > 1) {
+            v.push(format!("equation sheet lists equation {i} {c} times"));
+        }
+        for i in seen.keys().filter(|i| **i >= n_eq) {
+            v.push(format!("equation sheet lists equation {i}, beyond the DAE's {n_eq}"));
+        }
+    }
+
+    if let Some(index) = index {
+        // Keyed by the `kind` the index itself recorded, so this check does
+        // not merely re-list the DAE's partitions and drift. The first draft
+        // did exactly that — it omitted the two discrete partitions and
+        // reported `BouncingBall`'s `c` as a phantom variable. A partition
+        // added later lands in the `_` arm and says so, instead of
+        // masquerading as a fidelity violation.
+        let vars = &dae.variables;
+        let set = |ks: Vec<String>| -> BTreeSet<String> { ks.into_iter().collect() };
+        let partitions: BTreeMap<&str, BTreeSet<String>> = [
+            ("state", set(vars.states.keys().map(ToString::to_string).collect())),
+            ("algebraic", set(vars.algebraics.keys().map(ToString::to_string).collect())),
+            ("input", set(vars.inputs.keys().map(ToString::to_string).collect())),
+            ("output", set(vars.outputs.keys().map(ToString::to_string).collect())),
+            ("parameter", set(vars.parameters.keys().map(ToString::to_string).collect())),
+            ("constant", set(vars.constants.keys().map(ToString::to_string).collect())),
+            ("discrete real", set(vars.discrete_reals.keys().map(ToString::to_string).collect())),
+            ("discrete valued", set(vars.discrete_valued.keys().map(ToString::to_string).collect())),
+        ]
+        .into_iter()
+        .collect();
+
+        for (name, iv) in &index.variables {
+            let Some(partition) = partitions.get(iv.kind) else {
+                v.push(format!(
+                    "identifier index uses partition {:?}, which this check does not \
+                     know — extend check_f6 rather than trusting it",
+                    iv.kind,
+                ));
+                continue;
+            };
+            if !partition.contains(name) {
+                v.push(format!(
+                    "identifier index names {name:?} as a {} , which the DAE's {} \
+                     partition does not contain — a click on it resolves to nothing",
+                    iv.kind, iv.kind,
+                ));
+            }
+        }
+        // The line map must agree with the variables it indexes.
+        for (line, names) in &index.line_to_variables {
+            for n in names {
+                if !index.variables.contains_key(n) {
+                    v.push(format!("line {line} maps to {n:?}, absent from the index"));
+                }
+            }
+        }
+    }
+    v
+}
+
+// ---------------------------------------------------------------- F7
+
+/// Up to `cap` node paths from a JSON tree, breadth-first.
+///
+/// Breadth-first on purpose: depth-first on real IR spends the whole budget
+/// inside the first equation's expression tree and never reaches a sibling
+/// stage field, so the sample would not represent what a user can click.
+pub fn sample_paths(root: &Value, cap: usize) -> Vec<Vec<crate::bridge::Seg>> {
+    use crate::bridge::Seg;
+    let mut out: Vec<Vec<Seg>> = Vec::new();
+    let mut queue: std::collections::VecDeque<Vec<Seg>> = std::collections::VecDeque::new();
+    queue.push_back(Vec::new());
+    while let Some(path) = queue.pop_front() {
+        if out.len() >= cap {
+            break;
+        }
+        let Some(node) = crate::bridge::navigate(root, &path) else { continue };
+        match node {
+            Value::Object(map) => {
+                for k in map.keys() {
+                    let mut p = path.clone();
+                    p.push(Seg::Key(k.clone()));
+                    out.push(p.clone());
+                    queue.push_back(p);
+                }
+            }
+            Value::Array(items) => {
+                for i in 0..items.len().min(4) {
+                    let mut p = path.clone();
+                    p.push(Seg::Index(i));
+                    out.push(p.clone());
+                    queue.push_back(p);
+                }
+            }
+            _ => {}
+        }
+    }
+    out.truncate(cap);
+    out
+}
+
+/// **F7 — every capture noun survives the round trip on real IR.**
+///
+/// `describe_path` renders a node path into an `hrw://` link; `parse_path`
+/// reads it back. The two have only ever been exercised on hand-built values
+/// and short specimens, and they are what *every* question Doug asks depends
+/// on — a noun that does not round-trip points Claude at the wrong subtree
+/// while looking perfectly well-formed.
+///
+/// Compares the **navigated subtree**, not the rendered string: a path may
+/// legitimately render differently as long as it still lands on the same
+/// node, and comparing strings would flag that as a failure.
+pub fn check_f7(label: &str, root: &Value) -> Vec<String> {
+    let mut v = Vec::new();
+    for path in sample_paths(root, 400) {
+        let described = crate::bridge::describe_path(&path);
+        let Some(parsed) = crate::bridge::parse_path(&described) else {
+            v.push(format!("{label}: {described:?} does not parse back"));
+            continue;
+        };
+        let want = crate::bridge::navigate(root, &path);
+        let got = crate::bridge::navigate(root, &parsed);
+        if want != got {
+            v.push(format!(
+                "{label}: {described:?} round-trips to a different node \
+                 (path {path:?} vs parsed {parsed:?})",
+            ));
+        }
+    }
+    v
+}
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::{BTreeMap, BTreeSet};
 
     use crate::worker::test_msl::compile_specimen_shared;
-    use crate::worker::{FromWorker, StageBundle, index_reduce_in_place};
+    use crate::worker::{FromWorker, index_reduce_in_place};
 
     /// The specimens the invariants run over.
     ///
@@ -75,489 +681,6 @@ mod tests {
         "ProportionalLoop", "MixedLoop", "TwoLoops", "NonlinearLoop", "Drivetrain",
         "RcCircuit", "SingleInertia", "CapacitorLoop", "BouncingBall", "MotorWithBrake",
     ];
-
-    /// Every incidence-bearing report in the bundle, with the DAE it describes.
-    ///
-    /// The Structural stage describes the **raw** system and Index Reduction the
-    /// **reduced** one — the distinction that made F1's first tearing check fail
-    /// for the wrong reason. `before` is the raw system again, published inside
-    /// the reduced stage.
-    fn subjects<'a>(
-        stages: &'a StageBundle,
-        dae: &'a rumoca_ir_dae::Dae,
-        reduced: &'a rumoca_ir_dae::Dae,
-    ) -> Vec<Subject<'a>> {
-        let mut out = Vec::new();
-        let mut push = |label: &str, report: Option<&'a Value>, d: &'a rumoca_ir_dae::Dae| {
-            if let Some(r) = report
-                && r.get("incidence").is_some()
-            {
-                out.push(Subject { label: label.to_owned(), report: r, dae: Some(d) });
-            }
-        };
-        push("Structural", stages.structural.value.as_ref(), dae);
-        push("IndexReduction", stages.index_reduction.value.as_ref(), reduced);
-        push(
-            "IndexReduction.before",
-            stages.index_reduction.value.as_ref().and_then(|v| v.get("before")),
-            dae,
-        );
-        out
-    }
-
-    /// `rows[i]["equation"]` — the published row labels, in row order.
-    fn row_labels(report: &Value) -> Vec<String> {
-        report["incidence"]["rows"]
-            .as_array()
-            .map(|rows| {
-                rows.iter()
-                    .map(|r| r["equation"].as_str().unwrap_or_default().to_owned())
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    fn unknown_names(report: &Value) -> Vec<String> {
-        report["incidence"]["unknown_names"]
-            .as_array()
-            .map(|ns| ns.iter().map(|n| n.as_str().unwrap_or_default().to_owned()).collect())
-            .unwrap_or_default()
-    }
-
-    /// `rows[i]["unknowns"]` as sets, in row order.
-    fn row_sets(report: &Value) -> Vec<BTreeSet<usize>> {
-        report["incidence"]["rows"]
-            .as_array()
-            .map(|rows| {
-                rows.iter()
-                    .map(|r| {
-                        r["unknowns"]
-                            .as_array()
-                            .map(|u| u.iter().filter_map(Value::as_u64).map(|v| v as usize).collect())
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    /// A name → index map, reporting duplicates rather than silently keeping the
-    /// last. Duplicate row labels would make every name-keyed lookup in the UI
-    /// ambiguous, which is worth knowing about on its own.
-    fn index_of(names: &[String]) -> (BTreeMap<&str, usize>, Vec<String>) {
-        let mut map = BTreeMap::new();
-        let mut dups = Vec::new();
-        for (i, n) in names.iter().enumerate() {
-            if let Some(prev) = map.insert(n.as_str(), i) {
-                dups.push(format!("duplicate name {n:?} at rows {prev} and {i}"));
-            }
-        }
-        (map, dups)
-    }
-
-    // ---------------------------------------------------------------- F2
-
-    /// **F2 — the published incidence is what Rumoca builds.**
-    ///
-    /// Compared against a fresh `build_incidence` on the DAE the subject
-    /// describes: same dimensions, same unknown order, same row labels, and the
-    /// same column set per row.
-    ///
-    /// Order matters and is checked as order. Every downstream view indexes into
-    /// these arrays, so a permutation would leave the matrix looking entirely
-    /// plausible while every label sat against the wrong row.
-    fn check_f2(s: &Subject) -> Vec<String> {
-        let Some(dae) = s.dae else { return Vec::new() };
-        let mut v = Vec::new();
-        let inc = rumoca_phase_structural::build_incidence(dae);
-
-        let (n_eq, n_var) = (
-            s.report["incidence"]["n_eq"].as_u64().unwrap_or(u64::MAX) as usize,
-            s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
-        );
-        if n_eq != inc.n_eq {
-            v.push(format!("{}: n_eq {n_eq} published, {} from build_incidence", s.label, inc.n_eq));
-        }
-        if n_var != inc.n_var {
-            v.push(format!("{}: n_var {n_var} published, {} from build_incidence", s.label, inc.n_var));
-        }
-
-        let published_unknowns = unknown_names(s.report);
-        let real_unknowns: Vec<String> = inc.unknown_names.iter().map(ToString::to_string).collect();
-        if published_unknowns != real_unknowns {
-            v.push(format!(
-                "{}: unknown_names differ from build_incidence (first difference at {:?})",
-                s.label,
-                published_unknowns
-                    .iter()
-                    .zip(&real_unknowns)
-                    .position(|(a, b)| a != b)
-                    .map_or_else(|| "length".to_owned(), |i| i.to_string()),
-            ));
-        }
-
-        let published_labels = row_labels(s.report);
-        let real_labels: Vec<String> = (0..inc.n_eq)
-            .map(|i| rumoca_phase_structural::equation_label(dae, &inc.equation_refs[i]))
-            .collect();
-        if published_labels != real_labels {
-            v.push(format!("{}: row equation labels differ from equation_label", s.label));
-        }
-
-        let published_rows = row_sets(s.report);
-        for (i, real) in inc.eq_unknowns.iter().enumerate() {
-            let real: BTreeSet<usize> = real.iter().copied().collect();
-            match published_rows.get(i) {
-                Some(pub_row) if *pub_row == real => {}
-                Some(pub_row) => v.push(format!(
-                    "{}: row {i} publishes {pub_row:?}, build_incidence says {real:?}",
-                    s.label,
-                )),
-                None => v.push(format!("{}: row {i} missing; only {} published", s.label, published_rows.len())),
-            }
-        }
-        v
-    }
-
-    // ---------------------------------------------------------------- F3
-
-    /// **F3 — the counts agree with each other and with the incidence.**
-    ///
-    /// The `rank_deficiency: 7` bug of 2026-07-29 (true value 1) is exactly this
-    /// class and was found by eye: the error described the *reduced* system while
-    /// the incidence beside it described the raw one. A wrong number reads as
-    /// authoritative, so it is worse than a missing one.
-    fn check_f3(s: &Subject) -> Vec<String> {
-        let mut v = Vec::new();
-        let n_eq = s.report["incidence"]["n_eq"].as_u64().unwrap_or_default() as usize;
-        let n_var = s.report["incidence"]["n_var"].as_u64().unwrap_or_default() as usize;
-
-        for key in ["n_equations", "n_unknowns"] {
-            let expect = if key == "n_equations" { n_eq } else { n_var };
-            if let Some(got) = s.report[key].as_u64()
-                && got as usize != expect
-            {
-                v.push(format!("{}: {key} = {got}, incidence says {expect}", s.label));
-            }
-        }
-
-        let n_matched = s.report["matching"].as_array().map(Vec::len);
-        if let (Some(m), Some(published)) = (n_matched, s.report["n_matched"].as_u64())
-            && m != published as usize
-        {
-            v.push(format!("{}: n_matched = {published}, but matching has {m} pairs", s.label));
-        }
-        if let Some(m) = n_matched
-            && m > n_eq.min(n_var)
-        {
-            v.push(format!(
-                "{}: {m} matched pairs exceeds min(n_eq {n_eq}, n_var {n_var})",
-                s.label,
-            ));
-        }
-
-        // A singular error's own counts must describe the same system as the
-        // incidence published beside it — the 2026-07-29 defect exactly.
-        let err = &s.report["error"];
-        if err["kind"] == "singular" {
-            for (key, expect) in [("n_equations", n_eq), ("n_unknowns", n_var)] {
-                if let Some(got) = err[key].as_u64()
-                    && got as usize != expect
-                {
-                    v.push(format!(
-                        "{}: error.{key} = {got} but the incidence beside it says {expect} \
-                         — the error and the matrix describe different systems",
-                        s.label,
-                    ));
-                }
-            }
-            if let (Some(rd), Some(nm), Some(ne), Some(nu)) = (
-                err["rank_deficiency"].as_u64(),
-                err["n_matched"].as_u64(),
-                err["n_equations"].as_u64(),
-                err["n_unknowns"].as_u64(),
-            ) && rd != ne.max(nu) - nm
-            {
-                v.push(format!("{}: rank_deficiency {rd} != max({ne},{nu}) - {nm}", s.label));
-            }
-        }
-        v
-    }
-
-    // ---------------------------------------------------------------- F4
-
-    /// **F4 — the BLT blocks partition the equations.**
-    ///
-    /// Every equation in exactly one block, and every block equation resolvable
-    /// to a real row. A partition is impossible to satisfy by accident, so a
-    /// violation is a genuine defect with no adjudication needed.
-    ///
-    /// Reports with no `blocks` are skipped rather than failed: a singular system
-    /// legitimately has none, because the analysis stopped before BLT ran.
-    fn check_f4(s: &Subject) -> Vec<String> {
-        let Some(blocks) = s.report["blocks"].as_array() else { return Vec::new() };
-        let mut v = Vec::new();
-        let labels = row_labels(s.report);
-        let (index, dups) = index_of(&labels);
-        v.extend(dups.into_iter().map(|d| format!("{}: {d}", s.label)));
-
-        let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
-        for (bi, b) in blocks.iter().enumerate() {
-            let names: Vec<&str> = match (&b["equation"], &b["equations"]) {
-                (Value::String(one), _) => vec![one.as_str()],
-                (_, Value::Array(many)) => many.iter().filter_map(Value::as_str).collect(),
-                _ => {
-                    v.push(format!("{}: block {bi} names no equations", s.label));
-                    continue;
-                }
-            };
-            for n in names {
-                match index.get(n) {
-                    Some(&row) => *seen.entry(row).or_default() += 1,
-                    None => v.push(format!(
-                        "{}: block {bi} names equation {n:?}, which is not an incidence row",
-                        s.label,
-                    )),
-                }
-            }
-        }
-
-        for (row, count) in &seen {
-            if *count > 1 {
-                v.push(format!("{}: equation row {row} appears in {count} blocks", s.label));
-            }
-        }
-        if seen.len() != labels.len() {
-            let missing: Vec<usize> = (0..labels.len()).filter(|i| !seen.contains_key(i)).collect();
-            v.push(format!(
-                "{}: blocks cover {} of {} equations; missing rows {missing:?}",
-                s.label,
-                seen.len(),
-                labels.len(),
-            ));
-        }
-        v
-    }
-
-    // ---------------------------------------------------------------- F5
-
-    /// **F5 — the matching is a matching.**
-    ///
-    /// Injective both ways, in range, and — the check with real teeth — every
-    /// matched pair must be a **non-zero of the incidence**. An equation paired
-    /// with a variable it does not contain is not a wrong choice among valid
-    /// ones; it is not a matching at all, and every solve order built on it is
-    /// meaningless.
-    fn check_f5(s: &Subject) -> Vec<String> {
-        let Some(pairs) = s.report["matching"].as_array() else { return Vec::new() };
-        let mut v = Vec::new();
-        let labels = row_labels(s.report);
-        let unknowns = unknown_names(s.report);
-        let (eq_index, _) = index_of(&labels);
-        let (var_index, _) = index_of(&unknowns);
-        let rows = row_sets(s.report);
-
-        let mut used_eq: BTreeMap<usize, usize> = BTreeMap::new();
-        let mut used_var: BTreeMap<usize, usize> = BTreeMap::new();
-
-        for (i, p) in pairs.iter().enumerate() {
-            let (Some(e), Some(u)) = (p["equation"].as_str(), p["unknown"].as_str()) else {
-                v.push(format!("{}: matching pair {i} is not a (equation, unknown) pair", s.label));
-                continue;
-            };
-            let (Some(&er), Some(&uc)) = (eq_index.get(e), var_index.get(u)) else {
-                v.push(format!(
-                    "{}: matching pair {i} names {e:?} / {u:?}, which do not both resolve \
-                     against the incidence — the overlay would silently show nothing",
-                    s.label,
-                ));
-                continue;
-            };
-            *used_eq.entry(er).or_default() += 1;
-            *used_var.entry(uc).or_default() += 1;
-
-            if !rows.get(er).is_some_and(|r| r.contains(&uc)) {
-                v.push(format!(
-                    "{}: equation {e:?} is matched to {u:?}, which it does not reference \
-                     — that is not a matching",
-                    s.label,
-                ));
-            }
-        }
-
-        for (what, used) in [("equation", &used_eq), ("unknown", &used_var)] {
-            for (idx, count) in used.iter().filter(|(_, c)| **c > 1) {
-                v.push(format!("{}: {what} {idx} matched {count} times", s.label));
-            }
-        }
-        v
-    }
-
-    // ---------------------------------------------------------------- F6
-
-    /// **F6 — the derived views cover their source.**
-    ///
-    /// The equation sheet and the identifier index are *rebuilt* from the DAE
-    /// rather than read from a stage, so they can silently cover less than the
-    /// thing they claim to describe. An equation sheet missing an equation does
-    /// not look broken — it looks like a shorter model.
-    fn check_f6(
-        sheet: Option<&crate::equation_sheet::EquationSheet>,
-        index: Option<&crate::identifier_index::IdentifierIndex>,
-        dae: &rumoca_ir_dae::Dae,
-    ) -> Vec<String> {
-        let mut v = Vec::new();
-        let n_eq = dae.continuous.equations.len();
-
-        if let Some(sheet) = sheet {
-            if sheet.n_equations != n_eq {
-                v.push(format!(
-                    "equation sheet reports {} equations, the DAE has {n_eq}",
-                    sheet.n_equations,
-                ));
-            }
-            // Every equation exactly once, by index — a sheet that grouped one
-            // equation twice and dropped another would keep the count right.
-            let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
-            for (_, eqs) in &sheet.groups {
-                for e in eqs {
-                    *seen.entry(e.index).or_default() += 1;
-                }
-            }
-            let missing: Vec<usize> = (0..n_eq).filter(|i| !seen.contains_key(i)).collect();
-            if !missing.is_empty() {
-                v.push(format!("equation sheet omits equation indices {missing:?}"));
-            }
-            for (i, c) in seen.iter().filter(|(_, c)| **c > 1) {
-                v.push(format!("equation sheet lists equation {i} {c} times"));
-            }
-            for i in seen.keys().filter(|i| **i >= n_eq) {
-                v.push(format!("equation sheet lists equation {i}, beyond the DAE's {n_eq}"));
-            }
-        }
-
-        if let Some(index) = index {
-            // Keyed by the `kind` the index itself recorded, so this check does
-            // not merely re-list the DAE's partitions and drift. The first draft
-            // did exactly that — it omitted the two discrete partitions and
-            // reported `BouncingBall`'s `c` as a phantom variable. A partition
-            // added later lands in the `_` arm and says so, instead of
-            // masquerading as a fidelity violation.
-            let vars = &dae.variables;
-            let set = |ks: Vec<String>| -> BTreeSet<String> { ks.into_iter().collect() };
-            let partitions: BTreeMap<&str, BTreeSet<String>> = [
-                ("state", set(vars.states.keys().map(ToString::to_string).collect())),
-                ("algebraic", set(vars.algebraics.keys().map(ToString::to_string).collect())),
-                ("input", set(vars.inputs.keys().map(ToString::to_string).collect())),
-                ("output", set(vars.outputs.keys().map(ToString::to_string).collect())),
-                ("parameter", set(vars.parameters.keys().map(ToString::to_string).collect())),
-                ("constant", set(vars.constants.keys().map(ToString::to_string).collect())),
-                ("discrete real", set(vars.discrete_reals.keys().map(ToString::to_string).collect())),
-                ("discrete valued", set(vars.discrete_valued.keys().map(ToString::to_string).collect())),
-            ]
-            .into_iter()
-            .collect();
-
-            for (name, iv) in &index.variables {
-                let Some(partition) = partitions.get(iv.kind) else {
-                    v.push(format!(
-                        "identifier index uses partition {:?}, which this check does not \
-                         know — extend check_f6 rather than trusting it",
-                        iv.kind,
-                    ));
-                    continue;
-                };
-                if !partition.contains(name) {
-                    v.push(format!(
-                        "identifier index names {name:?} as a {} , which the DAE's {} \
-                         partition does not contain — a click on it resolves to nothing",
-                        iv.kind, iv.kind,
-                    ));
-                }
-            }
-            // The line map must agree with the variables it indexes.
-            for (line, names) in &index.line_to_variables {
-                for n in names {
-                    if !index.variables.contains_key(n) {
-                        v.push(format!("line {line} maps to {n:?}, absent from the index"));
-                    }
-                }
-            }
-        }
-        v
-    }
-
-    // ---------------------------------------------------------------- F7
-
-    /// Up to `cap` node paths from a JSON tree, breadth-first.
-    ///
-    /// Breadth-first on purpose: depth-first on real IR spends the whole budget
-    /// inside the first equation's expression tree and never reaches a sibling
-    /// stage field, so the sample would not represent what a user can click.
-    fn sample_paths(root: &Value, cap: usize) -> Vec<Vec<crate::bridge::Seg>> {
-        use crate::bridge::Seg;
-        let mut out: Vec<Vec<Seg>> = Vec::new();
-        let mut queue: std::collections::VecDeque<Vec<Seg>> = std::collections::VecDeque::new();
-        queue.push_back(Vec::new());
-        while let Some(path) = queue.pop_front() {
-            if out.len() >= cap {
-                break;
-            }
-            let Some(node) = crate::bridge::navigate(root, &path) else { continue };
-            match node {
-                Value::Object(map) => {
-                    for k in map.keys() {
-                        let mut p = path.clone();
-                        p.push(Seg::Key(k.clone()));
-                        out.push(p.clone());
-                        queue.push_back(p);
-                    }
-                }
-                Value::Array(items) => {
-                    for i in 0..items.len().min(4) {
-                        let mut p = path.clone();
-                        p.push(Seg::Index(i));
-                        out.push(p.clone());
-                        queue.push_back(p);
-                    }
-                }
-                _ => {}
-            }
-        }
-        out.truncate(cap);
-        out
-    }
-
-    /// **F7 — every capture noun survives the round trip on real IR.**
-    ///
-    /// `describe_path` renders a node path into an `hrw://` link; `parse_path`
-    /// reads it back. The two have only ever been exercised on hand-built values
-    /// and short specimens, and they are what *every* question Doug asks depends
-    /// on — a noun that does not round-trip points Claude at the wrong subtree
-    /// while looking perfectly well-formed.
-    ///
-    /// Compares the **navigated subtree**, not the rendered string: a path may
-    /// legitimately render differently as long as it still lands on the same
-    /// node, and comparing strings would flag that as a failure.
-    fn check_f7(label: &str, root: &Value) -> Vec<String> {
-        let mut v = Vec::new();
-        for path in sample_paths(root, 400) {
-            let described = crate::bridge::describe_path(&path);
-            let Some(parsed) = crate::bridge::parse_path(&described) else {
-                v.push(format!("{label}: {described:?} does not parse back"));
-                continue;
-            };
-            let want = crate::bridge::navigate(root, &path);
-            let got = crate::bridge::navigate(root, &parsed);
-            if want != got {
-                v.push(format!(
-                    "{label}: {described:?} round-trips to a different node \
-                     (path {path:?} vs parsed {parsed:?})",
-                ));
-            }
-        }
-        v
-    }
 
     // ---------------------------------------------------------------- report
 
