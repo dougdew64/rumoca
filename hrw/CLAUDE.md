@@ -270,6 +270,29 @@ Candidates, not commitments — consult when planning new work; promote items in
   **Before working on code that touches a compiler phase, read that phase's description** — but treat
   untagged prose as a lead, not a fact. (Distinct from `docs/specimen-notebook/` — the specimen lab
   notebook, also Claude's.)
+- **[`docs/upstream-strategy.md`](docs/upstream-strategy.md) — how engaging the Rumoca
+  maintainers serves Doug's education, and what that implies for planning.** Doug asked
+  (2026-07-31) to be reminded of this and for it to shape testing/implementation plans, so
+  **consult it when planning work**, not only when preparing something to send.
+
+  The short form: engagement is a **means**, not an end — their conversations are
+  educational, they are busy, so the questions must be worth answering. The mechanism is to
+  **make questions cheap to answer and interesting** ("here are 380 MSL models failing at
+  flatten with the same error shape — expected?" beats "why does X?"), which is fidelity and
+  survey work's real return beyond catching bugs.
+
+  **Order deliverables by *their* cost to accept, not our effort.** Bug reports with System
+  Modeler adjudication, an MSL capability map, and differential testing are zero-cost gifts;
+  **HRW itself goes last**, because it is the only item asking for maintenance burden and
+  review time. Gifts open conversations, proposals get scrutinized. The rarest thing Doug
+  brings is *not* HRW — it is differential testing against a commercial Modelica
+  implementation, which a volunteer project cannot cheaply do for itself.
+
+  Planning rules that follow: prefer zero-adoption-cost artifacts; anything published must be
+  **reproducible** (checked-in code *and* output, deterministic selection) and **honestly
+  bounded** (a "what this does not establish" section, because one visible overreach costs
+  more than several missing checks); and flag upstreamable work *at planning time*, not after
+  it is built in a shape that cannot be handed over.
 - **[`docs/upstream-issues.md`](docs/upstream-issues.md) — Rumoca bugs found through HRW,
   written ready to file.** Doug files them when the time is right; **Claude adds entries and
   never files them itself.** Only *reproduced* bugs go in, with reproduction, expected vs
