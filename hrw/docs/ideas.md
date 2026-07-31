@@ -2993,12 +2993,77 @@ A syllabus generated from IR statistics would be exactly the front-running that 
 An ordering of candidate models, once Doug has decided he is studying tearing, is a lookup aid.
 Keep it on the right side of that line.
 
+### Ad hoc / just-in-time curricula (Doug, 2026-07-31)
+
+The ladder above was one ordering — by measured complexity. Doug generalised it, and the
+generalisation is the load-bearing part:
+
+> There are so many potential curriculums, each depending upon my interest at the moment. For
+> example, I might want to focus on CS and performance concerns and so request an ad hoc
+> curriculum which explains and demonstrates what you highlighted in your "where does the time
+> go" table. Ad hoc / just-in-time curriculums is a powerful idea.
+
+**There is not one curriculum. There is one corpus and an unbounded number of paths through
+it**, and which path is right depends on what Doug wants to understand *today*.
+
+| Today's interest | The ordering it wants | The column that provides it |
+|---|---|---|
+| tearing | coupled-block size, ascending | `largest_coupled` |
+| **CS and performance** | **cost against system size** | **per-phase timings (#54 Part B)** |
+| hybrid systems | event conditions, smallest first | `n_event_conditions` |
+| connection semantics | connection equations | `n_connect_eq` |
+| how compilers fail | failure phase and cause | `outcome`, `message` |
+| high-index DAEs | rescued-by-reduction, by size | `index_reduced`, `n_equations` |
+
+### The design conclusion: do NOT build a curriculum feature
+
+This is the part worth getting right, because the obvious move is wrong.
+
+A curriculum is a **verb**, not a noun. It is an utterance — *"walk me from the simplest
+algebraic loop to the hardest, explaining what tearing does at each"* — and HRW's whole
+premise is that Claude supplies the verb while HRW supplies an exact noun
+(`docs/context-assembly.md`, `hrw-works-with-claude-not-without`).
+
+So the thing to build is **query surface**, not lesson storage:
+
+- **Build:** filters and orderings over the corpus, so any axis is reachable by mouse.
+- **Do not build:** a "curriculum" object, a lesson sequence, a progress tracker, stored
+  narration per rung.
+
+A *stored* curriculum is regenerable prose that nothing checks — the exact defect that
+retired 1,632 lines of specimen narrative and the end-to-end tour's prose
+(`feedback-learning-over-polish`, [[store what cannot be regenerated]]). An **ad hoc** one
+cannot rot, because it does not persist. That is not a compromise; it is strictly better.
+
+### Why this satisfies "curriculum emerges from reading" rather than violating it
+
+`feedback-curriculum-emerges-from-reading` warns against front-running the curriculum. A
+generated ladder could look like exactly that, so the line matters:
+
+> **A curriculum generated on request is emergence, not front-running.** The request *is* the
+> emergence — Doug's current interest is the input, not Claude's guess about what he should
+> want next.
+
+Front-running would be deciding in advance that lesson 3 is tearing. Answering "I want to
+understand where the time goes" with an ordered set of real models is the opposite: it is the
+curriculum arriving *because* a question did.
+
+### What this needs that does not exist yet
+
+1. **Query axes over the corpus** — #53's filter/sort, which is the enabler for all of them.
+2. **Per-phase timings**, for the performance curriculum specifically — #54 Part B, and the
+   worker already logs them, so it is aggregation rather than instrumentation.
+3. **Nothing else.** The curriculum itself is an utterance, and utterances need no schema.
+
 ### What to build (small, in this order)
 
 1. **A filter/sort over the survey rows** in Test mode's list — no new data, just a view.
+   **This is the enabler for every ad hoc curriculum**, not merely for lookup.
 2. **A saved-query notion**, so "models with a coupled block between 8 and 20" is nameable and
    re-runnable rather than retyped.
-3. **The ladder** as a sort order plus a picked rung, only once a real topic needs it.
+3. **Per-phase timings** (#54 Part B) — the one axis the corpus does not yet carry, and the
+   one a CS/performance curriculum needs.
+4. **No curriculum object.** The ladder is a sort order; the teaching is an utterance.
 
 **Relates to:** #51 (the corpus), #52 (Test mode), #46 (failure specimens),
 `docs/reports.md`, and the specimen rules in `CLAUDE.md` that this narrows.
