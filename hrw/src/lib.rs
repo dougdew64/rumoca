@@ -59,6 +59,7 @@ pub mod fidelity;
 pub mod playback;
 pub mod pre_lowering_anim;
 pub mod reduction_anim;
+pub mod report;
 pub mod tearing_anim;
 #[cfg(test)]
 pub mod test_support;

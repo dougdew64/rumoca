@@ -559,6 +559,78 @@ mod tests {
         v
     }
 
+    // ---------------------------------------------------------------- report
+
+    /// Where the fidelity report is written.
+    ///
+    /// Checked in, like the survey: it is a **deliverable**, not scratch output
+    /// (`docs/upstream-strategy.md` planning rule 1). Its steady state is green,
+    /// and a green report over the corpus is the evidence artifact the
+    /// methodology rests on — a certificate rather than a bug list
+    /// (`docs/reports.md`).
+    fn report_path() -> std::path::PathBuf {
+        std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fidelity-report.csv"))
+    }
+
+    /// One model's fidelity result.
+    ///
+    /// **Every model gets a row, green ones included.** The report is a
+    /// certificate, so "2,600 models, no violations" has to be *readable from
+    /// the file*; Test mode filters to exceptions for display rather than the
+    /// writer filtering them out of existence.
+    struct FidelityRow {
+        name: String,
+        violations: Vec<String>,
+    }
+
+    impl FidelityRow {
+        /// Shares its first four columns with every other report so one loader
+        /// serves all three — see `crate::report`.
+        const HEADER: &'static str = "name,kind,outcome,message,checks_failed,n_violations";
+
+        fn to_csv(&self) -> String {
+            // Which checks fired, deduplicated and ordered — `F2,F5` clusters a
+            // failure far better than its first message does.
+            let mut checks: Vec<&str> = self
+                .violations
+                .iter()
+                .filter_map(|v| v.split(':').nth(1).map(str::trim))
+                .filter(|t| t.len() == 2 && t.starts_with('F'))
+                .collect();
+            checks.sort_unstable();
+            checks.dedup();
+
+            let outcome = if self.violations.is_empty() { "ok" } else { "violations" };
+            let f = crate::survey::csv_field;
+            format!(
+                "{},{},{},{},{},{}",
+                f(&self.name),
+                f(&crate::survey::classify(&self.name)),
+                outcome,
+                // The first violation, verbatim. The rest are reachable by
+                // re-running the check on that one model, which is what Test
+                // mode's click is for — so the report stays a list, not a log.
+                f(self.violations.first().map_or("", String::as_str)),
+                f(&checks.join(" ")),
+                self.violations.len(),
+            )
+        }
+    }
+
+    /// Write the report, and return what was written for assertion.
+    fn write_report(rows: &[FidelityRow]) -> String {
+        let mut out = vec![FidelityRow::HEADER.to_owned()];
+        out.extend(rows.iter().map(FidelityRow::to_csv));
+        let text = out.join("\n") + "\n";
+        // **No timestamp and no timings in the row data**, deliberately: the
+        // file is checked in, so it must not churn on a run that found nothing
+        // new. Provenance belongs in the sidecar, where it changes on purpose.
+        if let Err(e) = std::fs::write(report_path(), &text) {
+            eprintln!("could not write the fidelity report: {e}");
+        }
+        text
+    }
+
     // ---------------------------------------------------------------- harness
 
     /// **F2–F5 over the corpus, one compile per model.**
@@ -577,8 +649,10 @@ mod tests {
         let mut with_singular_error = 0usize;
 
         let mut stage_values = 0usize;
+        let mut report: Vec<FidelityRow> = Vec::new();
 
         for name in MODELS {
+            let before = violations.len();
             let FromWorker::Compiled {
                 stages, dae, equation_sheet, identifier_index, ..
             } = compile_specimen_shared(name)
@@ -623,7 +697,16 @@ mod tests {
                     violations.extend(check(&s).into_iter().map(|msg| format!("{name} / {msg}")));
                 }
             }
+
+            // One row per model, green ones included: the report is a
+            // certificate, so "no violations" must be readable from the file.
+            report.push(FidelityRow {
+                name: (*name).to_owned(),
+                violations: violations[before..].to_vec(),
+            });
         }
+
+        let report_text = write_report(&report);
 
         // Printed rather than merely asserted: "0 violations" means nothing
         // without knowing how much was looked at, and a corpus that quietly
@@ -635,6 +718,23 @@ mod tests {
              {} violations",
             MODELS.len(),
             violations.len(),
+        );
+
+        // **The emitted report loads through the shared loader** — asserted
+        // *before* the violations, so a genuine finding cannot mask a broken
+        // report format. `docs/reports.md`: one loader for all three reports,
+        // which is a convention only if something checks it.
+        let loaded = crate::report::parse(&report_text);
+        assert!(loaded.has_shared_columns(), "the fidelity report lost a shared column");
+        assert_eq!(
+            loaded.rows.len(),
+            MODELS.len(),
+            "one row per model, green ones included — the report is a certificate",
+        );
+        assert_eq!(
+            loaded.exceptions().len(),
+            report.iter().filter(|r| !r.violations.is_empty()).count(),
+            "the loader's exception filter disagrees with the rows that had violations",
         );
 
         assert!(
