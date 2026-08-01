@@ -18,7 +18,11 @@
 #   .\measure-fidelity.ps1 -Models (Get-Content C:\tmp\stage-c.txt)
 
 param(
-    [Parameter(Mandatory = $true)][string]$Models,
+    # `-Models` is a comma-separated list. For the full corpus use `-ModelsFile`
+    # instead: 2,626 qualified names is roughly 130,000 characters and Windows
+    # caps a command line near 32,000, so the big run CANNOT be passed inline.
+    [string]$Models      = "",
+    [string]$ModelsFile  = "",
     [string]$Out         = "C:\tmp\fid-c.csv",         # the fidelity report (appended)
     [string]$Profile     = "C:\tmp\fid-memory.csv",    # the memory profile this produces
     [double]$MinFreeGB   = 3.0,
@@ -56,6 +60,12 @@ if ($raGB -gt 1 -and $freeNow -lt 8) {
     Write-Host ""
 }
 
+if ($ModelsFile) {
+    if (-not (Test-Path $ModelsFile)) { throw "no such -ModelsFile: $ModelsFile" }
+    # One name per line, or comma-separated — accept either.
+    $Models = ((Get-Content $ModelsFile) -join ',')
+}
+if (-not $Models) { throw "give -Models 'a,b,c' or -ModelsFile <path>" }
 $list = $Models -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 Write-Host "$($list.Count) models, one process each"
 Write-Host "guards: free RAM >= ${MinFreeGB}GB, process <= ${MaxProcGB}GB, sampled every ${SampleMs}ms"
