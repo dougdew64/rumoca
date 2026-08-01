@@ -110,7 +110,10 @@ if (-not $Models) { throw "give -Models 'a,b,c' or -ModelsFile <path>" }
 if (-not $PhaseLog) { $PhaseLog = [IO.Path]::ChangeExtension($Profile, ".phases.txt") }
 
 $list = $Models -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-Write-Host "$($list.Count) models, one process each"
+# **"corpus", not a count of work.** This is the whole model list; how many
+# will actually run is not known until the profile has been read, and is
+# announced below. Printing a bare "2626 models" first read as the plan.
+Write-Host "corpus: $($list.Count) model(s); one process each"
 Write-Host "guards: free RAM >= ${MinFreeGB}GB, process <= ${MaxProcGB}GB, sampled every ${SampleMs}ms"
 
 # Models already in the report are skipped by the runner's own --resume.
