@@ -213,18 +213,47 @@ fn main() {
         // 900 s.
         let stage_ms: std::sync::Mutex<Vec<(String, f64)>> = std::sync::Mutex::new(Vec::new());
         let on_event = |ev: FromWorker| {
-            if let FromWorker::Log(entry) = ev
-                && entry.level == hrw::worker::LogLevel::StageEnd
-            {
-                // Messages look like `Parse (12.3ms)`; keep the name and the number.
-                if let Some((name, rest)) = entry.message.split_once(" (") {
-                    let ms = rest.trim_end_matches("ms)").parse::<f64>().unwrap_or(0.0);
-                    eprintln!("    ..{name} {ms:.0}ms");
-                    let _ = std::io::Write::flush(&mut std::io::stderr());
-                    if let Ok(mut v) = stage_ms.lock() {
-                        v.push((name.to_owned(), ms));
+            let FromWorker::Log(entry) = ev else { return };
+            match entry.level {
+                // **StageStart is what makes the narration answer the question.**
+                //
+                // Reporting only StageEnd showed the last COMPLETED phase, so a
+                // model stuck 500 s into its first phase displayed the startup
+                // line and the phase had to be inferred. Emitting the start means
+                // the tail of stderr always names the phase actually RUNNING.
+                hrw::worker::LogLevel::StageStart => {
+                    // **Written to a FILE, not to stderr.**
+                    //
+                    // `WorkerState::compile` starts an `OutputCapture` that
+                    // redirects stdout and stderr at the FILE-DESCRIPTOR level so
+                    // Rumoca's own `println!` diagnostics can be forwarded as log
+                    // entries. This callback runs INSIDE that compile, so anything
+                    // printed here is swallowed by the capture and never reaches
+                    // the real stderr — which is exactly why the first attempt at
+                    // live narration produced nothing while the after-the-fact
+                    // summary worked fine.
+                    //
+                    // A direct file write bypasses the redirected descriptors. The
+                    // watchdog reads this file to say which phase is running.
+                    let _ = std::fs::write(
+                        std::env::temp_dir().join("fid-phase.txt"),
+                        format!("{} (running, {:.0}s in)", entry.message, entry.elapsed_secs),
+                    );
+                }
+                hrw::worker::LogLevel::StageEnd => {
+                    // Messages look like `Parse (12.3ms)`; keep the name and number.
+                    if let Some((name, rest)) = entry.message.split_once(" (") {
+                        let ms = rest.trim_end_matches("ms)").parse::<f64>().unwrap_or(0.0);
+                        let _ = std::fs::write(
+                            std::env::temp_dir().join("fid-phase.txt"),
+                            format!("{name} done in {:.1}s", ms / 1000.0),
+                        );
+                        if let Ok(mut v) = stage_ms.lock() {
+                            v.push((name.to_owned(), ms));
+                        }
                     }
                 }
+                _ => {}
             }
         };
 

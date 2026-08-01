@@ -177,6 +177,9 @@ foreach ($m in $list) {
     Write-Host -NoNewline ("{0,5}/{1}  {2,-72} " -f $i, $list.Count, $m)
 
     $errFile = Join-Path $env:TEMP "fid-one.err"
+    # Clear the phase marker so a stale one from the previous model
+    # cannot be reported as this model's current phase.
+    Remove-Item (Join-Path $env:TEMP "fid-phase.txt") -Force -ErrorAction SilentlyContinue
     $t0 = Get-Date
     $proc = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\fid-one.out" `
         -RedirectStandardError $errFile `
@@ -217,7 +220,11 @@ foreach ($m in $list) {
             # read $env:TEMP followed by junk. -ErrorAction SilentlyContinue then
             # produced NOTHING instead of an error, and the narration silently
             # never fired. The silencer hid my own bug.
-            $phase = Get-Content $errFile -Tail 1 -ErrorAction SilentlyContinue
+            # Read the phase file the runner writes directly. NOT the child's
+            # stderr: HRW's OutputCapture redirects stderr during a compile, so
+            # anything the callback prints is swallowed before it gets there.
+            $phaseFile = Join-Path $env:TEMP "fid-phase.txt"
+            $phase = if (Test-Path $phaseFile) { (Get-Content $phaseFile -Raw).Trim() } else { $null }
             if ($phase) {
                 Write-Host ""
                 Write-Host ("       {0,5:N0}s  in: {1}" -f $elapsedNow, $phase.Trim()) -ForegroundColor DarkGray

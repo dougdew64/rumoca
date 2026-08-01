@@ -1386,6 +1386,18 @@ their call sites. The regression test suite (270 tests) guards against silent
 regressions during a rebase.
 
 
+### A trap for anything instrumenting through the compile callback
+
+`WorkerState::compile` starts an `OutputCapture` that redirects **stdout and stderr at the
+file-descriptor level**, so Rumoca's own `println!` diagnostics can be forwarded as log
+entries. Anything a `FromWorker` callback prints therefore runs *inside* that redirection and
+**is swallowed before it reaches the real stderr**.
+
+Found the hard way on 2026-08-01: live phase narration produced nothing at all, while the
+after-the-fact summary printed normally — because the summary runs after `compile` returns and
+the capture is dropped. **Write to a file instead** (`examples/fidelity_msl.rs` writes
+`fid-phase.txt`); a direct file write bypasses the redirected descriptors.
+
 ## 11. The testing architecture
 
 **Five different questions, five instruments.** The clarifying frame is that these are not
