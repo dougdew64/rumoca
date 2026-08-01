@@ -1145,27 +1145,49 @@ point at anything interesting.
    per stage). The parity principle is now enforced by
    `link_slugs_and_capture_names_are_the_same_vocabulary` rather than merely intended.
 
-   **Still below the reach of a link:** an animation **frame position**, the
-   pointed-at node, the followed identifier. A tour can now say "open the Tearing
-   view" but not "…and go to frame 7, where `command` won". Frame addressing is the
-   next natural increment; nothing has needed it yet, so it waits for a tour that
-   does.
-3. **Ad hoc specimens — split, do not repurpose.** Doug offered `specimens/` for
-   repurposing; recommend against. The curated corpus has real properties
-   (portable Modelica subset, `// purpose:` comments, System Modeler round-trip
-   intent) that scratch models would quietly degrade. Two directories: curated,
-   and generated-for-a-question. Generated ones are ephemeral on the same rule.
+   ~~**Still below the reach of a link:** an animation frame position, the pointed-at
+   node, the followed identifier.~~ ✅ **ALL THREE DELIVERED 2026-07-30.** *(Corrected
+   2026-08-01 — this paragraph claimed they were unreachable for two days after they
+   shipped, which is how a stale record turns into re-building what exists.)* The
+   vocabulary now reaches every noun the capture can describe, **verified against the
+   fixture tours that exercise each form**:
+
+   | Noun | Link form | Fixture tour |
+   |---|---|---|
+   | animation frame | `hrw://stage/Structural/MatchingAnim/frame/41` | `frame-seeking.md` |
+   | tree node | `hrw://stage/Structural/Tree/node/blocks[3].unknown` | `node-pointing.md` |
+   | followed identifier | `hrw://follow/C.v` | `node-pointing.md` |
+   | equation (canvas) | `hrw://stage/Structural/TarjanAnim/equation/11` | `frame-seeking.md` |
+   | camera aim | — | `camera-aiming.md` |
+
+   Each tour also drives an **out-of-range** case (`frame/99999`, `equation/999`), so a
+   bad address fails visibly rather than silently doing nothing.
+3. ~~**Ad hoc specimens — split, do not repurpose.**~~ ✅ **DELIVERED 2026-07-30**, and
+   split exactly as recommended. Scratch models live in **`.hrw-bridge/specimens/`**,
+   gitignored and therefore **ephemeral by construction** rather than by discipline;
+   `App::scratch_specimens` marks them in the list and re-polls the directory, so a
+   model Claude writes mid-conversation appears within a second with no restart. The
+   curated `specimens/` corpus keeps its properties (portable subset, `// purpose:`
+   comments, System Modeler round-trip intent) and is not repurposed. **A scratch name
+   may not shadow a curated one** — the collision is reported and the file skipped,
+   because silently loading a different model than the name says would have Claude
+   reason confidently about source Doug is not looking at.
 
 ### The most valuable consequence
 
-**Specimens become a medium of explanation.** "Here is the smallest model that
-exhibits the thing you asked about" is what a good teacher does, and it is
-currently impossible — Claude can only point at the models that already exist.
-This also feeds the Cellier loop directly: his problems often specify a system
-that could be realised as a specimen and actually run through Rumoca, so a
-claimed answer can be *checked* rather than asserted.
+**Specimens became a medium of explanation.** "Here is the smallest model that
+exhibits the thing you asked about" is what a good teacher does, and until 2026-07-30
+it was impossible — Claude could only point at models that already existed. It is now
+a normal move (gap 3 above). This feeds the Cellier loop directly: his problems often
+specify a system that can be realised as a specimen and actually run through Rumoca,
+so a claimed answer can be **checked rather than asserted** — which matters because
+Claude being wrong is a false positive on the very test the loop relies on (**#57**).
 
-### Specimen notebook conversion (authorised 2026-07-29)
+### Specimen notebook conversion (authorised 2026-07-29) — ✅ DONE 2026-07-29
+
+**All four items below landed.** 1,632 lines of `narrative.md` became 638 lines of
+`purpose.md`; `trace/` was kept; the CLAUDE.md authorship claim was corrected. Recorded
+here as the plan that was carried out, not as work outstanding.
 
 Doug: *"I expressed the original design for the specimen notebook before I truly
 understood the possibilities of this project."*
@@ -1494,14 +1516,21 @@ robotics student modelling a mechanism will do it constantly.
 
 ### Audit of what HRW emits today (2026-07-29, quick pass — verify before relying)
 
-- **Structural singular — well emitted, but the spans are dropped.**
-  `structural_error_to_json` emits `n_equations`, `n_unknowns`, `n_matched`,
-  `rank_deficiency`, `unmatched_equations`, `unmatched_unknowns`, `guidance` — enough
-  for today's answer. But `StructuralError::Singular` *also* carries
-  **`unmatched_unknown_spans`**, whose own doc comment says it exists "so the failure
-  is traceable back to source", and **HRW does not emit it.** Rumoca hands over the
-  source traceability and HRW drops it on the floor. That is the single cheapest fix
-  here and the one that turns "unknown `emf.p.v`" into "line N of your model".
+- **Structural singular — ✅ AUDITED AND FIXED 2026-07-29.** *(Bullet corrected
+  2026-08-01: it still read "the spans are dropped" while step 1 of the Sketch below
+  recorded the fix. Two halves of one idea disagreeing is worse than either being
+  wrong, because whichever is read first wins.)*
+
+  `structural_error_to_json` emitted `n_equations`, `n_unknowns`, `n_matched`,
+  `rank_deficiency`, `unmatched_equations`, `unmatched_unknowns` and `guidance`, but
+  **dropped `unmatched_unknown_spans`** — which `StructuralError::Singular` carries
+  precisely so the failure is traceable back to source. Rumoca handed over the
+  traceability and HRW dropped it on the floor.
+
+  **Now emitted** as `unmatched_unknown_locations` (line, column, excerpt, and the
+  source `line_text`), turning "unknown `emf.p.v`" into "line N of your model". Full
+  detail, including the wrong `rank_deficiency` the work uncovered, in **step 1 of the
+  Sketch**.
 - **DAE construction — ✅ AUDITED AND FIXED 2026-07-29.** It was the worst of the lot:
   the arm returned a bare `Stage::info("flatten succeeded; DAE construction failed
   (later arc)")` **while `error`, `error_code` and `diagnostics` sat in scope, unused.**
@@ -1661,8 +1690,27 @@ accepts is exactly a filable issue.
    succeeded; DAE construction failed"), which is earlier and more specific — good
    compiler behaviour, but it means the most common authoring error of all lands on a
    failure path whose payload has *not* been audited yet. Start step 2 there.
-2. **Audit the other failure payloads** for source location; add spans where Rumoca
+2. **Audit the remaining failure payloads** for source location; add spans where Rumoca
    has them and widen visibility where it does not.
+
+   **This is the only open item in #45, and it is narrower than it was written**
+   *(scoped 2026-08-01)*. Five paths are already audited above, so what is left is:
+
+   | Phase | Audited? |
+   |---|---|
+   | structural singular, DAE construction, resolve, typecheck, flatten | ✅ 2026-07-29 |
+   | **parse, instantiate, index reduction, initialization, events, solve lowering, simulation** | **not yet** |
+
+   **Do this through #46, not separately.** #46 authors a failure specimen per phase,
+   and a payload cannot be audited without a model that reaches that failure — so the
+   specimen is the prerequisite, and auditing the payload is what you do the moment it
+   exists. Two tasks with one body of work.
+
+   **Start at DAE construction's neighbours.** The 2026-07-29 audit found that a model
+   with a genuinely *missing* equation never reaches structural analysis — Rumoca
+   catches it earlier and more specifically at DAE construction. Good compiler
+   behaviour, and a warning that the most common authoring errors land on early paths
+   rather than the dramatic late ones.
 2b. ✅ **Highlight the blamed source line** — **DONE 2026-07-29.** The specimen source
    view tints a blamed line and colours its line number, with a hover saying why. Plus
    `hrw://source[/<line>]`, so a tour can *point* at the line instead of quoting it.
