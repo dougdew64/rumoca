@@ -157,6 +157,18 @@ foreach ($m in $list) {
         break
     }
 
+    # **Announce the model BEFORE running it**, not after.
+    #
+    # The result used to be written only on completion, so a model that hung for
+    # 900 s showed nothing at all — the one fact wanted during a stall (which
+    # model?) was the one that could not be seen, and identifying a stuck process
+    # on 2026-07-31 meant reconstructing it from the CSV afterwards.
+    #
+    # `-NoNewline` keeps it to ONE line per model: the name appears the instant
+    # the model starts and the result completes the same line. A killed run then
+    # leaves a visibly incomplete line marking exactly where it stopped.
+    Write-Host -NoNewline ("{0,5}/{1}  {2,-72} " -f $i, $list.Count, $m)
+
     $t0 = Get-Date
     $proc = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\fid-one.out" `
         -RedirectStandardError "$env:TEMP\fid-one.err" `
@@ -178,7 +190,9 @@ foreach ($m in $list) {
         elseif ($elapsed -gt $TimeoutSec) { $verdict = "aborted:timeout" }
 
         if ($verdict -ne "ok") {
-            Write-Host ("  KILL {0}: {1} (peak {2} MB, free {3} GB)" -f $m, $verdict, $peakMB, $free) -ForegroundColor Yellow
+            # Close the -NoNewline line before writing a full line of our own.
+            Write-Host ""
+            Write-Host ("       KILL {0}: peak {1} MB, free {2} GB" -f $verdict, $peakMB, $free) -ForegroundColor Yellow
             try { $proc.Kill() } catch { }
             break
         }
@@ -186,8 +200,9 @@ foreach ($m in $list) {
     $secs = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1)
     "$m,$peakMB,$secs,$verdict" | Out-File $Profile -Append -Encoding utf8
 
-    $flag = if ($verdict -eq "ok") { "" } else { "  <- $verdict" }
-    Write-Host ("{0,3}/{1} {2,6} MB {3,6}s  {4}{5}" -f $i, $list.Count, $peakMB, $secs, $m, $flag)
+    # Completes the line opened above. The name is already printed.
+    $colour = if ($verdict -eq "ok") { "Gray" } else { "Yellow" }
+    Write-Host ("{0,6} MB {1,7}s  {2}" -f $peakMB, $secs, $verdict) -ForegroundColor $colour
 }
 
 if ($raGB -gt 1) {
