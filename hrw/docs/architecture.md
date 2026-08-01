@@ -1564,6 +1564,94 @@ returned 37 models with **zero failures** in it, because failure rows carry no `
 and a "skip zero-valued" guard silently dropped every failure bucket — leaving F9 with no data
 at all. A stratum that quietly vanishes looks exactly like one that was covered.
 
+### Running the checks at scale without taking the machine down
+
+**On 2026-07-31 an unbounded fidelity run made Doug's machine unusable and forced a hard
+power-cycle.** Everything in this subsection exists because of that, and it is written out
+in full because the reasoning is less obvious than the fix.
+
+#### What went wrong
+
+The runner rebuilt its `Session` every 200 models. The corpus was **53**, so **no rebuild
+ever fired**, and one process accumulated across the largest systems in the MSL — a
+10,175-equation model, and one with 110 functions whose inlined bodies are enormous.
+
+**The mistake was believing a session rebuild is a memory bound. It is not one.** A rebuild
+releases what the *session* holds; it cannot release what the allocator has fragmented or
+what any other cache retains. **Only process exit does**, because the OS reclaims
+unconditionally.
+
+Worse, the lesson was already available: the survey had run away that same morning, and
+`--slice`, `--rebuild-every`, `--resume` and incremental writes were built precisely so a
+long run could not. None of it was carried to the fidelity runner, which does strictly *more*
+per model.
+
+#### The design that replaced it
+
+**One model per process.** `measure-fidelity.ps1` launches `fidelity_msl --max-models 1
+--resume` per model, so the worst case is bounded by a single model rather than by a corpus.
+Measured peaks: **0.9-3.2 GB per model**, which explains the 6.5 GB a ten-model chunk
+reached.
+
+**Guard on FREE RAM, not on process size.** "The machine stays usable" is a free-RAM
+property. A 10 GB process is fine with 20 GB free; a 6 GB process is fatal with 1 GB free.
+Doug proposed a 30 GB ceiling; the machine has **31.7 GB total and had 7.8 GB free**, so that
+guard could never have fired — and *a guard that cannot trigger is indistinguishable from no
+guard*, which is precisely how the first crash happened.
+
+| Guard | Value | Why |
+|---|---|---|
+| free-RAM floor | 3 GB | below this Windows thrashes and the desktop stops responding |
+| process ceiling | 5 GB | secondary net, ~2x the worst model observed |
+| sample interval | **2s, during the run** | a between-chunks check cannot stop a chunk in flight |
+
+**An abort is a measurement, not a failure** — "this model needs more than the ceiling" is a
+fact worth recording, and it lands in the profile as a verdict.
+
+#### But two aborts are not the same kind of fact
+
+`aborted:proc-ceiling` and `aborted:timeout` are properties of the **model**. `aborted:free-ram`
+is a property of the **machine at that moment** — three models aborted that way while
+rust-analyzer held 5.7 GB, and had ample room minutes later.
+
+So the profile **retries free-RAM aborts and keeps the others**. Treating a transient machine
+state as a settled result would bake it into the artifact permanently, and it would do so on
+exactly the heavy models a stratified corpus exists to exercise.
+
+#### The IDE is a bigger consumer than the harness
+
+Measured, and counter-intuitive enough to record: **rust-analyzer alone held more resident
+memory than two parallel fidelity workers would need** — 5.7 GB while indexing.
+
+Why this workspace is close to a worst case for it: **173k lines of our code against 989
+dependency packages and 642 MB of third-party source**, a ratio near 100:1. `wgpu`, `naga`,
+`ash`, `nalgebra` and `faer` are all expensive to index — a shader compiler, four GPU backends,
+and deeply generic numerics. rust-analyzer's cost tracks the **dependency closure**, not the
+project's line count, so a much larger project with lighter dependencies would index faster.
+
+**Do not kill the process to reclaim it.** VS Code treats an unexpected exit as a *crash* and
+restarts the server within seconds; the only effect is paying the re-index cost again. A kill
+was measured to be undone in under two minutes. The durable stop is Command Palette →
+**"rust-analyzer: Stop server"**, an *intentional* stop the client does not resurrect —
+verified 2026-07-31, and it freed **5.5 GB** (4.55 -> 10.06 GB free).
+
+That is a VS Code command and unreachable from a shell, so `measure-fidelity.ps1` **reports
+rather than acts**: a pre-flight naming the exact command when headroom is thin, and a
+closing reminder to restart. Automating the reminder is possible; automating the action is
+not, and attempting it would make things worse.
+
+#### Whether to buy more RAM
+
+Checked rather than assumed, because it looked like an obvious yes. **It is not.** DDR5 64 GB
+kits were ~$870-970 in July 2026 — DRAM makers shifted capacity to HBM for AI accelerators,
+and prices are expected to stay elevated until ~2028.
+
+More importantly, **RAM was never the problem**: the crash was an unbounded run, and the work
+is now bounded and safe at 32 GB. More memory would buy only wall-clock — six parallel
+workers at ~2.5 GB each, turning a ~45-minute serial sweep into ~8 minutes. **Not worth $800
+for a run performed a few times a month.** Stopping the language server during a sweep buys
+more headroom than half that upgrade would.
+
 ### What has actually gone wrong — the instructive part
 
 **Of 12 violations across F6-F9's first runs, nine were the check's fault**, and they share

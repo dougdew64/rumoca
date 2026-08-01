@@ -102,17 +102,39 @@ output.** The same breakage survived a clippy run that was piped to `grep -c "^w
 which counts warnings and silently ignores a compile error. `cargo clippy … ; echo $?` or
 just let it print.
 
-**Running the fidelity checks at MSL scale — NEVER unbounded.** An unbounded 53-model run
-made Doug's machine unusable and forced a hard power-cycle (2026-07-31). Use the driver:
+**Running the fidelity checks at MSL scale — NEVER unbounded, and never a bare loop.**
+An unbounded 53-model run made Doug's machine unusable and forced a hard power-cycle
+(2026-07-31). Use the watchdog driver:
 
 ```powershell
-./run-fidelity.ps1 -Out C:/tmp/fid.csv -Models (Get-Content C:/tmp/stage-c.txt)
+# stop rust-analyzer FIRST via Ctrl+Shift+P -> "rust-analyzer: Stop server"
+./measure-fidelity.ps1 -Models (Get-Content C:/tmp/stage-c.txt) `
+    -Out C:/tmp/fid-c.csv -Profile C:/tmp/fid-memory.csv
 ```
 
-It runs `examples/fidelity_msl.rs` in chunks of 25 that **exit** between batches, resumes from
-the report, and **refuses to start a chunk below a free-RAM floor**. A session rebuild is not a
-memory bound — it releases what the session holds, not what the allocator fragmented. **Only
-process exit is.** See `docs/architecture.md` §11.
+**One model per process** (`fidelity_msl --max-models 1 --resume`), so the worst case is
+bounded by a single model — measured peaks are 0.9–3.2 GB. A session rebuild is **not** a
+memory bound: it releases what the session holds, not what the allocator fragmented. **Only
+process exit is.**
+
+The watchdog guards on **free RAM** (3 GB floor), not process size, sampled **every 2s during
+the run** — Doug proposed a 30 GB ceiling when the machine has 31.7 GB total, and *a guard
+that cannot fire is indistinguishable from no guard*. It also writes a **memory profile**
+(peak resident per model), and treats `aborted:free-ram` as retryable while keeping
+`aborted:proc-ceiling` and `aborted:timeout`, because the first is a fact about the machine
+and the others about the model.
+
+`run-fidelity.ps1` is the earlier chunked driver (25 models per process). **Superseded** —
+chunking bounds accumulation *across* chunks but not within one, and its free-RAM check ran
+*between* chunks, which is the only moment it cannot help.
+
+**Before a sweep, stop rust-analyzer** via Command Palette → **"rust-analyzer: Stop server"**.
+It holds ~5.7 GB here — more than two parallel workers would need — and this workspace is
+near its worst case: 173k lines of our code against **989 dependency packages and 642 MB of
+third-party source**. **Do not kill the process**; VS Code treats that as a crash and restarts
+it within seconds. The script prints this reminder when headroom is thin, and prompts the
+restart afterwards. Full reasoning in [`docs/architecture.md`](docs/architecture.md) §11
+"Running the checks at scale".
 
 **Fidelity checks — when they run** (policy agreed with Doug 2026-07-31; full reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). F1–F9 ask whether HRW faithfully

@@ -64,9 +64,32 @@ Write-Host "guards: free RAM >= ${MinFreeGB}GB, process <= ${MaxProcGB}GB, sampl
 if (-not (Test-Path $Profile)) {
     "name,peak_ws_mb,secs,verdict" | Out-File $Profile -Encoding utf8
 }
+# Only a SETTLED verdict counts as done.
+#
+# `aborted:free-ram` says the ENVIRONMENT was tight, not that the model is too
+# big — three models aborted that way on 2026-07-31 while rust-analyzer held
+# 5.7 GB, then had ample room minutes later. Treating that as done would bake a
+# transient machine state into the profile permanently, and those are exactly
+# the heavy models the stratified corpus exists to exercise.
+#
+# `aborted:proc-ceiling` and `aborted:timeout` are properties of the MODEL, so
+# they stay done: retrying them would just reproduce the same result.
 $alreadyProfiled = @{}
+$retryable = @()
 Get-Content $Profile | Select-Object -Skip 1 | ForEach-Object {
-    $alreadyProfiled[($_ -split ',')[0]] = $true
+    $parts = $_ -split ','
+    if ($parts.Count -ge 4 -and $parts[3] -eq 'aborted:free-ram') {
+        $retryable += $parts[0]
+    } elseif ($parts[0]) {
+        $alreadyProfiled[$parts[0]] = $true
+    }
+}
+if ($retryable.Count -gt 0) {
+    Write-Host "retrying $($retryable.Count) model(s) that aborted on free RAM, not on their own size"
+    # Drop their rows so the retry writes a fresh verdict rather than a duplicate.
+    $kept = @(Get-Content $Profile | Select-Object -First 1)
+    $kept += Get-Content $Profile | Select-Object -Skip 1 | Where-Object { ($_ -split ',')[3] -ne 'aborted:free-ram' }
+    $kept | Out-File $Profile -Encoding utf8
 }
 
 $i = 0
