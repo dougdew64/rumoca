@@ -96,8 +96,19 @@ fn corpus() -> Vec<SurveyRow> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let out = arg(&args, "--out")
-        .unwrap_or_else(|| format!("{}/docs/fidelity-report.csv", env!("CARGO_MANIFEST_DIR")));
+    // **No default into `docs/`.** This used to default to
+    // `docs/fidelity-report.csv`, which (a) is a retired name — the specimen
+    // report is `specimen-fidelity-report.csv` and the corpus artifact is
+    // `msl-fidelity-report.csv` — and (b) meant any bare invocation silently
+    // overwrote a committed artifact. That happened on 2026-07-31 during a
+    // profiling run. A corpus run always passes `--out`; requiring it is free.
+    let Some(out) = arg(&args, "--out") else {
+        eprintln!(
+            "--out is required. Corpus runs write to a working directory and are promoted \
+             into docs/ by promote-run.ps1; writing there directly would overwrite an artifact."
+        );
+        std::process::exit(2);
+    };
     let max_reduce_eq: usize =
         arg(&args, "--max-reduce-eq").and_then(|v| v.parse().ok()).unwrap_or(800);
     let resume = args.iter().any(|a| a == "--resume");
