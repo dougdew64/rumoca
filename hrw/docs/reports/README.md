@@ -21,9 +21,9 @@ among the documents.*
 |---|---|---|
 | `msl-survey.csv` | `examples/survey_msl.rs` | **The corpus definition.** Rumoca's reach across all 2,626 MSL models, plus the IR-shape metrics that stratify a sample. |
 | `msl-survey.meta.json` | same | provenance for the above |
-| `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `promote-run.ps1` | **The artifact.** F1-F9 over the corpus — 2,614 of 2,626 models, all green (2026-08-01). |
-| `msl-fidelity-profile.csv` | `measure-fidelity.ps1` | peak resident memory and wall time per model, plus the abort verdict |
-| `msl-fidelity-report.meta.json` | `promote-run.ps1` | provenance, **including the `not_checked` bound** |
+| `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `scripts/promote-run.ps1` | **The artifact.** F1-F9 over the corpus — 2,614 of 2,626 models, all green (2026-08-01). |
+| `msl-fidelity-profile.csv` | `scripts/measure-fidelity.ps1` | peak resident memory and wall time per model, plus the abort verdict |
+| `msl-fidelity-report.meta.json` | `scripts/promote-run.ps1` | provenance, **including the `not_checked` bound** |
 | `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the 16 curated specimens. **Churns on every full test run** — that is expected. |
 
 ## Read at runtime — do not move or rename
@@ -36,12 +36,12 @@ Three paths are compiled in. Moving a file means editing code, not just document
 | `msl-survey.csv` | `examples/survey_msl.rs` — default `--out` |
 | `specimen-fidelity-report.csv` | `src/fidelity.rs` — where the pre-commit test writes |
 
-`promote-run.ps1` writes the three `msl-fidelity-*` files here.
+`scripts/promote-run.ps1` writes the three `msl-fidelity-*` files here.
 
 ## Rules
 
 **Never write a corpus run directly into this directory.** Runs go to
-`C:\Users\dougd\rumoca-runs\`, and `promote-run.ps1` copies them in — that is the step that
+`C:\Users\dougd\rumoca-runs\`, and `scripts/promote-run.ps1` copies them in — that is the step that
 also writes the provenance sidecar and refuses to replace a larger report with a smaller one.
 `fidelity_msl` **requires `--out`** for exactly this reason: a bare invocation used to default
 into `docs/`, and on 2026-07-31 a profiling run overwrote a committed artifact that way.

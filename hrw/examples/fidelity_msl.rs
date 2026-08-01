@@ -105,7 +105,7 @@ fn main() {
     let Some(out) = arg(&args, "--out") else {
         eprintln!(
             "--out is required. Corpus runs write to a working directory and are promoted \
-             into docs/ by promote-run.ps1; writing there directly would overwrite an artifact."
+             into docs/ by scripts/promote-run.ps1; writing there directly would overwrite an artifact."
         );
         std::process::exit(2);
     };

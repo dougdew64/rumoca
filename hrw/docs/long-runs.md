@@ -43,7 +43,7 @@ cargo build -p hrw --release --example survey_msl
 cargo build -p hrw --release --example fidelity_msl
 ```
 
-> **`measure-fidelity.ps1` runs `target/release/examples/fidelity_msl.exe`**, which `cargo
+> **`scripts/measure-fidelity.ps1` runs `target/release/examples/fidelity_msl.exe`**, which `cargo
 > test` and a debug build never touch. So a **release** binary can sit stale for days while
 > everything else looks green — and it holds compiled-in paths, notably
 > `docs/reports/msl-survey.csv`.
@@ -128,7 +128,7 @@ cd C:\Users\dougd\source\repos\rumoca\hrw
 
 Start-Transcript -Path C:\Users\dougd\rumoca-runs\fid-full.log
 
-.\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
+.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
     -Out C:\Users\dougd\rumoca-runs\fid-full.csv -Profile C:\Users\dougd\rumoca-runs\fid-full-memory.csv
 
 Stop-Transcript
@@ -157,12 +157,12 @@ rust-analyzer), then:
 
 ```powershell
 # free-RAM aborts only — the default, no flag required
-.\measure-fidelity.ps1 -ModelsFile C:	mpll-models.txt `
-    -Out C:	mpid-full.csv -Profile C:	mpid-full-memory.csv
+.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
+    -Out C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv
 
 # ALSO retry the timeouts, which are partly environmental
-.\measure-fidelity.ps1 -ModelsFile C:	mpll-models.txt `
-    -Out C:	mpid-full.csv -Profile C:	mpid-full-memory.csv `
+.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
+    -Out C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv `
     -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 ```
 
@@ -218,7 +218,7 @@ Start-Transcript -Path C:/Users/dougd/rumoca-runs/fid-retry.log
 
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
-./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
+./scripts/measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 Stop-Transcript
 ```
 
@@ -235,7 +235,7 @@ two-element array — only `-Command` binds arrays properly. On 2026-08-01 this 
 retry pass a no-op, and **passing the flag was worse than omitting it**, because the
 one-element default `@('aborted:free-ram')` *would* have matched.
 
-`measure-fidelity.ps1` now splits on commas before reading the value, so it behaves
+`scripts/measure-fidelity.ps1` now splits on commas before reading the value, so it behaves
 identically however it is invoked. The trap is recorded because it applies to **any** array
 parameter passed through `-File`, not just this one.
 
@@ -264,7 +264,7 @@ GB free**, and the 3 GB floor that keeps the desktop responsive leaves a practic
 **~9.9 GB** — *less than the 10 GB already configured*.
 
 So the headroom is exhausted: **the models want more than the hardware can safely provide.**
-That is a limit of the machine, not a defect in HRW or Rumoca, and `promote-run.ps1` writes it
+That is a limit of the machine, not a defect in HRW or Rumoca, and `scripts/promote-run.ps1` writes it
 into the report's sidecar as `not_checked` so the bound travels with the data rather than
 beside it.
 
@@ -309,11 +309,11 @@ functions — existed in neither.
 
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
-./promote-run.ps1 -RunDir C:/Users/dougd/rumoca-runs
+./scripts/promote-run.ps1 -RunDir C:/Users/dougd/rumoca-runs
 git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
-`promote-run.ps1` **copies** (never moves) into `docs/` as `msl-fidelity-report.csv` plus a
+`scripts/promote-run.ps1` **copies** (never moves) into `docs/` as `msl-fidelity-report.csv` plus a
 provenance sidecar, and **refuses to replace a larger report with a smaller one** unless
 forced — the likeliest accident is promoting a partial re-run over a complete sweep.
 

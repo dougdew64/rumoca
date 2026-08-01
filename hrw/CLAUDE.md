@@ -151,7 +151,7 @@ made Doug's machine unusable and forced a hard power-cycle (2026-07-31). Use the
 
 ```powershell
 # stop rust-analyzer FIRST via Ctrl+Shift+P -> "rust-analyzer: Stop server"
-./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt `
+./scripts/measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt `
     -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
 ```
 
@@ -163,7 +163,7 @@ process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB
 
 - Long runs go in a **standalone terminal**, not VS Code's.
 - Output goes to `C:\Users\dougd\rumoca-runs\`, **never `C:\tmp`**, and is promoted into `docs/`
-  by `promote-run.ps1`, which writes the provenance sidecar.
+  by `scripts/promote-run.ps1`, which writes the provenance sidecar.
 - **Do not rebuild an example while a run holds its binary.**
 - **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
   treats that as a crash and restarts it within seconds.

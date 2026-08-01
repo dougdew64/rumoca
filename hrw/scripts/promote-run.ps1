@@ -10,8 +10,8 @@
 # that cannot be confused with the small pre-commit test's output, and writes a
 # provenance sidecar so the table can say what it describes.
 #
-#   .\promote-run.ps1 -RunDir C:\Users\dougd\rumoca-runs\2026-08-01-full
-#   .\promote-run.ps1 -Report C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv
+#   .\scripts\promote-run.ps1 -RunDir C:\Users\dougd\rumoca-runs\2026-08-01-full
+#   .\scripts\promote-run.ps1 -Report C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv
 
 param(
     [string]$RunDir  = "",
@@ -27,9 +27,10 @@ if ($RunDir) {
 if (-not $Report)  { throw "give -RunDir, or -Report and -Profile" }
 if (-not (Test-Path $Report))  { throw "no such report: $Report" }
 
-# The generated artifacts live in docs/reports/, beside the reports.md that
+# The generated artifacts live in hrw/docs/reports/, beside the reports.md that
 # explains how they compose — not loose among the prose (grouped 2026-08-01).
-$docs = Join-Path $PSScriptRoot "docs/reports"
+# One level up from hrw/scripts/. (Was `docs/reports` while this lived in hrw/.)
+$docs = Join-Path $PSScriptRoot "..\docs\reports"
 $destReport = Join-Path $docs "msl-fidelity-report.csv"
 $destMeta   = Join-Path $docs "msl-fidelity-report.meta.json"
 
@@ -86,7 +87,11 @@ if ($Profile -and (Test-Path $Profile)) {
     $profileNote = '"msl-fidelity-profile.csv"'
 }
 
-$rumoca = (Select-String -Path (Join-Path $PSScriptRoot "..\Cargo.toml") -Pattern '^version\s*=' | Select-Object -First 1).Line -replace '.*"(.*)".*','$1'
+# (A `$rumoca` version was read from ../Cargo.toml here and never used — dead
+# since it was written. Deleted 2026-08-01 rather than have its path corrected
+# for the move into scripts/, which would have been maintaining dead code. If
+# the sidecar should carry a Rumoca version, add it to the JSON below and it
+# will have a reader.)
 $meta = @"
 {
   "generated_unix": $([int][double]::Parse((Get-Date -UFormat %s))),

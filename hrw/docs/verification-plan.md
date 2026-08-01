@@ -222,7 +222,7 @@ click do the thing? — so Doug's attention goes only where judgement is require
 
 ### 3. Move the run drivers into Rust
 
-`measure-fidelity.ps1` and `promote-run.ps1` meet all three conditions of the tech-debt
+`scripts/measure-fidelity.ps1` and `scripts/promote-run.ps1` meet all three conditions of the tech-debt
 trigger: re-run repeatedly, can fail silently, and have already produced defects only a human
 caught.
 

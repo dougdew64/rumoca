@@ -316,4 +316,42 @@ Some prose.
         assert!(resolves("crates/rumoca-phase-structural/src/tearing.rs"));
         assert!(resolves("src/tearing.rs"), "bare paths resolve against any crate");
     }
+
+    /// Control characters injected by an interpreted backslash escape.
+    ///
+    /// **A runbook is copy-pasted, so a byte nobody can see is a broken command.**
+    /// `docs/long-runs.md` carried `C:\tmp\all-models.txt` written through something
+    /// that interpreted the escapes, eating three characters at once — `\t` → TAB,
+    /// `\a` → BEL, `\f` → FORMFEED — leaving `C:<TAB>mp<BEL>ll-models.txt`. It rendered
+    /// close enough to right in a terminal to read past, and **survived six commits**
+    /// (introduced 2026-08-01 in `1c2e3472`, found 2026-08-01 while grouping the
+    /// scripts) because nothing checked.
+    ///
+    /// BEL and FORMFEED have no legitimate use in our markdown. **TAB is deliberately
+    /// not checked** — tabs are ordinary in code blocks, so flagging them would produce
+    /// noise, and the two that are unambiguous are enough to catch this class.
+    #[test]
+    fn documents_contain_no_stray_control_characters() {
+        let mut offences = Vec::new();
+        let mut scanned = 0usize;
+        for path in doc_files() {
+            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            scanned += 1;
+            for (n, line) in text.lines().enumerate() {
+                for (ch, name) in [('\u{7}', "BEL"), ('\u{c}', "FORMFEED"), ('\u{b}', "VTAB")] {
+                    if line.contains(ch) {
+                        offences.push(format!("{}:{} contains {name}", path.display(), n + 1));
+                    }
+                }
+            }
+        }
+        // Non-vacuity: a clean scan of nothing is not a clean scan.
+        assert!(scanned > 20, "only scanned {scanned} documents — the walk is broken");
+        assert!(
+            offences.is_empty(),
+            "control characters in documentation (a backslash escape was interpreted \
+             somewhere — check how the text was written, not just the text):\n  {}",
+            offences.join("\n  "),
+        );
+    }
 }

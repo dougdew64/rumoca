@@ -1531,7 +1531,7 @@ enormous.
 > because the OS reclaims unconditionally.
 
 So the runner processes `--max-models` (default 25) and **exits**; `--resume` skips rows
-already in the report and the sink appends. `measure-fidelity.ps1` runs ONE MODEL PER
+already in the report and the sink appends. `scripts/measure-fidelity.ps1` runs ONE MODEL PER
 PROCESS with a watchdog and
 **refuses to start one below a free-RAM floor**, so the failure mode is *"stops early and says
 so"* rather than *"takes the desktop down"*. Verified by watching free RAM return to the same
@@ -1607,7 +1607,7 @@ per model.
 
 #### The design that replaced it
 
-**One model per process.** `measure-fidelity.ps1` launches `fidelity_msl --max-models 1
+**One model per process.** `scripts/measure-fidelity.ps1` launches `fidelity_msl --max-models 1
 --resume` per model, so the worst case is bounded by a single model rather than by a corpus.
 Measured peaks: **0.9-3.2 GB per model**, which explains the 6.5 GB a ten-model chunk
 reached.
@@ -1654,7 +1654,7 @@ was measured to be undone in under two minutes. The durable stop is Command Pale
 **"rust-analyzer: Stop server"**, an *intentional* stop the client does not resurrect —
 verified 2026-07-31, and it freed **5.5 GB** (4.55 -> 10.06 GB free).
 
-That is a VS Code command and unreachable from a shell, so `measure-fidelity.ps1` **reports
+That is a VS Code command and unreachable from a shell, so `scripts/measure-fidelity.ps1` **reports
 rather than acts**: a pre-flight naming the exact command when headroom is thin, and a
 closing reminder to restart. Automating the reminder is possible; automating the action is
 not, and attempting it would make things worse.

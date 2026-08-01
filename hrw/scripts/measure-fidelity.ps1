@@ -15,7 +15,7 @@
 # An abort is a MEASUREMENT, not a failure: "this model needs more than the
 # ceiling" is the fact we are trying to learn, and it is recorded as such.
 #
-#   .\measure-fidelity.ps1 -Models (Get-Content C:\tmp\stage-c.txt)
+#   .\scripts\measure-fidelity.ps1 -Models (Get-Content C:\tmp\stage-c.txt)
 
 param(
     # `-Models` is a comma-separated list. For the full corpus use `-ModelsFile`
@@ -73,7 +73,9 @@ $RetryVerdicts = @(
         Where-Object { $_ }
 )
 
-$exe = Join-Path $PSScriptRoot "..\target\release\examples\fidelity_msl.exe"
+# Three levels up from hrw/scripts/: hrw/scripts -> hrw -> repo root -> target.
+# (Was `..\target` while this lived in hrw/; grouped into scripts/ 2026-08-01.)
+$exe = Join-Path $PSScriptRoot "..\..\target\release\examples\fidelity_msl.exe"
 if (-not (Test-Path $exe)) { throw "build first: cargo build -p hrw --release --example fidelity_msl" }
 
 function Get-FreeGB { [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2) }

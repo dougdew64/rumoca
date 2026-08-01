@@ -789,7 +789,7 @@ mod tests {
     fn report_path() -> std::path::PathBuf {
         // **Named for its scope, deliberately.** This is the 10-specimen pre-commit
     // gate. The MSL corpus artifact is `docs/reports/msl-fidelity-report.csv`, written
-    // by `promote-run.ps1` — two reports with the same name but different
+    // by `scripts/promote-run.ps1` — two reports with the same name but different
     // scopes would be confused exactly once, expensively.
     std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/specimen-fidelity-report.csv"))
     }

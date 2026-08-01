@@ -2768,7 +2768,7 @@ cadence 45 minutes compounds into real time.
 
 ### Sketch, if picked up
 
-- `measure-fidelity.ps1` partitions the model list using `docs/reports/msl-survey.csv`'s
+- `scripts/measure-fidelity.ps1` partitions the model list using `docs/reports/msl-survey.csv`'s
   `n_equations` and `outcome` — data it already has.
 - Small partition runs with `--max-models 10 --rebuild-every 5`; large partition unchanged at
   `--max-models 1`.

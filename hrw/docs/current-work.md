@@ -109,7 +109,7 @@ happens to it.
 
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
-./promote-run.ps1 -Report C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
+./scripts/promote-run.ps1 -Report C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
 git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
@@ -121,10 +121,10 @@ timeouts explicitly, since those turned out to be partly environmental (529 s in
 against 901 s under load).
 
 ```powershell
-./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
+./scripts/measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 ```
 
-**F. Re-promote and commit.** `promote-run.ps1` refuses to replace a larger report with a
+**F. Re-promote and commit.** `scripts/promote-run.ps1` refuses to replace a larger report with a
 smaller one, so a mistake here fails loudly rather than quietly.
 
 **Then** triage — step 5 of the plan above, with its three categories.
@@ -215,7 +215,7 @@ Get-Process fidelity_msl -ErrorAction SilentlyContinue | Stop-Process -Force
 
 # resume: the identical command. It skips settled rows and retries free-RAM aborts.
 cd C:\Users\dougd\source\repos\rumoca\hrw
-.\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
+.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
     -Out C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv
 ```
 

@@ -106,7 +106,7 @@ mid-run is why it exists"* — and say which, rather than converting on principl
 
 #### Standing candidate
 
-`measure-fidelity.ps1` and `promote-run.ps1` meet all three conditions. **Not urgent**, and
+`scripts/measure-fidelity.ps1` and `scripts/promote-run.ps1` meet all three conditions. **Not urgent**, and
 behind fidelity, the oracle test and Test mode — but on the list, with a day of evidence
 rather than taste behind it. The memory-sampling part needs a crate, and adding a dependency
 needs Doug's approval.
