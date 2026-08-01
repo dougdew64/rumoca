@@ -98,11 +98,19 @@ when the sweep's findings have landed.
 **[`docs/reports.md`](docs/reports.md) is the design authority for steps 3-5.** Its load-bearing
 claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
 
-**Two dependencies the sequence hides:**
+**One dependency the sequence hid, now met:**
 
-- **Step 3 needs a compile-by-qualified-name path in the worker.** `WorkerState::compile` takes
-  a *file path* and reads it as specimen source; an MSL model has no such file.
-- **One risk in the ordering.** Test mode is built at step 3 with only *one* real report to
+- ~~Step 3 needs a compile-by-qualified-name path in the worker.~~ ✅ **`WorkerState::compile_model_by_name`
+  exists** — built for step 2, since checking HRW's representation of an MSL model means
+  compiling it *through HRW's own path*, which is the thing under test. *(Corrected 2026-08-01;
+  this was listed as missing after it shipped.)* Note **why it could not just call `compile`
+  with the library file**: a library file may declare many classes — `Blocks/Continuous.mo`
+  holds `CriticalDamping` among others — so "the first class in the file" is the wrong model.
+  The document is **located, not added**.
+
+**One risk in the ordering:**
+
+- **The n=1 risk.** Test mode is built at step 3 with only *one* real report to
   load, then asked to take a second at step 5 — an abstraction fitted to n=1. Half the
   mitigation is made: all three reports share the first four columns (`name`, `kind`,
   `outcome`, `message`). The other half is to **sketch the oracle report's columns during
