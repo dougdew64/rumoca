@@ -1,5 +1,11 @@
 # Plan — does HRW faithfully represent Rumoca?
 
+**Purpose:** what F1-F9 check, the reasoning behind each, when the two scales run, and Doug's
+standing boundary against optimising HRW to widen test scope.
+**Status:** authority. The run-frequency policy and the boundary both bind.
+**Read when:** before changing anything that emits or reads stage JSON; before running the
+large suite; before proposing a performance change to the compile path.
+
 Written 2026-07-30, from Doug's concern:
 
 > We have not sufficiently tested that the HRW code correctly represents Rumoca's

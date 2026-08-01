@@ -1,5 +1,11 @@
 # HRW Architecture
 
+**Purpose:** how HRW works — the threading model, the stage pipeline, the bridge, and §11 the
+testing architecture with the scale and safety rules.
+**Status:** reference. Look things up; do not read end to end.
+**Read when:** you need to know how a subsystem fits together, or *why* a long-run precaution
+exists (§11 — `long-runs.md` is the matching *how*).
+
 How the observatory works, for a reader who knows Rust and egui basics but hasn't
 read the HRW source. Written as onboarding material and as documentation for an
 upstream PR to the Rumoca repository.

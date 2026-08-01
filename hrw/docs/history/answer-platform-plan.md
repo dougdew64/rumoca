@@ -1,5 +1,30 @@
 # Plan — HRW as an answer platform
 
+**Purpose:** the sequencing plan that carried out the 2026-07-29 reframe of the project.
+**Status:** **HISTORICAL — do not follow its phases.** Retired 2026-08-01. Kept for its
+reasoning, which is still load-bearing, and for the record of a correction Doug made that
+governs how work is chosen.
+**Read when:** you want to know *why* speculative features are permitted but stored prose is
+not, or what the 2026-07-29 reframe actually changed. **Not** when deciding what to do next —
+that is [`../../CLAUDE.md`](../../CLAUDE.md) and [`../current-work.md`](../current-work.md).
+
+## Where its content went
+
+Everything still live was moved out before retirement. Nothing here is the only copy:
+
+| Content | Now lives in |
+|---|---|
+| The "features are experimentable" rule | `../../CLAUDE.md` (and Claude's memory) |
+| Phase 2 — the first Cellier problems | `../ideas.md` **#57** |
+| Phase 5 — four-bar linkage | `../ideas.md` **#5** |
+| B4 — failure specimens per phase | `../ideas.md` **#46** |
+| #41 stages D-E, #22's revisit trigger | `../ideas.md`, at those items |
+| "The ledger is always in flight" | `../question-ledger.md` |
+| The tech-debt trigger change | `../tech-debt.md` |
+| Phases 6-7 of source tooling | `../source-tooling-plan.md`, still live there |
+
+---
+
 Written 2026-07-29, at the end of the session that reframed the project. Sequences
 `docs/ideas.md` #41 (Claude's teaching database), #42 (ad hoc tours), #43 (Wolfram
 and System Modeler as answer channels), #5 (four-bar linkage + planar mechanics),

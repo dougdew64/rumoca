@@ -1,5 +1,11 @@
 # Runbook — the long runs
 
+**Purpose:** copy-paste commands for the MSL survey and the fidelity sweep, what to watch,
+how to resume, and what each abort verdict means.
+**Status:** procedure. Follow it; do not re-derive it.
+**Read when:** about to start either long run. **Never run the fidelity sweep unbounded** —
+an unbounded run took Doug's machine down on 2026-07-31.
+
 **Copy-paste procedures for the two runs that take minutes to hours.** Written to be used
 without re-deriving anything. *Why* each precaution exists is in
 [`architecture.md`](architecture.md) §11 "Running the checks at scale"; this page is the

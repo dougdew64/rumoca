@@ -1,8 +1,28 @@
 # Rumoca: High-Level Overview
 
+**Purpose:** the entry point to the teaching database — what Rumoca is and how its phases fit
+together, before any drill-down.
+**Status:** reference. **Audience is Claude, not Doug** — Doug reads this only indirectly,
+through answers.
+**Read when:** starting on any compiler phase. Then read that phase's own directory. Treat
+untagged prose as a lead, not a fact — see [`../provenance.md`](../provenance.md).
+
 > This document is the starting point of a top-down, iterative series of notes
 > exploring how Rumoca works. Each subsequent document drills deeper into a
 > specific phase or algorithm.
+
+**Two documents sit above the per-phase directories:**
+
+- **[`the-chain-of-problems.md`](the-chain-of-problems.md)** — why the pipeline has the shape
+  it has, each phase as a response to the previous one's insufficiency, plus the
+  structural/numerical distinction and the reading list. **Start there when framing an
+  explanation**; start here when you need the component inventory.
+- this file — what Rumoca is, and what each phase produces.
+
+*`end_to_end_tour.md` was deleted 2026-08-01. Its twelve stop-by-stop walkthroughs had rotted
+(Stop 8 described a 7×7 incidence matrix on a tab that shows 48 equations, uncaught because
+nothing checks prose); its conceptual sections are now `the-chain-of-problems.md`. For numbers
+about a specimen, read its generated trace, never prose.*
 
 ---
 

@@ -1,526 +1,266 @@
 # CLAUDE.md — HRW Observatory
 
-Rust/egui observatory app for studying the Rumoca Modelica compiler. The project's purpose, binding
-decisions, and curriculum are in `docs/CHARTER.md` (v1.1) — consult it for any design question; do
-not re-litigate settled decisions in-session. Append any nontrivial implementation choice you make
-to `DECISIONS.md` with a one-line rationale.
+**Purpose:** the rules that bind, what is being worked on now, and where everything else lives.
+**Status:** authority. **The one file to read at session start.**
+**Read when:** every session, first.
 
-## Current arc
+Rust/egui observatory for studying the Rumoca Modelica compiler.
+**[`docs/README.md`](docs/README.md) is the document index** — every file, its purpose, and
+whether it is live. Go there rather than guessing.
 
-**Pass one (the public-API build of Arcs 1–7) is COMPLETE. Pass two is now the current work:
-RE-IMPLEMENT Arcs 1–7 with internal Rumoca access, then build the log view.** Pass one built the
-whole pipeline observatory (Parse → Resolve → Instantiate → Typecheck → Flatten → Structural → Index
-reduction → Initialization → Events → Solve lowering → Simulation) under a self-imposed
-**public-API-only** constraint. That constraint is **now lifted** — HRW lives in the Rumoca workspace
-(`hrw/`) and may reach internal phase state. **Key mechanic:** across a crate boundary a phase's
-`pub(crate)` internals aren't reachable, so "accessing non-public APIs" means **additively widening
-visibility / adding observation hooks in the `../crates/rumoca-*` crates** — i.e. it *is* the
-instrumentation, and it must stay **additive, observation-only, and upstreamable** (see
-[`DECISIONS.md`](DECISIONS.md)).
+Purpose, scope and binding decisions are in [`docs/CHARTER.md`](docs/CHARTER.md) (v1.1) —
+consult it for any design question; **do not re-litigate settled decisions in-session.**
+Append any nontrivial implementation choice to [`DECISIONS.md`](DECISIONS.md) with a one-line
+rationale.
 
-**Completed initiative — End-to-end tour upgrade.** All three visualization features are delivered:
-(1) equation sheet (#27), (2) source-to-equation traceability (#28), (3) solver stepping (#29). The
-tour document is wired to these views. Only the manual verification stop ("verify every stop works
-with a fresh MotorWithBrake load") remains open. *(Its plan document was retired 2026-07-28 —
-see `DECISIONS.md`.)*
+---
 
-**Current initiative — source tooling** ([`docs/source-tooling-plan.md`](docs/source-tooling-plan.md)):
-seven phases covering the Modelica lexer, syntax highlighting, identifier tracking, the Context Bar,
-the tree rework, and the canvas views. **Phases 1–5 complete** (Phase 5 closed 2026-07-28 after Doug
-tested the full loop end to end). The Context Bar, designed in
-[`docs/context-assembly.md`](docs/context-assembly.md), is what makes the thin-emitter /
-thick-reasoner split visible — the premise that HRW is an instrument for use with Claude rather than
-a standalone tool.
+## The rules
 
-**The composition primitives are frozen**: one point-at + one follow + background, unchanged until a
-practical scenario demonstrates a need. Multiple `follow` items and a third "compare" primitive were
-considered and deliberately not built — **do not re-propose them from first principles.**
+**Instrumentation of the Rumoca crates is intended, and must stay additive,
+observation-only, and upstreamable.** Across a crate boundary a phase's `pub(crate)` internals
+are unreachable, so "accessing internals" means **additively widening visibility / adding
+observation hooks in `../crates/rumoca-*`**. Semantics-preserving, so HRW stays faithful to
+real Rumoca and rebases stay clean.
 
-**[`docs/current-work.md`](docs/current-work.md) — the LIVE plan while the fidelity sweep
-runs** (started 2026-07-31, spans a couple of days). It carries the step-by-step state, the
-three triage categories, and what can and cannot be built while a sweep holds the binary.
-**Delete it when the sweep is done** and its findings have landed in `fidelity-plan.md`.
+- **After touching a `crates/rumoca-*` file, run `cargo clippy -p <that-crate> --all-targets`.**
+  Those crates are clippy-clean and `[workspace.lints]` denies; a lint the instrumentation
+  introduces fails upstream CI.
+- **Commit Rumoca crate changes separately from HRW code**, so an upstream PR is a clean
+  cherry-pick.
+- **Ask before adding a dependency.** Record accepted ones in `DECISIONS.md`.
 
-**Current sequence (Doug, 2026-07-31) — each step's output is the next step's input:**
+**THE MUST-FIRE RULE.** Any code whose job is to *report* something gets a test proving it
+reports; **silence must be a failure, never a pass.** Its absence makes a change incomplete.
+All seven silent bugs of 2026-08-01 were observers that looked like they worked: a dead column,
+an array argument collapsed by `powershell -File`, an `eprintln!` swallowed by HRW's own
+fd-level `OutputCapture`, a rate limiter gating its own first fire, an announcement silent when
+work was pending by absence. `fidelity.rs` had this discipline
+(`each_invariant_catches_its_own_violation`); the tooling around it did not.
 
-1. **The MSL survey** — `examples/survey_msl.rs`, first full run 2026-07-31. Rumoca's reach
-   across all 2,626 MSL models, plus the IR-shape metrics that stratify the sample.
-2. **Fidelity testing at scale** — F1-F9 (`src/fidelity.rs`, `worker.rs`) over that sample.
-3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open
-   it compiled in the RHS (`docs/ideas.md` **#52**).
-3b. **PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** (agreed 2026-08-01).
-   Four items, before oracle testing and Test mode: the must-fire convention, shortening the
-   pre-commit suite (#48), **headless UI testing with `egui_kittest`** (dev-dependency,
-   approved), and moving the run drivers to Rust. Doug: *"Anything which slows down your
-   ability to help bring my ideas to life is absolutely worth fixing now."*
+**DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
+[`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Measurement showed HRW's *compile path*, not
+the checks, costs 30 s and 3.5 GB on a 4,193-equation model. Doug: *"we should not redesign
+worker.rs's compile path. Perhaps ever… If some models cannot be fidelity-tested within our
+limits, so be it."* The stage JSON trees, equation sheet, identifier index and animation frames
+**are the product**. Raising `-TimeoutSec` / `-MaxProcGB` when measurement justifies it is
+calibration, not optimisation, and is fine. **HRW is an education project, not a production
+tool.**
+
+**The composition primitives are frozen** — one point-at + one follow + background, unchanged
+until a practical scenario demonstrates a need. Multiple `follow` items and a third "compare"
+primitive were considered and deliberately not built; **do not re-propose them from first
+principles.**
+
+**No heuristic name-matching** — [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md).
+No substring search ever decides identity. Cited by six source files.
+
+**Tech-debt sweeps have TWO triggers** ([`docs/tech-debt.md`](docs/tech-debt.md)). Forward:
+each phase boundary, scoped to what the next phase touches. Backward (added 2026-08-01): **code
+that has produced defects only a human caught.** Ask *"who caught it?"* — toolchain, nothing to
+sweep; Doug, the code lives somewhere nothing checks. The property is **verifiability, not
+Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper than converting.
+
+---
+
+## Current work
+
+**Pass two: re-implement Arcs 1-7 with internal Rumoca access, delivering richer stage views
+than the public API allowed.** Per arc: scout what state the phase holds (read the crate under
+`../crates/`), expose it additively, render it. Remaining per-arc opportunities are
+`docs/ideas.md` #19-#22. The log view is delivered. Pass-one closure record and the arc history
+are in [`DECISIONS.md`](DECISIONS.md).
+
+**[`docs/current-work.md`](docs/current-work.md) is the live step-by-step plan.** Delete it
+when the sweep's findings have landed.
+
+**The sequence (Doug, 2026-07-31) — each step's output is the next step's input:**
+
+1. **The MSL survey** ✅ — `examples/survey_msl.rs`. Rumoca's reach across all 2,626 MSL models,
+   plus the IR-shape metrics that stratify the sample.
+2. **Fidelity testing at scale** ✅ — F1-F9 over that corpus. **2,614 of 2,626 models green**
+   (2026-08-01); 12 exceeded this machine's memory or the time limit.
+3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open it
+   compiled in the RHS (`docs/ideas.md` **#52**).
+   - **3b. PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** (agreed
+     2026-08-01). Four items *before* oracle testing and Test mode: the must-fire convention,
+     shortening the pre-commit suite (#48), **headless UI testing with `egui_kittest`**
+     (dev-dependency, approved), and moving the run drivers to Rust. Doug: *"Anything which
+     slows down your ability to help bring my ideas to life is absolutely worth fixing now."*
 4. **Design and run the oracle test** — Rumoca vs System Modeler (#43). **Constrained by
    [`docs/reports.md`](docs/reports.md):** it must emit the same `name` join key, because a
    mismatch is only an admissible upstream finding when that model is *fidelity-green*.
-5. **Oracle-report support in Test mode**, including per-item state (unfiled / filed / fixed
+5. **Oracle-report support in Test mode**, with per-item state (unfiled / filed / fixed
    upstream) that regeneration merges rather than overwrites.
 
-**[`docs/reports.md`](docs/reports.md) is the design authority for steps 3-5.** Its
-load-bearing claim: **survey → eligible, fidelity → trustworthy, oracle → findings.** Read it
-before building Test mode or designing the oracle test.
+**[`docs/reports.md`](docs/reports.md) is the design authority for steps 3-5.** Its load-bearing
+claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
 
-**Two dependencies this sequence hides, both worth knowing before starting step 2:**
+**Two dependencies the sequence hides:**
 
-- **Step 2 needs a compile-by-qualified-name path in the worker**, not just step 3.
-  `WorkerState::compile` takes a *file path* and reads it as the specimen source, but an MSL
-  model has no such file. #52 records this as a Test-mode prerequisite; it is really a
-  step-2 one, because testing HRW's representation of an MSL model means compiling it
-  *through HRW's own path*, which is the very thing under test.
-- **Step 2 must EMIT a report, not only assert.** F1-F9 currently assert and produce
-  nothing loadable. Step 3 has nothing to open unless step 2 writes a file — so the harness
-  becomes *assert **and** emit*: the assertion keeps it a test, the emission makes it a
-  deliverable (`docs/upstream-strategy.md` planning rule 5).
+- **Step 3 needs a compile-by-qualified-name path in the worker.** `WorkerState::compile` takes
+  a *file path* and reads it as specimen source; an MSL model has no such file.
+- **One risk in the ordering.** Test mode is built at step 3 with only *one* real report to
+  load, then asked to take a second at step 5 — an abstraction fitted to n=1. Half the
+  mitigation is made: all three reports share the first four columns (`name`, `kind`,
+  `outcome`, `message`). The other half is to **sketch the oracle report's columns during
+  step 3**, without building the oracle.
 
-**One risk in the ordering, and its cheap insurance.** Test mode is built at step 3 with only
-*one* real report to load, then asked to take a second at step 5 — an abstraction fitted to
-n=1. Mitigation is already half-made: all three reports share the first four columns
-(`name`, `kind`, `outcome`, `message`). The other half is to **sketch the oracle report's
-columns during step 3**, without building the oracle, so the loader is shaped by two
-consumers even though only one exists.
+---
 
-**Delivered 2026-07-29 — four more phase animations.** Tearing, alias elimination, initial-condition
-planning and connection expansion now have animated views, bringing the total to eight. Building them
-established a distinction to preserve: **not every phase hides a search.** Tearing and connection
-expansion are real processes with reasons that exist only mid-run, so they are *replays*; alias
-elimination and IC planning are lists computed before HRW sees them, so they are *reveals* with no
-Debug button, and their module docs say why. Connection expansion is instrumented for a live trace
-but has no Debug button *yet* — re-running flatten needs the whole MSL on the UI thread; the fix is a
-worker-side live-debug path (`docs/ideas.md` #9). New Rumoca instrumentation: `rumoca-phase-structural`
-(`pub mod blt`, `block_local_incidence`) and `rumoca-phase-flatten` (`connections::trace`,
-`flatten_ref_with_options_traced`) — the first non-structural, non-DAE crate instrumented.
-
-**Running HRW's tests — and always `--test-threads=1`:**
+## Running things
 
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~7s,  353 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~6min, 454 tests — before committing
-cargo build -p hrw --bin hrw                                       # the binary — SEE BELOW
+cargo test -p hrw --lib -- --test-threads=1                        # ~25s, 412 tests — between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~6min, 471 tests — before committing
+cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
 
+**`--test-threads=1` is required** — two pre-existing tests race on process-global stdout and
+on `focus.json`, and the suite can **hang** under the default harness on a clean tree.
+
 **`cargo test` does not build the binary, and that gap is not theoretical.** On 2026-07-31 a
-`#[cfg(test)]` attribute was placed above the first of three lifted helpers — the attribute
-applies to *one* item — so two of them compiled into `--bin hrw` referencing imports that
-existed only under `cfg(test)`. Every test passed; **Doug's debugger launch failed.** Test
-builds have everything, so they cannot see this class at all.
+`#[cfg(test)]` was placed above the first of three lifted helpers — **the attribute applies to
+one item** — so two compiled into `--bin hrw` referencing test-only imports. Every test passed;
+**Doug's debugger launch failed.** `cargo clippy --all-targets` covers the bin, **but check its
+exit code, not its output**: the same breakage survived a clippy run piped to
+`grep -c "^warning: "`, which counts warnings and silently ignores a compile error.
 
-`cargo clippy -p hrw --all-targets` does cover the bin — **but check its exit code, not its
-output.** The same breakage survived a clippy run that was piped to `grep -c "^warning: "`,
-which counts warnings and silently ignores a compile error. `cargo clippy … ; echo $?` or
-just let it print.
+**Use the fast suite between edits and the full one before every commit.** Measured 2026-07-29:
+49 of 402 tests took 180 of the suite's 183 seconds, nearly all compiling a specimen against the
+MSL. They are gated by `slow-tests` and reported as ignored *with a reason*. **Parallelism is
+not the fix** — they serialize on a global `Mutex<WorkerState>` regardless, saving about two
+seconds; `docs/ideas.md` **#48** (memoize compiled specimens) is.
 
-**[`docs/long-runs.md`](docs/long-runs.md) is the runbook for both long runs** — the MSL
-survey and the fidelity sweep — with copy-paste commands, what to watch, how to resume, and
-what each abort verdict means. Use it rather than reconstructing the procedure; the *why*
-lives in `docs/architecture.md` §11.
+**Long runs → [`docs/long-runs.md`](docs/long-runs.md)**, the runbook for the MSL survey and the
+fidelity sweep: copy-paste commands, what to watch, how to resume, what each abort verdict
+means. *Why* each precaution exists is `docs/architecture.md` §11.
 
-**Running the fidelity checks at MSL scale — NEVER unbounded, and never a bare loop.**
-An unbounded 53-model run made Doug's machine unusable and forced a hard power-cycle
-(2026-07-31). Use the watchdog driver:
+**NEVER run the fidelity sweep unbounded, and never in a bare loop.** An unbounded 53-model run
+made Doug's machine unusable and forced a hard power-cycle (2026-07-31). Use the watchdog:
 
 ```powershell
 # stop rust-analyzer FIRST via Ctrl+Shift+P -> "rust-analyzer: Stop server"
-./measure-fidelity.ps1 -Models (Get-Content C:/tmp/stage-c.txt) `
-    -Out C:/tmp/fid-c.csv -Profile C:/tmp/fid-memory.csv
+./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt `
+    -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
 ```
 
-**One model per process** (`fidelity_msl --max-models 1 --resume`), so the worst case is
-bounded by a single model — measured peaks are 0.9–3.2 GB. A session rebuild is **not** a
-memory bound: it releases what the session holds, not what the allocator fragmented. **Only
-process exit is.**
+**One model per process**, so the worst case is bounded by a single model. **A session rebuild
+is not a memory bound** — it releases what the session holds, not what the allocator
+fragmented. **Only process exit is.** The watchdog guards on **free RAM** (3 GB floor), not
+process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB machine, and
+*a guard that cannot fire is indistinguishable from no guard*.
 
-The watchdog guards on **free RAM** (3 GB floor), not process size, sampled **every 2s during
-the run** — Doug proposed a 30 GB ceiling when the machine has 31.7 GB total, and *a guard
-that cannot fire is indistinguishable from no guard*. It also writes a **memory profile**
-(peak resident per model), and treats `aborted:free-ram` as retryable while keeping
-`aborted:proc-ceiling` and `aborted:timeout`, because the first is a fact about the machine
-and the others about the model.
+- Long runs go in a **standalone terminal**, not VS Code's.
+- Output goes to `C:\Users\dougd\rumoca-runs\`, **never `C:\tmp`**, and is promoted into `docs/`
+  by `promote-run.ps1`, which writes the provenance sidecar.
+- **Do not rebuild an example while a run holds its binary.**
+- **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
+  treats that as a crash and restarts it within seconds.
 
-*(An earlier chunked driver, `run-fidelity.ps1`, was deleted 2026-08-01: chunking bounded
-accumulation across chunks but not within one, and its free-RAM check ran between chunks —
-the only moment it cannot help.)*
+**When the fidelity checks run** (policy 2026-07-31; reasoning in
+[`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Small scale — the 16 curated specimens —
+**stays in the pre-commit run** (~90 s), answering *"did HRW drift from itself?"*, which is not
+a rare event: both bugs found on 2026-07-31 were HRW-internal drift, weeks old. Large scale gets
+its own feature gate. Run the large suite: **(1)** after rebasing on upstream (a step in
+`docs/updating-rumoca.md`); **(2)** before submitting a PR to CogniPilot/rumoca; **(3)** when
+HRW changes how it **emits or reads stage JSON** — the `*_to_json` functions in `worker.rs`, the
+path grammar in `bridge.rs`, `IncidenceMatrix::from_report`, or any animation's re-derivation.
+**Trigger 3 is code-shaped, not judgement-shaped, deliberately** — "when a change gives reason
+to doubt fidelity" is exactly the judgement that already failed twice.
 
-**Before a sweep, stop rust-analyzer** via Command Palette → **"rust-analyzer: Stop server"**.
-It holds ~5.7 GB here — more than two parallel workers would need — and this workspace is
-near its worst case: 173k lines of our code against **989 dependency packages and 642 MB of
-third-party source**. **Do not kill the process**; VS Code treats that as a crash and restarts
-it within seconds. The script prints this reminder when headroom is thin, and prompts the
-restart afterwards. Full reasoning in [`docs/architecture.md`](docs/architecture.md) §11
-"Running the checks at scale".
+---
 
-**DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
-`docs/fidelity-plan.md`). Measurement showed HRW's *compile path*, not the checks, costs 30 s
-and 3.5 GB on a 4,193-equation model. Doug: *"we should not redesign worker.rs's compile
-path. Perhaps ever… If some models cannot be fidelity-tested within our limits, so be it."*
-The stage JSON trees, equation sheet, identifier index and animation frames **are the
-product** — making them lazy to fit a benchmark would optimise away the observatory. Raising
-`-TimeoutSec` / `-MaxProcGB` when measurement justifies it is calibration, not optimisation,
-and is fine. **HRW is an education project, not a production tool.**
+## Where things live
 
-**THE MUST-FIRE RULE — applies now, to everything.** Any code whose job is to *report*
-something gets a test proving it reports; **silence must be a failure, never a pass.** Its
-absence makes a change incomplete. All seven silent bugs of 2026-08-01 were observers that
-looked like they worked: a dead column, an array argument collapsed by `powershell -File`, an
-`eprintln!` swallowed by HRW's own fd-level `OutputCapture`, a rate limiter gating its own
-first fire, an announcement silent when work was pending by absence. `fidelity.rs` had this
-discipline (`each_invariant_catches_its_own_violation`); the tooling around it did not.
-
-**Tech-debt sweeps have TWO triggers** (`docs/tech-debt.md`). The forward one: each phase
-boundary, scoped to what the next phase touches. The backward one, added 2026-08-01: **code
-that has produced defects only a human caught.** Ask *"who caught it?"* — if the toolchain
-did, nothing to sweep; if Doug did, the code lives somewhere nothing checks. The property is
-**verifiability, not Rust**, and converting to Rust is only one answer; adding a test, a
-non-vacuity guard, or a loud failure is often cheaper.
-
-**Fidelity checks — when they run** (policy agreed with Doug 2026-07-31; full reasoning in
-[`docs/fidelity-plan.md`](docs/fidelity-plan.md)). F1–F9 ask whether HRW faithfully
-represents Rumoca, and they come in two scales answering *different* questions:
-
-- **Small scale** (the 16 curated specimens, `src/fidelity.rs` + `worker.rs`) **stays in the
-  pre-commit run**, costing ~90s of it. It answers *"did HRW drift from itself?"* — and that
-  is not a rare event. **Both bugs found on 2026-07-31 were HRW-internal drift**, weeks old,
-  introduced by ordinary work, and neither was suspected by anyone.
-- **Large scale** (the stratified MSL sample) gets its **own feature gate** so it never runs
-  by accident. It answers *"did Rumoca change; does an unseen IR shape break us?"*
-
-Run the large suite: **(1)** after rebasing on upstream — a step in
-`docs/updating-rumoca.md`, not a thing to remember; **(2)** before submitting a PR to
-CogniPilot/rumoca; **(3)** when HRW changes how it **emits or reads stage JSON** — the
-`*_to_json` functions in `worker.rs`, the path grammar in `bridge.rs`,
-`IncidenceMatrix::from_report`, or any animation's re-derivation.
-
-Trigger 3 is **code-shaped, not judgement-shaped**, deliberately: "when a change gives reason
-to doubt fidelity" is exactly the judgement that already failed twice. A diff can be checked;
-a suspicion has to occur to someone.
-
-**Use the fast one between edits and the full one before every commit.** Measured 2026-07-29:
-**49 of 402 tests accounted for 180 of the suite's 183 seconds**, nearly all compiling a specimen
-against the MSL; the other 353 finish in seconds. The 49 are gated by the `slow-tests` feature, and
-`cargo test` reports them as ignored *with a reason* rather than silently skipping them.
-
-**This is not a parallelism fix, and parallelism is not the answer here.** Those 49 all acquire a
-global `Mutex<WorkerState>` (Rumoca's `Session` is not thread-safe), so they serialize regardless of
-`--test-threads` — dropping to parallel would save about *two seconds*. Doug ruled out the
-concurrency work on 2026-07-29 after that measurement. `docs/ideas.md` **#48** is the fix that
-actually shortens the full run: memoize compiled specimens, since 37 call sites cover only 12
-distinct models.
-
-`--test-threads=1` is still required regardless: two pre-existing tests race on process-global stdout
-and on `focus.json`, and fail or hang under the default parallel harness on a clean tree.
-
-**Current plan: [`docs/answer-platform-plan.md`](docs/answer-platform-plan.md)** (2026-07-29).
-Five phases sequencing #41 (Claude's teaching database), #42 (ad hoc tours), #43 (Wolfram + System
-Modeler as answer channels) and #5 (four-bar / planar mechanics), plus a change to the tech-debt
-trigger — from weekly-by-calendar to **scoped by what the next phase touches** (adopted 2026-07-29;
-see `docs/tech-debt.md` for the rules). `central_panel_ui` at 664 lines is logged and deliberately
-not split before Phase 3 reworks the sub-tab bars — Doug: *"acknowledged"*.
-
-Its spine — **corrected by Doug the same day**, and the corrected form is the load-bearing one:
-
-> **Features are experimentable; stored prose is not.**
-
-Claude's first version said nothing should be built ahead of a real question, generalising from the
-tour's failure. The counter-example was already in the repo: the **animations were also speculative**
-— nobody asked for a tearing replay — and they are the project's most educational output. Tour
-worthless, animations excellent, both built ahead of any question. So speculativeness is not the
-discriminator. *A feature you did not know you needed teaches you by being used; prose you did not
-know you needed just rots.* The tour's real defect was storing **regenerable content that nothing
-checked**.
-
-So: **build speculative features freely** — in a domain nobody has mapped, feature-building *is* the
-exploration method, and mistakes are cheap here. Keep only the narrow rule: do not *store*
-regenerable explanation ahead of use. Runtime tour loading still goes first, as the **enabler of
-experimentation** rather than as a hedge.
-
-The plan **supersedes items 3-5 of the work order below** (attempt the tour, refactor `bridge.rs`,
-Phases 6-7), which were written before the tour was attempted and found wanting. Items 1-2 are
-delivered.
-
-**Superseded work order (Doug, 2026-07-28) — retained for its reasoning:**
-
-1. **Animation debt** — a trait over the three animation types, plus `animation_controls`'s 8
-   positional parameters and the duplicated matrix-canvas boilerplate. First because idea #40 builds
-   a *fourth* animation view; copying the pattern again would leave Phase 7 four near-duplicates.
-   **Fold in** `current_frame_context()` on the trait, so `view.animation` in the capture carries
-   *what* the user is looking at and not merely *where* they are (see `docs/tech-debt.md`).
-2. **Idea #40** — instrument `lower_pre_operator` (`rumoca-phase-dae`) with `LiveTrace`. First
-   non-structural crate instrumented, so it also tests whether `LiveTrace` generalises — which gates
-   ideas #19–#22.
-3. **End-to-end tour attempt** — moved *ahead* of Phases 6 and 7 deliberately. Attempting the tour
-   is what generates requirements: every Phase 5 improvement came from Doug using the thing, none
-   from planning. The tour will stress exactly the tree and canvas work those phases contain, so
-   doing them first would be building on assumptions.
-4. **Refactor `bridge.rs`** — 2342 lines at Phase 5 close; Phase 6 touches it.
-5. **Phases 6 and 7** — the tree rework and the canvas views, **shaped by what the tour turns up**.
-   Half of Phase 6's search work already landed as the jump-to-followed-identifier control, and
-   incidence rows and spy-plot blocks are already clickable; Phase 7 adds axis labels, Tarjan nodes
-   and reduction rows.
-
-**The larger loop this sits inside** (Doug): attempt the tour → find what makes it tedious → fix
-that → repeat, until the tour is *pleasurable*. Only then does he begin reading Cellier and using
-HRW for its intended purpose, and only after that can he identify improvements to the phase
-animations — *"For now, I'm unable to identify such improvements as I am too ignorant about the
-algorithms which are being animated."* **Do not propose animation/pedagogy refinements before then;
-log them in `ideas.md` instead.** The signal that the loop has converged is a change in the *kind*
-of problem reported: from "this is broken or tedious" to "this doesn't teach me the thing well".
-
-**Current work — Pass two, in this order:**
-1. **Re-implement Arcs 1–7 with internal access**, arc by arc, delivering *richer* stage views than
-   the public API allowed. Per arc: scout what state the phase holds (read the crate under
-   `../crates/`), expose it additively, render it. Remaining per-arc instrumentation opportunities
-   are captured in [`docs/ideas.md`](docs/ideas.md) (#19–#22). Clearest concrete win: the
-   **incidence-matrix view** (Arc 3) — deferred in pass one *precisely because incidence was
-   `pub(crate)`*; now reachable and delivered.
-2. **The log view** — ✅ **delivered** — a pane streaming compilation + simulation log messages with
-   **timestamps** and far more phase/solver detail than the public API could give (per-phase timing
-   was impossible when phases 5–9 arrived from one opaque
-   `compile_model_strict_reachable_with_recovery` call). The proof the migration was worthwhile (Doug).
-
-Pass one is the **baseline to surpass, not discard** — its stage views, specimens, notebook, and tests
-are the reference that pass two enriches. The pass-one arc record follows.
-
-**Arc 7 closed (2026-07-21) — The simulation core** (charter §4.2.7), the biggest inflection (static IR →
-live execution). Delivered: **Solve lowering** (phase 8 — DAE → `SolveModel`, via
-`rumoca-phase-solve::lower_dae_to_solve_model`) as a stage tab, and **Simulation** (phase 9 — a
-worker-thread runner calling `rumoca-sim::simulate_solve_model`, Auto solver = BDF-via-diffsol for stiff /
-RK45 otherwise, plotted in an `egui_plot` pane; the UI never blocks, never shells out to the CLI). Ran
-start-simple (`SingleInertia` → `BouncingBall` → the stiff `BenchActuator`). **Step-mode plotting** landed
-(`worker::discontinuity_segments` breaks the line at reinit jumps, gated on `SimData.has_discontinuities` =
-the DAE has a discrete update; `series_color` pins per-variable colour) — closes the Arc-6-deferred
-"discontinuities render as discontinuities" and `docs/ideas.md` #8. Closed the "solve lowering not
-instrumented" gap (Doug, 2026-07-20).
-
-**Arc 6 closed (2026-07-20):** the compile-level hybrid structure is observable — the **Events** tab shows
-`BouncingBall`'s condition (`h <= 0`) + discrete reinit; smooth models show "no events". **Arc 5 closed:**
-initialization observable (`RcCircuit` IC plan + relaxation; `CapacitorLoop` structural + `OverInitRc`
-init-determinacy blow-ups). **Arc 4 closed:** index reduction on `Drivetrain`; the nonlinear four-bar +
-planar library (`lib/PlanarMechanics.mo`) parked/deferred (`docs/ideas.md` #5). Arc 1–7 done (Parse …
-Simulation + BLT spy-plot + the 14-specimen notebook). **New pipeline stages must be wired into the
-stage-diff highlight + stage-file publishing AND the notebook trace** (see Claude's
-`hrw-stage-diff-highlight-extend` memory).
-
-**Close-out gates under review:** Doug is separately weighing whether the differential test (System
-Modeler round-trip) and the debugger single-step should remain arc close-out gates at all — Arcs 3 & 4
-closed with both accepted (deferred / unconfirmed). Until he decides, treat them as satisfiable-by-acceptance,
-not hard blockers (see `docs/ideas.md` #4).
-
-**Per-specimen lab notebook (`docs/specimen-notebook/`).** Each entry has two parts:
-
-- **`trace/`** — the durable per-stage IR plus a `manifest.json` stamping the Rumoca rev and
-  specimen hash, produced by `cargo run --example gen_trace -- <Model>`. **Generated, therefore
-  correct by construction.** Any number about a specimen is read from here.
-- **`purpose.md`** — why the specimen exists (the phenomenon it was authored to trigger) and which
-  of Doug's questions it has answered. HRW renders it as the **Purpose** tab of the specimen view.
-
-**Converted 2026-07-29.** Each entry used to carry a `narrative.md` telling the story of that
-specimen's trip through the pipeline. Retired, for the reason in `docs/ideas.md` #42: **Claude
-regenerates that explanation on demand, so storing it buys nothing and costs staleness** — and the
-staleness was real, not hypothetical (`end_to_end_tour.md` described a 7x7 incidence matrix on a tab
-showing 48 equations, uncaught because nothing checks prose). 1,632 lines of narrative became 638
-lines of purpose. It also removed the most expensive step of a Rumoca pin bump: there is no prose
-left to re-verify.
-
-**Both the notebook and `docs/compiler-phases` are written by Claude** — see the authorship
-correction below.
-
-**Deferred — revisit after Doug's consideration:** the Arc-1/2 close-out differential tests
-(round-tripping specimens through System Modeler vs Rumoca). Doug is deliberately thinking through the
-round-tripping workflow and will return to it *without* blocking arc progress — its absence is
-intentional, not an oversight.
-
-**Backlog:** unscheduled future-implementation ideas are captured in [`docs/ideas.md`](docs/ideas.md)
-(e.g. simulation/convergence-failure narratives, specimen purpose hints in the UI, directory renames).
-Candidates, not commitments — consult when planning new work; promote items into an arc/decision when picked up.
-
-## Reference documentation
-
-- Rumoca source: **HRW lives INSIDE a fork of the Rumoca workspace** — `hrw/` is a workspace member
-  of `github.com/dougdew64/rumoca` (fork of `CogniPilot/rumoca`) on the `hrw` branch, depending on
-  the Rumoca crates via **path deps** (`../crates/rumoca-*`). Read the source directly in the sibling
-  `../crates/...` — it's the exact tree HRW builds against (no Cargo cache indirection). The `hrw`
-  branch was cut from the former pin `8cdc7419` (v0.9.20); "updating Rumoca" now means **rebasing the
-  `hrw` branch on upstream**, per `docs/updating-rumoca.md` (compiler + tests drive the code fixes;
-  `cargo run -p hrw --example gen_field_help` refreshes the generic field-help table;
-  `docs/compiler-phases` is maintained by Claude — see below). This in-workspace move exists to enable
-  **instrumenting Rumoca internals** (the public API exposes phase *results*, not the algorithms'
-  *process*); build/run/test from the workspace root with `-p hrw`, or `cd hrw/`. See `DECISIONS.md`.
-- **`docs/compiler-phases/` — Claude's teaching database.** One subdirectory per compiler phase,
-  with drill-downs (Pantelides, tearing, BLT, …). **Authorship corrected 2026-07-29: Claude wrote
-  100% of these**, on Doug's request months ago. CLAUDE.md previously called them "Doug's own
-  explanations… refreshed only by Doug", and that was wrong in a way that mattered — it made Claude's
-  own months-old prose look like an authoritative outside source.
-
-  **Audience: Claude, not Doug.** Doug reads them only indirectly, through answers. Their job is to
-  make Claude a better teacher over months and years, so Claude maintains them and commits them.
-
-  **What goes in** follows [[store what cannot be regenerated]]: Doug's *questions*, the confusion
-  behind them, and what finally made a thing click. **Not** Claude's explanations — those are
-  regenerable, and storing them builds an echo chamber that a later session mistakes for fact.
-  A question asked repeatedly is a signal: either the earlier explanation failed (try a different
-  angle) or the thing is not visible in HRW (a feature request, and a better one than Claude invents).
-
-  **Provenance, and how it is enforced** (`docs/provenance.md`, `docs/ideas.md` #41 C).
-  Two tests in `src/doc_citations.rs` run in the fast loop: every source path the docs cite
-  must exist, and every `*Verified … against `<path>`*` tag must name a file that still
-  does. **Upgrading is lazy on purpose** — no audit project; when a real question sends
-  Claude into the source, the claims it actually checked get tagged on the way past. Low
-  coverage is expected and does not fail; a *wrong* tag does, because a tag is a claim
-  about trustworthiness. Coverage is printed each run (5 of 62 docs at 2026-07-30).
-
-  **Every claim carries provenance** — `verified` (checked against code or tools, with the file),
-  `cellier` (with a citation), or `inference`. Only the first two are trusted on re-read; `inference`
-  gets re-checked. Text predating this rule is `unverified` by default and upgrades **lazily**: when
-  a real question sends Claude into the source, the claims actually checked get promoted. The
-  database becomes trustworthy exactly where it is used most, with no audit project.
-
-  **Before working on code that touches a compiler phase, read that phase's description** — but treat
-  untagged prose as a lead, not a fact. (Distinct from `docs/specimen-notebook/` — the specimen lab
-  notebook, also Claude's.)
-- **[`docs/upstream-strategy.md`](docs/upstream-strategy.md) — how engaging the Rumoca
-  maintainers serves Doug's education, and what that implies for planning.** Doug asked
-  (2026-07-31) to be reminded of this and for it to shape testing/implementation plans, so
-  **consult it when planning work**, not only when preparing something to send.
-
-  The short form: engagement is a **means**, not an end — their conversations are
-  educational, they are busy, so the questions must be worth answering. The mechanism is to
-  **make questions cheap to answer and interesting** ("here are 380 MSL models failing at
-  flatten with the same error shape — expected?" beats "why does X?"), which is fidelity and
-  survey work's real return beyond catching bugs.
-
-  **Order deliverables by *their* cost to accept, not our effort.** Bug reports with System
-  Modeler adjudication, an MSL capability map, and differential testing are zero-cost gifts;
-  **HRW itself goes last**, because it is the only item asking for maintenance burden and
-  review time. Gifts open conversations, proposals get scrutinized. The rarest thing Doug
-  brings is *not* HRW — it is differential testing against a commercial Modelica
-  implementation, which a volunteer project cannot cheaply do for itself.
-
-  Planning rules that follow: prefer zero-adoption-cost artifacts; anything published must be
-  **reproducible** (checked-in code *and* output, deterministic selection) and **honestly
-  bounded** (a "what this does not establish" section, because one visible overreach costs
-  more than several missing checks); and flag upstreamable work *at planning time*, not after
-  it is built in a shape that cannot be handed over.
-- **[`docs/upstream-issues.md`](docs/upstream-issues.md) — Rumoca bugs found through HRW,
-  written ready to file.** Doug files them when the time is right; **Claude adds entries and
-  never files them itself.** Only *reproduced* bugs go in, with reproduction, expected vs
-  actual, and suspect code marked as unverified — a confident wrong diagnosis in a bug
-  report wastes a maintainer's time and costs the credibility this project is building
-  (`project-engage-rumoca-community`). Where an independent implementation can adjudicate,
-  use it first: "System Modeler rejects this and you accept it" beats "I think the spec
-  says…". Two entries as of 2026-07-29, both found by auditing failure paths.
-- **[`docs/fixture-tours/`](docs/fixture-tours/) — tours that are *tests*, not
-  explanations.** Kept and versioned, unlike an ad hoc tour (`.hrw-bridge/tour.md`,
-  gitignored, regenerated per question). The ephemerality rule was never about tours; it was
-  about **explanation**, which rots because nothing checks it. A fixture tour has expected
-  outcomes, so it fails loudly instead. **Only justified because something runs it:**
-  `fixture_tour_links_all_resolve` parses every link on every test run — a saved tour nobody
-  runs is stored prose with extra steps. Pick one from the list at the top of Tour mode; the
-  directory is hard-coded, not a setting. **One fixture tour per capability, not per change.**
-  They cover what Claude cannot see: the rendered surface.
-
-  **Cross-platform stops** (2026-07-30, ideas #47): a tour may route through Wolfram
-  Desktop or System Modeler when the point cannot be made in HRW. Each stop marks its
-  medium. A **fixture** notebook is versioned in `docs/fixture-tours/notebooks/` — an *ad
-  hoc* notebook is ephemeral like an ad hoc tour, but a fixture has expected outcomes, so a
-  test that vanishes on a fresh checkout is not a test. Claude evaluates every result
-  through the kernel first, then ships cells for **Doug** to evaluate: the stop that lands
-  is the one he checks himself.
-
-  **Narrow, one feature each — deliberately** (Doug, 2026-07-30). Claude proposed *wider*
-  tours after noticing that half of one walk's bugs came from outside the stops, and had
-  the evidence backwards: those bugs were found *because* the tour was short enough to
-  leave attention to spare. **The scarce resource is Doug's attention per expectation, not
-  his walks**, so a wide tour consumes the surplus that produced the off-stop findings
-  rather than multiplying them. Narrow also means a stop failure implicates one feature,
-  and means Claude authors the tour while it still knows exactly what should happen —
-  both "mostly collapsed" and the phantom highlight were written about behaviour Claude
-  had *not* just built.
-
-  Past ten or so fixtures this needs a **selection principle** (walk the tour for whatever
-  just changed, plus one stale one) and **visible staleness** — nothing currently catches a
-  tour whose *expectations* rot, only its links. "Last walked" is derivable from the
-  `tour-link` entries in the action trail.
-
-  **An expectation must say WHERE to look**, not only what to look for. Doug clicked a
-  stop that was correctly refused, with the reason on screen, and reported that nothing
-  happened — the tour said "a notice appears" and never said notices live in the status
-  bar (2026-07-30). A reader who does not know where to look cannot check an expectation,
-  so it is not violable in practice however precise its wording.
-
-  **Every `**Expected:**` line must be violable.** Doug found "mostly collapsed" where the
-  truth is *fully* collapsed (2026-07-30); an audit then found "nothing particularly
-  centred" in a second fixture. Neither could be contradicted by anything, so neither
-  tested anything — and hedged expectations teach Doug to read them loosely, which defeats
-  the point. Write what would be *different* if the feature broke: a number, a named field,
-  "nothing moves", "the counter goes down".
-- **[`docs/question-ledger.md`](docs/question-ledger.md) — started 2026-07-29.** The questions
-  themselves: verbatim wording, what was on screen, which medium answered, and what actually made it
-  click. **Scan it before answering in a familiar area.** A repeated question is the signal, and it
-  branches two ways that call for opposite responses — the concept is hard (try a different angle,
-  don't restate louder), or the thing is not visible in HRW (a feature request, better than any
-  Claude invents). The first entry is a repeat about Claude's own coined term, which is a lesson
-  about Claude: naming an abstraction is not teaching it.
+- **Rumoca source** — HRW lives **inside** the fork; read the sibling `../crates/...` directly.
+  It is the exact tree HRW builds against, no Cargo-cache indirection. "Updating Rumoca" means
+  **rebasing the `hrw` branch on upstream**, per
+  [`docs/updating-rumoca.md`](docs/updating-rumoca.md).
+- **[`docs/compiler-phases/`](docs/compiler-phases/) — Claude's teaching database.** **Audience
+  is Claude, not Doug**, who reads it only indirectly through answers; Claude maintains and
+  commits it. Start at
+  [`the-chain-of-problems.md`](docs/compiler-phases/the-chain-of-problems.md). **What goes in:**
+  Doug's *questions*, the confusion behind them, and what made a thing click — **not** Claude's
+  explanations, which are regenerable and build an echo chamber a later session mistakes for
+  fact. **Every claim carries provenance** ([`docs/provenance.md`](docs/provenance.md));
+  untagged prose is a **lead, not a fact**, and upgrades lazily when a real question sends
+  Claude into the source. Two tests in `src/doc_citations.rs` check that cited paths exist.
+- **[`docs/question-ledger.md`](docs/question-ledger.md)** — Doug's questions verbatim and what
+  made each click. **Scan it before answering in a familiar area.** A repeat branches two ways
+  demanding opposite responses: the concept is hard (try a different angle), or the thing is not
+  visible in HRW (a feature request, better than any Claude invents).
+- **[`docs/upstream-strategy.md`](docs/upstream-strategy.md)** — **consult when planning work**,
+  not only when preparing something to send. Engagement is a **means** to Doug's education, so
+  questions must be worth answering: *"here are 380 MSL models failing at flatten with the same
+  error shape — expected?"* beats *"why does X?"*. **Order deliverables by their cost to accept,
+  not our effort** — bug reports with System Modeler adjudication, an MSL capability map and
+  differential testing are zero-cost gifts; **HRW goes last**, being the only item asking for
+  maintenance burden. Anything published must be **reproducible** and **honestly bounded**.
+- **[`docs/upstream-issues.md`](docs/upstream-issues.md)** — **Claude adds entries and never
+  files them.** Only *reproduced* bugs, with suspect code marked unverified: a confident wrong
+  diagnosis wastes a maintainer's time and costs the credibility this project is building.
+- **[`docs/fixture-tours/`](docs/fixture-tours/) — tours that are *tests*, not explanations.**
+  Versioned, unlike an ad hoc tour (`.hrw-bridge/tour.md`, gitignored). **Only justified because
+  something runs them:** `fixture_tour_links_all_resolve` parses every link on every test run.
+  Three rules, each bought with a defect:
+  - **One tour per capability, narrow.** The scarce resource is **Doug's attention per
+    expectation**, not his walks; a wide tour consumes the surplus that produced the off-stop
+    findings (`docs/ideas.md` #49).
+  - **An expectation must say WHERE to look.** Doug reported "nothing happened" at a stop that
+    was correctly refused with the reason on screen — the tour never said notices live in the
+    status bar.
+  - **Every `**Expected:**` line must be violable.** "Mostly collapsed" where the truth is
+    *fully* collapsed tests nothing, and hedged expectations teach Doug to read them loosely.
+- **[`docs/specimen-notebook/`](docs/specimen-notebook/)** — per specimen: `trace/` (durable
+  per-stage IR + manifest, from `cargo run --example gen_trace -- <Model>`, **generated and
+  therefore correct by construction — any number about a specimen is read from here**) and
+  `purpose.md` (why it exists; rendered as the Purpose tab).
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
-  Specification sections. Respect phase boundaries — IR crates are pure data.
+  Specification sections. **Respect phase boundaries** — IR crates are pure data.
 
-## Architecture rules (from charter §4.4 and Decision 6)
+## Architecture rules (charter §4.4, Decision 6)
 
-- Rumoca is linked **as a library** — now via **path deps on the sibling `../crates/rumoca-*`**
-  (HRW is an in-workspace member of the fork; the charter's "path dependency on the workspace" option).
-  Never shell out to the Rumoca CLI. A load-IR-from-JSON import path is retained as a secondary mode only.
-  **Instrumentation is permitted and intended** — additive, observation-only hooks in the Rumoca crates
-  (semantics-preserving, so HRW stays faithful to real Rumoca), designed to be upstreamable. See `DECISIONS.md`.
+- Rumoca is linked **as a library**, via path deps on `../crates/rumoca-*`. **Never shell out to
+  the Rumoca CLI.** A load-IR-from-JSON import path is retained as a secondary mode only.
 - Compilation and simulation run on a **worker thread**, results returned over a channel. The
-  egui `update()` loop never blocks and never calls into the compiler or solver directly.
-- Native builds only. No WASM targets, no web deployment (charter Decision 5).
-- One generic serde-value tree inspector, pointed at every pipeline stage's IR — not
-  per-stage bespoke tree widgets. Graph views (egui_graphs) and custom-painter views
-  (bipartite matching, BLT spy plot) arrive in their own arcs, not before.
-- Ask before adding a new dependency; record accepted ones in `DECISIONS.md`.
+  egui `update()` loop never blocks and never calls the compiler or solver directly.
+- Native builds only. No WASM, no web deployment (charter Decision 5).
+- **One generic serde-value tree inspector** pointed at every stage's IR — not per-stage bespoke
+  tree widgets. Graph and custom-painter views arrive in their own arcs.
+- **New pipeline stages must be wired into ALL per-stage systems** — stage-diff highlight,
+  stage-file publishing, and the notebook trace.
 
 ## Debugging conventions
 
-The VS Code debugger is a first-class learning instrument — structure code so that a breakpoint
-can be set inside a Rumoca phase while it processes a specimen.
+The VS Code debugger is a first-class learning instrument: structure code so a breakpoint can be
+set inside a Rumoca phase while it processes a specimen.
 
-- Breakpoints belong in **actions** (button handlers, worker-thread tasks), never in the
-  per-frame paint path. Keep compile/simulate logic out of rendering code.
-- `[profile.dev.package]`: keep full debug info on all Rumoca crates; raise `opt-level` on
-  numerical kernels only if debug-build simulation becomes painful.
-- Debug stack: rust-analyzer + CodeLLDB. Rumoca pins its toolchain via `rust-toolchain.toml`.
+- Breakpoints belong in **actions** (button handlers, worker tasks), **never in the per-frame
+  paint path.** Keep compile/simulate logic out of rendering code.
+- `[profile.dev.package]`: keep full debug info on all Rumoca crates.
+- Setup, launch config and failure signatures: [`docs/setup-windows.md`](docs/setup-windows.md).
 
-## Specimen rules (from charter §4.3 and §4.1)
+## Specimen rules (charter §4.3, §4.1)
 
-- Specimens live in `specimens/`, authored in Wolfram System Modeler, written to the
-  **portable Modelica subset** — no Wolfram-flavored extensions. Definition of done: compiles
-  and runs equivalently in System Modeler and Rumoca.
-- **Scratch specimens (2026-07-29, ideas #42) live in `.hrw-bridge/specimens/` instead.** Claude
-  writes them mid-conversation to answer a question — *"here is the smallest model that shows the
-  thing you asked about"* — and HRW lists them (marked, in the explore colour) within a second, no
-  restart. They are **not** held to the rules above and must never be promoted casually: the
-  gitignored bridge directory makes them **ephemeral by construction**, the same rule as `tour.md`.
-  A probe worth keeping gets moved into `specimens/` deliberately, with a `// purpose:` line and a
-  notebook entry — which is the moment it stops being a probe.
-  **A scratch name may not shadow a curated one:** the collision is reported in the panel and the
-  scratch file skipped, because silently loading a different model than the name says would have
-  Claude reason confidently about source Doug is not looking at.
-- **No MSL MultiBody.** Mechanical components come from our own small planar (2D) mechanics
-  library, hand-built in the portable subset (revolute joint, rigid link, ideal motor,
-  friction, contact).
-- Comparison protocol: identical solver tolerances, identical initial conditions, explicit
-  `experiment` annotations, agreement metric = relative error on state trajectories and
-  event-time differences.
-- **Every specimen carries a `// purpose:` comment** (one line, phenomenon-focused — the compiler
-  feature it exercises, e.g. "high-index, structurally singular DAE"). The app scans it (`read_purpose`)
-  and shows it under the filename in the specimen list; keep it distinct from the Modelica description
-  string (which stays a faithful *model* description). Add one to each new specimen, and give it a
-  `docs/specimen-notebook/<Model>/` trace + `purpose.md` (see the notebook README).
+- Specimens live in `specimens/`, authored in Wolfram System Modeler, in the **portable Modelica
+  subset** — no Wolfram extensions. Done = compiles and runs equivalently in both.
+- **Every specimen carries a `// purpose:` comment** (one line, phenomenon-focused), plus a
+  `docs/specimen-notebook/<Model>/` trace and `purpose.md`.
+- **Scratch specimens live in `.hrw-bridge/specimens/`** — Claude writes them mid-conversation to
+  answer a question; HRW lists them within a second, no restart. **Not** held to the rules above,
+  and **ephemeral by construction**. **A scratch name may not shadow a curated one** — the
+  collision is reported and the file skipped, because silently loading a different model than the
+  name says would have Claude reason confidently about source Doug is not looking at.
+- **No MSL MultiBody.** Mechanical components come from our own small planar library.
+- Comparison protocol: identical solver tolerances and initial conditions, explicit `experiment`
+  annotations; agreement metric = relative error on state trajectories and event-time deltas.
+- **Prefer standards** — MSL and portable Modelica over custom implementations.
 
 ## Arc close-out ritual
 
-An arc is done when: (1) the specimen passes the differential test in both toolchains;
-(2) the arc's observatory pane renders the relevant IR; (3) Doug has single-stepped the phase
-in the debugger on that specimen; (4) the trace log (IR before/after the phase) is captured;
-(5) `CLAUDE.md`'s Current Arc section is advanced.
+An arc is done when: (1) the specimen passes the differential test in both toolchains; (2) the
+arc's observatory pane renders the relevant IR; (3) Doug has single-stepped the phase in the
+debugger on that specimen; (4) the trace log (IR before/after) is captured; (5) this file's
+Current work section is advanced. *(Gates 1 and 3 are under review — treat as
+satisfiable-by-acceptance; `docs/ideas.md` #4.)*

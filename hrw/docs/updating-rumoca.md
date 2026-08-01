@@ -1,7 +1,13 @@
 # Updating Rumoca (rebasing the `hrw` branch on upstream)
 
+**Purpose:** the rebase procedure, and which generated artifacts need explicit regeneration
+afterwards.
+**Status:** procedure.
+**Read when:** pulling in newer upstream Rumoca. This is a rebase, not a pin bump — the large
+fidelity suite is a step here, not something to remember.
+
 HRW now lives **inside a fork of the Rumoca workspace** (`hrw/`), depending on the Rumoca crates
-via **path deps** (see [`decisions`](../../DECISIONS.md) — the in-workspace move). So "updating
+via **path deps** (see [`DECISIONS.md`](../DECISIONS.md) — the in-workspace move). So "updating
 Rumoca" is no longer a pin bump; it's **rebasing the `hrw` branch on a newer upstream** and fixing
 the fallout. The Rust compiler and the test suite do most of the work; a few generated artifacts
 (the field-help table and the per-specimen traces) need explicit regeneration.

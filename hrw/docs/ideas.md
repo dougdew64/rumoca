@@ -1,5 +1,12 @@
 # Ideas — backlog for future implementation
 
+**Purpose:** the numbered backlog. Every idea keeps its number forever, so `#43` means one
+thing across every document and commit message.
+**Status:** record — append-only. Items are marked DELIVERED or DECLINED in place rather than
+deleted, because the reasoning is the value.
+**Read when:** planning new work, or before proposing something that may already be here
+(with a decision attached). **Candidates, not commitments.**
+
 Captured ideas not yet scheduled. **These are candidates, not commitments** — no
 arc depends on them, and settled decisions live in [`DECISIONS.md`](../DECISIONS.md),
 current work in [`CLAUDE.md`](../CLAUDE.md). Promote an item here into an arc /
@@ -3452,3 +3459,43 @@ faster at extreme models.
 
 **Relates to:** #54 (the performance profile — this is its measurement arm), `long-runs.md`,
 `docs/architecture.md` §11.
+
+---
+
+## 57. Where to start reading Cellier — the chapters Rumoca fits best
+
+**Extracted 2026-08-01** from `history/answer-platform-plan.md` (Phase 2), which is being
+retired. This is the one part of that plan not already captured elsewhere, and it is a fact
+about **Rumoca's coverage**, not a curriculum — which is why recording it does not violate
+`curriculum-emerges-from-reading`.
+
+### The recommendation
+
+Start with the **structural-analysis chapters**: Cellier & Kofman, *Continuous System
+Modeling*, **Ch. 9.3-9.5**.
+
+**The reason is a control-of-variables argument, and it is the whole point.** Two things are
+being tested the first time Doug works a textbook problem inside HRW:
+
+1. **The loop** — read a narrative, work here, solve the problem, does the round trip hold
+   together?
+2. **The fit** — does HRW have anything to show for *this particular* piece of mathematics?
+
+If the first problem is drawn from a chapter where Rumoca's coverage is thin, a failure is
+uninterpretable: the loop and the fit failed together and nothing says which. **Ch. 9.3-9.5 is
+where Rumoca's fit is best** — structural singularity, Pantelides, index reduction, tearing —
+so a failure there is a failure of the loop, which is the thing actually under test.
+
+Numerical-integration theory is the opposite end: largely pencil work, with little for an
+observatory to show. **Expect a lopsided fit across chapters and do not design a uniform
+process around it.**
+
+### The risk this carries, stated in advance
+
+**Claude being wrong is a false positive on the very test being relied upon.** The mitigation
+is **#43**: prefer computation over assertion. Cellier says index 2 → *watch Pantelides reduce
+it*. Claude says a block is well-conditioned → *compute the condition number*. An answer that
+can be executed is worth more than one that can only be believed.
+
+**Relates to:** #5 (four-bar — the closed kinematic chain is exactly the index-3 DAE these
+chapters explain), #43, #53 (ad hoc curricula), `question-ledger.md`.

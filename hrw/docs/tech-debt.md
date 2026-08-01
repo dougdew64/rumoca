@@ -1,5 +1,11 @@
 # Tech Debt — HRW Observatory
 
+**Purpose:** the two sweep triggers, the tour-holes table, and the outstanding debt with its
+dispositions.
+**Status:** authority for when a sweep fires; record for the debt list itself.
+**Read when:** at a phase boundary, or after noticing that a defect was caught by Doug rather
+than by the toolchain. Every sweep starts from the tour-holes table.
+
 Quality improvements identified by code review. Items are grouped by theme,
 ordered by severity within each group. Check off items as they are completed;
 clear completed items at the end of each cycle.

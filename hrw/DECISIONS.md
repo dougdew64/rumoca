@@ -1414,3 +1414,59 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   makes an incompatible-connector model fail rather than expand. Recorded frames from different
   options would describe a flatten that never happened. The end-to-end worker test exists for
   exactly this: a unit test on the animation type would show zero frames and call it a pass.
+
+## Arcs 4-7 — closure record (moved out of `CLAUDE.md` 2026-08-01)
+
+Pass one built the whole pipeline observatory under a self-imposed **public-API-only**
+constraint, which is **now lifted** — HRW lives in the Rumoca workspace and may reach internal
+phase state. Pass one remains the **baseline to surpass, not discard**: its stage views,
+specimens, notebook and tests are the reference pass two enriches. This record moved here
+because a closed arc is a decision, not current work, and it was crowding the file that gets
+read at the start of every session.
+
+- **Arc 4 closed** — index reduction on `Drivetrain`. The nonlinear four-bar + planar library
+  (`lib/PlanarMechanics.mo`) parked/deferred; see `docs/ideas.md` #5.
+- **Arc 5 closed** — initialization observable: `RcCircuit` IC plan + relaxation; `CapacitorLoop`
+  structural and `OverInitRc` init-determinacy blow-ups.
+- **Arc 6 closed (2026-07-20)** — compile-level hybrid structure is observable. The Events tab
+  shows `BouncingBall`'s condition (`h <= 0`) plus discrete reinit; smooth models show
+  "no events".
+- **Arc 7 closed (2026-07-21) — the simulation core** (charter §4.2.7), the biggest inflection
+  (static IR → live execution). **Solve lowering** (phase 8 — DAE → `SolveModel`, via
+  `rumoca-phase-solve::lower_dae_to_solve_model`) as a stage tab, and **Simulation** (phase 9 —
+  a worker-thread runner calling `rumoca-sim::simulate_solve_model`; Auto solver = BDF-via-diffsol
+  for stiff, RK45 otherwise, plotted in an `egui_plot` pane). The UI never blocks and never
+  shells out to the CLI. Ran start-simple: `SingleInertia` → `BouncingBall` → the stiff
+  `BenchActuator`. **Step-mode plotting** landed (`worker::discontinuity_segments` breaks the
+  line at reinit jumps, gated on `SimData.has_discontinuities`; `series_color` pins per-variable
+  colour), closing the Arc-6-deferred "discontinuities render as discontinuities" and
+  `docs/ideas.md` #8. Closed the "solve lowering not instrumented" gap (Doug, 2026-07-20).
+
+**The log view** — delivered — a pane streaming compilation and simulation log messages with
+timestamps and far more phase/solver detail than the public API could give. Per-phase timing was
+impossible when phases 5-9 arrived from one opaque
+`compile_model_strict_reachable_with_recovery` call. **Doug's proof the in-workspace migration
+was worthwhile.**
+
+**Delivered 2026-07-29 — four more phase animations** (tearing, alias elimination,
+initial-condition planning, connection expansion), bringing the total to eight. Building them
+established a distinction to preserve: **not every phase hides a search.** Tearing and connection
+expansion are real processes with reasons that exist only mid-run, so they are *replays*; alias
+elimination and IC planning are lists computed before HRW sees them, so they are *reveals* with
+no Debug button, and their module docs say why. Connection expansion is instrumented for a live
+trace but has no Debug button *yet* — re-running flatten needs the whole MSL on the UI thread;
+the fix is a worker-side live-debug path (`docs/ideas.md` #9). New Rumoca instrumentation:
+`rumoca-phase-structural` (`pub mod blt`, `block_local_incidence`) and `rumoca-phase-flatten`
+(`connections::trace`, `flatten_ref_with_options_traced`) — the first non-structural, non-DAE
+crate instrumented.
+
+**Close-out gates under review.** Doug is separately weighing whether the differential test
+(System Modeler round-trip) and the debugger single-step should remain arc close-out gates at
+all — Arcs 3 and 4 closed with both accepted (deferred / unconfirmed). Until he decides, treat
+them as **satisfiable-by-acceptance, not hard blockers** (`docs/ideas.md` #4).
+
+**Superseded work order (Doug, 2026-07-28)** — its items 3-5 (attempt the tour, refactor
+`bridge.rs`, source-tooling Phases 6-7) were written before the tour was attempted and found
+wanting; the answer-platform plan superseded them, and it is now itself retired to
+`docs/history/`. Items 1-2 (animation debt, idea #40) were delivered. The reasoning is preserved
+in `docs/history/answer-platform-plan.md`.

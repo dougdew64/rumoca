@@ -1,212 +1,118 @@
 # HRW Observatory
 
-An egui application for **studying** the Rumoca Modelica compiler — a pipeline observatory that
-makes each compiler phase's IR inspectable, animates the structural-analysis algorithms, and lets
-you step through Rumoca's own code in a debugger while the animation follows along.
+**An instrument for understanding a Modelica compiler from the inside.**
 
-HRW is a workspace member of [`dougdew64/rumoca`](https://github.com/dougdew64/rumoca) (a fork of
-`CogniPilot/rumoca`) on the **`hrw` branch**, depending on the compiler crates via path deps
-(`../crates/rumoca-*`).
+HRW makes every phase of the [Rumoca](https://github.com/CogniPilot/rumoca) compiler
+inspectable — not just its output, but its *process*. Pantelides iterating. Matching walking
+augmenting paths. Tarjan discovering strongly connected components. Tearing choosing a
+variable, and why. You can watch each algorithm run, step it in a debugger, and see the
+animation advance in lockstep with the real code.
 
-- **What it is and why** — [`docs/CHARTER.md`](docs/CHARTER.md), [`docs/vision.md`](docs/vision.md)
-- **How it is built** — [`docs/architecture.md`](docs/architecture.md)
-- **Design decisions** — [`DECISIONS.md`](DECISIONS.md)
-- **Working agreements for Claude** — [`CLAUDE.md`](CLAUDE.md)
+> <!-- CAPTURE 1 — hero loop, animated GIF, ~8s, no audio.
+>      Source: the Tarjan animation on Drivetrain, stepping through SCC discovery.
+>      This is the single image that has to earn the reader's attention. -->
+> *[hero capture pending]*
+
+It is a **study instrument, not a product.** There is no user but its author, and every design
+choice follows from that: the stage trees, the equation sheet, the identifier index and the
+animation frames *are* the point, not overhead to be optimised away.
+
+HRW is a workspace member of [`dougdew64/rumoca`](https://github.com/dougdew64/rumoca) (a fork
+of `CogniPilot/rumoca`) on the **`hrw` branch**, depending on the compiler crates via path deps
+(`../crates/rumoca-*`). It links Rumoca **as a library** and never shells out to its CLI — so
+what you see is the real compiler's real state.
 
 ---
 
-## Setting up on a fresh Windows machine
+## What it does that reading the source does not
 
-Everything here has been verified on Windows 11 with the MSVC toolchain. Steps 1–5 get you a
-running app; steps 6–8 are needed only for **live trace debugging**, which is the feature with real
-environmental requirements.
+**A compiler's phases are legible; its algorithms are not.** Rumoca's public API exposes each
+phase's *result* — the IR after parsing, after flattening, after index reduction. What it
+cannot expose is the *process*: the intermediate states that exist only mid-run and vanish
+before any result is returned. **Those states are where the mathematics lives.**
 
-### 1. Rust
+That is why HRW moved *into* the Rumoca workspace. It adds observation hooks to the compiler
+crates — **additive and semantics-preserving**, so HRW stays faithful to real Rumoca and the
+work can be offered upstream.
 
-```powershell
-winget install Rustlang.Rustup
-```
+| | What you get |
+|---|---|
+| **Eleven pipeline stages** | Parse → Resolve → Instantiate → Typecheck → Flatten → DAE → Index reduction → Initialization → Events → Solve lowering → Simulation, each with its IR inspectable and diffed against the previous stage |
+| **Eight animated algorithms** | Matching, Tarjan/BLT, index reduction, tearing, alias elimination, IC planning, connection expansion, solver stepping |
+| **Live debugger stepping** | The real algorithm pauses at each step; the animation follows. Not a re-implementation — the actual Rumoca code |
+| **Source ↔ equation traceability** | Click a variable in Modelica source, see where it went; click a flat equation, see the line it came from |
+| **A verified corpus** | F1-F9 fidelity checks over **2,614 of the 2,626 MSL models**, all green |
 
-The workspace pins its toolchain in `rust-toolchain.toml` (nightly, plus a `wasm32-unknown-unknown`
-target inherited from upstream Rumoca — HRW itself is native-only). Rustup installs the pinned
-toolchain automatically on first build; no manual `rustup default` needed.
+> <!-- CAPTURE 2 — still, PNG. The stage tabs with a cross-stage diff highlight visible.
+>      Source: fixture tour `node-pointing.md`, stop 1. -->
+> *[stage-view capture pending]*
 
-You need the **MSVC** toolchain (the rustup default on Windows), which implies the Visual Studio
-Build Tools with the C++ workload. If linking fails with a missing `link.exe`, that is what to
-install.
+## Does it tell the truth?
 
-### 2. Clone
+**This is the question an observatory has to answer**, because an observer fails silently: a
+feature that breaks gets noticed, while a view that quietly misreports looks exactly like a
+view that works.
 
-```powershell
-git clone https://github.com/dougdew64/rumoca.git
-cd rumoca
-git checkout hrw
-```
+So HRW checks itself against the compiler it observes. Nine invariants — **HRW must invent
+nothing and omit nothing** — run at two scales: the curated specimens on every commit, and the
+full Modelica Standard Library before anything is published.
 
-### 3. Stage the Modelica Standard Library (required — not in the clone)
+- **2,614 of 2,626 MSL models, zero violations**
+  ([`docs/msl-fidelity-report.csv`](docs/msl-fidelity-report.csv), with
+  [provenance](docs/msl-fidelity-report.meta.json))
+- The remaining 12 exceeded this machine's memory or the run's time limit, and the artifact
+  **says so** rather than omitting them
+- **It found two real bugs in HRW itself** — both weeks old, both introduced by ordinary work,
+  neither suspected by anyone
 
-`hrw/vendor/` is gitignored, so **a fresh clone has no MSL and specimens will fail to compile.**
-HRW expects reference **MSL 4.1.0** at `hrw/vendor/msl/`, laid out exactly as the upstream release:
+**What it does not establish**, stated plainly because one visible overreach costs more than
+several missing checks: that *Rumoca* is correct — only that HRW agrees with it — and nothing
+about the rendered UI. See [`docs/fidelity-plan.md`](docs/fidelity-plan.md).
 
-```
-hrw/vendor/msl/
-├── Modelica 4.1.0/
-├── ModelicaServices 4.1.0/
-├── ModelicaReference 4.1.0/
-├── Complex.mo
-├── ObsoleteModelica4.mo
-├── LICENSE
-└── README.md
-```
+> <!-- CAPTURE 3 — still or short GIF: an animation stepping in the debugger, VS Code and
+>      HRW side by side, breakpoint visibly hit.
+>      This is the capability nothing else in this space has. -->
+> *[live-trace capture pending]*
 
-Get it either by copying `hrw/vendor/` from a machine that already has it, or by downloading the
-v4.1.0 release from [modelica/ModelicaStandardLibrary](https://github.com/modelica/ModelicaStandardLibrary/releases)
-and arranging it as above. The directory names include the version and are matched literally — see
-the library list in [`src/app.rs`](src/app.rs).
+## Built to work *with* a reasoner
 
-### 4. Build and test
+HRW is half of a pair. The other half is Claude.
 
-```powershell
-cargo build -p hrw
+The premise: **assembling a question's context is a mouse job; answering it is not.** So HRW
+does the part a UI is good at — you point at a node, follow a variable, and it emits an exact
+description of what you are looking at. The explanation comes from a reasoner that reads that
+description. Neither half is asked to do the other's work, and **what HRW emits is exact rather
+than approximate**: a missing fact is recoverable, a false one is not.
 
-# Between edits — 353 tests, about 7 seconds.
-cargo test -p hrw --lib -- --test-threads=1
+The channel runs both ways. Claude can compose a *tour* — a sequence of clickable stops through
+HRW's own views — to answer a question that prose alone cannot.
 
-# Before committing — all 402, about 3 minutes.
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1
-```
+---
 
-**Two commands, because 49 tests hold 98% of the runtime.** Measured 2026-07-29: 49 of 402
-tests took 180 of the suite's 183 seconds, nearly all of them compiling a specimen against the
-MSL. They are gated behind the `slow-tests` feature so the loop between edits stays fast;
-`cargo test` lists them as ignored *with a reason*, so a skipped test never looks like a passing
-one. **Run the full command before every commit** — the fast suite deliberately does not cover
-compilation.
+## Getting started
 
-Parallelism would not help: those 49 all acquire a global `Mutex<WorkerState>` (Rumoca's
-`Session` is not thread-safe) and serialize whatever `--test-threads` says. The fix that would
-shorten the full run is memoizing compiled specimens (`docs/ideas.md` #48).
-
-**`--test-threads=1` is required.** Two independent causes, both of which reproduce on a clean
-checkout:
-
-1. Tests that exercise the Claude bridge and the breakpoint pre-warm share single files under
-   `.hrw-bridge/`, so in parallel they race each other.
-2. `worker::tests::output_capture_handles_large_write_without_deadlock` redirects **process-global**
-   stdout, so any concurrently-running test that writes to stdout steals bytes from it.
-
-Without the flag the suite does not merely fail — it can also **hang**, which looks like a broken
-build rather than a test-isolation problem. The serialized run takes roughly 2.5 minutes.
-
-### 5. Run
+**[`docs/setup-windows.md`](docs/setup-windows.md)** — from a bare Windows box to a running
+app, and on to live-trace debugging. The short version:
 
 ```powershell
+git clone https://github.com/dougdew64/rumoca.git && cd rumoca && git checkout hrw
+# stage MSL 4.1.0 into hrw/vendor/msl/  — a fresh clone has none; see the setup guide
 cargo run -p hrw
 ```
 
-Add `--half` to open at half screen width, for working side by side with VS Code.
+## Documentation
 
----
+**[`docs/README.md`](docs/README.md) is the index** — every document, what it is for, and
+whether it is live.
 
-## Live trace debugging
-
-The third and most demanding animation tier: the real algorithm runs on a worker thread, pauses in
-the debugger at each step, and the animation advances in lockstep. Because it runs the real binary
-under a real debugger, it depends on the toolchain in ways that are invisible from the source.
-
-**[`docs/architecture.md` § Live trace debugging on Windows](docs/architecture.md#live-trace-debugging-on-windows)
-is the authoritative reference** — it explains *why* each piece below exists, and carries a failure-
-signature table. Read it before changing anything in this area.
-
-### 6. VS Code extensions
-
-| Extension | Id | Why |
-|-----------|-----|-----|
-| C/C++ | `ms-vscode.cpptools` | **Required.** Provides the `cppvsdbg` adapter — the working debug config on windows-msvc. Install the base extension only, *not* the Extension Pack. |
-| rust-analyzer | `rust-lang.rust-analyzer` | Language support |
-| CodeLLDB | `vadimcn.vscode-lldb` | *Optional.* The alternative adapter, with Rust-aware formatters. Retained; see the caveat below. |
-
-**Use the `Debug HRW Observatory (cppvsdbg)` launch config.** Verified 2026-07-28: breakpoints in
-the path-dep `crates/rumoca-*` bind and fire, and live-trace stepping advances the animation with
-plain **F10** — no Debug Console aliases needed. That last point was a surprise: all-threads
-stepping was assumed to be a CodeLLDB feature, when in fact **LLDB defaults to stepping one thread
-and must be told otherwise**, while the Visual Studio debugger already runs all threads on a step.
-
-If you use CodeLLDB instead, type `ns` / `si` / `so` in the Debug Console rather than pressing
-F10/F11, or the animation will not advance. A note in `launch.json` records CodeLLDB mis-binding
-breakpoints in path-dep crates; that note is **unverified** — it predates the discovery of Rumoca's
-compile cache, which produces a near-identical symptom (see `docs/architecture.md` §§ 4–5).
-
-### 7. The HRW Debugger Bridge extension
-
-HRW arms its own breakpoints by writing request files that a small VS Code extension picks up. Its
-`out/` directory is gitignored, so **it must be built after cloning** or the Debug button does
-nothing:
-
-```powershell
-cd hrw\vscode-extension
-npm install
-npm run build
-cd ..\..
-code --install-extension hrw\vscode-extension
-```
-
-Reload VS Code afterwards. The extension logs to the "HRW Bridge" output channel — a working arm
-shows `Armed: live_trace.rs:<line>`.
-
-### 8. Launch
-
-Open **the repository root** as the VS Code folder (not `hrw/`), and launch **"Debug HRW
-Observatory"** from the launch-configuration dropdown.
-
-> **Launch from the dropdown, not from rust-analyzer's "Debug" CodeLens.** The CodeLens builds its
-> own configuration and ignores `launch.json`, so it gets neither the GPU backend override nor the
-> stepping aliases — live trace will crash or misbehave under it.
-
-`.vscode/launch.json` carries settings that are not optional. Each is explained in the architecture
-doc; briefly:
-
-| Setting | Why |
-|---------|-----|
-| `WGPU_BACKEND=gl` | A D3D12 device does not survive the long pauses live trace depends on. Without this, HRW dies with exit code 101 and an `egui-wgpu` staging-buffer panic. |
-| `_NO_DEBUG_HEAP=1` | Windows switches the CRT to the validating debug heap under a debugger, making sessions ~100x slower. |
-| `RUST_BACKTRACE=1` | Panic output goes to the debuggee's stderr — the **integrated terminal**, not the Debug Console. |
-| `initCommands` aliases | All-threads stepping (below). |
-
-Note these files are force-added: the repo root's `.gitignore` excludes `.vscode/`, so new files
-there need `git add -f` to be tracked.
-
-### Using it
-
-1. Launch under the debugger, load a specimen, open the Structural Analysis or Index Reduction tab.
-2. Open a **Matching**, **Tarjan**, or **Reduction** animation view and click **Debug**.
-3. Execution stops at the anchor with `frame_index = 18446744073709551615` (`usize::MAX`) — the
-   startup gate, before any algorithm work.
-4. **Continue (F5)** advances one algorithm step per press, and the animation follows.
-5. To step through Rumoca's code *and* keep the animation live, type these in the **Debug Console**
-   rather than pressing F10/F11:
-
-   | Alias | Equivalent |
-   |-------|-----------|
-   | `ns` | `thread step-over -m all-threads` |
-   | `si` | `thread step-in -m all-threads` |
-   | `so` | `thread step-out -m all-threads` |
-
-   VS Code's step buttons move only the selected thread, which freezes the UI thread and leaves the
-   animation stale.
-
-### If something goes wrong
-
-| Symptom | Cause |
-|---------|-------|
-| Debug button does nothing; "HRW Bridge" channel silent | Extension not built or not installed (step 7) |
-| Breakpoint lands in an unrelated crate during startup | The anchor has been folded onto another empty function — see architecture doc §1. Do not simplify `live_trace_breakpoint`. |
-| Locals show `<optimized out>` | The crate under study needs `opt-level = 0` in the workspace `Cargo.toml` |
-| Visuals freeze, HRW exits with code 101 | GPU device loss — confirm `WGPU_BACKEND=gl` is in effect and that you launched from the dropdown |
-| Specimens fail to compile | MSL not staged (step 3) |
-| Tests fail intermittently | Missing `--test-threads=1` |
-
----
+| Start here | For |
+|---|---|
+| [`docs/CHARTER.md`](docs/CHARTER.md) | Purpose, scope, and binding decisions |
+| [`docs/vision.md`](docs/vision.md) | What this is ultimately for |
+| [`docs/architecture.md`](docs/architecture.md) | How the code works |
+| [`docs/compiler-phases/the-chain-of-problems.md`](docs/compiler-phases/the-chain-of-problems.md) | Why the pipeline has the shape it has |
+| [`DECISIONS.md`](DECISIONS.md) | Every nontrivial implementation choice, with rationale |
+| [`CLAUDE.md`](CLAUDE.md) | Working agreements for Claude |
 
 ## Layout
 
@@ -214,10 +120,51 @@ there need `git add -f` to be tracked.
 hrw/
 ├── src/               # The application
 ├── specimens/         # Modelica models, authored in Wolfram System Modeler
-├── vendor/msl/        # Gitignored — staged MSL 4.1.0 (step 3)
-├── vscode-extension/  # The HRW Debugger Bridge (out/ gitignored — step 7)
+├── vendor/msl/        # Gitignored — staged MSL 4.1.0
+├── vscode-extension/  # The HRW Debugger Bridge (out/ gitignored)
 ├── docs/              # Charter, architecture, compiler phases, specimen notebook
 └── .hrw-bridge/       # Gitignored — runtime scratch for the Claude/debugger bridge
 ```
 
 Build, run, and test from the **workspace root** with `-p hrw`, or from `hrw/` directly.
+
+---
+
+<!-- ============================================================================
+     CAPTURE PLAN — read before shooting anything.
+
+     Take captures AT FIXTURE-TOUR STOPS, not at arbitrary moments. A fixture
+     tour already declares what should be on screen in violable terms, and
+     `fixture_tour_links_all_resolve` runs over it on every test run. That makes
+     a stale screenshot DETECTABLE: walking the tour is the check. A capture
+     taken at an arbitrary moment has no such property — and screenshots are
+     exactly the kind of regenerable-but-unchecked content this project keeps
+     getting burned by. Claude cannot regenerate a screenshot.
+
+     Available fixture tours (docs/fixture-tours/):
+       camera-aiming.md                — canvas camera aiming
+       frame-seeking.md                — stopping an animation on a given frame
+       node-pointing.md                — pointing at a tree node, and following
+       structural-vs-numerical-rank.md — cross-platform: HRW, then a notebook
+       the-oracle.md                   — Rumoca vs System Modeler disagreeing
+
+     GitHub's video rules, which are specific:
+       - A committed .mp4 referenced by a RELATIVE PATH does NOT play inline;
+         it renders as a link.
+       - Inline video only works for assets uploaded through GitHub's own
+         uploader: drag the file into an issue or PR comment, take the
+         `user-attachments` URL it returns, and paste that URL here.
+       - Animated GIF DOES play inline from a committed relative path, but has
+         no audio, no seek bar, and gets large fast.
+       - So: GIF for the short hero loop; uploaded MP4 for anything narrated or
+         longer than ~10 seconds.
+
+     AUDIENCE — decide deliberately, because the two want opposite openings:
+       - A Rumoca maintainer asks "what does this show me about my compiler that
+         I could not otherwise see?" -> incidence matrix, Pantelides replay, the
+         2,614-model fidelity table.
+       - A learner asks "will this teach me the algorithms?" -> the animations,
+         the debugger sync, the specimen notebook.
+     docs/upstream-strategy.md argues the maintainer framing should lead, since
+     HRW is the one deliverable that asks for maintenance burden.
+     ============================================================================ -->

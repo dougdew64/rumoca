@@ -1,5 +1,11 @@
 # The three reports, and how they compose
 
+**Purpose:** how the survey, fidelity and oracle reports compose — survey says *eligible*,
+fidelity says *trustworthy*, oracle says *finding*.
+**Status:** authority for Test mode (#52) and the oracle test (#43).
+**Read when:** before building Test mode or designing the oracle test. It constrains how the
+oracle is *designed*, not merely how its results are shown.
+
 Agreed with Doug 2026-07-31. **The design authority for Test mode
 (`docs/ideas.md` #52) and for the oracle test (#43)** — consult it before building either,
 because the composition below is a constraint on how the oracle test is *designed*, not

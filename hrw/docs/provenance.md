@@ -1,5 +1,10 @@
 # Provenance tags
 
+**Purpose:** the tag vocabulary that separates what Claude verified from what it inferred.
+**Status:** authority. A wrong tag fails a test, because a tag is a claim about
+trustworthiness.
+**Read when:** writing or editing anything in `compiler-phases/`, or citing a source file.
+
 **How Claude marks what it knows from what it guessed.** `docs/ideas.md` #41 stage C.
 
 The teaching database is Claude's own prose, months old, read back by a later session with

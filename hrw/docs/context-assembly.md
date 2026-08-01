@@ -1,9 +1,23 @@
 # Design note — context assembly and the Context Bar
 
+**Purpose:** the design of the capture — how a question carries its context to Claude, and
+why the noun must be self-sufficient.
+**Status:** reference. **The design it describes is DELIVERED** (source-tooling Phase 5,
+closed 2026-07-28); it is kept for the reasoning, which still governs every new emission
+point.
+**Read when:** adding anything that emits context, or adding a new place a user can point
+from. **The composition primitives are frozen** — one point-at, one follow, background —
+until a practical scenario proves otherwise. Do not re-propose multi-follow or a third
+"compare" primitive from first principles.
+
 Renamed from `tracking-as-capture.md` on 2026-07-27. The original note covered
 one proposal (tracking should also capture); the discussion that followed showed
 it was half of a larger idea, so this note now covers context assembly as a
-whole. Proposed by Doug; not yet implemented.
+whole. Proposed by Doug.
+
+*(Header corrected 2026-08-01: this said "not yet implemented" for four days after it was
+implemented. A design note that outlives its implementation has to say so, or a later session
+plans to build what already exists.)*
 
 ## The thing this is really about
 

@@ -1,0 +1,111 @@
+# Document index
+
+**Purpose:** the map of every HRW document — what it is for, whether it is live, and the
+moment that should send you to it.
+**Status:** index. Update it whenever a document is added, retired, or changes status.
+**Read when:** you are looking for something and do not know where it lives; or you are about
+to add a document and should check whether one already covers it.
+
+**The documents are written for Claude.** Doug does not read them in the normal course of
+work — he reads *this page* to audit what exists. So every document states its own purpose,
+status and reading moment in a three-line header, and this index is the sorted view of those.
+
+## Status vocabulary
+
+| Status | Means |
+|---|---|
+| **authority** | a decision or constraint that binds future work. Consult before designing; do not re-litigate. |
+| **procedure** | how to perform a specific operation. Follow it; do not re-derive it. |
+| **reference** | how something works. Look up; do not read end to end. |
+| **live plan** | current work in flight. **Delete when its work lands.** |
+| **record** | append-only history. Rarely rewritten, occasionally consulted. |
+| **historical** | superseded. Kept for reasoning only — **do not follow its plan.** |
+
+---
+
+## Read first
+
+| Document | Purpose |
+|---|---|
+| [`../CLAUDE.md`](../CLAUDE.md) | The rules, the current sequence, and pointers. **The one file to read at session start.** |
+| [`../README.md`](../README.md) | The project README — **the only document written for a human arriving cold**, including Doug on a new machine. |
+
+## Authorities — consult before designing
+
+| Document | Binds |
+|---|---|
+| [`CHARTER.md`](CHARTER.md) | Purpose, scope, method, and the binding decisions. The most binding document here. |
+| [`vision.md`](vision.md) | The north star, and the platform HRW is becoming. |
+| [`fidelity-plan.md`](fidelity-plan.md) | What F1-F9 check, when they run, and the standing boundary against optimising HRW for test scope. |
+| [`reports.md`](reports.md) | How the survey, fidelity and oracle reports compose. **Design authority for Test mode (#52) and the oracle test (#43).** |
+| [`upstream-strategy.md`](upstream-strategy.md) | How engaging Rumoca's maintainers serves Doug's education, and the planning rules that follow. |
+| [`identity-and-provenance.md`](identity-and-provenance.md) | No heuristic name-matching; identity vs membership; what provenance Rumoca preserves. **Cited by six source files.** |
+| [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the tour-holes table, and the outstanding debt. |
+| [`provenance.md`](provenance.md) | How Claude marks what it verified from what it inferred. |
+
+## Procedures — how to do a specific thing
+
+| Document | For |
+|---|---|
+| [`setup-windows.md`](setup-windows.md) | A fresh Windows machine → running HRW → live-trace debugging. |
+| [`long-runs.md`](long-runs.md) | The MSL survey and the fidelity sweep, including the retry pass. **Never run the sweep unbounded.** |
+| [`updating-rumoca.md`](updating-rumoca.md) | Rebasing the `hrw` branch on upstream. |
+
+## Live plans — delete when their work lands
+
+| Document | Covers |
+|---|---|
+| [`current-work.md`](current-work.md) | The fidelity sweep and the sequence around it. |
+| [`verification-plan.md`](verification-plan.md) | The four-item pause: must-fire tests, a faster suite, headless UI testing, Rust drivers. |
+| [`source-tooling-plan.md`](source-tooling-plan.md) | **Part live.** Phases 1-5 delivered; **Phases 6 (tree rework) and 7 (canvas views) are unbuilt design work.** Read before touching the IR tree or a canvas view. |
+
+## Reference — look things up
+
+| Document | Describes |
+|---|---|
+| [`architecture.md`](architecture.md) | How HRW works, including §11 the testing architecture and the scale/safety rules. |
+| [`context-assembly.md`](context-assembly.md) | The capture design — how a question carries its context to Claude. **Delivered**; kept for the reasoning. |
+| [`debug-set-sites.md`](debug-set-sites.md) | IR field → the Rumoca line that assigns it, for arming a breakpoint. |
+| [`compiler-phases/`](compiler-phases/) | **Claude's teaching database.** Start at [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md), then [`high_level_overview.md`](compiler-phases/high_level_overview.md), then the per-phase directories. Audience is Claude, not Doug. |
+
+## Records — append-only
+
+| Document | Holds |
+|---|---|
+| [`ideas.md`](ideas.md) | The numbered backlog, #1-#57. Candidates, not commitments; numbers are permanent. |
+| [`../DECISIONS.md`](../DECISIONS.md) | Every nontrivial implementation choice, plus the closed-arc record. |
+| [`question-ledger.md`](question-ledger.md) | Doug's questions verbatim, and what made each click. **The only artifact whose value grows with time.** |
+| [`upstream-issues.md`](upstream-issues.md) | Rumoca bugs, written ready to file. **Claude never files them.** |
+| [`fixture-tours/`](fixture-tours/) | Tours that are *tests*. One per capability, narrow, with violable expectations. |
+| [`specimen-notebook/`](specimen-notebook/) | Per specimen: a generated `trace/` and a hand-written `purpose.md`. |
+
+## Data HRW reads at runtime — do not move
+
+Load-bearing paths, not documents. Moving any of them breaks the app or its tests.
+
+| Path | Used by |
+|---|---|
+| `fixture-tours/*.md` | the tour picker, and `fixture_tour_links_all_resolve` |
+| `fixture-tours/notebooks/` | cross-platform tour stops |
+| `specimen-notebook/<Model>/purpose.md` | the Purpose tab |
+| `specimen-notebook/<Model>/trace/` | the durable per-stage IR |
+| `msl-survey.csv` + `.meta.json` | the fidelity corpus definition, and the capability map |
+| `msl-fidelity-report.csv` + `-profile.csv` + `.meta.json` | the corpus fidelity artifact |
+| `specimen-fidelity-report.csv` | written by the pre-commit fidelity test |
+
+`src/doc_citations.rs` scans `../CLAUDE.md`, `../README.md`, `../DECISIONS.md` and **all of
+`docs/` recursively**, so a document moved into a subdirectory is still checked.
+
+## Historical — reasoning only, do not follow
+
+| Document | Status |
+|---|---|
+| [`history/answer-platform-plan.md`](history/answer-platform-plan.md) | Retired 2026-08-01. Its live items were moved out first — the file lists where each went. Kept for the "features are experimentable, stored prose is not" correction. |
+
+**Deleted 2026-08-01: `compiler-phases/end_to_end_tour.md`** (1,071 lines). HRW stopped showing
+it on 2026-07-29, but it stayed inside the teaching database where a later session would read
+it as authoritative — and its twelve stop-by-stop walkthroughs had rotted (Stop 8 described a
+7×7 incidence matrix on a tab that shows 48 equations). Its conceptual sections, which make no
+claim about what is on screen, are now
+[`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md).
+Recoverable from git history.

@@ -1,5 +1,11 @@
 # HRW Vision
 
+**Purpose:** the north star — what Doug is actually trying to learn, and the platform HRW is
+becoming around that.
+**Status:** authority.
+**Read when:** weighing whether a piece of work serves the goal, or when a plan starts
+optimising for something that is not Doug's understanding.
+
 ## The goal
 
 Doug's top priority is **learning** — specifically, mastering the math and algorithms

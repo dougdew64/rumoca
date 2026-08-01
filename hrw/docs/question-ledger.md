@@ -1,9 +1,25 @@
 # Question Ledger
 
-**Claude's record of what Doug asked, and what made it click.** Stage A of
-`docs/ideas.md` #41. Read this before answering a question in a familiar area.
+**Purpose:** what Doug asked, verbatim, and the specific thing that made it click.
+**Status:** record — append-only, never rewritten.
+**Read when:** before answering a question in an area that has come up before. A repeat is a
+signal, and it branches two ways demanding opposite responses.
 
-Doug reads this only if he wants to; its audience is Claude.
+Stage A of `docs/ideas.md` #41. Doug reads this only if he wants to; its audience is Claude.
+
+---
+
+## Always in flight
+
+**Every phase of work appends here, and this is the only artifact whose value depends on
+elapsed time.** *(Carried forward 2026-08-01 from the retired answer-platform plan, whose
+closing section this was.)*
+
+If experimenting with features is what teaches — the project's strongest evidence to date —
+then **the record of which experiment taught what is the irreplaceable artifact.** A stretch
+of work that ends with no entries here is not necessarily wasted (the animations produced none
+while being built), but it does mean the learning went unrecorded, and **that is the one loss
+this project cannot absorb.**
 
 ---
 

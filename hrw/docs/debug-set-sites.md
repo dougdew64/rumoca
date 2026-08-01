@@ -1,5 +1,10 @@
 # Debug set-sites — IR field → where Rumoca assigns it
 
+**Purpose:** the lookup table from an IR field to the Rumoca source line that assigns it.
+**Status:** reference — a table to consult, not prose to read.
+**Read when:** a capture arrives with `request: "debug-where-set"`, and you need the source
+line to arm a breakpoint on.
+
 Reference for the 🐞 **"Show this being set (debugger)"** feature. When a focus with
 `request: "debug-where-set"` is captured, Claude maps the field (the last segment of the node's
 `key_path`) to the Rumoca source line that assigns it, and writes a breakpoint request to

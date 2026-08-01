@@ -1,5 +1,11 @@
 # Engaging the Rumoca maintainers — strategy
 
+**Purpose:** why engaging CogniPilot/rumoca serves Doug's education, and the five planning
+rules that follow from it.
+**Status:** authority — shapes planning, not just outreach.
+**Read when:** planning testing or implementation work, not only when preparing something to
+send. Deliverables are ordered by *their* cost to accept; HRW itself goes last.
+
 Agreed with Doug 2026-07-31. **This document is meant to shape testing and implementation
 plans**, not to sit and be admired; the last section says how.
 

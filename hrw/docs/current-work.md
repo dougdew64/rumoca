@@ -1,5 +1,10 @@
 # Current work — the fidelity sweep, and working alongside it
 
+**Purpose:** the step-by-step state of the fidelity sweep and what can be built alongside it.
+**Status:** **live plan.** Delete it when the sweep's findings have landed in
+`fidelity-plan.md` and `architecture.md`.
+**Read when:** picking up mid-sequence and needing to know which step is next.
+
 **This is a live plan, not a record.** Update it as steps complete; delete it when the sweep
 is done and its findings have landed in `fidelity-plan.md` and `architecture.md`. It exists
 because the plan spans a couple of days and would otherwise live only in a chat transcript.

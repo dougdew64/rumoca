@@ -1,5 +1,12 @@
 # Upstream issues — Rumoca bugs found through HRW
 
+**Purpose:** reproduced Rumoca bugs, each written to be filable with a copy-paste plus a
+sentence.
+**Status:** record.
+**Read when:** a bug is reproduced and needs recording. **Claude adds entries and never files
+them** — filing is Doug's. Only *reproduced* bugs go in, and suspect code is marked
+unverified: a confident wrong diagnosis costs the credibility this project is building.
+
 **Ready to file with [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).** Doug files
 these when the time is right; Claude adds entries as they are found and never files them
 itself.

@@ -1,5 +1,11 @@
 # HRW Project Charter
 
+**Purpose:** the project's purpose, scope, method, and binding decisions.
+**Status:** authority — the most binding document here. Amended deliberately, never drifted
+from.
+**Read when:** any design question whose answer might contradict a settled decision. Do not
+re-litigate one of its decisions in-session; amend the charter or accept it.
+
 **How Rumoca Works — a mastery project in the mathematics and computer science of modeling and simulating deterministic systems**
 
 *Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
