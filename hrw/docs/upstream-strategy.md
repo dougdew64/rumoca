@@ -59,6 +59,76 @@ think the spec says…"* into *"System Modeler rejects this and you accept it."*
 
 **A rarer contribution than a GUI.** See `feedback-oracle-first-for-specimens`.
 
+## The alignment argument — read Rumoca's own README first
+
+Noticed by Doug 2026-08-01, and it is a better opening than anything Claude had drafted.
+
+Rumoca's README does not merely tolerate what HRW does. It **states as a design emphasis** the
+exact property HRW depends on:
+
+> Rumoca emphasizes:
+> - **explicit compiler phases and IR boundaries**
+> - strong structural analysis and DAE lowering
+> - **reusable symbolic outputs rather than a single closed execution path**
+
+And on why that is unusual, in their words: traditional Modelica compilers *"primarily focus
+on simulation, FMU export, and tool-specific execution pipelines."*
+
+### So the pitch is not "HRW is useful"
+
+**HRW is a demonstration of a property they designed for.** An observatory that renders every
+phase's IR, and lets a reader click from one to the next, is *evidence* that the phase
+boundaries really are explicit and the symbolic outputs really are reusable. You cannot build
+one on a compiler that does not have those properties — which is the point.
+
+That is a far better first sentence than any claim about usefulness, because it is a claim
+about **their** work rather than about ours, and it is checkable by running the thing.
+
+### It also disposes of the cost objection, which was the worry
+
+Measured 2026-08-01 during the full fidelity sweep: models Rumoca compiles in **5-15 seconds**
+take **~900 seconds** through HRW's path — **50-170x**, with the survey (calling `Session`
+directly, no HRW code) recording **zero** timeouts across all 2,626 models and a slowest
+single model of 376 s.
+
+That looks alarming until it is framed correctly. **A project whose stated goal is "reusable
+symbolic outputs rather than a single closed execution path" has already accepted that
+materialising IR costs something** — that is the trade it chose over a closed pipeline. HRW
+pays it maximally: ten stage trees per model rather than one throughput-optimised path.
+
+**50-170x is the price of looking at everything.** It is a fact about the trade, not a
+criticism of the compiler.
+
+### Which reframes the performance profile (`docs/ideas.md` #54)
+
+Not *"here is what your compiler costs"*, which invites defensiveness. Instead:
+
+> *"Here is what materialising every IR costs, measured across your standard library."*
+
+For a project positioning itself as an **interoperability layer**, that is useful design data:
+it tells them what a downstream consumer pays to hold all the IR at once — which is precisely
+what Julia/SciML, CasADi or a code generator would be doing.
+
+### Two limits, so the inference is not over-read
+
+- **The interoperability framing names computational consumers**: Julia/SciML, Python/JAX/
+  CasADi/PyTorch, embedded targets, WASM. **Not GUIs.** So mission alignment is real, and it
+  does *not* by itself argue for merging an egui app into their repository. **The deliverable
+  ordering above stands** — HRW remains the item with a maintenance cost attached.
+- Alignment of *mission* is not agreement about *scope*. It makes the conversation easy to
+  start; it does not pre-decide where it ends.
+
+### One practical detail worth acting on
+
+The README says, verbatim:
+
+> **Project status:** Rumoca is in active development. You should expect bugs and rough
+> edges; **please file issues** at https://github.com/cognipilot/rumoca/issues.
+
+That is an explicit invitation, which makes the entries in `docs/upstream-issues.md`
+lower-friction than assumed. A bug report is not an imposition on a project that asked for
+them.
+
 ## Two cautions
 
 ### A reach report can read as a scorecard

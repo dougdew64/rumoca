@@ -3094,10 +3094,30 @@ opposite directions for the two audiences:
 
 Same measurement, opposite emphasis. Neither report can quietly reuse the other's prose.
 
+### How to frame it — settled 2026-08-01
+
+**Not** *"here is what your compiler costs"*, which invites defensiveness. Instead:
+
+> *"Here is what materialising every IR costs, measured across your standard library."*
+
+Rumoca's README states as a design emphasis *"explicit compiler phases and IR boundaries"* and
+*"reusable symbolic outputs rather than a single closed execution path"*. **A project that
+chose that trade has already accepted that materialising IR costs something.** HRW pays it
+maximally — ten stage trees per model — so the 50-170x measured below is *the price of looking
+at everything*, a fact about the trade rather than a criticism.
+
+For an interoperability layer, that number is **design data**: it says what a downstream
+consumer pays to hold all the IR at once, which is what Julia/SciML, CasADi or a code
+generator would be doing. See `docs/upstream-strategy.md` § "The alignment argument".
+
 ### Part A — the upstream performance profile (a zero-adoption-cost gift)
 
 Three findings worth a maintainer's afternoon, per `docs/upstream-strategy.md`'s ordering:
 
+- **The cost of full IR materialisation, measured.** Models Rumoca compiles in **5-15 s**
+  take **~900 s** through HRW's path — **50-170x** — while the survey, calling `Session`
+  directly with no HRW code, recorded **zero timeouts across all 2,626 models** and a slowest
+  single model of 376 s. Framed per the section above.
 - **A performance cliff with a named cause.** The whole MSL compiles in ~38 minutes; adding
   index reduction made **four models consume 97 minutes** (the Spice3 four-bit-adder family,
   2,477-10,175 equations). Superlinear in system size, with the models to reproduce it. That
