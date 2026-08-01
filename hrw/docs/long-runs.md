@@ -35,13 +35,24 @@ open it.
 > so you pay the re-index cost for nothing. The Command Palette stop is *intentional* and is
 > not resurrected. Restart afterwards with **`rust-analyzer: Restart server`**.
 
-**3. Build the binaries.**
+**3. Build the binaries — `--release`, and do not skip this even if you "just built".**
 
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca
 cargo build -p hrw --release --example survey_msl
 cargo build -p hrw --release --example fidelity_msl
 ```
+
+> **`measure-fidelity.ps1` runs `target/release/examples/fidelity_msl.exe`**, which `cargo
+> test` and a debug build never touch. So a **release** binary can sit stale for days while
+> everything else looks green — and it holds compiled-in paths, notably
+> `docs/reports/msl-survey.csv`.
+>
+> This bit on 2026-08-01: moving the reports into `docs/reports/` updated the source and the
+> debug build, the whole suite passed, and the *release* binary still carried the old path. The
+> next sweep would have died with "run the survey first". **After any change to a compiled-in
+> path, rebuild release before running a sweep** — `cargo build` is seconds against a run that
+> is hours.
 
 ---
 
