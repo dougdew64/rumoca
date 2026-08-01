@@ -46,7 +46,7 @@ repeatedly.
 
 ---
 
-### 0. The must-fire convention — adopt now, not a phase
+### 0. The must-fire convention — adopt now, not a phase — DONE 2026-08-01
 
 **Every piece of code whose job is to report something gets a test proving it reports.**
 Silence must be a failure, never a pass.
@@ -60,6 +60,47 @@ silent when work was pending by absence.
 **Done when:** the rule is in `CLAUDE.md`, and every existing observer either has a must-fire
 test or a recorded reason it cannot. **No dependency, no approval, no schedule** — it applies
 from now on, and its absence makes a change incomplete.
+
+#### The audit, 2026-08-01
+
+**Scope.** An *observer* is code whose job is to report a problem, where producing nothing is
+a possible outcome. Found by enumerating detector-shaped functions and then by the shape most
+at risk of a vacuous pass: an assertion that a collection of findings **is empty**. Seventeen
+such assertions exist; most are ordinary positive tests (*"no span means no line to blame"*)
+rather than "the checker found nothing", and only the checkers below carry the risk.
+
+| Observer | Proof that it fires |
+|---|---|
+| `fidelity::check_model` — F1-F9 | `each_invariant_catches_its_own_violation` |
+| `survey::all_zero_columns` | `a_column_that_is_always_zero_is_reported` |
+| `report::exceptions` | `exceptions_are_recognised_across_reports` — asserts *only* the failing row |
+| `doc_citations::every_documented_source_path_exists` | `a_missing_file_is_reported` |
+| `doc_citations::claims_of_absence_are_still_true` | `the_unbuilt_tag_is_parsed_and_both_verdicts_fire` |
+| `doc_citations::provenance_tags_are_well_formed` | `provenance_tags_are_recognised_by_form` |
+| `doc_citations::documents_contain_no_stray_control_characters` | **`a_stray_control_character_is_reported` — added by this audit** |
+| `app::fixture_tour_links_all_resolve` | `parse_hrw_link_invalid_stage` proves the predicate rejects; the test carries its own non-vacuity guard |
+| F8's stage-IR ceiling | non-vacuity guard on row count — *"a model produced no row, so the loop exited early"* |
+| `app::purpose_placeholder` | `the_purpose_placeholder_fits_the_actual_state` |
+| `bridge::check_breakpoint_ack` | `live_trace_breakpoint_arm_remove_and_ack` |
+| diagnostics digest + pruning | `a_digest_entry_is_one_line…`, `pruning_keeps_the_newest_crash_files` |
+
+**One gap found and closed.** The control-character checker had been verified *by hand* —
+injecting a BEL into `provenance.md` and watching it fail. **That proved it worked that day
+and nothing about any later day.** A manual proof is not a must-fire test, and it was the only
+checker in the codebase without an automated one.
+
+#### The recorded reason, for the observers that cannot have one
+
+**The PowerShell drivers have no test harness**, so `scripts/measure-fidelity.ps1`'s watchdog
+narration, its retry-verdict clearing and `scripts/promote-run.ps1`'s guards are verified only
+by being run. On 2026-08-01 that verification was done deliberately and by hand — a seeded
+profile proving the retry clears the right rows, plus a control showing the array
+normalisation is load-bearing — but **it is not repeatable without a person.**
+
+**This is not an exemption; it is item 3.** Those scripts are precisely the standing candidate
+in `tech-debt.md`'s second trigger, and the honest position is that they are *unverified
+between runs* until item 3 either moves them to Rust or records why mid-run editability is
+worth more. Recording it here so the gap is a known one rather than an oversight.
 
 ---
 

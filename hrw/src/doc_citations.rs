@@ -330,6 +330,20 @@ Some prose.
     /// BEL and FORMFEED have no legitimate use in our markdown. **TAB is deliberately
     /// not checked** — tabs are ordinary in code blocks, so flagging them would produce
     /// noise, and the two that are unambiguous are enough to catch this class.
+    /// The predicate, factored out so a must-fire test can drive it with text
+    /// rather than with the corpus. Returns `(line number, character name)`.
+    fn control_chars_in(text: &str) -> Vec<(usize, &'static str)> {
+        let mut out = Vec::new();
+        for (n, line) in text.lines().enumerate() {
+            for (ch, name) in [('\u{7}', "BEL"), ('\u{c}', "FORMFEED"), ('\u{b}', "VTAB")] {
+                if line.contains(ch) {
+                    out.push((n + 1, name));
+                }
+            }
+        }
+        out
+    }
+
     #[test]
     fn documents_contain_no_stray_control_characters() {
         let mut offences = Vec::new();
@@ -337,12 +351,8 @@ Some prose.
         for path in doc_files() {
             let Ok(text) = std::fs::read_to_string(&path) else { continue };
             scanned += 1;
-            for (n, line) in text.lines().enumerate() {
-                for (ch, name) in [('\u{7}', "BEL"), ('\u{c}', "FORMFEED"), ('\u{b}', "VTAB")] {
-                    if line.contains(ch) {
-                        offences.push(format!("{}:{} contains {name}", path.display(), n + 1));
-                    }
-                }
+            for (line, name) in control_chars_in(&text) {
+                offences.push(format!("{}:{line} contains {name}", path.display()));
             }
         }
         // Non-vacuity: a clean scan of nothing is not a clean scan.
@@ -352,6 +362,39 @@ Some prose.
             "control characters in documentation (a backslash escape was interpreted \
              somewhere — check how the text was written, not just the text):\n  {}",
             offences.join("\n  "),
+        );
+    }
+
+    /// The control-character check catches one, and leaves ordinary text alone.
+    ///
+    /// **Added 2026-08-01 during the must-fire audit** (`verification-plan.md`
+    /// item 0). The corpus check above was verified when written by injecting a
+    /// BEL into `provenance.md` by hand and watching it fail — which proved it
+    /// worked *that day* and proves nothing on any later day. **A manual proof is
+    /// not a must-fire test**, and this was the only checker in the codebase
+    /// without an automated one.
+    ///
+    /// **TAB is deliberately absent from the checked set** and this pins that
+    /// too: tabs are ordinary inside code blocks, so flagging them would be noise.
+    /// The real bug that motivated the checker ate a tab *and* a BEL *and* a
+    /// FORMFEED out of `C:\tmp\all-models.txt`; the two unambiguous ones are
+    /// enough to catch it.
+    #[test]
+    fn a_stray_control_character_is_reported() {
+        let bel = format!("fine line\nbroken {} line\n", '\u{7}');
+        let hits = control_chars_in(&bel);
+        assert_eq!(hits, vec![(2, "BEL")], "the BEL on line 2, and nothing else");
+
+        let ff = format!("C:{}tmp{}id-full.csv\n", '\t', '\u{c}');
+        assert_eq!(
+            control_chars_in(&ff),
+            vec![(1, "FORMFEED")],
+            "a formfeed is caught; the tab beside it is deliberately not",
+        );
+
+        assert!(
+            control_chars_in("ordinary prose\n\twith a tab\nand `code`\n").is_empty(),
+            "clean text, including tabs, must report nothing",
         );
     }
 
