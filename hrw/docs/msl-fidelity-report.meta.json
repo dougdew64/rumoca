@@ -1,0 +1,10 @@
+﻿{
+  "generated_unix": 1785578237,
+  "generated_utc": "2026-08-01T14:57:17Z",
+  "models": 2610,
+  "outcomes": {"ok": 2610},
+  "profile": "msl-fidelity-profile.csv",
+  "run_verdicts": {"ok": 2610, "aborted:timeout": 10, "aborted:free-ram": 6},
+  "source_report": "C:/tmp/fid-full.csv",
+  "note": "F1-F9 over the MSL corpus. Establishes that HRW agrees with Rumoca, NOT that Rumoca is correct, and does not test the rendered UI."
+}
