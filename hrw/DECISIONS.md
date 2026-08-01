@@ -1545,3 +1545,51 @@ convention exposed: `specimens/`, `docs/fixture-tours/`, `vscode-extension/`,
 
 **The repo root `README.md` is upstream Rumoca's and stays untouched** — editing it would
 conflict on every rebase, and keeping the fork cleanly cherry-pickable outranks a pointer.
+
+### The maintenance division — who owns what, and which signal only Doug can give
+
+Amendment, 2026-08-01, same session:
+
+> Most of the documents exist for your consumption. So, you should maintain the content of
+> those documents so as best to enable you to help me learn. But we must ensure that the
+> content of the README.md files is appropriate for human readers such as me and rumoca
+> maintainers. [...] I will provide feedback as a learner for that file.
+
+| Scope | Written and maintained by | Judged by |
+|---|---|---|
+| Everything except READMEs | Claude, for **Claude's** effectiveness at helping Doug learn | Claude — fewer wrong answers, less re-derivation |
+| README.md files | Claude | **Doug** — did he act on it without asking? |
+| `hrw/README.md`'s value case | **Both, deliberately together** | a maintainer, and a learner |
+
+**Claude maintains its own documents without asking.** Reorganising, condensing, deleting a
+rotted file, correcting a stale claim — these need no approval, because the standard is
+whether they make Claude a better teacher and Claude can evaluate that directly.
+
+#### "For now I am the only learner" is a constraint, not a placeholder
+
+It rules out writing the learner half for a generic Modelica-curious developer, which is the
+default and is vague enough to reach nobody. The concrete reader is **someone learning the
+mathematics of robotics through a compiler that implements it** — decades of C/C++/Java, new
+to Rust, wanting Pantelides to stop being a word. Specific enough to write against, and
+specific *because* it is Doug.
+
+#### The signal Claude cannot generate
+
+**Whether a README lands is not self-checkable.** Claude can verify a README's *facts* — the
+link checker, the control-character test, the by-reference rule all do that mechanically — but
+not whether it teaches or persuades. The precedent is not hypothetical: `end_to_end_tour.md`
+was Claude's solo attempt at explanation and it was worthless, while the animations nobody
+asked for were the best thing the project produced.
+
+So the standing shape is: **speculative features, freely. Speculative persuasion, not at
+all.** Until the joint rewrite, Claude's job on `hrw/README.md` is to keep it accurate and
+current and to **stop short of investing in the value case**, because that is precisely the
+artifact Claude gets wrong alone.
+
+#### Open, and not to be settled unilaterally
+
+**Which audience the page opens with.** `upstream-strategy.md` argues the maintainer framing
+should lead, since HRW is the deliverable asking for the most maintenance burden — and the
+capture plan in `hrw/README.md` currently records that argument. **It is recorded there as an
+argument, not adopted as a decision.** The two audiences want different first images, and that
+choice belongs to the joint rewrite.

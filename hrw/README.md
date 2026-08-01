@@ -159,12 +159,20 @@ Build, run, and test from the **workspace root** with `-p hrw`, or from `hrw/` d
        - So: GIF for the short hero loop; uploaded MP4 for anything narrated or
          longer than ~10 seconds.
 
-     AUDIENCE — decide deliberately, because the two want opposite openings:
+     AUDIENCE — OPEN, and deliberately not settled here. The two want opposite
+     first images:
        - A Rumoca maintainer asks "what does this show me about my compiler that
          I could not otherwise see?" -> incidence matrix, Pantelides replay, the
          2,614-model fidelity table.
        - A learner asks "will this teach me the algorithms?" -> the animations,
          the debugger sync, the specimen notebook.
-     docs/upstream-strategy.md argues the maintainer framing should lead, since
-     HRW is the one deliverable that asks for maintenance burden.
+     docs/upstream-strategy.md ARGUES the maintainer framing should lead, since
+     HRW is the one deliverable that asks for maintenance burden. That is an
+     argument on the record, NOT a decision taken.
+
+     The value case is a joint rewrite -- Doug supplies the learner judgement,
+     which Claude cannot generate (DECISIONS.md, 2026-08-01, "the signal Claude
+     cannot generate"). Until then this file stays accurate and current, and
+     does NOT invest in persuasion: a value case written solo is the exact
+     artifact this project has watched fail.
      ============================================================================ -->

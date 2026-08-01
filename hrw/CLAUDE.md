@@ -55,6 +55,16 @@ principles.**
 **No heuristic name-matching** — [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md).
 No substring search ever decides identity. Cited by six source files.
 
+**Documents divide by audience, and so does who judges them** ([`DECISIONS.md`](DECISIONS.md),
+2026-08-01). Everything except READMEs is **Claude's, maintained without asking** —
+reorganise, condense, delete a rotted file, correct a stale claim, all on Claude's own
+judgement. **READMEs and their further reading are for Doug and Rumoca maintainers**, and the
+test is whether a reader acts without asking Claude; an index link is not an endorsement, and
+a README states facts it does not own **by reference, never transcription**. **`hrw/README.md`'s
+value case is a joint rewrite** — keep that file accurate and current, but **do not invest in
+persuasion alone**: whether prose lands is the one signal Claude cannot generate, and the
+solo attempt at explanation (`end_to_end_tour.md`) is the project's clearest failure.
+
 **Tech-debt sweeps have TWO triggers** ([`docs/tech-debt.md`](docs/tech-debt.md)). Forward:
 each phase boundary, scoped to what the next phase touches. Backward (added 2026-08-01): **code
 that has produced defects only a human caught.** Ask *"who caught it?"* — toolchain, nothing to
