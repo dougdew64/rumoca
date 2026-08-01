@@ -71,6 +71,54 @@ Misclassifying either way is expensive. The third row is the one that needs care
 
 ---
 
+## When the big run finishes — the order matters
+
+Doug and Claude walk this together (agreed 2026-08-01). **Snapshot before anything else**: the
+sweep cost hours, and every later step touches the same files.
+
+**1. Confirm it actually finished** — not merely that the worker is gone between models.
+
+```powershell
+Get-Process fidelity_msl -ErrorAction SilentlyContinue      # expect nothing
+(Get-Content C:/tmp/fid-full.csv | Measure-Object -Line).Lines - 1
+Import-Csv C:/tmp/fid-full-memory.csv | Group-Object verdict | Select-Object Name, Count
+```
+
+**2. Snapshot the complete sweep, BEFORE any re-run.** A resume only appends, so it should not
+be able to lose anything — but "should not" is a poor reason to skip a copy that costs seconds.
+
+```powershell
+$stamp = Get-Date -Format "yyyyMMdd-HHmm"
+$dir = "C:/Users/dougd/rumoca-runs/complete-$stamp"
+New-Item -ItemType Directory $dir -Force | Out-Null
+Copy-Item C:/tmp/fid-full.csv, C:/tmp/fid-full-memory.csv, C:/tmp/fid-full.log $dir
+```
+
+**3. Promote to the repository and commit**, so git holds the artifact before anything else
+happens to it.
+
+```powershell
+cd C:/Users/dougd/source/repos/rumoca/hrw
+./promote-run.ps1 -Report C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
+git add hrw/docs/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
+```
+
+**4. Free memory.** Close Chrome; confirm rust-analyzer is still stopped. `ServiceShell` held
+3.4 GB during the sweep — between them that is roughly 6 GB.
+
+**5. Re-run for the aborted items.** Free-RAM aborts are retried with no flag; add the
+timeouts explicitly, since those turned out to be partly environmental (529 s in isolation
+against 901 s under load).
+
+```powershell
+./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
+```
+
+**6. Re-promote and commit.** `promote-run.ps1` refuses to replace a larger report with a
+smaller one, so a mistake here fails loudly rather than quietly.
+
+**Then** triage — step 5 of the plan above, with its three categories.
+
 ## The zero-contention work: the feature backlog
 
 Doug has a long list of feature ideas to discuss and record. **That is the ideal work while a
