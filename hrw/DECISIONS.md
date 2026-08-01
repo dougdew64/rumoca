@@ -1470,3 +1470,78 @@ them as **satisfiable-by-acceptance, not hard blockers** (`docs/ideas.md` #4).
 wanting; the answer-platform plan superseded them, and it is now itself retired to
 `docs/history/`. Items 1-2 (animation debt, idea #40) were delivered. The reasoning is preserved
 in `docs/history/answer-platform-plan.md`.
+
+## Documentation audience — two readerships, one boundary (2026-08-01)
+
+Doug, setting the convention:
+
+> README.md files and the files to which they link should be written with the assumption
+> that those files are for me to read and might also be read by rumoca maintainers. There
+> should be README.md and linked files wherever it is necessary for me and rumoca
+> maintainers to learn without having to ask you for help.
+
+This supersedes the blanket form recorded earlier the same day (*"the documents are
+primarily for Claude's consumption"*), which was true of most documents and wrong about
+READMEs — and being wrong about the boundary meant every README got written in a register
+aimed at the wrong reader.
+
+### The two readerships, and what each fails at
+
+| | Audience | The failure |
+|---|---|---|
+| **README.md and its further reading** | Doug, and Rumoca maintainers | **the reader has to ask Claude** |
+| everything else | Claude | Claude acts on something stale |
+
+**The human criterion is testable, and that is the point.** "Readable" is a judgement;
+*"a maintainer got from a fresh clone to a running HRW without asking"* is a fact, in the
+same way a fixture tour's expectation is violable or it is not. It also has a cost behind
+it: `docs/upstream-strategy.md` orders deliverables by **their** cost to accept, and HRW is
+already the item asking for the most. Needing Claude in the loop to evaluate it is more of
+exactly that cost.
+
+### The boundary: an index link is not an endorsement
+
+"Files to which they link" is transitive, and `docs/README.md` is an **index** that
+deliberately links to nearly everything. Read literally, the convention would make
+`ideas.md`, `tech-debt.md` and the compiler-phases database human-facing, and the
+Claude-facing category would vanish.
+
+So the rule is about what a README **promises**, not what it mentions:
+
+> **A README must let its reader finish the job without following any link into a
+> Claude-facing document.**
+
+Links are therefore of two kinds, and an index says which:
+
+- **Further reading** — held to the human standard. `setup-windows.md`, `CHARTER.md`,
+  `reports.md`, `compiler-phases/the-chain-of-problems.md`.
+- **Working notes, listed so Doug can audit what exists** — not held to it. `ideas.md`,
+  `tech-debt.md`, `question-ledger.md`, `DECISIONS.md`, the per-phase drill-downs.
+
+### Facts by reference, never by transcription
+
+**Human-facing prose is precisely what this project has watched rot.**
+`end_to_end_tour.md` was human-facing prose, and it died asserting a 7x7 incidence matrix
+on a tab that shows 48 equations — uncaught for weeks because nothing checks prose. A
+convention that produces more of it, unprotected, re-creates the failure we spent
+2026-08-01 removing.
+
+So:
+
+> **A README states facts it does not own by REFERENCE, not by transcription.** Counts,
+> outcomes and measurements point at the generated artifact — a report CSV and its
+> provenance sidecar, a specimen `trace/`, a fixture tour — rather than repeating numbers
+> in prose.
+
+`docs/reports/README.md` is the pattern: "2,614 of 2,626" sits beside a link to the CSV and
+its `meta.json`. Written as prose alone it would be wrong by the next sweep.
+
+### Where a README is required
+
+Wherever a human would otherwise have to ask. Written 2026-08-01 to close the gaps this
+convention exposed: `specimens/`, `docs/fixture-tours/`, `vscode-extension/`,
+`docs/compiler-phases/`. Already present: `hrw/README.md`, `docs/README.md`,
+`docs/reports/README.md`, `scripts/README.md`, `docs/specimen-notebook/README.md`.
+
+**The repo root `README.md` is upstream Rumoca's and stays untouched** — editing it would
+conflict on every rebase, and keeping the fork cleanly cherry-pickable outranks a pointer.

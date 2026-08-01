@@ -183,6 +183,10 @@ pub fn resolve_notebook(name: &str) -> Option<PathBuf> {
 /// Distinct from the ad hoc tour in [`TOUR_FILE`]: an ad hoc tour answers one question
 /// and is regenerated, a fixture tour is a **test** with a pass/fail criterion and is
 /// kept. See `docs/fixture-tours/camera-aiming.md` for the shape.
+/// **`README.md` is excluded**: the directory gained one on 2026-08-01 under the
+/// two-audience convention (`DECISIONS.md`), and without this it would appear in
+/// the tour picker as a tour called "README" whose stops do not exist. A README
+/// describes the directory; it is not a member of it.
 pub fn fixture_tours() -> Vec<PathBuf> {
     let Ok(entries) = fs::read_dir(FIXTURE_TOURS_DIR) else {
         return Vec::new();
@@ -191,6 +195,7 @@ pub fn fixture_tours() -> Vec<PathBuf> {
         .flatten()
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("md"))
+        .filter(|p| p.file_name().and_then(|n| n.to_str()) != Some("README.md"))
         .collect();
     found.sort();
     found

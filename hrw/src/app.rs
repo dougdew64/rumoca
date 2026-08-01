@@ -8087,6 +8087,18 @@ mod tests {
             "the checked-in fixture tours should be listed: {:?}",
             app.tours.iter().map(TourSource::label).collect::<Vec<_>>(),
         );
+
+        // **A README is not a tour.** `docs/fixture-tours/` gained one on
+        // 2026-08-01 under the two-audience convention (`DECISIONS.md`), and the
+        // enumeration takes every `.md` in the directory — so without the
+        // exclusion in `bridge::fixture_tours` the picker offers a tour called
+        // "README" whose stops do not exist. Pinned here because the next
+        // directory README would reintroduce it silently.
+        let labels: Vec<String> = app.tours.iter().map(TourSource::label).collect();
+        assert!(
+            !labels.iter().any(|l| l.eq_ignore_ascii_case("README")),
+            "README.md must not be offered as a tour: {labels:?}",
+        );
         if app.tours.contains(&TourSource::AdHoc) {
             assert_eq!(app.tours[0], TourSource::AdHoc, "ad hoc sorts first");
             assert_eq!(app.selected_tour, Some(TourSource::AdHoc), "and is selected by default");
@@ -8212,19 +8224,20 @@ mod tests {
         assert!(checked > 0, "expected at least one file reference across the fixtures");
     }
 
+    /// Every `hrw://` link in every fixture tour parses.
+    ///
+    /// **Enumerates through `bridge::fixture_tours`, not its own `read_dir`.** It had
+    /// a private copy until 2026-08-01, which is a second definition of "what is a
+    /// fixture tour" — and the two drifted the moment the directory gained a
+    /// `README.md`: the app correctly stopped offering it as a tour while this test
+    /// still scanned it and failed on the bare `hrw://` in its prose. *A check that
+    /// exists twice is a check that drifts*, which is the same lesson F1 and F7 both
+    /// produced.
     #[test]
     fn fixture_tour_links_all_resolve() {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
-        let Ok(entries) = std::fs::read_dir(&dir) else {
-            return; // no fixture tours in this checkout
-        };
         let mut tours = 0usize;
         let mut links = 0usize;
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("md") {
-                continue;
-            }
+        for path in bridge::fixture_tours() {
             tours += 1;
             let text = std::fs::read_to_string(&path).unwrap();
             let found = extract_hrw_links(&text);
