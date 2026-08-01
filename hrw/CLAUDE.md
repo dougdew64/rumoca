@@ -102,6 +102,11 @@ output.** The same breakage survived a clippy run that was piped to `grep -c "^w
 which counts warnings and silently ignores a compile error. `cargo clippy … ; echo $?` or
 just let it print.
 
+**[`docs/long-runs.md`](docs/long-runs.md) is the runbook for both long runs** — the MSL
+survey and the fidelity sweep — with copy-paste commands, what to watch, how to resume, and
+what each abort verdict means. Use it rather than reconstructing the procedure; the *why*
+lives in `docs/architecture.md` §11.
+
 **Running the fidelity checks at MSL scale — NEVER unbounded, and never a bare loop.**
 An unbounded 53-model run made Doug's machine unusable and forced a hard power-cycle
 (2026-07-31). Use the watchdog driver:
