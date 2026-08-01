@@ -101,6 +101,13 @@ fn main() {
     let max_reduce_eq: usize =
         arg(&args, "--max-reduce-eq").and_then(|v| v.parse().ok()).unwrap_or(800);
     let resume = args.iter().any(|a| a == "--resume");
+    // `--only-checks F2` runs one check, so the same model profiled once per
+    // check yields per-check time AND peak memory from the existing watchdog.
+    let only: Option<std::collections::BTreeSet<String>> = arg(&args, "--only-checks")
+        .map(|v| v.split(',').map(|c| c.trim().to_uppercase()).collect());
+    if let Some(set) = &only {
+        eprintln!("--only-checks: {}", set.iter().cloned().collect::<Vec<_>>().join(","));
+    }
     // **Process lifetime is the only hard memory bound.** A session rebuild
     // releases what the session holds; it cannot release what the allocator has
     // fragmented or what any other cache retains. Exiting does, because the OS
@@ -231,6 +238,7 @@ fn main() {
                 identifier_index.as_ref(),
                 &mut cov,
                 &mut timing,
+                only.as_ref(),
             );
             checked += 1;
         } else {

@@ -164,8 +164,18 @@ pub fn check_model(
     index: Option<&crate::identifier_index::IdentifierIndex>,
     coverage: &mut Coverage,
     timing: &mut CheckTiming,
+    // `only`: which checks to run; `None` runs all of them.
+    //
+    // **Exists to make the checks measurable, not configurable.** Running one
+    // model once per check turns the per-process watchdog — which already
+    // records peak RSS and elapsed time — into a per-check profiler, with no
+    // new instrumentation and no dependency. That matters because stage C
+    // produced TWO scaling failures: seven timeouts and three memory blowouts
+    // at up to 7.7 GB, and timing alone would have explained only the first.
+    only: Option<&std::collections::BTreeSet<String>>,
 ) -> Vec<Violation> {
     let mut out = Vec::new();
+    let want = |c: &str| only.is_none_or(|set| set.contains(c));
     let tag = |check: &'static str, v: Vec<String>| {
         v.into_iter().map(move |detail| Violation { check, detail })
     };
@@ -184,18 +194,26 @@ pub fn check_model(
         if s.report["matching"].as_array().is_some_and(|m| !m.is_empty()) {
             coverage.with_matching += 1;
         }
-        let t = std::time::Instant::now();
-        out.extend(tag("F2", check_f2(&s)));
-        timing.add("F2", t);
-        let t = std::time::Instant::now();
-        out.extend(tag("F3", check_f3(&s)));
-        timing.add("F3", t);
-        let t = std::time::Instant::now();
-        out.extend(tag("F4", check_f4(&s)));
-        timing.add("F4", t);
-        let t = std::time::Instant::now();
-        out.extend(tag("F5", check_f5(&s)));
-        timing.add("F5", t);
+        if want("F2") {
+            let t = std::time::Instant::now();
+            out.extend(tag("F2", check_f2(&s)));
+            timing.add("F2", t);
+        }
+        if want("F3") {
+            let t = std::time::Instant::now();
+            out.extend(tag("F3", check_f3(&s)));
+            timing.add("F3", t);
+        }
+        if want("F4") {
+            let t = std::time::Instant::now();
+            out.extend(tag("F4", check_f4(&s)));
+            timing.add("F4", t);
+        }
+        if want("F5") {
+            let t = std::time::Instant::now();
+            out.extend(tag("F5", check_f5(&s)));
+            timing.add("F5", t);
+        }
     }
     if sheet.is_some() {
         coverage.with_sheet += 1;
@@ -203,15 +221,19 @@ pub fn check_model(
     if index.is_some() {
         coverage.with_index += 1;
     }
-    let t = std::time::Instant::now();
-    out.extend(tag("F6", check_f6(sheet, index, dae)));
-    timing.add("F6", t);
+    if want("F6") {
+        let t = std::time::Instant::now();
+        out.extend(tag("F6", check_f6(sheet, index, dae)));
+        timing.add("F6", t);
+    }
     for kind in crate::worker::StageKind::COMPILATION {
         if let Some(root) = stages.get(*kind).value.as_ref() {
             coverage.stage_irs += 1;
-            let t = std::time::Instant::now();
-            out.extend(tag("F7", check_f7(&format!("{kind:?}"), root)));
-            timing.add("F7", t);
+            if want("F7") {
+                let t = std::time::Instant::now();
+                out.extend(tag("F7", check_f7(&format!("{kind:?}"), root)));
+                timing.add("F7", t);
+            }
         }
     }
     out

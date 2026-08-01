@@ -146,7 +146,7 @@ Import-Csv C:\tmp\fid-full-memory.csv | Sort-Object {[int]$_.peak_ws_mb} -Descen
 | `ok` | completed | nothing |
 | `aborted:free-ram` | **the machine was tight**, not the model | retried automatically on the next run; close things or stop rust-analyzer |
 | `aborted:proc-ceiling` | the **model** exceeded 5 GB | a finding — investigate that model |
-| `aborted:timeout` | the **checks were slow on that model** — cause not yet measured | a finding; see `architecture.md` §11 "The checks themselves are expensive on large systems" before raising `-TimeoutSec` |
+| `aborted:timeout` | **HRW's compile path** is slow on that model — measured, not the checks | expected on very large systems; see `architecture.md` §11 "Where the cost on large systems actually is" |
 
 The guards are `-MinFreeGB 3` and `-MaxProcGB 5`, sampled every 2 s **during** the run.
 Guard on **free RAM, not process size**: "the machine stays usable" is a free-RAM property,

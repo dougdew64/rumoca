@@ -1640,46 +1640,50 @@ rather than acts**: a pre-flight naming the exact command when headroom is thin,
 closing reminder to restart. Automating the reminder is possible; automating the action is
 not, and attempting it would make things worse.
 
-#### The checks themselves are expensive on large systems — and we do not yet know which
+#### Where the cost on large systems actually is — measured, after a wrong first answer
 
-**Measured 2026-07-31** from the stage-C memory profile and `docs/msl-survey.csv`, on
-`Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Transformer`.
-(Bold, not a `*Verified*` provenance tag: that form is reserved for claims checked against
-SOURCE and must name a `.rs` file. This is a runtime measurement, and the lint was right to
-reject the first attempt.)
+**Measured 2026-07-31** by running one model with each check individually enabled
+(`--only-checks`), which turns the per-process watchdog into a per-check profiler. Subject:
+`Modelica.Electrical.QuasiStatic.Machines.Examples.TransformerTestbench`, 4,193 equations.
 
-| | |
-|---|---|
-| equations | 5,061 |
-| **survey** (compile + shape only) | **18.4 s** |
-| **fidelity sweep** (compile + F1-F9) | **301.1 s — hit the 300 s timeout** |
-| peak resident | 3,186 MB |
+| checks enabled | peak RSS | seconds |
+|---|---|---|
+| **none** | **3,541 MB** | **30.2** |
+| F2 | 3,525 MB | 32.6 |
+| F3, F4, F5, F6, F7 | ~3,500 MB each | ~30.7 each |
+| all | 3,525 MB | 43.0 |
 
-**Roughly a 16x multiplier, and it is not the compile.** Index reduction is capped above 800
-equations, so it is skipped for this model in both runs — the extra time is spent inside the
-checks.
+**With no checks running at all: 30.2 s and 3.5 GB.** Memory is flat across every row — the
+checks contribute essentially nothing to it — and the checks add ~13 s on top of a 30 s
+baseline, about 42%.
 
-*Inference — not checked against the source.* The plausible culprits are F2 rebuilding the
-incidence matrix, F7 walking 400 sampled paths across ten stage IRs, and F6 covering the
-equation sheet — all written against specimens two orders of magnitude smaller. **Which of
-them dominates has not been measured**, and the first version of this note asserted the cause
-as though it had been.
+**So the cost is in HRW's own compile path, not in F1-F9.** The earlier note in this section
+claimed the opposite, and stated it as fact: it inferred from the survey taking 18.4 s on
+`IMC_Transformer` while the fidelity sweep exceeded 300 s that the difference must be the
+checks. It is not. **The two runs do not use the same compile path.**
 
-That distinction matters here more than usual, because the same guess has already been wrong
-once today: the stuck stage-C process was blamed on a deadlocked `OutputCapture` and on being
-blocked on I/O, and it turned out to be F8 materialising stage IR as a `String`. **A cost
-hypothesis is cheap to state and expensive to trust.**
+| | Calls | Builds |
+|---|---|---|
+| survey | `Session::compile_model_strict_reachable_uncached_with_recovery` | the `CompilationResult` |
+| fidelity sweep | `WorkerState::compile_model_by_name` | **that, plus ten stage JSON trees, `def_index`, the equation sheet, the identifier index, and three sets of animation frames** |
 
-**Why this is a finding rather than a nuisance.** If a check is superlinear in system size,
-the full 2,626-model run is dominated by its tail — the same shape as the survey's problem,
-one layer up, where four models consumed 97 of 127 minutes. Capping or excluding the large
-models would hide it; the models that stress the representation hardest are exactly the ones a
-stratified corpus exists to include.
+That extra construction is what costs 30 s and 3.5 GB, and it is what blows past 5 GB on the
+Spice3 models (10,175 equations, 7.7 GB) in **under twenty seconds** — fast and enormous,
+which is the signature of allocation rather than computation.
 
-**The next step is measurement, not a fix:** per-check timing inside the harness, which is
-`docs/ideas.md` #54 Part B turned on our own instrument rather than on Rumoca. Until that
-exists, treat `aborted:timeout` on a large model as *"the checks are slow here, cause
-unknown"* — not as a defect in any particular check, and not as a property of the model.
+**This matters for what to fix.** Optimising the checks would recover ~42%, on a baseline
+that is already over the timeout for the largest models. The scaling problem is in **stage IR
+construction**, which is HRW's own product and used by the app itself — so it is a finding
+about HRW's behaviour on large models, not about the test harness.
+
+*Inference — not checked against the source.* Within that path the likely dominators are the
+ten `serde_json::Value` stage trees, which materialise the entire IR as an owned tree per
+stage. `docs/ideas.md` #54 Part B — per-phase timing — would settle it.
+
+**Recorded at length because the wrong answer survived two rounds of reasoning.** The first
+explanation blamed a deadlocked `OutputCapture`; the second blamed the checks and was written
+into this document; only running the model with the checks *switched off* settled it. A cost
+hypothesis is cheap to state, expensive to trust, and worth measuring before it is documented.
 
 #### Whether to buy more RAM
 
