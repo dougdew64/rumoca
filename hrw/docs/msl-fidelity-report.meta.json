@@ -1,10 +1,11 @@
 ﻿{
-  "generated_unix": 1785578237,
-  "generated_utc": "2026-08-01T14:57:17Z",
-  "models": 2610,
-  "outcomes": {"ok": 2610},
+  "generated_unix": 1785593477,
+  "generated_utc": "2026-08-01T19:11:17Z",
+  "models": 2614,
+  "outcomes": {"ok": 2614},
   "profile": "msl-fidelity-profile.csv",
-  "run_verdicts": {"ok": 2610, "aborted:timeout": 10, "aborted:free-ram": 6},
-  "source_report": "C:/tmp/fid-full.csv",
+  "run_verdicts": {"ok": 2614, "aborted:timeout": 8, "aborted:proc-ceiling": 4},
+  "source_report": "C:/Users/dougd/rumoca-runs/complete-retry-20260801/fid-full.csv",
+  "not_checked": "4 model(s) exceeded the memory this machine can safely provide (observed above 11.4 GB and still growing when stopped) and were NOT checked; 8 model(s) exceeded the time limit and were NOT checked. These are limits of the machine and the run configuration, not findings about HRW or Rumoca.",
   "note": "F1-F9 over the MSL corpus. Establishes that HRW agrees with Rumoca, NOT that Rumoca is correct, and does not test the rendered UI."
 }

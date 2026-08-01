@@ -2609,3 +2609,7 @@ ModelicaServices.Animation.Surface,Component,ok,,,0
 ModelicaServices.Animation.Vector,Component,ok,,,0
 ModelicaServices.UsersGuide.Contact,Component,ok,,,0
 ModelicaServices.UsersGuide.ReleaseNotes,Component,ok,,,0
+Modelica.Electrical.Spice3.Examples.Oscillator,Examples,ok,,,0
+Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair,Examples,ok,,,0
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMS_Start,Examples,ok,,,0
+Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMPM_Mains,Examples,ok,,,0
