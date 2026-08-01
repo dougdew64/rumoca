@@ -107,6 +107,45 @@ scale where a compile-census is not.
 
 Ordered by how much they would hurt if they failed.
 
+### The checks mirror the algorithm chain
+
+The organising idea, and the fastest way to hold all nine: **structural analysis is a
+pipeline where each step consumes the last, and each check guards one link.**
+
+```text
+DAE  ->  incidence matrix  ->  matching  ->  SCCs (Tarjan)  ->  BLT blocks  ->  tearing
+```
+
+- **Incidence** is the bipartite graph: rows are equations, columns are unknowns, an edge
+  where that equation mentions that unknown. Everything downstream is derived from it.
+- **Matching** pairs each equation with the one unknown it will be *solved for* — a perfect
+  matching in that graph. When none exists the system is **structurally singular**
+  (Dulmage-Mendelsohn), which for a high-index model is normal and index reduction repairs.
+- The matching orients the graph; **Tarjan's SCCs** on the result are the equation sets that
+  must be solved *simultaneously*.
+- Those SCCs in topological order are the **BLT blocks** — the solve order.
+- Inside a coupled block, **tearing** chooses variables to guess so the rest solve explicitly.
+
+Drill-downs for each algorithm live in
+[`compiler-phases/phase7_structural_analysis/`](compiler-phases/phase7_structural_analysis/).
+
+| Check | Link it guards | The failure it makes impossible to hide |
+|---|---|---|
+| **F2** | the incidence itself | every downstream view indexes into these arrays, so a transposition or off-by-one leaves the matrix looking entirely plausible while every label sits against the wrong row |
+| **F5** | the matching | a pair whose equation does not *contain* its unknown is not a poor choice — it is **not a matching at all**, and every solve order built on it is meaningless |
+| **F4** | the BLT decomposition | a partition is impossible to satisfy by accident, so a gap or an overlap is definitionally a defect |
+| **F3** | the counts across all of it | `rank_deficiency: 7` when the truth was 1 — the error described the *reduced* system while the matrix beside it described the *raw* one |
+| **F1** | the **re-derivation** of all of the above | an animation teaching a decision Rumoca never made |
+
+F6, F7, F8 and F9 sit outside this chain: they guard the *derived views*, the *capture
+vocabulary*, *scale*, and *failure reporting* respectively.
+
+**Why the chain framing matters for reading a violation.** A break in an early link
+manifests as violations in every later one. If F2 fails, F5 and F4 will almost certainly fail
+too — not because the matching and the blocks are separately wrong, but because they were
+computed from a matrix that was already wrong. **Triage the earliest failing link first**, and
+expect the rest to resolve with it.
+
 ### F1. Re-derivation matches the report  *(the centrepiece)*
 
 For every model with a coupled block: run `tearing_anim::walk_blocks` and compare its

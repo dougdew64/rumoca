@@ -39,6 +39,31 @@
 //! bug F1 found in the singular matching, and a check written against
 //! "structural" alone would have missed it.
 
+//! # The checks mirror the algorithm chain
+//!
+//! The fastest way to hold all of them. Structural analysis is a pipeline where
+//! each step consumes the last:
+//!
+//! ```text
+//! DAE -> incidence -> matching -> SCCs (Tarjan) -> BLT blocks -> tearing
+//! ```
+//!
+//! **Each check guards one link.** F2 guards the incidence (everything indexes
+//! into it); F5 guards the matching (a pair whose equation does not *contain*
+//! its unknown is not a matching at all); F4 guards the BLT partition; F3
+//! guards the counts across all of it; and **F1 guards the re-derivation** —
+//! the animations re-run these algorithms, so F1 is what stops an animation
+//! teaching a decision Rumoca never made.
+//!
+//! F6, F7, F8 and F9 sit outside the chain, guarding the derived views, the
+//! capture vocabulary, scale, and failure reporting.
+//!
+//! **A break in an early link shows up as violations in every later one.** If
+//! F2 fails, F5 and F4 almost certainly fail too — not because they are
+//! separately wrong but because they consumed a matrix that was already wrong.
+//! **Triage the earliest failing link first.** Full version in
+//! `docs/fidelity-plan.md`.
+//!
 //! # Why the checks are not test-only code
 //!
 //! They were, until 2026-07-31. Running them over hundreds of MSL models needs a
