@@ -146,6 +146,15 @@ it within seconds. The script prints this reminder when headroom is thin, and pr
 restart afterwards. Full reasoning in [`docs/architecture.md`](docs/architecture.md) §11
 "Running the checks at scale".
 
+**DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
+`docs/fidelity-plan.md`). Measurement showed HRW's *compile path*, not the checks, costs 30 s
+and 3.5 GB on a 4,193-equation model. Doug: *"we should not redesign worker.rs's compile
+path. Perhaps ever… If some models cannot be fidelity-tested within our limits, so be it."*
+The stage JSON trees, equation sheet, identifier index and animation frames **are the
+product** — making them lazy to fit a benchmark would optimise away the observatory. Raising
+`-TimeoutSec` / `-MaxProcGB` when measurement justifies it is calibration, not optimisation,
+and is fine. **HRW is an education project, not a production tool.**
+
 **Fidelity checks — when they run** (policy agreed with Doug 2026-07-31; full reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). F1–F9 ask whether HRW faithfully
 represents Rumoca, and they come in two scales answering *different* questions:

@@ -393,6 +393,53 @@ Each model is a full uncached compile against MSL — seconds. 50 models is minu
 hour a full census would take, which is why the sample is stratified rather than
 exhaustive. **Behind `slow-tests`**, not in the 7-second loop.
 
+## Do NOT optimise HRW to widen test scope
+
+**A standing boundary, set by Doug 2026-07-31**, after measurement showed HRW's compile path
+— not the fidelity checks — is what costs 30 s and 3.5 GB on a 4,193-equation model, and
+7.7 GB on a 10,175-equation one.
+
+> **First, I very much agree that we should not redesign worker.rs's compile path. Perhaps
+> ever, even if some models cannot be opened quickly in the HRW UI. HRW is an education
+> project, not a production tool. We are creating HRW to teach me and to possibly serve as a
+> convenient test tool for rumoca maintainers. I do not want to optimize, let alone
+> fundamentally redesign, HRW in order to run tests of extreme models. If some models cannot
+> be fidelity-tested within our limits, so be it.**
+
+### What this rules out
+
+- **Redesigning `WorkerState::compile_model_by_name` or the stage-IR construction it drives**
+  — laziness, streaming, or bounded materialisation — *for the purpose of widening test
+  coverage*.
+- Trading away the thing HRW exists for. The ten stage JSON trees, `def_index`, the equation
+  sheet, the identifier index and three sets of animation frames **are the product**. They
+  are why HRW can show what a compiler decided. Making them lazy to fit a benchmark would be
+  optimising away the observatory.
+
+### What it does not rule out
+
+- **Raising the run guards** when measurement says the cost is legitimate. `-TimeoutSec` and
+  `-MaxProcGB` were guesses made before anything was measured; adjusting them to fit what
+  models actually need is not optimisation, it is calibration.
+- A UX change *if a real session makes one necessary* — for instance a progress indicator, or
+  a warning before opening a very large model. That would be driven by Doug hitting it while
+  learning, which is this project's normal trigger for anything.
+- Fixing a genuine defect. The F8 `to_string()` materialisation was a **bug** — it built the
+  entire IR as a `String` purely to measure its length — and fixing it was correct. The line
+  is between *removing waste* and *redesigning the product*.
+
+### Why the boundary is worth writing down
+
+The pull toward optimisation here is strong and looks reasonable at every step: 10 of 53
+stage-C models aborted, the checks are clean, the cost is in HRW — so *make HRW faster*. Each
+step follows, and the conclusion is still wrong, because **the goal is not maximum test
+coverage. The goal is Doug's education**, and HRW's job is to make a compiler's decisions
+visible rather than to process the largest model in the MSL quickly.
+
+**A model that cannot be fidelity-tested within the limits is recorded as such and left.**
+That is a stated bound, and stating a bound honestly is a thing this project already values
+over pretending it is not there (`docs/upstream-strategy.md` planning rule 3).
+
 ## What this does not establish
 
 That Rumoca is *correct*. Every check here asks whether HRW agrees with Rumoca, so a
