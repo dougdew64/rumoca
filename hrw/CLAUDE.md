@@ -139,9 +139,9 @@ that cannot fire is indistinguishable from no guard*. It also writes a **memory 
 `aborted:proc-ceiling` and `aborted:timeout`, because the first is a fact about the machine
 and the others about the model.
 
-`run-fidelity.ps1` is the earlier chunked driver (25 models per process). **Superseded** —
-chunking bounds accumulation *across* chunks but not within one, and its free-RAM check ran
-*between* chunks, which is the only moment it cannot help.
+*(An earlier chunked driver, `run-fidelity.ps1`, was deleted 2026-08-01: chunking bounded
+accumulation across chunks but not within one, and its free-RAM check ran between chunks —
+the only moment it cannot help.)*
 
 **Before a sweep, stop rust-analyzer** via Command Palette → **"rust-analyzer: Stop server"**.
 It holds ~5.7 GB here — more than two parallel workers would need — and this workspace is

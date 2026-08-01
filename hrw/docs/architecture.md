@@ -1525,7 +1525,8 @@ enormous.
 > because the OS reclaims unconditionally.
 
 So the runner processes `--max-models` (default 25) and **exits**; `--resume` skips rows
-already in the report and the sink appends. `run-fidelity.ps1` drives chunks in a loop and
+already in the report and the sink appends. `measure-fidelity.ps1` runs ONE MODEL PER
+PROCESS with a watchdog and
 **refuses to start one below a free-RAM floor**, so the failure mode is *"stops early and says
 so"* rather than *"takes the desktop down"*. Verified by watching free RAM return to the same
 value after every chunk.
