@@ -236,11 +236,28 @@ parameter passed through `-File`, not just this one.
 |---|---|---|
 | `ok` | completed | nothing |
 | `aborted:free-ram` | **the machine was tight**, not the model | retried automatically on the next run; close things or stop rust-analyzer |
-| `aborted:proc-ceiling` | the **model** exceeded 5 GB | a finding — investigate that model |
+| `aborted:proc-ceiling` | the model wants more memory than this machine can safely give | **a stated bound, not a defect** — see below. Never retried. |
 | `aborted:timeout` | **HRW's compile path** is slow on that model — measured, not the checks | expected on very large systems; see `architecture.md` §11 "Where the cost on large systems actually is" |
 
-The guards are `-MinFreeGB 3`, `-MaxProcGB 10` and `-TimeoutSec 900`, sampled every 2 s
-**during** the run. **The last two were calibrated on 2026-07-31 rather than guessed**: the
+#### Some models cannot pass on this machine, and that is a stated bound
+
+Measured 2026-08-01. The Spice3 family was observed above **11.4 GB and still climbing** when
+the watchdog stopped it. With Chrome and rust-analyzer both closed the machine offers **12.9
+GB free**, and the 3 GB floor that keeps the desktop responsive leaves a practical ceiling of
+**~9.9 GB** — *less than the 10 GB already configured*.
+
+So the headroom is exhausted: **the models want more than the hardware can safely provide.**
+That is a limit of the machine, not a defect in HRW or Rumoca, and `promote-run.ps1` writes it
+into the report's sidecar as `not_checked` so the bound travels with the data rather than
+beside it.
+
+It is also mildly unsafe to keep attempting them: at ~0.7 GB/s growth those runs briefly left
+~1.2 GB free, which is the territory that hung the machine on 2026-07-31. `proc-ceiling` is
+never retried, so this does not recur.
+
+The guards are `-MinFreeGB 3`, `-MaxProcGB 10` and `-TimeoutSec 900`, sampled every **500 ms**
+**during** the run — 500 ms rather than 2 s because `ONEBIT` grew 1.4 GB inside a single
+2 s interval. **The last two were calibrated on 2026-07-31 rather than guessed**: the
 original 5 GB / 300 s were set before anything was measured, and both were marginally too
 tight — the worst timeout model needs 529 s and 5,416 MB, missing the old ceiling by 300 MB,
 and passes cleanly with zero violations once given room. **Stop rust-analyzer first**, or 10

@@ -33,7 +33,13 @@ param(
     # memory aborts peaked at 5,241 / 5,434 / 7,728 MB, so 10 GB clears all of
     # them on a machine with ~14 GB free once rust-analyzer is stopped.
     [double]$MaxProcGB   = 10.0,
-    [int]$SampleMs       = 2000,
+    # 500ms, not 2000. Measured 2026-08-01: ONEBIT grew from under the 10 GB
+    # ceiling to 11.4 GB inside a single 2 s interval — roughly 0.7 GB/s — so the
+    # watchdog allowed a 1.4 GB overshoot and the machine was briefly left with
+    # ~1.2 GB free, below the floor that exists to keep the desktop responsive.
+    # At 500 ms the overshoot is ~0.35 GB. The cost is four cheap samples a
+    # second against a process doing seconds of work.
+    [int]$SampleMs       = 500,
     [int]$TimeoutSec     = 900,
     # Once a model passes this, the watchdog starts reporting which phase it is
     # in, every ~30 s. Normal models never reach it.

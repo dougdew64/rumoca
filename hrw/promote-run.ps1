@@ -51,10 +51,36 @@ $byOutcome = $rows | Group-Object outcome | ForEach-Object { '"{0}": {1}' -f $_.
 
 $profileNote = "null"
 $verdicts = "{}"
+$boundNote = ""
 if ($Profile -and (Test-Path $Profile)) {
     Copy-Item $Profile (Join-Path $docs "msl-fidelity-profile.csv") -Force
     $pv = @(Import-Csv $Profile) | Group-Object verdict | ForEach-Object { '"{0}": {1}' -f $_.Name, $_.Count }
     $verdicts = "{" + ($pv -join ", ") + "}"
+
+    # **State the bound WITH the data, not beside it.**
+    #
+    # A table handed to a maintainer travels without its context, so anything it
+    # does not cover has to be readable from the artifact itself. Measured
+    # 2026-08-01: the Spice3 family wants more than 11.4 GB and was still
+    # climbing when stopped, against a machine that can safely offer ~9.9 GB
+    # (12.9 free, less a 3 GB floor). That is a limit of the HARDWARE, not of
+    # HRW or of Rumoca, and saying so is the honest form.
+    $prof = @(Import-Csv $Profile)
+    $ceil = @($prof | Where-Object verdict -eq 'aborted:proc-ceiling')
+    $tmo  = @($prof | Where-Object verdict -eq 'aborted:timeout')
+    $parts = @()
+    if ($ceil.Count -gt 0) {
+        $worst = ($ceil | ForEach-Object { [int]$_.peak_ws_mb } | Measure-Object -Maximum).Maximum
+        $parts += ("$($ceil.Count) model(s) exceeded the memory this machine can safely provide " +
+                   "(observed above $([math]::Round($worst/1024,1)) GB and still growing when stopped) " +
+                   "and were NOT checked")
+    }
+    if ($tmo.Count -gt 0) {
+        $parts += "$($tmo.Count) model(s) exceeded the time limit and were NOT checked"
+    }
+    if ($parts.Count -gt 0) {
+        $boundNote = ($parts -join "; ") + ". These are limits of the machine and the run configuration, not findings about HRW or Rumoca."
+    }
     $profileNote = '"msl-fidelity-profile.csv"'
 }
 
@@ -68,6 +94,7 @@ $meta = @"
   "profile": $profileNote,
   "run_verdicts": $verdicts,
   "source_report": "$($Report -replace '\\','/')",
+  "not_checked": "$boundNote",
   "note": "F1-F9 over the MSL corpus. Establishes that HRW agrees with Rumoca, NOT that Rumoca is correct, and does not test the rendered UI."
 }
 "@
