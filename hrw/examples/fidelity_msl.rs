@@ -198,8 +198,38 @@ fn main() {
         }
 
         let t = Instant::now();
+        // **Capture the per-stage timings the worker already emits.**
+        //
+        // `worker.rs` logs `Parse (12.3ms)`, `Resolve (…)`, `Flatten (…)` and so
+        // on for every model — and this callback used to ignore its argument, so
+        // all of it went into a void. Which phase of HRW's compile path dominates
+        // on a large model was recorded in `docs/architecture.md` as an
+        // *Inference* because of that, when the measurement was already being
+        // produced and thrown away.
+        //
+        // Each stage marker is also written to stderr AS IT HAPPENS and flushed,
+        // so the watchdog can read the last line and say which phase a hung model
+        // is sitting in — the thing that could not be seen while a model burned
+        // 900 s.
+        let stage_ms: std::sync::Mutex<Vec<(String, f64)>> = std::sync::Mutex::new(Vec::new());
+        let on_event = |ev: FromWorker| {
+            if let FromWorker::Log(entry) = ev
+                && entry.level == hrw::worker::LogLevel::StageEnd
+            {
+                // Messages look like `Parse (12.3ms)`; keep the name and the number.
+                if let Some((name, rest)) = entry.message.split_once(" (") {
+                    let ms = rest.trim_end_matches("ms)").parse::<f64>().unwrap_or(0.0);
+                    eprintln!("    ..{name} {ms:.0}ms");
+                    let _ = std::io::Write::flush(&mut std::io::stderr());
+                    if let Ok(mut v) = stage_ms.lock() {
+                        v.push((name.to_owned(), ms));
+                    }
+                }
+            }
+        };
+
         let FromWorker::Compiled { stages, dae, equation_sheet, identifier_index, .. } =
-            w.compile_model_by_name(&row.name, &|_: FromWorker| {})
+            w.compile_model_by_name(&row.name, &on_event)
         else {
             continue;
         };
@@ -245,6 +275,23 @@ fn main() {
             no_dae += 1;
         }
         violations.extend(check_failures(&stages));
+
+        // One compact line per model: the phases that actually cost something.
+        // Sorted by cost and truncated, because a full ten-phase dump per model
+        // across 2,626 models is noise rather than data.
+        if let Ok(v) = stage_ms.lock() {
+            let mut top: Vec<&(String, f64)> = v.iter().filter(|(_, ms)| *ms >= 1.0).collect();
+            top.sort_by(|a, b| b.1.total_cmp(&a.1));
+            if !top.is_empty() {
+                let total: f64 = v.iter().map(|(_, ms)| ms).sum();
+                let parts: Vec<String> = top
+                    .iter()
+                    .take(4)
+                    .map(|(n, ms)| format!("{n} {:.1}s", ms / 1000.0))
+                    .collect();
+                eprintln!("  [phases] {:.1}s total: {}", total / 1000.0, parts.join(", "));
+            }
+        }
 
         let secs = t.elapsed().as_secs_f64();
         if secs >= 10.0 {

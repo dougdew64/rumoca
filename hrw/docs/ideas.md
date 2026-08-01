@@ -3234,3 +3234,68 @@ cadence 45 minutes compounds into real time.
 **Relates to:** `docs/long-runs.md` (the runbook), `docs/architecture.md` §11 (why the run is
 bounded by process lifetime at all), and the standing boundary in `docs/fidelity-plan.md` —
 note this is a **scheduling** change, not an optimisation of HRW, so it does not cross it.
+
+---
+
+## 56. A dedicated diagnostic run over the "hard models" stress corpus
+
+Doug, 2026-08-01, while the fidelity retry was pending:
+
+> Perhaps retry runs are opportunities to learn more about how various models stress HRW and
+> how we might improve HRW. Should we consider retry runs to be useful stress tests of HRW?
+
+**Yes to the framing, but not by loading the retry itself.** Deferred until after fidelity
+testing, the oracle test and Test mode are done — Doug's explicit sequencing.
+
+### The asymmetry that makes it worth doing
+
+A retry operates on a **small set of pre-selected, known-difficult models** — 16, not 2,626.
+That inverts the economics of instrumentation: something costing 10x per model is
+unaffordable across the corpus and free across sixteen. And they are not arbitrary; they are
+precisely the models that already broke something.
+
+### Why it must NOT be the retry run
+
+**A retry's job is to complete the corpus.** Its success criterion is "all 2,626 rows
+present". Instrumentation that slows a model enough to push it past 900 s trades a data point
+for a measurement — a bad trade, since the corpus result is the artifact and the measurement
+is not.
+
+| Run | Purpose | Instrumentation |
+|---|---|---|
+| Retry | complete the corpus | **only what is free** |
+| **Diagnostic** | study the hard models | as heavy as useful |
+
+The free part was done on 2026-08-01: the runner now captures the per-stage timings
+`worker.rs` was already emitting into a discarded callback, and the watchdog narrates which
+phase a slow model is sitting in. That cost nothing and is in the retry.
+
+### The stress corpus
+
+**Keep the hard models as a named, checked-in list.** They are deliberately extreme, already
+identified, and reusable. Current members are the 16 that aborted in the full sweep — the
+Spice3 family (up to 10,175 equations, 7.7 GB), the induction machines, and
+`LightningSegmentedTransmissionLine`.
+
+### What the diagnostic would measure
+
+- **Where the memory goes.** 7.7 GB on a Spice3 model, and *which structure* is unknown. The
+  ten stage `serde_json::Value` trees are the obvious suspect but that is inference. Peak RSS
+  correlated against phase markers would localise it without a new dependency, since the
+  watchdog already samples every 2 s and the phases are now timestamped.
+- **Where the time goes, per phase**, on models where it matters — the free capture gives
+  totals; a diagnostic could break down within a phase.
+- **Whether cost is size-driven at all.** It is not, and that is unexplained:
+  `FourInverters` is 282 equations and took 161 s; `TransformerTestbench` is 4,193 equations
+  and took 31 s. Fifteen times the size, a fifth of the time.
+
+### What it must not become
+
+**Not a reason to optimise HRW.** `docs/fidelity-plan.md` carries Doug's standing boundary:
+HRW is an education project, and the stage trees, equation sheet, identifier index and
+animation frames *are the product*. The diagnostic is for **understanding** — Doug's
+education, and the maintainer-facing performance profile in **#54** — not for making HRW
+faster at extreme models.
+
+**Relates to:** #54 (the performance profile — this is its measurement arm), `long-runs.md`,
+`docs/architecture.md` §11.

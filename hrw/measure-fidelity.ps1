@@ -35,6 +35,9 @@ param(
     [double]$MaxProcGB   = 10.0,
     [int]$SampleMs       = 2000,
     [int]$TimeoutSec     = 900,
+    # Once a model passes this, the watchdog starts reporting which phase it is
+    # in, every ~30 s. Normal models never reach it.
+    [int]$SlowNarrateSec = 60,
     # Which verdicts to re-attempt on a resume. `aborted:free-ram` is always
     # worth retrying; `aborted:timeout` is worth it on a QUIETER machine, but
     # is not retried by default or a genuinely unfinishable model would burn
@@ -176,6 +179,7 @@ foreach ($m in $list) {
 
     $peakMB = 0
     $verdict = "ok"
+    $lastNarrate = 0
     while (-not $proc.HasExited) {
         Start-Sleep -Milliseconds $SampleMs
         try { $proc.Refresh() } catch { break }
@@ -188,6 +192,24 @@ foreach ($m in $list) {
         if ($free -lt $MinFreeGB) { $verdict = "aborted:free-ram"; }
         elseif ($ws / 1024 -gt $MaxProcGB) { $verdict = "aborted:proc-ceiling" }
         elseif ($elapsed -gt $TimeoutSec) { $verdict = "aborted:timeout" }
+
+        # **Say which phase a slow model is sitting in, while it is happening.**
+        #
+        # The Rust runner writes each stage marker to stderr as it completes and
+        # flushes, so the tail of its error file is the phase currently running.
+        # Reported once a model passes the slow threshold, then every ~30 s, so
+        # normal models stay quiet and a hung one narrates itself. Previously a
+        # model could burn 900 s showing nothing at all.
+        $elapsedNow = ((Get-Date) - $t0).TotalSeconds
+        if ($elapsedNow -ge $SlowNarrateSec -and ($elapsedNow - $lastNarrate) -ge 30) {
+            $lastNarrate = $elapsedNow
+            $phase = (Get-Content "$env:TEMPid-one.err" -Tail 1 -ErrorAction SilentlyContinue)
+            if ($phase) {
+                Write-Host ""
+                Write-Host ("       {0,5:N0}s  in: {1}" -f $elapsedNow, $phase.Trim()) -ForegroundColor DarkGray
+                Write-Host -NoNewline ("{0,5}/{1}  {2,-72} " -f $i, $list.Count, $m)
+            }
+        }
 
         if ($verdict -ne "ok") {
             # Close the -NoNewline line before writing a full line of our own.
