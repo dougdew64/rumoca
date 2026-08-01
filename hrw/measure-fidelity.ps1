@@ -153,6 +153,26 @@ if ($retryable.Count -gt 0) {
     $kept | Out-File $Profile -Encoding utf8
 }
 
+# **Announce what is actually left to do.**
+#
+# The "retrying N model(s)" line above only fires when rows carrying a retryable
+# VERDICT are found. After a previous retry pass those rows have already been
+# REMOVED from the profile, so the models are pending by ABSENCE rather than by
+# verdict — nothing matches, nothing is announced, and a correct run looks
+# exactly like a run with nothing to do. Doug killed one on 2026-08-01 for
+# precisely that reason, and was right to: silence is not an acceptable way to
+# say "16 models to process".
+#
+# This reports the real number either way, and says so up front.
+$todo = @($list | Where-Object { -not $alreadyProfiled.ContainsKey($_) })
+if ($todo.Count -eq 0) {
+    Write-Host "nothing to do: all $($list.Count) model(s) already have a settled verdict" -ForegroundColor Green
+} else {
+    Write-Host ("{0} model(s) to process, {1} already done:" -f $todo.Count, $alreadyProfiled.Count) -ForegroundColor Cyan
+    foreach ($t in ($todo | Select-Object -First 20)) { Write-Host "    $t" -ForegroundColor Cyan }
+    if ($todo.Count -gt 20) { Write-Host "    ... and $($todo.Count - 20) more" -ForegroundColor Cyan }
+}
+
 $i = 0
 foreach ($m in $list) {
     $i++
