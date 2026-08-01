@@ -3137,6 +3137,53 @@ Three findings worth a maintainer's afternoon, per `docs/upstream-strategy.md`'s
 their IR, not their cost. Including it would be measuring ourselves and billing them — the
 same attribution discipline the capability map needs.
 
+### HRW's costs are paid INSIDE the phase windows — so the phase log cannot attribute them
+
+Established 2026-08-01, from Doug's question *"are the HRW costs paid at phase boundaries and
+not during execution of phases?"*
+
+**Inside.** Every stage's timing window encloses HRW's own work, not just Rumoca's:
+
+```rust
+log(LogLevel::StageStart, "Index reduction");
+let t = Instant::now();
+let (stage, frames) = index_reduction_stage(result, &source);   // <-- all of it
+log(LogLevel::StageEnd, format!("Index reduction ({:.1}ms)", t.elapsed()...));
+```
+
+`index_reduction_stage` clones the DAE, runs Rumoca's
+`index_reduce_for_structural_analysis`, builds the structural report, **serialises the whole
+thing to JSON**, and records the animation frames — all before the clock stops. `Resolve` is
+the same shape, enclosing `extract_class`, `build_def_index`, `instantiate_and_typecheck` and
+`record_connection_frames`.
+
+**Consequence, and it corrects a claim made an hour earlier:** `Index reduction: 500 s` means
+*Pantelides plus HRW's serialisation of its result*, and nothing in the log tells them apart.
+The per-phase log gives **phase attribution**, never **HRW-versus-Rumoca attribution**.
+
+### The control group already exists: `survey_msl --only-skipped`
+
+Built on 2026-07-31 to close the 2.7% coverage gap left by the reduction cap. It turns out to
+be the missing experiment as well, because it runs **exactly the capped models, uncapped,
+through `Session` directly with no HRW extraction**:
+
+| Run | Measures |
+|---|---|
+| `survey_msl --only-skipped` | Rumoca's cost **including** index reduction |
+| HRW's compile path on the same models | the same, **plus** HRW's extraction |
+| **difference** | **HRW's overhead, cleanly attributed** |
+
+**This is the number to have before publishing any ratio.** The retracted "50-170x" figure
+compared a capped survey against an uncapped HRW path and called the difference overhead.
+
+**Cost:** those 71 models uncapped include the Spice3 family, so it is the multi-hour run
+already logged as optional part 2 of the survey. Its value has changed: it is no longer only a
+coverage exercise, it is the control group for the whole performance question — which makes it
+considerably more worth doing than when it was filed.
+
+**Sequencing:** behind the fidelity retry. Completing the corpus matters more, and the two
+compete for the same machine.
+
 ### Part B — the student's version: measured cost against theoretical complexity
 
 The half Doug asked for, and the more interesting one. **HRW already logs per-stage

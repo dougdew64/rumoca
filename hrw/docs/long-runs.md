@@ -76,6 +76,12 @@ models that once consumed 97 minutes between them):
 Part 1 stands alone as a complete report if part 2 never runs; the bound is stated in the
 data.
 
+**Part 2 is also the control group for the performance question** (`docs/ideas.md` #54). It
+runs exactly the capped models **uncapped, through `Session` directly with no HRW extraction**,
+so the difference against HRW's time on the same models is HRW's overhead, cleanly attributed.
+Without it, comparing a capped survey against an uncapped HRW path attributes a Rumoca phase
+to HRW — which is the error that produced, and required retracting, a "50-170x" figure.
+
 ### Watching it
 
 ```powershell
