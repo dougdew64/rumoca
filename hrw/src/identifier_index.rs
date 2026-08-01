@@ -230,7 +230,7 @@ pub fn is_prose_field(key: &str) -> bool {
 /// **Exact comparison, modulo one `der(…)` wrapper on either side.**
 ///
 /// This replaced a whole-word substring search (`matches_tracked`), which
-/// `docs/source-tooling-plan.md` rules out as a standing principle: *"No
+/// `docs/identity-and-provenance.md` rules out as a standing principle: *"No
 /// heuristic name-matching."* The substring version was buying exactly one
 /// thing — letting a tracked `h` match an unknown named `der(h)` — and paying
 /// for it with false positives wherever a name appeared inside other text.
@@ -389,7 +389,7 @@ mod tests {
     /// Replaced a whole-word substring search. The substring version bought
     /// exactly one thing -- letting tracked `h` match an unknown `der(h)` --
     /// and paid for it with false positives wherever a name sat inside other
-    /// text. `docs/source-tooling-plan.md` rules that out as a standing principle.
+    /// text. `docs/identity-and-provenance.md` rules that out as a standing principle.
     #[test]
     fn same_variable_is_exact_modulo_der() {
         assert!(same_variable("h", "h"));

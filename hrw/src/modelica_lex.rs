@@ -4,7 +4,7 @@
 //! Four features need that answer and none of them can get it today: syntax
 //! highlighting (`docs/ideas.md` #36), clickable identifiers, reverse identifier
 //! tracking (#37), and forward identifier debugging. See
-//! `docs/source-tooling-plan.md`.
+//! `docs/identity-and-provenance.md`.
 //!
 //! ## Scope: lexical only
 //!

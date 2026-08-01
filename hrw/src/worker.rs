@@ -1186,7 +1186,7 @@ impl WorkerState {
     /// basename — verified against `Session::get_document` for models in three
     /// different MSL packages, including one nested 1,498 lines into a
     /// multi-class file. So no path guessing, no scan of 2,553 documents, and no
-    /// heuristic name matching (which `docs/source-tooling-plan.md` rules out
+    /// heuristic name matching (which `docs/identity-and-provenance.md` rules out
     /// anyway).
     fn locate_library_model(&mut self, qualified: &str) -> Result<Located, String> {
         let tree = self
