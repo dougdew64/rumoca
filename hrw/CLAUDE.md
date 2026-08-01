@@ -36,6 +36,11 @@ a standalone tool.
 practical scenario demonstrates a need. Multiple `follow` items and a third "compare" primitive were
 considered and deliberately not built — **do not re-propose them from first principles.**
 
+**[`docs/current-work.md`](docs/current-work.md) — the LIVE plan while the fidelity sweep
+runs** (started 2026-07-31, spans a couple of days). It carries the step-by-step state, the
+three triage categories, and what can and cannot be built while a sweep holds the binary.
+**Delete it when the sweep is done** and its findings have landed in `fidelity-plan.md`.
+
 **Current sequence (Doug, 2026-07-31) — each step's output is the next step's input:**
 
 1. **The MSL survey** — `examples/survey_msl.rs`, first full run 2026-07-31. Rumoca's reach
