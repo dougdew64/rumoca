@@ -13,6 +13,24 @@ consult it for any design question; **do not re-litigate settled decisions in-se
 Append any nontrivial implementation choice to [`DECISIONS.md`](DECISIONS.md) with a one-line
 rationale.
 
+**[`docs/working-with-doug.md`](docs/working-with-doug.md) — read it too.** Who Doug is and
+how he learns, which nothing else in this repository carries. The short form:
+
+- **Decades of C/C++/Java, new to Rust and egui.** The gap is *idiom*, not concepts —
+  translate (`trait` ≈ interface, ownership ≈ RAII + move), and frame Modelica-compiler
+  concepts as **introductions, not reminders**.
+- **Top-down, and problem before solution.** State the problem a step solves before the
+  mechanism; he learns by understanding *why*.
+- **The conversation is the instrument.** Sessions are teaching dialogues; **code changes are
+  a byproduct of understanding, not the deliverable.** Explain the math alongside the code and
+  name the textbook algorithm.
+- **Propose features unprompted** that would deepen understanding — he asked for this, and the
+  success metric is his understanding, not feature count.
+- **Every change ships with tests, comments and doc updates**, unasked. **The source is itself
+  a learning artifact**, so clean commented code ranks with the explanations, not below them.
+- **Learning over polish**; **prefer Rust/egui over VS Code work**; **token cost is not a
+  constraint** — never trade richness for economy.
+
 ---
 
 ## The rules
@@ -29,6 +47,19 @@ real Rumoca and rebases stay clean.
 - **Commit Rumoca crate changes separately from HRW code**, so an upstream PR is a clean
   cherry-pick.
 - **Ask before adding a dependency.** Record accepted ones in `DECISIONS.md`.
+- **After changing traced algorithm code, update the guided tours.**
+  `docs/compiler-phases/*/guided-tour.md` quote **line numbers, code excerpts, locals and enum
+  variants** from `crates/rumoca-phase-structural/` (`matching.rs`, `tarjan.rs`,
+  `live_trace.rs`). **Nothing compiles them, so they go stale silently** and a learner
+  following one with wrong line numbers is simply confused. Grep the tours for any name that
+  moved. This applies to *any* such change, not only a rebase — `docs/updating-rumoca.md`
+  step 6 is the rebase instance of the same rule.
+
+**When you write a memory, name where it belongs in the repo** (`DECISIONS.md`, "the
+repository is the system of record"). **The memory store does not survive a clone** — it lives
+outside the repo, keyed to the project's filesystem *path*, so a different machine *or a
+different clone path* loses all of it. If a fact has no home in the repository, that is the
+finding.
 
 **THE MUST-FIRE RULE.** Any code whose job is to *report* something gets a test proving it
 reports; **silence must be a failure, never a pass.** Its absence makes a change incomplete.

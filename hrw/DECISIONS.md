@@ -1593,3 +1593,89 @@ should lead, since HRW is the deliverable asking for the most maintenance burden
 capture plan in `hrw/README.md` currently records that argument. **It is recorded there as an
 argument, not adopted as a decision.** The two audiences want different first images, and that
 choice belongs to the joint rewrite.
+
+## The repository is the system of record; memory is a cache (2026-08-01)
+
+Doug, describing what he lost migrating this project from Linux to Windows:
+
+> I learned during that migration that much of what you understood about the project would be
+> lost. In other words, your understanding was apparently captured in files that are not part
+> of the project. In the near future, I'm going to attempt to clone this project on a
+> different windows machine and hope that when I do, you'll immediately understand my top
+> priority and other such stuff without me having to re-explain everything.
+
+**Measured the same day: 39 memory files, 1,600 lines, none of them in the repository.** They
+live at `~/.claude/projects/<key>/memory`, and **the key is derived from the project's
+filesystem path** — so this is not only a machine boundary. **Clone to a different path on the
+same machine and the memory is equally gone.**
+
+### The rule
+
+> **The repository is the system of record. Memory is an accelerator, never the sole carrier.
+> Memory may duplicate the repo freely; where a memory holds something the repo does not,
+> that is a portability bug rather than good hygiene.**
+
+**This deliberately overrides the default memory discipline**, which says *don't save what the
+repo already records* — a rule optimising for non-duplication. Followed literally it
+**guarantees** the migration failure, because every memory is then by construction something
+the repo does not say.
+
+### What the reconciliation found
+
+Of 38 memories, **9 carried claims the repository did not**, and they were the ones a fresh
+session most needs and least infers: who Doug is, how he learns, what Claude is expected to do
+unprompted, and the standing quality bar. Ported 2026-08-01 into
+[`docs/working-with-doug.md`](docs/working-with-doug.md) (new),
+[`docs/context-assembly.md`](docs/context-assembly.md), [`docs/vision.md`](docs/vision.md) and
+this file.
+
+**A keyword sweep is not sufficient to find them.** Two of the nine passed a naive grep and
+were false negatives: "the cost of being wrong" matched a *memory-safety* warning in the
+fidelity runner, and "Claude is the consumer" matched a comment about *crash files*. Same
+words, unrelated claims. **The check has to be "is this claim carried", not "does this phrase
+appear."**
+
+### The standing check
+
+**When writing a memory, name where it belongs in the repo** — the same way a bug now arrives
+with a test. If the answer is "nowhere", that is the finding.
+
+## The cost of being wrong collapses — but only where it is detected (2026-07-29)
+
+Recorded here 2026-08-01; it had lived only in memory, and it is the insight several other
+decisions rest on. Claude's formulation, which Doug answered with "EXACTLY":
+
+> Not that the reasoner is smart, but that **the cost of being wrong collapses**, so you can
+> afford to think out loud and reverse yourself the same afternoon.
+
+It explains why speculative **features** are permitted, why the tech-debt trigger could move
+from calendar to phase boundary, and why this project reversed its own philosophy twice in one
+day at no cost.
+
+**But the collapse is maintained, not free.** What kept the cost low on 2026-07-29 was
+concrete: a test suite that caught four mistakes; **probing instead of reasoning** (the
+contamination bug hid behind a fix placed in the wrong function and was found only by printing
+guard state); the System Modeler oracle; verify-before-asserting; and Doug correcting Claude
+directly. **Those are the mechanism, not fastidiousness.**
+
+**Doug's sharpening, without which this inverts into permission to be casual:**
+
+> The most effective way for us to continue moving fast in this project is to slow down and
+> take the time necessary to detect bugs so that the costs of those bugs can be limited to
+> reverts and not investigations.
+
+**Wrong-and-caught-now is cheap; wrong-and-caught-later is expensive; the two are
+indistinguishable at the moment of being wrong.** So detection is not a tax on speed, it *is*
+the speed. And the curve is not linear — a revert is minutes and loses one change, while an
+investigation is hours and **may not converge**.
+
+**The one place wrong stays expensive: stored claims.** A mistake in conversation costs one
+exchange. A mistake written into the repo as fact costs months and is indistinguishable from
+knowledge later — the `rank_deficiency: 7` bug, the stale handoff, the tour's 7×7 matrix.
+**Speed on actions, care on records.**
+
+**Operationally:** the full suite before every commit, not a filtered subset; stash-check to
+decide pre-existing versus introduced *before* diagnosing; track the clippy count across a
+change. And **Claude cannot run the GUI** — for UI work it must say which parts are
+test-verified and which are only reasoned, rather than letting a report imply more than
+happened.

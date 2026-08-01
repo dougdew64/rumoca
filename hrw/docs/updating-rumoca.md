@@ -82,11 +82,17 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
   - `emit_matching_frame` / `TracedTarjanState::record` call sites
 - Update the affected tours to match the new code — line numbers, code excerpts, and locals tables.
 
-## 7. Refresh `docs/compiler-phases/` — only if phases changed, and only by Doug
-- These are Doug's authored explanations, matching a specific Rumoca commit. Claude does **not**
-  rewrite them automatically. If a phase's behavior changed materially, Doug updates the chapter
-  (or asks Claude to draft a diff for ratification). Their being pinned-behind is acceptable;
-  silently overwriting them is not.
+## 7. Refresh `docs/compiler-phases/` — if phases changed
+- **Claude maintains these and commits them.** *(Corrected 2026-08-01. This step said they were
+  "Doug's authored explanations" that "Claude does not rewrite automatically" — a framing
+  corrected on 2026-07-29, when it was established that **Claude wrote 100% of them**, on
+  Doug's request. `CLAUDE.md` was updated then and this step was not, so the two documents
+  contradicted each other and this one told Claude to refuse work that is its job.)*
+- The audience is **Claude, not Doug** — he reads them only indirectly, through answers. Their
+  job is to make Claude a better teacher over months.
+- If a phase's behaviour changed materially, update the affected pages. **Re-tag provenance
+  rather than leaving stale `verified` claims**: a tag is a claim about trustworthiness, and
+  one naming a file that moved is worse than no tag. See [`provenance.md`](provenance.md).
 
 ## 8. Smoke-test the app
 - `cargo run`; load a specimen; confirm each stage renders, and the bridge capture / field-help

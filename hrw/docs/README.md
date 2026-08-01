@@ -59,6 +59,7 @@ on a tab showing 48 equations.
 | [`fidelity-plan.md`](fidelity-plan.md) | What F1-F9 check, when they run, and the standing boundary against optimising HRW for test scope. |
 | 👤 [`reports.md`](reports.md) | How the survey, fidelity and oracle reports compose. **Design authority for Test mode (#52) and the oracle test (#43).** |
 | [`upstream-strategy.md`](upstream-strategy.md) | How engaging Rumoca's maintainers serves Doug's education, and the planning rules that follow. |
+| [`working-with-doug.md`](working-with-doug.md) | Who Doug is, how he learns, and the standing working agreements. **All of it lived only in Claude's memory until 2026-08-01**, and memory does not survive a clone. |
 | [`identity-and-provenance.md`](identity-and-provenance.md) | No heuristic name-matching; identity vs membership; what provenance Rumoca preserves. **Cited by six source files.** |
 | [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the tour-holes table, and the outstanding debt. |
 | [`provenance.md`](provenance.md) | How Claude marks what it verified from what it inferred. |

@@ -75,6 +75,39 @@ This combination — textbook theory grounded in a real compiler, visualized in 
 interactive observatory, with an AI teacher bridging all three — is an opportunity for
 learning that has not existed before.
 
+## HRW is never finished, and that is the design
+
+**HRW is not a product with a completion date.** It is an instrument that evolves alongside
+Doug's reading. The loop, established 2026-07-24:
+
+1. Doug reads a textbook — Cellier, Hairer & Wanner, Petzold, Strang.
+2. He hits **friction** — a passage that does not land.
+3. Q&A identifies the specific educational problem.
+4. Claude answers it with some mix of explanation, specimen, document and HRW feature.
+
+**Build a feature when it makes that loop more effective** — not when a curriculum is
+"complete", because it never will be. Doug, 2026-07-28: *"HRW is like fashion: it will never
+be done."*
+
+**Two consequences that govern how work is judged:**
+
+- **"Correct" means trustworthy, not complete.** The bar for foundational work is that its
+  invariants hold, so later changes never re-litigate them.
+- **Change cost dominates build cost.** On a multi-year artifact under permanent revision,
+  that is the practical reason clean commented code and a maintained `DECISIONS.md` are
+  load-bearing rather than polish — and why **any process proposed around HRW must be
+  near-zero-friction, or it will not survive contact with the timescale.**
+
+**The tension this resolves.** The curriculum cannot be designed top-down before the reading,
+because the whole point is to address *specific* friction. But features should not be built
+speculatively either. The rule that separates them: **build what has obvious benefit to the
+reading-and-Q&A workflow.** Feature ideas come from three places — friction points (primary),
+existing entries in [`ideas.md`](ideas.md) with clear Q&A benefit, and what HRW can already
+do.
+
+*(Written here 2026-08-01; it had lived only in Claude's memory. See
+[`working-with-doug.md`](working-with-doug.md) on why that matters.)*
+
 ## The curriculum
 
 The curriculum is **top-down**, matching Doug's learning style. Its structure:

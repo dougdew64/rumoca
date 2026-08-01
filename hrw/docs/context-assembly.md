@@ -19,6 +19,38 @@ whole. Proposed by Doug.
 implemented. A design note that outlives its implementation has to say so, or a later session
 plans to build what already exists.)*
 
+## Who each artifact is for — the split that decides every design question
+
+Doug, 2026-07-28, and he called this as important as it is unconventional:
+
+> Design the context captures in a way which will best enable you to answer my "Explain"
+> questions. **You are the consumer of context, not me. I am the consumer of your answers** to
+> my questions which are based upon the captured context.
+
+**This splits one artifact into two with different customers**, and judging either by the
+other's criteria produces the wrong shape:
+
+| Artifact | Customer | Criterion |
+|---|---|---|
+| the **Context Bar** | Doug | glanceable, and honest about what has been assembled |
+| **`.hrw-bridge/focus.json`** | **Claude** | *does this let Claude answer well?* — not readability, not tidiness, not file size |
+
+**Consequences that are easy to get backwards:**
+
+- **Emit things no human would want**, if they help: phase source locations, `generated`
+  flags, raw IR excerpts at each mention, which view and frame was on screen.
+- **Every cap needs re-justifying on "what does Claude need?"** — `MAX_NODE_BYTES`,
+  `MAX_MENTION_PATHS`, `MAX_CHANGES` were sized by file-size instincts, which is the wrong
+  reason. Token consumption is **not** a constraint here.
+- **Claude is expected to state its requirements.** As the consumer, it is the one who knows
+  what the last answer lacked. The honest test is *what did I have to find by hand, and what
+  did I fail to notice?*
+- **This does not soften the exactness rule.** Still exact, still no pre-explanation — richer
+  **facts** for Claude, never interpretation.
+
+*(Written into this document 2026-08-01. It had lived only in Claude's memory, which does not
+survive a clone — see [`working-with-doug.md`](working-with-doug.md).)*
+
 ## The thing this is really about
 
 **HRW is not a standalone tool. It is an instrument for use with Claude.**
