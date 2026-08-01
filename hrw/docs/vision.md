@@ -12,6 +12,42 @@ Doug's top priority is **learning** — specifically, mastering the math and alg
 of continuous-system modeling and simulation. HRW is the teaching instrument, not the
 deliverable. Doug's understanding is the deliverable.
 
+### The widening: the target is the mathematics of *robotics*
+
+**Continuous-system modeling and simulation is an *example* of the target, not the whole of
+it.** Doug, 2026-07-29:
+
+> what I'm trying to learn most right now is the mathematics of robotics. For example, the
+> mathematics of continuous system modeling and simulation.
+
+**The bridge is specific and mathematical, not a slogan.** A **closed kinematic chain produces
+exactly the high-index DAE that Pantelides exists to fix** — constrained mechanisms *are*
+index-3 DAEs. Index reduction is not an abstract compiler topic; it is what makes a robot with
+a loop simulable at all. Rumoca's upstream is **CogniPilot**, a robotics/autopilot
+organisation, so the fork's purpose and the learning goal already coincide.
+
+**Concrete consequence, and it is a scheduling one:** [`ideas.md`](ideas.md) **#5** (four-bar
+linkage specimen + un-park the planar mechanics library) is *central*, not parked. And the
+charter's "no MSL MultiBody — build our own planar mechanics" was a **robotics decision made
+before anyone said so.**
+
+**The destination.** This is undertaken *in preparation for and alongside the **Robotics MS at
+Purdue, beginning Fall 2026*** — [`CHARTER.md`](CHARTER.md) §1 and Decision 1 carry the binding
+form. CSM is the **deterministic substrate** the robotics curriculum is built on, which is why
+the charter defers stochastic methods, SO(3)/SE(3) geometry and optimization as
+*prerequisite-building rather than deferral*.
+
+*(Added 2026-08-01, and the gap is the point. Doug stated the widening on 2026-07-29 and it
+was recorded in Claude's memory — which names **this file** as the authority for curriculum
+decisions — but never written here. So the authority lacked what the note about it contained,
+and a session without that memory would read this page, answer "continuous-system simulation",
+and never learn what it is **for**. Found 2026-08-01 by Doug auditing Claude's answer to
+"what is my top priority?")*
+
+**The operational definition of success is the charter's, not a separate one:** complete
+understanding of Rumoca on the specimen set. The bet is a proxy claim — understand the
+pipeline as the specimens exercise it, and you thereby understand the necessary math and CS.
+
 The target understanding is **product-independent**: a mental flowchart of the
 mathematical and algorithmic transformations that any Modelica compiler and simulator
 must perform, and the problems that motivate each transformation. This understanding
@@ -43,16 +79,29 @@ learning that has not existed before.
 
 The curriculum is **top-down**, matching Doug's learning style. Its structure:
 
-- The **end-to-end tour** is the spine
-- The **phase tours** are the chapters
-- The **specimen narratives** are the worked examples
+- The **chain of problems** is the spine
+- The **phase drill-downs** are the chapters
+- The **specimen traces** are the worked examples
 - The **three-tier views** (snapshot / replay / live-stepping) are the labs
 - Everything gets a **learning goal** and a **place in the sequence**
 
+**Two of these were stored documents and are not any more** *(corrected 2026-08-01; this
+section still named both)*:
+
+| Was | Is now | Why it changed |
+|---|---|---|
+| the end-to-end tour document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **ad hoc tour** for the *walk* | The stored tour rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
+| specimen narratives, as worked examples | a generated [`specimen-notebook/<Model>/trace/`](specimen-notebook/) plus a short hand-written `purpose.md` | 1,632 lines of narrative became 638 of purpose on 2026-07-29. **Numbers are read from the trace, which is correct by construction**; Claude regenerates the explanation on demand. |
+
+**The pattern behind both is the project's governing rule:** *store what cannot be
+regenerated.* An explanation is regenerable and rots; a **generated** trace and a *why this
+exists* note are not. The curriculum did not shrink — its vehicle stopped being a file nobody
+checked.
+
 In detail:
 
-1. **End-to-end guided tour** — the full story of a Modelica model becoming a running
-   simulation, framed as a chain of problems and solutions. Each step's output creates
+1. **The chain of problems** — the full story of a Modelica model becoming a running
+   simulation, framed as problems and solutions. Each step's output creates
    the problem the next step solves:
 
    - Modelica's class hierarchy → *problem:* you can't do math on objects
@@ -63,9 +112,11 @@ In detail:
    - Consistent initial conditions → *problem:* how to advance in time reliably
    - Numerical integration → *problem:* discrete events interrupt the continuous flow
 
-2. **Phase-level guided tours** — each linked from the end-to-end tour, going deeper
+2. **Phase-level drill-downs** — each linked from the chain of problems, going deeper
    into one transformation's algorithms. These follow Cellier's chapter structure as
-   inspiration but are grounded in Rumoca specimens and HRW views.
+   inspiration but are grounded in Rumoca specimens and HRW views. They live in
+   [`compiler-phases/`](compiler-phases/), one directory per phase; **Phase 7 has six of
+   them**, which is where the interesting algorithms are.
 
 3. **Three-tier progression** — the delivery mechanism within each tour:
    - **Snapshot** shows the result (static IR view) — establishes what the algorithm produced
@@ -75,9 +126,15 @@ In detail:
 Every guided tour has **explicit learning goals** — what Doug should understand by the
 end. The three tiers are designed to achieve those goals, not as standalone features.
 
-## Learning goals — end-to-end tour
+## Learning goals — the spine
 
-By the end of the end-to-end tour (the spine), Doug should be able to:
+**These are the goals, and they outlived their vehicle** *(re-titled 2026-08-01; they were
+headed "end-to-end tour", a document since deleted)*. Nothing here depended on that file —
+each goal is a statement about **Doug's understanding**, which is the deliverable, so the
+list stands unchanged while the way it is reached has moved to the chain of problems, the
+phase drill-downs and ad hoc tours.
+
+Doug should be able to:
 
 1. **Explain why** a Modelica model cannot be directly simulated — why the
    hierarchical, object-oriented, equation-based description must be transformed
@@ -219,8 +276,8 @@ adding stored *verbs*.
   Features are proposed based on what will deepen Doug's understanding next.
 
 - **Top-down, then drill.** Start with the big picture. Drill into details only after
-  the context is established. The end-to-end tour is the entry point; phase tours are
-  the deep dives.
+  the context is established. [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md)
+  is the entry point; the per-phase drill-downs are the deep dives.
 
 ## Assumptions
 
