@@ -306,6 +306,33 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 - [ ] **`lldb.verboseLogging` is off but retained** in `.vscode/settings.json` with a comment
   explaining when to switch it on. **Keep** — it documents a diagnostic that was hard to find.
 
+## UI defects — found by walking
+
+- [ ] **A selected fixture tour does not always open scrolled to the top.**
+  *(Doug, 2026-08-01, walking the fixture tours as a smoke test.)*
+
+  **Cause identified, not guessed.** The tour pane is
+  `egui::ScrollArea::vertical().id_salt("tour")` (`app.rs`) — **one fixed id for every
+  tour** — and egui persists scroll offset per `ScrollArea` id. Switching tours therefore
+  reuses the previous tour's offset. `select_tour` already resets the right-hand side on a
+  real change (specimen, stage, log, compiling) and deliberately *not* on re-selecting the
+  same tour; **the scroll offset was simply never included in that reset.**
+
+  **Fix:** extend the existing "only on an actual change" branch in `select_tour` to raise a
+  flag, and have the pane apply `.vertical_scroll_offset(0.0)` for one frame. Salting the id
+  per tour is the other option and is worse here — it would make each tour *resume* where it
+  was left, which contradicts the reset that branch exists to perform.
+
+  **Why it matters more than it looks.** Opening mid-document means Stop 1 is off-screen, so
+  a tour whose whole purpose is a sequence starts by hiding its start — the same species as
+  the RHS-not-re-initialising bug, which made Stop 1 look already done.
+
+  **This is the class `egui_kittest` is for** (`verification-plan.md` item 2): its table
+  already lists *"the RHS doesn't re-initialise on a second tour"*, and *"scroll offset is 0
+  after selecting a different tour"* is the same assertion shape. **Caught by Doug, which the
+  backward trigger says is the signal** — nothing checks the rendered surface today.
+  *File:* `app.rs`.
+
 ## Robustness
 
 - [ ] **Test races under parallel execution — two causes, not one.**
