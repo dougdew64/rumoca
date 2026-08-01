@@ -38,6 +38,8 @@ param(
     # Once a model passes this, the watchdog starts reporting which phase it is
     # in, every ~30 s. Normal models never reach it.
     [int]$SlowNarrateSec = 60,
+    # Per-model phase breakdowns accumulate here. Defaults beside the profile.
+    [string]$PhaseLog    = "",
     # Which verdicts to re-attempt on a resume. `aborted:free-ram` is always
     # worth retrying; `aborted:timeout` is worth it on a QUIETER machine, but
     # is not retried by default or a genuinely unfinishable model would burn
@@ -105,6 +107,8 @@ if ($ModelsFile) {
     $Models = ((Get-Content $ModelsFile) -join ',')
 }
 if (-not $Models) { throw "give -Models 'a,b,c' or -ModelsFile <path>" }
+if (-not $PhaseLog) { $PhaseLog = [IO.Path]::ChangeExtension($Profile, ".phases.txt") }
+
 $list = $Models -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 Write-Host "$($list.Count) models, one process each"
 Write-Host "guards: free RAM >= ${MinFreeGB}GB, process <= ${MaxProcGB}GB, sampled every ${SampleMs}ms"
@@ -172,14 +176,19 @@ foreach ($m in $list) {
     # leaves a visibly incomplete line marking exactly where it stopped.
     Write-Host -NoNewline ("{0,5}/{1}  {2,-72} " -f $i, $list.Count, $m)
 
+    $errFile = Join-Path $env:TEMP "fid-one.err"
     $t0 = Get-Date
     $proc = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\fid-one.out" `
-        -RedirectStandardError "$env:TEMP\fid-one.err" `
+        -RedirectStandardError $errFile `
         -ArgumentList @("--models", $m, "--out", $Out, "--resume", "--max-models", "1", "--rebuild-every", "1")
 
     $peakMB = 0
     $verdict = "ok"
-    $lastNarrate = 0
+    # Negative, not zero: the 30 s gap below is a rate limit BETWEEN narrations,
+    # and starting at 0 made it apply to the FIRST one as well — so nothing could
+    # print until 30 s no matter what -SlowNarrateSec said. That was the second
+    # bug in this one feature; the first was a path eaten by an escape.
+    $lastNarrate = -99999
     while (-not $proc.HasExited) {
         Start-Sleep -Milliseconds $SampleMs
         try { $proc.Refresh() } catch { break }
@@ -203,7 +212,12 @@ foreach ($m in $list) {
         $elapsedNow = ((Get-Date) - $t0).TotalSeconds
         if ($elapsedNow -ge $SlowNarrateSec -and ($elapsedNow - $lastNarrate) -ge 30) {
             $lastNarrate = $elapsedNow
-            $phase = (Get-Content "$env:TEMPid-one.err" -Tail 1 -ErrorAction SilentlyContinue)
+            # Join-Path, not string interpolation: an earlier edit turned the "\f"
+            # of "$env:TEMP\fid-one.err" into a literal formfeed byte, so PowerShell
+            # read $env:TEMP followed by junk. -ErrorAction SilentlyContinue then
+            # produced NOTHING instead of an error, and the narration silently
+            # never fired. The silencer hid my own bug.
+            $phase = Get-Content $errFile -Tail 1 -ErrorAction SilentlyContinue
             if ($phase) {
                 Write-Host ""
                 Write-Host ("       {0,5:N0}s  in: {1}" -f $elapsedNow, $phase.Trim()) -ForegroundColor DarkGray
@@ -219,6 +233,17 @@ foreach ($m in $list) {
             break
         }
     }
+    # **Preserve the phase breakdown before it is overwritten.** The child's
+    # stderr file is replaced on every model, so each `[phases]` line survived
+    # only until the next model started — the measurement was being taken and
+    # thrown away, which is the exact defect this instrumentation was added to
+    # fix. Appended to a durable per-run log instead.
+    if (Test-Path $errFile) {
+        $phaseLines = Select-String -Path $errFile -Pattern ([regex]::Escape('[phases]')) |
+            ForEach-Object { $_.Line.Trim() }
+        foreach ($pl in $phaseLines) { "$m  $pl" | Out-File $PhaseLog -Append -Encoding utf8 }
+    }
+
     $secs = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1)
     "$m,$peakMB,$secs,$verdict" | Out-File $Profile -Append -Encoding utf8
 
