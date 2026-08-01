@@ -119,6 +119,27 @@ smaller one, so a mistake here fails loudly rather than quietly.
 
 **Then** triage — step 5 of the plan above, with its three categories.
 
+## Pending — after the retry pass lands
+
+**Log the model at the START of its test, not only on completion** (Doug, 2026-08-01).
+
+Today the result line is written after a model finishes, so a model that hangs for 900 s
+shows **nothing** — the one fact you want during a stall is the one you cannot see. Claude hit
+this directly on 2026-07-31 trying to identify a stuck process, and had to reconstruct it
+afterwards from the CSV.
+
+Keep it to one line per model:
+
+```powershell
+Write-Host -NoNewline ("{0,4}/{1}  {2,-70} " -f $i, $count, $m)   # before starting
+# ... run, watch ...
+Write-Host ("{0,6} MB {1,7}s  {2}" -f $peakMB, $secs, $verdict)   # completes the line
+```
+
+The name appears the instant the model starts, and the result lands on the same line. A killed
+run then leaves a visibly **incomplete** line marking exactly where it stopped — which the
+two-line version would not give.
+
 ## The zero-contention work: the feature backlog
 
 Doug has a long list of feature ideas to discuss and record. **That is the ideal work while a
