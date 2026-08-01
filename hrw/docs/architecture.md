@@ -1640,6 +1640,47 @@ rather than acts**: a pre-flight naming the exact command when headroom is thin,
 closing reminder to restart. Automating the reminder is possible; automating the action is
 not, and attempting it would make things worse.
 
+#### The checks themselves are expensive on large systems — and we do not yet know which
+
+**Measured 2026-07-31** from the stage-C memory profile and `docs/msl-survey.csv`, on
+`Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Transformer`.
+(Bold, not a `*Verified*` provenance tag: that form is reserved for claims checked against
+SOURCE and must name a `.rs` file. This is a runtime measurement, and the lint was right to
+reject the first attempt.)
+
+| | |
+|---|---|
+| equations | 5,061 |
+| **survey** (compile + shape only) | **18.4 s** |
+| **fidelity sweep** (compile + F1-F9) | **301.1 s — hit the 300 s timeout** |
+| peak resident | 3,186 MB |
+
+**Roughly a 16x multiplier, and it is not the compile.** Index reduction is capped above 800
+equations, so it is skipped for this model in both runs — the extra time is spent inside the
+checks.
+
+*Inference — not checked against the source.* The plausible culprits are F2 rebuilding the
+incidence matrix, F7 walking 400 sampled paths across ten stage IRs, and F6 covering the
+equation sheet — all written against specimens two orders of magnitude smaller. **Which of
+them dominates has not been measured**, and the first version of this note asserted the cause
+as though it had been.
+
+That distinction matters here more than usual, because the same guess has already been wrong
+once today: the stuck stage-C process was blamed on a deadlocked `OutputCapture` and on being
+blocked on I/O, and it turned out to be F8 materialising stage IR as a `String`. **A cost
+hypothesis is cheap to state and expensive to trust.**
+
+**Why this is a finding rather than a nuisance.** If a check is superlinear in system size,
+the full 2,626-model run is dominated by its tail — the same shape as the survey's problem,
+one layer up, where four models consumed 97 of 127 minutes. Capping or excluding the large
+models would hide it; the models that stress the representation hardest are exactly the ones a
+stratified corpus exists to include.
+
+**The next step is measurement, not a fix:** per-check timing inside the harness, which is
+`docs/ideas.md` #54 Part B turned on our own instrument rather than on Rumoca. Until that
+exists, treat `aborted:timeout` on a large model as *"the checks are slow here, cause
+unknown"* — not as a defect in any particular check, and not as a property of the model.
+
 #### Whether to buy more RAM
 
 Checked rather than assumed, because it looked like an obvious yes. **It is not.** DDR5 64 GB
