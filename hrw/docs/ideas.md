@@ -3147,3 +3147,70 @@ not front-run.
 **Relates to:** #51 (the corpus), #53 (lookup and the ladder — the same data, ordered for
 teaching), `docs/upstream-strategy.md` (deliverable ordering, attribution),
 `docs/upstream-issues.md` #3.
+
+---
+
+## 55. Size-aware batching for the fidelity sweep — measured, and deliberately deferred
+
+Raised and then argued against by Claude on 2026-07-31; Doug agreed to defer. **Recorded with
+the numbers so it can be picked up on evidence rather than re-derived from scratch.**
+
+### The observation
+
+The sweep runs **one model per process**, so it pays the MSL load — measured at **1.3 s** —
+**2,626 times**. That is **57 minutes** of the ~4.3-hour serial run doing identical work.
+
+Batching several *small* models per process recovers most of it. Failures and models under
+200 equations peak around 1 GB, so several fit comfortably; models ≥200 equations stay
+one-per-process.
+
+| Batch size for small models | MSL load total | Saved |
+|---|---|---|
+| 1 (today) | 57 min | — |
+| 5 | 17 min | 40 min |
+| **10** | **12 min** | **45 min** |
+| 20 | 9 min | 48 min |
+
+**The saving is capped at 57 minutes** however large the batch, and flattens hard after 10 —
+by then 90% of the redundant loads are already gone. Net effect at batch 10: **4.3 h → 3.5 h,
+about 18%.**
+
+Corpus split: **2,326 batchable** (failures + <200 equations), **300 must stay
+one-per-process**.
+
+### Why it was deferred
+
+- **The run is overnight.** 3.5 h versus 4.3 h changes nothing about when results are seen.
+  This is the same argument that stopped further survey optimisation (#48 and the survey's
+  own "no further improvements" decision), and it applies more strongly here.
+- **Batching is what broke the machine.** The 2026-07-31 crash was 53 models accumulating in
+  one process. Size-aware batching is genuinely different — small models only, with
+  `--rebuild-every` inside the batch — but it reintroduces the *shape* of that failure for
+  18% on an **unattended** run. The current design's virtue is that its worst case is one
+  model, which is easy to reason about at 3am.
+- **It adds a scheduling layer that must be right**: partition by size, batch one partition
+  and not the other, keep `--resume` working across both. More code to be wrong in than the
+  thing it saves.
+
+### When it becomes worth building
+
+**If the sweep is re-run often.** The trigger policy has it running after a Rumoca rebase,
+before an upstream PR, and whenever HRW changes how it emits or reads stage JSON — and that
+third trigger could fire several times a week during active work on `worker.rs`. At that
+cadence 45 minutes compounds into real time.
+
+**Revisit with usage data**, not speculatively: count actual sweep runs over a month.
+
+### Sketch, if picked up
+
+- `measure-fidelity.ps1` partitions the model list using `docs/msl-survey.csv`'s
+  `n_equations` and `outcome` — data it already has.
+- Small partition runs with `--max-models 10 --rebuild-every 5`; large partition unchanged at
+  `--max-models 1`.
+- `--resume` is unaffected: both write to the same report and skip settled rows.
+- **The watchdog stays per-process and unchanged.** It is the safety property, and batching
+  must not weaken it.
+
+**Relates to:** `docs/long-runs.md` (the runbook), `docs/architecture.md` §11 (why the run is
+bounded by process lifetime at all), and the standing boundary in `docs/fidelity-plan.md` —
+note this is a **scheduling** change, not an optimisation of HRW, so it does not cross it.
