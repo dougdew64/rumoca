@@ -12,9 +12,9 @@ Started 2026-07-31.
 
 | # | Step | State |
 |---|---|---|
-| 1 | **Stage C** — 53 models stratified by IR shape | running |
-| 2 | **Build + measure per-check timing** on a model that times out | code written, `cargo check` clean; **cannot build while stage C holds the exe** |
-| 3 | **Decide**: fix a superlinear check, or accept the timeouts | needs step 2 |
+| 1 | **Stage C** — 53 models stratified by IR shape | ✅ **done** — 43 completed, **0 violations**, 10 aborts now explained |
+| 2 | **Measure where the cost is** | ✅ **done** — it is HRW's compile path, not the checks; `--only-checks` proved it |
+| 3 | **Decide** | ✅ **done** — CALIBRATE, do not optimise. Guards raised to 900 s / 10 GB; the worst model needs 529 s and 5,416 MB and passes cleanly |
 | 4 | **The big run** — full corpus, overnight | needs step 3 |
 | 5 | **Triage** the findings — three categories, see below | needs step 4 |
 | 6 | **Fix**, re-run to green | |

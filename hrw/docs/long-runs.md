@@ -148,7 +148,12 @@ Import-Csv C:\tmp\fid-full-memory.csv | Sort-Object {[int]$_.peak_ws_mb} -Descen
 | `aborted:proc-ceiling` | the **model** exceeded 5 GB | a finding — investigate that model |
 | `aborted:timeout` | **HRW's compile path** is slow on that model — measured, not the checks | expected on very large systems; see `architecture.md` §11 "Where the cost on large systems actually is" |
 
-The guards are `-MinFreeGB 3` and `-MaxProcGB 5`, sampled every 2 s **during** the run.
+The guards are `-MinFreeGB 3`, `-MaxProcGB 10` and `-TimeoutSec 900`, sampled every 2 s
+**during** the run. **The last two were calibrated on 2026-07-31 rather than guessed**: the
+original 5 GB / 300 s were set before anything was measured, and both were marginally too
+tight — the worst timeout model needs 529 s and 5,416 MB, missing the old ceiling by 300 MB,
+and passes cleanly with zero violations once given room. **Stop rust-analyzer first**, or 10
+GB will not be available.
 Guard on **free RAM, not process size**: "the machine stays usable" is a free-RAM property,
 and a ceiling above what the machine has free can never fire.
 

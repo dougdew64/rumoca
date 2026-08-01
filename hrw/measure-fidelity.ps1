@@ -26,9 +26,15 @@ param(
     [string]$Out         = "C:\tmp\fid-c.csv",         # the fidelity report (appended)
     [string]$Profile     = "C:\tmp\fid-memory.csv",    # the memory profile this produces
     [double]$MinFreeGB   = 3.0,
-    [double]$MaxProcGB   = 5.0,
+    # Calibrated 2026-07-31, not guessed. The original 5 GB / 300 s were set
+    # before anything was measured, and both were MARGINALLY too tight:
+    # LightningSegmentedTransmissionLine needs 529 s and 5,416 MB and passes
+    # cleanly given them — it missed the old ceiling by 300 MB. The three
+    # memory aborts peaked at 5,241 / 5,434 / 7,728 MB, so 10 GB clears all of
+    # them on a machine with ~14 GB free once rust-analyzer is stopped.
+    [double]$MaxProcGB   = 10.0,
     [int]$SampleMs       = 2000,
-    [int]$TimeoutSec     = 300
+    [int]$TimeoutSec     = 900
 )
 
 $exe = Join-Path $PSScriptRoot "..\target\release\examples\fidelity_msl.exe"
