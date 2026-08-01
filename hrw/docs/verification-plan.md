@@ -63,7 +63,7 @@ from now on, and its absence makes a change incomplete.
 
 ---
 
-### 0b. Make a claim of *absence* checkable — the stale-negative test
+### 0b. Make a claim of *absence* checkable — the stale-negative test — DONE 2026-08-01
 
 **The mirror of `doc_citations.rs`.** That test asserts every cited path **exists**. This one
 asserts that everything a document claims **does not exist** still does not.
@@ -111,6 +111,27 @@ must-fire rule — which is the same principle, pointed at absence instead of si
 
 **Explicitly out of scope:** understanding free-form prose. This catches what someone chose to
 tag; it does not read English. That limit is why the lint exists.
+
+**Delivered 2026-08-01** in `src/doc_citations.rs`, three tests in the fast loop:
+`claims_of_absence_are_still_true` (fails when a tagged target resolves),
+`the_unbuilt_tag_is_parsed_and_both_verdicts_fire` (proves both verdicts are reachable, so the
+checker cannot pass by matching nothing), and `untagged_claims_of_absence_are_listed` (the
+lint — prints, never fails). The convention is in `CLAUDE.md` beside the must-fire rule.
+
+**Two bugs in the checker, both found by running it rather than reading it:**
+
+1. **`*` matched exactly one segment**, so `hrw://stage/*/frame` failed against the real
+   `hrw://stage/Structural/MatchingAnim/frame/41` — the check reported a *shipped* capability
+   as absent, which is the very error it exists to catch, committed by the catcher. Now a
+   subsequence match: named segments in order, `*` skipping any number.
+2. **Example tags inside code fences were read as live claims.** This document's own worked
+   examples are drawn from real stale claims, so the first run reported *the documentation of
+   the mechanism* as a defect. Fences are skipped now — an example is not an assertion.
+
+**Coverage is 2 tags, deliberately.** Both were verified absent before tagging
+(`survey_filter`, `last_walked`). The resolver errs toward "still absent" on doubt, because
+this test fails the build: a false positive costs a wrong failure, a false negative leaves a
+claim for the lint to surface.
 
 ---
 

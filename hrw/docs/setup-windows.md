@@ -68,10 +68,10 @@ literally** — see the library list in [`../src/app.rs`](../src/app.rs).
 ```powershell
 cargo build -p hrw
 
-# Between edits — 413 tests, about 8 seconds.
+# Between edits — 416 tests, about 8 seconds.
 cargo test -p hrw --lib -- --test-threads=1
 
-# Before committing — all 473, under 2 minutes.
+# Before committing — all 476, under 2 minutes.
 cargo test -p hrw --lib --features slow-tests -- --test-threads=1
 
 # Covers the binary, which `cargo test` does NOT build.

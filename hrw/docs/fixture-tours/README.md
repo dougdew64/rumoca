@@ -75,7 +75,7 @@ shipped here described behaviour Claude had *not* just built.
 **Past ten or so fixtures this needs a selection principle** — walk whatever just changed,
 plus one stale one — and **visible staleness**: nothing currently catches a tour whose
 *expectations* rot, only its links. "Last walked" is derivable from the `tour-link` entries in
-the action trail, and nobody has built it yet.
+the action trail, and nobody has built it yet. <!-- unbuilt: last_walked -->
 
 ## Further reading
 

@@ -2546,6 +2546,7 @@ curriculum arriving *because* a question did.
 ### What this needs that does not exist yet
 
 1. **Query axes over the corpus** — #53's filter/sort, which is the enabler for all of them.
+   <!-- unbuilt: survey_filter -->
 2. **Per-phase timings**, for the performance curriculum specifically — #54 Part B, and the
    worker already logs them, so it is aggregation rather than instrumentation.
 3. **Nothing else.** The curriculum itself is an utterance, and utterances need no schema.

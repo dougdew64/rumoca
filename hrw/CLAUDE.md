@@ -69,6 +69,21 @@ fd-level `OutputCapture`, a rate limiter gating its own first fire, an announcem
 work was pending by absence. `fidelity.rs` had this discipline
 (`each_invariant_catches_its_own_violation`); the tooling around it did not.
 
+**TAG A CLAIM OF ABSENCE, or it rots unnoticed.** The must-fire rule pointed at silence; this
+is the same principle pointed at **absence**. When a document says something is not built,
+tag it so the claim is checkable:
+
+```markdown
+Query axes over the corpus do not exist yet. <!-- unbuilt: survey_filter -->
+```
+
+`doc_citations::claims_of_absence_are_still_true` fails if the target **does** resolve.
+**A wrong negative is the one error nobody catches**: acting on a wrong *positive* means
+going to use the thing and finding it missing, while acting on a wrong *negative* means **not
+looking**. Four stale ones were found on 2026-08-01, and `ideas.md` #42 was two days from
+having its link vocabulary re-implemented on top of itself. Coverage is expected to be low —
+tag when you write the claim, the way provenance tags work.
+
 **DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Measurement showed HRW's *compile path*, not
 the checks, costs 30 s and 3.5 GB on a 4,193-equation model. Doug: *"we should not redesign
@@ -162,8 +177,8 @@ claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
 ## Running things
 
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   413 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 473 tests — before committing
+cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   416 tests — between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 476 tests — before committing
 cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
 

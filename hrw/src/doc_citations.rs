@@ -354,4 +354,290 @@ Some prose.
             offences.join("\n  "),
         );
     }
+
+    // ----------------------------------------------------------------------
+    // Stale-negative checking — `verification-plan.md` item 0b.
+    //
+    // The mirror of the citation check above. That one asserts every cited path
+    // EXISTS; this one asserts that everything a document claims does NOT exist
+    // still does not.
+    //
+    // **A wrong negative is the one error nobody catches.** A wrong *positive*
+    // claim gets caught the moment someone acts on it — you go to use the thing
+    // and it is not there. Acting on a wrong *negative* means NOT LOOKING, and
+    // the natural response to "that is not possible yet" is to build it. On
+    // 2026-08-01 `ideas.md` #42 was two days from having its link vocabulary
+    // re-implemented on top of itself.
+    // ----------------------------------------------------------------------
+
+    /// One `<!-- unbuilt: TARGET -->` tag, with where it was written.
+    struct Unbuilt {
+        file: String,
+        line: usize,
+        target: String,
+    }
+
+    /// **Fenced code blocks are skipped**, and finding that out was the point of
+    /// running this. `verification-plan.md` documents the tag with two worked
+    /// examples, and both were deliberately chosen from real stale claims — so the
+    /// first run reported the *documentation of the mechanism* as a defect. An
+    /// example is not an assertion.
+    fn unbuilt_tags(text: &str, file: &str) -> Vec<Unbuilt> {
+        let mut out = Vec::new();
+        let mut in_fence = false;
+        for (i, line) in text.lines().enumerate() {
+            if line.trim_start().starts_with("```") {
+                in_fence = !in_fence;
+                continue;
+            }
+            if in_fence {
+                continue;
+            }
+            let mut rest = line;
+            while let Some(at) = rest.find("<!-- unbuilt:") {
+                let after = &rest[at + "<!-- unbuilt:".len()..];
+                let Some(close) = after.find("-->") else { break };
+                let target = after[..close].trim();
+                if !target.is_empty() {
+                    out.push(Unbuilt {
+                        file: file.to_owned(),
+                        line: i + 1,
+                        target: target.to_owned(),
+                    });
+                }
+                rest = &after[close..];
+            }
+        }
+        out
+    }
+
+    /// Every `.rs` file in the workspace, for symbol resolution.
+    fn rust_sources() -> Vec<PathBuf> {
+        fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
+            let Ok(entries) = std::fs::read_dir(dir) else { return };
+            for e in entries.flatten() {
+                let p = e.path();
+                let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if p.is_dir() {
+                    if !matches!(name, "target" | "node_modules" | "vendor" | ".git") {
+                        walk(&p, out);
+                    }
+                } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
+                    out.push(p);
+                }
+            }
+        }
+        let mut out = Vec::new();
+        walk(&workspace_root().join("crates"), &mut out);
+        walk(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src"), &mut out);
+        walk(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples"), &mut out);
+        out
+    }
+
+    /// Does a Rust symbol exist, as a **definition** rather than a mention?
+    ///
+    /// **Deliberately conservative, and the direction matters.** This test *fails
+    /// the build*, so a false positive is expensive and a false negative merely
+    /// leaves a stale claim for the companion lint to surface. Matching a bare
+    /// identifier anywhere would count a mention in a comment — including the very
+    /// sentence claiming the thing does not exist — so only definition-shaped
+    /// occurrences count. When in doubt this reports "still absent", which lets the
+    /// claim stand.
+    fn symbol_is_defined(symbol: &str) -> bool {
+        // `App::scratch_specimens` -> `scratch_specimens`; a bare name is used as is.
+        let leaf = symbol.rsplit("::").next().unwrap_or(symbol).trim();
+        if leaf.is_empty() {
+            return false;
+        }
+        let forms = [
+            format!("fn {leaf}"),
+            format!("struct {leaf}"),
+            format!("enum {leaf}"),
+            format!("trait {leaf}"),
+            format!("const {leaf}"),
+            format!("static {leaf}"),
+            format!("type {leaf}"),
+            format!("mod {leaf}"),
+            format!("{leaf}:"), // a struct field
+        ];
+        rust_sources().iter().any(|p| {
+            let Ok(text) = std::fs::read_to_string(p) else { return false };
+            text.lines()
+                .filter(|l| !l.trim_start().starts_with("//"))
+                .any(|l| forms.iter().any(|f| l.contains(f.as_str())))
+        })
+    }
+
+    /// Does an `hrw://` link form appear in a fixture tour?
+    ///
+    /// The named segments must appear **in order**, with `*` skipping any number
+    /// of segments between them — so `hrw://stage/*/frame` matches
+    /// `hrw://stage/Structural/MatchingAnim/frame/41`.
+    ///
+    /// **`*` meaning exactly one segment was the first implementation and it was
+    /// wrong**: that pattern failed against the real link, which has *two*
+    /// segments where the star is, and the check reported a shipped capability as
+    /// still absent. Someone writing `stage/*/frame` means "a stage link with a
+    /// frame verb", not "with exactly one thing between".
+    ///
+    /// The fixture tours are the right corpus: a link form nothing exercises is
+    /// not really built.
+    fn link_form_is_exercised(pattern: &str) -> bool {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let Ok(entries) = std::fs::read_dir(&dir) else { return false };
+        let wanted: Vec<&str> = pattern.trim_start_matches("hrw://").split('/').collect();
+        entries.flatten().any(|e| {
+            let p = e.path();
+            if p.extension().and_then(|x| x.to_str()) != Some("md") {
+                return false;
+            }
+            let Ok(text) = std::fs::read_to_string(&p) else { return false };
+            text.split("hrw://").skip(1).any(|tail| {
+                let link: String =
+                    tail.chars().take_while(|c| !c.is_whitespace() && *c != ')' && *c != '`').collect();
+                let got: Vec<&str> = link.split('/').collect();
+                // Subsequence match: walk `got`, consuming each named segment of
+                // `wanted` in order. `*` consumes nothing and simply allows a gap.
+                let mut g = 0usize;
+                wanted.iter().all(|w| {
+                    if *w == "*" {
+                        return true;
+                    }
+                    while g < got.len() {
+                        g += 1;
+                        if got[g - 1] == *w {
+                            return true;
+                        }
+                    }
+                    false
+                })
+            })
+        })
+    }
+
+    fn still_absent(target: &str) -> bool {
+        if target.starts_with("hrw://") {
+            !link_form_is_exercised(target)
+        } else if target.contains("::") || !target.contains('/') {
+            !symbol_is_defined(target)
+        } else {
+            !resolves(target) && !workspace_root().join(target).exists()
+        }
+    }
+
+    /// Everything a document claims does not exist still does not.
+    ///
+    /// Tag a claim of absence so it can be checked:
+    ///
+    /// ```markdown
+    /// Frame addressing is not built yet. <!-- unbuilt: hrw://stage/*/frame -->
+    /// ```
+    ///
+    /// **Coverage is expected to be low, and that is fine** — the tag is added when
+    /// a claim of absence is written, the way a provenance tag is added when a
+    /// claim of fact is. A *wrong* tag fails, because a tag is a claim.
+    #[test]
+    fn claims_of_absence_are_still_true() {
+        let mut tags = Vec::new();
+        for path in doc_files() {
+            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            let name = path
+                .strip_prefix(workspace_root())
+                .unwrap_or(&path)
+                .display()
+                .to_string();
+            tags.extend(unbuilt_tags(&text, &name));
+        }
+
+        let stale: Vec<String> = tags
+            .iter()
+            .filter(|t| !still_absent(&t.target))
+            .map(|t| format!("{}:{} claims `{}` is unbuilt — it exists", t.file, t.line, t.target))
+            .collect();
+
+        println!("stale-negative check: {} `unbuilt:` tag(s) verified", tags.len());
+        assert!(
+            stale.is_empty(),
+            "documents claim something is unbuilt, but it exists. **Acting on a wrong \
+             claim of absence means not looking**, so this is the error whose cost is \
+             duplicated work rather than a failed build:\n  {}",
+            stale.join("\n  "),
+        );
+    }
+
+    /// The tag mechanism itself works — both directions.
+    ///
+    /// **A checker reporting zero problems is exactly when to prove it can report
+    /// one.** Without this, an `unbuilt:` parser that silently matched nothing
+    /// would look identical to a clean corpus.
+    #[test]
+    fn the_unbuilt_tag_is_parsed_and_both_verdicts_fire() {
+        let md = "Frame addressing is not built. <!-- unbuilt: hrw://stage/*/frame -->\n\
+                  Scratch specimens do not exist. <!-- unbuilt: App::scratch_specimens -->\n\
+                  Nothing tagged on this line.\n\
+                  A made-up thing. <!-- unbuilt: NoSuchSymbolAnywhere -->\n";
+        let tags = unbuilt_tags(md, "test.md");
+        assert_eq!(tags.len(), 3, "three tags, and the untagged line is not one: {:?}",
+                   tags.iter().map(|t| &t.target).collect::<Vec<_>>());
+        assert_eq!(tags[0].line, 1);
+        assert_eq!(tags[1].target, "App::scratch_specimens");
+
+        // Both verdicts must be reachable, or the check is decorative.
+        assert!(
+            !still_absent("hrw://stage/*/frame"),
+            "frame addressing IS exercised by a fixture tour, so this claim would be stale",
+        );
+        assert!(
+            !still_absent("App::scratch_specimens"),
+            "scratch_specimens IS a field in app.rs, so this claim would be stale",
+        );
+        assert!(
+            still_absent("NoSuchSymbolAnywhere"),
+            "a genuinely absent symbol must read as still absent",
+        );
+        assert!(
+            still_absent("hrw://stage/*/no-such-verb"),
+            "an unexercised link form must read as still absent",
+        );
+    }
+
+    /// **A lint, not a test** — prints untagged claims of absence and never fails.
+    ///
+    /// The tagged check above catches what someone chose to tag; it cannot read
+    /// English. This surfaces the candidates so the retrofit can stay lazy, in the
+    /// way provenance tags do. **Failing on these would be wrong**: most are
+    /// accurate, and many are prose about the past rather than a live claim.
+    #[test]
+    fn untagged_claims_of_absence_are_listed() {
+        const PHRASES: [&str; 6] = [
+            "not yet built",
+            "currently impossible",
+            "does not exist yet",
+            "below the reach",
+            "cannot currently",
+            "is not built",
+        ];
+        let mut found = 0usize;
+        let mut examples: Vec<String> = Vec::new();
+        for path in doc_files() {
+            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            for (i, line) in text.lines().enumerate() {
+                if line.contains("unbuilt:") {
+                    continue; // already tagged
+                }
+                let lower = line.to_lowercase();
+                if PHRASES.iter().any(|p| lower.contains(p)) {
+                    found += 1;
+                    if examples.len() < 12 {
+                        let f = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+                        examples.push(format!("{f}:{}  {}", i + 1, line.trim()));
+                    }
+                }
+            }
+        }
+        println!(
+            "untagged claims of absence: {found} (lint only, never fails)\n  {}",
+            examples.join("\n  "),
+        );
+    }
 }
