@@ -163,6 +163,67 @@ Import-Csv C:\Users\dougd\rumoca-runs\fid-full-memory.csv | Sort-Object {[int]$_
     Select-Object -First 10                                                # heaviest models
 ```
 
+### Recovering the aborted models — a second pass
+
+**Run this in the same standalone PowerShell window as the sweep**, not from the editor.
+Anything launched from VS Code is a child of the extension host and dies with it.
+
+**1. Close the sweep's transcript**, if it is still open. It finalises the file — a transcript
+copied while still open can be missing its tail.
+
+```powershell
+Stop-Transcript
+```
+
+**2. Snapshot the finalised log** alongside the CSVs already snapshotted.
+
+```powershell
+Copy-Item C:/tmp/fid-full.log C:/Users/dougd/rumoca-runs/complete-<stamp>/ -Force
+```
+
+**3. Free memory.** Close Chrome; leave rust-analyzer stopped. Both together are worth ~9 GB
+here, which is what decides whether the memory-aborted models fit.
+
+**4. Start a transcript for the retry**, kept separate from the sweep's so each run has its
+own record.
+
+```powershell
+Start-Transcript -Path C:/Users/dougd/rumoca-runs/fid-retry.log
+```
+
+**5. Run the retry.**
+
+```powershell
+cd C:/Users/dougd/source/repos/rumoca/hrw
+./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
+Stop-Transcript
+```
+
+It should print `retrying N model(s) with verdict(s): …`. **If it prints no such line and
+exits immediately, nothing matched** — check the profile actually contains those verdicts
+before assuming the corpus is complete.
+
+**6. Promote and commit**, as in "Afterwards" below.
+
+#### The `-File` array trap, which cost a wasted pass
+
+`powershell -File script.ps1 -RetryVerdicts 'a','b'` passes **one string `"a,b"`**, not a
+two-element array — only `-Command` binds arrays properly. On 2026-08-01 this silently made a
+retry pass a no-op, and **passing the flag was worse than omitting it**, because the
+one-element default `@('aborted:free-ram')` *would* have matched.
+
+`measure-fidelity.ps1` now splits on commas before reading the value, so it behaves
+identically however it is invoked. The trap is recorded because it applies to **any** array
+parameter passed through `-File`, not just this one.
+
+#### What each verdict means for a retry
+
+| Verdict | Retried by default? | Why |
+|---|---|---|
+| `aborted:free-ram` | **yes** | a fact about the machine at that moment, not the model |
+| `aborted:timeout` | only on request | partly environmental — 529 s isolated against 901 s under load — but retrying by default would burn the full timeout on an unfinishable model every run |
+| `aborted:proc-ceiling` | **never** | a model wanting more than the ceiling wants it regardless of what else is running |
+
 ### What the verdicts mean
 
 | Verdict | Means | Do |

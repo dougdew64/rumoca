@@ -42,6 +42,31 @@ param(
     [string[]]$RetryVerdicts = @('aborted:free-ram')
 )
 
+# **Normalise -RetryVerdicts before anything reads it.**
+#
+# `powershell -File script.ps1 -RetryVerdicts 'a','b'` passes ONE string "a,b",
+# not a two-element array — only `-Command` binds arrays properly. On
+# 2026-08-01 that silently made the retry pass a no-op: nothing matched, the
+# script reported nothing to do, and the flag was WORSE than omitting it, since
+# the one-element default would have matched. Splitting here makes the script
+# behave identically however it is invoked.
+$RetryVerdicts = @($RetryVerdicts | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+
+# **Normalise -RetryVerdicts before anything reads it.**
+#
+# `powershell -File script.ps1 -RetryVerdicts 'a','b'` passes ONE string "a,b",
+# not a two-element array — only `-Command` binds arrays properly. On
+# 2026-08-01 that silently made a retry pass a no-op: nothing matched, the
+# script reported nothing to do, and passing the flag was WORSE than omitting
+# it, because the one-element default would have matched. Splitting here makes
+# the script behave identically however it is invoked.
+$RetryVerdicts = @(
+    $RetryVerdicts |
+        ForEach-Object { $_ -split ',' } |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ }
+)
+
 $exe = Join-Path $PSScriptRoot "..\target\release\examples\fidelity_msl.exe"
 if (-not (Test-Path $exe)) { throw "build first: cargo build -p hrw --release --example fidelity_msl" }
 
