@@ -342,7 +342,7 @@ impl Health {
                 row.secs, row.name, row.structural,
             ));
         }
-        if done % self.window != 0 {
+        if !done.is_multiple_of(self.window) {
             return;
         }
 

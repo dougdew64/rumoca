@@ -70,7 +70,7 @@ fn query_screen_dimensions() -> Option<(u32, u32)> {
         let line = line.trim();
         if let Some(rest) = line.strip_prefix("dimensions:") {
             // "3440x1440 pixels (910x381 millimeters)"
-            let dims = rest.trim().split_whitespace().next()?;
+            let dims = rest.split_whitespace().next()?;
             let (w, h) = dims.split_once('x')?;
             return Some((w.parse().ok()?, h.parse().ok()?));
         }

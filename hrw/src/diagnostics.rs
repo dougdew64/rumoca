@@ -41,12 +41,12 @@
 //!    failure as well as our own bugs. **The newest three are kept**; see
 //!    [`MAX_CRASH_FILES`]. **Not written under `cargo test`** — see
 //!    [`write_crash_file`], which explains why that mattered.
-//! 1b. **`crashes.log`** — one line per crash, appended forever and never
+//! 2. **`crashes.log`** — one line per crash, appended forever and never
 //!    pruned. Answers *"has this happened before, and when did it start?"* for
 //!    ~100 bytes instead of 7 KB, which is what makes pruning the full files
 //!    safe. **The retention split is the design:** one recent complete file is
 //!    what a reasoner needs to diagnose; a directory of them is a haystack.
-//! 2. **`session.json`** — rewritten on every recorded *user action*. Deliberately
+//! 3. **`session.json`** — rewritten on every recorded *user action*. Deliberately
 //!    cheap and deliberately not per-frame. A stack overflow, a `SIGSEGV` from a
 //!    graphics driver, or a hard kill runs **no** hook at all and would otherwise
 //!    leave nothing; this file survives them because it was already on disk.

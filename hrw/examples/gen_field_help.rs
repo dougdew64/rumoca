@@ -85,14 +85,13 @@ fn extract(src: &str, docs: &mut BTreeMap<String, String>) {
         } else if t.starts_with("#[") {
             // attribute between the doc and the field — keep the buffer
         } else {
-            if !buf.is_empty() {
-                if let Some(name) = field_name(line) {
+            if !buf.is_empty()
+                && let Some(name) = field_name(line) {
                     let doc = buf.iter().filter(|s| !s.is_empty()).cloned().collect::<Vec<_>>().join(" ");
                     if !doc.is_empty() && docs.get(&name).is_none_or(|d| doc.len() > d.len()) {
                         docs.insert(name, doc);
                     }
                 }
-            }
             buf.clear();
         }
     }

@@ -654,6 +654,7 @@ impl LogLevel {
 ///   updates in real time.
 /// - **Final** (`Compiled`, `Simulated`, `Libraries`, `DefTree`) — one per
 ///   request, signals the task is done.
+///
 /// **`Clone` is derived for the test suite, and the cost is worth naming.**
 /// Every payload here is plain data — IR, frames, an equation sheet — so a clone
 /// is a deep copy and nothing more. The app never needs it: results move from
@@ -661,6 +662,18 @@ impl LogLevel {
 /// because it memoises one compile per specimen per process and hands out copies
 /// (`docs/ideas.md` #48). Compiling `Drivetrain` six times per run against the
 /// MSL is most of the suite's runtime.
+/// **`large_enum_variant` is allowed here deliberately, with the reason.**
+/// `Compiled` is far bigger than the other variants, and the lint's remedy is to
+/// box it. That trades a real cost for a theoretical one: the lint protects
+/// against *many* instances each paying the largest variant's size, and there is
+/// **one of these in flight at a time** — the worker sends a result, the UI takes
+/// it. Boxing would add an allocation on the hot path and force every one of the
+/// ~40 `FromWorker::Compiled { .. }` match sites to dereference, for no memory
+/// anyone can observe.
+///
+/// Item-level rather than crate-level on purpose: the judgement is about *this*
+/// enum, and a crate-wide allow would silence the lint where it might be right.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone)]
 pub enum FromWorker {
     /// Outcome of loading libraries: total documents loaded, or an error.
@@ -871,6 +884,12 @@ fn make_log<'a>(
             level,
             message: msg,
         }));
+    }
+}
+
+impl Default for WorkerState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -2681,19 +2700,6 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
     })
 }
 
-/// Instantiate the model directly from the resolved tree and serialize the
-/// resulting `InstanceOverlay` for the Instantiate tab; then run the instanced
-/// typecheck, which enriches the *same* overlay in place (evaluated dimensions,
-/// resolved component types), and serialize it again for the Typecheck tab.
-/// The cross-stage diff between the two shows exactly what typecheck contributed.
-///
-/// Rumoca API:
-/// - `instantiate_model(tree, name)` — creates an `InstanceOverlay` (the model
-///   with all inherited/extended components resolved and enumerated).
-/// - `typecheck_instanced(tree, &mut overlay, name)` — enriches the overlay
-///   in place with type information (dimensions, component types). The `&mut`
-///   means it MODIFIES the overlay — which is why we serialize it BEFORE
-///   typecheck (for the Instantiate tab) and AFTER (for the Typecheck tab).
 /// Record connection expansion (MLS §9) by re-running flatten with an observer.
 ///
 /// The session's own compile has already flattened, without an observer — the
@@ -2743,6 +2749,25 @@ fn record_connection_frames(
     frames.into_inner()
 }
 
+/// Instantiate the model directly from the resolved tree and serialize the
+/// resulting `InstanceOverlay` for the Instantiate tab; then run the instanced
+/// typecheck, which enriches the *same* overlay in place (evaluated dimensions,
+/// resolved component types), and serialize it again for the Typecheck tab.
+/// The cross-stage diff between the two shows exactly what typecheck contributed.
+///
+/// Rumoca API:
+/// - `instantiate_model(tree, name)` — creates an `InstanceOverlay` (the model
+///   with all inherited/extended components resolved and enumerated).
+/// - `typecheck_instanced(tree, &mut overlay, name)` — enriches the overlay
+///   in place with type information (dimensions, component types). The `&mut`
+///   means it MODIFIES the overlay — which is why we serialize it BEFORE
+///   typecheck (for the Instantiate tab) and AFTER (for the Typecheck tab).
+///
+/// *(This doc block sat above `record_connection_frames` until 2026-08-01, because that
+/// function was inserted between it and its own -- and a doc comment attaches to the NEXT
+/// item, so it had been silently documenting the wrong function. Clippy's
+/// `doc_lazy_continuation` was pointing at it the whole time.)*
+///
 /// `source` is the specimen text, so a diagnostic's labels can be reported as line
 /// numbers rather than byte offsets (ideas #45).
 fn instantiate_and_typecheck(
@@ -3617,8 +3642,8 @@ mod tests {
         assert!(err["n_equations"].as_u64().unwrap() > 0);
         assert!(err["n_unknowns"].as_u64().unwrap() > 0);
         assert!(err["rank_deficiency"].as_u64().unwrap() > 0);
-        assert!(err["unmatched_equations"].as_array().unwrap().len() > 0);
-        assert!(err["unmatched_unknowns"].as_array().unwrap().len() > 0);
+        assert!(!err["unmatched_equations"].as_array().unwrap().is_empty());
+        assert!(!err["unmatched_unknowns"].as_array().unwrap().is_empty());
         let inc = &v["incidence"];
         assert!(inc["n_eq"].as_u64().unwrap() > 0);
         let matching = v["matching"].as_array().expect("should have partial matching");

@@ -2156,11 +2156,11 @@ mod tests {
         assert_eq!(entry["mentions"], json!(3), "got: {:?}", entry["paths"]);
         let paths: Vec<&str> = entry["paths"].as_array().unwrap()
             .iter().map(|p| p.as_str().unwrap()).collect();
-        assert!(paths.iter().any(|p| *p == "equation"));
-        assert!(paths.iter().any(|p| *p == "unknown"));
+        assert!(paths.contains(&"equation"));
+        assert!(paths.contains(&"unknown"));
         assert!(paths.iter().any(|p| p.contains("nested")));
-        assert!(!paths.iter().any(|p| *p == "other"), "substring is not a mention");
-        assert!(!paths.iter().any(|p| *p == "description"), "prose is not a mention");
+        assert!(!paths.contains(&"other"), "substring is not a mention");
+        assert!(!paths.contains(&"description"), "prose is not a mention");
     }
 
     /// Following and pointing are independent: either may be absent.

@@ -266,8 +266,8 @@ fn step_style(frame: &IndexReductionFrame) -> (&'static str, egui::Color32, Stri
 fn render_start_states(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
     // List the starting states, laid out like the "Demoted states" table below
     // so the before/after comparison reads as a pair.
-    if let IndexReductionStep::Start { states, .. } = &frame.step {
-        if !states.is_empty() {
+    if let IndexReductionStep::Start { states, .. } = &frame.step
+        && !states.is_empty() {
             ui.add_space(4.0);
             ui.label(egui::RichText::new("States entering reduction").strong());
             egui::Grid::new("start_states_grid")
@@ -282,7 +282,6 @@ fn render_start_states(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
                     }
                 });
         }
-    }
 
     if let IndexReductionStep::Differentiated { before_rhs, after_rhs, .. } = &frame.step {
         let before = expr_format::format_expr(before_rhs);

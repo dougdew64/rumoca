@@ -332,8 +332,8 @@ impl IncidenceMatrix {
         }
 
         // --- Persistent highlight from equation sheet cross-link ---
-        if let Some(hr) = highlighted_row {
-            if hr < self.n_eq {
+        if let Some(hr) = highlighted_row
+            && hr < self.n_eq {
                 let band = egui::Rect::from_min_size(
                     egui::pos2(0.0, hr as f32),
                     egui::vec2(self.n_var as f32, 1.0),
@@ -341,11 +341,10 @@ impl IncidenceMatrix {
                 let highlight_color = crate::colors::INCIDENCE_HOVER.gamma_multiply(0.25);
                 painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
             }
-        }
 
         // --- Persistent column highlight from tracked identifier ---
-        if let Some(hc) = highlighted_col {
-            if hc < self.n_var {
+        if let Some(hc) = highlighted_col
+            && hc < self.n_var {
                 let band = egui::Rect::from_min_size(
                     egui::pos2(hc as f32, 0.0),
                     egui::vec2(1.0, self.n_eq as f32),
@@ -353,7 +352,6 @@ impl IncidenceMatrix {
                 let highlight_color = crate::colors::TRACKED_FILL;
                 painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
             }
-        }
 
         // --- Unmatched row/column bands (rank deficiency) ---
         // Draw faint red bands behind unmatched rows and columns so rank

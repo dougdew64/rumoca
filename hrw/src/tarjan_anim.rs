@@ -81,11 +81,10 @@ fn build_dep_graph(
             if match_eq[eq] == Some(col) {
                 continue;
             }
-            if let Some(&Some(owner)) = match_var.get(col) {
-                if owner != eq && !adj[eq].contains(&owner) {
+            if let Some(&Some(owner)) = match_var.get(col)
+                && owner != eq && !adj[eq].contains(&owner) {
                     adj[eq].push(owner);
                 }
-            }
         }
     }
     for deps in &mut adj {
@@ -392,7 +391,7 @@ impl TarjanAnimation {
     fn draw_graph(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         // Lay out nodes in a grid arrangement.
         let cols = grid_cols(self.n_nodes);
-        let grid_rows = (self.n_nodes + cols - 1) / cols;
+        let grid_rows = self.n_nodes.div_ceil(cols);
         let bounds = egui::Rect::from_min_size(
             egui::pos2(-1.0, -1.0),
             egui::vec2(cols as f32 + 2.0, grid_rows as f32 + 2.0),
@@ -454,9 +453,13 @@ impl TarjanAnimation {
         // Draw nodes.
         let node_radius = view.zoom() * 0.3;
         let font = egui::FontId::proportional((view.zoom() * 0.2).min(14.0));
-        for i in 0..self.n_nodes {
+        // Iterate `in_scc` rather than `0..n_nodes`: it is built as
+        // `vec![None; self.n_nodes]` directly above, so the bounds are the same
+        // by construction — and indexing a second collection by a range index is
+        // what `needless_range_loop` warns about.
+        for (i, scc_of_node) in in_scc.iter().enumerate() {
             let center = view.to_screen(node_pos(i));
-            let fill = if let Some(scc_idx) = in_scc[i] {
+            let fill = if let Some(scc_idx) = *scc_of_node {
                 scc_colors[scc_idx % scc_colors.len()]
             } else if on_stack.contains(&i) {
                 crate::colors::ANIM_EXPLORE.gamma_multiply(0.7)

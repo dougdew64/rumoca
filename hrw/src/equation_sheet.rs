@@ -139,13 +139,11 @@ fn scan_connect_statements(source: &str) -> Vec<(u32, String, String)> {
     let mut result = Vec::new();
     for (i, line) in source.lines().enumerate() {
         let trimmed = line.trim();
-        if let Some(rest) = trimmed.strip_prefix("connect(") {
-            if let Some(args) = rest.strip_suffix(");") {
-                if let Some((a, b)) = args.split_once(',') {
+        if let Some(rest) = trimmed.strip_prefix("connect(")
+            && let Some(args) = rest.strip_suffix(");")
+                && let Some((a, b)) = args.split_once(',') {
                     result.push((i as u32 + 1, a.trim().to_owned(), b.trim().to_owned()));
                 }
-            }
-        }
     }
     result
 }
@@ -211,7 +209,7 @@ fn match_connection_to_source(
 pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet {
     let specimen_sid = source_info.map(|(uri, _)| SourceId::from_source_name(uri));
     let source_text = source_info.map(|(_, src)| src);
-    let connects = source_text.map(|s| scan_connect_statements(s)).unwrap_or_default();
+    let connects = source_text.map(scan_connect_statements).unwrap_or_default();
 
     let mut by_category: std::collections::BTreeMap<EquationCategory, Vec<FormattedEquation>> =
         std::collections::BTreeMap::new();
@@ -335,7 +333,7 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
                 kind,
                 unit: v.unit.clone().filter(|u| !u.is_empty()),
                 description: v.description.clone().filter(|d| !d.is_empty()),
-                start: v.start.as_ref().map(|e| expr_format::format_expr(e)),
+                start: v.start.as_ref().map(expr_format::format_expr),
             });
         }
     }
@@ -394,7 +392,7 @@ impl Ord for EquationCategory {
 
 impl PartialOrd for EquationCategory {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 

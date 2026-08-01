@@ -254,11 +254,10 @@ impl<'a> ModelicaText<'a> {
             }
             // The tracked highlight outranks a whole-run tint: it is the more
             // specific statement about this particular token.
-            if let Some((needle, background)) = self.tracked {
-                if token.kind == TokenKind::Identifier && identifier_is(slice, needle) {
+            if let Some((needle, background)) = self.tracked
+                && token.kind == TokenKind::Identifier && identifier_is(slice, needle) {
                     format.background = background;
                 }
-            }
             job.append(slice, 0.0, format);
         }
     }
@@ -332,10 +331,10 @@ pub fn mentions_identifier(text: &str, tracked: &str) -> bool {
 pub(crate) fn dotted_path_ending_at(text: &str, tokens: &[LineToken], i: usize) -> String {
     let mut parts = vec![&text[tokens[i].start..tokens[i].end]];
     let mut j = i;
-    loop {
-        // Step back over a dot, then the identifier before it, skipping
-        // whitespace in case the text is written `b . phi`.
-        let Some(dot) = prev_significant(tokens, j) else { break };
+    // Step back over a dot, then the identifier before it, skipping whitespace
+    // in case the text is written `b . phi`. Running out of tokens ends the walk,
+    // which is why that case is the loop condition rather than another `break`.
+    while let Some(dot) = prev_significant(tokens, j) {
         if tokens[dot].kind != TokenKind::Operator || &text[tokens[dot].start..tokens[dot].end] != "."
         {
             break;

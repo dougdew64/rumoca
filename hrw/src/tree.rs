@@ -662,8 +662,8 @@ fn header(key: &str, hint: &str) -> egui::RichText {
 // ancestor of a leaf matching `tracked`. During rendering, nodes in this
 // set get `default_open(true)` so the path to the tracked identifier is
 // fully expanded without re-walking the subtree at every level.
-fn collect_tracked_ancestors<'a>(
-    value: &'a Value,
+fn collect_tracked_ancestors(
+    value: &Value,
     tracked: &str,
     ancestors: &mut HashSet<*const Value>,
 ) -> bool {
@@ -700,7 +700,9 @@ fn collect_tracked_ancestors<'a>(
 }
 
 
-///
+/// A tree header for a node on the followed identifier's path — the key plus a
+/// short hint, in the follow colour. Distinct from a *pointed-at* row, which is
+/// one row for one link rather than a thread through every stage.
 fn header_tracked(key: &str, hint: &str) -> egui::RichText {
     egui::RichText::new(format!("{key}  {hint}"))
         .monospace()

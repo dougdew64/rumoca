@@ -114,7 +114,7 @@ tag; it does not read English. That limit is why the lint exists.
 
 ---
 
-### 0c. Clear HRW's clippy warnings, then deny them
+### 0c. Clear HRW's clippy warnings, then deny them — DONE 2026-08-01
 
 **67 warnings, and the count is what makes them dangerous, not any one of them.** Measured
 2026-08-01; 63 were noted informally on 2026-07-29, so it drifts upward unwatched. **A warning
@@ -166,6 +166,26 @@ indistinguishable from the noise this item exists to remove.
 **Out of scope:** the Rumoca crates. They are already clippy-clean under
 `[workspace.lints]`'s `all = "deny"`, and that must stay true — a lint the instrumentation
 introduces would fail upstream CI.
+
+**Delivered 2026-08-01. 75 -> 0, and `[lints.clippy] all = "deny"` in `hrw/Cargo.toml`.**
+(75, not the 67 measured two days earlier — *this session's own doc comments added eight*,
+which is the drift in miniature.) `cargo clippy --fix` cleared 48; the rest were done by hand.
+**Verified the deny actually fires** by injecting a violation: 5 errors, then removed.
+
+**Three were not style, and two of those were real defects:**
+
+| | |
+|---|---|
+| `assertions_on_constants` x4 | Three `#[test]`s asserting relationships between compile-time constants became `const` blocks. **They now fail the build rather than the test run** — a constant's range cannot be wrong only when tests happen to execute. Test count 416 -> 413 for this reason. |
+| `items_after_test_module` | **`--fix` relocated `impl Canvas` above `mod tests`** — 142 lines moved, verified a pure move (added and removed line sets identical). This was the lint firing on the shape of the 2026-07-31 debugger-launch bug. |
+| `doc_lazy_continuation` | **A doc block had been documenting the wrong function.** The paragraph describing `instantiate_and_typecheck` sat above `record_connection_frames`, because that function was inserted between it and its own — and a doc comment attaches to the *next* item. Silently wrong for however long, and clippy was pointing at it the whole time. |
+
+**One allow, with its reason, item-level.** `large_enum_variant` on `FromWorker`: the lint's
+remedy is boxing `Compiled`, which would add an allocation and force ~40 match sites to
+dereference, to save memory nobody can observe — **one of these exists at a time.** Recorded
+on the item rather than crate-wide, because the judgement is about that enum. The convention:
+crate-level allow for a crate-wide judgement, item-level for an item-specific one, and
+**never an undocumented `#[allow]`**.
 
 ---
 

@@ -303,8 +303,15 @@ impl Summary {
 ///
 /// Reported rather than asserted, because a legitimately all-zero column is
 /// possible on a small or filtered corpus. On the full MSL it is a defect.
+/// A named column and the accessor that reads it from a row.
+///
+/// A `type` alias purely so the probe table below reads as a list of columns
+/// rather than as a type signature — clippy's `type_complexity` is right that
+/// the inline form is hard to take in at a glance.
+type ColumnProbe = (&'static str, fn(&SurveyRow) -> Option<usize>);
+
 pub fn all_zero_columns(rows: &[SurveyRow]) -> Vec<&'static str> {
-    let probes: [(&'static str, fn(&SurveyRow) -> Option<usize>); 10] = [
+    let probes: [ColumnProbe; 10] = [
         ("n_equations", |r| r.n_equations),
         ("n_states", |r| r.n_states),
         ("n_algebraic", |r| r.n_algebraic),
@@ -319,7 +326,7 @@ pub fn all_zero_columns(rows: &[SurveyRow]) -> Vec<&'static str> {
     let mut dead: Vec<&'static str> = probes
         .iter()
         .filter(|(_, get)| {
-            let vals: Vec<usize> = rows.iter().filter_map(|r| get(r)).collect();
+            let vals: Vec<usize> = rows.iter().filter_map(get).collect();
             !vals.is_empty() && vals.iter().all(|v| *v == 0)
         })
         .map(|(name, _)| *name)

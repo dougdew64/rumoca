@@ -203,8 +203,10 @@ mod tests {
         assert!(c.a() > 0 && c.a() < 255, "coupled_fill should be semi-transparent");
     }
 
-    #[test]
-    fn grid_alpha_is_within_unit_range() {
-        assert!(GRID_ALPHA > 0.0 && GRID_ALPHA <= 1.0);
-    }
+    /// Checked at **compile time** rather than as a `#[test]` — see the note on the
+    /// equivalent block in `canvas.rs`. A constant's range cannot be wrong only
+    /// when the tests happen to run.
+    const _: () = {
+        assert!(GRID_ALPHA > 0.0 && GRID_ALPHA <= 1.0, "GRID_ALPHA is an alpha fraction");
+    };
 }

@@ -286,7 +286,7 @@ impl ReductionView {
         );
         ui.add_space(2.0);
         for name in &self.demoted_states {
-            let is_tracked = tracked.map_or(false, |t| {
+            let is_tracked = tracked.is_some_and(|t| {
                 crate::identifier_index::same_variable(name, t)
             });
             ui.horizontal(|ui| {
@@ -331,7 +331,7 @@ impl ReductionView {
                 ui.label(egui::RichText::new("equation origin").weak());
                 ui.end_row();
                 for row in &self.differentiated_rows {
-                    let is_tracked = tracked.map_or(false, |t| {
+                    let is_tracked = tracked.is_some_and(|t| {
                         crate::identifier_index::same_variable(&row.for_state, t)
                     });
                     let mut rt = egui::RichText::new(&row.for_state).monospace();
@@ -371,7 +371,7 @@ impl ReductionView {
                 ui.label(egui::RichText::new("replaced by").weak());
                 ui.end_row();
                 for elim in &self.eliminations {
-                    let is_tracked = tracked.map_or(false, |t| {
+                    let is_tracked = tracked.is_some_and(|t| {
                         crate::identifier_index::same_variable(&elim.variable, t)
                     });
                     let mut rt = egui::RichText::new(&elim.variable).monospace();

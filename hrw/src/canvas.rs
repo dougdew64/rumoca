@@ -245,6 +245,148 @@ impl View {
     }
 }
 
+impl Canvas {
+    /// Set the vertical placement bias for fit-to-content (0.0 = top-aligned,
+    /// 0.5 = centered, 1.0 = bottom-aligned). Returns `self` for chaining.
+    pub fn with_fit_vertical_bias(mut self, bias: f32) -> Self {
+        self.fit_vertical_bias = bias.clamp(0.0, 1.0);
+        self
+    }
+
+    /// Aim the camera: centre the view on a world point at the next paint.
+    ///
+    /// One-shot, like [`request_fit`], and applied *after* it — see `center_on`.
+    /// Zoom is left alone: a link that says "look at node 25" is about *where* the
+    /// camera points, not how far in it is, and silently changing the zoom would
+    /// discard whatever the reader had set up.
+    pub fn request_center_on(&mut self, target: egui::Pos2) {
+        self.center_on = Some(target);
+    }
+
+    /// Request a fit-to-content on the next paint.
+    ///
+    /// Call this when the drawn data changes — e.g., a new specimen compiled,
+    /// producing a different-sized matrix. The next `show()` will compute a
+    /// zoom and pan that centers the content in the available space.
+    pub fn request_fit(&mut self) {
+        self.fit = true;
+    }
+
+    /// The main entry point for a canvas frame.
+    ///
+    /// Allocates the drawing area, processes pan/zoom input, and returns the
+    /// three things a custom view needs:
+    ///
+    /// - `response` — egui's interaction state (hover position, clicks, drags)
+    /// - `view` — the world-to-screen transform for this frame
+    /// - `painter` — an egui `Painter` clipped to the canvas rect, for drawing
+    ///
+    /// `world_bounds` is the bounding box of the content in world coordinates.
+    /// It is only used when a fit-to-content was requested (via `request_fit`);
+    /// during normal pan/zoom frames it is ignored.
+    pub fn show(
+        &mut self,
+        ui: &mut egui::Ui,
+        world_bounds: egui::Rect,
+    ) -> (egui::Response, View, egui::Painter) {
+        // Allocate the entire remaining space in the panel for this canvas.
+        // `click_and_drag` makes the allocated rect sensitive to both clicks
+        // (for capture) and drags (for panning).
+        let (rect, response) =
+            ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
+
+        // Re-fit when the canvas area changes (window resize, panel toggle) —
+        // but only for changes that are really a resize.
+        //
+        // The fit below is **uniform-scale and horizontally centred**:
+        // `zoom = min(zx, zy)` and `pad_x = (width - world_width * zoom) / 2`.
+        // So a change in *height alone* moves content *sideways* — shrink the
+        // height, the zoom drops, the content narrows, and the centring padding
+        // grows. Meanwhile the text above a canvas changes height by a line as
+        // an animation steps: the BLT view's status line wraps when Tarjan's
+        // stack gets deep and un-wraps as it unwinds, which shifted the whole
+        // diagram right and then back left, once per run (Doug, 2026-07-29).
+        //
+        // Width changes always refit — the fit is horizontally centred, so a
+        // different width genuinely means a different framing. Height changes
+        // refit only when large enough to be a resize rather than a reflow: a
+        // wrapped line is ~20px against a canvas several hundred tall, so the
+        // fraction below separates the two cleanly with room to spare.
+        if should_refit(self.fitted_rect_size, rect.size()) {
+            self.fit = true;
+        }
+
+        // --- Fit-to-content (one-shot) ---
+        //
+        // When `self.fit` is true, compute a zoom that fits the world_bounds
+        // into the canvas rect, then position it.
+        //
+        // `fit_vertical_bias` reserves that fraction of view height as top
+        // margin (e.g. 0.1 = 10% reserved at top for labels). The zoom is
+        // computed from the remaining vertical space so the content always
+        // fits below that margin.
+        if self.fit && world_bounds.width() > 0.0 && world_bounds.height() > 0.0 && rect.area() > 0.0
+        {
+            let top_reserve = rect.height() * self.fit_vertical_bias;
+            let avail_height = rect.height() - top_reserve;
+            let zx = rect.width() / world_bounds.width();
+            let zy = avail_height / world_bounds.height();
+            self.zoom = (zx.min(zy) * FIT_MARGIN).clamp(MIN_ZOOM, MAX_ZOOM);
+            // Horizontally center; vertically place content top at top_reserve.
+            let pad_x = (rect.width() - world_bounds.width() * self.zoom) / 2.0;
+            self.pan = world_bounds.min.to_vec2() - egui::vec2(pad_x, top_reserve) / self.zoom;
+            self.fit = false;
+        }
+
+        // --- Aim (one-shot), after the fit so the more specific intent wins ---
+        if let Some(target) = self.center_on.take()
+            && rect.area() > 0.0
+        {
+            self.pan = pan_to_center(target, rect.size(), self.zoom);
+            self.fitted_rect_size = rect.size();
+        }
+
+        // --- Pan by dragging ---
+        //
+        // `drag_delta()` gives the pixel distance the pointer moved this frame.
+        // Dividing by zoom converts screen pixels to world units. Subtracting
+        // (not adding) because dragging right should reveal content to the left
+        // (the pan origin moves in the opposite direction of the drag).
+        if response.dragged() {
+            self.pan -= response.drag_delta() / self.zoom;
+        }
+
+        // --- Zoom about the pointer ---
+        //
+        // The key insight: when zooming, we want the world point under the
+        // cursor to stay fixed on screen. Without this, zooming would drift
+        // the content away from where the user is looking.
+        //
+        // Algorithm:
+        // 1. Record the world point under the cursor before zoom changes.
+        // 2. Apply the zoom change (exponential for smooth feel).
+        // 3. Adjust pan so the same world point maps back to the same screen pos.
+        if let Some(p) = response.hover_pos() {
+            let scroll = ui.input(|i| i.smooth_scroll_delta.y);
+            if scroll != 0.0 {
+                let world_before = self.pan + (p - rect.min) / self.zoom;
+                // Exponential zoom for perceptually uniform speed — each scroll
+                // tick multiplies zoom by a constant factor rather than adding.
+                self.zoom = (self.zoom * (scroll * SCROLL_ZOOM_SENSITIVITY).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
+                // Re-anchor: solve for pan such that world_before maps to p.
+                self.pan = world_before - (p - rect.min) / self.zoom;
+            }
+        }
+
+        // Snapshot the transform for this frame and create a clipped painter.
+        let view = View { rect, pan: self.pan, zoom: self.zoom };
+        // `painter_at` returns a Painter whose draw commands are clipped to
+        // `rect` — nothing drawn by the custom view leaks outside the canvas.
+        let painter = ui.painter_at(rect);
+        (response, view, painter)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -461,156 +603,15 @@ mod tests {
         assert!(view.zoom() < 6.0);
     }
 
-    #[test]
-    fn fit_margin_is_less_than_one() {
+    /// These were `#[test]`s until 2026-08-01. As `const` blocks they are checked
+    /// **at compile time** — the relationship between two constants cannot be
+    /// wrong at runtime and right at build time, so a test was the weaker place to
+    /// state it, and a build that violates one now fails outright instead of
+    /// waiting for `cargo test`. Clippy's `assertions_on_constants` names exactly
+    /// this.
+    const _: () = {
         assert!(FIT_MARGIN > 0.0 && FIT_MARGIN < 1.0, "FIT_MARGIN should leave breathing room");
-    }
-
-    #[test]
-    fn zoom_bounds_are_sane() {
         assert!(MIN_ZOOM > 0.0, "MIN_ZOOM must be positive");
         assert!(MAX_ZOOM > MIN_ZOOM, "MAX_ZOOM must exceed MIN_ZOOM");
-    }
-}
-
-impl Canvas {
-    /// Set the vertical placement bias for fit-to-content (0.0 = top-aligned,
-    /// 0.5 = centered, 1.0 = bottom-aligned). Returns `self` for chaining.
-    pub fn with_fit_vertical_bias(mut self, bias: f32) -> Self {
-        self.fit_vertical_bias = bias.clamp(0.0, 1.0);
-        self
-    }
-
-    /// Aim the camera: centre the view on a world point at the next paint.
-    ///
-    /// One-shot, like [`request_fit`], and applied *after* it — see `center_on`.
-    /// Zoom is left alone: a link that says "look at node 25" is about *where* the
-    /// camera points, not how far in it is, and silently changing the zoom would
-    /// discard whatever the reader had set up.
-    pub fn request_center_on(&mut self, target: egui::Pos2) {
-        self.center_on = Some(target);
-    }
-
-    /// Request a fit-to-content on the next paint.
-    ///
-    /// Call this when the drawn data changes — e.g., a new specimen compiled,
-    /// producing a different-sized matrix. The next `show()` will compute a
-    /// zoom and pan that centers the content in the available space.
-    pub fn request_fit(&mut self) {
-        self.fit = true;
-    }
-
-    /// The main entry point for a canvas frame.
-    ///
-    /// Allocates the drawing area, processes pan/zoom input, and returns the
-    /// three things a custom view needs:
-    ///
-    /// - `response` — egui's interaction state (hover position, clicks, drags)
-    /// - `view` — the world-to-screen transform for this frame
-    /// - `painter` — an egui `Painter` clipped to the canvas rect, for drawing
-    ///
-    /// `world_bounds` is the bounding box of the content in world coordinates.
-    /// It is only used when a fit-to-content was requested (via `request_fit`);
-    /// during normal pan/zoom frames it is ignored.
-    pub fn show(
-        &mut self,
-        ui: &mut egui::Ui,
-        world_bounds: egui::Rect,
-    ) -> (egui::Response, View, egui::Painter) {
-        // Allocate the entire remaining space in the panel for this canvas.
-        // `click_and_drag` makes the allocated rect sensitive to both clicks
-        // (for capture) and drags (for panning).
-        let (rect, response) =
-            ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
-
-        // Re-fit when the canvas area changes (window resize, panel toggle) —
-        // but only for changes that are really a resize.
-        //
-        // The fit below is **uniform-scale and horizontally centred**:
-        // `zoom = min(zx, zy)` and `pad_x = (width - world_width * zoom) / 2`.
-        // So a change in *height alone* moves content *sideways* — shrink the
-        // height, the zoom drops, the content narrows, and the centring padding
-        // grows. Meanwhile the text above a canvas changes height by a line as
-        // an animation steps: the BLT view's status line wraps when Tarjan's
-        // stack gets deep and un-wraps as it unwinds, which shifted the whole
-        // diagram right and then back left, once per run (Doug, 2026-07-29).
-        //
-        // Width changes always refit — the fit is horizontally centred, so a
-        // different width genuinely means a different framing. Height changes
-        // refit only when large enough to be a resize rather than a reflow: a
-        // wrapped line is ~20px against a canvas several hundred tall, so the
-        // fraction below separates the two cleanly with room to spare.
-        if should_refit(self.fitted_rect_size, rect.size()) {
-            self.fit = true;
-        }
-
-        // --- Fit-to-content (one-shot) ---
-        //
-        // When `self.fit` is true, compute a zoom that fits the world_bounds
-        // into the canvas rect, then position it.
-        //
-        // `fit_vertical_bias` reserves that fraction of view height as top
-        // margin (e.g. 0.1 = 10% reserved at top for labels). The zoom is
-        // computed from the remaining vertical space so the content always
-        // fits below that margin.
-        if self.fit && world_bounds.width() > 0.0 && world_bounds.height() > 0.0 && rect.area() > 0.0
-        {
-            let top_reserve = rect.height() * self.fit_vertical_bias;
-            let avail_height = rect.height() - top_reserve;
-            let zx = rect.width() / world_bounds.width();
-            let zy = avail_height / world_bounds.height();
-            self.zoom = (zx.min(zy) * FIT_MARGIN).clamp(MIN_ZOOM, MAX_ZOOM);
-            // Horizontally center; vertically place content top at top_reserve.
-            let pad_x = (rect.width() - world_bounds.width() * self.zoom) / 2.0;
-            self.pan = world_bounds.min.to_vec2() - egui::vec2(pad_x, top_reserve) / self.zoom;
-            self.fit = false;
-        }
-
-        // --- Aim (one-shot), after the fit so the more specific intent wins ---
-        if let Some(target) = self.center_on.take()
-            && rect.area() > 0.0
-        {
-            self.pan = pan_to_center(target, rect.size(), self.zoom);
-            self.fitted_rect_size = rect.size();
-        }
-
-        // --- Pan by dragging ---
-        //
-        // `drag_delta()` gives the pixel distance the pointer moved this frame.
-        // Dividing by zoom converts screen pixels to world units. Subtracting
-        // (not adding) because dragging right should reveal content to the left
-        // (the pan origin moves in the opposite direction of the drag).
-        if response.dragged() {
-            self.pan -= response.drag_delta() / self.zoom;
-        }
-
-        // --- Zoom about the pointer ---
-        //
-        // The key insight: when zooming, we want the world point under the
-        // cursor to stay fixed on screen. Without this, zooming would drift
-        // the content away from where the user is looking.
-        //
-        // Algorithm:
-        // 1. Record the world point under the cursor before zoom changes.
-        // 2. Apply the zoom change (exponential for smooth feel).
-        // 3. Adjust pan so the same world point maps back to the same screen pos.
-        if let Some(p) = response.hover_pos() {
-            let scroll = ui.input(|i| i.smooth_scroll_delta.y);
-            if scroll != 0.0 {
-                let world_before = self.pan + (p - rect.min) / self.zoom;
-                // Exponential zoom for perceptually uniform speed — each scroll
-                // tick multiplies zoom by a constant factor rather than adding.
-                self.zoom = (self.zoom * (scroll * SCROLL_ZOOM_SENSITIVITY).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
-                // Re-anchor: solve for pan such that world_before maps to p.
-                self.pan = world_before - (p - rect.min) / self.zoom;
-            }
-        }
-
-        // Snapshot the transform for this frame and create a clipped painter.
-        let view = View { rect, pan: self.pan, zoom: self.zoom };
-        // `painter_at` returns a Painter whose draw commands are clipped to
-        // `rect` — nothing drawn by the custom view leaks outside the canvas.
-        let painter = ui.painter_at(rect);
-        (response, view, painter)
-    }
+    };
 }

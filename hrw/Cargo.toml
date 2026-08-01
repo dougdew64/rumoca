@@ -3,11 +3,30 @@ name = "hrw"
 version = "0.1.0"
 edition = "2024"
 
+# **Clippy is DENIED here as of 2026-08-01**, after clearing 75 warnings
+# (`docs/verification-plan.md` item 0c).
+#
+# The count was the danger, not any single warning. It had drifted 63 → 67 → 75
+# unwatched, and `cargo clippy --all-targets` is the ONLY check that covers the
+# binary — `cargo test` does not build it. A warning nobody reads is where a real
+# one hides, and one was: `items_after_test_module` was firing on the exact shape
+# of the bug that broke the debugger launch on 2026-07-31, invisible in the noise.
+#
+# Denying makes a new warning a build failure, which is the point: it can no
+# longer accumulate.
+#
+# **A lint that is genuinely wrong for this crate gets an allow WITH A WRITTEN
+# REASON** — crate-level below when the judgement is crate-wide, item-level when
+# it is about one item (see `large_enum_variant` on `FromWorker` in `worker.rs`).
+# What is not acceptable is an undocumented `#[allow]`, which is indistinguishable
+# from the noise this exists to remove.
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+
 # HRW is an egui UI crate: deeply-nested builder/handler closures and multi-arg
 # widget fns are idiomatic. It deliberately does NOT inherit Rumoca's internal
 # complexity budget (SPEC_0021 clippy.toml / workspace.lints) — those govern the
-# compiler crates, not a UI. The rest of clippy stays at its default warn level.
-[lints.clippy]
+# compiler crates, not a UI.
 excessive_nesting = "allow"
 too_many_arguments = "allow"
 

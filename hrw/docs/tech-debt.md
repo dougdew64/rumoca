@@ -256,6 +256,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 | **The three animation views were near-identical** | 2026-07-29 | `playback::Playback<T>` — a **generic struct, not a trait**, deliberately: a trait would share the behaviour and leave the state declared three times, so it could still drift. `playback::Animated` is the small trait on top for the one thing that cannot be generic — what the current frame *means*. `animation_controls` went 8 positional parameters → 4. |
 | **No batch narrative regeneration** | 2026-07-29 | **Closed as obsolete.** The 14 `narrative.md` files it would have driven were retired. Debt that evaporated rather than got paid — one of the three legitimate outcomes. |
 | **`compile()` was 363 lines with an inlined `macro_rules!`** | *(discovered closed 2026-08-01)* | Now a 3-line wrapper over `compile_target` (454 lines), which gained a second caller — `compile_model_by_name`. **Resolved by a refactor nobody logged**, which is why the sweep rule is *measure*. |
+| **67 clippy warnings in HRW, drifting upward unwatched** | 2026-08-01 | Cleared 75 (it had reached 75 — this session added 8) and set `[lints.clippy] all = "deny"`, so a new one is now a build failure. Three were not style: four constant assertions became compile-time `const` blocks, `--fix` relocated `impl Canvas` above `mod tests` (the lint for the debugger-launch bug shape), and a doc block turned out to have been documenting the wrong function. |
 | **Crash files were never pruned, and `cargo test` failures wrote them** | 2026-08-01 | The accumulation was the symptom; **the panic hook is process-global**, so every failing assertion left a `crash-*.json` looking like an app crash — all five found that day were test failures. Now: no full file under `cargo test`, newest 3 kept, and a `crashes.log` digest appended forever so pruning loses no recurrence history. |
 
 ---
@@ -285,17 +286,6 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   half of noun parity, and #42 kept touching it. Decomposition was deferred into #42 rather
   than swept; #42's remaining work is small, so this is now a genuine candidate.
   *File:* `bridge.rs`.
-
-- [ ] **67 clippy warnings in HRW** *(measured 2026-08-01; 63 logged informally on 2026-07-29,
-  so it is drifting upward).* **The Rumoca crates are clippy-clean and `[workspace.lints]`
-  denies there; HRW is not held to that.** Several are the newer `manual_is_multiple_of`,
-  i.e. toolchain drift rather than new bad code.
-
-  **This was never logged as debt** — it lived only in a retired plan document, which is how it
-  went from 63 to 67 unnoticed. It matters more than it looks: **a warning count nobody watches
-  is a place a real warning hides**, and `cargo clippy --all-targets` is the only check that
-  covers the binary.
-  *Files:* HRW crate-wide.
 
 - [ ] **`Expansion::force_open` exists only because "Reveal identifiers" is a mode.**
   Source-tooling Phase 6 is expected to make revealing an *action*, at which point forcing

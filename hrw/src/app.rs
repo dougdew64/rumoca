@@ -883,8 +883,8 @@ impl App {
             self.live_breakpoint_armed = false;
         }
 
-        if let Some((armed_at, v)) = self.pending_live_debug {
-            if v == variant {
+        if let Some((armed_at, v)) = self.pending_live_debug
+            && v == variant {
                 let acked = bridge::check_breakpoint_ack();
                 let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
                 if acked || timed_out {
@@ -896,7 +896,6 @@ impl App {
                 // "Arming…" badge via `LiveState::badge`.
                 ctx.request_repaint();
             }
-        }
         LiveDebugAction::None
     }
 
@@ -1726,7 +1725,7 @@ impl App {
                 StageKind::Initialization => Some(init_view_name(self.init_view)),
                 _ => None,
             },
-            specimen_detail: (self.ui_mode == UiMode::Specimen).then(|| {
+            specimen_detail: (self.ui_mode == UiMode::Specimen).then_some({
                 match self.specimen_detail {
                     SpecimenDetail::Source => "Source",
                     SpecimenDetail::Purpose => "Purpose",
@@ -2722,8 +2721,8 @@ impl App {
     let action = self.live_debug_poll(
         ui.ctx(), live, PendingLiveDebug::Matching,
     );
-    if matches!(action, LiveDebugAction::SpawnLive) {
-        if let Some(Some(mat)) = &self.cached_incidence {
+    if matches!(action, LiveDebugAction::SpawnLive)
+        && let Some(Some(mat)) = &self.cached_incidence {
             let live = matching_anim::MatchingAnimation::start_live(mat, || {
                 let _ = bridge::remove_live_trace_breakpoint();
             });
@@ -2734,7 +2733,6 @@ impl App {
             self.cached_matching_anim = Some(live);
             self.matching_anim_canvas.request_fit();
         }
-    }
     if self.cached_matching_anim.is_none() {
         let inc = self.cached_incidence.as_ref().unwrap();
         self.cached_matching_anim = Some(
@@ -2783,8 +2781,8 @@ impl App {
     let action = self.live_debug_poll(
         ui.ctx(), live, PendingLiveDebug::Tarjan,
     );
-    if matches!(action, LiveDebugAction::SpawnLive) {
-        if let Some(Some(mat)) = &self.cached_incidence {
+    if matches!(action, LiveDebugAction::SpawnLive)
+        && let Some(Some(mat)) = &self.cached_incidence {
             let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
                 let _ = bridge::remove_live_trace_breakpoint();
             });
@@ -2795,7 +2793,6 @@ impl App {
             self.cached_tarjan_anim = Some(live);
             self.tarjan_anim_canvas.request_fit();
         }
-    }
     if self.cached_tarjan_anim.is_none() {
         let inc = self.cached_incidence.as_ref().unwrap();
         self.cached_tarjan_anim = Some(
@@ -2851,8 +2848,8 @@ impl App {
     let action = self.live_debug_poll(
         ui.ctx(), live, PendingLiveDebug::Reduction,
     );
-    if matches!(action, LiveDebugAction::SpawnLive) {
-        if let Some(dae) = &self.cached_dae {
+    if matches!(action, LiveDebugAction::SpawnLive)
+        && let Some(dae) = &self.cached_dae {
             let live = reduction_anim::ReductionAnimation::start_live(
                 dae.clone(), || {
                     let _ = bridge::remove_live_trace_breakpoint();
@@ -2864,7 +2861,6 @@ impl App {
             }
             self.cached_reduction_anim = Some(live);
         }
-    }
     if self.cached_reduction_anim.is_none() {
         let frames = &self.index_reduction_frames;
         self.cached_reduction_anim = Some(if frames.is_empty() {
@@ -3297,7 +3293,7 @@ impl App {
                          sparsity. This is the compile step just before simulation.",
                     )),
                 ];
-                for &(kind, label, ref stage, hover) in tabs {
+                for &(kind, label, stage, hover) in tabs {
                     let mut resp = ui.selectable_label(
                         stage_selected && self.stage == kind,
                         tab_label(label, stage, ok, err),
@@ -3388,9 +3384,9 @@ impl App {
                     && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
                 let has_custom_banner = matches!(
                     self.stage, StageKind::Structural | StageKind::IndexReduction
-                ) && stage.note.as_deref().map_or(false, |n| n.contains("singular") || n.contains("index-1"));
-                if let Some(note) = &stage.note {
-                    if !has_custom_banner && !has_error_summary {
+                ) && stage.note.as_deref().is_some_and(|n| n.contains("singular") || n.contains("index-1"));
+                if let Some(note) = &stage.note
+                    && !has_custom_banner && !has_error_summary {
                         let color = if stage.note_is_error() {
                             ui.visuals().error_fg_color
                         } else {
@@ -3401,7 +3397,6 @@ impl App {
                         });
                         ui.separator();
                     }
-                }
             }
 
             // The Flatten stage offers an equation sheet alongside the tree.
@@ -3496,7 +3491,7 @@ impl App {
                     // Default sub-view: Summary for IndexReduction and
                     // singular Structural; SpyPlot otherwise.
                     let is_singular = self.stages.get(self.stage).note.as_deref()
-                        .map_or(false, |n| n.contains("singular"));
+                        .is_some_and(|n| n.contains("singular"));
                     if self.stage == StageKind::IndexReduction || is_singular {
                         self.structural_view = StructuralView::Summary;
                     } else if matches!(self.structural_view,
@@ -3634,7 +3629,7 @@ impl App {
             let ir_split = report_ready
                 && self.stage == StageKind::IndexReduction
                 && self.stages.get(self.stage).note.as_deref()
-                    .map_or(false, |n| n.contains("singular"));
+                    .is_some_and(|n| n.contains("singular"));
 
             if report_ready && self.structural_view == StructuralView::SpyPlot {
                 if ir_split {
@@ -5141,19 +5136,18 @@ egui::Panel::top("bar").show(ui, |ui| {
         }
 
         // Evaluation context (solve lowering)
-        if kind == "evaluation" {
-            if let Some(ctx) = error.get("context").and_then(|c| c.as_str()) {
+        if kind == "evaluation"
+            && let Some(ctx) = error.get("context").and_then(|c| c.as_str()) {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     ui.strong("Context");
                     ui.label(ctx);
                 });
             }
-        }
 
         // Diagnostics list (flatten / typecheck)
-        if let Some(diags) = error.get("diagnostics").and_then(|d| d.as_array()) {
-            if !diags.is_empty() {
+        if let Some(diags) = error.get("diagnostics").and_then(|d| d.as_array())
+            && !diags.is_empty() {
                 ui.add_space(8.0);
                 ui.strong(format!("Diagnostics ({})", diags.len()));
                 for d in diags {
@@ -5184,11 +5178,10 @@ egui::Panel::top("bar").show(ui, |ui| {
                     }
                 }
             }
-        }
 
         // Singularity details (structural/initialization errors)
-        if kind == "singular" {
-            if let (Some(n_eq), Some(n_unk), Some(n_matched), Some(deficiency)) = (
+        if kind == "singular"
+            && let (Some(n_eq), Some(n_unk), Some(n_matched), Some(deficiency)) = (
                 error["n_equations"].as_u64(),
                 error["n_unknowns"].as_u64(),
                 error["n_matched"].as_u64(),
@@ -5211,8 +5204,8 @@ egui::Panel::top("bar").show(ui, |ui| {
                     ui.end_row();
                 });
 
-                if let Some(eqs) = error["unmatched_equations"].as_array() {
-                    if !eqs.is_empty() {
+                if let Some(eqs) = error["unmatched_equations"].as_array()
+                    && !eqs.is_empty() {
                         ui.add_space(4.0);
                         ui.strong("Unmatched equations");
                         for eq in eqs {
@@ -5221,9 +5214,8 @@ egui::Panel::top("bar").show(ui, |ui| {
                             }
                         }
                     }
-                }
-                if let Some(unks) = error["unmatched_unknowns"].as_array() {
-                    if !unks.is_empty() {
+                if let Some(unks) = error["unmatched_unknowns"].as_array()
+                    && !unks.is_empty() {
                         ui.add_space(4.0);
                         ui.strong("Unmatched unknowns");
                         for unk in unks {
@@ -5232,9 +5224,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                             }
                         }
                     }
-                }
             }
-        }
 
         // Determinacy summary (initialization stage)
         if let Some(det) = error.get("determinacy") {
@@ -6199,7 +6189,7 @@ fn extract_hrw_links(text: &str) -> Vec<String> {
         // found 2026-07-30 by the fixture file-reference test, which duly reported a
         // notebook named "`" as missing.
         let end = rest
-            .find(|c: char| matches!(c, ')' | ' ' | '\n' | '"' | '>' | '`'))
+            .find([')', ' ', '\n', '"', '>', '`'])
             .unwrap_or(rest.len());
         let url = &rest[..end];
         if !links.contains(&url.to_owned()) {
@@ -6318,7 +6308,7 @@ fn set_markdown_text_sizes(ui: &mut egui::Ui) {
     );
 }
 
-const GOLDEN_RATIO: f32 = 0.618_033_99;
+const GOLDEN_RATIO: f32 = 0.618_034;
 
 /// The colour for simulation series `i` — egui_plot's own auto-colour palette
 /// (golden-ratio hue, `Hsva`), replicated so we can pin it explicitly. We must:
@@ -6950,13 +6940,15 @@ mod tests {
     fn declaring_classes_resolves_a_component_type() {
         use crate::equation_sheet::{ClassifiedVariable, EquationSheet};
 
-        let mut stages = StageBundle::default();
-        stages.resolve = Stage::ok(serde_json::json!({
-            "components": {
-                "src": { "type_def_id": 6005 },
-                "plain": { "type_def_id": 4047 },
-            }
-        }));
+        let stages = StageBundle {
+            resolve: Stage::ok(serde_json::json!({
+                "components": {
+                    "src": { "type_def_id": 6005 },
+                    "plain": { "type_def_id": 4047 },
+                }
+            })),
+            ..Default::default()
+        };
         let mut def_index = BTreeMap::new();
         def_index.insert(6005u64, DefInfo {
             name: "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
@@ -7338,10 +7330,9 @@ mod tests {
         let (mut app, tx) = App::test_with_sender();
         let path = PathBuf::from("/test/specimen.mo");
         app.selected = Some(path.clone());
-        let stages = {
-            let mut b = StageBundle::default();
-            b.parse = Stage::ok(serde_json::json!({"parsed": true}));
-            b
+        let stages = StageBundle {
+            parse: Stage::ok(serde_json::json!({"parsed": true})),
+            ..Default::default()
         };
         tx.send(FromWorker::CompileProgress { path, stages }).unwrap();
         app.drain_worker();
@@ -7352,10 +7343,9 @@ mod tests {
     fn drain_worker_compile_progress_ignored_for_stale_specimen() {
         let (mut app, tx) = App::test_with_sender();
         app.selected = Some(PathBuf::from("/test/current.mo"));
-        let stages = {
-            let mut b = StageBundle::default();
-            b.parse = Stage::ok(serde_json::json!({"parsed": true}));
-            b
+        let stages = StageBundle {
+            parse: Stage::ok(serde_json::json!({"parsed": true})),
+            ..Default::default()
         };
         tx.send(FromWorker::CompileProgress { path: PathBuf::from("/test/stale.mo"), stages }).unwrap();
         app.drain_worker();
@@ -7373,10 +7363,9 @@ mod tests {
         app.cached_report_stage = Some(StageKind::Parse);
         app.live_breakpoint_armed = false;
 
-        let stages = {
-            let mut b = StageBundle::default();
-            b.parse = Stage::ok(serde_json::json!({}));
-            b
+        let stages = StageBundle {
+            parse: Stage::ok(serde_json::json!({})),
+            ..Default::default()
         };
         tx.send(FromWorker::Compiled {
             path,
@@ -7434,11 +7423,10 @@ mod tests {
         app.compiling = true;
         app.pending_stage = Some(StageKind::Flatten);
 
-        let stages = {
-            let mut b = StageBundle::default();
-            b.parse = Stage::ok(serde_json::json!({}));
-            b.resolve = Stage::ok(serde_json::json!({}));
-            b
+        let stages = StageBundle {
+            parse: Stage::ok(serde_json::json!({})),
+            resolve: Stage::ok(serde_json::json!({})),
+            ..Default::default()
         };
         tx.send(FromWorker::Compiled {
             path,
@@ -7468,11 +7456,10 @@ mod tests {
         app.compiling = true;
         app.pending_stage = None;
 
-        let stages = {
-            let mut b = StageBundle::default();
-            b.parse = Stage::ok(serde_json::json!({}));
-            b.resolve = Stage::ok(serde_json::json!({}));
-            b
+        let stages = StageBundle {
+            parse: Stage::ok(serde_json::json!({})),
+            resolve: Stage::ok(serde_json::json!({})),
+            ..Default::default()
         };
         tx.send(FromWorker::Compiled {
             path,
@@ -7500,11 +7487,10 @@ mod tests {
         app.compiling = true;
         app.viewing_log = true;
 
-        let stages = {
-            let mut b = StageBundle::default();
-            b.parse = Stage::ok(serde_json::json!({}));
-            b.resolve = Stage::ok(serde_json::json!({}));
-            b
+        let stages = StageBundle {
+            parse: Stage::ok(serde_json::json!({})),
+            resolve: Stage::ok(serde_json::json!({})),
+            ..Default::default()
         };
         tx.send(FromWorker::Compiled {
             path,
