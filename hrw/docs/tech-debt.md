@@ -256,6 +256,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 | **The three animation views were near-identical** | 2026-07-29 | `playback::Playback<T>` — a **generic struct, not a trait**, deliberately: a trait would share the behaviour and leave the state declared three times, so it could still drift. `playback::Animated` is the small trait on top for the one thing that cannot be generic — what the current frame *means*. `animation_controls` went 8 positional parameters → 4. |
 | **No batch narrative regeneration** | 2026-07-29 | **Closed as obsolete.** The 14 `narrative.md` files it would have driven were retired. Debt that evaporated rather than got paid — one of the three legitimate outcomes. |
 | **`compile()` was 363 lines with an inlined `macro_rules!`** | *(discovered closed 2026-08-01)* | Now a 3-line wrapper over `compile_target` (454 lines), which gained a second caller — `compile_model_by_name`. **Resolved by a refactor nobody logged**, which is why the sweep rule is *measure*. |
+| **Crash files were never pruned, and `cargo test` failures wrote them** | 2026-08-01 | The accumulation was the symptom; **the panic hook is process-global**, so every failing assertion left a `crash-*.json` looking like an app crash — all five found that day were test failures. Now: no full file under `cargo test`, newest 3 kept, and a `crashes.log` digest appended forever so pruning loses no recurrence history. |
 
 ---
 
@@ -319,23 +320,6 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   required for the *whole* suite. **Worth fixing before any CI, since the default harness both
   fails *and* hangs** — and a hang reads as a broken build rather than a test-isolation problem.
   *Files:* `bridge.rs`, `worker.rs` — test modules.
-
-- [ ] **Crash files are never pruned.** `rotate_previous_session` rotates `session.json` →
-  `previous-session.json`, but `crash-<utc>.json` files accumulate in
-  `.hrw-bridge/diagnostics/` forever.
-
-  **The cost is not disk — it is signal.** Five stale files from 2026-07-29 sat there until
-  2026-08-01, all recording *test* assertions from the known parallel-test race rather than
-  app crashes. Doug saw them, read them as unresolved crashes, and asked; establishing they
-  were harmless took reading all five. **A diagnostic directory whose contents are mostly
-  irrelevant makes the relevant file harder to find**, which is the opposite of what this
-  module is for.
-
-  Cheapest fix is a cap — keep the newest N (5?) and delete the rest at `init()`, beside the
-  rotation that already runs there. Worth considering whether a panic from a **test** should
-  write a crash file at all: the hook is process-global, so `cargo test` failures land here
-  looking like app crashes, and that is what made all five misleading.
-  *File:* `diagnostics.rs`.
 
 - [ ] **`build_declaring_classes` resolves only the first path segment.** `src.V` resolves
   exactly; `gear.flange_a.tau` yields `gear`'s type, which *contains* the declaration rather

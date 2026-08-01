@@ -33,12 +33,19 @@
 //!
 //! So the snapshot is the point of this module and the backtrace is a bonus.
 //!
-//! ## Two files, because there are two kinds of death
+//! ## Three files, because there are two kinds of death and one kind of history
 //!
 //! 1. **`crash-<utc>.json`** — written from a panic hook. Complete: panic
 //!    message, location, backtrace, app snapshot, recent actions, log tail.
 //!    Rust's `exit code 101` is a panic, so this covers the egui-wgpu class of
-//!    failure as well as our own bugs.
+//!    failure as well as our own bugs. **The newest three are kept**; see
+//!    [`MAX_CRASH_FILES`]. **Not written under `cargo test`** — see
+//!    [`write_crash_file`], which explains why that mattered.
+//! 1b. **`crashes.log`** — one line per crash, appended forever and never
+//!    pruned. Answers *"has this happened before, and when did it start?"* for
+//!    ~100 bytes instead of 7 KB, which is what makes pruning the full files
+//!    safe. **The retention split is the design:** one recent complete file is
+//!    what a reasoner needs to diagnose; a directory of them is a haystack.
 //! 2. **`session.json`** — rewritten on every recorded *user action*. Deliberately
 //!    cheap and deliberately not per-frame. A stack overflow, a `SIGSEGV` from a
 //!    graphics driver, or a hard kill runs **no** hook at all and would otherwise
@@ -290,7 +297,43 @@ impl Diag {
     }
 }
 
+/// How many `crash-*.json` files to keep. **The cost of keeping more is signal,
+/// not disk.**
+///
+/// Five stale files sat here from 2026-07-29 to 2026-08-01, all recording *test*
+/// assertions rather than app crashes. Doug read them as unresolved crashes and
+/// asked; establishing they were harmless meant reading all five. A diagnostics
+/// directory whose contents are mostly irrelevant makes the relevant file harder
+/// to find, which is the opposite of this module's purpose.
+///
+/// Three, not one: a crash that reproduces is worth comparing against its
+/// predecessor, and the second-most-recent is occasionally the interesting one
+/// when a restart crashes differently. Beyond that, [`CRASH_LOG`] answers the
+/// only question an old *full* file was ever going to answer.
+const MAX_CRASH_FILES: usize = 3;
+
+/// One line per crash, appended forever. **Never pruned** — this is what makes
+/// pruning the full files safe.
+///
+/// The question a pile of crash files was implicitly kept for is *"has this
+/// happened before, and when did it start?"* — and that needs a panic message, a
+/// location and a git rev, not a 7 KB snapshot. At roughly 100 bytes a crash this
+/// stays scannable for the life of the project.
+const CRASH_LOG: &str = "crashes.log";
+
 /// The panic hook's body. Must not panic, and must not block.
+///
+/// **Writes nothing under `cargo test`, and that is the point.** The panic hook
+/// is process-global, so before 2026-08-01 every failing assertion in the suite
+/// left a `crash-*.json` looking exactly like an app crash — all five files
+/// found that day were test failures from the known parallel-test races, and
+/// they were misleading precisely because nothing distinguished them.
+///
+/// `cfg!(test)` is compiled per-crate, so this is `false` in `--bin hrw` and in
+/// `examples/crash_probe.rs`. The probe is therefore still the must-fire proof
+/// that a real, process-killing panic leaves a file behind — a check `cargo
+/// test` cannot make, since the harness installs its own hook and catches the
+/// panic.
 fn write_crash_file(info: &std::panic::PanicHookInfo<'_>) {
     // `PanicHookInfo::payload` is the `Box<dyn Any>` from `panic!`. The two
     // concrete types it is ever built from are `&'static str` (a literal
@@ -324,7 +367,82 @@ fn write_crash_file(info: &std::panic::PanicHookInfo<'_>) {
     });
 
     if let Some(Some(report)) = report {
-        let _ = write_json(&dir().join(format!("crash-{}.json", file_stamp())), &report);
+        // The digest is written even under test — it is one line, it is what a
+        // recurrence question reads, and a test panic recurring is itself worth
+        // seeing. Only the 7 KB file is suppressed.
+        write_crash_artifacts(&dir(), &report, !cfg!(test));
+    }
+}
+
+/// Write the durable record of a crash: always a digest line, optionally the
+/// full report, then prune.
+///
+/// Split out from the hook so it is **reachable from a test with a temporary
+/// directory**. Gating the hook on `cfg!(test)` would otherwise make the
+/// retention behaviour unverifiable, which is the failure mode this module
+/// exists to argue against.
+///
+/// Every failure is ignored: losing a diagnostic is a far smaller loss than a
+/// panic hook that itself panics.
+fn write_crash_artifacts(dir: &Path, report: &Value, write_full_file: bool) {
+    let _ = append_line(&dir.join(CRASH_LOG), &digest_line(report));
+    if write_full_file {
+        let _ = write_json(&dir.join(format!("crash-{}.json", file_stamp())), report);
+        prune_crash_files(dir, MAX_CRASH_FILES);
+    }
+}
+
+/// One crash, one line: when, which build, where, and what.
+///
+/// **Newlines are flattened deliberately.** A panic message can be multi-line
+/// (`assert_eq!` produces three), and a digest whose entries span an unknown
+/// number of lines cannot be read with `tail` or counted, which is most of what
+/// it is for.
+fn digest_line(report: &Value) -> String {
+    let at = report["captured_at"].as_str().unwrap_or("<unknown time>");
+    let rev = report["build"]["git_rev"].as_str().unwrap_or("?");
+    let dirty = if report["build"]["git_dirty"].as_bool().unwrap_or(false) { "+" } else { "" };
+    let panic = &report["panic"];
+    let where_ = match (panic["location"]["file"].as_str(), panic["location"]["line"].as_u64()) {
+        (Some(f), Some(l)) => format!("{f}:{l}"),
+        _ => "<unknown location>".to_owned(),
+    };
+    let message = panic["message"].as_str().unwrap_or("<no message>");
+    let flat = message.split_whitespace().collect::<Vec<_>>().join(" ");
+    format!("{at}  {rev}{dirty}  {where_}  {flat}")
+}
+
+fn append_line(path: &Path, line: &str) -> std::io::Result<()> {
+    use std::io::Write;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut f = std::fs::OpenOptions::new().create(true).append(true).open(path)?;
+    writeln!(f, "{line}")
+}
+
+/// Keep the newest `keep` crash files; delete the rest.
+///
+/// **Sorted by name, not by mtime.** [`file_stamp`] is `YYYYmmdd-HHMMSS-mmm`,
+/// which sorts chronologically as text, and a file's mtime can be changed by a
+/// copy, a restore or a sync client while its name cannot.
+fn prune_crash_files(dir: &Path, keep: usize) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    let mut crashes: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
+                n.starts_with("crash-") && n.ends_with(".json")
+            })
+        })
+        .collect();
+    if crashes.len() <= keep {
+        return;
+    }
+    crashes.sort();
+    for old in &crashes[..crashes.len() - keep] {
+        let _ = std::fs::remove_file(old);
     }
 }
 
@@ -641,4 +759,130 @@ mod tests {
             "actions must read in the order they happened: {details:?}",
         );
     }
+
+    /// Retention keeps the newest and drops the oldest.
+    ///
+    /// The names *are* the chronological order, so this also pins the
+    /// sort-by-name choice: an implementation using mtime would pass on a
+    /// freshly written set and fail the moment a file was copied or restored.
+    #[test]
+    fn pruning_keeps_the_newest_crash_files() {
+        let dir = std::env::temp_dir().join("hrw-prune-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for n in [
+            "crash-20260101-000000-000.json",
+            "crash-20260102-000000-000.json",
+            "crash-20260103-000000-000.json",
+            "crash-20260104-000000-000.json",
+            "crash-20260105-000000-000.json",
+        ] {
+            std::fs::write(dir.join(n), "{}").unwrap();
+        }
+        // Things that are NOT crash files must survive untouched.
+        std::fs::write(dir.join("session.json"), "{}").unwrap();
+        std::fs::write(dir.join(CRASH_LOG), "one line\n").unwrap();
+
+        prune_crash_files(&dir, 3);
+
+        let mut left: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        left.sort();
+        assert_eq!(
+            left,
+            // Sorted as text: `crash-` precedes `crashes.log`, since '-' < 'e'.
+            vec![
+                "crash-20260103-000000-000.json".to_owned(),
+                "crash-20260104-000000-000.json".to_owned(),
+                "crash-20260105-000000-000.json".to_owned(),
+                CRASH_LOG.to_owned(),
+                "session.json".to_owned(),
+            ],
+            "the three newest crashes survive; the digest and session.json are not crash files",
+        );
+
+        // Pruning below the cap must be a no-op, not a reason to delete.
+        prune_crash_files(&dir, 3);
+        assert_eq!(
+            std::fs::read_dir(&dir).unwrap().count(),
+            5,
+            "a second prune with nothing over the cap changes nothing",
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The digest is one line, and carries the four facts a recurrence question
+    /// needs.
+    ///
+    /// **Multi-line panic messages are the case that matters** — `assert_eq!`
+    /// produces three lines, and every one of the five crash files deleted on
+    /// 2026-08-01 was an `assert_eq!`. A digest entry spanning an unknown number
+    /// of lines cannot be counted or `tail`ed.
+    #[test]
+    fn a_digest_entry_is_one_line_however_the_panic_was_worded() {
+        let report = json!({
+            "captured_at": "2026-08-01 20:00:00.000 UTC",
+            "build": { "git_rev": "abc1234", "git_dirty": true },
+            "panic": {
+                "message": "assertion `left == right` failed: should capture all 128 KB\n  left: 53\n right: 131072",
+                "location": { "file": "hrw/src/worker.rs", "line": 3530, "column": 9 },
+            },
+        });
+        let line = digest_line(&report);
+        assert!(!line.contains('\n'), "one line, whatever the panic did: {line:?}");
+        assert!(line.contains("abc1234+"), "the rev, and dirty is flagged: {line:?}");
+        assert!(line.contains("worker.rs:3530"), "where it died: {line:?}");
+        assert!(line.contains("left: 53 right: 131072"), "the whole message survives: {line:?}");
+
+        // A crash with nothing known must still produce a usable line rather
+        // than panicking inside the panic hook.
+        let bare = digest_line(&json!({}));
+        assert!(!bare.contains('\n'));
+        assert!(bare.contains("<unknown location>"), "degrades, never panics: {bare:?}");
+    }
+
+    /// Under test the digest is written and the full file is not — the
+    /// behaviour that stops `cargo test` failures from filling the diagnostics
+    /// directory with things that look like app crashes.
+    #[test]
+    fn the_digest_is_written_when_the_full_file_is_suppressed() {
+        let dir = std::env::temp_dir().join("hrw-artifacts-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        let report = json!({
+            "captured_at": "2026-08-01 20:00:00.000 UTC",
+            "build": { "git_rev": "abc1234", "git_dirty": false },
+            "panic": { "message": "boom", "location": { "file": "a.rs", "line": 1 } },
+        });
+
+        write_crash_artifacts(&dir, &report, false);
+        let crashes: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.starts_with("crash-"))
+            .collect();
+        assert!(crashes.is_empty(), "no full file when suppressed, got {crashes:?}");
+        let log = std::fs::read_to_string(dir.join(CRASH_LOG)).expect("digest is still written");
+        assert!(log.contains("boom"), "the digest records it: {log:?}");
+        assert_eq!(log.lines().count(), 1);
+
+        // A second crash appends rather than replacing.
+        write_crash_artifacts(&dir, &report, false);
+        let log = std::fs::read_to_string(dir.join(CRASH_LOG)).unwrap();
+        assert_eq!(log.lines().count(), 2, "append-only: {log:?}");
+
+        // With writing enabled the full file appears too.
+        write_crash_artifacts(&dir, &report, true);
+        let n = std::fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with("crash-"))
+            .count();
+        assert_eq!(n, 1, "the full file is written when not suppressed");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
+
