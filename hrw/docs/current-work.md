@@ -18,9 +18,33 @@ Started 2026-07-31.
 | 4 | **The big run** — full corpus, overnight | needs step 3 |
 | 5 | **Triage** the findings — three categories, see below | needs step 4 |
 | 6 | **Fix**, re-run to green | |
-| 7 | **Test mode** (`ideas.md` #52) — somewhere to *look* at these reports | the payoff |
+| 7 | **The oracle test** — design, run (`ideas.md` #43) | after 6 |
+| 8 | **Test mode** (`ideas.md` #52) — somewhere to *look* at these reports | the payoff |
+| 9 | **A reading path for HRW**, then a **structural pass on `app.rs`** | after 8, deliberately |
 
-Steps 1-4 are the machine's time; steps 5-7 are ours.
+Steps 1-4 are the machine's time; steps 5-9 are ours.
+
+### Why 9 comes last, rather than sooner (Doug, 2026-07-31)
+
+HRW is now **33,964 lines across 33 modules** against Rumoca's 138,987 across 53 crates —
+about a quarter, and no longer trivial. Doug: *"I'm definitely going to have to consider HRW
+to be a subject of focused study, just like rumoca."*
+
+But the complexity is **concentrated, not diffuse**: `app.rs` is 9,039 lines and `worker.rs`
+5,668 — **43% of all HRW code in two files**. And unlike Rumoca's, much of it is *accidental*
+rather than essential: a 9,000-line UI module is not inherent to what HRW does. So part of
+the answer is not "study it harder" but "make it smaller".
+
+**Both are deferred until after Test mode on purpose**, and the reason is a rule this project
+already holds: `feedback-tech-debt-sweeps-serve-future-phases` — skip debt a later phase will
+rewrite. Test mode touches `app.rs` and adds a fourth `UiMode`, so a structural pass or a
+reading path written before it would be partly obsolete on arrival. CLAUDE.md already defers
+splitting `central_panel_ui` for exactly this reason.
+
+**The gap the reading path fills**: HRW has 19,117 lines of documentation across 64 files —
+generous against 34k of code — but `architecture.md` is a 1,500-line *reference*. It answers
+"how does X work", never "where do I start". Rumoca has `compiler-phases/` for that; HRW has
+no equivalent.
 
 ### Why step 2 is worth doing before step 4
 
@@ -46,6 +70,12 @@ not HRW's. So triage precedes fixing, and a violation means *something disagrees
 Misclassifying either way is expensive. The third row is the one that needs care.
 
 ---
+
+## The zero-contention work: the feature backlog
+
+Doug has a long list of feature ideas to discuss and record. **That is the ideal work while a
+sweep runs** — it needs no build, no binary, and no CPU, so it competes with nothing. Add to
+`docs/ideas.md`.
 
 ## Working on HRW while the sweep runs
 
