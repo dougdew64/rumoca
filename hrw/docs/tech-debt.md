@@ -320,6 +320,23 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   fails *and* hangs** — and a hang reads as a broken build rather than a test-isolation problem.
   *Files:* `bridge.rs`, `worker.rs` — test modules.
 
+- [ ] **Crash files are never pruned.** `rotate_previous_session` rotates `session.json` →
+  `previous-session.json`, but `crash-<utc>.json` files accumulate in
+  `.hrw-bridge/diagnostics/` forever.
+
+  **The cost is not disk — it is signal.** Five stale files from 2026-07-29 sat there until
+  2026-08-01, all recording *test* assertions from the known parallel-test race rather than
+  app crashes. Doug saw them, read them as unresolved crashes, and asked; establishing they
+  were harmless took reading all five. **A diagnostic directory whose contents are mostly
+  irrelevant makes the relevant file harder to find**, which is the opposite of what this
+  module is for.
+
+  Cheapest fix is a cap — keep the newest N (5?) and delete the rest at `init()`, beside the
+  rotation that already runs there. Worth considering whether a panic from a **test** should
+  write a crash file at all: the hook is process-global, so `cargo test` failures land here
+  looking like app crashes, and that is what made all five misleading.
+  *File:* `diagnostics.rs`.
+
 - [ ] **`build_declaring_classes` resolves only the first path segment.** `src.V` resolves
   exactly; `gear.flange_a.tau` yields `gear`'s type, which *contains* the declaration rather
   than being it. The UI wording says "in" rather than "declared in", so it is honest — but a
