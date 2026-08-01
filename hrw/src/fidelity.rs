@@ -787,7 +787,11 @@ mod tests {
     /// methodology rests on — a certificate rather than a bug list
     /// (`docs/reports.md`).
     fn report_path() -> std::path::PathBuf {
-        std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fidelity-report.csv"))
+        // **Named for its scope, deliberately.** This is the 10-specimen pre-commit
+    // gate. The MSL corpus artifact is `docs/msl-fidelity-report.csv`, written
+    // by `promote-run.ps1` — two reports with the same name but different
+    // scopes would be confused exactly once, expensively.
+    std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/specimen-fidelity-report.csv"))
     }
 
     /// One model's fidelity result.

@@ -103,10 +103,10 @@ Runs F1–F9 over the corpus, **one model per process**.
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca\hrw
 
-Start-Transcript -Path C:\tmp\fid-full.log
+Start-Transcript -Path C:\Users\dougd\rumoca-runs\fid-full.log
 
 .\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
-    -Out C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv
+    -Out C:\Users\dougd\rumoca-runs\fid-full.csv -Profile C:\Users\dougd\rumoca-runs\fid-full-memory.csv
 
 Stop-Transcript
 ```
@@ -156,10 +156,10 @@ regardless of what else is running.
 ### Watching it, from a second window
 
 ```powershell
-(Get-Content C:\tmp\fid-full.csv | Measure-Object -Line).Lines - 1          # models done
-Import-Csv C:\tmp\fid-full.csv | Where-Object outcome -eq 'violations'      # findings
-Import-Csv C:\tmp\fid-full-memory.csv | Where-Object verdict -ne 'ok'       # aborts
-Import-Csv C:\tmp\fid-full-memory.csv | Sort-Object {[int]$_.peak_ws_mb} -Descending |
+(Get-Content C:\Users\dougd\rumoca-runs\fid-full.csv | Measure-Object -Line).Lines - 1          # models done
+Import-Csv C:\Users\dougd\rumoca-runs\fid-full.csv | Where-Object outcome -eq 'violations'      # findings
+Import-Csv C:\Users\dougd\rumoca-runs\fid-full-memory.csv | Where-Object verdict -ne 'ok'       # aborts
+Import-Csv C:\Users\dougd\rumoca-runs\fid-full-memory.csv | Sort-Object {[int]$_.peak_ws_mb} -Descending |
     Select-Object -First 10                                                # heaviest models
 ```
 
@@ -201,6 +201,32 @@ bug that stages A and B could not, because the triggering shape — 48 equations
 functions — existed in neither.
 
 ---
+
+## Afterwards — promote the output, do not leave it lying around
+
+**A finished sweep costs hours. Do not leave it in a working directory.**
+
+```powershell
+cd C:/Users/dougd/source/repos/rumoca/hrw
+./promote-run.ps1 -RunDir C:/Users/dougd/rumoca-runs
+git add hrw/docs/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
+```
+
+`promote-run.ps1` **copies** (never moves) into `docs/` as `msl-fidelity-report.csv` plus a
+provenance sidecar, and **refuses to replace a larger report with a smaller one** unless
+forced — the likeliest accident is promoting a partial re-run over a complete sweep.
+
+**Three files, three different jobs — do not confuse them:**
+
+| File | Scope | Committed? |
+|---|---|---|
+| `docs/specimen-fidelity-report.csv` | 10 curated specimens, written by the pre-commit **test** | yes, and it churns |
+| `docs/msl-fidelity-report.csv` | the **full MSL corpus** — the artifact | yes, deliberately |
+| `C:/Users/dougd/rumoca-runs/*` | in-progress and historical run output | no — durable working area |
+
+**Run output goes to `C:/Users/dougd/rumoca-runs/`, never `C:/tmp`.** Temp directories get
+cleaned by Windows, and Claude generates scratch files there constantly. The original version
+of this runbook said `C:/tmp`, which put hours of work one cleanup away from gone.
 
 ## Afterwards
 
