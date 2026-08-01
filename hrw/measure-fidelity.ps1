@@ -90,10 +90,13 @@ function Get-FreeGB { [math]::Round((Get-CimInstance Win32_OperatingSystem).Free
 $freeNow = Get-FreeGB
 $ra = Get-Process rust-analyzer -ErrorAction SilentlyContinue
 $raGB = if ($ra) { [math]::Round((($ra | Measure-Object WorkingSet64 -Sum).Sum)/1GB, 2) } else { 0 }
-Write-Host "free RAM ${freeNow} GB; rust-analyzer holding ${raGB} GB resident"
+# Free RAM always; rust-analyzer only when it is actually running and in the
+# way. Reporting "holding 0 GB resident" on every run is noise, and the reminder
+# to stop it now lives in docs/long-runs.md where it is read before starting.
+Write-Host "free RAM ${freeNow} GB"
 if ($raGB -gt 1 -and $freeNow -lt 8) {
     Write-Host ""
-    Write-Host "  rust-analyzer is holding ${raGB} GB and free RAM is ${freeNow} GB." -ForegroundColor Yellow
+    Write-Host "  rust-analyzer is running and free RAM is ${freeNow} GB." -ForegroundColor Yellow
     Write-Host "  For a clean sweep of the heaviest models, stop it FIRST via:" -ForegroundColor Yellow
     Write-Host "      Ctrl+Shift+P -> 'rust-analyzer: Stop server'" -ForegroundColor Yellow
     Write-Host "  Do NOT kill the process - VS Code restarts it and re-indexes." -ForegroundColor Yellow
@@ -149,7 +152,15 @@ Get-Content $Profile | Select-Object -Skip 1 | ForEach-Object {
     }
 }
 if ($retryable.Count -gt 0) {
-    Write-Host "retrying $($retryable.Count) model(s) with verdict(s): $($RetryVerdicts -join ', ')"
+    # **Says what it MEASURES: rows cleared, not models to be run.**
+    #
+    # This used to read "retrying N model(s)", where N counted only rows still
+    # carrying a retryable VERDICT. Models left pending by a previous pass are
+    # absent from the profile entirely, so they were never counted — and on
+    # 2026-08-01 it announced "retrying 1 model(s)" while sixteen were queued.
+    # The count that matters is the "N model(s) to process" line below, which
+    # counts both kinds.
+    Write-Host "cleared $($retryable.Count) stale row(s) with verdict(s): $($RetryVerdicts -join ', ')"
     # Drop their rows so the retry writes a fresh verdict rather than a duplicate.
     $kept = @(Get-Content $Profile | Select-Object -First 1)
     $kept += Get-Content $Profile | Select-Object -Skip 1 | Where-Object { $RetryVerdicts -notcontains ($_ -split ',')[3] }
