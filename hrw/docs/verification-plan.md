@@ -1,8 +1,14 @@
 # Plan — making the environment verify more, so Doug verifies less
 
+**Purpose:** the items that make the toolchain catch what Doug currently catches by hand.
+**Status:** **live plan.** Update it as items land; delete it when all five are complete and
+their conventions have moved into `CLAUDE.md` and `tech-debt.md`.
+**Read when:** picking up the pause, or when tempted to add a plan item — the ordering rule is
+*what makes the rest cheaper*, not what is biggest.
+
 **A deliberate pause in feature work**, agreed 2026-08-01. Oracle testing and Test mode resume
-when this is done. **This is a live plan: update it as items land, delete it when all four are
-complete** and their conventions have moved into `CLAUDE.md` and `tech-debt.md`.
+when this is done. *(Item 0b added 2026-08-01 during the document cleanup, which produced a
+new class of evidence — see below.)*
 
 ## Why this pause exists
 
@@ -27,7 +33,7 @@ And the standing asymmetry, which predates that day:
 `docs/tech-debt.md`'s second trigger names the property: **verifiability, not Rust.** This plan
 is that trigger's first application.
 
-## The four items, in order
+## The five items, in order
 
 Ordered by *what makes the rest cheaper*, not by size.
 
@@ -47,6 +53,57 @@ silent when work was pending by absence.
 **Done when:** the rule is in `CLAUDE.md`, and every existing observer either has a must-fire
 test or a recorded reason it cannot. **No dependency, no approval, no schedule** — it applies
 from now on, and its absence makes a change incomplete.
+
+---
+
+### 0b. Make a claim of *absence* checkable — the stale-negative test
+
+**The mirror of `doc_citations.rs`.** That test asserts every cited path **exists**. This one
+asserts that everything a document claims **does not exist** still does not.
+
+**The evidence, found 2026-08-01 while cleaning the documents** — a class the pause's original
+four items do not cover, because nothing here is silent tooling or UI:
+
+| Stale claim | Reality | How long |
+|---|---|---|
+| #42: frame position, pointed-at node, followed identifier are *"still below the reach of a link"* | all three shipped; **three fixture tours actively test them** | 2 days |
+| #42: *"specimens become a medium of explanation… it is currently impossible"* | `.hrw-bridge/specimens/` shipped | 2 days |
+| #45 audit: structural *"spans are dropped"* | fixed — and **step 1 of the same idea said so** | 3 days |
+| `context-assembly.md`: *"not yet implemented"* | the Context Bar shipped 2026-07-28 | 4 days |
+
+**Why this class is worse than it looks.** A wrong *positive* claim gets caught the moment
+someone acts on it — you go to use the thing and it is not there. A wrong *negative* claim is
+never caught, because acting on it means **not looking**. The natural response to "that is not
+possible yet" is to build it, and #42 was two days from having its link vocabulary
+re-implemented on top of itself. **It is the one error whose cost is paid in duplicated work
+rather than a failed test.**
+
+**The mechanism — a tag, because free prose cannot be checked.**
+
+```markdown
+Frame addressing is not built. <!-- unbuilt: hrw://stage/*/frame -->
+Scratch specimens do not exist. <!-- unbuilt: App::scratch_specimens -->
+```
+
+The test resolves each `unbuilt:` target and **fails if it resolves** — a link slug against
+`SubView::from_slug` and the fixture-tour corpus, a Rust path against the source. The failure
+message says *"`ideas.md` line N claims X is unbuilt; it exists at Y"*. `doc_citations.rs`
+already has the scanner, the boundary-matching and the workspace-root plumbing, so this is
+mostly a second predicate over machinery that exists.
+
+**And a non-vacuity guard, without which this is theatre.** Zero tags means zero failures,
+which reads exactly like zero staleness. The test **prints its tag count**, and a companion
+lint lists untagged negative phrases — *"not yet"*, *"currently impossible"*, *"does not
+exist"*, *"below the reach"* — as a **warning, never a failure**, so the retrofit stays lazy
+in the way provenance tags are. **Coverage is expected to be low and that is fine**; a *wrong*
+tag fails, because a tag is a claim.
+
+**Done when:** the tag is honoured by a test in the fast loop, the four claims above are tagged
+or removed, the untagged-phrase lint prints, and the convention is in `CLAUDE.md` beside the
+must-fire rule — which is the same principle, pointed at absence instead of silence.
+
+**Explicitly out of scope:** understanding free-form prose. This catches what someone chose to
+tag; it does not read English. That limit is why the lint exists.
 
 ---
 

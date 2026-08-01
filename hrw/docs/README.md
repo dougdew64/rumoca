@@ -56,7 +56,7 @@ status and reading moment in a three-line header, and this index is the sorted v
 | Document | Covers |
 |---|---|
 | [`current-work.md`](current-work.md) | The fidelity sweep and the sequence around it. |
-| [`verification-plan.md`](verification-plan.md) | The four-item pause: must-fire tests, a faster suite, headless UI testing, Rust drivers. |
+| [`verification-plan.md`](verification-plan.md) | The five-item pause: must-fire tests, the stale-negative test, a faster suite, headless UI testing, Rust drivers. |
 | [`source-tooling-plan.md`](source-tooling-plan.md) | **Part live.** Phases 1-5 delivered; **Phases 6 (tree rework) and 7 (canvas views) are unbuilt design work.** Read before touching the IR tree or a canvas view. |
 
 ## Reference — look things up
