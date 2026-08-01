@@ -83,12 +83,12 @@ when the sweep's findings have landed.
 3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open it
    compiled in the RHS (`docs/ideas.md` **#52**).
    - **3b. PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** (agreed
-     2026-08-01). Five items *before* oracle testing and Test mode: the must-fire convention,
+     2026-08-01). Six items *before* oracle testing and Test mode: the must-fire convention,
      **the stale-negative test** (a claim of *absence* must be checkable — the mirror of
-     `doc_citations.rs`), shortening the pre-commit suite (#48), **headless UI testing with
-     `egui_kittest`** (dev-dependency, approved), and moving the run drivers to Rust. Doug:
-     *"Anything which slows down your ability to help bring my ideas to life is absolutely
-     worth fixing now."*
+     `doc_citations.rs`), **clearing HRW's 67 clippy warnings and then denying them**,
+     shortening the pre-commit suite (#48), **headless UI testing with `egui_kittest`**
+     (dev-dependency, approved), and moving the run drivers to Rust. Doug: *"Anything which
+     slows down your ability to help bring my ideas to life is absolutely worth fixing now."*
 4. **Design and run the oracle test** — Rumoca vs System Modeler (#43). **Constrained by
    [`docs/reports.md`](docs/reports.md):** it must emit the same `name` join key, because a
    mismatch is only an admissible upstream finding when that model is *fidelity-green*.

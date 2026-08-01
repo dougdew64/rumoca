@@ -1,14 +1,15 @@
 # Plan — making the environment verify more, so Doug verifies less
 
 **Purpose:** the items that make the toolchain catch what Doug currently catches by hand.
-**Status:** **live plan.** Update it as items land; delete it when all five are complete and
+**Status:** **live plan.** Update it as items land; delete it when all six are complete and
 their conventions have moved into `CLAUDE.md` and `tech-debt.md`.
 **Read when:** picking up the pause, or when tempted to add a plan item — the ordering rule is
 *what makes the rest cheaper*, not what is biggest.
 
 **A deliberate pause in feature work**, agreed 2026-08-01. Oracle testing and Test mode resume
-when this is done. *(Item 0b added 2026-08-01 during the document cleanup, which produced a
-new class of evidence — see below.)*
+when this is done. *(Items 0b and 0c added 2026-08-01 during the document and tech-debt
+cleanups, each on evidence those cleanups turned up — a stale-negative claim that nearly caused
+duplicated work, and a clippy lint that was firing on the exact shape of a shipped bug.)*
 
 ## Why this pause exists
 
@@ -33,7 +34,7 @@ And the standing asymmetry, which predates that day:
 `docs/tech-debt.md`'s second trigger names the property: **verifiability, not Rust.** This plan
 is that trigger's first application.
 
-## The five items, in order
+## The six items, in order
 
 Ordered by *what makes the rest cheaper*, not by size.
 
@@ -104,6 +105,61 @@ must-fire rule — which is the same principle, pointed at absence instead of si
 
 **Explicitly out of scope:** understanding free-form prose. This catches what someone chose to
 tag; it does not read English. That limit is why the lint exists.
+
+---
+
+### 0c. Clear HRW's clippy warnings, then deny them
+
+**67 warnings, and the count is what makes them dangerous, not any one of them.** Measured
+2026-08-01; 63 were noted informally on 2026-07-29, so it drifts upward unwatched. **A warning
+count nobody reads is where a real warning hides** — and `cargo clippy --all-targets` is the
+*only* check that covers the binary, which `cargo test` does not build.
+
+**The evidence is not hypothetical, and it is close to home.** Among the 67:
+
+> ```
+> warning: items after a test module
+>    --> hrw\src\canvas.rs:249:1
+> 249 | mod tests {
+> 476 | impl Canvas {
+> ```
+
+**`items_after_test_module` is the lint for the exact shape of the bug that broke Doug's
+debugger launch on 2026-07-31** — code placed after `#[cfg(test)] mod tests`, where a
+misapplied `#[cfg(test)]` let two helpers compile into `--bin hrw` referencing test-only
+imports. Every test passed; the binary did not. **Clippy had a lint for it, the lint was
+firing, and it was invisible in the noise.** That is the entire argument for this item.
+
+**What the 67 actually are** — mostly mechanical, which is why this is cheap:
+
+| Kind | Count | Note |
+|---|---|---|
+| `collapsible_if` | 18 | style |
+| `field_reassign_with_default` | 7 | style |
+| `map_or` simplifications | 6 | style |
+| `manual_contains` | 4 | minor efficiency |
+| **`assertions_on_constants`** | **4** | **not style** — four `#[test]`s assert relationships between compile-time constants (`MIN_ZOOM > 0.0`, `MAX_ZOOM > MIN_ZOOM`). As `const { assert!(…) }` they fail at **compile** time instead of test time, which is strictly better verification and squarely this pause's theme. |
+| **`items_after_test_module`** | **1** | **not style** — see above |
+| ~25 others | 1-3 each | incl. `manual_is_multiple_of` and other **toolchain drift**, not new bad code |
+
+**`cargo clippy --fix` handles 34 of them**, so most of the work is review rather than typing.
+
+**Then deny, or it comes back.** `hrw/Cargo.toml` already carries a `[lints.clippy]` block
+allowing `excessive_nesting` and `too_many_arguments` — deliberately, since the Rumoca crates'
+complexity budget governs a compiler and not a UI. **HRW does not inherit the workspace's
+`all = "deny"`.** The fix is to opt in at the crate level, keeping those two allows.
+
+**Done when:** `cargo clippy -p hrw --all-targets` is clean, HRW's `[lints.clippy]` denies by
+default, and the two existing allows carry their recorded reason.
+
+**The discipline that makes it stick:** a lint that is genuinely wrong for a UI crate gets an
+**allow at crate level with a written reason**, never a scattered `#[allow]` at the call site.
+A crate-level allow is one line someone can argue with; a sprinkling of local allows is
+indistinguishable from the noise this item exists to remove.
+
+**Out of scope:** the Rumoca crates. They are already clippy-clean under
+`[workspace.lints]`'s `all = "deny"`, and that must stay true — a lint the instrumentation
+introduces would fail upstream CI.
 
 ---
 
