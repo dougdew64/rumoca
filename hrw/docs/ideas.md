@@ -2,10 +2,12 @@
 
 **Purpose:** the numbered backlog. Every idea keeps its number forever, so `#43` means one
 thing across every document and commit message.
-**Status:** record — append-only. Items are marked DELIVERED or DECLINED in place rather than
-deleted, because the reasoning is the value.
-**Read when:** planning new work, or before proposing something that may already be here
-(with a decision attached). **Candidates, not commitments.**
+**Status:** record. **Delivered items are cut down to a one-line entry** in *Delivered and
+closed* at the foot of this file — a backlog is for what has not been built. **Their numbers
+are never reused**, because 55 references outside this file depend on them resolving.
+*Declined* items stay in full: their whole job is to stop a proposal coming back.
+**Read when:** planning new work, or before proposing something that may already be here with
+a decision attached. **Candidates, not commitments.**
 
 Captured ideas not yet scheduled. **These are candidates, not commitments** — no
 arc depends on them, and settled decisions live in [`DECISIONS.md`](../DECISIONS.md),
@@ -65,93 +67,6 @@ tour take priority over unlinked items of the same severity.
 
 ---
 
-## 1. Narratives for *simulation*, especially convergence-failure troubleshooting
-
-**✅ Implemented 2026-07-21.** `gen_trace` now runs simulation after compilation for
-specimens that compile through solve lowering, writing per-variable trajectory
-summaries (`simulation.json`: name, is\_state, initial/final/min/max values) and
-recording the simulation outcome in `manifest.json`. The notebook template and README
-include a Simulation section. All 12 specimens have simulation traces. The deeper
-convergence-failure diagnostics (solver logs, per-step residual history, Jacobian
-conditioning) remain future work. Original capture below.
-
-Captured 2026-07-20 (Doug). The Claude-authored [notebook narrative](specimen-notebook/README.md)
-is powerful for *compilation*; it should extend to **simulation** — and is likely
-*most* valuable when a simulation **fails to converge**.
-
-- **Why it matters:** convergence failures (Newton divergence on a torn block,
-  event-iteration chattering, step-size collapse, singular/ill-conditioned
-  Jacobian) are exactly where a grounded, cited narrative earns its keep — the raw
-  solver output is opaque, and the failure usually traces back to a *specific*
-  structural feature (a particular BLT block, a bad tear choice, a high-index
-  residual). A narrative can connect "the solver stalled here" to "this is the
-  coupled block from the structural phase, torn on X."
-- **Sketch:** a **simulation trace** analogous to the compilation trace — solver
-  logs, per-step residual/error history, the failing block/tear, event log,
-  Jacobian conditioning — captured durably, with a `narrative.md` that diagnoses
-  the failure against it. Ties directly to the matching/BLT/tearing work: the
-  structural report is the map a convergence post-mortem reads.
-- **When:** aligns with the simulation arcs (charter §4.2, arcs 6–7). Revisit then;
-  the trace+narrative machinery ([`examples/gen_trace.rs`](../examples/gen_trace.rs))
-  is the pattern to extend.
-
-## 2. Specimen *purpose hints* — in the file and in the app UI
-
-**✅ Implemented 2026-07-20.** Convention: a `// purpose: <one-line>` comment in
-each specimen (phenomenon-focused, distinct from the Modelica description string).
-The app scans it at rescan (`read_purpose`, no compile) and shows it as weak
-subtext + hover under each filename in the LHS list. All seven specimens carry one.
-Original capture below.
-
-Captured 2026-07-20 (Doug). The app's left-hand specimen list shows only filenames
-— no hint of *why* each specimen exists (e.g. "demonstrates Pantelides' algorithm",
-"a genuine algebraic loop"). Surface a one-line purpose both in the specimen file
-and in the UI.
-
-- **Source of truth:** every specimen already has a model description string
-  (`model X "…"`), and the notebook's "Why this specimen exists" section states the
-  phenomenon precisely — keep the hint consistent with both. Consider a lightweight
-  convention (the description string, or a dedicated structured comment/annotation)
-  so it's machine-readable.
-- **UI:** show the hint in the LHS list (secondary text under the filename, or a
-  hover tooltip). The compile already yields the model; the description is available
-  from `parse.json` (or a cheap pre-compile scan of the `"…"` after the model name).
-- **Payoff:** turns the specimen list into a navigable index of *what each teaches*
-  — small change, directly serves "identify context conveniently."
-
-## 3. Directory naming / organization
-
-**✅ Implemented 2026-07-20.** Renamed `docs/understanding/` → `docs/compiler-phases/`
-(says what it is — per-phase Rumoca explanations) and `docs/notebook/` →
-`docs/specimen-notebook/` (shares the `specimen` stem with `specimens/`, signaling the
-one-entry-per-specimen tie by name). `specimens/` left in place (its path is hard-coded
-across the app and tests). `examples/` also kept — it's a **Cargo convention** (Cargo
-discovers `examples/*.rs` as targets for `cargo run --example`), not a free-choice name,
-so renaming would break the `gen_trace` / `gen_field_help` invocations. Original capture
-below (its wording now uses the new names, since the rename swept this file too).
-
-Captured 2026-07-20 (Doug). Two naming problems:
-
-- **`specimens/` ↔ `docs/specimen-notebook/` coupling is invisible.** They are tightly
-  related (one notebook entry per specimen) but the names don't say so.
-  - *Options:* (a) lightest — rename `docs/specimen-notebook/` to something that signals the
-    tie (e.g. `docs/specimen-lab/`) and lean on cross-links; (b) a shared parent;
-    (c) per-specimen folders holding both the `.mo` and its notebook — the strongest
-    signal but the biggest restructure (fights the app's flat `specimens/` scan and
-    the many test paths that hard-code `specimens/<X>.mo`).
-  - *Lean:* (a) — signal the relationship by name + cross-reference; defer the deep
-    restructure unless it clearly pays off.
-- **`docs/compiler-phases/` is poorly named** — "understanding of *what*?" It is
-  Doug's canonical explanation of the **Rumoca compiler phases**.
-  - *Candidate names:* `docs/phases/`, `docs/rumoca-phases/`, `docs/compiler-phases/`.
-    *Lean:* `docs/rumoca-phases/` (says exactly what it is, and distinguishes it from
-    the specimen-specific notebook).
-  - *Impact (so a future rename is scoped, not surprising):* `src/field_help.rs`
-    (`chapter_for_stage` paths), the notebook narratives' `../../compiler-phases/…`
-    links, the app "Read: chapter" button, `.vscode/settings.json` editor
-    associations glob, and references in `CLAUDE.md` / `docs/updating-rumoca.md`.
-    Mechanical but wide — do it as one deliberate sweep.
-
 ## 4. Reconsider the arc close-out gates (differential test + debugger single-step)
 
 Captured 2026-07-20 (Doug). The arc close-out ritual (CLAUDE.md) currently gates on (1) the specimen
@@ -174,32 +89,6 @@ nonlinear-constraint reduction (worth confirming against its own test suite / a 
 contribution), or (b) we confirm the full private sim path / CasADi target handles it and expose a way
 to drive it from HRW. Then: author `FourBarLinkage.mo` from the library, wire its trace + narrative,
 and show index-3 → reduced. Arc 4's core (index reduction observed) is already met via Drivetrain.
-
-## 6. Initialization stage: detect over/under-determined *user* initialization
-
-**✅ Implemented 2026-07-20 (over-determination).** The Initialization stage now
-reports a `determinacy` block — explicit initial conditions (initial equations +
-fixed-start states) vs states — and flags **over-determined** init with a red note
-(specimen `OverInitRc`: `C.v = 0` + `der(C.v) = 0` → surplus +1). Under-determination
-is intentionally NOT flagged (states initialize from their `start` attributes, so a
-deficit is normal — verified: `RcCircuit` surplus −1 is well-posed). A full
-initialization-system structural analysis (Rumoca's `rumoca-phase-dae::balance` is
-the *continuous* balance, not init-specific) remains a possible deepening. Original
-capture below.
-
-
-Captured 2026-07-20 (finding, Arc 5). The Initialization stage today renders
-`build_ic_plan`, which plans the *algebraic subsystem* — it does NOT see the user's
-`initial equation`s or `start`/`fixed` attributes. So a **pure initialization
-blow-up** (e.g. conflicting initial equations like `C.v = 0` together with
-`der(C.v) = 0` — the `OverInitRc` case, tested during Arc 5) shows **all-green** in
-the observatory even though it's over-determined. Enhancement: have the
-Initialization stage assemble the full initialization system (continuous eqs at
-t=0 with `der` as unknowns + initial equations + fixed starts) and report its
-determinacy (equations vs free init unknowns), flagging over/under-determination.
-That would surface the class of blow-up `CapacitorLoop` cannot (its failure
-surfaces structurally instead). Scout whether Rumoca exposes an initialization-
-system assembly/consistency check first.
 
 ## 7. Full initialization-system structural analysis (the rigorous form of #6)
 
@@ -230,27 +119,6 @@ init — but neither incorporates the user's `initial equation`s / fixed starts 
 matched system. If Rumoca does not expose it, reproducing the assembly risks a
 subtly-wrong analysis (cf. the Arc-4 nonlinear-constraint reimplementation caution) —
 weigh an upstream contribution instead.
-
-## 8. Step-mode plotting for discontinuities (Arc 7 refinement) — DONE (2026-07-21)
-
-**Implemented** as Arc 7 #4. `worker::discontinuity_segments` breaks each trajectory
-into segments at reinit jumps (threshold `max(range·0.08, 6·median|Δ|)`); the plot
-draws one polyline per segment so the line never slopes through the jump. Gated on
-`SimData.has_discontinuities` (the DAE has a `reinit`/`when` discrete update), so
-smooth-but-stiff models like BenchActuator are never mis-broken. Landed differently
-from the sketch below: a **break (gap)** at the jump rather than a fabricated vertical
-riser, since the resampled `SimResult` doesn't carry exact event times. Original note:
-
-Captured 2026-07-20. The Simulation pane (Arc 7 #3) plots each trajectory as a
-straight-line `egui_plot::Line`. For a **hybrid** model like `BouncingBall`, the
-velocity `v` jumps discontinuously at each bounce; with a fine time grid the jump
-renders as a near-vertical segment, but a true **step-mode** render (hold the value
-between samples / draw the jump as a vertical) would show discontinuities *as*
-discontinuities — the charter's §4.2.6 "step-mode plotting so discontinuities render
-as discontinuities". Needs: knowing which outputs are discrete/discontinuous (the
-`SimResult.variable_meta` roles, or the first `n_states`), and using egui_plot's
-line-style / a manual step polyline for those. Smooth specimens (BenchActuator) don't
-need it; it's specifically for the event/hybrid ones.
 
 ## 9. Incremental / animated views of algorithms
 
@@ -414,43 +282,6 @@ scrolls to / expands / highlights where that identifier's information appears.
 - **When:** can start independently of #10 — a single-view search is simpler and
   immediately useful.
 
-## 12. HRW architecture document — how the code works
-
-**Implemented 2026-07-21.** `docs/architecture.md` covers: crate structure,
-data-flow diagram, worker-thread architecture (channel protocol, progressive
-streaming, the Rumoca Session, compilation pipeline, simulation), the UI shell
-(immediate-mode pattern, App struct, panel layout, tab bar, right-panel routing),
-the generic tree inspector (path accumulation, cross-stage diff, DefId resolution),
-custom-painted views (canvas scaffold, BLT spy-plot, incidence matrix, reduction
-summary), the Claude bridge (thin-emitter/thick-reasoner, file protocol,
-span-ascent, chat shortcuts), supporting modules (field help, log view), the
-instrumentation surface (all Rumoca crate dependencies + discipline), build/run
-commands, and key design decisions (why serde_json::Value, why simulation
-re-compiles, why the funnel is replicated, why thin emitter, why egui). Original
-capture below.
-
-Captured 2026-07-21 (Doug). Claude has written 100% of the HRW code. Before any
-upstream PR to the Rumoca repo, Doug needs to understand and be accountable for the
-codebase. A dedicated architecture document that explains how HRW works — the module
-structure, data flow, key abstractions, and design rationale — so Doug can read,
-defend, and maintain the code he'd be submitting.
-
-- **Why it matters:** submitting a PR means owning the code. Doug's learning mission
-  is the Rumoca *compiler*, not the observatory's internals — but an upstream PR
-  makes him the maintainer of both. A clear architecture doc bridges the gap between
-  "I use HRW to study Rumoca" and "I can explain how HRW itself works."
-- **Sketch:** a `docs/architecture.md` covering: module map (`app.rs`, `worker.rs`,
-  `bridge.rs`, `tree.rs`, `log_view.rs`, `field_help.rs`), the worker-thread
-  architecture (channel protocol, `ToWorker`/`FromWorker` messages, why the UI never
-  blocks), the stage pipeline (how compilation results flow from worker → app state →
-  views), the bridge (how captures reach Claude), the tree inspector (generic
-  serde-value rendering, provenance, cross-stage diff), the spy-plot/incidence
-  custom painters, and the instrumentation surface (what HRW touches in the Rumoca
-  crates and why). Written for a reader who knows Rust and egui basics but hasn't
-  read the HRW source.
-- **When:** before preparing the upstream PR. Can be written incrementally — one
-  section per module — and doubles as onboarding material if others contribute.
-
 ## 13. Guided learning explorations through the Rumoca code
 
 Captured 2026-07-21 (Doug). HRW is not merely an application — it is a **learning
@@ -495,32 +326,6 @@ simulation, using the actual Rumoca codebase as the teaching material.
   **master the math and algorithms** of continuous-system modeling and simulation.
   Every feature decision should be evaluated against this learning mission.
 
-## 14. Rank deficiency visualization in the incidence matrix
-
-**✅ Implemented 2026-07-22.** Unmatched rows and columns now have faint red bands
-on the incidence matrix. Caption shows "N/M matched (rank deficiency D)" or
-"(full rank)". Colors in `colors.rs`: `UNMATCHED_BAND`.
-
-Captured 2026-07-21 (Claude, learning-driven). The incidence view currently reports
-"93/97 matched" as text. Enhancement: **highlight unmatched rows and columns** in
-the incidence matrix with a distinct color (red).
-
-- **Why it matters (linear algebra):** the number of matched rows in a maximum
-  matching equals the **structural rank** of the matrix. Unmatched rows are
-  equations that cannot be assigned to any unknown — they represent rank deficiency.
-  Highlighting them makes rank deficiency something you *see* spatially, not just
-  a number. When Doug studies matrix rank in his linear algebra class, he can open
-  Drivetrain's Structural tab and see: "these 4 red rows are why the system is
-  singular — they correspond to constraint forces at the ideal gears."
-- **Sketch:** the matching result already identifies unmatched equations and
-  unknowns (they're the ones not in the transversal). Color unmatched equation rows
-  with a red band and unmatched unknown columns with a red band. On hover, say
-  "this equation is unmatched — the system has more constraints than unknowns for
-  this variable." Could also annotate the caption: "93/97 matched (structural
-  rank 93, rank deficiency 4)."
-- **Specimens:** Drivetrain (singular, 4 unmatched) vs RotationalInertia (full
-  rank, 0 unmatched) — the contrast teaches the concept.
-
 ## 15. Matching-as-permutation view — before and after the transversal
 
 **Partially implemented 2026-07-22.** Matched-pair green circles now mark the
@@ -549,37 +354,6 @@ and after** the row/column permutation implied by maximum matching.
   see as dense sub-matrices along the diagonal of the permuted incidence matrix.
   This bridges the incidence view and the spy-plot view, showing they're two
   perspectives on the same decomposition.
-
-## 16. Animated BLT block discovery (Tarjan's SCC algorithm)
-
-**✅ Implemented 2026-07-22.** `tarjan_anim.rs` replays Tarjan's algorithm frame by
-frame on the equation dependency graph. Trace recorded by `tarjan_scc_with_trace`
-in `rumoca-phase-structural`. UI tab: "BLT ▶" in the structural view.
-
-Captured 2026-07-21 (Claude, learning-driven). Animate the process of discovering
-BLT blocks — Tarjan's algorithm finding strongly connected components (SCCs) in the
-equation-variable dependency graph, then topological sorting.
-
-- **Why it matters (linear algebra + graph theory):** the BLT decomposition is the
-  structural analogue of permuting a matrix to block triangular form. Each block
-  is an SCC: a set of equations that mutually depend on each other (an algebraic
-  loop). The blocks are topologically ordered, so each block's inputs come from
-  earlier (already-solved) blocks. Seeing the DFS stack grow, the low-link numbers
-  update, and blocks pop off the stack one by one connects the graph algorithm to
-  the matrix structure.
-- **Sketch:** a step-by-step animation over the bipartite dependency graph (or the
-  incidence matrix, with cells lighting up as the DFS visits them):
-  1. DFS visits a node — highlight it, show discovery number
-  2. Back edge found — show the low-link update, highlight the cycle
-  3. SCC complete — outline the block, color it, add it to the BLT ordering
-  4. Repeat until all nodes visited
-  Synchronized with the spy-plot: as each SCC is discovered, the corresponding
-  diagonal block appears in the BLT view.
-- **Ties to idea #9** (animated algorithm views) — this is a concrete instance
-  for one specific algorithm. Requires the instrumentation that emits per-step
-  events from Tarjan's algorithm inside `rumoca-phase-structural`.
-- **Textbook link:** Tarjan (1972), "Depth-first search and linear graph
-  algorithms"; the Dulmage-Mendelsohn decomposition (Pothen & Fan, 1990).
 
 ## 17. Jacobian sparsity and conditioning view
 
@@ -788,19 +562,6 @@ specimens.
   HRW enhancements, not one-off tour widgets. The tours are one way to
   experience the features; the features enrich HRW permanently.
 
-## 25. ~~Live breakpoint arming on an already-running debug session~~ ✅ DELIVERED
-
-Captured 2026-07-22 (Doug). **Delivered 2026-07-24.** Implemented via the **HRW
-Debugger Bridge** VS Code extension (`hrw/vscode-extension/`). Claude writes
-`.hrw-bridge/breakpoint-request.json` with conditional breakpoints keyed on the
-captured item's identity; the extension calls `vscode.debug.addBreakpoints()` on
-the running debug session. Breakpoints accumulate per specimen and are cleared
-automatically when the specimen changes. The specimen list's context menu offers
-**Recompile** to re-run compilation and hit armed breakpoints (the worker calls
-`session.remove_document()` to bypass the session cache). See
-`docs/debug-set-sites.md` for the protocol and `docs/architecture.md` §8 for the
-full architecture.
-
 ## 26. VS Code extension integration: Trace / Debug / Debug-shortcut
 
 Captured 2026-07-23 (Doug). **High-priority learning infrastructure.** Extend the
@@ -913,122 +674,6 @@ right-click on a Modelica identifier.
 - **#9 Animated algorithm stepping** — debug-this-identifier syncs with live
   algorithm animations
 
-## 27. Equation sheet — the flat DAE in readable math notation
-
-**✅ Implemented 2026-07-25.** `equation_sheet.rs` renders the flat DAE as readable
-equations with a precedence-aware pretty-printer (`expr_format.rs`).
-
-Captured 2026-07-24 (Doug + Claude). The Flatten tab today shows the flat DAE as a
-JSON tree. Enhancement: render the system of equations in **readable mathematical
-notation** — one equation per line, variables and operators formatted as math, not
-as nested JSON objects.
-
-- **Why it matters:** the flat DAE is the central artifact of the entire compilation
-  pipeline — everything before it (Parse through Typecheck) builds toward it, and
-  everything after it (Structural through Simulation) operates on it. Yet the current
-  view buries the equations inside a serde-value tree where `der(h) = v` reads as
-  `{"lhs": {"Der": {"arg": {"ComponentRef": ...}}}, "rhs": ...}`. Rendering equations
-  as math makes the "what does the solver actually see?" moment land immediately.
-- **Foundation exists:** `expr_format.rs` already renders equation expressions as
-  readable strings for the incidence matrix column labels (e.g. `der(h) = v`,
-  `h + (-g) * t = 0`). The equation sheet extends this from single-line labels to a
-  full formatted listing — variable classification (states, algebraic, parameters),
-  equation grouping (by BLT block, by origin component), and residual vs explicit form.
-- **Tour value:** the Flatten guided tour's central "aha" moment is "your Modelica
-  `connect(a, b)` became *these* conservation equations." That moment needs a readable
-  equation listing, not a JSON tree. The equation sheet would also improve the
-  Structural Analysis tour (annotating which equations are in which BLT blocks) and the
-  Index Reduction tour (showing which equations were differentiated).
-- **Sketch:** a scrollable pane (tab or panel) listing each equation as formatted text,
-  grouped by BLT block (if structural analysis has run) or by origin. Variable
-  classification sidebar (state/algebraic/parameter). Click an equation to highlight
-  its row in the incidence matrix; click a variable to highlight its column. Reuses
-  `expr_format` for rendering, `incidence_view` for cross-linking.
-- **Specimens:** RotationalInertia (small, readable system) → ProportionalLoop
-  (algebraic loop visible in the equation grouping) → BouncingBall (hybrid equations
-  with event conditions annotated).
-
-## 28. Source-to-equation traceability — bridging the OO/flat divide
-
-**✅ Implemented 2026-07-25.** `source_map_ui()` in `app.rs` renders a side-by-side
-source-code / equation view with cross-highlighting.
-
-Captured 2026-07-24 (Doug + Claude). A side-by-side or linked view showing which
-Modelica source lines produced which equations in the flat DAE.
-
-- **Why it matters:** the pipeline's biggest conceptual gap is between the
-  object-oriented model (phases 1–4: Parse, Resolve, Instantiate, Typecheck) and the
-  flat mathematical system (phases 5+: Flatten, Structural, Simulation). A `connect`
-  statement in the source becomes conservation equations; a component's `equation`
-  section becomes residual equations with qualified variable names; a `parameter`
-  becomes a numeric constant. Without a visual bridge, these two worlds feel
-  disconnected — the learner can't answer "where did equation 7 come from?" or
-  "what happened to my `connect(flange_a, flange_b)`?"
-- **Foundation exists:** Rumoca's IR carries `location` spans (byte offsets into the
-  source file) through the pipeline. The bridge module's `ascend_provenance` already
-  traces a node back to its source line. The equation sheet (#27) would give equations
-  readable labels. Combining these: each equation in the flat DAE links back to the
-  source line(s) that produced it.
-- **Sketch:** two panes — Modelica source on the left, equation sheet on the right.
-  Click a source line → highlight the equations it generated. Click an equation →
-  highlight the source line(s) that produced it. Color-code by origin type: `connect`
-  equations (flow sums, potential equalities), component equations, parameter bindings.
-  For `connect`: show "these two flow variables sum to zero because of this connect
-  statement."
-- **Tour value:** the Flatten tour's story arc is "OO model → flat math." This view
-  *is* that story arc, made visual. The guided tour can literally say "click on
-  `connect(flange_a, flange_b)` and see the two equations it generated."
-- **Relationship to #10 and #26:** cross-stage identifier tracking (#10) follows a
-  *variable* through the pipeline; this follows an *equation* back to its *source*.
-  Complementary: #10 answers "what happened to variable `v`?", this answers "where
-  did equation 7 come from?" The VS Code integration (#26) could initiate this from
-  a right-click on a `connect` statement.
-
-## 29. Solver stepping visualization — what the integrator does at each time step
-
-**✅ Implemented 2026-07-25.** Solver diagnostics (step size, Newton iterations,
-convergence) are plotted in `simulation_pane()` alongside trajectory plots.
-
-Captured 2026-07-24 (Doug + Claude). During simulation, visualize the solver's
-internal decisions at each time step: step size adaptation, Newton iteration counts,
-convergence behavior, and (for BDF) order changes.
-
-- **Why it matters:** the simulation plot shows *results* but not *process*. The
-  learner sees that `BenchActuator` converges and `BouncingBall` bounces, but not
-  *why* the solver chose those step sizes, *why* it needed 4 Newton iterations at
-  one point and 1 at another, or *why* BDF order 2 was selected over order 1. These
-  are the core questions of numerical methods for DAEs — and they're invisible today.
-  Seeing the solver struggle at a stiff transient (step size shrinking, Newton
-  iterations climbing) and then recover (step size growing, iterations dropping)
-  makes the theory of stiffness, implicit methods, and adaptive control concrete.
-- **Complements #18 and #22:** idea #18 (BDF step-size and order) covers the
-  integrator's macro-level decisions; idea #22 (Newton convergence) covers the
-  per-step micro-level. This idea unifies both into a single solver-stepping view
-  that shows the complete picture: at time t, the solver took a step of size h,
-  at BDF order k, requiring n Newton iterations with final residual r. Together
-  they answer "what is the solver actually doing?" at every level of detail.
-- **Sketch:** a secondary plot panel synchronized with the trajectory plot's time
-  axis. Three time-series sub-plots stacked vertically:
-  1. **Step size h(t)** — log scale, showing adaptation. Dramatic shrinkage at
-     events or stiff transients; smooth growth in quiet regions.
-  2. **Newton iterations per step** — integer values, typically 1–6. Spikes
-     indicate coupling or near-singularity in the BLT blocks.
-  3. **BDF order k(t)** — integer 1–5, showing the stability/accuracy trade-off.
-  Click a time point → see the details: which BLT block required the most Newton
-  iterations, what the residual norm was, whether an event was detected nearby.
-- **The stiffness story:** run `BenchActuator` with both BDF and RK45. Overlay
-  the step-size plots. BDF takes ~100 large steps through the stiff actuator
-  transient; RK45 takes ~10,000 tiny steps (stability-limited). The visual
-  contrast *is* the explanation of stiffness — no textbook definition needed.
-- **Rumoca entry point:** `rumoca-sim::simulate_solve_model` currently returns only
-  the resampled output grid. Instrumentation needed: a per-step callback or a
-  post-hoc log recording `(t, h, order, newton_iters, residual_norm,
-  event_detected)` from diffsol's integration loop. This is pass-two
-  instrumentation territory — the simulation loop is inside `rumoca-sim`.
-- **Textbook link:** Hairer & Wanner, *Solving ODEs II* (BDF step/order control);
-  Brenan, Campbell & Petzold, *Numerical Solution of Initial-Value Problems in
-  DAEs* (Newton convergence on DAE systems).
-
 ## 30. Live solver stepping via LiveTrace — real-time solver animation
 
 Captured 2026-07-24 (Claude, from Phase 3 planning). The Phase 3 solver stepping
@@ -1104,39 +749,6 @@ simulation-related features can deliver their full value.
   tracker and release notes.
 - **Relates to:** #29 (solver stepping), #30 (live stepping), #1 (convergence
   narratives), #17 (Jacobian), #18 (BDF), #22 (events).
-
-## 32. In-app tour view — render guided tours inside HRW with clickable navigation
-
-**✅ Implemented 2026-07-25.** Three UI modes (Tour/Specimen/Debug) with
-`egui_commonmark` rendering markdown in the left panel. Tour mode renders the
-end-to-end tour document with clickable `hrw://` navigation links that load
-specimens and switch stage tabs. Specimen mode shows the specimen list (top ⅓)
-and narrative (bottom ⅔). Debug mode hides the left panel for side-by-side with
-VS Code. The `hrw://` link scheme (`hrw://load/<Specimen>`,
-`hrw://stage/<StageName>`, `hrw://load/<Specimen>/<StageName>`) works in both
-tour and narrative documents via `egui_commonmark`'s link hooks API. Styled with
-blue section headers consistent with the RHS palette. Window launches maximized
-by default; `--half` flag for debug layout. Original idea below.
-
-**Problem:** The end-to-end guided tour (`docs/compiler-phases/end_to_end_tour.md`)
-lives in a markdown file that the user reads in VS Code. The tour references HRW
-stage views ("click the Parse tab", "expand equations") but has no way to actually
-*drive* HRW from those references. Multiple approaches to making deep links work in
-VS Code's markdown preview failed (DocumentLinkProvider, editor decorations,
-`vscode://` URI handler, `command:` URIs) — the VS Code extension environment in
-Remote WSL proved too opaque to debug effectively. See commit `100dab9f` (revert).
-
-**Remaining extensions:**
-- **Sub-view links:** `hrw://view/SpyPlot`, `hrw://view/Incidence` — switch to a
-  specific sub-view within a stage (e.g. Structural → SpyPlot vs Incidence vs Tree).
-- **Tree-node links:** `hrw://node/<path>` — expand the tree to a specific node and
-  scroll to it. Useful for tour steps like "expand equations → GearWithBrake → body."
-- **Multiple tour documents:** currently only the end-to-end tour; future phase-specific
-  tours could be selectable from a dropdown.
-- **Tour progress tracking:** checkmarks, "you are here" indicator, bookmarks.
-
-**Relates to:** #24 (guided tours as HRW-driven walkthroughs), #9 (animated
-algorithm stepping — the tour could embed step controls).
 
 ## 33. Comprehensive tooltips — surface contextual help across all HRW widgets
 
@@ -1298,109 +910,6 @@ uncoloured text and so break that rule:
 [`source-tooling-plan.md`](source-tooling-plan.md).
 
 ---
-
-## 39. ~~Crash and diagnostic log — make HRW troubleshootable without a live session~~ ✅ DELIVERED
-
-**Delivered 2026-07-28** (`src/diagnostics.rs`, `examples/crash_probe.rs`) — see
-`architecture.md` § 9 *Crash and diagnostic log*. Built essentially as captured:
-panic hook + per-frame app snapshot + action ring buffer + log tail + build
-identity, in `.hrw-bridge/diagnostics/`. The `session.json` half covers deaths
-that run no hook, and `Help ▸ Write diagnostic snapshot` covers problems that do
-not kill the app. The original capture follows.
-
-Captured 2026-07-28 (Doug), after HRW crashed instantly on left-clicking an
-identifier in the specimen source view:
-
-> So far, you have done an amazing job of troubleshooting problems. But, that
-> might not always be possible. Today's crash … reminded me that we have skipped
-> a step in creating HRW.
-
-**The problem.** When HRW dies, the evidence dies with it. Today's crash was
-diagnosed only because the failing path could be *re-created headlessly* — a
-test compiled `MotorWithBrake` and called `summarize_tracking`, which reproduced
-the panic with its message and location. That worked because the crash lived in
-pure logic reachable from a test. A crash in the paint path, in a drag, in
-frame-timing, or one that depends on GPU or window state would not have been
-reproducible that way, and there would have been nothing to reason from but
-Doug's description of what he clicked.
-
-The gap is structural, not incidental: HRW is a **windowed** app. A Rust panic
-prints to stderr, and when the app is launched from the VS Code debugger or from
-Explorer there is often no stderr anyone reads. HRW has already lost evidence
-twice this way — today's panic, and the earlier `exit code 101` from
-egui-wgpu's staging-buffer failure during long debugger pauses, which took
-several rounds of guessing before Doug happened to capture the message.
-
-**What it should capture.** A panic message and a backtrace are the easy half
-and the less useful half. Location says *where* the process died; it rarely says
-*why the app was there*. The HRW-specific half is the **application state at the
-moment of death**:
-
-- Selected specimen, model name, current stage, current detail view.
-- What was pointed at and what was being followed — the assembled noun
-  (`PointedAt`, `tracked_identifier`, the sequence counters).
-- Live/animation state: which animation, frame index of total, `LiveState`.
-- The tail of the existing `log_entries` buffer (`worker::LogEntry`), which
-  already carries timestamped per-phase detail — the log view's data, persisted.
-- Build identity: git rev, Rumoca rev, `wgpu` backend in use.
-
-Today, every one of those bullets was reconstructed from Doug's sentence
-describing what he did. All of them are already in `HrwApp`.
-
-**Design notes.**
-
-- **Claude is the consumer** (see `DECISIONS.md`, 2026-07-28) — this file is not
-  a user-facing error report. Optimise it for *diagnosis*, not readability, and
-  do not summarise away detail.
-- A `std::panic::set_hook` that writes a timestamped file (say
-  `.hrw-bridge/crashes/<timestamp>.json`) covers panics. Reaching `HrwApp` state
-  from inside the hook is the design problem worth thinking about — likely a
-  small `Mutex`/`ArcSwap` snapshot the app refreshes each frame, so the hook
-  reads a plain value and never touches the app's borrow graph.
-- **Not all deaths are panics.** GPU device loss, an `abort`, or a hard kill
-  leave no hook to run. A rolling "last frame state" written cheaply (or an
-  atomic frame counter plus periodic flush) would still say what HRW was doing.
-- Worth considering: keep a short ring buffer of recent *user actions* (clicks,
-  stage changes, follows) rather than only final state — a crash's cause is
-  usually the action before last, not the state after.
-- Consider surfacing existing crash files in the UI, so Doug can hand one over
-  without hunting for a path.
-
-**Why it is worth doing before it is needed.** The value shows up only on the
-day something is *not* reproducible from a description — and on that day it
-cannot be added retroactively. Cheap to build, and it converts "HRW crashed when
-I clicked something" from a guessing game into a file.
-
-**Relates to:** `log_view` and `worker::LogEntry` (the infrastructure already
-exists; this persists it), the Context Bar's `PointedAt` state, and the
-`architecture.md` § Live trace debugging notes on the egui-wgpu device-loss
-failure.
-
----
-
-## 40. ~~Instrument `pre()` lowering~~ ✅ DELIVERED
-
-**Delivered 2026-07-29.** `rumoca-phase-dae` gained `to_dae_with_options_traced`
-and `lower_pre_operator_with_trace`; HRW gained `pre_lowering_anim`, a sub-tab on
-the **Events** stage. Four beats replay: discover → name → materialize →
-substitute.
-
-**Two findings the work produced.**
-
-1. **`LiveTrace` did not need to generalise — the phases do not need it.** The
-   question this idea was written to answer had a better answer than expected:
-   `rumoca-phase-dae` takes an **observer callback**, not a `LiveTrace`, because
-   `LiveTrace` lives in `rumoca-phase-structural` and that dependency would run
-   backwards through the pipeline. HRW owns the `LiveTrace` and passes a closure.
-   More upstreamable, and the existing three phases could migrate to it.
-2. **The instrumentation immediately falsified a documented claim** — see the
-   correction below, which was the first thing it produced.
-
-What *did* generalise is `Playback<T>`: the new view declares no cursor, no
-timing, no channel, and compiled first try. That is the payoff from sequencing
-the animation debt ahead of this.
-
-The original capture follows.
 
 ## 40a. Original proposal text for #40, retained for its rationale
 
@@ -1956,75 +1465,6 @@ unattended that depends on it.
 ledger), #17 (Jacobian conditioning — the clearest Mathematica use), #4 (the
 deferred differential test, now reframed), `user-wolfram-tools` and
 `user-linear-algebra-learning` in Claude's memory.
-
----
-
-## 44. ~~Show `Matching ▶` when the Structural stage is singular~~ ✅ DELIVERED
-
-**Found 2026-07-29 by writing the first ad hoc tour** — the first requirement the
-#42 mechanism produced, on its first use. **Fixed the same day**, pre-emptively: no
-question was waiting on it, and the cheapest moment to fix a hole is while nothing is
-blocked by it (see the priority order in `docs/tech-debt.md`).
-
-**The fix was one UI condition.** Nothing had to be built: the trace already emitted
-`MatchingStep::EquationFailed` and `matching_anim` already painted the failed row red
-with "has no augmenting path — unmatched (rank deficiency)". The feature was **written
-and then gated out of reach**, and nothing tested it, which is how it stayed hidden.
-`a_singular_report_still_animates_and_ends_on_the_failure` now pins it against real
-`MotorWithBrake` data: exactly one failure, 47 of 48 matched.
-
-**The `Tearing ▶` / `Spy-plot` half of this idea was deliberately NOT done, and the
-original suggestion was wrong.** Showing them with an explanatory message sounded
-kinder than absence, but a BLT decomposition or a tearing result computed from a
-*partial* matching would be plausible-looking and meaningless — a "makes Claude
-guess" hazard, which the priority order ranks above tour holes. Absence is correct
-there. The distinction is that `Matching ▶` replays a *search*, so its failure is the
-content; the other three consume a *result* that does not exist yet.
-
-Doug asked what a rank deficiency of 1 means. The best available answer is to watch
-Kuhn's algorithm exhaust its augmenting paths and give up on the 48th equation.
-**That view is hidden.** `app.rs` gates four sub-tabs on `!is_singular ||
-is_index_reduction`:
-
-```rust
-if !is_singular || is_index_reduction {
-    ui.selectable_value(.., StructuralView::SpyPlot, "Spy-plot");
-}
-ui.selectable_value(.., StructuralView::Incidence, "Incidence");
-if !is_singular || is_index_reduction {
-    ui.selectable_value(.., StructuralView::MatchingAnim, "Matching ▶");
-    ui.selectable_value(.., StructuralView::TarjanAnim, "BLT ▶");
-    ui.selectable_value(.., StructuralView::TearingAnim, "Tearing ▶");
-}
-```
-
-**The gating is right for three of the four and backwards for the fourth.** A spy
-plot, a BLT decomposition and tearing all require a *complete* matching before they
-mean anything — hiding them on a singular system is correct. But the matching
-**animation** is a replay of the *search*, and the search failing is the most
-instructive thing on that tab. It is hidden exactly when it would teach the most.
-
-**What it should do instead.** `matching_anim` already builds from
-`IncidenceMatrix::from_report`, and a singular Structural report *does* carry an
-`incidence` and a partial `matching` (`partial_matching_to_json`), so the data is
-present. The animation should run and **end on the failure**: the last frame is an
-augmenting-path search that finds no path, and the running-state panel already says
-"Matched 47 of 48 — still unmatched: …", which is precisely the sentence the
-question needs. Check what `maximum_matching_with_trace` emits when a search fails —
-whether there is a distinct terminal step or whether the frame stream simply stops —
-and if there is no explicit "gave up" step, that is a small `rumoca-phase-structural`
-addition of the same shape as the tearing `NoProgress` variant.
-
-**Also worth reconsidering:** `Tearing ▶` on a singular Structural tab could
-legitimately say "no blocks to tear — there is no matching to decompose", which is
-more informative than the tab being absent. Absence reads as "this feature does not
-exist here"; a message reads as "here is why there is nothing to show." The same
-argument applies to the spy plot.
-
-**Relates to:** #42 (produced this), #9 (the animation set), the question ledger
-entry for "what does a rank deficiency of 1 mean", and `docs/answer-platform-plan.md`
-Phase 3 — this is a concrete item for it, with a real question behind it rather than
-a guess at likely demand.
 
 ---
 
@@ -3499,3 +2939,44 @@ can be executed is worth more than one that can only be believed.
 
 **Relates to:** #5 (four-bar — the closed kinematic chain is exactly the index-3 DAE these
 chapters explain), #43, #53 (ad hoc curricula), `question-ledger.md`.
+
+---
+
+# Delivered and closed
+
+**These items are done. Their planning prose was deleted 2026-08-01** — it described work that
+now exists as code, and a backlog is for what has not been built.
+
+**The numbers are kept, and that is the point.** They are cited **55 times** outside this file,
+18 of those to #40 and 12 to #44, many from source-code comments. A deleted number turns every
+one of those into a reference to nothing — the exact silent rot this cleanup exists to stop. So
+each keeps one line saying what it was and where it landed; the reasoning is in git history,
+`../DECISIONS.md`, and the code itself.
+
+| # | What | Delivered | Where it landed |
+|---|---|---|---|
+| **#1** | Narratives for *simulation*, especially convergence-failure troubleshooting | 2026-07-21 | `gen_trace` runs simulation after compilation |
+| **#2** | Specimen *purpose hints* — in the file and in the app UI | 2026-07-20 | the `// purpose:` convention; `read_purpose`, shown under the filename |
+| **#3** | Directory naming / organization | 2026-07-20 | `docs/understanding/` → `docs/compiler-phases/` |
+| **#6** | Initialization stage: detect over/under-determined *user* initialization | 2026-07-20 | over-determination only; the rigorous form is **#7**, still open |
+| **#8** | Step-mode plotting for discontinuities | 2026-07-21 | `worker::discontinuity_segments`, gated on `SimData.has_discontinuities` |
+| **#12** | HRW architecture document — how the code works | 2026-07-21 | `architecture.md` |
+| **#14** | Rank deficiency visualization in the incidence matrix | 2026-07-22 | unmatched rows and columns get faint red bands |
+| **#16** | Animated BLT block discovery (Tarjan’s SCC algorithm) | 2026-07-22 | `tarjan_anim.rs` |
+| **#25** | Live breakpoint arming on an already-running debug session | 2026-07-24 | the HRW Debugger Bridge extension; protocol in `debug-set-sites.md` |
+| **#27** | Equation sheet — the flat DAE in readable math notation | 2026-07-25 | `equation_sheet.rs` |
+| **#28** | Source-to-equation traceability — bridging the OO/flat divide | 2026-07-25 | `source_map_ui()` in `app.rs` |
+| **#29** | Solver stepping visualization — what the integrator does at each step | 2026-07-25 | solver diagnostics: step size, Newton iterations |
+| **#32** | In-app tour view — tours rendered inside HRW with clickable navigation | 2026-07-25 | three UI modes; superseded in shape by **#42** ad hoc tours |
+| **#39** | Crash and diagnostic log — troubleshootable without a live session | 2026-07-28 | `src/diagnostics.rs`, `examples/crash_probe.rs`; `architecture.md` §9 |
+| **#40** | Instrument `pre()` lowering | 2026-07-29 | `pre_lowering_anim` on the Events stage. **The finding** — phases take an *observer callback*, not a `LiveTrace`, since that dependency would run backwards through the pipeline: `DECISIONS.md` 2026-07-29 |
+| **#44** | Show `Matching ▶` when the Structural stage is singular | 2026-07-29 | one UI condition — the feature was *written and then gated out of reach*, and nothing tested it: `tech-debt.md` |
+
+**Not listed here, and deliberately:**
+
+- **#40a** — the original proposal text for #40, retained *for its rationale*, which is the one
+  thing a tombstone cannot carry.
+- **#50** — *declined*, not delivered. Its entire job is to stop test-coverage measurement being
+  re-proposed, so deleting it would invite the proposal it exists to refuse.
+- **#42** and **#45** — **partly** delivered, and still live. #42's ad hoc tours and #45's
+  diagnostic audits have shipped sub-items marked in place; each still has open work.
