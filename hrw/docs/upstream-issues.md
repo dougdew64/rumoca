@@ -242,6 +242,29 @@ traversal entry point varies while the cycle's membership does not. A determinis
 point — the lexicographically smallest member, say — would fix the text without changing
 the analysis.
 
+### Reproduced independently, 2026-08-01
+
+Re-running the whole survey at a **different shard count** (4 against the committed 6) and
+diffing column by column reproduced it without looking for it — which is worth stating in the
+report, because it means the variation does not need a deliberate repeat run to surface, only
+a re-run.
+
+**6 models this time, not 5**, so the count is a floor rather than a fixed set:
+
+```
+Modelica.Fluid.Examples.ControlledTankSystem.Utilities.NormalOperation
+Modelica.StateGraph.Examples.Utilities.CompositeStep
+Modelica.StateGraph.Examples.Utilities.CompositeStep1
+Modelica.StateGraph.Examples.Utilities.CompositeStep2
+Modelica.StateGraph.Examples.Utilities.MakeProduct
+Modelica.StateGraph.PartialCompositeStep
+```
+
+**Every one is `StateGraph` or a `StateGraph` user**, which narrows where to look and is
+consistent with the hash-ordering suspicion above. The `message` column was the **only**
+non-timing column to differ across the two runs — the model set, every structural metric and
+every outcome matched exactly.
+
 ---
 
 ## Adding to this file

@@ -79,8 +79,28 @@ while (Get-Process survey_msl -ErrorAction SilentlyContinue) { Start-Sleep -Seco
     --out hrw\docs\reports\msl-survey.csv
 ```
 
-**Output is byte-identical whatever the shard count** — slicing indexes the sorted name list
-and the merge sorts — so a maintainer can regenerate and diff it.
+**The model set and every structural column are deterministic** — slicing indexes the sorted
+name list and the merge sorts — so a maintainer can regenerate and diff it. **Two columns are
+not**, and a diff must exclude them or it reports noise:
+
+| Column | Why it varies | Verified |
+|---|---|---|
+| `compile_cost` | **wall-clock derived.** Fewer parallel shards means less contention means a model crosses the slow/fast threshold. | 2026-08-01: re-running at **4** shards against the committed **6**-shard artifact moved 16 models, **all `slow` → `fast`** — one direction, which is what load rather than randomness predicts. |
+| `message` | **a known Rumoca non-determinism** — a cyclic-dependency chain is reported from a hash-ordered entry point, so the same cycle prints starting at a different member. [`upstream-issues.md`](upstream-issues.md) issue 3. | 6 models, all `StateGraph`-related. |
+
+**So the honest claim is: same models, same structure, same outcomes — not the same bytes.**
+*(Corrected 2026-08-01. The previous text promised byte-identity, which is the stronger claim
+a maintainer would actually test, and it fails on 22 of 2,626 rows.)*
+
+To diff two surveys meaningfully, drop the two unstable columns:
+
+```powershell
+function Get-Stable($p) {
+    Import-Csv $p | Select-Object * -ExcludeProperty compile_cost, message |
+        ConvertTo-Csv -NoTypeInformation
+}
+Compare-Object (Get-Stable a.csv) (Get-Stable b.csv)   # no output = agreement
+```
 
 **Part 2, optional.** Reduction is capped at 800 equations, leaving ~71 models with
 `index_reduced = skipped:too-large`. To close that gap (**hours** — it includes the Spice3
@@ -107,8 +127,23 @@ to HRW — which is the error that produced, and required retracting, a "50-170x
     (Get-Content $_ | Measure-Object -Line).Lines - 1 } | Measure-Object -Sum).Sum
 
 # anything the run itself flagged as anomalous
-Select-String -Path C:\tmp\part-*.log -Pattern 'ANOMALY'
+# Anomalies THIS run only. The -Newer guard is not optional — see below.
+$since = (Get-Date).AddHours(-6)
+Get-ChildItem C:\tmp\part-*.csv.health.log | Where-Object LastWriteTime -gt $since |
+    Select-String -Pattern 'ANOMALY'
 ```
+
+**The time guard on the anomaly check is not decoration.** *(Corrected 2026-08-01 after the
+old form was run and every hit it returned was from the previous day.)* Two traps compound:
+
+- **Nothing cleans `C:\tmp\part-*` between runs.** Run 4 shards after a 6-shard run and
+  `part-4.*` and `part-5.*` are still yesterday's, with no marker saying so.
+- **The old pattern was `part-*.log`, which glob-matches `part-0.csv.health.log` as well as
+  orphaned `part-0.log` files that nothing writes any more.** It appeared to work because the
+  glob happened to catch the right files — alongside the wrong ones.
+
+The survey writes its health log as **`<out>.health.log`**, i.e. `part-0.csv.health.log`. Match
+that name explicitly and filter by time, or delete `C:\tmp\part-*` before starting.
 
 **Never pipe a run through `tail`** — it buffers to EOF, so you see nothing until the end.
 Read the CSVs; they are written and flushed per row.
@@ -222,9 +257,18 @@ cd C:/Users/dougd/source/repos/rumoca/hrw
 Stop-Transcript
 ```
 
-It should print `retrying N model(s) with verdict(s): …`. **If it prints no such line and
-exits immediately, nothing matched** — check the profile actually contains those verdicts
-before assuming the corpus is complete.
+It should print **`cleared N stale row(s) with verdict(s): …`**, then
+**`N model(s) to process, M already done`**.
+
+**Read the second line, not the first.** *(Corrected 2026-08-01 — this said to expect
+`retrying N model(s)`, wording the script stopped using on 2026-08-01 precisely because it
+undercounted, and then told you that its absence meant nothing matched. Following that
+literally concludes the corpus is complete when it is not.)*
+
+The `cleared` line counts **rows it deleted**, so it stays silent when models are pending by
+*absence* — which is the normal state after an earlier retry pass already removed their rows.
+**`N model(s) to process` counts both kinds and is the number that matters.** If *that* line
+says `nothing to do`, the corpus really is complete.
 
 **6. Promote and commit**, as in "Afterwards" below.
 

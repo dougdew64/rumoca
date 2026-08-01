@@ -333,6 +333,24 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   backward trigger says is the signal** — nothing checks the rendered surface today.
   *File:* `app.rs`.
 
+- [ ] **`compile_cost` makes the survey artifact non-reproducible.** *(Measured 2026-08-01
+  while verifying the runbook.)* The column is **wall-clock derived**, so it varies with how
+  many shards are competing: re-running the survey at 4 shards against the committed 6-shard
+  artifact moved **16 of 2,626 models, every one `slow` → `fast`** — one direction, which is
+  load rather than randomness.
+
+  **It matters because of who we hand this to.** `upstream-strategy.md` requires anything
+  published to be **reproducible**, and a maintainer's natural check is *regenerate and diff*.
+  Sixteen spurious rows is exactly the noise that teaches people to ignore diffs — the same
+  argument `upstream-issues.md` issue 3 makes about the `message` column.
+
+  **Options, none chosen:** drop the column from the committed artifact and keep it in the
+  health log; bucket it far more coarsely so threshold-crossing is rare; or record the shard
+  count in the sidecar and state that the column is comparable only within a shard count. The
+  runbook now documents the instability and gives a diff recipe that excludes it, which is the
+  honest interim.
+  *Files:* `examples/survey_msl.rs`, `docs/long-runs.md`.
+
 ## Robustness
 
 - [ ] **Test races under parallel execution — two causes, not one.**
