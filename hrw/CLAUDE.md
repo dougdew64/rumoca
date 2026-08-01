@@ -155,6 +155,13 @@ product** — making them lazy to fit a benchmark would optimise away the observ
 `-TimeoutSec` / `-MaxProcGB` when measurement justifies it is calibration, not optimisation,
 and is fine. **HRW is an education project, not a production tool.**
 
+**Tech-debt sweeps have TWO triggers** (`docs/tech-debt.md`). The forward one: each phase
+boundary, scoped to what the next phase touches. The backward one, added 2026-08-01: **code
+that has produced defects only a human caught.** Ask *"who caught it?"* — if the toolchain
+did, nothing to sweep; if Doug did, the code lives somewhere nothing checks. The property is
+**verifiability, not Rust**, and converting to Rust is only one answer; adding a test, a
+non-vacuity guard, or a loud failure is often cheaper.
+
 **Fidelity checks — when they run** (policy agreed with Doug 2026-07-31; full reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). F1–F9 ask whether HRW faithfully
 represents Rumoca, and they come in two scales answering *different* questions:

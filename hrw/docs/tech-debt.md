@@ -28,6 +28,75 @@ Previous cycles: 48 items fixed across two passes (2026-07-22), plus 22 in the
 2026-07-25 cycle, 25 in the 2026-07-25 sweep, and 20 in the 2026-07-26 sweep.
 See git history for details.
 
+### A second trigger: code that costs mistakes rather than code the next phase needs
+
+Added 2026-08-01, from Doug:
+
+> We did not add to our tech debt log an item for asking ourselves whether our current code is
+> causing too many mistakes or is reducing our feature velocity.
+
+The existing trigger looks **forward** — what does the next phase touch? This one looks
+**backward** — what has actually been costing us? They are complementary, and the second was
+missing.
+
+#### Ask "who caught it?", not "did it feel hard?"
+
+**"Too many mistakes" is not measurable and would become a vibe.** The observable version is:
+
+> **Did the toolchain catch this defect, or did a human?**
+
+If `cargo`, `clippy` or a test caught it, the environment is doing its job and there is nothing
+to sweep. If **Doug** caught it — by noticing a missing line, a frozen number, a claim that did
+not match the data — then the code lives somewhere nothing checks, and *that* is the debt.
+
+Evidence from 2026-08-01, which is why this trigger exists. Every silent defect that day was
+at or inside a **language boundary**: an array argument collapsed by `powershell -File`, a
+formfeed injected into a path by a Python escape, an `eprintln!` swallowed by HRW's own
+fd-level `OutputCapture`, a rate limiter that gated its own first fire, an announcement that
+stayed silent when models were pending by absence. **None was in `fidelity.rs`**, which is
+Rust, tested and clippy-clean.
+
+#### The property is verifiability, not Rust
+
+Rust is the proxy, not the point — a Rust program with no tests is no better than a shell
+script. What actually differs:
+
+| | Verifying environment | Not |
+|---|---|---|
+| type errors | compiler | nothing |
+| logic errors | the test suite | nothing |
+| silent no-ops | non-vacuity guards | nothing |
+| who verifies | **the toolchain, in seconds, unattended** | **a human, watching output** |
+
+So the sweep question is *"can the toolchain check this?"* — and **converting to Rust is only
+one of the available answers.** Often cheaper and sufficient: add a test, add a non-vacuity
+guard, or make the thing fail loudly instead of silently.
+
+#### When it should fire — all three, not any one
+
+1. The code is **re-run repeatedly** (a runbook step, not a one-off).
+2. It can **fail silently** — producing nothing looks like having nothing to report.
+3. It has **already produced a defect only a human caught**.
+
+One or two of these is not enough. A five-line shell command that runs once and fails loudly is
+fine forever.
+
+#### The counter-argument, which is real
+
+**Scripts are editable without a rebuild.** On 2026-08-01 that mattered: the fidelity binary
+was locked by a running sweep, and fixing the watchdog in PowerShell required no rebuild and
+did not disturb the run. Converting everything to Rust would have cost that.
+
+So the honest form is *"move it where the toolchain can check it, unless being editable
+mid-run is why it exists"* — and say which, rather than converting on principle.
+
+#### Standing candidate
+
+`measure-fidelity.ps1` and `promote-run.ps1` meet all three conditions. **Not urgent**, and
+behind fidelity, the oracle test and Test mode — but on the list, with a day of evidence
+rather than taste behind it. The memory-sampling part needs a crate, and adding a dependency
+needs Doug's approval.
+
 ## Priority order — read this before choosing what to fix
 
 Set 2026-07-29, when Doug named the real operating constraint: **his robotics
