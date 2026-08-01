@@ -48,6 +48,11 @@ three triage categories, and what can and cannot be built while a sweep holds th
 2. **Fidelity testing at scale** — F1-F9 (`src/fidelity.rs`, `worker.rs`) over that sample.
 3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open
    it compiled in the RHS (`docs/ideas.md` **#52**).
+3b. **PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** (agreed 2026-08-01).
+   Four items, before oracle testing and Test mode: the must-fire convention, shortening the
+   pre-commit suite (#48), **headless UI testing with `egui_kittest`** (dev-dependency,
+   approved), and moving the run drivers to Rust. Doug: *"Anything which slows down your
+   ability to help bring my ideas to life is absolutely worth fixing now."*
 4. **Design and run the oracle test** — Rumoca vs System Modeler (#43). **Constrained by
    [`docs/reports.md`](docs/reports.md):** it must emit the same `name` join key, because a
    mismatch is only an admissible upstream finding when that model is *fidelity-green*.
@@ -154,6 +159,14 @@ The stage JSON trees, equation sheet, identifier index and animation frames **ar
 product** — making them lazy to fit a benchmark would optimise away the observatory. Raising
 `-TimeoutSec` / `-MaxProcGB` when measurement justifies it is calibration, not optimisation,
 and is fine. **HRW is an education project, not a production tool.**
+
+**THE MUST-FIRE RULE — applies now, to everything.** Any code whose job is to *report*
+something gets a test proving it reports; **silence must be a failure, never a pass.** Its
+absence makes a change incomplete. All seven silent bugs of 2026-08-01 were observers that
+looked like they worked: a dead column, an array argument collapsed by `powershell -File`, an
+`eprintln!` swallowed by HRW's own fd-level `OutputCapture`, a rate limiter gating its own
+first fire, an announcement silent when work was pending by absence. `fidelity.rs` had this
+discipline (`each_invariant_catches_its_own_violation`); the tooling around it did not.
 
 **Tech-debt sweeps have TWO triggers** (`docs/tech-debt.md`). The forward one: each phase
 boundary, scoped to what the next phase touches. The backward one, added 2026-08-01: **code
