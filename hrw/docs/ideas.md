@@ -3347,6 +3347,51 @@ costs 7 GB is an engineering lesson, not a modelling one. Doug is learning Rust 
 ([[user_role]]), so that is not worthless. But **say which kind it is at the outset**, so a
 week does not disappear into allocator behaviour when the goal was Pantelides.
 
+### What is actually captured, and the one gap (2026-08-01)
+
+Doug asked whether the narration is for monitoring or for later analysis, and whether its data
+would be needed to pick the smaller models for study. Three things had been getting conflated:
+
+| | What it is | Durable? |
+|---|---|---|
+| **Narration** | time-sampled console output, every 30 s past 60 s | **no** — monitoring only |
+| **The `[phases]` log** | per-model phase *totals*, written on completion, beside the profile | **yes** |
+| **The survey** | structural shape for all 2,626 models | yes, committed |
+
+**Narration is monitoring only.** Nothing depends on it; if it vanished we would lose
+visibility during a run and no data.
+
+**Phase START/END events are not captured** — only per-phase totals, derived from what
+`StageEnd` already reports. So there is no timeline, no nesting, no overlap detection. That is
+why `TransformerTestbench`'s phase totals summed to 40.6 s against a 31.6 s wall clock and the
+most that could be said was "the phases overlap or nest".
+
+#### Selecting smaller models does NOT need it
+
+The reverse-ladder selection runs off `docs/msl-survey.csv`, which already carries
+`n_equations`, `largest_coupled`, `index_reduced`, `n_event_conditions`, `n_coupled`,
+`has_arrays`, `max_depth` and `n_functions` for **every** model. *"The smallest model with a
+coupled block over 20"* is a query against existing columns.
+
+#### The one criterion that does, and the gap under it
+
+> *"Show me the smallest model where index reduction dominates the DAE pipeline."*
+
+That is a phase-cost question, and **the full sweep ran before the phases log existed**. Phase
+totals exist for **zero** of the 2,610 completed models, and for only the sixteen in the retry.
+Backfilling means re-running the sweep — four-plus hours.
+
+**Decision: do not backfill, and do not add start/end events.**
+
+- Most selection criteria are structural, and the survey answers them today.
+- Per-phase **totals** are sufficient to say which phase dominates. Timestamps would add a
+  timeline, and no question currently needs one.
+- The gap closes **incidentally**: the next full sweep after a Rumoca rebase captures phases
+  for everything at no extra cost.
+
+**Revisit only if a phase-cost query actually arises before the next rebase** — that is the
+moment to weigh four hours against it, and not before.
+
 ### What it must not become
 
 **Not a reason to optimise HRW.** `docs/fidelity-plan.md` carries Doug's standing boundary:
