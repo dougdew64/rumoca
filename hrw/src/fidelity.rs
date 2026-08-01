@@ -96,6 +96,41 @@ pub struct Violation {
 ///
 /// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
 /// function's: they need the whole bundle rather than a subject.
+/// Milliseconds spent in each check, accumulated across models.
+///
+/// **Built because the cause of a 16x slowdown was a guess.** `IMC_Transformer`
+/// (5,061 equations) compiles in 18.4s in the survey and exceeds 300s under the
+/// fidelity checks, with index reduction skipped in both — so the cost is in the
+/// checks, but *which* check was inference, not measurement
+/// (`docs/architecture.md` §11).
+///
+/// It matters beyond curiosity: 44 models in the corpus are >=1,200 equations,
+/// and at 300s each that is 3.7 hours of a full run producing **no data** on
+/// exactly the models that stress the representation hardest. Knowing whether
+/// one check is superlinear decides whether that is fixable or inherent.
+#[derive(Debug, Default, Clone)]
+pub struct CheckTiming {
+    /// `(check, milliseconds)` — F2..F7, in the order they run.
+    pub ms: BTreeMap<&'static str, f64>,
+}
+
+impl CheckTiming {
+    fn add(&mut self, check: &'static str, t: std::time::Instant) {
+        *self.ms.entry(check).or_default() += t.elapsed().as_secs_f64() * 1000.0;
+    }
+
+    /// Checks by cost, most expensive first.
+    pub fn ranked(&self) -> Vec<(&'static str, f64)> {
+        let mut v: Vec<(&'static str, f64)> = self.ms.iter().map(|(k, t)| (*k, *t)).collect();
+        v.sort_by(|a, b| b.1.total_cmp(&a.1));
+        v
+    }
+
+    pub fn total_ms(&self) -> f64 {
+        self.ms.values().sum()
+    }
+}
+
 pub fn check_model(
     stages: &StageBundle,
     dae: &rumoca_ir_dae::Dae,
@@ -103,6 +138,7 @@ pub fn check_model(
     sheet: Option<&crate::equation_sheet::EquationSheet>,
     index: Option<&crate::identifier_index::IdentifierIndex>,
     coverage: &mut Coverage,
+    timing: &mut CheckTiming,
 ) -> Vec<Violation> {
     let mut out = Vec::new();
     let tag = |check: &'static str, v: Vec<String>| {
@@ -123,10 +159,18 @@ pub fn check_model(
         if s.report["matching"].as_array().is_some_and(|m| !m.is_empty()) {
             coverage.with_matching += 1;
         }
+        let t = std::time::Instant::now();
         out.extend(tag("F2", check_f2(&s)));
+        timing.add("F2", t);
+        let t = std::time::Instant::now();
         out.extend(tag("F3", check_f3(&s)));
+        timing.add("F3", t);
+        let t = std::time::Instant::now();
         out.extend(tag("F4", check_f4(&s)));
+        timing.add("F4", t);
+        let t = std::time::Instant::now();
         out.extend(tag("F5", check_f5(&s)));
+        timing.add("F5", t);
     }
     if sheet.is_some() {
         coverage.with_sheet += 1;
@@ -134,11 +178,15 @@ pub fn check_model(
     if index.is_some() {
         coverage.with_index += 1;
     }
+    let t = std::time::Instant::now();
     out.extend(tag("F6", check_f6(sheet, index, dae)));
+    timing.add("F6", t);
     for kind in crate::worker::StageKind::COMPILATION {
         if let Some(root) = stages.get(*kind).value.as_ref() {
             coverage.stage_irs += 1;
+            let t = std::time::Instant::now();
             out.extend(tag("F7", check_f7(&format!("{kind:?}"), root)));
+            timing.add("F7", t);
         }
     }
     out

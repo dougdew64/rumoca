@@ -69,7 +69,7 @@ use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::time::Instant;
 
-use hrw::fidelity::{Coverage, Violation, check_model, group_by_check};
+use hrw::fidelity::{CheckTiming, Coverage, Violation, check_model, group_by_check};
 use hrw::survey::{SurveyRow, classify};
 use hrw::worker::{FromWorker, Outcome, StageKind, WorkerState, index_reduce_in_place};
 
@@ -180,6 +180,7 @@ fn main() {
     let mut no_dae = 0usize;
     let mut sizes: Vec<(usize, String)> = Vec::new();
     let mut cov = Coverage::default();
+    let mut timing = CheckTiming::default();
     let t_run = Instant::now();
 
     for (i, row) in rows.iter().enumerate() {
@@ -229,6 +230,7 @@ fn main() {
                 equation_sheet.as_ref(),
                 identifier_index.as_ref(),
                 &mut cov,
+                &mut timing,
             );
             checked += 1;
         } else {
@@ -250,6 +252,23 @@ fn main() {
                 rows.len(),
                 t_run.elapsed().as_secs_f64(),
                 all.len(),
+            );
+        }
+    }
+
+    // **Where the time actually went.** Printed always, not behind a flag: the
+    // cost distribution is the finding, and a run that does not say which check
+    // dominated leaves the next person guessing, which is how this got recorded
+    // as inference in the first place.
+    let total_ms = timing.total_ms();
+    if total_ms > 0.0 {
+        eprintln!("
+[check cost] {:.1}s inside the checks:", total_ms / 1000.0);
+        for (check, ms) in timing.ranked() {
+            eprintln!(
+                "  {check}  {:>8.1}s  {:>5.1}%",
+                ms / 1000.0,
+                100.0 * ms / total_ms,
             );
         }
     }
