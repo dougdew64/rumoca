@@ -3289,6 +3289,64 @@ Spice3 family (up to 10,175 equations, 7.7 GB), the induction machines, and
   `FourInverters` is 282 equations and took 161 s; `TransformerTestbench` is 4,193 equations
   and took 31 s. Fifteen times the size, a fifth of the time.
 
+### Diagnostics as teaching — and the trap in that idea (Doug, 2026-08-01)
+
+> I could learn a lot from diagnosing problems experienced by those sixteen models. And we're
+> building HRW to enable you to help me learn about stuff like those problems. So it seems
+> that we should leverage HRW to enable you to teach me during diagnostics. For example,
+> something like ad hoc diagnostic tours.
+
+**The strongest version of this is stronger than stated.** A diagnostic is a *real question
+with stakes*, and this project's thesis is that curriculum emerges from real friction rather
+than from a syllabus (`feedback-curriculum-emerges-from-reading`). *"Why does this model take
+900 seconds?"* pulls in model structure, incidence sparsity, index reduction, algebraic loops
+and the cost of symbolic manipulation — not because someone decided those were lesson four,
+but because the question requires them.
+
+#### But hard-for-HRW is not the same as pedagogically rich
+
+| Family | Why it is hard | What is there to learn |
+|---|---|---|
+| **Spice3** (up to 10,175 eq) | **scale** — a four-bit adder's worth of transistor models | mostly *"large systems are large"* |
+| **Induction machines** (7 of the 10 timeouts) | **structure** — high index, coupled electromagnetics | genuinely rich |
+| `LightningSegmentedTransmissionLine` (6,477 eq) | distributed parameters | interesting, physically motivated |
+
+The Spice3 family dominates the *memory* story and teaches the least: its difficulty is a
+fact about arithmetic, not about modelling. **Worth knowing before investing a session in it.**
+
+#### And they are hard to open for exactly the reason they are hard to test
+
+HRW's UI uses the same compile path the sweep does. A diagnostic tour of
+`Spice3BenchmarkFourBitBinaryAdder` means waiting ~15 minutes and 7.7 GB for the first screen.
+That is not a tour, it is an ordeal — and `docs/fidelity-plan.md`'s standing boundary says we
+do **not** optimise HRW to fix it.
+
+#### The synthesis: use the difficulty ladder in REVERSE
+
+Rather than diagnosing the hardest model, find the **smallest** model exhibiting the same
+phenomenon:
+
+> *"Show me the smallest model where index reduction dominates the DAE pipeline."*
+
+Study **that** interactively, where it opens in seconds and every view is usable — then
+confirm the finding scales by checking the CSV across all 2,626 models. **The big model
+becomes evidence, not the classroom.**
+
+That is #53's query surface doing the work, and it removes the ordeal without touching HRW.
+
+#### Ad hoc diagnostic tours are #53, pointed at a diagnostic
+
+Same rule, so it does not need restating in code: **do not build a diagnostic-tour feature.**
+The tour is an utterance Claude composes; HRW supplies the exact noun. What earns building is
+**the query that finds the right model to tour**.
+
+#### Label which kind of learning a diagnostic offers
+
+Some of what is learnable here is about **HRW and Rust** — why materialising ten IR trees
+costs 7 GB is an engineering lesson, not a modelling one. Doug is learning Rust and egui too
+([[user_role]]), so that is not worthless. But **say which kind it is at the outset**, so a
+week does not disappear into allocator behaviour when the goal was Pantelides.
+
 ### What it must not become
 
 **Not a reason to optimise HRW.** `docs/fidelity-plan.md` carries Doug's standing boundary:
