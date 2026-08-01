@@ -5283,6 +5283,23 @@ impl eframe::App for App {
     /// then left/right, and `CentralPanel` fills whatever remains. This is
     /// why the panels appear in this specific order in the code.
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.frame_ui(ui);
+    }
+}
+
+impl App {
+    /// The whole frame, minus the `eframe::Frame` the trait requires and this app
+    /// never used.
+    ///
+    /// **Split out 2026-08-01 so the UI can be driven headlessly.**
+    /// `eframe::Frame` cannot be constructed outside eframe, so a test harness
+    /// could not call [`eframe::App::ui`] at all — one unused parameter was the
+    /// only thing standing between ~12,000 lines of UI and an automated test.
+    /// The parameter was already `_frame`; nothing is lost by not passing it.
+    ///
+    /// Everything below is unchanged and runs in the same order. See
+    /// `docs/verification-plan.md` item 2.
+    pub(crate) fn frame_ui(&mut self, ui: &mut egui::Ui) {
         // First thing every frame: check for results from the worker thread.
         self.drain_worker();
 
@@ -6359,8 +6376,31 @@ fn tab_label(
 
 #[cfg(test)]
 impl App {
-    fn test_default() -> Self {
+    /// pub(crate) so the headless UI tests in a sibling module can build an App.
+    pub(crate) fn test_default() -> Self {
         Self::test_with_sender().0
+    }
+
+    // ---- Test-only accessors for the headless UI suite -------------------
+    //
+    // `app::tests` reaches `App`'s private fields because it is a child module.
+    // `ui_tests` is a **sibling**, so it cannot — and the fix is not to widen the
+    // fields. Production encapsulation is unchanged; these exist only under
+    // `cfg(test)` and say so by name.
+
+    pub(crate) fn test_stage(&self) -> StageKind {
+        self.stage
+    }
+
+    pub(crate) fn test_model(&self) -> Option<&str> {
+        self.model.as_deref()
+    }
+
+    /// Put the right-hand side into the state a walked-into tour would leave.
+    pub(crate) fn test_set_walked_state(&mut self, specimen: &str, model: &str, stage: StageKind) {
+        self.selected = Some(PathBuf::from(specimen));
+        self.model = Some(model.to_owned());
+        self.stage = stage;
     }
 
     fn test_with_sender() -> (Self, std::sync::mpsc::Sender<FromWorker>) {

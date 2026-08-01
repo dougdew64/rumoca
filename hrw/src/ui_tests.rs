@@ -1,0 +1,249 @@
+//! **Headless UI tests** — `docs/verification-plan.md` item 2.
+//!
+//! HRW has ~12,000 lines of UI and, until now, essentially one test that
+//! exercised rendering. Everything else was verified by Doug walking fixture
+//! tours, which makes **his attention the project's scarce resource**. These
+//! tests convert the *mechanical* half of that — did the click select the node,
+//! is the panel empty after a mode switch, does the notice exist — so his
+//! attention goes only where judgement is required.
+//!
+//! # What this can and cannot see
+//!
+//! `egui_kittest` renders headlessly and queries the **accessibility tree**:
+//! widgets with a label and a role. That draws a hard line through HRW:
+//!
+//! | Queryable | Not queryable |
+//! |---|---|
+//! | the IR tree, tab bars, buttons, notices, the equation sheet, the status bar | the incidence matrix, spy plot, Tarjan graph, matching animation |
+//!
+//! The second column is drawn with `Painter` calls — pixels, not widgets — so an
+//! accessibility harness sees nothing there. **Image snapshot testing is
+//! deliberately not enabled** (`snapshot`/`wgpu` features off): it asserts on
+//! pixels, needs a GPU in the test path, and is brittle.
+//!
+//! **So the canvas views stay the fixture tours' job**, and that is now their
+//! focused purpose rather than an accident of what nobody automated.
+//!
+//! # Two harness facts that each cost a wrong diagnosis
+//!
+//! **A widget laid out off-screen is queryable but not clickable.** At the
+//! harness's 800x600 default, HRW's panels push the central content out of the
+//! viewport — the tour links were in the accessibility tree, `query_by_label`
+//! found them, and `click()` landed on nothing. The test read as *"the feature is
+//! broken"*. It is not: the window was too small. Hence 1600x1200 below, and
+//! hence the rule — **if a click appears to do nothing, check the layout before
+//! the logic.**
+//!
+//! **HRW never goes quiescent, so `run()` cannot be used.** `tick_prewarm`
+//! requests a repaint every frame while waiting for a debugger ack that never
+//! comes in a test, so `Harness::run` exhausts its step budget and panics. That
+//! is correct behaviour from a polling UI; `run_steps` is the right tool.
+//!
+//! # Why these tests do not compile specimens
+//!
+//! Driving the UI is cheap; compiling a model against the MSL is not — 30s and
+//! 3.5 GB on a large one. These assert on **UI mechanics with state set
+//! directly**, which is what the mechanical half of a tour actually checks. A
+//! test that needs real IR belongs beside the worker tests, behind
+//! `slow-tests`.
+
+use egui_kittest::Harness;
+use egui_kittest::kittest::Queryable;
+
+use crate::app::App;
+
+/// Drive HRW's whole frame in a headless harness.
+///
+/// `frame_ui` rather than [`eframe::App::ui`] because the trait method takes an
+/// `eframe::Frame`, which cannot be constructed outside eframe — that one unused
+/// parameter was the only thing standing between this UI and an automated test.
+fn harness(app: App) -> Harness<'static, App> {
+    // **1600x1200, not the 800x600 default.** HRW is a multi-panel observatory:
+    // menu bar, status bar, specimen list, help panel, and a central panel with a
+    // tab row. At 800x600 the central panel's content is pushed out of the
+    // viewport, and a widget that is laid out off-screen is in the accessibility
+    // tree but cannot be clicked — a synthetic click lands on nothing and the
+    // test reads as "the feature is broken".
+    let mut h = Harness::builder()
+        .with_size(eframe::egui::Vec2::new(1600.0, 1200.0))
+        .build_ui_state(|ui, app: &mut App| app.frame_ui(ui), app);
+    // **`run_steps`, not `run` — HRW never goes quiescent, by design.**
+    //
+    // `Harness::run` repaints until the app stops asking, then gives up after
+    // four frames. HRW keeps asking: `tick_prewarm` requests a repaint every
+    // frame while it waits for the debugger to acknowledge a breakpoint, and in
+    // a test there is no debugger, so it waits out its full three-second timeout
+    // (`app.rs`, `Prewarm::Armed`).
+    //
+    // That is not a bug to route around — a UI that polls is *supposed* to keep
+    // painting. Two frames is what these tests need: one to lay out, one so
+    // anything a click deferred to the next frame has landed.
+    h.run_steps(2);
+    h
+}
+
+/// The harness renders HRW at all, and the accessibility tree is populated.
+///
+/// **The non-vacuity test for every test below it.** A harness that rendered
+/// nothing would let every later assertion pass by querying an empty tree, which
+/// is precisely the silent-success shape the must-fire rule exists to forbid.
+#[test]
+fn the_harness_renders_hrw_and_sees_widgets() {
+    let h = harness(App::test_default());
+
+    let buttons = h.get_all_by_label_contains("").count();
+    assert!(
+        buttons > 0,
+        "the accessibility tree has no buttons at all — the harness is not rendering HRW, \
+         and every other UI test would pass vacuously",
+    );
+
+    // The menu bar is the most stable thing on screen: present in every mode,
+    // for every specimen, whether or not anything has compiled.
+    assert!(
+        h.query_by_label("File").is_some(),
+        "expected the File menu; the frame rendered but not HRW's chrome",
+    );
+    assert!(h.query_by_label("Help").is_some(), "expected the Help menu");
+}
+
+/// The tour picker offers exactly the fixture tours — **rendered**, not merely
+/// listed.
+///
+/// `app::tests::the_tour_list_offers_fixtures_with_ad_hoc_first` already asserts
+/// this against `App::tours`. **This asserts it against what is on screen**,
+/// which is the half that was previously checkable only by Doug looking at it.
+///
+/// It also pins the `README.md` exclusion at the rendered layer:
+/// `docs/fixture-tours/` gained a README on 2026-08-01 and `bridge::fixture_tours`
+/// had to learn to skip it, or the picker would offer a tour whose stops do not
+/// exist.
+#[test]
+fn the_tour_picker_shows_every_fixture_and_no_readme() {
+    let h = harness(App::test_default());
+
+    for tour in [
+        "node-pointing",
+        "frame-seeking",
+        "camera-aiming",
+        "structural-vs-numerical-rank",
+        "the-oracle",
+    ] {
+        assert!(
+            h.query_by_label(tour).is_some(),
+            "the tour picker should offer {tour:?}; it is a checked-in fixture",
+        );
+    }
+    assert!(
+        h.query_by_label("README").is_none(),
+        "README.md is documentation ABOUT the tours, not a tour — offering it would \
+         give the picker an entry whose stops do not exist",
+    );
+}
+
+/// Selecting a different tour clears the stage side — **on screen**.
+///
+/// The bug this guards against was found by walking: *"the RHS doesn't
+/// re-initialise on a second tour"*, which made Stop 1 look as though it had
+/// already been done. `app::tests::switching_tours_resets_the_stage_side` covers
+/// the state; this covers the state actually reaching the frame.
+#[test]
+fn switching_tours_clears_the_stage_side_on_screen() {
+    let mut h = harness(App::test_default());
+
+    // Walk into a tour far enough to have a model and a stage on the right.
+    h.state_mut().test_set_walked_state(
+        "/x/RcCircuit.mo",
+        "RcCircuit",
+        crate::worker::StageKind::Structural,
+    );
+    h.run_steps(2);
+    assert!(h.state().test_model().is_some(), "precondition: the RHS has something on it");
+
+    // Now pick a *different* tour.
+    h.get_by_label("the-oracle").click();
+    h.run_steps(2);
+
+    assert!(
+        h.state().test_model().is_none(),
+        "switching tours must clear the model, or the new tour is read against the \
+         old tour's state and its first stop looks already done",
+    );
+    assert_eq!(
+        h.state().test_stage(),
+        crate::worker::StageKind::Parse,
+        "and the stage returns to the start of the pipeline",
+    );
+}
+
+
+/// A stop that needs a specimen is **refused, and says so where you can see it**.
+///
+/// **This is the "the notice was invisible" bug**, and the story is worth
+/// keeping. Doug clicked a stop that HRW correctly refused, with the reason on
+/// screen, and reported that nothing happened — because the tour said "a notice
+/// appears" and never said notices live in the status bar. Two things were
+/// wrong: the expectation did not say *where to look*, and nothing verified the
+/// notice was rendered at all.
+///
+/// This closes the second half. The first half is a rule for writing tours, in
+/// `docs/fixture-tours/README.md`.
+///
+/// **It also documents that the refusal is correct.** An earlier version of the
+/// isolation test below clicked this same link on a fresh app and asserted the
+/// stage changed — asserting a bug into existence, because a stage link with no
+/// specimen *should* do nothing. Probing the behaviour rather than trusting the
+/// premise turned a wrong test into this one.
+#[test]
+fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
+    let mut h = harness(App::test_default());
+
+    h.get_by_label("Structural → Incidence").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_stage(),
+        crate::worker::StageKind::Parse,
+        "with no specimen loaded the stop must not half-apply — a stage set now would \
+         linger and fire when a specimen arrived later, sending the reader somewhere \
+         no link pointed",
+    );
+    assert!(
+        h.query_by_label_contains("no specimen loaded").is_some(),
+        "the refusal must be RENDERED, not merely recorded. A silent refusal is \
+         indistinguishable from a broken link, which is exactly how it was reported",
+    );
+}
+
+/// A tour link acts **clicked in isolation**, not only after its predecessors.
+///
+/// This is the *"stop 4 works only if I click 1-3 first"* bug — the kind a human
+/// walking in order never sees, because they always click stop 1 first. Driving
+/// one link into an app that has *only* the specimen loaded is something a walk
+/// structurally cannot do, which makes this the clearest case of the suite
+/// catching what Doug cannot.
+///
+/// The specimen is set directly rather than loaded, because this asserts on
+/// **link dispatch**, not on compilation — `open()` would spawn a real compile
+/// against the MSL for no gain here.
+#[test]
+fn a_tour_link_acts_when_clicked_in_isolation() {
+    let mut h = harness(App::test_default());
+    h.state_mut().test_set_walked_state(
+        "/x/RcCircuit.mo",
+        "RcCircuit",
+        crate::worker::StageKind::Parse,
+    );
+    h.run_steps(2);
+
+    // A mid-tour link, with none of the stops before it clicked.
+    h.get_by_label("Structural → Incidence").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_stage(),
+        crate::worker::StageKind::Structural,
+        "a stage link must act on its own once its precondition is met; needing an \
+         earlier stop first is the \"works on the second click\" bug",
+    );
+}

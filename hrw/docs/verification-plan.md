@@ -289,7 +289,7 @@ on a global mutex regardless, and going parallel would save about two seconds.
 
 ---
 
-### 2. Headless UI testing with `egui_kittest` — the big one
+### 2. Headless UI testing with `egui_kittest` — the big one — CAPABILITY LANDED 2026-08-01
 
 **The item that attacks the actual bottleneck.** Doug is the sole verifier of 11,939 lines,
 and his attention-per-expectation is the scarce resource
@@ -325,6 +325,45 @@ tours are automated**, and the convention for writing them is documented.
 
 **The point is not to replace the tours.** It is to convert their *mechanical* half — did the
 click do the thing? — so Doug's attention goes only where judgement is required.
+
+#### Landed 2026-08-01 — the capability plus five assertions
+
+`egui_kittest` 0.35 as a dev-dependency, **default features only** (`snapshot`/`wgpu` off, so
+no GPU enters the test path). New module `src/ui_tests.rs`; 482 tests total, clippy clean.
+
+**One production change made it possible.** `eframe::App::ui` takes an `eframe::Frame` that
+cannot be constructed outside eframe, so no harness could call it. The body moved to
+`App::frame_ui(&mut Ui)` and the trait method delegates — **the parameter was already
+`_frame`, unused.** One unused parameter was the whole barrier between ~12,000 lines of UI and
+an automated test.
+
+| Test | Replaces a bug found by walking |
+|---|---|
+| `the_harness_renders_hrw_and_sees_widgets` | the non-vacuity guard for all the others |
+| `the_tour_picker_shows_every_fixture_and_no_readme` | pins the README exclusion **at the rendered layer** |
+| `switching_tours_clears_the_stage_side_on_screen` | *"the RHS doesn't re-initialise on a second tour"* |
+| `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` | *"the notice was invisible"* |
+| `a_tour_link_acts_when_clicked_in_isolation` | *"stop 4 works only if I click 1-3 first"* |
+
+**Two harness facts, each of which first produced a wrong diagnosis:**
+
+1. **A widget laid out off-screen is queryable but not clickable.** At the 800x600 default,
+   HRW's panels push the central content out of the viewport: `query_by_label` found the tour
+   links, `click()` landed on nothing, and the test read as *"the feature is broken"*. Hence
+   1600x1200. **If a click appears to do nothing, check the layout before the logic.**
+2. **`Harness::run` cannot be used** — `tick_prewarm` requests a repaint every frame awaiting a
+   debugger ack that never comes in a test, so `run` exhausts its budget and panics. Correct
+   behaviour from a polling UI; `run_steps` is the tool.
+
+**And one test was wrong before it was right.** The isolation test originally clicked a stage
+link on a *fresh* app and asserted the stage changed — which would have **asserted a bug into
+existence**, since HRW deliberately refuses a stage link with no specimen. Probing the actual
+behaviour instead of trusting the premise turned that into the notice test, which is one of
+the four the plan set out to write.
+
+**What remains for this item:** more of the mechanical tour assertions, as tours are walked and
+their checkable halves become clear. The capability is the deliverable; the assertions
+accumulate.
 
 ---
 
