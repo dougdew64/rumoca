@@ -58,19 +58,14 @@ param(
 # `powershell -File script.ps1 -RetryVerdicts 'a','b'` passes ONE string "a,b",
 # not a two-element array — only `-Command` binds arrays properly. On
 # 2026-08-01 that silently made the retry pass a no-op: nothing matched, the
-# script reported nothing to do, and the flag was WORSE than omitting it, since
-# the one-element default would have matched. Splitting here makes the script
-# behave identically however it is invoked.
-$RetryVerdicts = @($RetryVerdicts | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-
-# **Normalise -RetryVerdicts before anything reads it.**
-#
-# `powershell -File script.ps1 -RetryVerdicts 'a','b'` passes ONE string "a,b",
-# not a two-element array — only `-Command` binds arrays properly. On
-# 2026-08-01 that silently made a retry pass a no-op: nothing matched, the
 # script reported nothing to do, and passing the flag was WORSE than omitting
 # it, because the one-element default would have matched. Splitting here makes
 # the script behave identically however it is invoked.
+#
+# (This block existed TWICE until 2026-08-01 — two near-identical comments and
+# two copies of the split. Harmless, since splitting an already-split list is
+# idempotent, which is exactly why nothing caught it. The hazard was a later
+# edit landing on one copy.)
 $RetryVerdicts = @(
     $RetryVerdicts |
         ForEach-Object { $_ -split ',' } |
