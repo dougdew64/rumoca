@@ -88,7 +88,7 @@ fn msl_roots() -> Vec<PathBuf> {
 /// would be a second definition of "which models exist", and the two would
 /// drift the moment MSL moves.
 fn corpus() -> Vec<SurveyRow> {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/msl-survey.csv");
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
     let text = std::fs::read_to_string(path)
         .unwrap_or_else(|e| panic!("run the survey first: cannot read {path}: {e}"));
     hrw::survey::parse_csv(&text)

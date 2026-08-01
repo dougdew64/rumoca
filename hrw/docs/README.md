@@ -78,6 +78,7 @@ status and reading moment in a three-line header, and this index is the sorted v
 | [`upstream-issues.md`](upstream-issues.md) | Rumoca bugs, written ready to file. **Claude never files them.** |
 | [`fixture-tours/`](fixture-tours/) | Tours that are *tests*. One per capability, narrow, with violable expectations. |
 | [`specimen-notebook/`](specimen-notebook/) | Per specimen: a generated `trace/` and a hand-written `purpose.md`. |
+| [`reports/`](reports/) | **Generated data, not prose** — the survey, the corpus fidelity artifact and its profile, the specimen report. Explained by [`reports.md`](reports.md); inventoried by [`reports/README.md`](reports/README.md). |
 
 ## Data HRW reads at runtime — do not move
 
@@ -89,9 +90,12 @@ Load-bearing paths, not documents. Moving any of them breaks the app or its test
 | `fixture-tours/notebooks/` | cross-platform tour stops |
 | `specimen-notebook/<Model>/purpose.md` | the Purpose tab |
 | `specimen-notebook/<Model>/trace/` | the durable per-stage IR |
-| `msl-survey.csv` + `.meta.json` | the fidelity corpus definition, and the capability map |
-| `msl-fidelity-report.csv` + `-profile.csv` + `.meta.json` | the corpus fidelity artifact |
-| `specimen-fidelity-report.csv` | written by the pre-commit fidelity test |
+| **`reports/msl-survey.csv`** | `fidelity_msl::corpus()` and `survey_msl` — **the corpus definition** |
+| **`reports/specimen-fidelity-report.csv`** | written by the pre-commit test in `src/fidelity.rs` |
+| `reports/msl-fidelity-*` | written by `promote-run.ps1`; the committed artifact |
+
+**Three of those are compiled-in paths**, so moving a report means editing code. See
+[`reports/README.md`](reports/README.md).
 
 `src/doc_citations.rs` scans `../CLAUDE.md`, `../README.md`, `../DECISIONS.md` and **all of
 `docs/` recursively**, so a document moved into a subdirectory is still checked.

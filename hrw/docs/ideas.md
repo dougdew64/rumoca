@@ -2408,7 +2408,7 @@ argument arriving from a different direction.
 Agreed with Doug 2026-07-31, once the survey existed and it became clear what it enables.
 **#51 predicted the corpus; this is what having it measured actually changes.**
 
-The survey (`examples/survey_msl.rs`, `docs/msl-survey.csv`) records outcome and IR shape for
+The survey (`examples/survey_msl.rs`, `docs/reports/msl-survey.csv`) records outcome and IR shape for
 all **2,626** MSL models, of which **557 reach a solvable system**. That turns the corpus from
 "a pile of models we could compile" into **a catalogue searchable by the thing we care about**.
 
@@ -2768,7 +2768,7 @@ cadence 45 minutes compounds into real time.
 
 ### Sketch, if picked up
 
-- `measure-fidelity.ps1` partitions the model list using `docs/msl-survey.csv`'s
+- `measure-fidelity.ps1` partitions the model list using `docs/reports/msl-survey.csv`'s
   `n_equations` and `outcome` — data it already has.
 - Small partition runs with `--max-models 10 --rebuild-every 5`; large partition unchanged at
   `--max-models 1`.
@@ -2913,7 +2913,7 @@ most that could be said was "the phases overlap or nest".
 
 #### Selecting smaller models does NOT need it
 
-The reverse-ladder selection runs off `docs/msl-survey.csv`, which already carries
+The reverse-ladder selection runs off `docs/reports/msl-survey.csv`, which already carries
 `n_equations`, `largest_coupled`, `index_reduced`, `n_event_conditions`, `n_coupled`,
 `has_arrays`, `max_depth` and `n_functions` for **every** model. *"The smallest model with a
 coupled block over 20"* is a query against existing columns.

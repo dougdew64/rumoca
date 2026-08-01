@@ -1,6 +1,6 @@
 //! **Survey every model in the vendored MSL.**
 //!
-//! Produces `docs/msl-survey.csv`: one row per model, recording whether Rumoca
+//! Produces `docs/reports/msl-survey.csv`: one row per model, recording whether Rumoca
 //! compiles it, where it stops if not, and — when it succeeds — the IR shape
 //! metrics that stratify the fidelity sample.
 //!
@@ -48,10 +48,10 @@
 //! ```text
 //! # part 1 — everything, reduction capped, 8 shards in parallel
 //! for i in 0..8: survey_msl --slice i/8 --out part-$i.csv
-//! survey_msl --merge part-0.csv,…,part-7.csv --out docs/msl-survey.csv
+//! survey_msl --merge part-0.csv,…,part-7.csv --out docs/reports/msl-survey.csv
 //!
 //! # part 2 — the models part 1 capped, no limit, however long it takes
-//! survey_msl --only-skipped --out docs/msl-survey.csv
+//! survey_msl --only-skipped --out docs/reports/msl-survey.csv
 //! ```
 //!
 //! **Parallelism is by process, not thread.** `Session` is not thread-safe, and
@@ -139,7 +139,7 @@ fn main() {
 
     let cfg = Config {
         out: arg_value(&args, "--out")
-            .unwrap_or_else(|| format!("{}/docs/msl-survey.csv", env!("CARGO_MANIFEST_DIR"))),
+            .unwrap_or_else(|| format!("{}/docs/reports/msl-survey.csv", env!("CARGO_MANIFEST_DIR"))),
         limit: arg_value(&args, "--limit").and_then(|v| v.parse().ok()),
         resume: args.iter().any(|a| a == "--resume"),
         only_skipped: args.iter().any(|a| a == "--only-skipped"),

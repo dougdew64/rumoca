@@ -110,7 +110,7 @@ happens to it.
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
 ./promote-run.ps1 -Report C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
-git add hrw/docs/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
+git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
 **D. Free memory.** Close Chrome; confirm rust-analyzer is still stopped. `ServiceShell` held

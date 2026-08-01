@@ -234,7 +234,7 @@ run 2: ... cyclic dependency: wait2.outerStatePort.subgraphStatePort.suspend -> 
 
 Only 5 of 2,626 models are affected, so the practical impact on a user is small. But a
 consumer that stores diagnostics — a golden-file test, a CI log diff, or a checked-in
-capability report like `docs/msl-survey.csv` — sees spurious changes with no behaviour
+capability report like `docs/reports/msl-survey.csv` — sees spurious changes with no behaviour
 change behind them, which is exactly the noise that trains people to ignore diffs.
 
 **Suspect, unverified:** the cycle is detected over a hash-ordered collection, so the

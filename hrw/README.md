@@ -58,8 +58,8 @@ nothing and omit nothing** — run at two scales: the curated specimens on every
 full Modelica Standard Library before anything is published.
 
 - **2,614 of 2,626 MSL models, zero violations**
-  ([`docs/msl-fidelity-report.csv`](docs/msl-fidelity-report.csv), with
-  [provenance](docs/msl-fidelity-report.meta.json))
+  ([`docs/reports/msl-fidelity-report.csv`](docs/reports/msl-fidelity-report.csv), with
+  [provenance](docs/reports/msl-fidelity-report.meta.json))
 - The remaining 12 exceeded this machine's memory or the run's time limit, and the artifact
   **says so** rather than omitting them
 - **It found two real bugs in HRW itself** — both weeks old, both introduced by ordinary work,

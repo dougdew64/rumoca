@@ -6,8 +6,8 @@
 # directory is the wrong home for both reasons, and it sits among the scratch
 # files Claude generates constantly.
 #
-# This copies (never moves) the finished CSVs into hrw/docs/ under names that
-# cannot be confused with the small pre-commit test's output, and writes a
+# This copies (never moves) the finished CSVs into hrw/docs/reports/ under names
+# that cannot be confused with the small pre-commit test's output, and writes a
 # provenance sidecar so the table can say what it describes.
 #
 #   .\promote-run.ps1 -RunDir C:\Users\dougd\rumoca-runs\2026-08-01-full
@@ -27,7 +27,9 @@ if ($RunDir) {
 if (-not $Report)  { throw "give -RunDir, or -Report and -Profile" }
 if (-not (Test-Path $Report))  { throw "no such report: $Report" }
 
-$docs = Join-Path $PSScriptRoot "docs"
+# The generated artifacts live in docs/reports/, beside the reports.md that
+# explains how they compose — not loose among the prose (grouped 2026-08-01).
+$docs = Join-Path $PSScriptRoot "docs/reports"
 $destReport = Join-Path $docs "msl-fidelity-report.csv"
 $destMeta   = Join-Path $docs "msl-fidelity-report.meta.json"
 
@@ -101,8 +103,8 @@ $meta = @"
 $meta | Out-File $destMeta -Encoding utf8
 
 "promoted $n rows"
-"  -> docs/msl-fidelity-report.csv"
-if ($profileNote -ne "null") { "  -> docs/msl-fidelity-profile.csv" }
-"  -> docs/msl-fidelity-report.meta.json"
+"  -> docs/reports/msl-fidelity-report.csv"
+if ($profileNote -ne "null") { "  -> docs/reports/msl-fidelity-profile.csv" }
+"  -> docs/reports/msl-fidelity-report.meta.json"
 ""
-"now commit them:  git add hrw/docs/msl-fidelity-*  && git commit"
+"now commit them:  git add hrw/docs/reports/msl-fidelity-*  && git commit"

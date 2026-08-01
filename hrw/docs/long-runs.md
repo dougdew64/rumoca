@@ -65,7 +65,7 @@ while (Get-Process survey_msl -ErrorAction SilentlyContinue) { Start-Sleep -Seco
 
 .\target\release\examples\survey_msl.exe --merge `
     C:\tmp\part-0.csv,C:\tmp\part-1.csv,C:\tmp\part-2.csv,C:\tmp\part-3.csv,C:\tmp\part-4.csv,C:\tmp\part-5.csv `
-    --out hrw\docs\msl-survey.csv
+    --out hrw\docs\reports\msl-survey.csv
 ```
 
 **Output is byte-identical whatever the shard count** — slicing indexes the sorted name list
@@ -76,7 +76,7 @@ and the merge sorts — so a maintainer can regenerate and diff it.
 models that once consumed 97 minutes between them):
 
 ```powershell
-.\target\release\examples\survey_msl.exe --only-skipped --out hrw\docs\msl-survey.csv
+.\target\release\examples\survey_msl.exe --only-skipped --out hrw\docs\reports\msl-survey.csv
 ```
 
 Part 1 stands alone as a complete report if part 2 never runs; the bound is stated in the
@@ -134,7 +134,7 @@ Two things that are easy to get wrong:
 
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca\hrw
-python -c "import csv,io; rows=list(csv.DictReader(io.open('docs/msl-survey.csv',encoding='utf-8'))); io.open('C:/tmp/all-models.txt','w',encoding='utf-8',newline='').write('\n'.join(sorted(r['name'] for r in rows))+'\n')"
+python -c "import csv,io; rows=list(csv.DictReader(io.open('docs/reports/msl-survey.csv',encoding='utf-8'))); io.open('C:/tmp/all-models.txt','w',encoding='utf-8',newline='').write('\n'.join(sorted(r['name'] for r in rows))+'\n')"
 ```
 
 **Interrupted?** Run the identical command again. It resumes from the two CSVs, skips
@@ -299,7 +299,7 @@ functions — existed in neither.
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
 ./promote-run.ps1 -RunDir C:/Users/dougd/rumoca-runs
-git add hrw/docs/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
+git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
 `promote-run.ps1` **copies** (never moves) into `docs/` as `msl-fidelity-report.csv` plus a
@@ -310,8 +310,8 @@ forced — the likeliest accident is promoting a partial re-run over a complete 
 
 | File | Scope | Committed? |
 |---|---|---|
-| `docs/specimen-fidelity-report.csv` | 10 curated specimens, written by the pre-commit **test** | yes, and it churns |
-| `docs/msl-fidelity-report.csv` | the **full MSL corpus** — the artifact | yes, deliberately |
+| `docs/reports/specimen-fidelity-report.csv` | 10 curated specimens, written by the pre-commit **test** | yes, and it churns |
+| `docs/reports/msl-fidelity-report.csv` | the **full MSL corpus** — the artifact | yes, deliberately |
 | `C:/Users/dougd/rumoca-runs/*` | in-progress and historical run output | no — durable working area |
 
 **Run output goes to `C:/Users/dougd/rumoca-runs/`, never `C:/tmp`.** Temp directories get
@@ -321,7 +321,7 @@ of this runbook said `C:/tmp`, which put hours of work one cleanup away from gon
 ## Afterwards
 
 - Restart rust-analyzer: `Ctrl+Shift+P` → **`rust-analyzer: Restart server`**.
-- Commit the regenerated `docs/msl-survey.csv` and its `.meta.json` together; the sidecar is
+- Commit the regenerated `docs/reports/msl-survey.csv` and its `.meta.json` together; the sidecar is
   what lets the table say which Rumoca and which MSL it describes.
 - If a run was interrupted and resumed, the CSV is still sorted and deterministic — the
   merge sorts, and the fidelity report is written in corpus order.
