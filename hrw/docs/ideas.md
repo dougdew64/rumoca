@@ -1953,7 +1953,7 @@ platforms.
 
 ---
 
-## 48. Memoize compiled specimens across tests
+## 48. Memoize compiled specimens across tests — DELIVERED 2026-08-01
 
 Split out 2026-07-29, when Doug asked how to run the test suite in parallel and the
 measurement said parallelism was the wrong lever.

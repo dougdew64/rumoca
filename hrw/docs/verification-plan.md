@@ -38,6 +38,12 @@ is that trigger's first application.
 
 Ordered by *what makes the rest cheaper*, not by size.
 
+**Numbers are identifiers; execution order is separate.** Items 0b and 0c were inserted on
+2026-08-01 ahead of item 1, whose own text says *"First, because every later phase pays this
+cost repeatedly"* — so the numbering contradicted the rationale. **Item 1 was done first**, and
+it was the right call: the full suite went 375s -> 113s, and every remaining item runs it
+repeatedly.
+
 ---
 
 ### 0. The must-fire convention — adopt now, not a phase
@@ -163,7 +169,7 @@ introduces would fail upstream CI.
 
 ---
 
-### 1. Shorten the pre-commit suite (`docs/ideas.md` #48)
+### 1. Shorten the pre-commit suite (`docs/ideas.md` #48) — DONE 2026-08-01
 
 **First, because every later phase pays this cost repeatedly.** Six minutes is long enough
 that Claude runs the full suite less often than it should, which is its own risk.
@@ -175,6 +181,26 @@ models**, and `Drivetrain` is compiled five or six times per run.
 passing, and #48's recorded caveat is honoured — **one test still compiles a specimen fresh
 and compares against the memoised result**, so memoisation cannot hide a reproducibility
 failure.
+
+**Delivered 2026-08-01. 375s -> 113s (3.3x), 476 tests passing.** `FromWorker` and `SimData`
+gained `Clone`; `test_msl` memoises one compile per specimen per process and hands out copies;
+`compile_specimen_uncached` is the opt-out. The caveat is honoured by
+`compiling_a_specimen_twice_is_reproducible`, which compares **every compilation stage's
+emitted JSON**.
+
+**Two findings the work produced, both worth more than the speedup.**
+
+1. **The guard test's first form was wrong, and the full suite caught it.** Comparing the memo
+   against a *later* fresh compile failed on Resolve — because the shared session accumulates
+   documents between the two, so they were never comparable. Now two back-to-back compiles.
+   The session-dependence itself is logged in `tech-debt.md`.
+2. **Inserting the test silently un-tested another one.** The new function landed between
+   `a_broken_specimen_does_not_poison_the_next_compile`'s attributes and its `fn`, so it
+   inherited a second `#[test]` while that function — the regression guard for upstream issue
+   1 — quietly stopped being a test. Caught only because the duplicate name made the harness
+   list 476 entries with 475 unique. **This is the second time an attribute attaching to the
+   wrong item has caused a silent defect here**; the first broke the debugger launch on
+   2026-07-31.
 
 **Out of scope:** parallelism. Measured and ruled out on 2026-07-29 — the slow tests serialise
 on a global mutex regardless, and going parallel would save about two seconds.

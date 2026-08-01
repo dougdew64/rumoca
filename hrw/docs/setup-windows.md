@@ -68,17 +68,17 @@ literally** — see the library list in [`../src/app.rs`](../src/app.rs).
 ```powershell
 cargo build -p hrw
 
-# Between edits — 412 tests, about 25 seconds.
+# Between edits — 416 tests, about 8 seconds.
 cargo test -p hrw --lib -- --test-threads=1
 
-# Before committing — all 471, about 6 minutes.
+# Before committing — all 476, under 2 minutes.
 cargo test -p hrw --lib --features slow-tests -- --test-threads=1
 
 # Covers the binary, which `cargo test` does NOT build.
 cargo clippy -p hrw --all-targets
 ```
 
-*(Counts measured 2026-08-01.)*
+*(Counts and timings measured 2026-08-01, after `ideas.md` #48 memoised compiled specimens: the full run was 375s before it.)*
 
 **Two commands, because 59 tests hold nearly all the runtime.** Measured 2026-07-29: 49 of
 402 tests took 180 of the suite's 183 seconds, nearly all of them compiling a specimen against

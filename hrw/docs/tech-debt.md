@@ -366,6 +366,27 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   fails *and* hangs** — and a hang reads as a broken build rather than a test-isolation problem.
   *Files:* `bridge.rs`, `worker.rs` — test modules.
 
+- [ ] **A stage's emitted JSON depends on what else the session holds.**
+  *(Found 2026-08-01 while building the memoisation guard for #48.)* Compiling `Drivetrain`
+  early in the test run and again late produces **different Resolve JSON**, against the same
+  shared `Session`. The compiles are identical; what changed is that the session has
+  accumulated every other specimen's document in between.
+
+  **Not yet characterised** — the difference could be diagnostics that name other documents,
+  or something that would matter more. It was found by elimination (two back-to-back compiles
+  agree; two separated ones do not), not by inspecting the diff, so **treat the cause as
+  unverified.**
+
+  **Why it is worth chasing.** HRW shows the Resolve tab for *one* model, and if that view
+  varies with what was loaded earlier in the session then two users — or the same user in two
+  orders — see different things for the same file. It is adjacent to
+  [`upstream-issues.md`](upstream-issues.md) issue 1, where a *failed* resolve leaked into the
+  next model's result; this is the same surface with a milder symptom.
+
+  **First step is a probe, not a theory:** compile a specimen, dump Resolve's JSON, compile ten
+  others, compile it again, and diff. Cheap, and it converts a suspicion into a fact.
+  *Files:* `worker.rs`, and possibly `crates/rumoca-compile` session caching.
+
 - [ ] **`build_declaring_classes` resolves only the first path segment.** `src.V` resolves
   exactly; `gear.flange_a.tau` yields `gear`'s type, which *contains* the declaration rather
   than being it. The UI wording says "in" rather than "declared in", so it is honest — but a

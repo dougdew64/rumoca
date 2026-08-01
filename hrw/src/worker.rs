@@ -113,6 +113,11 @@ pub enum ToWorker {
 /// `data[i][j]` is variable i at time `times[j]`. The first `n_states`
 /// variables are true differential states (the ODE unknowns); the rest are
 /// algebraic outputs computed from the state at each time step.
+///
+/// `Clone` so [`FromWorker`] can derive it — see the note there. Every field is
+/// owned plain data, so a clone is a deep copy of the trajectories and nothing
+/// subtler. `SolverStepRecord` comes from `rumoca_solver` and is `Clone` there.
+#[derive(Clone)]
 pub struct SimData {
     pub times: Vec<f64>,
     pub names: Vec<String>,
@@ -649,6 +654,14 @@ impl LogLevel {
 ///   updates in real time.
 /// - **Final** (`Compiled`, `Simulated`, `Libraries`, `DefTree`) — one per
 ///   request, signals the task is done.
+/// **`Clone` is derived for the test suite, and the cost is worth naming.**
+/// Every payload here is plain data — IR, frames, an equation sheet — so a clone
+/// is a deep copy and nothing more. The app never needs it: results move from
+/// the worker thread to the UI once. `test_msl::compile_specimen_shared` does,
+/// because it memoises one compile per specimen per process and hands out copies
+/// (`docs/ideas.md` #48). Compiling `Drivetrain` six times per run against the
+/// MSL is most of the suite's runtime.
+#[derive(Clone)]
 pub enum FromWorker {
     /// Outcome of loading libraries: total documents loaded, or an error.
     Libraries(Result<usize, String>),
@@ -3010,6 +3023,51 @@ pub(crate) mod test_msl {
     /// the inner value anyway — we accept the risk because our WorkerState is
     /// still usable after a panic (it's just a Session, not half-modified data).
     pub(crate) fn compile_specimen_shared(name: &str) -> FromWorker {
+        if let Some(hit) = specimen_cache()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(name)
+        {
+            return hit.clone();
+        }
+        // **Compile outside the cache lock.** Holding it across a compile would
+        // mean holding two locks in a fixed order for tens of seconds; harmless
+        // under `--test-threads=1` but a deadlock waiting for the day that
+        // changes. A duplicate compile on a race is wasted work, never wrong.
+        let fresh = compile_specimen_uncached(name);
+        specimen_cache()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(name.to_owned(), fresh.clone());
+        fresh
+    }
+
+    /// One compile per specimen per test process. See [`compile_specimen_shared`].
+    fn specimen_cache() -> &'static Mutex<std::collections::HashMap<String, FromWorker>> {
+        static CACHE: OnceLock<Mutex<std::collections::HashMap<String, FromWorker>>> =
+            OnceLock::new();
+        CACHE.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+    }
+
+    /// Compile a specimen **without** consulting the memo — a genuinely fresh
+    /// run through every phase.
+    ///
+    /// # When a test must use this
+    ///
+    /// **Any test whose subject is the act of compiling**, rather than the
+    /// result. Two kinds exist today:
+    ///
+    /// - **Cross-compile contamination.**
+    ///   `a_broken_specimen_does_not_poison_the_next_compile` exists because a
+    ///   failed resolve once leaked into the *next* model's result. A memoised
+    ///   answer would never touch the session and the test would pass
+    ///   vacuously — proving nothing while looking green, which is worse than
+    ///   deleting it.
+    /// - **Reproducibility.** `compiling_a_specimen_twice_is_reproducible` is
+    ///   the mitigation for what memoisation costs: the second test to ask for
+    ///   `Drivetrain` no longer re-verifies that compiling it is deterministic,
+    ///   so one test keeps doing exactly that.
+    pub(crate) fn compile_specimen_uncached(name: &str) -> FromWorker {
         let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
         w.compile(&path, &|_: FromWorker| {})
@@ -4172,6 +4230,70 @@ mod tests {
             !note.contains("missingGain"),
             "`missingGain` appears only in UndefinedRef.mo; leaking it here would have \
              Claude diagnosing the wrong file: {note}",
+        );
+    }
+
+    /// A memoised compile equals a fresh one, stage for stage.
+    ///
+    /// **This is the price of `docs/ideas.md` #48, paid deliberately.** Memoising
+    /// specimens took the full suite from 375s to about 100s, but it *weakens* the
+    /// suite: before, the second test to ask for `Drivetrain` re-verified that
+    /// compiling it produced the same thing. Now it gets a copy of the first answer,
+    /// so nothing checks reproducibility, and a compiler that had become
+    /// non-deterministic would sail through a green run.
+    ///
+    /// So one test keeps doing what the others stopped doing. It compares every
+    /// compilation stage's **emitted JSON** rather than a summary, because that tree
+    /// is what HRW renders, what the bridge publishes and what the fidelity checks
+    /// read -- a difference invisible there is invisible everywhere that matters.
+    ///
+    /// **Two back-to-back uncached compiles, not memo-versus-fresh.** The first
+    /// version compared the memo against a fresh compile and failed on Resolve in
+    /// the full suite while passing alone — because those two compiles happen at
+    /// *different points in the session's life*, and the shared session accumulates
+    /// every specimen the suite has touched. That difference is a property of the
+    /// session, not non-determinism, so the comparison could never have been stable.
+    /// Compiling twice in a row holds the session constant and isolates the property
+    /// actually at issue. *(The session-dependence itself is logged in
+    /// `docs/tech-debt.md`; it is adjacent to upstream issue 1.)*
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn compiling_a_specimen_twice_is_reproducible() {
+        let memoised = compile_specimen_uncached("Drivetrain");
+        let fresh = compile_specimen_uncached("Drivetrain");
+
+        let (FromWorker::Compiled { stages: a, def_index: da, .. }, FromWorker::Compiled { stages: b, def_index: db, .. }) =
+            (&memoised, &fresh)
+        else {
+            panic!("expected Compiled from both");
+        };
+
+        for kind in StageKind::COMPILATION {
+            let (sa, sb) = (a.get(*kind), b.get(*kind));
+            assert_eq!(
+                sa.outcome, sb.outcome,
+                "{} outcome differs between a memoised and a fresh compile",
+                kind.name(),
+            );
+            assert_eq!(
+                sa.value.is_some(), sb.value.is_some(),
+                "{} presence differs between a memoised and a fresh compile",
+                kind.name(),
+            );
+            if sa.value != sb.value {
+                panic!(
+                    "{} emits different JSON on a fresh compile — memoisation is hiding \
+                     non-determinism, which is exactly what this test exists to catch",
+                    kind.name(),
+                );
+            }
+        }
+        assert_eq!(da.len(), db.len(), "def_index size differs");
+
+        // Non-vacuity: comparing two empty pipelines proves nothing.
+        assert!(
+            StageKind::COMPILATION.iter().filter(|k| a.get(**k).value.is_some()).count() >= 8,
+            "expected a substantially compiled Drivetrain; got mostly empty stages",
         );
     }
 
