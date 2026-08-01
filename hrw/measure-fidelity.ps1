@@ -34,7 +34,12 @@ param(
     # them on a machine with ~14 GB free once rust-analyzer is stopped.
     [double]$MaxProcGB   = 10.0,
     [int]$SampleMs       = 2000,
-    [int]$TimeoutSec     = 900
+    [int]$TimeoutSec     = 900,
+    # Which verdicts to re-attempt on a resume. `aborted:free-ram` is always
+    # worth retrying; `aborted:timeout` is worth it on a QUIETER machine, but
+    # is not retried by default or a genuinely unfinishable model would burn
+    # the full timeout on every re-run forever.
+    [string[]]$RetryVerdicts = @('aborted:free-ram')
 )
 
 $exe = Join-Path $PSScriptRoot "..\target\release\examples\fidelity_msl.exe"
@@ -88,23 +93,31 @@ if (-not (Test-Path $Profile)) {
 # transient machine state into the profile permanently, and those are exactly
 # the heavy models the stratified corpus exists to exercise.
 #
-# `aborted:proc-ceiling` and `aborted:timeout` are properties of the MODEL, so
-# they stay done: retrying them would just reproduce the same result.
+# `aborted:timeout` was ALSO thought to be a property of the model. It is not,
+# and the measurement says so: LightningSegmentedTransmissionLine took 529 s
+# run in isolation and 901.7 s during the full sweep — 70% slower under
+# contention. So it is retryable, but only when asked
+# (`-RetryVerdicts 'aborted:free-ram','aborted:timeout'`), because retrying it
+# by default would burn the whole timeout on a genuinely unfinishable model
+# every single re-run.
+#
+# `aborted:proc-ceiling` stays done: a model that wants more than the ceiling
+# wants it regardless of what else is running.
 $alreadyProfiled = @{}
 $retryable = @()
 Get-Content $Profile | Select-Object -Skip 1 | ForEach-Object {
     $parts = $_ -split ','
-    if ($parts.Count -ge 4 -and $parts[3] -eq 'aborted:free-ram') {
+    if ($parts.Count -ge 4 -and $RetryVerdicts -contains $parts[3]) {
         $retryable += $parts[0]
     } elseif ($parts[0]) {
         $alreadyProfiled[$parts[0]] = $true
     }
 }
 if ($retryable.Count -gt 0) {
-    Write-Host "retrying $($retryable.Count) model(s) that aborted on free RAM, not on their own size"
+    Write-Host "retrying $($retryable.Count) model(s) with verdict(s): $($RetryVerdicts -join ', ')"
     # Drop their rows so the retry writes a fresh verdict rather than a duplicate.
     $kept = @(Get-Content $Profile | Select-Object -First 1)
-    $kept += Get-Content $Profile | Select-Object -Skip 1 | Where-Object { ($_ -split ',')[3] -ne 'aborted:free-ram' }
+    $kept += Get-Content $Profile | Select-Object -Skip 1 | Where-Object { $RetryVerdicts -notcontains ($_ -split ',')[3] }
     $kept | Out-File $Profile -Encoding utf8
 }
 

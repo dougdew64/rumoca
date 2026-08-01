@@ -127,7 +127,31 @@ python -c "import csv,io; rows=list(csv.DictReader(io.open('docs/msl-survey.csv'
 
 **Interrupted?** Run the identical command again. It resumes from the two CSVs, skips
 everything settled, and retries free-RAM aborts. Nothing is lost — rows are flushed as
-produced.
+produced. **No flag is needed for that.**
+
+**Recovering the aborts, on a quieter machine.** Close what is holding memory (Chrome,
+rust-analyzer), then:
+
+```powershell
+# free-RAM aborts only — the default, no flag required
+.\measure-fidelity.ps1 -ModelsFile C:	mpll-models.txt `
+    -Out C:	mpid-full.csv -Profile C:	mpid-full-memory.csv
+
+# ALSO retry the timeouts, which are partly environmental
+.\measure-fidelity.ps1 -ModelsFile C:	mpll-models.txt `
+    -Out C:	mpid-full.csv -Profile C:	mpid-full-memory.csv `
+    -RetryVerdicts 'aborted:free-ram','aborted:timeout'
+```
+
+**Timeouts are worth retrying and are not retried by default**, which looks inconsistent
+until you see both reasons. They *are* partly environmental —
+`LightningSegmentedTransmissionLine` took **529 s in isolation and 901.7 s during the full
+sweep**, 70% slower under contention. But retrying them automatically would burn the entire
+900 s timeout on a genuinely unfinishable model on *every* re-run, forever. So: retryable,
+by request.
+
+`aborted:proc-ceiling` is never retried — a model that wants more than the ceiling wants it
+regardless of what else is running.
 
 ### Watching it, from a second window
 
