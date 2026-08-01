@@ -3114,10 +3114,13 @@ generator would be doing. See `docs/upstream-strategy.md` § "The alignment argu
 
 Three findings worth a maintainer's afternoon, per `docs/upstream-strategy.md`'s ordering:
 
-- **The cost of full IR materialisation, measured.** Models Rumoca compiles in **5-15 s**
-  take **~900 s** through HRW's path — **50-170x** — while the survey, calling `Session`
-  directly with no HRW code, recorded **zero timeouts across all 2,626 models** and a slowest
-  single model of 376 s. Framed per the section above.
+- **The cost of full IR materialisation — NOT yet cleanly measured.** The obvious comparison
+  (survey 5-15 s versus HRW ~900 s on the same models) is **contaminated**: the survey *caps
+  index reduction above 800 equations and skips it*, while HRW runs the funnel
+  unconditionally. So the gap mixes HRW's extraction overhead with a Rumoca phase the survey
+  never ran. **Separating them needs either an uncapped survey pass on those models, or the
+  `Index reduction` line from the per-phase log**, which now records phases individually.
+  Until then there is no publishable ratio — see `docs/upstream-strategy.md`.
 - **A performance cliff with a named cause.** The whole MSL compiles in ~38 minutes; adding
   index reduction made **four models consume 97 minutes** (the Spice3 four-bit-adder family,
   2,477-10,175 equations). Superlinear in system size, with the models to reproduce it. That

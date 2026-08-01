@@ -86,10 +86,19 @@ about **their** work rather than about ours, and it is checkable by running the 
 
 ### It also disposes of the cost objection, which was the worry
 
-Measured 2026-08-01 during the full fidelity sweep: models Rumoca compiles in **5-15 seconds**
-take **~900 seconds** through HRW's path — **50-170x**, with the survey (calling `Session`
-directly, no HRW code) recording **zero** timeouts across all 2,626 models and a slowest
-single model of 376 s.
+Measured 2026-08-01 during the full fidelity sweep: models the survey handles in **5-15
+seconds** take **~900 seconds** through HRW's path.
+
+**That ratio is NOT HRW overhead, and an earlier version of this document said it was.** The
+survey **caps index reduction above 800 equations and skips it**; HRW's `index_reduction_stage`
+runs the funnel **unconditionally**. So for exactly these models the two runs are not doing the
+same work — a large part of the gap is HRW performing a phase the survey declined to perform,
+and the phase in question is *Rumoca's*, not HRW's serialisation.
+
+**Do not publish the ratio until the two sides are made comparable** — either by running the
+survey uncapped on those models, or by subtracting the `Index reduction` figure the per-phase
+log now records. A number that misattributes a compiler's own cost to a tool measuring it is
+precisely the overreach that costs credibility permanently.
 
 That looks alarming until it is framed correctly. **A project whose stated goal is "reusable
 symbolic outputs rather than a single closed execution path" has already accepted that

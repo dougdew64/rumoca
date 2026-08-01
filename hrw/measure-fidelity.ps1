@@ -215,6 +215,8 @@ foreach ($m in $list) {
     # print until 30 s no matter what -SlowNarrateSec said. That was the second
     # bug in this one feature; the first was a path eaten by an escape.
     $lastNarrate = -99999
+    $lastPhaseText = $null
+    $phaseSince = $null
     while (-not $proc.HasExited) {
         Start-Sleep -Milliseconds $SampleMs
         try { $proc.Refresh() } catch { break }
@@ -248,9 +250,37 @@ foreach ($m in $list) {
             # anything the callback prints is swallowed before it gets there.
             $phaseFile = Join-Path $env:TEMP "fid-phase.txt"
             $phase = if (Test-Path $phaseFile) { (Get-Content $phaseFile -Raw).Trim() } else { $null }
+            # **Measure time-in-phase here, rather than trusting the marker.**
+            #
+            # The runner writes the marker ONCE when a phase starts, stamped with
+            # seconds-since-compile-start. Rendered as "14s in" it read as
+            # time-spent-in-this-phase and never moved, which is worse than
+            # useless — it looked like a frozen clock. The watchdog knows when the
+            # marker last CHANGED, so it can report the real duration.
+            if ($phase -ne $lastPhaseText) {
+                $lastPhaseText = $phase
+                $phaseSince = Get-Date
+            }
+            # Prefer the marker's own start stamp: the runner records
+            # seconds-since-compile-start when the phase BEGAN, so
+            # elapsed-minus-that is the true time in phase, exact from the very
+            # first narration. The watchdog's own observation is the fallback,
+            # and it necessarily reads 0 the first time it sees a phase.
+            #
+            # (Off by the ~1.3 s MSL load, since the marker is relative to the
+            # compile and $t0 is relative to process start. Immaterial against
+            # the minutes this exists to measure.)
+            $inPhase = if ($phase -match 'running,\s*([\d.]+)s in') {
+                [math]::Max(0, $elapsedNow - [double]$Matches[1])
+            } elseif ($phaseSince) {
+                ((Get-Date) - $phaseSince).TotalSeconds
+            } else { 0 }
+            # Drop the runner's own "(running, Ns in)" suffix; it means
+            # "started at N s", not "N s elapsed", and we now show the real thing.
+            $phaseName = ($phase -replace '\s*\(running,.*$', '')
             if ($phase) {
                 Write-Host ""
-                Write-Host ("       {0,5:N0}s  in: {1}" -f $elapsedNow, $phase.Trim()) -ForegroundColor DarkGray
+                Write-Host ("       {0,5:N0}s  in: {1}  ({2:N0}s in this phase)" -f $elapsedNow, $phaseName, $inPhase) -ForegroundColor DarkGray
                 Write-Host -NoNewline ("{0,5}/{1}  {2,-72} " -f $i, $list.Count, $m)
             }
         }
