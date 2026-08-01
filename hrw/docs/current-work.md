@@ -15,10 +15,11 @@ Started 2026-07-31.
 | 1 | **Stage C** — 53 models stratified by IR shape | ✅ **done** — 43 completed, **0 violations**, 10 aborts now explained |
 | 2 | **Measure where the cost is** | ✅ **done** — it is HRW's compile path, not the checks; `--only-checks` proved it |
 | 3 | **Decide** | ✅ **done** — CALIBRATE, do not optimise. Guards raised to 900 s / 10 GB; the worst model needs 529 s and 5,416 MB and passes cleanly |
-| 4 | **The big run** — full corpus, overnight | needs step 3 |
-| 5 | **Triage** the findings — three categories, see below | needs step 4 |
-| 6 | **Fix**, re-run to green | |
-| 7 | **The oracle test** — design, run (`ideas.md` #43) | after 6 |
+| 4 | **The big run** — full corpus | ✅ **done** — 2,610 models, **0 violations**; 16 aborts under retry (checklist E) |
+| 5 | **Triage** the findings — three categories, see below | **nothing to triage: zero violations.** Confirm after the retry |
+| 6 | **Fix**, re-run to green | likely a no-op — see step 5 |
+| 6b | **The verification pause** — [`verification-plan.md`](verification-plan.md), four items | **after 6, before 7** (agreed 2026-08-01) |
+| 7 | **The oracle test** — design, run (`ideas.md` #43) | after 6b |
 | 8 | **Test mode** (`ideas.md` #52) — somewhere to *look* at these reports | the payoff |
 | 9 | **A reading path for HRW**, then a **structural pass on `app.rs`** | after 8, deliberately |
 
@@ -73,10 +74,14 @@ Misclassifying either way is expensive. The third row is the one that needs care
 
 ## When the big run finishes — the order matters
 
+**Lettered, not numbered.** The plan table above uses numbers, and "step 6" was
+genuinely ambiguous between the two on 2026-08-01. A number now always means the
+plan; a letter always means this checklist.
+
 Doug and Claude walk this together (agreed 2026-08-01). **Snapshot before anything else**: the
 sweep cost hours, and every later step touches the same files.
 
-**1. Confirm it actually finished** — not merely that the worker is gone between models.
+**A. Confirm it actually finished** — not merely that the worker is gone between models.
 
 ```powershell
 Get-Process fidelity_msl -ErrorAction SilentlyContinue      # expect nothing
@@ -84,7 +89,7 @@ Get-Process fidelity_msl -ErrorAction SilentlyContinue      # expect nothing
 Import-Csv C:/tmp/fid-full-memory.csv | Group-Object verdict | Select-Object Name, Count
 ```
 
-**2. Snapshot the complete sweep, BEFORE any re-run.** A resume only appends, so it should not
+**B. Snapshot the complete sweep, BEFORE any re-run.** A resume only appends, so it should not
 be able to lose anything — but "should not" is a poor reason to skip a copy that costs seconds.
 
 ```powershell
@@ -94,7 +99,7 @@ New-Item -ItemType Directory $dir -Force | Out-Null
 Copy-Item C:/tmp/fid-full.csv, C:/tmp/fid-full-memory.csv, C:/tmp/fid-full.log $dir
 ```
 
-**3. Promote to the repository and commit**, so git holds the artifact before anything else
+**C. Promote to the repository and commit**, so git holds the artifact before anything else
 happens to it.
 
 ```powershell
@@ -103,10 +108,10 @@ cd C:/Users/dougd/source/repos/rumoca/hrw
 git add hrw/docs/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
-**4. Free memory.** Close Chrome; confirm rust-analyzer is still stopped. `ServiceShell` held
+**D. Free memory.** Close Chrome; confirm rust-analyzer is still stopped. `ServiceShell` held
 3.4 GB during the sweep — between them that is roughly 6 GB.
 
-**5. Re-run for the aborted items.** Free-RAM aborts are retried with no flag; add the
+**E. Re-run for the aborted items.** Free-RAM aborts are retried with no flag; add the
 timeouts explicitly, since those turned out to be partly environmental (529 s in isolation
 against 901 s under load).
 
@@ -114,7 +119,7 @@ against 901 s under load).
 ./measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 ```
 
-**6. Re-promote and commit.** `promote-run.ps1` refuses to replace a larger report with a
+**F. Re-promote and commit.** `promote-run.ps1` refuses to replace a larger report with a
 smaller one, so a mistake here fails loudly rather than quietly.
 
 **Then** triage — step 5 of the plan above, with its three categories.
