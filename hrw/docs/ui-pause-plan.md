@@ -104,6 +104,28 @@ Per pane, the same three questions, which is what makes this writable at speed:
   "broken" must not look alike.
 - **Does clicking it change what it should, and nothing it should not?**
 
+**Layout is part of the baseline, added 2026-08-02 at Doug's prompting.** He flagged that the
+draggable divider (`ideas.md` #59) *"could seriously break our UI code"* and asked that it be
+considered while the tests are being written. Checking it exposed a hole in everything written
+so far:
+
+> **Every baseline test asserts presence in the accessibility tree, and presence is
+> width-independent.** A widget squeezed to nothing, or pushed off-screen, is still in the tree
+> with its label intact. All 24 tests would pass on a layout that is completely broken.
+
+That is harness fact H3 — off-screen widgets are queryable but not clickable — turned into a
+systemic blind spot. Today it is latent because the split is a fixed 40/60. **#59 makes width a
+variable, and turns it live.**
+
+So the baseline gains **layout invariants**, and `Node::rect()` (H10) makes them writable
+without recording anything app-side. Two constraints on how, both measured rather than assumed:
+
+- **Name the chrome that must always be visible** — menu bar, stage tab row, status bar, mode
+  buttons. **Not** a sweep over every node: at a healthy 1600×1200, 153 of 232 widgets already
+  lie outside the viewport, because scroll content extends past the clip rect by design (H12).
+- **Run them at several widths**, since a single width cannot distinguish a layout that works
+  from one that happens to fit.
+
 Panes with no headless test today, in the priority order from `tech-debt.md`:
 
 1. **Reporting panes first** — the status bar's notices, the log view, the equation sheet.
@@ -152,6 +174,15 @@ writes proposals in the same form as facts is how a later session reads intent a
 of 105 fields, so nothing becomes independently testable and the next defect hides just as
 well. The pane takes what it owns — the specimen list fields, the filter, the corpus — and
 returns an action for the caller to apply.
+
+**And a pane receives its width; it does not read `available_width()` deep inside.** This is
+the shape `ideas.md` #59 needs, and the reason to adopt it now rather than retrofit it. Today
+the split is `ui.available_width() * LEFT_PANEL_WIDTH_FRACTION` evaluated at two call sites,
+recomputed every frame from a constant — so there is nowhere for a dragged width to live, and
+no way to render a pane at a width of the test's choosing. **A pane that takes its width is
+testable at any width**, which is what makes the divider safe to build rather than a rewrite
+waiting to happen. Doug, 2026-08-02: *"implementing support for that draggable vertical
+divider could seriously break our UI code."*
 
 ## Step 4 — `central_panel_ui`
 
