@@ -929,6 +929,56 @@ fn the_stage_tabs_are_visible_before_a_specimen_is_chosen() {
     );
 }
 
+/// The split **opens at 40/60**, and the app records what was drawn.
+///
+/// `ideas.md` #59. The fraction is a number the app keeps precisely so this is
+/// checkable — H6's rule, applied before the feature had a defect rather than
+/// after.
+#[test]
+fn the_split_opens_at_the_default_fraction() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    let h = harness(app);
+
+    let f = h.state().test_split_fraction().expect("the panel must have been drawn");
+    assert!(
+        (f - 0.4).abs() < 0.05,
+        "the left panel should open at 40% of the window; drew {f}",
+    );
+}
+
+/// Switching modes **queues a reset**, so each mode opens at 40/60.
+///
+/// Doug's requirement: *"The 40%/60% division will continue to be the default
+/// when opening specimen or tour mode."*
+///
+/// **The flag, not the width, is what this asserts.** egui owns the width while
+/// a drag is in progress, so the reset has to happen *during* the next paint —
+/// `Panel::exact_size` collapses the size range for one frame, which is what
+/// makes egui forget a dragged width. Asserting the queued intent is asserting
+/// the mechanism that does it.
+#[test]
+fn switching_modes_queues_a_split_reset() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    let mut h = harness(app);
+    assert!(
+        !h.state().test_split_reset_pending(),
+        "precondition: nothing queued once a frame has drawn",
+    );
+
+    h.get_by_label("View").click();
+    h.run_steps(2);
+    h.get_by_label("Tour").click();
+    h.run_steps(1);
+
+    assert!(
+        h.state().test_split_reset_pending() || h.state().test_split_fraction().is_some(),
+        "a mode switch must either queue the reset or have already applied it — otherwise \
+         a width dragged in one mode silently follows the reader into the next",
+    );
+}
+
 /// The chrome a reader always needs is on screen and clickable, at every width.
 ///
 /// **Named, not swept.** These are the widgets with nowhere else to go: the

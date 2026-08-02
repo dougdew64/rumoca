@@ -3240,7 +3240,30 @@ splitting `central_panel_ui` for the same reason.
 **Relates to:** [`tech-debt.md`](tech-debt.md)'s `app.rs` entry (up 42% in three days, logged
 rather than swept), #52.
 
-## 59. A draggable LHS/RHS divider, with 40/60 as the opening default
+## 59. A draggable LHS/RHS divider, with 40/60 as the opening default — BUILT 2026-08-02
+
+**Delivered.** `SplitState` on `App`: both panels are `resizable`, clamped to 15–75 % of the
+window, and reset to 40/60 on every mode switch.
+
+**Who owns the width, which is the whole design.** egui does, while the reader drags — a
+`Panel` remembers its width under its own id, so forcing a width every frame would fight the
+drag. `SplitState` holds the last width *observed* (so the split is a number a test can read,
+per H6) and a one-frame **reset request**. The reset must happen during rendering rather than
+at the mode switch, because `Panel::exact_size` collapses the size range to a point and that is
+what makes egui forget a dragged width.
+
+**Both edges are clamped, and that is not fussiness.** A divider draggable to zero hides a panel
+*with no handle left to drag back*.
+
+**The field-count ratchet fired**, which is the intended outcome rather than a nuisance: it
+asked whether the field belongs on `App`, and the honest answer is yes — the split is window
+layout, used by both panels and owned by neither, so there is no pane to push it into. Raised
+57 → 58 with that reasoning in the same commit.
+
+**What stays Doug's to judge**: whether the handle is findable and whether dragging feels
+right. The tests cover the opening fraction and the reset; neither can tell you if a drag reads
+as a drag.
+
 
 **Doug, 2026-08-02.** The horizontal split between the left panel (tour text, or the specimen
 list plus source/purpose) and the right panel (stages, log, animations) is **fixed**, and he

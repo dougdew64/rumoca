@@ -115,8 +115,15 @@ is the same principle pointed at **absence**. When a document says something is 
 tag it so the claim is checkable:
 
 ```markdown
-Query axes over the corpus do not exist yet. <!-- unbuilt: survey_filter -->
+Sorting the corpus is not built. <!-- unbuilt: survey::sort_rows -->
 ```
+
+**Name the symbol as it will actually be spelled.** The example above used to read
+`survey_filter`, and `ideas.md` carried that tag for a day after the filter shipped as
+`matches_filter` — **the tag passed the whole time, because it resolved nothing.** A tag that
+resolves nothing is indistinguishable from a claim that is still true, so the checker was green
+on a claim that was false. The mechanism only fails when the target *does* resolve; a
+misspelled target is silently permanent.
 
 `doc_citations::claims_of_absence_are_still_true` fails if the target **does** resolve.
 **A wrong negative is the one error nobody catches**: acting on a wrong *positive* means
@@ -179,57 +186,39 @@ oracle test is **no longer a step** (see below).
    six items landed 2026-08-01: the must-fire convention and its audit, the stale-negative test,
    clippy cleared and denied, the pre-commit suite memoised (375s → 113s), **headless UI testing
    with `egui_kittest`**, and the run drivers resolved by splitting.
-4. **← NEXT (2026-08-02): the UI pause** — *a lot* of automated UI tests first, then
-   refactor `app.rs` into small, comprehensible pieces. **Doug's call**, and the ordering is
-   his: tests before any refactoring, so regressions have something to hit.
+4. **The UI pause** ✅ — [`docs/ui-pause-plan.md`](docs/ui-pause-plan.md), landed 2026-08-02.
+   Tests first, then refactoring, at Doug's direction. **`App` 105 → 57 fields**, `frame_ui`
+   727 → 419, `central_panel_ui` 771 → 430, 504 → 524 tests, and `model_list.rs` /
+   `tour.rs` split out of `app.rs`. Six state groupings now own what was scattered across
+   `App`. **The field-count ratchet** (`doc_citations::app_does_not_regrow_its_field_count`)
+   keeps it there: raising it requires the reasoning in the same commit.
 
-   **Tonight's measurements, so tomorrow starts from facts rather than impressions:**
+   **What the pause did *not* settle**, recorded so it is not assumed: `app.rs` still ends the
+   day at 9,434 lines, and the claim that its size causes editing defects is unproven either
+   way — the honest test is whether `ui-findings.md`'s R-series stops recurring, which only
+   the next substantial edit can show.
 
-   | | |
-   |---|---|
-   | `app.rs` | **9,562 lines, 188 fns, 105 fields on `App`, 53 `&mut self` methods** |
-   | biggest two | `central_panel_ui` **771**, `frame_ui` **727** — 16% of the file |
-   | `ui_tests.rs` | 561 lines, **14 tests** against 17 `*_ui` fns |
+5. **The corpus list** ✅ *(list)* — `docs/ideas.md` **#52**. Three sources behind one filter,
+   built 2026-08-01. **The join it argued for is unbuilt and may stay so**: all 2,614 fidelity
+   rows read `outcome=ok, n_violations=0`, so a fidelity column would be a constant and a
+   fidelity predicate would match everything or nothing. **The sweep of 2026-08-02 decides it**
+   — the first run to check Parse IR for real. All-zero closes #52; violations rebuild the
+   case from evidence.
 
-   **The 105 fields are the problem, not the 9,562 lines.** Splitting `central_panel_ui`
-   into ten functions that each take `&mut self` moves lines without reducing coupling:
-   every one still reaches any of 105 fields, so nothing becomes independently testable
-   and the next defect hides just as well. **Extract state, not just functions** — the
-   unit that makes a pane comprehensible is the set of fields it owns.
+6. **← THE LIVE WORK: a draggable LHS/RHS divider** (`docs/ideas.md` **#59**, Doug's request).
+   The split is a fixed 40/60 constant recomputed every frame, so there is nowhere for a
+   dragged width to live. **40/60 stays the opening default.**
 
-   **Doug: *"we have been incredibly lucky."* The sharper reading is that we were not
-   lucky — breakage went undetected.** The Context Bar was half-built from its first
-   commit; the source view refused MSL models outright; the specimen list hid the corpus.
-   Weeks each, all in daily use. That strengthens the case rather than weakening it:
-   the risk being bought down is **invisible** breakage, which is why the tests come first.
+   The pause prepared for this deliberately: the layout invariant
+   (`the_chrome_stays_on_screen_at_every_width`) exists, and **H15 names the failure to
+   expect** — at an extreme split the tab row *wraps and falls off the bottom*, not off the
+   side. Clamp both edges: a divider draggable to zero hides a panel with no way back.
 
-   **Two traps, both hit today, both worse at scale:**
-   - **A test written against current code encodes current behaviour, defects included.**
-     The corpus test asserted the very hiding Doug then reported as a bug.
-   - **A UI test can pass while checking nothing.** `test_set_specimen_files` was undone
-     by the scratch poll, so "no specimen row is rendered" was true of an empty list.
-     **At a hundred tests, vacuous ones are worse than no tests** — they manufacture the
-     confidence that licenses the refactor. Every test earns its place by being seen to
-     **fail against a deliberately broken version**; that is the only evidence that
-     distinguishes the two.
-
-   **The plan is [`docs/ui-pause-plan.md`](docs/ui-pause-plan.md)** — evidence per target,
-   the four steps, and what the pause will not do.
-
-   **Claude decides the tests, the seams and the timing** — `DECISIONS.md`, *"Claude is the
-   primary consumer of HRW's code"*. The mandate is delegated **judgement, not purpose**:
-   Claude's effectiveness is instrumental, Doug's understanding is the goal, and every
-   refactoring commit must name the friction it removes so the delegation stays auditable.
-
-5. **Then: one corpus list with a filter** (`docs/ideas.md` **#52**). One list widget
-   over **three visible sources** — curated `specimens/`, scratch `.hrw-bridge/specimens/`, and
-   the 2,626 MSL rows — with the reports as **columns and filter predicates**, never as separate
-   views. **NOT a Test mode**, decided 2026-08-01: that loop *is* Specimen mode's loop, and
-   `DECISIONS.md` records why "mode" was the wrong unit.
-
-   **The filter is a prerequisite, not an enhancement** — 18 files need none, 2,644 do.
-   **Merge the widget, not the corpora**: curated specimens have properties MSL rows do not, and
-   the sources stay visibly distinct.
+7. **Then, in rough order of value:** #46 (a failure specimen and tour per compiler phase —
+   the largest item serving the learning mission, since phases that only ever succeed cannot
+   be diagnosed), #49 **re-scoped** (fixture tours were sized for "everything a test cannot
+   reach", which the pause measured at *two surfaces*, so that entry now drives work sized for
+   a world that no longer exists), and #43 as a track.
 
 **[`docs/reports.md`](docs/reports.md) is the design authority for step 4.** Its load-bearing
 claim: **survey → eligible, fidelity → trustworthy, oracle → findings**, joined on `name`.

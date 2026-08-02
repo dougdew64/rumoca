@@ -107,6 +107,68 @@ const DEFAULT_LIBRARIES: &str = concat!(
 /// list) in Tour and Specimen modes.
 const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 
+/// How far the divider may be dragged, as a fraction of the window.
+///
+/// **Both edges are clamped, and that is not fussiness.** A divider draggable to
+/// zero hides a panel *with no handle left to drag back* — the reader would have
+/// to know the layout resets on a mode switch to recover, which is exactly the
+/// kind of thing nobody knows at the moment they need it.
+const MIN_LEFT_FRACTION: f32 = 0.15;
+const MAX_LEFT_FRACTION: f32 = 0.75;
+
+/// The draggable LHS/RHS split (`docs/ideas.md` #59).
+///
+/// # Who owns the width
+///
+/// **egui does, while the reader is dragging.** A `Panel` remembers its width
+/// under its own id, so forcing a width every frame would fight the drag. This
+/// struct holds two things instead: the last width *observed*, so a test can
+/// assert on it (H6 — a layout property is checkable when the app records the
+/// number), and a one-frame **reset request**.
+///
+/// # Why the reset is a flag rather than an assignment
+///
+/// `Panel::exact_size` collapses the size range to a point, which overrides
+/// egui's remembered width for that frame — so the reset has to happen *during*
+/// rendering, not when the mode changes. The flag carries the intent from the
+/// mode switch to the next paint.
+#[derive(Default)]
+struct SplitState {
+    /// The left panel's share of the window as of the last frame that drew it.
+    /// `None` until something has been drawn.
+    fraction: Option<f32>,
+    /// Force both panels back to [`LEFT_PANEL_WIDTH_FRACTION`] on the next paint.
+    reset_pending: bool,
+}
+
+impl SplitState {
+    /// Configure a left panel: draggable, clamped, and reset when asked.
+    ///
+    /// Takes `avail` rather than reading it, because the caller is already
+    /// inside the `Ui` whose width matters.
+    fn configure(&self, panel: egui::Panel, avail: f32) -> egui::Panel {
+        let default = avail * LEFT_PANEL_WIDTH_FRACTION;
+        let panel = panel
+            .resizable(true)
+            .default_size(default)
+            .size_range(avail * MIN_LEFT_FRACTION..=avail * MAX_LEFT_FRACTION);
+        if self.reset_pending {
+            // Collapses the range to a point for this frame only, which is what
+            // makes egui forget a dragged width.
+            panel.exact_size(default)
+        } else {
+            panel
+        }
+    }
+
+    /// Record what was actually drawn, so the split is a number a test can read.
+    fn observe(&mut self, width: f32, avail: f32) {
+        if avail > 0.0 {
+            self.fraction = Some(width / avail);
+        }
+    }
+}
+
 /// Fraction of the left panel's height reserved for the specimen file list
 /// (the top third). The remaining two-thirds show source or purpose note.
 const SPECIMEN_LIST_HEIGHT_FRACTION: f32 = 1.0 / 3.0;
@@ -725,6 +787,8 @@ pub struct App {
     /// Populated **only when the model is genuinely ill-posed** — see
     /// [`Self::compute_problem_lines`]. Recomputed once per compile, never per frame.
     problem_lines: Vec<(u32, String)>,
+    /// The draggable LHS/RHS split. See [`SplitState`].
+    split: SplitState,
     /// Everything the Context Bar owns. See [`ContextBarState`].
     context: ContextBarState,
     /// Everything the source view owns. See [`SourceViewState`].
@@ -1133,6 +1197,7 @@ impl App {
             cached_dae: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
+            split: SplitState::default(),
             context: ContextBarState::default(),
             source: SourceViewState::default(),
             tour: TourState::default(),
@@ -1998,6 +2063,7 @@ impl App {
                 // means setting both — a tour should not have to tell Doug which mode
                 // to be in.
                 self.ui_mode = UiMode::Specimen;
+                self.split.reset_pending = true;
                 self.specimen_detail = SpecimenDetail::Source;
                 self.viewing_log = false;
                 self.source.scroll_target = line;
@@ -2741,6 +2807,7 @@ impl App {
             // already navigates to the incidence matrix.
             if self.tracked_identifier.is_some() {
                 self.ui_mode = UiMode::Specimen;
+                self.split.reset_pending = true;
                 self.specimen_detail = SpecimenDetail::Source;
             }
         }
@@ -3795,14 +3862,17 @@ egui::Panel::top("bar").show(ui, |ui| {
         ui.menu_button("View", |ui| {
             if ui.selectable_label(self.ui_mode == UiMode::Tour, "Tour").clicked() {
                 self.ui_mode = UiMode::Tour;
+                self.split.reset_pending = true;
                 ui.close();
             }
             if ui.selectable_label(self.ui_mode == UiMode::Specimen, "Specimen").clicked() {
                 self.ui_mode = UiMode::Specimen;
+                self.split.reset_pending = true;
                 ui.close();
             }
             if ui.selectable_label(self.ui_mode == UiMode::Debug, "Debug").clicked() {
                 self.ui_mode = UiMode::Debug;
+                self.split.reset_pending = true;
                 ui.close();
             }
         });
@@ -4748,10 +4818,11 @@ egui::Panel::top("bar").show(ui, |ui| {
         let tour_text = self.tour.text().map(str::to_owned);
         let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
         register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
-        let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
+        let avail = ui.available_width();
         let mut switch_to: Option<TourSource> = None;
-        egui::Panel::left("tour_panel")
-            .exact_size(panel_width)
+        let shown = self
+            .split
+            .configure(egui::Panel::left("tour_panel"), avail)
             .show(ui, |ui| {
                 // --- Top third: the tour list, laid out like the specimen list ---
                 //
@@ -4809,6 +4880,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                     }
                 });
             });
+        self.split.observe(shown.response.rect.width(), avail);
         if let Some(source) = switch_to {
             self.select_tour(source);
             // Re-read now rather than waiting up to a poll interval: a click that
@@ -5634,9 +5706,10 @@ impl App {
             hrw_link_action = self.tour_panel_ui(ui);
         }
         if self.ui_mode == UiMode::Specimen {
-        let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
-        egui::Panel::left("specimen_panel")
-            .exact_size(panel_width)
+        let avail = ui.available_width();
+        let shown = self
+            .split
+            .configure(egui::Panel::left("specimen_panel"), avail)
             .show(ui, |ui| {
                 let panel_height = ui.available_height();
                 let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
@@ -5732,7 +5805,13 @@ impl App {
                     }
                 }
             });
+        self.split.observe(shown.response.rect.width(), avail);
         }
+
+        // **The reset is consumed here, after both panels have had their chance
+        // at it.** Clearing it inside either one would leave the other still
+        // holding a dragged width on the frame a mode switch happens.
+        self.split.reset_pending = false;
 
         // ---- Dispatch hrw:// link actions ----
         if let Some(action) = hrw_link_action {
@@ -5802,6 +5881,7 @@ impl App {
             self.set_tracked_identifier(name);
             if self.tracked_identifier.is_some() {
                 self.ui_mode = UiMode::Specimen;
+                self.split.reset_pending = true;
                 self.specimen_detail = SpecimenDetail::Source;
             }
         }
@@ -6491,6 +6571,16 @@ impl App {
         self.viewing_log = true;
     }
 
+    /// The left panel's share of the window, as last drawn.
+    pub(crate) fn test_split_fraction(&self) -> Option<f32> {
+        self.split.fraction
+    }
+
+    /// Whether a reset back to the 40/60 default is queued for the next paint.
+    pub(crate) fn test_split_reset_pending(&self) -> bool {
+        self.split.reset_pending
+    }
+
     pub(crate) fn test_stage(&self) -> StageKind {
         self.stage
     }
@@ -6672,6 +6762,7 @@ impl App {
             cached_dae: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
+            split: SplitState::default(),
             context: ContextBarState::default(),
             source: SourceViewState::default(),
             tour: TourState::default(),

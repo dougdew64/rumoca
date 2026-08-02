@@ -543,7 +543,14 @@ Some prose.
         /// 105 before the pause (2026-08-02); 94 after `StageViewCaches`; 85
         /// after `ModelListState`; 75 after `Viewport`; 72 after `TourState`; 57
         /// after `SourceViewState` and `ContextBarState`.
-        const MAX_APP_FIELDS: usize = 57;
+        ///
+        /// **Raised to 58 on 2026-08-02 for `SplitState`** (`ideas.md` #59). The ratchet
+        /// fired and the question it asks was answered honestly: the LHS/RHS split is
+        /// **window layout**, used by both the tour and specimen panels and owned by
+        /// neither, so there is no pane to push it into. This is the intended outcome of
+        /// a ratchet, not a defeat of one — it forced the question and the answer was
+        /// recorded rather than assumed.
+        const MAX_APP_FIELDS: usize = 58;
 
         let src = std::fs::read_to_string(
             Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
