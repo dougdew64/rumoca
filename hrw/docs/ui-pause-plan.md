@@ -87,7 +87,7 @@ nothing checking it rots like any other.
 |---|---|---|
 | Step 2 (caches) | ~~≤ 86~~ **94, landed** | 12 stage-view fields → 1 |
 | Step 3 (left panel) | **85, landed** | specimen list, filter, corpus, scratch polling |
-| Step 4 (central panel) | ≤ 60; **75 landed** via `Viewport` | per-stage view state moves to its view |
+| Step 4 (central panel) | ≤ 60; **57 landed** — `Viewport`, then the three panes below | per-stage view state, then each pane's own |
 | Eventually | **~30** | with the 4-field core documented as irreducible |
 
 Steps beyond today continue the same ratchet; there is no separate "field problem" phase.
@@ -247,15 +247,22 @@ outputs or one-frame flags, not a pane's private world.
 
 ### Unfinished — a `ModelListState` waiting to be written
 
-| Method | Its own fields | Would become |
-|---|---|---|
-| `context_bar_ui` | `pointed_at`, `point_error`, `tracking_summary`, `track_seq`, `context_seq`, `jump_matches`, `jump_index`, `jump_target`, `jump_highlight` | ~9 → 1 |
-| `specimen_source_ui` | `cached_source`, `cached_highlight`, `library_source_uri`, `library_source_error`, `source_scroll_target`, `source_scroll_offset`, `scrolled_source_for`, `identifier_index` | ~8 → 1 |
-| `tour_panel_ui` | `cached_tour`, `tours`, `selected_tour`, `tour_polled_at` | ~4 → 1 |
+**All three landed 2026-08-02**, at Doug's direction: *"That is an important negative
+characterization."*
 
-**That is roughly 21 fields, which would take `App` from 75 to about 56** and meet
-step 4's ≤ 60 target. Each is the same shape as `ModelListState`: a pane with a
-private world that merely happens to live on `App`.
+| Method | Became | Fields |
+|---|---|---|
+| `context_bar_ui` | `ContextBarState` | 10 → 1 |
+| `specimen_source_ui` | `SourceViewState` | 7 → 1 |
+| `tour_panel_ui` | `TourState` | 4 → 1 |
+
+**`App`: 75 → 57**, past step 4's ≤ 60 target.
+
+**One field was excluded on inspection.** `identifier_index` looked like source-view
+state and is not: it is a **compile output**, built by the worker and read by
+`source_map_ui` too. The membership test is not *"does this pane use it"* but
+***"is it nobody else's business"*** — the same question that kept `tracked_identifier`
+on `App` while the Context Bar's other nine fields moved.
 
 ### Aggregators — expected to touch everything
 

@@ -1003,6 +1003,99 @@ impl TourState {
     }
 }
 
+/// Everything the **source view** owns.
+///
+/// One file's text on screen, plus everything about *how it is being shown*: the
+/// lexed highlight, which line a jump is heading for, where the pane is scrolled,
+/// and — for a library model — which file the text came from or why it could not
+/// be read.
+///
+/// # Seven fields, not eight
+///
+/// `identifier_index` looks like it belongs here and does not. It is a **compile
+/// output**, built by the worker and read by `source_map_ui` as well, so it lives
+/// with the other results. The test for membership is not "does the source view
+/// use it" but **"is it nobody else's business"**.
+///
+/// # Why `text` is `Option<String>` and not a path
+///
+/// A specimen's text is re-read from disk each time so live edits show. A library
+/// model's cannot be: Rumoca discards source-root text, so the worker reads the
+/// declaring file once and hands it over. `library_uri` says which file that was,
+/// which the reader needs — `Resistor` lands you inside `Basic.mo` among dozens
+/// of classes.
+#[derive(Default)]
+struct SourceViewState {
+    /// The text on screen. For a specimen, re-read from disk; for a library
+    /// model, seeded by the worker from the declaring file.
+    text: Option<String>,
+    /// Lexed spans for [`Self::text`], rebuilt whenever the text changes.
+    highlight: Option<crate::source_view::SourceHighlight>,
+    /// Which library file [`Self::text`] came from, when it is a library model.
+    library_uri: Option<String>,
+    /// Why the declaring file could not be read, when it could not.
+    ///
+    /// Kept apart from the text so the pane distinguishes *"unreadable"* from
+    /// *"nothing selected"*. Both would otherwise render the same blank.
+    library_error: Option<String>,
+    /// A line a link or a declaration jump is heading for, consumed on arrival.
+    scroll_target: Option<u32>,
+    /// Where the pane is scrolled, recorded so the horizontal offset is
+    /// **checkable** — the one layout property that has actually bitten.
+    scroll_offset: egui::Vec2,
+    /// Which tracked identifier the view has already scrolled to, so reverse
+    /// tracking fires on a *change* rather than pinning the view every frame.
+    scrolled_for: Option<String>,
+}
+
+/// Everything the **Context Bar** owns: what has been captured, and how the
+/// reader moves through it.
+///
+/// Two cohorts, kept in one struct because the second exists only to serve the
+/// first — you jump between *mentions of the identifier being followed*, so the
+/// jump fields are meaningless without the capture.
+///
+/// # What stays on `App`
+///
+/// `tracked_identifier` does. It is one of the four fields the census found
+/// genuinely shared: the source view underlines it, the tree highlights it, the
+/// equation sheet marks its rows. The Context Bar *displays* the follow; it does
+/// not own it.
+#[derive(Default)]
+struct ContextBarState {
+    // ---- The capture ----
+    /// What is pointed at, if anything.
+    pointed_at: Option<PointedAt>,
+    /// Why the last capture could not be written, if it could not. **Reported,
+    /// never swallowed** — a capture that silently failed would have Claude
+    /// answer about a screen nobody is looking at.
+    point_error: Option<String>,
+    /// A one-line summary of the followed identifier: how many mentions, across
+    /// how many stages.
+    tracking_summary: Option<(usize, usize)>,
+    /// Bumped when the follow changes, so the capture can be re-emitted.
+    track_seq: u64,
+    /// Bumped on every capture, so `focus.json` carries a monotonic sequence and
+    /// Claude can tell a stale read from a fresh one.
+    context_seq: u64,
+
+    // ---- Moving through the capture ----
+    /// Where the followed identifier is mentioned, in render order.
+    jump_matches: Vec<Vec<Seg>>,
+    /// What [`Self::jump_matches`] was computed for, so it is rebuilt only when
+    /// the question changes rather than every frame.
+    jump_key: Option<(StageKind, String)>,
+    /// Which mention the reader is on.
+    jump_index: usize,
+    /// A mention to scroll to next frame. **Lasts exactly one frame**: holding it
+    /// longer would re-scroll every frame and pin the view.
+    jump_target: Option<Vec<Seg>>,
+    /// A row to flash so the reader can see which one the jump meant. Cleared as
+    /// soon as they point at something themselves — they have just answered a
+    /// different question.
+    jump_highlight: Option<Vec<Seg>>,
+}
+
 impl Default for ModelListState {
     fn default() -> Self {
         Self {
@@ -1160,12 +1253,6 @@ pub struct App {
     nav_loading: Option<String>,
     nav_error: Option<String>,
 
-    // ---- 6. Claude bridge ----
-    // The "capture" system writes JSON files that Claude Code reads to
-    // understand what the user is looking at. `context_seq` is a monotonic counter
-    // so each capture gets a unique ID. Confirmation lives in the Context Bar,
-    // not the status bar — see `notice`.
-    context_seq: u64,
     /// A transient one-line notice for the status bar.
     ///
     /// **No longer the bridge's confirmation channel.** Renamed from
@@ -1251,10 +1338,10 @@ pub struct App {
     /// Populated **only when the model is genuinely ill-posed** — see
     /// [`Self::compute_problem_lines`]. Recomputed once per compile, never per frame.
     problem_lines: Vec<(u32, String)>,
-    /// A line the source view should scroll to, set by an `hrw://source/<line>` link.
-    /// Consumed on the frame it is honoured, like `jump_target`, so it cannot re-scroll
-    /// every frame and pin the view.
-    source_scroll_target: Option<u32>,
+    /// Everything the Context Bar owns. See [`ContextBarState`].
+    context: ContextBarState,
+    /// Everything the source view owns. See [`SourceViewState`].
+    source: SourceViewState,
     /// Everything the tour panel owns. See [`TourState`].
     ///
     /// Polled rather than watched: stat-ing once per frame would be cheap but
@@ -1287,26 +1374,6 @@ pub struct App {
     // Specimen purpose notes, loaded on demand from
     // docs/specimen-notebook/<Model>/purpose.md.
     cached_purpose_notes: HashMap<PathBuf, Option<String>>,
-    // The selected specimen's Modelica source text, loaded on demand.
-    cached_source: Option<String>,
-    /// Document URI of the file a **library model** was read from.
-    ///
-    /// Shown above the source, because the pane holds a whole package file that
-    /// declares many classes — without it, a reader who asked for `Resistor`
-    /// and sees `Basic.mo` has no way to tell the pane is showing the right thing.
-    library_source_uri: Option<String>,
-    /// Why the declaring file could not be read, if it could not.
-    ///
-    /// Kept separate from the text so the pane distinguishes *"unreadable"* from
-    /// *"nothing selected"*. Both would otherwise render the same blank.
-    library_source_error: Option<String>,
-    /// Where the source pane is scrolled to, as of the last frame that drew it.
-    ///
-    /// Recorded so the horizontal offset is **checkable**. Layout is otherwise
-    /// Doug's to judge -- the accessibility tree carries no geometry -- but this
-    /// one number is what went wrong when a programmatic scroll centred long
-    /// lines and pushed their opening characters off-screen.
-    source_scroll_offset: egui::Vec2,
     // Every variable name in the compiled model — ground truth for which tree
     // leaves name something trackable. Rebuilt per compile alongside the
     // equation sheet, which is where the full classification lives.
@@ -1316,61 +1383,7 @@ pub struct App {
     declaring_classes: HashMap<String, String>,
     // "Reveal identifiers" — expand every tree path leading to a variable.
     expand_trackable: bool,
-    // The last deliberate capture — the *point*. Retained (it used to be
-    // written and forgotten) because the Context Bar must state it, and
-    // because re-emitting when following changes has to preserve it.
-    pointed_at: Option<PointedAt>,
-    // Set when the last emission failed. The bar says so rather than claiming
-    // context Claude does not have.
-    point_error: Option<String>,
-    // Mentions and stage count for the followed identifier, computed at
-    // emission time. Never per frame — the sweep walks every stage IR.
-    tracking_summary: Option<(usize, usize)>,
-    // Bumped whenever the followed identifier changes. Emitted alongside the
-    // focus `seq` so Claude can tell which of the two was acted on last —
-    // "pointed at this, then went following" and the reverse are different
-    // questions. See docs/context-assembly.md.
-    track_seq: u64,
-    // Which tracked identifier the source view has already scrolled to.
-    //
-    // Reverse tracking (idea #37) scrolls the source to a variable's
-    // declaration when it becomes tracked from a downstream view. Scrolling
-    // must happen on *change* only — repeating it every frame while the same
-    // identifier stays tracked would pin the view and make the scrollbar
-    // unusable. Comparing against this field is what makes it a one-shot.
-    scrolled_source_for: Option<String>,
-    // ---- Jump to the followed identifier ----
-    // Where the followed name appears in the CURRENT stage's IR, so the Context
-    // Bar can cycle through the matches. Comes from `bridge::mention_paths` —
-    // the same walk that produces `tracking.paths` in the emitted context, so
-    // the tree cannot highlight one set of nodes while Claude is told about
-    // another.
-    //
-    // Cached because the walk visits the whole stage IR and lexes every
-    // code-bearing string in it; doing that per frame is what `tracking_summary`
-    // already avoids. `jump_matches_key` records what the cache was built for,
-    // so a stage switch or a change of followed name rebuilds it and nothing
-    // else does.
-    jump_matches: Vec<Vec<Seg>>,
-    jump_matches_key: Option<(StageKind, String)>,
-    jump_index: usize,
-    // Set for ONE frame when the user asks to jump. See `TreeOptions::jump_to`
-    // for why it must not persist.
-    jump_target: Option<Vec<Seg>>,
-    /// The row a node link pointed at, kept **after** the scroll so it stays marked.
-    ///
-    /// Separate from `jump_target`, which lasts exactly one frame: a highlight that
-    /// lived and died with it would flash for 16ms and tell nobody anything. This
-    /// persists until Doug does something else — clicks a row, follows a link, loads a
-    /// specimen — because the question it answers ("which row did that link mean?")
-    /// stays open until he moves on.
-    jump_highlight: Option<Vec<Seg>>,
 
-    // Per-line token classification for `cached_source`, built on demand.
-    // Tokenizing is cheap but not free, and the source cannot change while it
-    // is displayed — so it is built once per specimen, not once per frame.
-    // Cleared wherever `cached_source` is, or the two would disagree.
-    cached_highlight: Option<crate::source_view::SourceHighlight>,
 
     // ---- 14. Pending stage from hrw:// link ----
     // When an hrw://load/Specimen/Stage link fires, the stage can't be applied
@@ -1704,7 +1717,6 @@ impl App {
             nav: Vec::new(),
             nav_loading: None,
             nav_error: None,
-            context_seq: 0,
             notice: None,
             ui_mode: UiMode::Tour,
             specimen_detail: SpecimenDetail::default(),
@@ -1734,29 +1746,15 @@ impl App {
             cached_dae: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
-            source_scroll_target: None,
+            context: ContextBarState::default(),
+            source: SourceViewState::default(),
             tour: TourState::default(),
             aim_at_equation: None,
             seek_frame: None,
             cached_purpose_notes: HashMap::new(),
-            cached_source: None,
-            library_source_uri: None,
-            library_source_error: None,
-            source_scroll_offset: egui::Vec2::ZERO,
-            cached_highlight: None,
             known_variables: None,
             declaring_classes: HashMap::new(),
             expand_trackable: false,
-            pointed_at: None,
-            point_error: None,
-            tracking_summary: None,
-            track_seq: 0,
-            jump_matches: Vec::new(),
-            jump_matches_key: None,
-            jump_index: 0,
-            jump_target: None,
-            jump_highlight: None,
-            scrolled_source_for: None,
             pending_stage: None,
             pending_sub_view: None,
             pending_live_debug: None,
@@ -1841,7 +1839,7 @@ impl App {
         // asynchronously via `FromWorker::CompileProgress` and `FromWorker::Compiled`.
         // Recorded before the state changes, so the ring buffer reads in the
         // order the user acted. See `diagnostics.rs`.
-        self.jump_highlight = None;
+        self.context.jump_highlight = None;
         diagnostics::record_action("specimen", path.display().to_string());
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
@@ -1874,7 +1872,7 @@ impl App {
         self.clear_specimen_state(same);
         self.log_entries.clear();
         self.viewing_log = true;
-        self.jump_highlight = None;
+        self.context.jump_highlight = None;
         diagnostics::record_action("corpus-model", qualified.to_owned());
         self.worker.send(ToWorker::CompileLibraryModel(qualified.to_owned()));
         self.selected = Some(id);
@@ -1907,26 +1905,26 @@ impl App {
         // A point addresses IR that no longer exists once the stages are
         // replaced — but only when the specimen changed. See `same_specimen`.
         if !keep_context {
-            self.pointed_at = None;
+            self.context.pointed_at = None;
             self.tracked_identifier = None;
         }
-        self.point_error = None;
-        self.tracking_summary = None;
+        self.context.point_error = None;
+        self.context.tracking_summary = None;
         self.identifier_index = None;
         // Whatever the followed name matched belonged to the old IR, so the
         // jump list must be rebuilt rather than reused.
-        self.jump_matches = Vec::new();
-        self.jump_matches_key = None;
-        self.jump_index = 0;
-        self.jump_target = None;
-        self.scrolled_source_for = None;
-        self.cached_source = None;
+        self.context.jump_matches = Vec::new();
+        self.context.jump_key = None;
+        self.context.jump_index = 0;
+        self.context.jump_target = None;
+        self.source.scrolled_for = None;
+        self.source.text = None;
         // Cleared *with* the text it labels, or the header would name the previous
         // model's library file over an empty pane for the whole compile. The two
         // are set together in the `Compiled` handler for the same reason.
-        self.library_source_uri = None;
-        self.library_source_error = None;
-        self.cached_highlight = None;
+        self.source.library_uri = None;
+        self.source.library_error = None;
+        self.source.highlight = None;
         self.viewport.highlighted_eq_row = None;
         self.viewport.highlighted_source_line = None;
         self.nav.clear();
@@ -2052,23 +2050,23 @@ impl App {
                         // A read failure is *reported*, never rendered as blank.
                         match lib.text {
                             Ok(text) => {
-                                self.library_source_error = None;
-                                self.cached_source = Some(text);
+                                self.source.library_error = None;
+                                self.source.text = Some(text);
                             }
                             Err(why) => {
-                                self.library_source_error = Some(why);
-                                self.cached_source = None;
+                                self.source.library_error = Some(why);
+                                self.source.text = None;
                             }
                         }
                         // Landing at line 1 of a package file shows a header and
                         // nothing asked for; `Resistor` starts 1,498 lines into
                         // `Basic.mo`. The line is the compiler's, not a search.
-                        self.source_scroll_target = lib.decl_line;
-                        self.library_source_uri = Some(lib.uri);
-                        self.cached_highlight = None;
+                        self.source.scroll_target = lib.decl_line;
+                        self.source.library_uri = Some(lib.uri);
+                        self.source.highlight = None;
                     } else {
-                        self.library_source_uri = None;
-                        self.library_source_error = None;
+                        self.source.library_uri = None;
+                        self.source.library_error = None;
                     }
                     if self.live_breakpoint_armed {
                         let _ = bridge::remove_live_trace_breakpoint();
@@ -2327,7 +2325,7 @@ impl App {
     ) -> Option<bridge::Tracking<'a>> {
         let name = self.tracked_identifier.as_deref()?;
         Some(bridge::Tracking {
-            seq: self.track_seq,
+            seq: self.context.track_seq,
             name,
             declared_line: self
                 .identifier_index
@@ -2355,7 +2353,7 @@ impl App {
         let seq = self.next_seq();
         // A point of Doug's own supersedes the link's — the highlight answers "which
         // row did that link mean?", and he has just answered a different question.
-        self.jump_highlight = None;
+        self.context.jump_highlight = None;
         diagnostics::record_action("point-at", format!("in {}", self.stage.name()));
         // Name what was captured, so the status confirms the *right* thing was
         // written — not just that some focus was.
@@ -2383,14 +2381,14 @@ impl App {
         };
         let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
         let result = bridge::write(&ask);
-        self.pointed_at = Some(PointedAt {
+        self.context.pointed_at = Some(PointedAt {
             seq,
             target: target.clone(),
             kind,
             stage: self.stage,
             request: bridge::AskRequest::Explain,
         });
-        self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
+        self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
         // `None` on success: the Context Bar already names the point, and it
         // does so persistently. See `status_line`.
         self.notice = status_line(seq, &target, "explain", result);
@@ -2615,7 +2613,7 @@ impl App {
                 self.ui_mode = UiMode::Specimen;
                 self.specimen_detail = SpecimenDetail::Source;
                 self.viewing_log = false;
-                self.source_scroll_target = line;
+                self.source.scroll_target = line;
             }
             HrwLink::SwitchStage(kind, sub) => {
                 self.stage = kind;
@@ -2646,8 +2644,8 @@ impl App {
                 // `jump_target` already forces ancestors open and scrolls, and is
                 // consumed on the frame it is honoured — the same one-shot discipline
                 // as the camera aim and the frame seek.
-                self.jump_target = Some(path.clone());
-                self.jump_highlight = Some(path);
+                self.context.jump_target = Some(path.clone());
+                self.context.jump_highlight = Some(path);
             }
             HrwLink::OpenNotebook(name) => match bridge::resolve_notebook(&name) {
                 Some(path) => {
@@ -2793,8 +2791,8 @@ impl App {
             // specimen — which changes what every other field refers to.
             "navigation": self.nav.iter().map(|n| n.name.clone()).collect::<Vec<_>>(),
             "context": {
-                "seq": self.context_seq,
-                "pointing_at": self.pointed_at.as_ref().map(|p| json!({
+                "seq": self.context.context_seq,
+                "pointing_at": self.context.pointed_at.as_ref().map(|p| json!({
                     "seq": p.seq,
                     "target": p.target,
                     "kind": match &p.kind {
@@ -2807,11 +2805,11 @@ impl App {
                 })),
                 "following": self.tracked_identifier.as_ref().map(|name| json!({
                     "identifier": name,
-                    "seq": self.track_seq,
-                    "mentions": self.tracking_summary.map(|(m, _)| m),
-                    "stages_with_mentions": self.tracking_summary.map(|(_, s)| s),
+                    "seq": self.context.track_seq,
+                    "mentions": self.context.tracking_summary.map(|(m, _)| m),
+                    "stages_with_mentions": self.context.tracking_summary.map(|(_, s)| s),
                 })),
-                "last_emission_error": self.point_error,
+                "last_emission_error": self.context.point_error,
                 "status_line": self.notice,
             },
             "animation": anim,
@@ -2865,8 +2863,8 @@ impl App {
     /// recency — and a reader trusting the instructions would conclude the
     /// wrong thing. Found on the first real `explain`.
     fn next_seq(&mut self) -> u64 {
-        self.context_seq += 1;
-        self.context_seq
+        self.context.context_seq += 1;
+        self.context.context_seq
     }
 
     /// Capture the node the user acted on — scoped to the navigated class when
@@ -2885,7 +2883,7 @@ impl App {
         // There are **two** capture paths — this one for nodes, `emit_focus` for stage
         // and specimen — and clearing in only one is exactly the omission the test for
         // this caught.
-        self.jump_highlight = None;
+        self.context.jump_highlight = None;
         let seq = self.next_seq();
         let target = bridge::describe_path(&key_path);
         let request_str = request.as_str();
@@ -2919,14 +2917,14 @@ impl App {
                     let result = bridge::write(&ask);
                     // Retained so the Context Bar can state it, and so a later
                     // change of what is followed re-emits without losing it.
-                    self.pointed_at = Some(PointedAt {
+                    self.context.pointed_at = Some(PointedAt {
                         seq,
                         target: target.clone(),
                         kind: PointKind::Node(key_path),
                         stage: self.stage,
                         request,
                     });
-                    self.point_error = result.as_ref().err().map(std::string::ToString::to_string);
+                    self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
                     status_line(seq, &target, request_str, result)
                 }
                 None => Some("(no IR for this stage to point at)".to_owned()),
@@ -4152,7 +4150,7 @@ impl App {
                             // like "it opened something" rather than "that path is
                             // wrong" — the silent partial failure the aim and seek verbs
                             // deliberately avoid.
-                            let jump_to = match &self.jump_target {
+                            let jump_to = match &self.context.jump_target {
                                 Some(t) => match resolve_jump_target(value, t) {
                                     Ok(()) => Some(t.clone()),
                                     Err(msg) => {
@@ -4168,7 +4166,7 @@ impl App {
                                 declaring_classes: Some(&self.declaring_classes),
                                 expand_trackable: intent.expand_trackable,
                                 jump_to: jump_to.as_deref(),
-                                highlight: self.jump_highlight.as_deref(),
+                                highlight: self.context.jump_highlight.as_deref(),
                             };
                             egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
                                 tree::tree_ui(ui, label, value, prev, &mut intent.tree, &self.def_index, &self.field_help, opts);
@@ -4182,7 +4180,7 @@ impl App {
                 }
                 // The stage borrow ends here, so the notices can finally be posted.
                 if let Some(msg) = bad_jump {
-                    self.jump_target = None;
+                    self.context.jump_target = None;
                     self.notify(msg);
                 }
             }
@@ -4470,7 +4468,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         // file declaring dozens of classes, so a reader who asked for `Resistor`
         // and is looking at `Basic.mo` needs to be told. A specimen needs no such
         // line: its file is the thing selected, and the name is already on screen.
-        if let Some(uri) = self.library_source_uri.clone() {
+        if let Some(uri) = self.source.library_uri.clone() {
             let file = std::path::Path::new(&uri)
                 .file_name()
                 .and_then(|n| n.to_str())
@@ -4487,7 +4485,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         }
         // **A read failure is reported, never rendered as blank.** Blank would be
         // indistinguishable from the refusal this replaced, and from an empty file.
-        if let Some(why) = self.library_source_error.clone() {
+        if let Some(why) = self.source.library_error.clone() {
             ui.label(
                 egui::RichText::new(format!("cannot show this file\n\n{why}"))
                     .color(crate::colors::ANIM_FAIL),
@@ -4505,7 +4503,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         // *"The modelica source view for an MSL model should be just as functional
         // as for an HRW specimen."*
         let source = self.selected.as_ref().map(|path| {
-            self.cached_source.get_or_insert_with(|| {
+            self.source.text.get_or_insert_with(|| {
                 std::fs::read_to_string(path).unwrap_or_default()
             }).as_str()
         });
@@ -4526,7 +4524,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                     // while an identifier stays tracked would peg
                     // the view and fight the scrollbar.
                     let scroll_to = (self.tracked_identifier
-                        != self.scrolled_source_for)
+                        != self.source.scrolled_for)
                         .then(|| {
                             self.tracked_identifier.as_deref().and_then(|name| {
                                 self.identifier_index.as_ref()
@@ -4536,13 +4534,13 @@ egui::Panel::top("bar").show(ui, |ui| {
                         })
                         .flatten();
                     if scroll_to.is_some() || self.tracked_identifier.is_none() {
-                        self.scrolled_source_for = self.tracked_identifier.clone();
+                        self.source.scrolled_for = self.tracked_identifier.clone();
                     }
                     // A link-driven scroll, taken once so it cannot re-scroll every
                     // frame and pin the view — the same discipline as `jump_target`.
-                    let source_scroll_to = self.source_scroll_target.take();
+                    let source_scroll_to = self.source.scroll_target.take();
                     // Tokenized once per specimen, not per frame.
-                    let highlight = self.cached_highlight.get_or_insert_with(
+                    let highlight = self.source.highlight.get_or_insert_with(
                         || crate::source_view::SourceHighlight::new(text)
                     );
                     for (i, line) in text.lines().enumerate() {
@@ -4670,7 +4668,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // honest way to read it. One `Vec2` per frame buys a headless
                 // guard on the one layout property that has bitten -- the
                 // horizontal offset drifting off the left margin.
-                self.source_scroll_offset = scroll_out.state.offset;
+                self.source.scroll_offset = scroll_out.state.offset;
             }
             _ => {
                 ui.weak("Select a specimen to view its source.");
@@ -4704,14 +4702,14 @@ egui::Panel::top("bar").show(ui, |ui| {
             .tracking_context(&stage_values)
             .as_ref()
             .map(bridge::summarize_tracking);
-        self.tracking_summary = summary;
+        self.context.tracking_summary = summary;
 
         let tracking = self.tracking_context(&stage_values);
-        let Some(point) = self.pointed_at.clone() else {
+        let Some(point) = self.context.pointed_at.clone() else {
             // Following with nothing pointed at is a normal state; emit the
             // thread on its own rather than withholding context.
             let ask = Ask {
-                seq: self.context_seq,
+                seq: self.context.context_seq,
                 // NOT `Focus::Stage`. See `Focus::Nothing`.
                 request: bridge::AskRequest::Explain,
                 specimen: self.selected.as_deref(),
@@ -4726,7 +4724,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 view: self.view_context(),
                 failure: self.failure_context(),
             };
-            self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+            self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
             return;
         };
 
@@ -4767,7 +4765,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             view: self.view_context(),
             failure: self.failure_context(),
         };
-        self.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+        self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }
 
     /// The Context Bar: what Claude can see right now.
@@ -4803,7 +4801,7 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// the *previous* compile's IR until it is rewritten — same node, different
     /// values — and a stale subtree is worse than an absent one.
     fn revalidate_point_against_new_ir(&mut self) {
-        let dangling = match &self.pointed_at {
+        let dangling = match &self.context.pointed_at {
             Some(point) => match &point.kind {
                 PointKind::Node(key_path) => !self
                     .stages
@@ -4816,7 +4814,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             None => false,
         };
         if dangling {
-            let target = self.pointed_at.take().map(|p| p.target).unwrap_or_default();
+            let target = self.context.pointed_at.take().map(|p| p.target).unwrap_or_default();
             // Said out loud. Silently dropping it would leave the user believing
             // Claude still has a node that has vanished from the bar.
             self.notify(format!(
@@ -4824,7 +4822,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             ));
             diagnostics::record_action("point-dropped", target);
         }
-        if self.pointed_at.is_some() || self.tracked_identifier.is_some() {
+        if self.context.pointed_at.is_some() || self.tracked_identifier.is_some() {
             self.emit_context();
         }
     }
@@ -4840,18 +4838,18 @@ egui::Panel::top("bar").show(ui, |ui| {
             .tracked_identifier
             .as_ref()
             .map(|name| (self.stage, name.clone()));
-        if key == self.jump_matches_key {
+        if key == self.context.jump_key {
             return;
         }
-        self.jump_matches = match (&key, self.current_stage().value.as_ref()) {
+        self.context.jump_matches = match (&key, self.current_stage().value.as_ref()) {
             (Some((_, name)), Some(value)) => bridge::mention_paths(value, name),
             _ => Vec::new(),
         };
         // Restart the cycle: an index carried over from another stage would
         // point at a match that no longer exists, and "3 of 4" would be a lie
         // about a different list.
-        self.jump_index = 0;
-        self.jump_matches_key = key;
+        self.context.jump_index = 0;
+        self.context.jump_key = key;
     }
 
     /// Advance to the next match and ask the tree to scroll to it.
@@ -4860,16 +4858,16 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// a dead button at the last one is a worse surprise than returning to the
     /// first.
     fn jump_to_next_match(&mut self, forward: bool) {
-        if self.jump_matches.is_empty() {
+        if self.context.jump_matches.is_empty() {
             return;
         }
-        let n = self.jump_matches.len();
-        self.jump_index = if forward {
-            (self.jump_index + 1) % n
+        let n = self.context.jump_matches.len();
+        self.context.jump_index = if forward {
+            (self.context.jump_index + 1) % n
         } else {
-            (self.jump_index + n - 1) % n
+            (self.context.jump_index + n - 1) % n
         };
-        self.jump_target = Some(self.jump_matches[self.jump_index].clone());
+        self.context.jump_target = Some(self.context.jump_matches[self.context.jump_index].clone());
         // The matches live in a stage's IR, so the tree has to be on screen for
         // the jump to land. Leaving the log showing would make the button look
         // broken.
@@ -4878,7 +4876,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             "jump",
             format!(
                 "match {} of {n} for {} in {}",
-                self.jump_index + 1,
+                self.context.jump_index + 1,
                 self.tracked_identifier.as_deref().unwrap_or("?"),
                 self.stage.name(),
             ),
@@ -5435,7 +5433,7 @@ egui::Panel::top("bar").show(ui, |ui| {
     }
 
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
-        let has_point = self.pointed_at.is_some();
+        let has_point = self.context.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
         if !has_point && !has_thread {
             // Say the empty state rather than vanishing.
@@ -5474,7 +5472,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new("Context").strong());
             self.background_ui(ui);
-            if let Some(point) = &self.pointed_at {
+            if let Some(point) = &self.context.pointed_at {
                 // Worth saying only when it **differs** from the background
                 // stage; otherwise it repeats the line above as if it were a
                 // second, independent fact.
@@ -5486,7 +5484,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             // the bar claims context Claude does not have — it would still be
             // holding the *previous* focus — which is the confident lie this
             // whole design exists to prevent.
-            if let Some(err) = &self.point_error {
+            if let Some(err) = &self.context.point_error {
                 ui.colored_label(
                     ui.visuals().error_fg_color,
                     format!("\u{26a0} not emitted \u{2014} {err}"),
@@ -5494,7 +5492,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             }
         });
 
-        if let Some(point) = &self.pointed_at {
+        if let Some(point) = &self.context.pointed_at {
             let request = point.request.as_str();
             let target = point.target.clone();
             ui.horizontal(|ui| {
@@ -5580,7 +5578,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                     },
                 }
                 // What the question will actually have behind it.
-                if let Some((mentions, stages)) = self.tracking_summary {
+                if let Some((mentions, stages)) = self.context.tracking_summary {
                     ui.weak(format!(
                         "\u{00b7} {mentions} mention{} across {stages} stage{}",
                         if mentions == 1 { "" } else { "s" },
@@ -5595,7 +5593,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // the haystack bigger. Here the target is already known: the
                 // user said which identifier they are following, so the app
                 // should not also make them find it.
-                let n = self.jump_matches.len();
+                let n = self.context.jump_matches.len();
                 if n == 0 {
                     // Meaningful, not a failure — the same information as
                     // `mentions: 0` in the emitted context. A variable absent
@@ -5605,7 +5603,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                 } else {
                     ui.weak(format!(
                         "\u{00b7} {} of {n} in {}",
-                        self.jump_index + 1,
+                        self.context.jump_index + 1,
                         self.stage.name(),
                     ));
                     if ui
@@ -5655,21 +5653,21 @@ egui::Panel::top("bar").show(ui, |ui| {
             self.jump_to_next_match(jump_forward);
         }
         if clear_point {
-            self.pointed_at = None;
+            self.context.pointed_at = None;
             // A stale failure would otherwise keep warning about an emission
             // for a point that no longer exists.
-            self.point_error = None;
+            self.context.point_error = None;
             // Clearing is a context change like any other, so it advances the
             // shared counter and re-emits. Emitting matters more here than
             // anywhere: the file still holds the old node until it is rewritten,
             // and a bar showing no point over a file holding one is exactly the
             // disagreement this design exists to prevent.
-            self.context_seq = self.next_seq();
+            self.context.context_seq = self.next_seq();
             self.emit_context();
         }
         if clear_thread {
             self.tracked_identifier = None;
-            self.track_seq = self.next_seq();
+            self.context.track_seq = self.next_seq();
             self.emit_context();
         }
         if let Some(class) = go_to_class {
@@ -5705,7 +5703,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         // Recency, not identity: the counter advances on *any* change,
         // including clearing, so the emitted context can say which half of it
         // the user touched most recently.
-        self.track_seq = self.next_seq();
+        self.context.track_seq = self.next_seq();
         // Following is context, so changing it changes what Claude has. Emit
         // now rather than waiting for the next capture, or the Context Bar
         // would show a thread that had never been sent.
@@ -6442,7 +6440,7 @@ impl App {
         // the source view's reverse-tracking scroll did before it was gated on
         // change — and would keep those headers forced open, which is the
         // "Reveal identifiers" complaint all over again.
-        self.jump_target = None;
+        self.context.jump_target = None;
 
         // ---- End of frame: publish diagnostics ----
         //
@@ -7180,14 +7178,14 @@ impl App {
     /// without a compile.
     pub(crate) fn test_set_source(&mut self, text: &str, scroll_to_line: u32) {
         self.selected = Some(PathBuf::from("Fixture.mo"));
-        self.cached_source = Some(text.to_owned());
-        self.cached_highlight = None;
-        self.source_scroll_target = Some(scroll_to_line);
+        self.source.text = Some(text.to_owned());
+        self.source.highlight = None;
+        self.source.scroll_target = Some(scroll_to_line);
         self.specimen_detail = SpecimenDetail::Source;
     }
 
     pub(crate) fn test_source_scroll_offset(&self) -> egui::Vec2 {
-        self.source_scroll_offset
+        self.source.scroll_offset
     }
 
     /// Show the Purpose tab, with the given model and selection.
@@ -7206,8 +7204,8 @@ impl App {
         self.selected = Some(PathBuf::from(qualified));
         self.selected_is_library = true;
         self.specimen_detail = SpecimenDetail::Source;
-        self.cached_source = None;
-        self.library_source_error = Some(why.to_owned());
+        self.source.text = None;
+        self.source.library_error = Some(why.to_owned());
     }
 
     /// Put a library model on screen with its declaring file's text.
@@ -7216,10 +7214,10 @@ impl App {
         self.selected_is_library = true;
         self.specimen_detail = SpecimenDetail::Source;
         self.model = Some(qualified.rsplit('.').next().unwrap_or(qualified).to_owned());
-        self.library_source_uri = Some(uri.to_owned());
-        self.library_source_error = None;
-        self.cached_source = Some(text.to_owned());
-        self.cached_highlight = None;
+        self.source.library_uri = Some(uri.to_owned());
+        self.source.library_error = None;
+        self.source.text = Some(text.to_owned());
+        self.source.highlight = None;
     }
 
     /// Put a message in the status bar, as any refusal or result would.
@@ -7298,7 +7296,6 @@ impl App {
             nav: Vec::new(),
             nav_loading: None,
             nav_error: None,
-            context_seq: 0,
             notice: None,
             ui_mode: UiMode::Tour,
             specimen_detail: SpecimenDetail::default(),
@@ -7328,29 +7325,15 @@ impl App {
             cached_dae: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
-            source_scroll_target: None,
+            context: ContextBarState::default(),
+            source: SourceViewState::default(),
             tour: TourState::default(),
             aim_at_equation: None,
             seek_frame: None,
             cached_purpose_notes: HashMap::new(),
-            cached_source: None,
-            library_source_uri: None,
-            library_source_error: None,
-            source_scroll_offset: egui::Vec2::ZERO,
-            cached_highlight: None,
             known_variables: None,
             declaring_classes: HashMap::new(),
             expand_trackable: false,
-            pointed_at: None,
-            point_error: None,
-            tracking_summary: None,
-            track_seq: 0,
-            jump_matches: Vec::new(),
-            jump_matches_key: None,
-            jump_index: 0,
-            jump_target: None,
-            jump_highlight: None,
-            scrolled_source_for: None,
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,
@@ -7384,42 +7367,42 @@ mod tests {
         app.tracked_identifier = Some("emf.w".to_owned());
 
         app.refresh_jump_matches();
-        assert_eq!(app.jump_matches.len(), 3, "one key plus two equations");
-        assert_eq!(app.jump_index, 0);
+        assert_eq!(app.context.jump_matches.len(), 3, "one key plus two equations");
+        assert_eq!(app.context.jump_index, 0);
 
         // Forward through the list and around the end. Wrapping beats a dead
         // button: with a handful of matches, stopping is the worse surprise.
         app.jump_to_next_match(true);
-        assert_eq!(app.jump_index, 1);
+        assert_eq!(app.context.jump_index, 1);
         app.jump_to_next_match(true);
-        assert_eq!(app.jump_index, 2);
+        assert_eq!(app.context.jump_index, 2);
         app.jump_to_next_match(true);
-        assert_eq!(app.jump_index, 0, "forward from the last match wraps");
+        assert_eq!(app.context.jump_index, 0, "forward from the last match wraps");
         app.jump_to_next_match(false);
-        assert_eq!(app.jump_index, 2, "and back again from the first");
+        assert_eq!(app.context.jump_index, 2, "and back again from the first");
 
         // The jump must have asked the tree for something, and must have left
         // the log view — the matches live in a stage IR, so a jump with the log
         // showing would look broken.
-        assert!(app.jump_target.is_some());
+        assert!(app.context.jump_target.is_some());
         assert!(!app.viewing_log);
 
         // Switching stage rebuilds the list and restarts the cycle.
         app.stage = StageKind::Parse;
         app.refresh_jump_matches();
-        assert!(app.jump_matches.is_empty(), "emf.w does not exist before flattening");
-        assert_eq!(app.jump_index, 0, "a stale index would describe another stage's list");
+        assert!(app.context.jump_matches.is_empty(), "emf.w does not exist before flattening");
+        assert_eq!(app.context.jump_index, 0, "a stale index would describe another stage's list");
 
         // Nothing to jump to is not an error; the control simply does nothing.
-        app.jump_target = None;
+        app.context.jump_target = None;
         app.jump_to_next_match(true);
-        assert!(app.jump_target.is_none());
+        assert!(app.context.jump_target.is_none());
 
         // And with nothing followed at all, the list empties rather than lingering.
         app.stage = StageKind::Flatten;
         app.tracked_identifier = None;
         app.refresh_jump_matches();
-        assert!(app.jump_matches.is_empty());
+        assert!(app.context.jump_matches.is_empty());
     }
 
     /// The empty-context hint must name a gesture that is actually available.
@@ -7488,7 +7471,7 @@ mod tests {
         let motor = PathBuf::from("specimens/MotorWithBrake.mo");
 
         app.selected = Some(motor.clone());
-        app.pointed_at = Some(PointedAt {
+        app.context.pointed_at = Some(PointedAt {
             seq: 1,
             target: "components.src.V".to_owned(),
             kind: PointKind::Stage,
@@ -7498,16 +7481,16 @@ mod tests {
         app.tracked_identifier = Some("emf.w".to_owned());
 
         app.open(motor.clone());
-        assert!(app.pointed_at.is_some(), "a reselect must keep the point");
+        assert!(app.context.pointed_at.is_some(), "a reselect must keep the point");
         assert_eq!(app.tracked_identifier.as_deref(), Some("emf.w"), "and the follow");
 
         // The jump list belonged to the old IR and must not be reused, even
         // though the stage and followed name are unchanged — which is exactly
         // the key `refresh_jump_matches` caches on.
-        assert!(app.jump_matches_key.is_none(), "stale match list must be invalidated");
+        assert!(app.context.jump_key.is_none(), "stale match list must be invalidated");
 
         app.open(PathBuf::from("specimens/BouncingBall.mo"));
-        assert!(app.pointed_at.is_none(), "a different specimen clears the point");
+        assert!(app.context.pointed_at.is_none(), "a different specimen clears the point");
         assert!(app.tracked_identifier.is_none(), "and the follow");
     }
 
@@ -7522,7 +7505,7 @@ mod tests {
         app.stages.flatten.value = Some(serde_json::json!({ "variables": { "emf.w": 1 } }));
 
         // Addresses something the new IR does not have.
-        app.pointed_at = Some(PointedAt {
+        app.context.pointed_at = Some(PointedAt {
             seq: 1,
             target: "variables.gone".to_owned(),
             kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("gone".into())]),
@@ -7530,14 +7513,14 @@ mod tests {
             request: bridge::AskRequest::Explain,
         });
         app.revalidate_point_against_new_ir();
-        assert!(app.pointed_at.is_none(), "a dangling point must not be kept");
+        assert!(app.context.pointed_at.is_none(), "a dangling point must not be kept");
         let notice = app.notice.as_deref().unwrap_or_default();
         assert!(notice.contains("point dropped"), "the drop must be stated: {notice}");
         assert!(notice.contains("variables.gone"), "and must name what was lost: {notice}");
 
         // One that still resolves survives untouched.
         app.notice = None;
-        app.pointed_at = Some(PointedAt {
+        app.context.pointed_at = Some(PointedAt {
             seq: 2,
             target: "variables.emf.w".to_owned(),
             kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("emf.w".into())]),
@@ -7545,11 +7528,11 @@ mod tests {
             request: bridge::AskRequest::Explain,
         });
         app.revalidate_point_against_new_ir();
-        assert!(app.pointed_at.is_some(), "a resolvable point survives a recompile");
+        assert!(app.context.pointed_at.is_some(), "a resolvable point survives a recompile");
         assert!(app.notice.is_none(), "and says nothing");
 
         // A stage point cannot dangle — there is always a stage.
-        app.pointed_at = Some(PointedAt {
+        app.context.pointed_at = Some(PointedAt {
             seq: 3,
             target: "stage".to_owned(),
             kind: PointKind::Stage,
@@ -7557,7 +7540,7 @@ mod tests {
             request: bridge::AskRequest::Explain,
         });
         app.revalidate_point_against_new_ir();
-        assert!(app.pointed_at.is_some(), "a stage point always resolves");
+        assert!(app.context.pointed_at.is_some(), "a stage point always resolves");
     }
 
     /// Every live-debug variant must be recognised by the arming machinery.
@@ -7643,7 +7626,7 @@ mod tests {
         assert!(doc["request"].is_null(), "following carries no point-request either");
 
         // 3. Both, independent of each other.
-        app.pointed_at = Some(a_point());
+        app.context.pointed_at = Some(a_point());
         app.emit_context();
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("stage"));
@@ -7657,12 +7640,12 @@ mod tests {
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("stage"));
         assert!(doc.get("tracking").is_none());
-        assert!(app.pointed_at.is_some(), "dropping the follow must not drop the point");
+        assert!(app.context.pointed_at.is_some(), "dropping the follow must not drop the point");
 
         // ...and back to neither, by clearing the point.
-        app.pointed_at = None;
-        app.point_error = None;
-        app.context_seq = app.next_seq();
+        app.context.pointed_at = None;
+        app.context.point_error = None;
+        app.context.context_seq = app.next_seq();
         app.emit_context();
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("none"));
@@ -7675,7 +7658,7 @@ mod tests {
     #[test]
     fn following_re_emits_without_losing_the_point() {
         let (mut app, _tx) = App::test_with_sender();
-        app.pointed_at = Some(PointedAt {
+        app.context.pointed_at = Some(PointedAt {
             seq: 3,
             target: "components.src.V".to_owned(),
             kind: PointKind::Node(vec![Seg::Key("components".into())]),
@@ -7686,16 +7669,16 @@ mod tests {
         app.set_tracked_identifier("h".to_owned());
         assert_eq!(app.tracked_identifier.as_deref(), Some("h"));
         assert!(
-            app.pointed_at.is_some(),
+            app.context.pointed_at.is_some(),
             "ambient following must not clear a deliberate capture"
         );
-        assert_eq!(app.track_seq, 1, "the thread's own recency counter advanced");
+        assert_eq!(app.context.track_seq, 1, "the thread's own recency counter advanced");
 
         // Un-following also re-emits, and still leaves the point alone.
         app.set_tracked_identifier("h".to_owned());
         assert!(app.tracked_identifier.is_none());
-        assert!(app.pointed_at.is_some());
-        assert_eq!(app.track_seq, 2);
+        assert!(app.context.pointed_at.is_some());
+        assert_eq!(app.context.track_seq, 2);
     }
 
     /// One counter for both halves, so the two stamps are comparable.
@@ -7708,19 +7691,19 @@ mod tests {
         let (mut app, _tx) = App::test_with_sender();
 
         app.emit_focus(Focus::Stage);
-        let after_point = app.pointed_at.as_ref().unwrap().seq;
+        let after_point = app.context.pointed_at.as_ref().unwrap().seq;
 
         app.set_tracked_identifier("h".to_owned());
         assert!(
-            app.track_seq > after_point,
+            app.context.track_seq > after_point,
             "following happened later, so its stamp must be higher \
              (point {after_point}, thread {})",
-            app.track_seq,
+            app.context.track_seq,
         );
 
         app.emit_focus(Focus::Stage);
         assert!(
-            app.pointed_at.as_ref().unwrap().seq > app.track_seq,
+            app.context.pointed_at.as_ref().unwrap().seq > app.context.track_seq,
             "pointing happened later, so now the point's stamp must be higher"
         );
     }
@@ -7736,13 +7719,13 @@ mod tests {
         let (mut app, _tx) = App::test_with_sender();
 
         app.emit_focus(Focus::Stage);
-        let point = app.pointed_at.as_ref().expect("a stage capture is still a point");
+        let point = app.context.pointed_at.as_ref().expect("a stage capture is still a point");
         assert!(matches!(point.kind, PointKind::Stage));
         assert!(point.target.contains("stage"));
 
         app.emit_focus(Focus::Specimen);
         assert!(matches!(
-            app.pointed_at.as_ref().unwrap().kind,
+            app.context.pointed_at.as_ref().unwrap().kind,
             PointKind::Specimen
         ));
     }
@@ -7753,7 +7736,7 @@ mod tests {
     fn the_point_remembers_its_own_stage() {
         let (mut app, _tx) = App::test_with_sender();
         app.stage = StageKind::Flatten;
-        app.pointed_at = Some(PointedAt {
+        app.context.pointed_at = Some(PointedAt {
             seq: 1,
             target: "x".to_owned(),
             kind: PointKind::Stage,
@@ -7763,7 +7746,7 @@ mod tests {
 
         app.stage = StageKind::Structural;
         assert_eq!(
-            app.pointed_at.as_ref().unwrap().stage,
+            app.context.pointed_at.as_ref().unwrap().stage,
             StageKind::Flatten,
             "the captured stage is a property of the capture, not of the view"
         );
@@ -7959,18 +7942,18 @@ mod tests {
     #[test]
     fn source_scroll_is_armed_only_when_the_tracked_identifier_changes() {
         let (mut app, _tx) = App::test_with_sender();
-        assert_eq!(app.scrolled_source_for, None);
+        assert_eq!(app.source.scrolled_for, None);
 
         app.set_tracked_identifier("h".to_owned());
         assert_ne!(
-            app.tracked_identifier, app.scrolled_source_for,
+            app.tracked_identifier, app.source.scrolled_for,
             "a newly tracked identifier must still be pending a scroll"
         );
 
         // Simulate the source view having scrolled to it.
-        app.scrolled_source_for = app.tracked_identifier.clone();
+        app.source.scrolled_for = app.tracked_identifier.clone();
         assert_eq!(
-            app.tracked_identifier, app.scrolled_source_for,
+            app.tracked_identifier, app.source.scrolled_for,
             "once scrolled, no further scroll is armed for the same identifier"
         );
     }
@@ -9481,13 +9464,13 @@ mod tests {
             SubView::Structural(StructuralView::Tree),
             path.clone(),
         ));
-        assert_eq!(app.jump_target.as_ref(), Some(&path), "scrolls to it");
-        assert_eq!(app.jump_highlight.as_ref(), Some(&path), "and marks it");
+        assert_eq!(app.context.jump_target.as_ref(), Some(&path), "scrolls to it");
+        assert_eq!(app.context.jump_highlight.as_ref(), Some(&path), "and marks it");
 
         // The scroll is consumed after one frame; the mark is not.
-        app.jump_target = None;
+        app.context.jump_target = None;
         assert_eq!(
-            app.jump_highlight.as_ref(),
+            app.context.jump_highlight.as_ref(),
             Some(&path),
             "the mark must outlive the one-frame scroll, or it flashes and tells nobody",
         );
@@ -9495,7 +9478,7 @@ mod tests {
         // A point of Doug's own answers a different question, so the mark goes.
         app.emit_node_focus(vec![Seg::Key("blocks".into())], bridge::AskRequest::Explain);
         assert!(
-            app.jump_highlight.is_none(),
+            app.context.jump_highlight.is_none(),
             "Doug pointing at something supersedes the link's mark",
         );
     }
@@ -9583,7 +9566,7 @@ mod tests {
             assert!(app.pending_sub_view.is_none());
             assert!(app.seek_frame.is_none());
             assert!(app.aim_at_equation.is_none());
-            assert!(app.jump_target.is_none());
+            assert!(app.context.jump_target.is_none());
         }
 
         // The three that stand alone are unaffected.
@@ -9985,7 +9968,7 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         });
         app.identifier_index = Some(crate::identifier_index::IdentifierIndex::default());
         app.tracked_identifier = Some("h".into());
-        app.cached_source = Some("old source".into());
+        app.source.text = Some("old source".into());
         app.viewport.highlighted_eq_row = Some(0);
         app.viewport.highlighted_source_line = Some(0);
         app.nav.push(NavEntry {
@@ -10009,7 +9992,7 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         assert!(app.cached_equation_sheet.is_none(), "cached_equation_sheet should be cleared");
         assert!(app.identifier_index.is_none(), "identifier_index should be cleared");
         assert!(app.tracked_identifier.is_none(), "tracked_identifier should be cleared");
-        assert!(app.cached_source.is_none(), "cached_source should be cleared");
+        assert!(app.source.text.is_none(), "cached_source should be cleared");
         assert!(app.viewport.highlighted_eq_row.is_none(), "highlighted_eq_row should be cleared");
         assert!(app.viewport.highlighted_source_line.is_none(), "highlighted_source_line should be cleared");
         assert!(app.nav.is_empty(), "nav should be cleared");
