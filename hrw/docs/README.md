@@ -62,6 +62,8 @@ on a tab showing 48 equations.
 | [`working-with-doug.md`](working-with-doug.md) | Who Doug is, how he learns, and the standing working agreements. **All of it lived only in Claude's memory until 2026-08-01**, and memory does not survive a clone. |
 | [`identity-and-provenance.md`](identity-and-provenance.md) | No heuristic name-matching; identity vs membership; what provenance Rumoca preserves. **Cited by six source files.** |
 | [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the tour-holes table, and the outstanding debt. |
+| [`ui-pause-plan.md`](ui-pause-plan.md) | The UI pause (2026-08-02): what gets tested and refactored, in what order, with the evidence for each and a ratcheted field-count target. |
+| [`ui-findings.md`](ui-findings.md) | Running log of what the pause turned up in passing — harness facts that change how a test is written, and code findings with their disposition. |
 | [`provenance.md`](provenance.md) | How Claude marks what it verified from what it inferred. |
 
 ## Procedures — how to do a specific thing

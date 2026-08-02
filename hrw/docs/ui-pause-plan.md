@@ -11,6 +11,10 @@ before any refactoring**, so regressions have something to hit.
 
 ---
 
+**Findings go in [`ui-findings.md`](ui-findings.md) as they appear**, not at the end of a
+chunk. Chunk 1 produced three before its first green — the ones worth having are exactly the
+ones that feel too small to write down, and a commit message records them where nobody browses.
+
 ## The evidence
 
 Measured 2026-08-01/02. **Refactor where there is evidence of friction, never where code

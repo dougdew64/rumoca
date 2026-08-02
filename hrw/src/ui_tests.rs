@@ -44,6 +44,23 @@
 //! not cost Doug a walk ever again. What stays genuinely his is what has no
 //! number — colour, proportion, whether a thing reads well.
 //!
+//! # Three facts that make a test fail for reasons unrelated to the code
+//!
+//! Each of these cost a wrong diagnosis before it was understood. The full log,
+//! with the rest, is `docs/ui-findings.md`.
+//!
+//! - **`query_by_label_contains` panics when two nodes match.** `"Flatten"`
+//!   legitimately appears twice — as a log entry and as a stage tab. Use
+//!   `get_all_…().next()` when a second match is none of the test's business;
+//!   the singular form quietly asserts something about the whole screen.
+//! - **The central panel draws nothing without a loaded specimen.** The log
+//!   view, the stage views and the equation sheet are all unreachable until
+//!   `selected` is set, so a test expecting the right-hand side must set it.
+//! - **Injected state can be undone before the first frame.**
+//!   `poll_scratch_specimens` fires on frame one and `rescan()`s an injected
+//!   specimen list back to empty. This is the dangerous one: it does not fail,
+//!   it makes the test **pass while checking nothing**.
+//!
 //! # Two harness facts that each cost a wrong diagnosis
 //!
 //! **A widget laid out off-screen is queryable but not clickable.** At the

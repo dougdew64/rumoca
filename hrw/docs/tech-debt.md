@@ -480,6 +480,14 @@ from:
    tab row, the mode switch. Cross-pane effects are where a test beats a walk,
    since a human checks the pane they clicked in.
 
+**The animations are testable, and none of them are tested** *(added 2026-08-02, from
+`ui-findings.md` C6/H7)*. The earlier reading of this entry assumed the animation panes were
+out of reach because they sit near painters. Checked: only `incidence_view.rs`'s cell glyphs
+and `spyplot.rs` paint their content as text — every animation's **controls, step labels and
+state text are ordinary widgets**. Six panes, no tests, and no line in the pause's four steps.
+**Not scheduled**, deliberately: they are not on the refactor's path, so they are debt rather
+than blocking work.
+
 **Do not chase a coverage number.** The metric that would matter is *panes whose
 reports are guarded*, and counting tests instead would reward the tour-link tests
 that already dominate the file.
