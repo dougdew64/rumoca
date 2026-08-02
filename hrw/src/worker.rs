@@ -1456,6 +1456,22 @@ impl WorkerState {
             text: std::fs::read_to_string(&uri).map_err(|e| format!("cannot read {uri}: {e}")),
             decl_line,
         });
+        // **The text that source *positions* are resolved against.**
+        //
+        // `IdentifierIndex::build` and `equation_sheet::build` turn each
+        // variable's `source_span` byte offset into a line number by counting
+        // newlines in the text they are handed. For a library model `source` is
+        // `""` (see above), so every offset collapsed to **line 1** -- the index
+        // was not empty, it was *wrong*, and no identifier in an MSL model was
+        // clickable anywhere except the first line.
+        //
+        // Must be the same bytes the pane renders, or a span found here lands on
+        // a different line there. Both now come from `library_source`.
+        let index_source: &str = library_source
+            .as_ref()
+            .and_then(|l| l.text.as_ref().ok())
+            .map(String::as_str)
+            .unwrap_or(&source);
         let path_owned = PathBuf::from(&uri);
         let file_name = path_owned
             .file_name()
@@ -1697,7 +1713,7 @@ impl WorkerState {
                     Some(PhaseResult::Success(cr)) => {
                         Some(crate::equation_sheet::build(
                             &cr.dae,
-                            Some((&uri, &source)),
+                            Some((&uri, index_source)),
                         ))
                     }
                     _ => None,
@@ -1706,7 +1722,7 @@ impl WorkerState {
                 let id_index = match result {
                     Some(PhaseResult::Success(cr)) => {
                         Some(crate::identifier_index::IdentifierIndex::build(
-                            &cr.dae, &uri, &source,
+                            &cr.dae, &uri, index_source,
                         ))
                     }
                     _ => None,
@@ -4383,6 +4399,65 @@ mod tests {
             "line {decl} should be Resistor\u{2019}s declaration, found: {decl_text:?}",
         );
     }
+
+    /// An MSL model's identifiers are indexed **on the lines they occupy**.
+    ///
+    /// Doug, 2026-08-01: *"Identifiers in the modelica source view of an MSL
+    /// model do not seem to be clickable to cause following."*
+    ///
+    /// The index and the source pane must agree about where a variable is.
+    /// `IdentifierIndex::build` counts newlines in the text it is handed to turn
+    /// a `source_span` byte offset into a line, and it was handed `""` for every
+    /// library model — so **every variable landed on line 1**. The index was
+    /// populated, which is why nothing looked broken; it was simply pointing at
+    /// the wrong lines, and `clickable_spans` found nothing to underline on the
+    /// lines a reader was actually looking at.
+    ///
+    /// **Line 1 is the tell**, so that is what this asserts against: a real
+    /// index over a multi-thousand-line library file cannot have everything on
+    /// its first line.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn an_msl_model_indexes_identifiers_on_their_own_lines() {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let out = w.compile_model_by_name("Modelica.Electrical.Analog.Basic.Resistor", &|_| {});
+        let FromWorker::Compiled { identifier_index, library_source, .. } = out else {
+            panic!("expected Compiled");
+        };
+        let idx = identifier_index.expect("a successful library compile builds an index");
+        assert!(
+            !idx.variables.is_empty(),
+            "an index with no variables makes nothing clickable at all",
+        );
+
+        let text = library_source
+            .expect("carries its source")
+            .text
+            .expect("readable");
+        let total_lines = text.lines().count() as u32;
+
+        // **Every line must be inside the file the pane renders.** A span
+        // resolved against different text can land past the end, where it
+        // silently matches nothing.
+        for (name, v) in &idx.variables {
+            assert!(
+                v.source_line >= 1 && v.source_line <= total_lines,
+                "{name} is indexed at line {} of a {total_lines}-line file",
+                v.source_line,
+            );
+        }
+
+        // The defect's signature: everything collapsed onto line 1.
+        let on_line_1 = idx.variables.values().filter(|v| v.source_line == 1).count();
+        assert!(
+            on_line_1 < idx.variables.len(),
+            "all {} variables are indexed on line 1, which means the index was built \
+             against text that is not what the pane shows — the exact defect that \
+             made MSL identifiers unclickable",
+            idx.variables.len(),
+        );
+    }
+
 
     /// A **specimen** compile carries no library source, and must not.
     ///
