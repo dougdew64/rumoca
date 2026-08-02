@@ -334,6 +334,77 @@ pub enum UiMode {
     Debug,
 }
 
+/// Views derived from a **stage's report**, all valid for exactly one stage.
+///
+/// # Why these eleven and not the other nine `cached_*` fields
+///
+/// Measured 2026-08-02 before the extraction, because the plan assumed all
+/// twenty caches shared one lifetime and **they do not**. Three families:
+///
+/// - **These** — rebuilt whenever the displayed report stage changes, and
+///   again on every new compile.
+/// - **Compile outputs** (`cached_flat`, `cached_dae`, `cached_equation_sheet`)
+///   — named "cached" but never invalidated, because they are *results*
+///   assigned from a finished compile.
+/// - **Self-keying memos** (`cached_purpose_notes` keyed by model,
+///   `cached_tour` keyed by mtime, `cached_source` per specimen) — each already
+///   carries whatever tells it when it is stale.
+///
+/// Folding all twenty into one bag would have cleared the memos on every stage
+/// change, which is a behaviour change disguised as a refactor.
+///
+/// # What the struct buys
+///
+/// The eleven were listed **by hand in two places** — once at compile
+/// completion, once on stage change — so a new view cache had to be added to
+/// both or it would silently serve a previous stage's data. `reset_for` makes
+/// that impossible: it assigns a whole `Self`, so a field added tomorrow is
+/// covered by construction. **The bug class is removed rather than tested for.**
+#[derive(Default)]
+struct StageViewCaches {
+    /// The stage these views were built from. `None` means "nothing built yet".
+    built_for: Option<StageKind>,
+    // Outer `Option` is cache state (None = not yet computed); inner `Option` is
+    // the parse result (None = the report held no data for this view).
+    spy_plot: Option<Option<spyplot::Plot>>,
+    incidence: Option<Option<incidence_view::IncidenceMatrix>>,
+    reduction: Option<Option<reduction_view::ReductionView>>,
+    matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
+    tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
+    tearing_anim: Option<Option<tearing_anim::TearingAnimation>>,
+    alias_anim: Option<Option<alias_anim::AliasAnimation>>,
+    ic_plan_anim: Option<Option<ic_plan_anim::IcPlanAnimation>>,
+    connection_anim: Option<Option<connection_anim::ConnectionAnimation>>,
+    reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
+    before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
+}
+
+impl StageViewCaches {
+    /// Drop every view unless it was already built for `stage`.
+    ///
+    /// Returns `true` when it actually reset, so the caller can do the rest of
+    /// its stage-change work — picking a default sub-view — only when the stage
+    /// really changed.
+    fn reset_for(&mut self, stage: StageKind) -> bool {
+        if self.built_for == Some(stage) {
+            return false;
+        }
+        // **Whole-struct assignment, deliberately.** Clearing field by field is
+        // what produced two lists to keep in step; this cannot go out of date.
+        *self = Self { built_for: Some(stage), ..Self::default() };
+        true
+    }
+
+    /// Drop every view **and** the key, so the next frame rebuilds from scratch.
+    ///
+    /// Used when a compile lands: the reports themselves changed, so even the
+    /// stage that is already showing must be rebuilt.
+    fn invalidate_all(&mut self) {
+        *self = Self::default();
+    }
+}
+
+
 /// The entire application state. In immediate-mode UI, this struct IS the
 /// application — every frame, `ui()` reads and writes these fields to decide
 /// what to render and how to react. Fields are grouped by concern:
@@ -505,16 +576,14 @@ pub struct App {
     // has its own report data). Outer Option is the cache state (None =
     // not yet computed); inner Option is the parse result (None = report
     // had no data for this view).
-    cached_report_stage: Option<StageKind>,
-    cached_spy_plot: Option<Option<spyplot::Plot>>,
-    cached_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
-    cached_reduction: Option<Option<reduction_view::ReductionView>>,
+    /// Every view derived from the current stage's report. See
+    /// [`StageViewCaches`] for why these eleven live together and the other nine
+    /// `cached_*` fields do not.
+    stage_views: StageViewCaches,
     cached_equation_sheet: Option<equation_sheet::EquationSheet>,
     identifier_index: Option<identifier_index::IdentifierIndex>,
     tracked_identifier: Option<String>,
-    cached_matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
     matching_anim_canvas: Canvas,
-    cached_tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     tarjan_anim_canvas: Canvas,
     index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
     // Idea #40: replay of `pre()` lowering, on the Events stage. The frames are
@@ -526,22 +595,7 @@ pub struct App {
     connection_frames: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
     cached_flat: Option<rumoca_ir_flat::Model>,
     cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
-    /// Tearing replay for the current stage tab. `Some(None)` means "computed,
-    /// and this model has no algebraic loop" — distinct from `None`, "not yet
-    /// computed". Rebuilt on stage change because Structural and Index
-    /// Reduction tear *different* DAEs (raw vs reduced).
-    cached_tearing_anim: Option<Option<tearing_anim::TearingAnimation>>,
-    /// Alias-elimination reveal, built from the Index Reduction report.
-    cached_alias_anim: Option<Option<alias_anim::AliasAnimation>>,
-    /// Initial-condition plan walk, built from the Initialization report.
-    cached_ic_plan_anim: Option<Option<ic_plan_anim::IcPlanAnimation>>,
-    /// Connection-expansion replay, built from the recorded frames.
-    cached_connection_anim: Option<Option<connection_anim::ConnectionAnimation>>,
-    cached_reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
     cached_dae: Option<rumoca_ir_dae::Dae>,
-    // "Before" views for the Index Reduction split — parsed from the `"before"`
-    // sub-object of the index reduction report JSON (the raw, pre-reduction DAE).
-    cached_before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
     before_incidence_canvas: Canvas,
 
     // ---- 13. Markdown rendering ----
@@ -889,7 +943,7 @@ impl App {
             // The flat model, not the DAE: `pre()` lowering runs inside DAE
             // construction, so the DAE is already past it.
             PendingLiveDebug::PreLowering => self.cached_flat.is_some(),
-            _ => matches!(&self.cached_incidence, Some(Some(_))),
+            _ => matches!(&self.stage_views.incidence, Some(Some(_))),
         }
     }
 
@@ -1048,29 +1102,18 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
-            cached_report_stage: None,
-            cached_spy_plot: None,
-            cached_incidence: None,
-            cached_reduction: None,
+            stage_views: StageViewCaches::default(),
             cached_equation_sheet: None,
             identifier_index: None,
             tracked_identifier: None,
-            cached_matching_anim: None,
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
-            cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
-            cached_tearing_anim: None,
-            cached_alias_anim: None,
-            cached_ic_plan_anim: None,
-            cached_connection_anim: None,
-            cached_reduction_anim: None,
             cached_dae: None,
-            cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
@@ -1460,18 +1503,9 @@ impl App {
                     self.cached_flat = flat;
                     self.cached_pre_lowering_anim = None;
                     self.cached_dae = dae;
-                    self.cached_report_stage = None;
-                    self.cached_spy_plot = None;
-                    self.cached_incidence = None;
-                    self.cached_reduction = None;
-                    self.cached_matching_anim = None;
-                    self.cached_tarjan_anim = None;
-                    self.cached_tearing_anim = None;
-                    self.cached_alias_anim = None;
-                    self.cached_ic_plan_anim = None;
-                    self.cached_connection_anim = None;
-                    self.cached_reduction_anim = None;
-                    self.cached_before_incidence = None;
+                    // A new compile means new reports, so even the stage already
+                    // on screen must be rebuilt — hence the key goes too.
+                    self.stage_views.invalidate_all();
                     // **A library model's source, seeded into the same cache a
                     // specimen fills from disk.** Everything downstream —
                     // highlighting, clickable identifiers, blamed lines, the
@@ -1884,22 +1918,22 @@ impl App {
         match self.stage {
             StageKind::Structural => match self.structural_view {
                 StructuralView::MatchingAnim => {
-                    Some(self.cached_matching_anim.as_ref()?.as_ref()?)
+                    Some(self.stage_views.matching_anim.as_ref()?.as_ref()?)
                 }
-                StructuralView::TarjanAnim => Some(self.cached_tarjan_anim.as_ref()?.as_ref()?),
-                StructuralView::TearingAnim => Some(self.cached_tearing_anim.as_ref()?.as_ref()?),
-                StructuralView::AliasAnim => Some(self.cached_alias_anim.as_ref()?.as_ref()?),
+                StructuralView::TarjanAnim => Some(self.stage_views.tarjan_anim.as_ref()?.as_ref()?),
+                StructuralView::TearingAnim => Some(self.stage_views.tearing_anim.as_ref()?.as_ref()?),
+                StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_ref()?.as_ref()?),
                 _ => None,
             },
-            StageKind::IndexReduction => Some(self.cached_reduction_anim.as_ref()?.as_ref()?),
+            StageKind::IndexReduction => Some(self.stage_views.reduction_anim.as_ref()?.as_ref()?),
             StageKind::Events if self.events_view == EventsView::PreLowering => {
                 Some(self.cached_pre_lowering_anim.as_ref()?.as_ref()?)
             }
             StageKind::Initialization if self.init_view == InitView::IcPlan => {
-                Some(self.cached_ic_plan_anim.as_ref()?.as_ref()?)
+                Some(self.stage_views.ic_plan_anim.as_ref()?.as_ref()?)
             }
             StageKind::Flatten if self.flatten_view == FlattenView::Connections => {
-                Some(self.cached_connection_anim.as_ref()?.as_ref()?)
+                Some(self.stage_views.connection_anim.as_ref()?.as_ref()?)
             }
             _ => None,
         }
@@ -2127,22 +2161,22 @@ impl App {
         match self.stage {
             StageKind::Structural => match self.structural_view {
                 StructuralView::MatchingAnim => {
-                    Some(self.cached_matching_anim.as_mut()?.as_mut()?)
+                    Some(self.stage_views.matching_anim.as_mut()?.as_mut()?)
                 }
-                StructuralView::TarjanAnim => Some(self.cached_tarjan_anim.as_mut()?.as_mut()?),
-                StructuralView::TearingAnim => Some(self.cached_tearing_anim.as_mut()?.as_mut()?),
-                StructuralView::AliasAnim => Some(self.cached_alias_anim.as_mut()?.as_mut()?),
+                StructuralView::TarjanAnim => Some(self.stage_views.tarjan_anim.as_mut()?.as_mut()?),
+                StructuralView::TearingAnim => Some(self.stage_views.tearing_anim.as_mut()?.as_mut()?),
+                StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_mut()?.as_mut()?),
                 _ => None,
             },
-            StageKind::IndexReduction => Some(self.cached_reduction_anim.as_mut()?.as_mut()?),
+            StageKind::IndexReduction => Some(self.stage_views.reduction_anim.as_mut()?.as_mut()?),
             StageKind::Events if self.events_view == EventsView::PreLowering => {
                 Some(self.cached_pre_lowering_anim.as_mut()?.as_mut()?)
             }
             StageKind::Initialization if self.init_view == InitView::IcPlan => {
-                Some(self.cached_ic_plan_anim.as_mut()?.as_mut()?)
+                Some(self.stage_views.ic_plan_anim.as_mut()?.as_mut()?)
             }
             StageKind::Flatten if self.flatten_view == FlattenView::Connections => {
-                Some(self.cached_connection_anim.as_mut()?.as_mut()?)
+                Some(self.stage_views.connection_anim.as_mut()?.as_mut()?)
             }
             _ => None,
         }
@@ -2661,7 +2695,7 @@ impl App {
             return;
         };
 
-        let has_incidence = self.cached_incidence.as_ref().is_some_and(|c| c.is_some())
+        let has_incidence = self.stage_views.incidence.as_ref().is_some_and(|c| c.is_some())
             || self.stages.get(StageKind::Structural).value.is_some();
 
         let mut clicked_row = None;
@@ -2849,14 +2883,14 @@ impl App {
     /// is logged in `docs/tech-debt.md`, deliberately not attempted here since
     /// Phase 7 will rework these views anyway.
     fn matching_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
-    if self.cached_incidence.is_none() {
-        self.cached_incidence = Some(
+    if self.stage_views.incidence.is_none() {
+        self.stage_views.incidence = Some(
             self.stages.get(self.stage).value.as_ref()
                 .and_then(incidence_view::IncidenceMatrix::from_report)
         );
     }
     let arming = self.is_arming(PendingLiveDebug::Matching);
-    let live = self.cached_matching_anim.as_ref()
+    let live = self.stage_views.matching_anim.as_ref()
         .and_then(|o| o.as_ref())
         .map_or(
             if arming { LiveState::Arming } else { LiveState::Idle },
@@ -2869,7 +2903,7 @@ impl App {
         ui.ctx(), live, PendingLiveDebug::Matching,
     );
     if matches!(action, LiveDebugAction::SpawnLive)
-        && let Some(Some(mat)) = &self.cached_incidence {
+        && let Some(Some(mat)) = &self.stage_views.incidence {
             let live = matching_anim::MatchingAnimation::start_live(mat, || {
                 let _ = bridge::remove_live_trace_breakpoint();
             });
@@ -2877,16 +2911,16 @@ impl App {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
-            self.cached_matching_anim = Some(live);
+            self.stage_views.matching_anim = Some(live);
             self.matching_anim_canvas.request_fit();
         }
-    if self.cached_matching_anim.is_none() {
-        let inc = self.cached_incidence.as_ref().unwrap();
-        self.cached_matching_anim = Some(
+    if self.stage_views.matching_anim.is_none() {
+        let inc = self.stage_views.incidence.as_ref().unwrap();
+        self.stage_views.matching_anim = Some(
             inc.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
         );
     }
-    if let Some(Some(anim)) = &mut self.cached_matching_anim {
+    if let Some(Some(anim)) = &mut self.stage_views.matching_anim {
         if ir_split {
             ui.label(egui::RichText::new("Before (raw DAE)")
                 .strong().color(crate::colors::ANIM_FAIL));
@@ -2909,14 +2943,14 @@ impl App {
 
     /// The BLT / Tarjan animation view. See [`Self::matching_anim_ui`].
     fn tarjan_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
-    if self.cached_incidence.is_none() {
-        self.cached_incidence = Some(
+    if self.stage_views.incidence.is_none() {
+        self.stage_views.incidence = Some(
             self.stages.get(self.stage).value.as_ref()
                 .and_then(incidence_view::IncidenceMatrix::from_report)
         );
     }
     let arming = self.is_arming(PendingLiveDebug::Tarjan);
-    let live = self.cached_tarjan_anim.as_ref()
+    let live = self.stage_views.tarjan_anim.as_ref()
         .and_then(|o| o.as_ref())
         .map_or(
             if arming { LiveState::Arming } else { LiveState::Idle },
@@ -2929,7 +2963,7 @@ impl App {
         ui.ctx(), live, PendingLiveDebug::Tarjan,
     );
     if matches!(action, LiveDebugAction::SpawnLive)
-        && let Some(Some(mat)) = &self.cached_incidence {
+        && let Some(Some(mat)) = &self.stage_views.incidence {
             let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
                 let _ = bridge::remove_live_trace_breakpoint();
             });
@@ -2937,12 +2971,12 @@ impl App {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
-            self.cached_tarjan_anim = Some(live);
+            self.stage_views.tarjan_anim = Some(live);
             self.tarjan_anim_canvas.request_fit();
         }
-    if self.cached_tarjan_anim.is_none() {
-        let inc = self.cached_incidence.as_ref().unwrap();
-        self.cached_tarjan_anim = Some(
+    if self.stage_views.tarjan_anim.is_none() {
+        let inc = self.stage_views.incidence.as_ref().unwrap();
+        self.stage_views.tarjan_anim = Some(
             inc.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
         );
     }
@@ -2950,7 +2984,7 @@ impl App {
     // at link-dispatch time because turning an equation index into a world position
     // needs this view's own layout, which exists only at paint time.
     if let Some(target) = self.aim_at_equation
-        && let Some(Some(anim)) = &self.cached_tarjan_anim
+        && let Some(Some(anim)) = &self.stage_views.tarjan_anim
     {
         self.aim_at_equation = None;
         if !anim.aim_at_equation(&mut self.tarjan_anim_canvas, target) {
@@ -2959,7 +2993,7 @@ impl App {
             ));
         }
     }
-    if let Some(Some(anim)) = &mut self.cached_tarjan_anim {
+    if let Some(Some(anim)) = &mut self.stage_views.tarjan_anim {
         if ir_split {
             ui.label(egui::RichText::new("Before (raw DAE)")
                 .strong().color(crate::colors::ANIM_FAIL));
@@ -2983,7 +3017,7 @@ impl App {
     /// The index-reduction animation view. See [`Self::matching_anim_ui`].
     fn reduction_anim_ui(&mut self, ui: &mut egui::Ui) {
     let arming = self.is_arming(PendingLiveDebug::Reduction);
-    let live = self.cached_reduction_anim.as_ref()
+    let live = self.stage_views.reduction_anim.as_ref()
         .and_then(|o| o.as_ref())
         .map_or(
             if arming { LiveState::Arming } else { LiveState::Idle },
@@ -3006,17 +3040,17 @@ impl App {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
-            self.cached_reduction_anim = Some(live);
+            self.stage_views.reduction_anim = Some(live);
         }
-    if self.cached_reduction_anim.is_none() {
+    if self.stage_views.reduction_anim.is_none() {
         let frames = &self.index_reduction_frames;
-        self.cached_reduction_anim = Some(if frames.is_empty() {
+        self.stage_views.reduction_anim = Some(if frames.is_empty() {
             None
         } else {
             Some(reduction_anim::ReductionAnimation::from_frames(frames.clone()))
         });
     }
-    if let Some(Some(anim)) = &mut self.cached_reduction_anim {
+    if let Some(Some(anim)) = &mut self.stage_views.reduction_anim {
         debug_clicked = egui::ScrollArea::vertical()
             .auto_shrink(false)
             .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
@@ -3044,7 +3078,7 @@ impl App {
     fn tearing_anim_ui(&mut self, ui: &mut egui::Ui) {
         let arming = self.is_arming(PendingLiveDebug::Tearing);
         let live = self
-            .cached_tearing_anim
+            .stage_views.tearing_anim
             .as_ref()
             .and_then(|o| o.as_ref())
             .map_or(
@@ -3064,13 +3098,13 @@ impl App {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
-            self.cached_tearing_anim = Some(live);
+            self.stage_views.tearing_anim = Some(live);
         }
-        if self.cached_tearing_anim.is_none() {
-            self.cached_tearing_anim =
+        if self.stage_views.tearing_anim.is_none() {
+            self.stage_views.tearing_anim =
                 Some(self.tearing_dae().map(|dae| tearing_anim::TearingAnimation::record(&dae)));
         }
-        if let Some(Some(anim)) = &mut self.cached_tearing_anim {
+        if let Some(Some(anim)) = &mut self.stage_views.tearing_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
@@ -3105,15 +3139,15 @@ impl App {
     /// Debug button yet (re-running flatten needs the resolved ClassTree, which
     /// contains the whole MSL).
     fn connection_anim_ui(&mut self, ui: &mut egui::Ui) {
-        if self.cached_connection_anim.is_none() {
+        if self.stage_views.connection_anim.is_none() {
             let frames = &self.connection_frames;
-            self.cached_connection_anim = Some(if frames.is_empty() {
+            self.stage_views.connection_anim = Some(if frames.is_empty() {
                 None
             } else {
                 Some(connection_anim::ConnectionAnimation::from_frames(frames.clone()))
             });
         }
-        if let Some(Some(anim)) = &mut self.cached_connection_anim {
+        if let Some(Some(anim)) = &mut self.stage_views.connection_anim {
             egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no connections in this model)");
@@ -3125,8 +3159,8 @@ impl App {
     /// Simpler than the replay views: no live-debug lifecycle, because this
     /// phase has no search to trace (see `alias_anim`'s module note).
     fn alias_anim_ui(&mut self, ui: &mut egui::Ui) {
-        if self.cached_alias_anim.is_none() {
-            self.cached_alias_anim = Some(
+        if self.stage_views.alias_anim.is_none() {
+            self.stage_views.alias_anim = Some(
                 self.stages
                     .get(self.stage)
                     .value
@@ -3134,7 +3168,7 @@ impl App {
                     .and_then(alias_anim::AliasAnimation::from_report),
             );
         }
-        if let Some(Some(anim)) = &mut self.cached_alias_anim {
+        if let Some(Some(anim)) = &mut self.stage_views.alias_anim {
             egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no alias eliminations in this report)");
@@ -3156,8 +3190,8 @@ impl App {
 
     /// The initial-condition plan walk, on the Initialization stage.
     fn ic_plan_anim_ui(&mut self, ui: &mut egui::Ui) {
-        if self.cached_ic_plan_anim.is_none() {
-            self.cached_ic_plan_anim = Some(
+        if self.stage_views.ic_plan_anim.is_none() {
+            self.stage_views.ic_plan_anim = Some(
                 self.stages
                     .initialization
                     .value
@@ -3165,7 +3199,7 @@ impl App {
                     .and_then(ic_plan_anim::IcPlanAnimation::from_report),
             );
         }
-        if let Some(Some(anim)) = &mut self.cached_ic_plan_anim {
+        if let Some(Some(anim)) = &mut self.stage_views.ic_plan_anim {
             egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no initial-condition plan in this report)");
@@ -3623,18 +3657,7 @@ impl App {
                 let mut bad_sub_view: Option<String> = None;
                 // Invalidate caches when switching between Structural
                 // and IndexReduction — each has different report data.
-                if self.cached_report_stage != Some(self.stage) {
-                    self.cached_spy_plot = None;
-                    self.cached_incidence = None;
-                    self.cached_reduction = None;
-                    self.cached_matching_anim = None;
-                    self.cached_tarjan_anim = None;
-                    self.cached_tearing_anim = None;
-                    self.cached_alias_anim = None;
-                    self.cached_ic_plan_anim = None;
-                    self.cached_connection_anim = None;
-                    self.cached_reduction_anim = None;
-                    self.cached_before_incidence = None;
+                if self.stage_views.reset_for(self.stage) {
                     // Default sub-view: Summary for IndexReduction and
                     // singular Structural; SpyPlot otherwise.
                     let is_singular = self.stages.get(self.stage).note.as_deref()
@@ -3646,7 +3669,7 @@ impl App {
                     {
                         self.structural_view = StructuralView::SpyPlot;
                     }
-                    self.cached_report_stage = Some(self.stage);
+                    // `reset_for` already recorded the new key.
                 }
                 // A sub-view requested by an hrw:// link is applied *here*, after
                 // the default-sub-view logic above, precisely because that logic
@@ -3789,7 +3812,7 @@ impl App {
                     ui.label(egui::RichText::new("After (reduced)")
                         .strong().color(crate::colors::ANIM_PATH_FOUND));
                 }
-                let cached = self.cached_spy_plot.get_or_insert_with(|| {
+                let cached = self.stage_views.spy_plot.get_or_insert_with(|| {
                     self.stages.get(self.stage).value.as_ref().and_then(spyplot::Plot::from_report)
                 });
                 if let Some(plot) = cached {
@@ -3801,12 +3824,12 @@ impl App {
             } else if report_ready && self.structural_view == StructuralView::Incidence {
                 if ir_split {
                     // Before/After split for incidence matrices.
-                    let before_cached = self.cached_before_incidence.get_or_insert_with(|| {
+                    let before_cached = self.stage_views.before_incidence.get_or_insert_with(|| {
                         self.stages.get(self.stage).value.as_ref()
                             .and_then(|v| v.get("before"))
                             .and_then(incidence_view::IncidenceMatrix::from_report)
                     });
-                    let after_cached = self.cached_incidence.get_or_insert_with(|| {
+                    let after_cached = self.stage_views.incidence.get_or_insert_with(|| {
                         self.stages.get(self.stage).value.as_ref()
                             .and_then(incidence_view::IncidenceMatrix::from_report)
                     });
@@ -3839,7 +3862,7 @@ impl App {
                         }
                     });
                 } else {
-                    let cached = self.cached_incidence.get_or_insert_with(|| {
+                    let cached = self.stage_views.incidence.get_or_insert_with(|| {
                         self.stages.get(self.stage).value.as_ref()
                             .and_then(incidence_view::IncidenceMatrix::from_report)
                     });
@@ -3864,7 +3887,7 @@ impl App {
                 if self.stage == StageKind::Structural {
                     Self::structural_singular_summary(ui, &self.stages.structural);
                 } else {
-                    let cached = self.cached_reduction.get_or_insert_with(|| {
+                    let cached = self.stage_views.reduction.get_or_insert_with(|| {
                         self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
                     });
                     if let Some(view) = cached {
@@ -6994,29 +7017,18 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
-            cached_report_stage: None,
-            cached_spy_plot: None,
-            cached_incidence: None,
-            cached_reduction: None,
+            stage_views: StageViewCaches::default(),
             cached_equation_sheet: None,
             identifier_index: None,
             tracked_identifier: None,
-            cached_matching_anim: None,
             matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
-            cached_tarjan_anim: None,
             tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
-            cached_tearing_anim: None,
-            cached_alias_anim: None,
-            cached_ic_plan_anim: None,
-            cached_connection_anim: None,
-            cached_reduction_anim: None,
             cached_dae: None,
-            cached_before_incidence: None,
             before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
@@ -7847,48 +7859,70 @@ mod tests {
         assert!(msg.contains("denied"), "should carry the cause: {msg}");
     }
 
+    /// Switching stages drops **every** view, including ones added later.
+    ///
+    /// **This test used to re-implement the invalidation inline**, clearing five
+    /// fields by hand and then asserting they were clear — so it verified its own
+    /// copy of the logic, not the app's. The real block could have been deleted
+    /// and this would still have passed. Calling `reset_for` is the point of
+    /// extracting it.
+    ///
+    /// The assertion is `built_for` plus a *whole-struct* check, so a view added
+    /// tomorrow is covered without touching this test.
     #[test]
     fn report_cache_invalidated_on_stage_switch() {
         let mut app = App::test_default();
-        // Simulate having cached data for Structural.
-        app.cached_report_stage = Some(StageKind::Structural);
-        app.cached_spy_plot = Some(None);
-        app.cached_incidence = Some(None);
-        app.cached_reduction = Some(None);
-        app.cached_matching_anim = Some(None);
-        app.cached_tarjan_anim = Some(None);
+        app.stage_views.built_for = Some(StageKind::Structural);
+        app.stage_views.spy_plot = Some(None);
+        app.stage_views.incidence = Some(None);
+        app.stage_views.reduction = Some(None);
+        app.stage_views.matching_anim = Some(None);
+        app.stage_views.tarjan_anim = Some(None);
 
-        // Switch to IndexReduction — caches should be invalidated.
-        app.stage = StageKind::IndexReduction;
-        if app.cached_report_stage != Some(app.stage) {
-            app.cached_spy_plot = None;
-            app.cached_incidence = None;
-            app.cached_reduction = None;
-            app.cached_matching_anim = None;
-            app.cached_tarjan_anim = None;
-            app.cached_report_stage = Some(app.stage);
-        }
-        assert!(app.cached_spy_plot.is_none());
-        assert!(app.cached_incidence.is_none());
-        assert!(app.cached_reduction.is_none());
-        assert!(app.cached_matching_anim.is_none());
-        assert!(app.cached_tarjan_anim.is_none());
-        assert_eq!(app.cached_report_stage, Some(StageKind::IndexReduction));
+        let reset = app.stage_views.reset_for(StageKind::IndexReduction);
+
+        assert!(reset, "a different stage must report that it reset");
+        assert_eq!(app.stage_views.built_for, Some(StageKind::IndexReduction));
+        // Every view is back to `None`. Listed rather than compared as a whole
+        // struct, because the view types do not implement `PartialEq` and
+        // deriving it on production types to satisfy a test would be backwards.
+        //
+        // **This list going stale is survivable, unlike the two it replaced**:
+        // `reset_for` assigns a whole `Self`, so a view added tomorrow is cleared
+        // whether or not anyone remembers to add a line here. Missing it costs
+        // coverage, not correctness.
+        assert!(
+            app.stage_views.spy_plot.is_none()
+                && app.stage_views.incidence.is_none()
+                && app.stage_views.reduction.is_none()
+                && app.stage_views.matching_anim.is_none()
+                && app.stage_views.tarjan_anim.is_none()
+                && app.stage_views.tearing_anim.is_none()
+                && app.stage_views.alias_anim.is_none()
+                && app.stage_views.ic_plan_anim.is_none()
+                && app.stage_views.connection_anim.is_none()
+                && app.stage_views.reduction_anim.is_none()
+                && app.stage_views.before_incidence.is_none(),
+            "a stage switch must leave no view built for the previous stage",
+        );
     }
 
     #[test]
     fn report_cache_preserved_for_same_stage() {
         let mut app = App::test_default();
-        app.cached_report_stage = Some(StageKind::Structural);
-        app.cached_spy_plot = Some(None);
+        app.stage_views.built_for = Some(StageKind::Structural);
+        app.stage_views.spy_plot = Some(None);
         app.stage = StageKind::Structural;
 
-        // Same stage — cache should NOT be invalidated.
-        if app.cached_report_stage != Some(app.stage) {
-            app.cached_spy_plot = None;
-            app.cached_report_stage = Some(app.stage);
-        }
-        assert!(app.cached_spy_plot.is_some());
+        // Same stage — nothing should be dropped, and `reset_for` says so.
+        let reset = app.stage_views.reset_for(StageKind::Structural);
+
+        assert!(!reset, "the same stage must not report a reset");
+        assert!(
+            app.stage_views.spy_plot.is_some(),
+            "rebuilding a view that was already correct wastes the work the cache exists \
+             to avoid — and on a large model that work is seconds, not milliseconds",
+        );
     }
 
     #[test]
@@ -7944,9 +7978,9 @@ mod tests {
         let path = PathBuf::from("/test/specimen.mo");
         app.selected = Some(path.clone());
         app.compiling = true;
-        app.cached_spy_plot = Some(None);
-        app.cached_incidence = Some(None);
-        app.cached_report_stage = Some(StageKind::Parse);
+        app.stage_views.spy_plot = Some(None);
+        app.stage_views.incidence = Some(None);
+        app.stage_views.built_for = Some(StageKind::Parse);
         app.live_breakpoint_armed = false;
 
         let stages = StageBundle {
@@ -7971,9 +8005,9 @@ mod tests {
 
         assert!(!app.compiling);
         assert_eq!(app.model.as_deref(), Some("TestModel"));
-        assert!(app.cached_spy_plot.is_none());
-        assert!(app.cached_incidence.is_none());
-        assert!(app.cached_report_stage.is_none());
+        assert!(app.stage_views.spy_plot.is_none());
+        assert!(app.stage_views.incidence.is_none());
+        assert!(app.stage_views.built_for.is_none());
         assert!(app.pending_live_debug.is_none());
     }
 

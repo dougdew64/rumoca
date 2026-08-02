@@ -520,6 +520,76 @@ Some prose.
         );
     }
 
+    /// **`App` has at most `MAX_APP_FIELDS` fields — a ratchet, not a limit.**
+    ///
+    /// The UI pause's success criterion (`docs/ui-pause-plan.md`). *"Extract
+    /// state, not just functions"* is otherwise an unfalsifiable claim: a
+    /// refactor that splits a 771-line function into ten that each take
+    /// `&mut self` has moved lines and changed nothing, because every one can
+    /// still reach every field.
+    ///
+    /// **Lower the number as extractions land; never raise it.** Failing here
+    /// means a field was added to `App` without anyone asking whether it belongs
+    /// there — which is the question that went unasked 105 times. The answer may
+    /// legitimately be "yes, it is shared": `stage`, `stages`, `tracked_identifier`
+    /// and `selected` are the four the measurement found genuinely global. If so,
+    /// raise the number **in the same commit as the reasoning**.
+    ///
+    /// Counted from the source rather than by a macro, so it needs no
+    /// cooperation from `App` itself and cannot be silenced by changing a
+    /// derive.
+    #[test]
+    fn app_does_not_regrow_its_field_count() {
+        /// 105 on 2026-08-02 before the pause; 94 after the stage-view caches
+        /// moved into `StageViewCaches`.
+        const MAX_APP_FIELDS: usize = 94;
+
+        let src = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
+        )
+        .expect("app.rs must be readable");
+
+        let body = src
+            .split_once("\npub struct App {")
+            .expect("app.rs must declare `pub struct App`")
+            .1
+            .split_once("\n}\n")
+            .expect("the App struct must be closed by a `}` at column 0")
+            .0;
+
+        // A field is `    name: Type,` at exactly one indent level. Doc comments,
+        // attributes and blank lines are skipped by the shape of the pattern.
+        let fields: Vec<&str> = body
+            .lines()
+            .filter_map(|l| {
+                let rest = l.strip_prefix("    ")?;
+                if rest.starts_with(' ') || rest.starts_with("//") || rest.starts_with('#') {
+                    return None;
+                }
+                let name = rest.split_once(':')?.0;
+                (!name.is_empty()
+                    && name.chars().all(|c| c.is_ascii_lowercase() || c == '_' || c.is_ascii_digit()))
+                .then_some(name)
+            })
+            .collect();
+
+        // **Non-vacuity.** A parse that silently found nothing would satisfy any
+        // ceiling, which is the exact shape this whole suite exists to refuse.
+        assert!(
+            fields.len() > 50,
+            "only {} fields parsed out of App — the parser broke, and a broken parser \
+             passes every ceiling",
+            fields.len(),
+        );
+        assert!(
+            fields.len() <= MAX_APP_FIELDS,
+            "App has {} fields, over the {MAX_APP_FIELDS} ratchet. Does the new field \
+             belong on App, or on the pane that owns it? If it is genuinely shared, raise \
+             MAX_APP_FIELDS in the same commit as the reasoning.",
+            fields.len(),
+        );
+    }
+
     fn collect_rust(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(entries) = std::fs::read_dir(dir) else { return };
         for e in entries.flatten() {

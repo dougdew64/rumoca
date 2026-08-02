@@ -85,7 +85,7 @@ nothing checking it rots like any other.
 
 | After | Target | From |
 |---|---|---|
-| Step 2 (caches) | **≤ 86** | 20 cache fields → 1 |
+| Step 2 (caches) | ~~≤ 86~~ **94, landed** | 12 stage-view fields → 1 |
 | Step 3 (left panel) | **≤ 76** | specimen list, filter, corpus, scratch polling |
 | Step 4 (central panel) | **≤ 60** | per-stage view state moves to its view |
 | Eventually | **~30** | with the 4-field core documented as irreducible |
@@ -141,7 +141,32 @@ intent, they are decisions Doug already made: the corpus visible unfiltered; HRW
 collapsed with MSL expanded; the background naming specimen *and* stage; a source scroll
 landing at the left margin; an MSL model's source and clickable identifiers.
 
-## Step 2 — The cache layer
+## Step 2 — The cache layer ✅ *(landed 2026-08-02, and the premise was wrong)*
+
+**The plan said "20 cache fields → 1". They do not share a lifetime.** Measured before
+writing any code, which is the only reason this did not ship as a behaviour change wearing a
+refactor's clothes:
+
+| Family | Fields | Invalidated |
+|---|---|---|
+| **Stage-view caches** | 11 + key | On stage change *and* on every compile — **listed by hand in both places** |
+| **Compile outputs** | `cached_flat`, `cached_dae`, `cached_equation_sheet` | Never — they are *results*, assigned from a finished compile |
+| **Self-keying memos** | `cached_purpose_notes` (by model), `cached_tour` (by mtime), `cached_source` (per specimen) | Each already carries what tells it it is stale |
+
+Folding all twenty into one `Default` reset would have **cleared the memos on every stage
+change** — a behaviour change, not a refactor. Only the first family was extracted, into
+`StageViewCaches`, whose `reset_for` assigns a whole `Self` so a view added tomorrow is
+covered by construction. Verified by adding a cache field mentioned in **no** invalidation
+site and watching it be cleared anyway.
+
+**So: 105 → 94, not 86.** The remaining caches are not orphans — they belong to the panes that
+own them, and they move in steps 3 and 4 rather than into a bag they do not fit.
+
+The two hand-written lists also had a **test that re-implemented them inline**, asserting its
+own copy worked rather than the app's; the real block could have been deleted with the test
+still green. It now calls `reset_for`.
+
+<details><summary>The original plan for this step, kept because the reasoning was sound and the premise was not</summary>
 
 **Do not test the invalidation. Make it unnecessary.**
 
@@ -159,6 +184,8 @@ Guards that still earn their place:
 
 Sequenced second because it removes 20 of 105 fields, which every later extraction would
 otherwise have to thread.
+
+</details>
 
 ## Step 3 — The left panel
 
