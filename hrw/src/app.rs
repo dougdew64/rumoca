@@ -912,6 +912,73 @@ impl Default for ModelListState {
     }
 }
 
+/// **How the reader is looking at the current stage** — not what it holds.
+///
+/// Eleven fields with one thing in common: each records a *choice the reader
+/// made about the view*, and none of them is derived from a compile. Which
+/// sub-view is open, where each camera is panned, which row is highlighted.
+///
+/// # Why this is the right seam
+///
+/// It is the complement of [`StageViewCaches`], and the pair together are the
+/// whole story of a stage view: **the caches are what was computed, the viewport
+/// is what is being looked at.** They also have opposite lifetimes — a cache is
+/// dropped whenever the stage changes, while a camera deliberately survives, so
+/// returning to a view finds it where you left it.
+///
+/// Keeping them apart is what makes that difference visible. Together on `App`
+/// they were eleven fields among eighty-five, and nothing said which ones a
+/// stage switch was allowed to touch.
+struct Viewport {
+    /// Which sub-view is open on the Flatten stage.
+    flatten: FlattenView,
+    /// Which sub-view is open on the Events stage.
+    events: EventsView,
+    /// Which sub-view is open on the Initialization stage.
+    init: InitView,
+    /// Which sub-view is open on the report stages (Structural, Index Reduction).
+    structural: StructuralView,
+    /// Pan/zoom camera for the spy plot.
+    spy: Canvas,
+    /// Pan/zoom camera for the incidence matrix.
+    incidence: Canvas,
+    /// Pan/zoom camera for the matching animation.
+    matching_anim: Canvas,
+    /// Pan/zoom camera for the Tarjan animation.
+    tarjan_anim: Canvas,
+    /// Pan/zoom camera for the "before" incidence matrix in the Index Reduction
+    /// split.
+    before_incidence: Canvas,
+    /// Equation-sheet row under the reader's attention, if any.
+    highlighted_eq_row: Option<usize>,
+    /// Source line under the reader's attention, if any.
+    highlighted_source_line: Option<u32>,
+}
+
+impl Default for Viewport {
+    fn default() -> Self {
+        Self {
+            // **Not `FlattenView::default()`.** Equations is the sub-view worth
+            // opening on, and `FlattenView` has no meaningful default of its own
+            // — which is why `derive(Default)` does not compile here, and a good
+            // thing: it forced these two choices to stay explicit.
+            flatten: FlattenView::Equations,
+            events: EventsView::default(),
+            init: InitView::default(),
+            structural: StructuralView::SpyPlot,
+            // The bias lifts the fitted content slightly above centre, leaving
+            // room for the labels drawn under each matrix.
+            spy: Canvas::default().with_fit_vertical_bias(0.15),
+            incidence: Canvas::default().with_fit_vertical_bias(0.15),
+            matching_anim: Canvas::default().with_fit_vertical_bias(0.15),
+            tarjan_anim: Canvas::default().with_fit_vertical_bias(0.15),
+            before_incidence: Canvas::default().with_fit_vertical_bias(0.15),
+            highlighted_eq_row: None,
+            highlighted_source_line: None,
+        }
+    }
+}
+
 /// The entire application state. In immediate-mode UI, this struct IS the
 /// application — every frame, `ui()` reads and writes these fields to decide
 /// what to render and how to react. Fields are grouped by concern:
@@ -1014,18 +1081,9 @@ pub struct App {
     // from a generated help table, delivered as hover tooltips on tree nodes.
     field_help: HashMap<String, String>,
 
-    // ---- 9. Custom views for Structural/Index-reduction stages ----
-    // These stages have a spy-plot and incidence-matrix visualization in
-    // addition to the generic JSON tree. Each custom view has its own `Canvas`
-    // (pan/zoom camera state).
-    flatten_view: FlattenView,
-    events_view: EventsView,
-    init_view: InitView,
-    highlighted_eq_row: Option<usize>,
-    highlighted_source_line: Option<u32>,
-    structural_view: StructuralView,
-    spy_canvas: Canvas,
-    incidence_canvas: Canvas,
+    // ---- 9. How the reader is looking at the current stage ----
+    /// Sub-view selections, cameras and highlights. See [`Viewport`].
+    viewport: Viewport,
 
     // ---- 10. Compilation log ----
     // Timestamped events streamed from the worker thread (phase start/end,
@@ -1063,8 +1121,6 @@ pub struct App {
     cached_equation_sheet: Option<equation_sheet::EquationSheet>,
     identifier_index: Option<identifier_index::IdentifierIndex>,
     tracked_identifier: Option<String>,
-    matching_anim_canvas: Canvas,
-    tarjan_anim_canvas: Canvas,
     index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
     // Idea #40: replay of `pre()` lowering, on the Events stage. The frames are
     // recorded by re-running DAE construction over the flat model, since the
@@ -1076,7 +1132,6 @@ pub struct App {
     cached_flat: Option<rumoca_ir_flat::Model>,
     cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
     cached_dae: Option<rumoca_ir_dae::Dae>,
-    before_incidence_canvas: Canvas,
 
     // ---- 13. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across tour and
@@ -1558,14 +1613,7 @@ impl App {
             show_help: false,
             show_about: false,
             field_help: field_help::load(),
-            flatten_view: FlattenView::Equations,
-            events_view: EventsView::default(),
-            init_view: InitView::default(),
-            highlighted_eq_row: None,
-            highlighted_source_line: None,
-            structural_view: StructuralView::SpyPlot,
-            spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
-            incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
 
@@ -1579,15 +1627,12 @@ impl App {
             cached_equation_sheet: None,
             identifier_index: None,
             tracked_identifier: None,
-            matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
-            tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
             cached_dae: None,
-            before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
             source_scroll_target: None,
@@ -1786,8 +1831,8 @@ impl App {
         self.library_source_uri = None;
         self.library_source_error = None;
         self.cached_highlight = None;
-        self.highlighted_eq_row = None;
-        self.highlighted_source_line = None;
+        self.viewport.highlighted_eq_row = None;
+        self.viewport.highlighted_source_line = None;
         self.nav.clear();
         self.nav_loading = None;
         self.nav_error = None;
@@ -1940,11 +1985,11 @@ impl App {
                     // that no longer exists — over an emitted `subtree: null` —
                     // is exactly the confident lie this design forbids.
                     self.revalidate_point_against_new_ir();
-                    self.spy_canvas.request_fit();
-                    self.incidence_canvas.request_fit();
-                    self.matching_anim_canvas.request_fit();
-                    self.tarjan_anim_canvas.request_fit();
-                    self.before_incidence_canvas.request_fit();
+                    self.viewport.spy.request_fit();
+                    self.viewport.incidence.request_fit();
+                    self.viewport.matching_anim.request_fit();
+                    self.viewport.tarjan_anim.request_fit();
+                    self.viewport.before_incidence.request_fit();
                     // Land on the furthest stage that completed cleanly,
                     // unless a pending_stage was requested via an hrw://load/…/Stage link.
                     // Always update `self.stage` so the correct stage is ready when the
@@ -2275,11 +2320,11 @@ impl App {
             },
             stage_view: match self.stage {
                 StageKind::Structural | StageKind::IndexReduction => {
-                    Some(structural_view_name(self.structural_view))
+                    Some(structural_view_name(self.viewport.structural))
                 }
-                StageKind::Flatten => Some(flatten_view_name(self.flatten_view)),
-                StageKind::Events => Some(events_view_name(self.events_view)),
-                StageKind::Initialization => Some(init_view_name(self.init_view)),
+                StageKind::Flatten => Some(flatten_view_name(self.viewport.flatten)),
+                StageKind::Events => Some(events_view_name(self.viewport.events)),
+                StageKind::Initialization => Some(init_view_name(self.viewport.init)),
                 _ => None,
             },
             specimen_detail: (self.ui_mode == UiMode::Specimen).then_some({
@@ -2310,7 +2355,7 @@ impl App {
     /// something they were not.
     fn on_screen_animation(&self) -> Option<&dyn Animated> {
         match self.stage {
-            StageKind::Structural => match self.structural_view {
+            StageKind::Structural => match self.viewport.structural {
                 StructuralView::MatchingAnim => {
                     Some(self.stage_views.matching_anim.as_ref()?.as_ref()?)
                 }
@@ -2320,13 +2365,13 @@ impl App {
                 _ => None,
             },
             StageKind::IndexReduction => Some(self.stage_views.reduction_anim.as_ref()?.as_ref()?),
-            StageKind::Events if self.events_view == EventsView::PreLowering => {
+            StageKind::Events if self.viewport.events == EventsView::PreLowering => {
                 Some(self.cached_pre_lowering_anim.as_ref()?.as_ref()?)
             }
-            StageKind::Initialization if self.init_view == InitView::IcPlan => {
+            StageKind::Initialization if self.viewport.init == InitView::IcPlan => {
                 Some(self.stage_views.ic_plan_anim.as_ref()?.as_ref()?)
             }
-            StageKind::Flatten if self.flatten_view == FlattenView::Connections => {
+            StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => {
                 Some(self.stage_views.connection_anim.as_ref()?.as_ref()?)
             }
             _ => None,
@@ -2553,7 +2598,7 @@ impl App {
     /// sub-view-to-animation mapping should become a table instead.
     fn on_screen_animation_mut(&mut self) -> Option<&mut dyn Animated> {
         match self.stage {
-            StageKind::Structural => match self.structural_view {
+            StageKind::Structural => match self.viewport.structural {
                 StructuralView::MatchingAnim => {
                     Some(self.stage_views.matching_anim.as_mut()?.as_mut()?)
                 }
@@ -2563,13 +2608,13 @@ impl App {
                 _ => None,
             },
             StageKind::IndexReduction => Some(self.stage_views.reduction_anim.as_mut()?.as_mut()?),
-            StageKind::Events if self.events_view == EventsView::PreLowering => {
+            StageKind::Events if self.viewport.events == EventsView::PreLowering => {
                 Some(self.cached_pre_lowering_anim.as_mut()?.as_mut()?)
             }
-            StageKind::Initialization if self.init_view == InitView::IcPlan => {
+            StageKind::Initialization if self.viewport.init == InitView::IcPlan => {
                 Some(self.stage_views.ic_plan_anim.as_mut()?.as_mut()?)
             }
-            StageKind::Flatten if self.flatten_view == FlattenView::Connections => {
+            StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => {
                 Some(self.stage_views.connection_anim.as_mut()?.as_mut()?)
             }
             _ => None,
@@ -3137,7 +3182,7 @@ impl App {
                     let modelica = crate::source_view::ModelicaText::new(ui)
                         .tracked(tracked.map(|t| (t, crate::colors::TRACKED_FILL_MEDIUM)));
                     for eq in eqs {
-                        let selected = self.highlighted_eq_row == Some(eq.index);
+                        let selected = self.viewport.highlighted_eq_row == Some(eq.index);
                         let text = modelica.job(&eq.text);
                         if has_incidence {
                             let resp = ui.selectable_label(selected, text);
@@ -3200,10 +3245,10 @@ impl App {
             });
 
         if let Some(new_val) = clicked_row {
-            self.highlighted_eq_row = new_val;
+            self.viewport.highlighted_eq_row = new_val;
             if new_val.is_some() {
                 self.stage = StageKind::Structural;
-                self.structural_view = StructuralView::Incidence;
+                self.viewport.structural = StructuralView::Incidence;
             }
         }
         if let Some(name) = clicked_variable {
@@ -3306,7 +3351,7 @@ impl App {
                 self.live_breakpoint_armed = false;
             }
             self.stage_views.matching_anim = Some(live);
-            self.matching_anim_canvas.request_fit();
+            self.viewport.matching_anim.request_fit();
         }
     if self.stage_views.matching_anim.is_none() {
         let inc = self.stage_views.incidence.as_ref().unwrap();
@@ -3324,7 +3369,7 @@ impl App {
                 .strong().color(crate::colors::ANIM_PATH_FOUND));
         }
         debug_clicked = anim.ui(
-            ui, &mut self.matching_anim_canvas,
+            ui, &mut self.viewport.matching_anim,
             self.tracked_identifier.as_deref(), arming, debug_enabled,
         );
     } else {
@@ -3366,7 +3411,7 @@ impl App {
                 self.live_breakpoint_armed = false;
             }
             self.stage_views.tarjan_anim = Some(live);
-            self.tarjan_anim_canvas.request_fit();
+            self.viewport.tarjan_anim.request_fit();
         }
     if self.stage_views.tarjan_anim.is_none() {
         let inc = self.stage_views.incidence.as_ref().unwrap();
@@ -3381,7 +3426,7 @@ impl App {
         && let Some(Some(anim)) = &self.stage_views.tarjan_anim
     {
         self.aim_at_equation = None;
-        if !anim.aim_at_equation(&mut self.tarjan_anim_canvas, target) {
+        if !anim.aim_at_equation(&mut self.viewport.tarjan_anim, target) {
             self.notify(format!(
                 "no equation {target} in this model \u{2014} the link names one that is not here",
             ));
@@ -3397,7 +3442,7 @@ impl App {
                 .strong().color(crate::colors::ANIM_PATH_FOUND));
         }
         debug_clicked = anim.ui(
-            ui, &mut self.tarjan_anim_canvas,
+            ui, &mut self.viewport.tarjan_anim,
             self.tracked_identifier.as_deref(), arming, debug_enabled,
         );
     } else {
@@ -3981,21 +4026,21 @@ impl App {
                 && self.cached_equation_sheet.as_ref().is_some_and(|s| !s.source_lines.is_empty());
             if flatten_ready {
                 ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.flatten_view, FlattenView::Equations, "Equations");
+                    ui.selectable_value(&mut self.viewport.flatten, FlattenView::Equations, "Equations");
                     if has_source_map {
-                        ui.selectable_value(&mut self.flatten_view, FlattenView::SourceMap, "Source Map");
+                        ui.selectable_value(&mut self.viewport.flatten, FlattenView::SourceMap, "Source Map");
                     }
                     // Connection expansion, only when the model has any --
                     // a hand-written model shows no empty tab.
                     if !self.connection_frames.is_empty() {
-                        ui.selectable_value(&mut self.flatten_view, FlattenView::Connections, "Connections \u{25b6}")
+                        ui.selectable_value(&mut self.viewport.flatten, FlattenView::Connections, "Connections \u{25b6}")
                             .on_hover_text(
                                 "Watch connect() statements become equations. A potential set \
                                  of n variables yields n-1 equalities; a flow set of the same \
                                  n yields one sum-to-zero equation (Kirchhoff).",
                             );
                     }
-                    ui.selectable_value(&mut self.flatten_view, FlattenView::Tree, "Tree");
+                    ui.selectable_value(&mut self.viewport.flatten, FlattenView::Tree, "Tree");
                 });
                 ui.separator();
             }
@@ -4007,9 +4052,9 @@ impl App {
                 self.stage == StageKind::Events && !self.pre_lowering_frames.is_empty();
             if events_ready {
                 ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.events_view, EventsView::Tree, "Tree");
+                    ui.selectable_value(&mut self.viewport.events, EventsView::Tree, "Tree");
                     ui.selectable_value(
-                        &mut self.events_view,
+                        &mut self.viewport.events,
                         EventsView::PreLowering,
                         "pre() lowering \u{25b6}",
                     )
@@ -4028,8 +4073,8 @@ impl App {
             let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
             if init_ready {
                 ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.init_view, InitView::Tree, "Tree");
-                    ui.selectable_value(&mut self.init_view, InitView::IcPlan, "IC plan \u{25b6}")
+                    ui.selectable_value(&mut self.viewport.init, InitView::Tree, "Tree");
+                    ui.selectable_value(&mut self.viewport.init, InitView::IcPlan, "IC plan \u{25b6}")
                         .on_hover_text(
                             "Walk the plan for computing a consistent state at t=0. Mostly \
                              plain assignment; the few blocks that iterate are where \
@@ -4057,11 +4102,11 @@ impl App {
                     let is_singular = self.stages.get(self.stage).note.as_deref()
                         .is_some_and(|n| n.contains("singular"));
                     if self.stage == StageKind::IndexReduction || is_singular {
-                        self.structural_view = StructuralView::Summary;
-                    } else if matches!(self.structural_view,
+                        self.viewport.structural = StructuralView::Summary;
+                    } else if matches!(self.viewport.structural,
                         StructuralView::Summary | StructuralView::Animate)
                     {
-                        self.structural_view = StructuralView::SpyPlot;
+                        self.viewport.structural = StructuralView::SpyPlot;
                     }
                     // `reset_for` already recorded the new key.
                 }
@@ -4133,17 +4178,17 @@ impl App {
                     // predicate the link guard uses — a tab that exists and a link that
                     // is honoured must not be able to disagree.
                     if self.structural_view_available(StructuralView::Summary) {
-                        ui.selectable_value(&mut self.structural_view, StructuralView::Summary, "Summary");
+                        ui.selectable_value(&mut self.viewport.structural, StructuralView::Summary, "Summary");
                         ui.separator();
                     }
                     if self.structural_view_available(StructuralView::Animate) {
-                        ui.selectable_value(&mut self.structural_view, StructuralView::Animate, "Reduction \u{25b6}");
+                        ui.selectable_value(&mut self.viewport.structural, StructuralView::Animate, "Reduction \u{25b6}");
                     }
                     // Alias elimination is reported by this stage only, and
                     // only when something was actually eliminated -- a model
                     // with no aliases must not show an empty tab.
                     if self.structural_view_available(StructuralView::AliasAnim) {
-                        ui.selectable_value(&mut self.structural_view, StructuralView::AliasAnim, "Aliases \u{25b6}")
+                        ui.selectable_value(&mut self.viewport.structural, StructuralView::AliasAnim, "Aliases \u{25b6}")
                             .on_hover_text(
                                 "Watch variables be substituted away. Every connection \
                                  equation `a = b` lets one of the two be deleted, which is \
@@ -4154,9 +4199,9 @@ impl App {
                     // Spy-plot, Matching, BLT require a full matching —
                     // hide them when the Structural stage is singular.
                     if self.structural_view_available(StructuralView::SpyPlot) {
-                        ui.selectable_value(&mut self.structural_view, StructuralView::SpyPlot, "Spy-plot");
+                        ui.selectable_value(&mut self.viewport.structural, StructuralView::SpyPlot, "Spy-plot");
                     }
-                    ui.selectable_value(&mut self.structural_view, StructuralView::Incidence, "Incidence");
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Incidence, "Incidence");
                     // Matching is shown *even when singular* — that is the whole
                     // point of it. The other three below need a complete matching
                     // before they mean anything; this one is a replay of the
@@ -4168,7 +4213,7 @@ impl App {
                     // emits `MatchingStep::EquationFailed` and the view already
                     // paints the failed row red. The feature was built, then
                     // gated out of reach.
-                    ui.selectable_value(&mut self.structural_view, StructuralView::MatchingAnim, "Matching \u{25b6}")
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::MatchingAnim, "Matching \u{25b6}")
                         .on_hover_text(if is_singular && !is_index_reduction {
                             "Watch the augmenting-path search run out. The equation it \
                              gives up on is the rank deficiency."
@@ -4177,12 +4222,12 @@ impl App {
                              with one unknown."
                         });
                     if !is_singular || is_index_reduction {
-                        ui.selectable_value(&mut self.structural_view, StructuralView::TarjanAnim, "BLT \u{25b6}");
+                        ui.selectable_value(&mut self.viewport.structural, StructuralView::TarjanAnim, "BLT \u{25b6}");
                         // Tearing operates on the coupled blocks BLT finds,
                         // so it needs the same full matching those two do.
-                        ui.selectable_value(&mut self.structural_view, StructuralView::TearingAnim, "Tearing \u{25b6}");
+                        ui.selectable_value(&mut self.viewport.structural, StructuralView::TearingAnim, "Tearing \u{25b6}");
                     }
-                    ui.selectable_value(&mut self.structural_view, StructuralView::Tree, "Tree");
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Tree, "Tree");
                 });
                 ui.separator();
             }
@@ -4195,7 +4240,7 @@ impl App {
                 && self.stages.get(self.stage).note.as_deref()
                     .is_some_and(|n| n.contains("singular"));
 
-            if report_ready && self.structural_view == StructuralView::SpyPlot {
+            if report_ready && self.viewport.structural == StructuralView::SpyPlot {
                 if ir_split {
                     // No spy-plot for the Before pane (needs full matching),
                     // show only the After pane.
@@ -4211,11 +4256,11 @@ impl App {
                 });
                 if let Some(plot) = cached {
                     ui.weak(plot.caption());
-                    plot.ui(ui, &mut self.spy_canvas, &mut intent.canvas_capture, self.tracked_identifier.as_deref());
+                    plot.ui(ui, &mut self.viewport.spy, &mut intent.canvas_capture, self.tracked_identifier.as_deref());
                 } else {
                     ui.weak("(the structural report has no BLT blocks to plot)");
                 }
-            } else if report_ready && self.structural_view == StructuralView::Incidence {
+            } else if report_ready && self.viewport.structural == StructuralView::Incidence {
                 if ir_split {
                     // Before/After split for incidence matrices.
                     let before_cached = self.stage_views.before_incidence.get_or_insert_with(|| {
@@ -4234,8 +4279,8 @@ impl App {
                         if let Some(mat) = before_cached {
                             cols[0].weak(mat.caption());
                             mat.ui(
-                                &mut cols[0], &mut self.before_incidence_canvas,
-                                &mut intent.canvas_capture, self.highlighted_eq_row, None,
+                                &mut cols[0], &mut self.viewport.before_incidence,
+                                &mut intent.canvas_capture, self.viewport.highlighted_eq_row, None,
                             );
                         } else {
                             cols[0].weak("(no before incidence data)");
@@ -4248,8 +4293,8 @@ impl App {
                             let tracked_col = self.tracked_identifier.as_deref()
                                 .and_then(|name| mat.column_index(name));
                             mat.ui(
-                                &mut cols[1], &mut self.incidence_canvas,
-                                &mut intent.canvas_capture, self.highlighted_eq_row, tracked_col,
+                                &mut cols[1], &mut self.viewport.incidence,
+                                &mut intent.canvas_capture, self.viewport.highlighted_eq_row, tracked_col,
                             );
                         } else {
                             cols[1].weak("(no after incidence data)");
@@ -4264,20 +4309,20 @@ impl App {
                         ui.weak(mat.caption());
                         let tracked_col = self.tracked_identifier.as_deref()
                             .and_then(|name| mat.column_index(name));
-                        mat.ui(ui, &mut self.incidence_canvas, &mut intent.canvas_capture, self.highlighted_eq_row, tracked_col);
+                        mat.ui(ui, &mut self.viewport.incidence, &mut intent.canvas_capture, self.viewport.highlighted_eq_row, tracked_col);
                     } else {
                         ui.weak("(no incidence data in this report)");
                     }
                 }
-            } else if report_ready && self.structural_view == StructuralView::MatchingAnim {
+            } else if report_ready && self.viewport.structural == StructuralView::MatchingAnim {
                 self.matching_anim_ui(ui, ir_split);
-            } else if report_ready && self.structural_view == StructuralView::TarjanAnim {
+            } else if report_ready && self.viewport.structural == StructuralView::TarjanAnim {
                 self.tarjan_anim_ui(ui, ir_split);
-            } else if report_ready && self.structural_view == StructuralView::TearingAnim {
+            } else if report_ready && self.viewport.structural == StructuralView::TearingAnim {
                 self.tearing_anim_ui(ui);
-            } else if report_ready && self.structural_view == StructuralView::AliasAnim {
+            } else if report_ready && self.viewport.structural == StructuralView::AliasAnim {
                 self.alias_anim_ui(ui);
-            } else if report_ready && self.structural_view == StructuralView::Summary {
+            } else if report_ready && self.viewport.structural == StructuralView::Summary {
                 if self.stage == StageKind::Structural {
                     Self::structural_singular_summary(ui, &self.stages.structural);
                 } else {
@@ -4290,17 +4335,17 @@ impl App {
                         ui.weak("(no reduction data in this report)");
                     }
                 }
-            } else if self.structural_view == StructuralView::Animate {
+            } else if self.viewport.structural == StructuralView::Animate {
                 self.reduction_anim_ui(ui);
-            } else if events_ready && self.events_view == EventsView::PreLowering {
+            } else if events_ready && self.viewport.events == EventsView::PreLowering {
                 self.pre_lowering_anim_ui(ui);
-            } else if init_ready && self.init_view == InitView::IcPlan {
+            } else if init_ready && self.viewport.init == InitView::IcPlan {
                 self.ic_plan_anim_ui(ui);
-            } else if flatten_ready && self.flatten_view == FlattenView::Equations {
+            } else if flatten_ready && self.viewport.flatten == FlattenView::Equations {
                 self.equation_sheet_ui(ui);
-            } else if flatten_ready && self.flatten_view == FlattenView::SourceMap {
+            } else if flatten_ready && self.viewport.flatten == FlattenView::SourceMap {
                 self.source_map_ui(ui);
-            } else if flatten_ready && self.flatten_view == FlattenView::Connections {
+            } else if flatten_ready && self.viewport.flatten == FlattenView::Connections {
                 self.connection_anim_ui(ui);
             } else {
                 // Set when a `hrw://…/node/<path>` link names a path this stage does not
@@ -4487,11 +4532,11 @@ impl App {
     fn apply_sub_view(&mut self, sub: Option<SubView>) {
         match (sub, self.stage) {
             (Some(SubView::Structural(v)), StageKind::Structural | StageKind::IndexReduction) => {
-                self.structural_view = v;
+                self.viewport.structural = v;
             }
-            (Some(SubView::Flatten(v)), StageKind::Flatten) => self.flatten_view = v,
-            (Some(SubView::Events(v)), StageKind::Events) => self.events_view = v,
-            (Some(SubView::Init(v)), StageKind::Initialization) => self.init_view = v,
+            (Some(SubView::Flatten(v)), StageKind::Flatten) => self.viewport.flatten = v,
+            (Some(SubView::Events(v)), StageKind::Events) => self.viewport.events = v,
+            (Some(SubView::Init(v)), StageKind::Initialization) => self.viewport.init = v,
             _ => {}
         }
     }
@@ -5467,8 +5512,8 @@ egui::Panel::top("bar").show(ui, |ui| {
             return;
         }
 
-        let highlighted_line = self.highlighted_source_line;
-        let highlighted_eq = self.highlighted_eq_row;
+        let highlighted_line = self.viewport.highlighted_source_line;
+        let highlighted_eq = self.viewport.highlighted_eq_row;
         let tracked = self.tracked_identifier.as_deref();
         let tracked_line = self.tracked_identifier.as_deref()
             .and_then(|name| self.identifier_index.as_ref()
@@ -5687,18 +5732,18 @@ egui::Panel::top("bar").show(ui, |ui| {
         ui.allocate_rect(full_rect, egui::Sense::hover());
 
         if let Some(new_val) = clicked_line {
-            self.highlighted_source_line = new_val;
-            self.highlighted_eq_row = None;
+            self.viewport.highlighted_source_line = new_val;
+            self.viewport.highlighted_eq_row = None;
         }
         if let Some(new_val) = clicked_eq {
-            self.highlighted_eq_row = new_val;
+            self.viewport.highlighted_eq_row = new_val;
             if let Some(eq_idx) = new_val {
                 let sheet = self.cached_equation_sheet.as_ref().unwrap();
                 let line = sheet.groups.iter()
                     .flat_map(|(_, eqs)| eqs)
                     .find(|eq| eq.index == eq_idx)
                     .and_then(|eq| eq.source_lines.first().copied());
-                self.highlighted_source_line = line;
+                self.viewport.highlighted_source_line = line;
             }
         }
     }
@@ -7123,14 +7168,7 @@ impl App {
             show_help: false,
             show_about: false,
             field_help: HashMap::new(),
-            flatten_view: FlattenView::Equations,
-            events_view: EventsView::default(),
-            init_view: InitView::default(),
-            highlighted_eq_row: None,
-            highlighted_source_line: None,
-            structural_view: StructuralView::SpyPlot,
-            spy_canvas: Canvas::default().with_fit_vertical_bias(0.15),
-            incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
+            viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
 
@@ -7144,15 +7182,12 @@ impl App {
             cached_equation_sheet: None,
             identifier_index: None,
             tracked_identifier: None,
-            matching_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
-            tarjan_anim_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             index_reduction_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
             cached_dae: None,
-            before_incidence_canvas: Canvas::default().with_fit_vertical_bias(0.15),
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
             source_scroll_target: None,
@@ -9089,7 +9124,7 @@ mod tests {
             let mut app = App::test_default();
             app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
             // A sub-view the reset would clobber, so the test cannot pass by accident.
-            app.structural_view = StructuralView::SpyPlot;
+            app.viewport.structural = StructuralView::SpyPlot;
             app.dispatch_hrw_link(link);
 
             assert_eq!(app.stage, StageKind::IndexReduction, "{label}: stage switched");
@@ -9100,7 +9135,7 @@ mod tests {
                  overwrite it",
             );
             assert_eq!(
-                app.structural_view,
+                app.viewport.structural,
                 StructuralView::SpyPlot,
                 "{label}: and must NOT be applied during dispatch",
             );
@@ -9815,8 +9850,8 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         app.identifier_index = Some(crate::identifier_index::IdentifierIndex::default());
         app.tracked_identifier = Some("h".into());
         app.cached_source = Some("old source".into());
-        app.highlighted_eq_row = Some(0);
-        app.highlighted_source_line = Some(0);
+        app.viewport.highlighted_eq_row = Some(0);
+        app.viewport.highlighted_source_line = Some(0);
         app.nav.push(NavEntry {
             name: "x".into(),
             value: serde_json::Value::Null,
@@ -9839,8 +9874,8 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         assert!(app.identifier_index.is_none(), "identifier_index should be cleared");
         assert!(app.tracked_identifier.is_none(), "tracked_identifier should be cleared");
         assert!(app.cached_source.is_none(), "cached_source should be cleared");
-        assert!(app.highlighted_eq_row.is_none(), "highlighted_eq_row should be cleared");
-        assert!(app.highlighted_source_line.is_none(), "highlighted_source_line should be cleared");
+        assert!(app.viewport.highlighted_eq_row.is_none(), "highlighted_eq_row should be cleared");
+        assert!(app.viewport.highlighted_source_line.is_none(), "highlighted_source_line should be cleared");
         assert!(app.nav.is_empty(), "nav should be cleared");
         assert!(app.nav_loading.is_none(), "nav_loading should be cleared");
         assert!(app.nav_error.is_none(), "nav_error should be cleared");

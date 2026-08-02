@@ -86,8 +86,8 @@ nothing checking it rots like any other.
 | After | Target | From |
 |---|---|---|
 | Step 2 (caches) | ~~≤ 86~~ **94, landed** | 12 stage-view fields → 1 |
-| Step 3 (left panel) | **≤ 76**; **85 after the state move**, function extraction pending | specimen list, filter, corpus, scratch polling |
-| Step 4 (central panel) | **≤ 60** | per-stage view state moves to its view |
+| Step 3 (left panel) | **85, landed** | specimen list, filter, corpus, scratch polling |
+| Step 4 (central panel) | ≤ 60; **75 landed** via `Viewport` | per-stage view state moves to its view |
 | Eventually | **~30** | with the 4-field core documented as irreducible |
 
 Steps beyond today continue the same ratchet; there is no separate "field problem" phase.
