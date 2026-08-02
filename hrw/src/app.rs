@@ -468,6 +468,432 @@ struct ModelListState {
     polled_at: Option<std::time::Instant>,
 }
 
+/// What the model list wants the app to do next.
+///
+/// The pane renders a list; **loading a specimen resets stages, the log, the
+/// context bar and the source view**, none of which it owns. Reporting the intent
+/// instead of acting keeps the list a list, and is what lets it be rendered in a
+/// test without constructing an `App`.
+#[derive(Default)]
+struct ModelListOutcome {
+    nav: Option<ModelListNav>,
+    /// The whole specimen was pointed at, from the row's context menu. A separate
+    /// field rather than a `ModelListNav` variant because it can accompany a
+    /// navigation in the same frame, exactly as it could before the split.
+    point_at_specimen: bool,
+}
+
+enum ModelListNav {
+    /// A corpus row: open by qualified name.
+    OpenLibrary(String),
+    /// "Recompile" from the context menu — always reloads.
+    Reload(std::path::PathBuf),
+    /// A row was clicked. May already be selected; only the caller knows.
+    Select(std::path::PathBuf),
+}
+
+impl ModelListState {
+    /// Re-read the specimen directory, rebuilding the file list and scanning
+    /// each `.mo` file for its `// purpose:` comment. Called at startup and
+    /// when the user changes the directory in Settings.
+    /// The left panel's **model list**: curated specimens, scratch specimens, and
+    /// the MSL corpus, behind one filter.
+    ///
+    /// Lifted out of `frame_ui` on 2026-08-02. It was ~270 lines inline, in the
+    /// region edited three times on 2026-08-01 alone -- and two of those edits
+    /// shipped defects Doug caught, the corpus hidden without a filter and then a
+    /// startup test that passed vacuously.
+    ///
+    /// **The signature is still `&mut self`, and that is not the finished shape.**
+    /// The state it owns already lives in [`ModelListState`]; narrowing this to
+    /// take that rather than all of `App` is the next step, and it is what makes
+    /// the pane renderable in a test without constructing an `App`. Splitting the
+    /// move from the narrowing keeps each one verifiable against the baseline
+    /// suite instead of landing 270 moved lines and a changed signature together.
+    fn ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        sel: Option<&Path>,
+        compiling: bool,
+        has_model: bool,
+    ) -> ModelListOutcome {
+        let mut outcome = ModelListOutcome::default();
+                    section_header(ui, "Models");
+                    ui.add_space(4.0);
+                    // The filter is a PREREQUISITE, not an enhancement:
+                    // 18 curated files need none, 2,644 rows do.
+                    ui.horizontal(|ui| {
+                        ui.label("\u{1f50d}");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.filter)
+                                .hint_text("filter by name or outcome")
+                                .desired_width(f32::INFINITY),
+                        );
+                    });
+                    ui.add_space(4.0);
+
+                    // **Report, but do not return** — this guard predates the
+                    // corpus and used to guard too much. An empty or unscanned
+                    // `specimens/` would take the 2,626 MSL models down with it,
+                    // leaving the whole corpus unreachable because a *different*
+                    // source was empty. Found 2026-08-01 by the headless test,
+                    // which runs with no specimens scanned.
+                    if let Some(err) = &self.scan_error {
+                        ui.colored_label(ui.visuals().error_fg_color, err);
+                    } else if self.files.is_empty() {
+                        ui.weak("(no .mo specimens found)");
+                    }
+
+                    self.poll_scratch_specimens();
+                    // A scratch name that collides with a curated one is skipped,
+                    // and said so out loud — silently loading a different model
+                    // than the one named is the failure this guards against.
+                    if !self.shadowed.is_empty() {
+                        ui.colored_label(
+                            crate::colors::ANIM_FAIL,
+                            format!(
+                                "\u{26a0} ignored scratch specimen(s) shadowing curated names: {}",
+                                self.shadowed.join(", "),
+                            ),
+                        );
+                    }
+                    egui::ScrollArea::vertical()
+                        .id_salt("specimen_list")
+                        .show(ui, |ui| {
+                        let mut to_open = None;
+                        let mut recompile = None;
+                        let mut capture_specimen = false;
+                        // ---- HRW specimens: curated `specimens/` + scratch ----
+                        //
+                        // **Collapsed at startup, with MSL expanded** (Doug,
+                        // 2026-08-01) -- the reverse of the first arrangement.
+                        // The corpus is now the surface most sessions browse, and
+                        // 18 curated files are the ones already known by name.
+                        //
+                        // Counted before the header is drawn, because the header
+                        // has to say how many are inside it while it is shut. A
+                        // collapsed section with no count is a section a reader has
+                        // to open to learn whether opening it was worth it.
+                        let hrw_filter = self.filter.trim().to_lowercase();
+                        let hrw_hits = self
+                            .files
+                            .iter()
+                            .filter(|p| {
+                                hrw_filter.is_empty()
+                                    || p.file_name()
+                                        .and_then(|n| n.to_str())
+                                        .is_some_and(|n| n.to_lowercase().contains(&hrw_filter))
+                            })
+                            .count();
+                        let hrw_header = if hrw_filter.is_empty() {
+                            format!("HRW specimens \u{2014} {}", self.files.len())
+                        } else {
+                            format!(
+                                "HRW specimens \u{2014} {hrw_hits} of {}",
+                                self.files.len(),
+                            )
+                        };
+                        // **Forced open when a scratch specimen just arrived.**
+                        // Claude writes those mid-conversation to answer the
+                        // question being asked, and HRW lists them within a second
+                        // without a restart. Left shut, the one file written *for
+                        // the current question* would be the one file not on
+                        // screen. Same rule as the filter: open when there is a
+                        // reason to look.
+                        let hrw_open = if !hrw_filter.is_empty() || self.scratch_arrived {
+                            Some(true)
+                        } else {
+                            None
+                        };
+                        egui::CollapsingHeader::new(hrw_header)
+                            .id_salt("hrw_specimen_list")
+                            .default_open(false)
+                            .open(hrw_open)
+                            .show(ui, |ui| {
+                        if hrw_hits == 0 {
+                            ui.weak("no match");
+                        }
+                        for path in &self.files {
+                            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
+                            // One box narrows every source: a curated specimen
+                            // and a corpus model are found the same way.
+                            if !self.filter.trim().is_empty()
+                                && !name.to_lowercase()
+                                    .contains(&self.filter.trim().to_lowercase())
+                            {
+                                continue;
+                            }
+                            let selected = sel == Some(path.as_path());
+                            let can_capture = selected && !compiling && has_model;
+                            let can_recompile = selected && !compiling;
+                            let purpose = self.purposes.get(path);
+                            // Scratch specimens are marked: "a probe Claude wrote for
+                            // one question" and "part of the curated corpus" carry very
+                            // different weight, and the list is where that shows.
+                            let is_scratch = self.scratch.contains(path);
+                            let label = if is_scratch {
+                                egui::RichText::new(format!("\u{270e} {name}"))
+                                    .color(crate::colors::ANIM_EXPLORE)
+                            } else {
+                                egui::RichText::new(name)
+                            };
+                            let mut resp = ui.selectable_label(selected, label);
+                            if is_scratch {
+                                resp = resp.on_hover_text(purpose.map(String::as_str).unwrap_or(
+                                    "Scratch specimen \u{2014} written by Claude to answer a \
+                                     question. Ephemeral: it lives in the gitignored bridge \
+                                     directory and is not part of the curated corpus.",
+                                ));
+                            } else if let Some(hint) = purpose {
+                                resp = resp.on_hover_text(hint);
+                            }
+                            resp.context_menu(|ui| {
+                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                let btn = ui.add_enabled(can_recompile, egui::Button::new("🔄 Recompile"));
+                                let btn = if can_recompile {
+                                    btn.on_hover_text(
+                                        "Re-run the compiler on this specimen (e.g. to hit an armed breakpoint).",
+                                    )
+                                } else {
+                                    btn.on_disabled_hover_text(
+                                        "Left-click to load this specimen first.",
+                                    )
+                                };
+                                if btn.clicked() {
+                                    recompile = Some(path.clone());
+                                    ui.close();
+                                }
+                                ui.separator();
+                                let btn = ui.add_enabled(can_capture, egui::Button::new("🎯 Point at"));
+                                let btn = if can_capture {
+                                    btn.on_hover_text(
+                                        "Make the whole specimen the subject of your next question, then ask in the chat.",
+                                    )
+                                } else {
+                                    btn.on_disabled_hover_text(
+                                        "Left-click to load & compile this specimen first, then point at it.",
+                                    )
+                                };
+                                if btn.clicked() {
+                                    capture_specimen = true;
+                                    ui.close();
+                                }
+                            });
+                            if resp.clicked() {
+                                to_open = Some(path.clone());
+                            }
+                        }
+                            });
+                        // ---- The corpus: the 2,626 MSL models ----
+                        //
+                        // **Expanded at startup** (Doug, 2026-08-01). The comment
+                        // that stood here said the section was "shown only while
+                        // filtering" -- true of the first version, false of the
+                        // code beneath it since the same day, and left behind. A
+                        // comment that describes a design the code abandoned is
+                        // worse than none: it is read as intent.
+                        let filter = self.filter.trim().to_owned();
+                        let mut open_model: Option<String> = None;
+                        {
+                            let rows = self.corpus_rows();
+                            let total = rows.len();
+                            let hits: Vec<(String, String)> = rows
+                                .iter()
+                                .filter(|r| crate::survey::matches_filter(r, &filter))
+                                .map(|r| (r.name.clone(), r.outcome.clone()))
+                                .collect();
+                            if total > 0 {
+                                ui.add_space(6.0);
+                                ui.separator();
+                                // **Always visible, collapsed by default.**
+                                //
+                                // The first version rendered this section only
+                                // while filtering, so an unfiltered list showed no
+                                // sign the corpus existed at all — Doug started HRW
+                                // and reported the MSL examples "not showing", which
+                                // was exactly right from where he sat. **An absence
+                                // you cannot see is indistinguishable from a feature
+                                // that was never built**, and the headless test had
+                                // asserted the hidden behaviour, so it encoded the
+                                // defect as a requirement.
+                                //
+                                // **Open at startup, with HRW specimens shut.**
+                                // The earlier worry -- 2,626 rows burying 18
+                                // curated files -- is answered by giving the 18
+                                // their own header rather than by hiding the 2,626.
+                                // Only `MAX_LISTED` rows render, so an open corpus
+                                // costs a bounded amount of screen either way.
+                                let header = if filter.is_empty() {
+                                    format!("MSL corpus \u{2014} {total} models")
+                                } else {
+                                    format!("MSL corpus \u{2014} {} of {total}", hits.len())
+                                };
+                                egui::CollapsingHeader::new(header)
+                                    .id_salt("corpus_list")
+                                    .default_open(true)
+                                    .open(if filter.is_empty() { None } else { Some(true) })
+                                    .show(ui, |ui| {
+                                        if hits.is_empty() {
+                                            ui.weak("no match");
+                                        }
+                                for (name, outcome) in hits.iter().take(crate::survey::MAX_LISTED)
+                                {
+                                    // The corpus row's identity is the qualified
+                                    // name, which `selected` holds verbatim for a
+                                    // library model.
+                                    let is_sel = sel
+                                        .map(|p| p.as_os_str() == name.as_str())
+                                        .unwrap_or(false);
+                                    // The leaf name reads; the qualified name is
+                                    // 60 characters and would wrap every row.
+                                    let leaf = name.rsplit('.').next().unwrap_or(name);
+                                    let label = egui::RichText::new(format!("\u{1f4e6} {leaf}"))
+                                        .color(crate::colors::INCIDENCE_CELL);
+                                    let resp = ui
+                                        .selectable_label(is_sel, label)
+                                        .on_hover_text(format!("{name}\n\noutcome: {outcome}"));
+                                    if resp.clicked() {
+                                        open_model = Some(name.clone());
+                                    }
+                                }
+                                // **No silent caps.** A truncated list that does not
+                                // say so reads as "that is all there is".
+                                if hits.len() > crate::survey::MAX_LISTED {
+                                    ui.weak(format!(
+                                        "\u{2026} and {} more \u{2014} narrow the filter",
+                                        hits.len() - crate::survey::MAX_LISTED,
+                                    ));
+                                }
+                                    });
+                            }
+                        }
+                            // **Reported, not applied.** Loading a specimen
+                        // resets stages, the log and the context bar, none of
+                        // which this pane owns. Returning the intent keeps the
+                        // list a *list*.
+                        if let Some(name) = open_model {
+                            outcome.nav = Some(ModelListNav::OpenLibrary(name));
+                        } else if let Some(path) = recompile {
+                            outcome.nav = Some(ModelListNav::Reload(path));
+                        } else if let Some(path) = to_open {
+                            outcome.nav = Some(ModelListNav::Select(path));
+                        }
+                        // A separate `if`, exactly as before: "point at" comes
+                        // from the context menu and can accompany a click.
+                        if capture_specimen {
+                            outcome.point_at_specimen = true;
+                        }
+                    });
+        outcome
+    }
+
+    fn rescan(&mut self) {
+        self.files.clear();
+        self.scratch.clear();
+        self.shadowed.clear();
+        self.scan_error = None;
+        match std::fs::read_dir(&self.dir) {
+            Ok(entries) => {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().and_then(|e| e.to_str()) == Some("mo") {
+                        self.files.push(path);
+                    }
+                }
+                self.files.sort();
+            }
+            Err(e) => self.scan_error = Some(format!("{}: {e}", self.dir)),
+        }
+
+        // Scratch specimens Claude wrote to answer a question (ideas #42). Appended
+        // after the curated corpus and **never allowed to shadow it**: a name
+        // collision would silently load a different model than the one Doug named,
+        // and Claude would then reason confidently about source Doug is not looking
+        // at. That is the "makes Claude guess" failure, so the collision is reported
+        // and the scratch file is skipped rather than winning or losing quietly.
+        let curated: HashSet<String> = self
+            .files
+            .iter()
+            .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_owned))
+            .collect();
+        let mut scratch = Vec::new();
+        for path in bridge::scratch_specimens() {
+            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                continue;
+            };
+            if curated.contains(name) {
+                self.shadowed.push(name.to_owned());
+                continue;
+            }
+            self.scratch.insert(path.clone());
+            scratch.push(path);
+        }
+        // **Scratch first, matching the tour list** (Doug, 2026-07-29). The ephemeral,
+        // just-written thing is the one most likely to be wanted next — a probe exists
+        // because a question is open right now. Appending it after 18 curated specimens
+        // buried the common case, which is the same mistake the tour picker avoids by
+        // putting Claude's answer at the top.
+        //
+        // Safe to reorder because a scratch name colliding with a curated one is
+        // skipped above, so `files` never holds two entries with the same file name and
+        // `find_specimen`'s first-match cannot become ambiguous.
+        scratch.extend(std::mem::take(&mut self.files));
+        self.files = scratch;
+        // Scan each specimen's `// purpose:` hint (cheap; no compile), so the list
+        // can show what each one demonstrates.
+        self.purposes = self
+            .files
+            .iter()
+            .filter_map(|p| read_purpose(p).map(|hint| (p.clone(), hint)))
+            .collect();
+    }
+
+    /// Re-scan when the set of scratch specimens changes.
+    ///
+    /// Cheaper than it looks: a `read_dir` of a directory that is usually empty, at
+    /// most once per [`SCRATCH_POLL_INTERVAL`]. A full `rescan()` only runs when the
+    /// *set of paths* actually differs, so the per-file `// purpose:` reads are not
+    /// repeated for an unchanged directory.
+    fn poll_scratch_specimens(&mut self) {
+        let due = self
+            .polled_at
+            .is_none_or(|last| last.elapsed() >= SCRATCH_POLL_INTERVAL);
+        if !due {
+            return;
+        }
+        self.polled_at = Some(std::time::Instant::now());
+
+        let found: HashSet<PathBuf> = bridge::scratch_specimens().into_iter().collect();
+        // Compare against what was *accepted* plus what was shadowed, so a scratch
+        // file appearing under a curated name still triggers a rescan and gets
+        // reported rather than being invisible until the next restart.
+        let known = self.scratch.len() + self.shadowed.len();
+        if found.len() != known || !found.iter().all(|p| self.scratch.contains(p)) {
+            // Only an *arrival* opens the section. A scratch specimen being
+            // deleted is not a reason to show the reader anything.
+            if found.len() > known {
+                self.scratch_arrived = true;
+            }
+            self.rescan();
+        }
+    }
+
+    /// The corpus rows, read from the survey on first use.
+    ///
+    /// Returns an empty slice when the survey has not been generated — a fresh
+    /// clone has no `docs/reports/msl-survey.csv` until someone runs the survey,
+    /// and the list should degrade to curated specimens rather than error.
+    fn corpus_rows(&mut self) -> &[crate::survey::SurveyRow] {
+        self.corpus.get_or_insert_with(|| {
+            let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
+            std::fs::read_to_string(path)
+                .map(|t| crate::survey::parse_csv(&t))
+                .unwrap_or_default()
+        })
+    }
+
+}
+
 impl Default for ModelListState {
     fn default() -> Self {
         Self {
@@ -1199,7 +1625,7 @@ impl App {
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
         // (Resolve needs the MSL classes to resolve `import` references).
-        app.rescan();
+        app.model_list.rescan();
         app.load_libraries();
         app
     }
@@ -1222,72 +1648,6 @@ impl App {
         self.libraries_busy = true;
         self.library_status = format!("loading {} source root(s)…", roots.len());
         self.worker.send(ToWorker::SetLibraries(roots));
-    }
-
-    /// Re-read the specimen directory, rebuilding the file list and scanning
-    /// each `.mo` file for its `// purpose:` comment. Called at startup and
-    /// when the user changes the directory in Settings.
-    fn rescan(&mut self) {
-        self.model_list.files.clear();
-        self.model_list.scratch.clear();
-        self.model_list.shadowed.clear();
-        self.model_list.scan_error = None;
-        match std::fs::read_dir(&self.model_list.dir) {
-            Ok(entries) => {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.extension().and_then(|e| e.to_str()) == Some("mo") {
-                        self.model_list.files.push(path);
-                    }
-                }
-                self.model_list.files.sort();
-            }
-            Err(e) => self.model_list.scan_error = Some(format!("{}: {e}", self.model_list.dir)),
-        }
-
-        // Scratch specimens Claude wrote to answer a question (ideas #42). Appended
-        // after the curated corpus and **never allowed to shadow it**: a name
-        // collision would silently load a different model than the one Doug named,
-        // and Claude would then reason confidently about source Doug is not looking
-        // at. That is the "makes Claude guess" failure, so the collision is reported
-        // and the scratch file is skipped rather than winning or losing quietly.
-        let curated: HashSet<String> = self
-            .model_list
-            .files
-            .iter()
-            .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_owned))
-            .collect();
-        let mut scratch = Vec::new();
-        for path in bridge::scratch_specimens() {
-            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-                continue;
-            };
-            if curated.contains(name) {
-                self.model_list.shadowed.push(name.to_owned());
-                continue;
-            }
-            self.model_list.scratch.insert(path.clone());
-            scratch.push(path);
-        }
-        // **Scratch first, matching the tour list** (Doug, 2026-07-29). The ephemeral,
-        // just-written thing is the one most likely to be wanted next — a probe exists
-        // because a question is open right now. Appending it after 18 curated specimens
-        // buried the common case, which is the same mistake the tour picker avoids by
-        // putting Claude's answer at the top.
-        //
-        // Safe to reorder because a scratch name colliding with a curated one is
-        // skipped above, so `files` never holds two entries with the same file name and
-        // `find_specimen`'s first-match cannot become ambiguous.
-        scratch.extend(std::mem::take(&mut self.model_list.files));
-        self.model_list.files = scratch;
-        // Scan each specimen's `// purpose:` hint (cheap; no compile), so the list
-        // can show what each one demonstrates.
-        self.model_list.purposes = self
-            .model_list
-            .files
-            .iter()
-            .filter_map(|p| read_purpose(p).map(|hint| (p.clone(), hint)))
-            .collect();
     }
 
     /// Find a specimen by model name (e.g. "BouncingBall" → `specimens/BouncingBall.mo`).
@@ -1378,20 +1738,6 @@ impl App {
         self.worker.send(ToWorker::CompileLibraryModel(qualified.to_owned()));
         self.selected = Some(id);
         self.selected_is_library = true;
-    }
-
-    /// The corpus rows, read from the survey on first use.
-    ///
-    /// Returns an empty slice when the survey has not been generated — a fresh
-    /// clone has no `docs/reports/msl-survey.csv` until someone runs the survey,
-    /// and the list should degrade to curated specimens rather than error.
-    fn corpus_rows(&mut self) -> &[crate::survey::SurveyRow] {
-        self.model_list.corpus.get_or_insert_with(|| {
-            let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
-            std::fs::read_to_string(path)
-                .map(|t| crate::survey::parse_csv(&t))
-                .unwrap_or_default()
-        })
     }
 
     /// Clear everything that belonged to the previously loaded specimen.
@@ -2733,7 +3079,7 @@ impl App {
             self.load_libraries();
         }
         if rescan_specimens {
-            self.rescan();
+            self.model_list.rescan();
         }
     }
 
@@ -4239,37 +4585,6 @@ impl App {
         self.cached_tour = None;
     }
 
-    /// Re-scan when the set of scratch specimens changes.
-    ///
-    /// Cheaper than it looks: a `read_dir` of a directory that is usually empty, at
-    /// most once per [`SCRATCH_POLL_INTERVAL`]. A full `rescan()` only runs when the
-    /// *set of paths* actually differs, so the per-file `// purpose:` reads are not
-    /// repeated for an unchanged directory.
-    fn poll_scratch_specimens(&mut self) {
-        let due = self
-            .model_list
-            .polled_at
-            .is_none_or(|last| last.elapsed() >= SCRATCH_POLL_INTERVAL);
-        if !due {
-            return;
-        }
-        self.model_list.polled_at = Some(std::time::Instant::now());
-
-        let found: HashSet<PathBuf> = bridge::scratch_specimens().into_iter().collect();
-        // Compare against what was *accepted* plus what was shadowed, so a scratch
-        // file appearing under a curated name still triggers a rescan and gets
-        // reported rather than being invisible until the next restart.
-        let known = self.model_list.scratch.len() + self.model_list.shadowed.len();
-        if found.len() != known || !found.iter().all(|p| self.model_list.scratch.contains(p)) {
-            // Only an *arrival* opens the section. A scratch specimen being
-            // deleted is not a reason to show the reader anything.
-            if found.len() > known {
-                self.model_list.scratch_arrived = true;
-            }
-            self.rescan();
-        }
-    }
-
     /// What tour mode shows when Claude has not written a tour.
     ///
     /// Deliberately **not** `end_to_end_tour.md`, which used to be compiled in
@@ -4306,7 +4621,7 @@ egui::Panel::top("bar").show(ui, |ui| {
     egui::MenuBar::new().ui(ui, |ui| {
         ui.menu_button("File", |ui| {
             if ui.button("Rescan specimens").clicked() {
-                self.rescan();
+                self.model_list.rescan();
                 ui.close();
             }
             ui.separator();
@@ -4367,287 +4682,6 @@ egui::Panel::top("bar").show(ui, |ui| {
         });
     });
 });
-    }
-
-    /// The left panel's **model list**: curated specimens, scratch specimens, and
-    /// the MSL corpus, behind one filter.
-    ///
-    /// Lifted out of `frame_ui` on 2026-08-02. It was ~270 lines inline, in the
-    /// region edited three times on 2026-08-01 alone -- and two of those edits
-    /// shipped defects Doug caught, the corpus hidden without a filter and then a
-    /// startup test that passed vacuously.
-    ///
-    /// **The signature is still `&mut self`, and that is not the finished shape.**
-    /// The state it owns already lives in [`ModelListState`]; narrowing this to
-    /// take that rather than all of `App` is the next step, and it is what makes
-    /// the pane renderable in a test without constructing an `App`. Splitting the
-    /// move from the narrowing keeps each one verifiable against the baseline
-    /// suite instead of landing 270 moved lines and a changed signature together.
-    fn model_list_ui(&mut self, ui: &mut egui::Ui) {
-                    section_header(ui, "Models");
-                    ui.add_space(4.0);
-                    // The filter is a PREREQUISITE, not an enhancement:
-                    // 18 curated files need none, 2,644 rows do.
-                    ui.horizontal(|ui| {
-                        ui.label("\u{1f50d}");
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.model_list.filter)
-                                .hint_text("filter by name or outcome")
-                                .desired_width(f32::INFINITY),
-                        );
-                    });
-                    ui.add_space(4.0);
-
-                    // **Report, but do not return** — this guard predates the
-                    // corpus and used to guard too much. An empty or unscanned
-                    // `specimens/` would take the 2,626 MSL models down with it,
-                    // leaving the whole corpus unreachable because a *different*
-                    // source was empty. Found 2026-08-01 by the headless test,
-                    // which runs with no specimens scanned.
-                    if let Some(err) = &self.model_list.scan_error {
-                        ui.colored_label(ui.visuals().error_fg_color, err);
-                    } else if self.model_list.files.is_empty() {
-                        ui.weak("(no .mo specimens found)");
-                    }
-
-                    self.poll_scratch_specimens();
-                    // A scratch name that collides with a curated one is skipped,
-                    // and said so out loud — silently loading a different model
-                    // than the one named is the failure this guards against.
-                    if !self.model_list.shadowed.is_empty() {
-                        ui.colored_label(
-                            crate::colors::ANIM_FAIL,
-                            format!(
-                                "\u{26a0} ignored scratch specimen(s) shadowing curated names: {}",
-                                self.model_list.shadowed.join(", "),
-                            ),
-                        );
-                    }
-                    egui::ScrollArea::vertical()
-                        .id_salt("specimen_list")
-                        .show(ui, |ui| {
-                        let mut to_open = None;
-                        let mut recompile = None;
-                        let mut capture_specimen = false;
-                        // ---- HRW specimens: curated `specimens/` + scratch ----
-                        //
-                        // **Collapsed at startup, with MSL expanded** (Doug,
-                        // 2026-08-01) -- the reverse of the first arrangement.
-                        // The corpus is now the surface most sessions browse, and
-                        // 18 curated files are the ones already known by name.
-                        //
-                        // Counted before the header is drawn, because the header
-                        // has to say how many are inside it while it is shut. A
-                        // collapsed section with no count is a section a reader has
-                        // to open to learn whether opening it was worth it.
-                        let hrw_filter = self.model_list.filter.trim().to_lowercase();
-                        let hrw_hits = self
-                            .model_list
-                            .files
-                            .iter()
-                            .filter(|p| {
-                                hrw_filter.is_empty()
-                                    || p.file_name()
-                                        .and_then(|n| n.to_str())
-                                        .is_some_and(|n| n.to_lowercase().contains(&hrw_filter))
-                            })
-                            .count();
-                        let hrw_header = if hrw_filter.is_empty() {
-                            format!("HRW specimens \u{2014} {}", self.model_list.files.len())
-                        } else {
-                            format!(
-                                "HRW specimens \u{2014} {hrw_hits} of {}",
-                                self.model_list.files.len(),
-                            )
-                        };
-                        // **Forced open when a scratch specimen just arrived.**
-                        // Claude writes those mid-conversation to answer the
-                        // question being asked, and HRW lists them within a second
-                        // without a restart. Left shut, the one file written *for
-                        // the current question* would be the one file not on
-                        // screen. Same rule as the filter: open when there is a
-                        // reason to look.
-                        let hrw_open = if !hrw_filter.is_empty() || self.model_list.scratch_arrived {
-                            Some(true)
-                        } else {
-                            None
-                        };
-                        egui::CollapsingHeader::new(hrw_header)
-                            .id_salt("hrw_specimen_list")
-                            .default_open(false)
-                            .open(hrw_open)
-                            .show(ui, |ui| {
-                        if hrw_hits == 0 {
-                            ui.weak("no match");
-                        }
-                        for path in &self.model_list.files {
-                            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
-                            // One box narrows every source: a curated specimen
-                            // and a corpus model are found the same way.
-                            if !self.model_list.filter.trim().is_empty()
-                                && !name.to_lowercase()
-                                    .contains(&self.model_list.filter.trim().to_lowercase())
-                            {
-                                continue;
-                            }
-                            let selected = self.selected.as_deref() == Some(path.as_path());
-                            let can_capture = selected && !self.compiling && self.model.is_some();
-                            let can_recompile = selected && !self.compiling;
-                            let purpose = self.model_list.purposes.get(path);
-                            // Scratch specimens are marked: "a probe Claude wrote for
-                            // one question" and "part of the curated corpus" carry very
-                            // different weight, and the list is where that shows.
-                            let is_scratch = self.model_list.scratch.contains(path);
-                            let label = if is_scratch {
-                                egui::RichText::new(format!("\u{270e} {name}"))
-                                    .color(crate::colors::ANIM_EXPLORE)
-                            } else {
-                                egui::RichText::new(name)
-                            };
-                            let mut resp = ui.selectable_label(selected, label);
-                            if is_scratch {
-                                resp = resp.on_hover_text(purpose.map(String::as_str).unwrap_or(
-                                    "Scratch specimen \u{2014} written by Claude to answer a \
-                                     question. Ephemeral: it lives in the gitignored bridge \
-                                     directory and is not part of the curated corpus.",
-                                ));
-                            } else if let Some(hint) = purpose {
-                                resp = resp.on_hover_text(hint);
-                            }
-                            resp.context_menu(|ui| {
-                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                                let btn = ui.add_enabled(can_recompile, egui::Button::new("🔄 Recompile"));
-                                let btn = if can_recompile {
-                                    btn.on_hover_text(
-                                        "Re-run the compiler on this specimen (e.g. to hit an armed breakpoint).",
-                                    )
-                                } else {
-                                    btn.on_disabled_hover_text(
-                                        "Left-click to load this specimen first.",
-                                    )
-                                };
-                                if btn.clicked() {
-                                    recompile = Some(path.clone());
-                                    ui.close();
-                                }
-                                ui.separator();
-                                let btn = ui.add_enabled(can_capture, egui::Button::new("🎯 Point at"));
-                                let btn = if can_capture {
-                                    btn.on_hover_text(
-                                        "Make the whole specimen the subject of your next question, then ask in the chat.",
-                                    )
-                                } else {
-                                    btn.on_disabled_hover_text(
-                                        "Left-click to load & compile this specimen first, then point at it.",
-                                    )
-                                };
-                                if btn.clicked() {
-                                    capture_specimen = true;
-                                    ui.close();
-                                }
-                            });
-                            if resp.clicked() {
-                                to_open = Some(path.clone());
-                            }
-                        }
-                            });
-                        // ---- The corpus: the 2,626 MSL models ----
-                        //
-                        // **Expanded at startup** (Doug, 2026-08-01). The comment
-                        // that stood here said the section was "shown only while
-                        // filtering" -- true of the first version, false of the
-                        // code beneath it since the same day, and left behind. A
-                        // comment that describes a design the code abandoned is
-                        // worse than none: it is read as intent.
-                        let filter = self.model_list.filter.trim().to_owned();
-                        let mut open_model: Option<String> = None;
-                        {
-                            let rows = self.corpus_rows();
-                            let total = rows.len();
-                            let hits: Vec<(String, String)> = rows
-                                .iter()
-                                .filter(|r| crate::survey::matches_filter(r, &filter))
-                                .map(|r| (r.name.clone(), r.outcome.clone()))
-                                .collect();
-                            if total > 0 {
-                                ui.add_space(6.0);
-                                ui.separator();
-                                // **Always visible, collapsed by default.**
-                                //
-                                // The first version rendered this section only
-                                // while filtering, so an unfiltered list showed no
-                                // sign the corpus existed at all — Doug started HRW
-                                // and reported the MSL examples "not showing", which
-                                // was exactly right from where he sat. **An absence
-                                // you cannot see is indistinguishable from a feature
-                                // that was never built**, and the headless test had
-                                // asserted the hidden behaviour, so it encoded the
-                                // defect as a requirement.
-                                //
-                                // **Open at startup, with HRW specimens shut.**
-                                // The earlier worry -- 2,626 rows burying 18
-                                // curated files -- is answered by giving the 18
-                                // their own header rather than by hiding the 2,626.
-                                // Only `MAX_LISTED` rows render, so an open corpus
-                                // costs a bounded amount of screen either way.
-                                let header = if filter.is_empty() {
-                                    format!("MSL corpus \u{2014} {total} models")
-                                } else {
-                                    format!("MSL corpus \u{2014} {} of {total}", hits.len())
-                                };
-                                egui::CollapsingHeader::new(header)
-                                    .id_salt("corpus_list")
-                                    .default_open(true)
-                                    .open(if filter.is_empty() { None } else { Some(true) })
-                                    .show(ui, |ui| {
-                                        if hits.is_empty() {
-                                            ui.weak("no match");
-                                        }
-                                for (name, outcome) in hits.iter().take(crate::survey::MAX_LISTED)
-                                {
-                                    let is_sel = self
-                                        .selected
-                                        .as_ref()
-                                        .map(|p| p.as_os_str() == name.as_str())
-                                        .unwrap_or(false);
-                                    // The leaf name reads; the qualified name is
-                                    // 60 characters and would wrap every row.
-                                    let leaf = name.rsplit('.').next().unwrap_or(name);
-                                    let label = egui::RichText::new(format!("\u{1f4e6} {leaf}"))
-                                        .color(crate::colors::INCIDENCE_CELL);
-                                    let resp = ui
-                                        .selectable_label(is_sel, label)
-                                        .on_hover_text(format!("{name}\n\noutcome: {outcome}"));
-                                    if resp.clicked() {
-                                        open_model = Some(name.clone());
-                                    }
-                                }
-                                // **No silent caps.** A truncated list that does not
-                                // say so reads as "that is all there is".
-                                if hits.len() > crate::survey::MAX_LISTED {
-                                    ui.weak(format!(
-                                        "\u{2026} and {} more \u{2014} narrow the filter",
-                                        hits.len() - crate::survey::MAX_LISTED,
-                                    ));
-                                }
-                                    });
-                            }
-                        }
-                        if let Some(name) = open_model {
-                            self.open_library_model(&name);
-                        } else if let Some(path) = recompile {
-                            self.open(path);
-                        } else if let Some(path) = to_open {
-                            if self.selected.as_ref() == Some(&path) {
-                                self.viewing_log = false;
-                            } else {
-                                self.open(path);
-                            }
-                        }
-                        if capture_specimen {
-                            self.emit_focus(Focus::Specimen);
-                        }
-                    });
     }
 
     /// The specimen's Modelica source: syntax-highlighted, with clickable
@@ -6043,7 +6077,35 @@ impl App {
                 ui.allocate_ui_with_layout(
                     egui::vec2(ui.available_width(), list_height),
                     egui::Layout::top_down(egui::Align::Min),
-                    |ui| self.model_list_ui(ui),
+                    |ui| {
+                        let sel = self.selected.clone();
+                        let out = self.model_list.ui(
+                            ui,
+                            sel.as_deref(),
+                            self.compiling,
+                            self.model.is_some(),
+                        );
+                        match out.nav {
+                            Some(ModelListNav::OpenLibrary(name)) => {
+                                self.open_library_model(&name);
+                            }
+                            Some(ModelListNav::Reload(path)) => self.open(path),
+                            // **A click on the specimen already loaded reveals it
+                            // rather than recompiling.** The list cannot know
+                            // that; only the caller knows what is selected.
+                            Some(ModelListNav::Select(path)) => {
+                                if self.selected.as_ref() == Some(&path) {
+                                    self.viewing_log = false;
+                                } else {
+                                    self.open(path);
+                                }
+                            }
+                            None => {}
+                        }
+                        if out.point_at_specimen {
+                            self.emit_focus(Focus::Specimen);
+                        }
+                    },
                 );
 
                 ui.add_space(10.0);
@@ -7985,6 +8047,70 @@ mod tests {
         );
     }
 
+    /// The model list renders **without an `App`**, and reports a click instead
+    /// of acting on it.
+    ///
+    /// This is the payoff of the whole extraction, and the reason the signature
+    /// was narrowed rather than left as `&mut self`. A pane that takes `&mut App`
+    /// can be *called* in a test but not *isolated* in one: every assertion is
+    /// entangled with 85 other fields, and a failure never tells you which.
+    ///
+    /// **`ModelListState` is the entire input here.** No worker, no channels, no
+    /// compile — the harness drives one struct.
+    #[test]
+    fn the_model_list_renders_and_reports_without_an_app() {
+        use egui_kittest::Harness;
+        use egui_kittest::kittest::Queryable;
+
+        let state = ModelListState {
+            dir: String::new(),
+            files: vec![PathBuf::from("RcCircuit.mo"), PathBuf::from("MotorWithBrake.mo")],
+            // Park the scratch poll, or frame one rescans an empty `dir` and
+            // wipes the list — finding C9, the trap that made two UI tests pass
+            // while checking nothing.
+            polled_at: Some(std::time::Instant::now()),
+            filter: "rc".to_owned(),
+            ..ModelListState::default()
+        };
+
+        // The closure outlives this scope, so the observed navigation goes into a
+        // shared cell rather than a captured local.
+        let nav_seen = std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
+        let sink = std::rc::Rc::clone(&nav_seen);
+        let mut h = Harness::builder()
+            .with_size(egui::Vec2::new(1600.0, 1200.0))
+            .build_ui_state(
+                |ui, s: &mut ModelListState| {
+                    let out = s.ui(ui, None, false, false);
+                    if let Some(ModelListNav::Select(p)) = out.nav {
+                        *sink.borrow_mut() = Some(p.display().to_string());
+                    }
+                },
+                state,
+            );
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains("RcCircuit").is_some(),
+            "the filtered specimen must render with no `App` in sight",
+        );
+        assert!(
+            h.query_by_label_contains("MotorWithBrake").is_none(),
+            "and the filter must still exclude the other one — a pane that renders \
+             everything regardless would pass the assertion above too",
+        );
+
+        h.get_all_by_label_contains("RcCircuit").next().expect("the row").click();
+        h.run_steps(2);
+
+        assert_eq!(
+            nav_seen.borrow().as_deref(),
+            Some("RcCircuit.mo"),
+            "a click must be REPORTED as a navigation, not applied — the list does not \
+             own the stages, the log or the context bar that opening a specimen resets",
+        );
+    }
+
     #[test]
     fn drain_worker_libraries_ok_updates_status() {
         let (mut app, tx) = App::test_with_sender();
@@ -8312,7 +8438,7 @@ mod tests {
     fn a_scratch_specimen_is_listed_and_marked() {
         let mut app = App::test_default();
         app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
-        app.rescan();
+        app.model_list.rescan();
 
         let probe = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR)
             .join("ScratchProbe.mo");
@@ -8366,7 +8492,7 @@ mod tests {
 
         let mut app = App::test_default();
         app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
-        app.rescan();
+        app.model_list.rescan();
 
         assert!(
             app.model_list.shadowed.iter().any(|n| n == "BouncingBall.mo"),
