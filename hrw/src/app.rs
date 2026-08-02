@@ -3899,145 +3899,7 @@ impl App {
                 matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
             let report_ready = report_stage && self.current_stage().value.is_some();
             if report_ready {
-                // Set when a link names a sub-view this model has no tab for. Collected
-                // here and posted after the borrows end, as `FrameIntent` does.
-                let mut bad_sub_view: Option<String> = None;
-                // Invalidate caches when switching between Structural
-                // and IndexReduction — each has different report data.
-                if self.stage_views.reset_for(self.stage) {
-                    // Default sub-view: Summary for IndexReduction and
-                    // singular Structural; SpyPlot otherwise.
-                    let is_singular = self.stages.get(self.stage).note.as_deref()
-                        .is_some_and(|n| n.contains("singular"));
-                    if self.stage == StageKind::IndexReduction || is_singular {
-                        self.viewport.structural = StructuralView::Summary;
-                    } else if matches!(self.viewport.structural,
-                        StructuralView::Summary | StructuralView::Animate)
-                    {
-                        self.viewport.structural = StructuralView::SpyPlot;
-                    }
-                    // `reset_for` already recorded the new key.
-                }
-                // A sub-view requested by an hrw:// link is applied *here*, after
-                // the default-sub-view logic above, precisely because that logic
-                // would otherwise overwrite it: it forces Summary whenever a
-                // report stage is entered singular. A link saying "show me the
-                // matching animation" has to win over the default saying "show
-                // the summary first".
-                if let Some(sub) = self.pending_sub_view.take() {
-                    // Refuse a sub-view this model does not have a tab for, rather than
-                    // selecting it and rendering something misleading — the same rule as
-                    // aiming at an equation that is not there. The link named a real
-                    // slug; whether it is *available* depends on what the compile
-                    // produced, which only this point knows.
-                    let available = match sub {
-                        SubView::Structural(v) => self.structural_view_available(v),
-                        _ => true,
-                    };
-                    if available {
-                        self.apply_sub_view(Some(sub));
-                    } else {
-                        let msg = format!(
-                            "{} has no {} view for this model \u{2014} the link names one \
-                             that is not here",
-                            self.stage.name(),
-                            sub.slug(),
-                        );
-                        bad_sub_view = Some(msg);
-                    }
-                }
-                // Only now is the sub-view settled, so only now does looking up "the
-                // on-screen animation" mean the one the link named. Applying this
-                // before the block above would seek whichever animation happened to be
-                // showing beforehand.
-                self.apply_pending_seek();
-                if let Some(msg) = bad_sub_view.take() {
-                    self.notify(msg);
-                }
-                let is_index_reduction = self.stage == StageKind::IndexReduction;
-                let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
-                let is_singular = note.contains("singular");
-
-                // Status banner
-                if is_index_reduction {
-                    if is_singular {
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
-                            ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
-                        });
-                    } else {
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("Index-1").color(crate::colors::ANIM_PATH_FOUND).strong());
-                            ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
-                        });
-                    }
-                    ui.add_space(2.0);
-                } else if is_singular {
-                    ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
-                        ui.weak("\u{2014} structurally singular; no perfect matching exists (see Index Reduction)");
-                    });
-                    ui.add_space(2.0);
-                }
-
-                // Sub-tab bar
-                ui.horizontal(|ui| {
-                    // Availability comes from `structural_view_available`, the same
-                    // predicate the link guard uses — a tab that exists and a link that
-                    // is honoured must not be able to disagree.
-                    if self.structural_view_available(StructuralView::Summary) {
-                        ui.selectable_value(&mut self.viewport.structural, StructuralView::Summary, "Summary");
-                        ui.separator();
-                    }
-                    if self.structural_view_available(StructuralView::Animate) {
-                        ui.selectable_value(&mut self.viewport.structural, StructuralView::Animate, "Reduction \u{25b6}");
-                    }
-                    // Alias elimination is reported by this stage only, and
-                    // only when something was actually eliminated -- a model
-                    // with no aliases must not show an empty tab.
-                    if self.structural_view_available(StructuralView::AliasAnim) {
-                        ui.selectable_value(&mut self.viewport.structural, StructuralView::AliasAnim, "Aliases \u{25b6}")
-                            .on_hover_text(
-                                "Watch variables be substituted away. Every connection \
-                                 equation `a = b` lets one of the two be deleted, which is \
-                                 why the solved system is far smaller than the equation \
-                                 count suggests.",
-                            );
-                    }
-                    // Spy-plot, Matching, BLT require a full matching —
-                    // hide them when the Structural stage is singular.
-                    if self.structural_view_available(StructuralView::SpyPlot) {
-                        ui.selectable_value(&mut self.viewport.structural, StructuralView::SpyPlot, "Spy-plot");
-                    }
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Incidence, "Incidence");
-                    // Matching is shown *even when singular* — that is the whole
-                    // point of it. The other three below need a complete matching
-                    // before they mean anything; this one is a replay of the
-                    // *search*, and the search failing is the most instructive
-                    // thing on a singular stage. It was hidden here until
-                    // 2026-07-29, when writing a tour to answer "what does a rank
-                    // deficiency of 1 mean?" ran straight into its absence
-                    // (ideas #44). Nothing else was needed: the trace already
-                    // emits `MatchingStep::EquationFailed` and the view already
-                    // paints the failed row red. The feature was built, then
-                    // gated out of reach.
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::MatchingAnim, "Matching \u{25b6}")
-                        .on_hover_text(if is_singular && !is_index_reduction {
-                            "Watch the augmenting-path search run out. The equation it \
-                             gives up on is the rank deficiency."
-                        } else {
-                            "Replay the augmenting-path search that pairs each equation \
-                             with one unknown."
-                        });
-                    if !is_singular || is_index_reduction {
-                        ui.selectable_value(&mut self.viewport.structural, StructuralView::TarjanAnim, "BLT \u{25b6}");
-                        // Tearing operates on the coupled blocks BLT finds,
-                        // so it needs the same full matching those two do.
-                        ui.selectable_value(&mut self.viewport.structural, StructuralView::TearingAnim, "Tearing \u{25b6}");
-                    }
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Tree, "Tree");
-                });
-                ui.separator();
+                self.report_sub_view_row_ui(ui, intent);
             }
 
             // Whether the Index Reduction tab shows a Before/After split for
@@ -5264,6 +5126,165 @@ egui::Panel::top("bar").show(ui, |ui| {
                 ui.weak(format!("opening {n}…"));
                 ui.spinner();
             }
+    }
+
+    /// The **sub-view selector** for the report stages (Structural, Index
+    /// Reduction): spy plot, incidence matrix, the four animations, the tree.
+    ///
+    /// Lifted out of `central_panel_ui` on 2026-08-02. Only ever reached when
+    /// `report_ready` — the stage is a report stage *and* it produced a value —
+    /// which the caller checks, so this does not re-test it.
+    ///
+    /// **Where the stage-change reset lives.** `StageViewCaches::reset_for` is
+    /// called here rather than on the tab click, because the sub-view a reader
+    /// lands on depends on what the *new* stage turned out to be: singular
+    /// Structural and Index Reduction open on Summary, everything else on the
+    /// spy plot. That decision needs the report, which only exists by the time
+    /// this row is drawn.
+    ///
+    /// `&mut self` is right here for the same reason as the tab row: it reads
+    /// `stage`, `stages` and the viewport, and writes the viewport — application
+    /// state, not pane-local state.
+    fn report_sub_view_row_ui(&mut self, ui: &mut egui::Ui, intent: &mut FrameIntent) {
+            // Set when a link names a sub-view this model has no tab for. Collected
+            // here and posted after the borrows end, as `FrameIntent` does.
+            let mut bad_sub_view: Option<String> = None;
+            // Invalidate caches when switching between Structural
+            // and IndexReduction — each has different report data.
+            if self.stage_views.reset_for(self.stage) {
+                // Default sub-view: Summary for IndexReduction and
+                // singular Structural; SpyPlot otherwise.
+                let is_singular = self.stages.get(self.stage).note.as_deref()
+                    .is_some_and(|n| n.contains("singular"));
+                if self.stage == StageKind::IndexReduction || is_singular {
+                    self.viewport.structural = StructuralView::Summary;
+                } else if matches!(self.viewport.structural,
+                    StructuralView::Summary | StructuralView::Animate)
+                {
+                    self.viewport.structural = StructuralView::SpyPlot;
+                }
+                // `reset_for` already recorded the new key.
+            }
+            // A sub-view requested by an hrw:// link is applied *here*, after
+            // the default-sub-view logic above, precisely because that logic
+            // would otherwise overwrite it: it forces Summary whenever a
+            // report stage is entered singular. A link saying "show me the
+            // matching animation" has to win over the default saying "show
+            // the summary first".
+            if let Some(sub) = self.pending_sub_view.take() {
+                // Refuse a sub-view this model does not have a tab for, rather than
+                // selecting it and rendering something misleading — the same rule as
+                // aiming at an equation that is not there. The link named a real
+                // slug; whether it is *available* depends on what the compile
+                // produced, which only this point knows.
+                let available = match sub {
+                    SubView::Structural(v) => self.structural_view_available(v),
+                    _ => true,
+                };
+                if available {
+                    self.apply_sub_view(Some(sub));
+                } else {
+                    let msg = format!(
+                        "{} has no {} view for this model \u{2014} the link names one \
+                         that is not here",
+                        self.stage.name(),
+                        sub.slug(),
+                    );
+                    bad_sub_view = Some(msg);
+                }
+            }
+            // Only now is the sub-view settled, so only now does looking up "the
+            // on-screen animation" mean the one the link named. Applying this
+            // before the block above would seek whichever animation happened to be
+            // showing beforehand.
+            self.apply_pending_seek();
+            if let Some(msg) = bad_sub_view.take() {
+                self.notify(msg);
+            }
+            let is_index_reduction = self.stage == StageKind::IndexReduction;
+            let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
+            let is_singular = note.contains("singular");
+
+            // Status banner
+            if is_index_reduction {
+                if is_singular {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
+                        ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
+                    });
+                } else {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("Index-1").color(crate::colors::ANIM_PATH_FOUND).strong());
+                        ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
+                    });
+                }
+                ui.add_space(2.0);
+            } else if is_singular {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
+                    ui.weak("\u{2014} structurally singular; no perfect matching exists (see Index Reduction)");
+                });
+                ui.add_space(2.0);
+            }
+
+            // Sub-tab bar
+            ui.horizontal(|ui| {
+                // Availability comes from `structural_view_available`, the same
+                // predicate the link guard uses — a tab that exists and a link that
+                // is honoured must not be able to disagree.
+                if self.structural_view_available(StructuralView::Summary) {
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Summary, "Summary");
+                    ui.separator();
+                }
+                if self.structural_view_available(StructuralView::Animate) {
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Animate, "Reduction \u{25b6}");
+                }
+                // Alias elimination is reported by this stage only, and
+                // only when something was actually eliminated -- a model
+                // with no aliases must not show an empty tab.
+                if self.structural_view_available(StructuralView::AliasAnim) {
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::AliasAnim, "Aliases \u{25b6}")
+                        .on_hover_text(
+                            "Watch variables be substituted away. Every connection \
+                             equation `a = b` lets one of the two be deleted, which is \
+                             why the solved system is far smaller than the equation \
+                             count suggests.",
+                        );
+                }
+                // Spy-plot, Matching, BLT require a full matching —
+                // hide them when the Structural stage is singular.
+                if self.structural_view_available(StructuralView::SpyPlot) {
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::SpyPlot, "Spy-plot");
+                }
+                ui.selectable_value(&mut self.viewport.structural, StructuralView::Incidence, "Incidence");
+                // Matching is shown *even when singular* — that is the whole
+                // point of it. The other three below need a complete matching
+                // before they mean anything; this one is a replay of the
+                // *search*, and the search failing is the most instructive
+                // thing on a singular stage. It was hidden here until
+                // 2026-07-29, when writing a tour to answer "what does a rank
+                // deficiency of 1 mean?" ran straight into its absence
+                // (ideas #44). Nothing else was needed: the trace already
+                // emits `MatchingStep::EquationFailed` and the view already
+                // paints the failed row red. The feature was built, then
+                // gated out of reach.
+                ui.selectable_value(&mut self.viewport.structural, StructuralView::MatchingAnim, "Matching \u{25b6}")
+                    .on_hover_text(if is_singular && !is_index_reduction {
+                        "Watch the augmenting-path search run out. The equation it \
+                         gives up on is the rank deficiency."
+                    } else {
+                        "Replay the augmenting-path search that pairs each equation \
+                         with one unknown."
+                    });
+                if !is_singular || is_index_reduction {
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::TarjanAnim, "BLT \u{25b6}");
+                    // Tearing operates on the coupled blocks BLT finds,
+                    // so it needs the same full matching those two do.
+                    ui.selectable_value(&mut self.viewport.structural, StructuralView::TearingAnim, "Tearing \u{25b6}");
+                }
+                ui.selectable_value(&mut self.viewport.structural, StructuralView::Tree, "Tree");
+            });
+            ui.separator();
     }
 
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
