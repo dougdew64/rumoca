@@ -408,3 +408,84 @@ fn the_background_names_the_stage_before_a_model_exists() {
          and must still be shown",
     );
 }
+
+/// At startup the **corpus is open and HRW specimens are shut**.
+///
+/// Doug, 2026-08-01, reversing the first arrangement: the corpus is the surface
+/// most sessions browse, and the 18 curated files are the ones already known by
+/// name.
+///
+/// **Both halves are asserted, because either alone can hold while the pair is
+/// wrong.** A test that only checked the corpus was open would have passed on
+/// the previous build too, where nothing was collapsed at all.
+#[test]
+fn at_startup_the_corpus_is_open_and_hrw_specimens_are_shut() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_specimen_files(&["RcCircuit.mo", "MotorWithBrake.mo"]);
+    let mut h = harness(app);
+    h.run_steps(2);
+
+    // A corpus row proves the section is expanded, not merely present.
+    assert!(
+        h.query_by_label_contains("MSL corpus").is_some(),
+        "the corpus header must be on screen",
+    );
+    assert!(
+        h.query_by_label_contains("HRW specimens").is_some(),
+        "the HRW section needs a header of its own \u{2014} that is the whole request",
+    );
+    assert!(
+        h.query_by_label_contains("RcCircuit").is_none(),
+        "HRW specimens start COLLAPSED, so no specimen row should be rendered",
+    );
+}
+
+/// Clicking the HRW header reveals the specimens it counts.
+///
+/// The header says how many are inside while it is shut; this checks the number
+/// is not decorative. A collapsed section whose count is right but whose body is
+/// empty would look identical until clicked.
+#[test]
+fn opening_the_hrw_section_reveals_its_specimens() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_specimen_files(&["RcCircuit.mo", "MotorWithBrake.mo"]);
+    let mut h = harness(app);
+    h.run_steps(2);
+
+    assert!(
+        h.query_by_label_contains("HRW specimens \u{2014} 2").is_some(),
+        "the header must carry the count while collapsed, or opening it is a guess",
+    );
+    h.get_by_label_contains("HRW specimens").click();
+    h.run_steps(2);
+    assert!(
+        h.query_by_label_contains("RcCircuit").is_some(),
+        "opening the section must show the specimens the header counted",
+    );
+}
+
+/// A filter opens **both** sections, so one box searches everything.
+///
+/// The filter is the reason the corpus is reachable at all, and a section that
+/// stayed shut while matching would report "no results" by omission \u{2014} the
+/// same absence-by-implication the Context Bar was fixed for.
+#[test]
+fn a_filter_opens_both_sections() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_specimen_files(&["RcCircuit.mo", "MotorWithBrake.mo"]);
+    app.test_set_filter("rc");
+    let mut h = harness(app);
+    h.run_steps(2);
+
+    assert!(
+        h.query_by_label_contains("RcCircuit").is_some(),
+        "a filter must open the HRW section, not merely narrow a shut one",
+    );
+    assert!(
+        h.query_by_label_contains("HRW specimens \u{2014} 1 of 2").is_some(),
+        "and the header must report the match count against the total",
+    );
+}

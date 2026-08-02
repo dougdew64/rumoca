@@ -388,6 +388,14 @@ pub struct App {
     /// Filter text for the list. **Narrows every source**, so a curated specimen
     /// and a corpus model are found the same way.
     list_filter: String,
+    /// A scratch specimen appeared since the list was last drawn.
+    ///
+    /// Holds the HRW section open, which is otherwise collapsed at startup. A
+    /// scratch specimen is written *for the question being asked right now*, so
+    /// it is the one file that must not need a click to be seen. Sticky for the
+    /// session rather than one frame: it marks "this session has scratch work",
+    /// and a section that sprang open and shut again would read as a glitch.
+    scratch_arrived: bool,
     /// Scratch specimens skipped because a curated specimen already owns the name.
     /// Reported rather than silently resolved: loading the wrong model would have
     /// Claude reason confidently about source Doug is not looking at.
@@ -996,6 +1004,7 @@ impl App {
             selected_is_library: false,
             corpus: None,
             list_filter: String::new(),
+            scratch_arrived: false,
             shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
@@ -4172,6 +4181,11 @@ impl App {
         // reported rather than being invisible until the next restart.
         let known = self.scratch_specimens.len() + self.shadowed_specimens.len();
         if found.len() != known || !found.iter().all(|p| self.scratch_specimens.contains(p)) {
+            // Only an *arrival* opens the section. A scratch specimen being
+            // deleted is not a reason to show the reader anything.
+            if found.len() > known {
+                self.scratch_arrived = true;
+            }
             self.rescan();
         }
     }
@@ -5682,6 +5696,56 @@ impl App {
                             let mut to_open = None;
                             let mut recompile = None;
                             let mut capture_specimen = false;
+                            // ---- HRW specimens: curated `specimens/` + scratch ----
+                            //
+                            // **Collapsed at startup, with MSL expanded** (Doug,
+                            // 2026-08-01) -- the reverse of the first arrangement.
+                            // The corpus is now the surface most sessions browse, and
+                            // 18 curated files are the ones already known by name.
+                            //
+                            // Counted before the header is drawn, because the header
+                            // has to say how many are inside it while it is shut. A
+                            // collapsed section with no count is a section a reader has
+                            // to open to learn whether opening it was worth it.
+                            let hrw_filter = self.list_filter.trim().to_lowercase();
+                            let hrw_hits = self
+                                .files
+                                .iter()
+                                .filter(|p| {
+                                    hrw_filter.is_empty()
+                                        || p.file_name()
+                                            .and_then(|n| n.to_str())
+                                            .is_some_and(|n| n.to_lowercase().contains(&hrw_filter))
+                                })
+                                .count();
+                            let hrw_header = if hrw_filter.is_empty() {
+                                format!("HRW specimens \u{2014} {}", self.files.len())
+                            } else {
+                                format!(
+                                    "HRW specimens \u{2014} {hrw_hits} of {}",
+                                    self.files.len(),
+                                )
+                            };
+                            // **Forced open when a scratch specimen just arrived.**
+                            // Claude writes those mid-conversation to answer the
+                            // question being asked, and HRW lists them within a second
+                            // without a restart. Left shut, the one file written *for
+                            // the current question* would be the one file not on
+                            // screen. Same rule as the filter: open when there is a
+                            // reason to look.
+                            let hrw_open = if !hrw_filter.is_empty() || self.scratch_arrived {
+                                Some(true)
+                            } else {
+                                None
+                            };
+                            egui::CollapsingHeader::new(hrw_header)
+                                .id_salt("hrw_specimen_list")
+                                .default_open(false)
+                                .open(hrw_open)
+                                .show(ui, |ui| {
+                            if hrw_hits == 0 {
+                                ui.weak("no match");
+                            }
                             for path in &self.files {
                                 let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
                                 // One box narrows every source: a curated specimen
@@ -5752,14 +5816,15 @@ impl App {
                                     to_open = Some(path.clone());
                                 }
                             }
+                                });
                             // ---- The corpus: the 2,626 MSL models ----
                             //
-                            // **Shown only while filtering, deliberately.** Rendering
-                            // 2,626 rows by default would bury the 18 curated specimens
-                            // that most sessions actually want, and make the list
-                            // unusable as a browsing surface. The filter is what makes
-                            // the corpus reachable, which is why #52 calls it a
-                            // prerequisite rather than an enhancement.
+                            // **Expanded at startup** (Doug, 2026-08-01). The comment
+                            // that stood here said the section was "shown only while
+                            // filtering" -- true of the first version, false of the
+                            // code beneath it since the same day, and left behind. A
+                            // comment that describes a design the code abandoned is
+                            // worse than none: it is read as intent.
                             let filter = self.list_filter.trim().to_owned();
                             let mut open_model: Option<String> = None;
                             {
@@ -5785,10 +5850,12 @@ impl App {
                                     // asserted the hidden behaviour, so it encoded the
                                     // defect as a requirement.
                                     //
-                                    // Collapsed keeps the reason the first version
-                                    // existed: 2,626 rows must not bury 18 curated
-                                    // specimens. A filter opens it, because typing is
-                                    // already the intent to look.
+                                    // **Open at startup, with HRW specimens shut.**
+                                    // The earlier worry -- 2,626 rows burying 18
+                                    // curated files -- is answered by giving the 18
+                                    // their own header rather than by hiding the 2,626.
+                                    // Only `MAX_LISTED` rows render, so an open corpus
+                                    // costs a bounded amount of screen either way.
                                     let header = if filter.is_empty() {
                                         format!("MSL corpus \u{2014} {total} models")
                                     } else {
@@ -5796,7 +5863,7 @@ impl App {
                                     };
                                     egui::CollapsingHeader::new(header)
                                         .id_salt("corpus_list")
-                                        .default_open(false)
+                                        .default_open(true)
                                         .open(if filter.is_empty() { None } else { Some(true) })
                                         .show(ui, |ui| {
                                             if hits.is_empty() {
@@ -6715,6 +6782,21 @@ impl App {
         self.list_filter = s.to_owned();
     }
 
+    /// Populate the HRW specimen list without touching the filesystem.
+    ///
+    /// **Also parks the scratch poll**, which would otherwise fire on the first
+    /// frame, see a bridge directory that disagrees with this injected list, and
+    /// `rescan()` it straight back to empty from a `specimen_dir` no test sets.
+    ///
+    /// Not hypothetical: the first version of the divider tests passed
+    /// **vacuously** because of it — "no specimen row is rendered" is true of a
+    /// collapsed section and equally true of a list with nothing in it. The
+    /// identical trap took the corpus test earlier the same day.
+    pub(crate) fn test_set_specimen_files(&mut self, names: &[&str]) {
+        self.files = names.iter().map(PathBuf::from).collect();
+        self.scratch_polled_at = Some(std::time::Instant::now());
+    }
+
     pub(crate) fn test_set_ui_mode_specimen(&mut self) {
         self.ui_mode = UiMode::Specimen;
     }
@@ -6754,6 +6836,7 @@ impl App {
             selected_is_library: false,
             corpus: None,
             list_filter: String::new(),
+            scratch_arrived: false,
             shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
