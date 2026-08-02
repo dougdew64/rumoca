@@ -889,6 +889,46 @@ fn the_purpose_tab_says_when_nothing_is_selected() {
 // extends past the clip rect by design. So the invariant names the chrome that
 // must *always* be reachable, and checks it across widths.
 
+/// The stage tabs are on screen **before a specimen is selected**.
+///
+/// Doug, 2026-08-02: *"Before, the tab bar was always visible. Now, when I start
+/// HRW, the tab bar is not visible until I select a specimen/model."*
+///
+/// Investigating found the early `return` predates the UI pause entirely, so it
+/// was not a refactoring regression — but the behaviour was wrong regardless.
+/// **The pipeline is the thing HRW teaches**, and a reader who cannot see its
+/// phases until they pick a file has to already know what to expect.
+///
+/// Asserts presence, not enabledness: the row renders disabled, and the
+/// accessibility tree carries the label either way. That is the honest limit of
+/// what this harness can claim here — whether the greying reads as "not yet"
+/// rather than "broken" is Doug's to judge.
+#[test]
+fn the_stage_tabs_are_visible_before_a_specimen_is_chosen() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    let h = harness(app);
+
+    assert!(
+        h.state().test_selected_name().is_none(),
+        "precondition: nothing is selected",
+    );
+    for tab in ["Parse", "Flatten", "Solve lowering"] {
+        assert!(
+            h.get_all_by_label_contains(tab).next().is_some(),
+            "{tab:?} must be on screen before a specimen is chosen — the phases are what \
+             HRW exists to show, and a reader who cannot see them has to already know \
+             what to expect",
+        );
+    }
+    // The guidance still has to be there; showing tabs is not a reason to stop
+    // saying what to do next.
+    assert!(
+        h.query_by_label_contains("Select a specimen to compile").is_some(),
+        "and the row must not replace the instruction that tells the reader what to do",
+    );
+}
+
 /// The chrome a reader always needs is on screen and clickable, at every width.
 ///
 /// **Named, not swept.** These are the widgets with nowhere else to go: the

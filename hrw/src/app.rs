@@ -3728,6 +3728,30 @@ impl App {
             // row (a highlighted tab before any compile is misleading).
             // In Debug mode the specimen list is hidden, so show the
             // dropdown here so the user can pick their first specimen.
+            // **The tab row is always on screen, disabled until there is
+            // something to show.** Doug, 2026-08-02: *"Before, the tab bar was
+            // always visible. Now, when I start HRW, the tab bar is not visible
+            // until I select a specimen/model."*
+            //
+            // Checked rather than assumed: the early `return` below predates the
+            // UI pause entirely — it is in `b1777e6a` and older — so this was not
+            // a refactoring regression. It was long-standing behaviour that
+            // became conspicuous when the startup screen changed.
+            //
+            // The original reasoning is preserved and narrowed. *"A highlighted
+            // tab before any compile is misleading"* is true of a **highlighted**
+            // tab; it is not an argument for hiding the row. **The pipeline is
+            // the thing HRW teaches**, and a reader who cannot see its phases
+            // until they pick a file has to already know what to expect. Greyed
+            // tabs say "these exist, and are not ready yet" — which is exactly
+            // the state, and is the same rule every other pane here follows:
+            // report the empty state, never vanish.
+            if self.selected.is_none() {
+                ui.horizontal_wrapped(|ui| {
+                    ui.disable();
+                    self.stage_tab_bar_ui(ui, intent);
+                });
+            }
             if self.selected.is_none() {
                 if self.ui_mode == UiMode::Debug {
                     let combo = egui::ComboBox::from_id_salt("specimen_switcher")
