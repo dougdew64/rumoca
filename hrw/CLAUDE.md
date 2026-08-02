@@ -86,6 +86,30 @@ debugger launch on 2026-07-31 and twice disabled
 `a_broken_specimen_does_not_poison_the_next_compile` on 2026-08-01.
 `doc_citations::no_function_has_two_test_attributes` now catches it.
 
+**EDIT FILES WITH THE EDIT/WRITE TOOLS. Do not generate source text through a shell.** Three
+separate corruptions on 2026-08-01 share this one root, and they were *silent* — the tool
+reported success every time:
+
+- **Shell quoting ate content.** `python -c "…"` in Bash: backticks became command
+  substitution and swallowed two file paths, including the one pointer that made a memory
+  useful. Never route content containing backticks, `$` or backslashes through `-c` or a
+  heredoc.
+- **Escapes leaked one language into another.** Generating Rust from Python string literals
+  put a literal `\u{2014}` into comment text. Content must be **literal in the tool call**, not
+  a string inside a string.
+- **Line arithmetic stole an attribute.** Inserting by index instead of by seen context put a
+  test between a doc comment and its `fn`, silently un-testing a regression guard.
+
+**A generator script is the exception, not the tool of choice.** When one is genuinely
+warranted, write it with the Write tool and run it by path — that pattern never produced shell
+corruption. And **read back anything a shell wrote.**
+
+**Do not sell the `app.rs` refactor on these.** A large file *pressures* Claude toward
+generators, but the corruption is a habit that operates on small files too — the memory case
+proves it. Recorded 2026-08-02 after Doug pushed back on exactly that over-claim: the
+refactor's justification is blast radius and testability, measured in
+[`docs/ui-pause-plan.md`](docs/ui-pause-plan.md), and it did not need the help.
+
 **TAG A CLAIM OF ABSENCE, or it rots unnoticed.** The must-fire rule pointed at silence; this
 is the same principle pointed at **absence**. When a document says something is not built,
 tag it so the claim is checkable:
