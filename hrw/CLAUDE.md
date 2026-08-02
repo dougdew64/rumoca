@@ -155,7 +155,43 @@ oracle test is **no longer a step** (see below).
    six items landed 2026-08-01: the must-fire convention and its audit, the stale-negative test,
    clippy cleared and denied, the pre-commit suite memoised (375s → 113s), **headless UI testing
    with `egui_kittest`**, and the run drivers resolved by splitting.
-4. **← THE LIVE WORK: one corpus list with a filter** (`docs/ideas.md` **#52**). One list widget
+4. **← NEXT (2026-08-02): the UI pause** — *a lot* of automated UI tests first, then
+   refactor `app.rs` into small, comprehensible pieces. **Doug's call**, and the ordering is
+   his: tests before any refactoring, so regressions have something to hit.
+
+   **Tonight's measurements, so tomorrow starts from facts rather than impressions:**
+
+   | | |
+   |---|---|
+   | `app.rs` | **9,562 lines, 188 fns, 105 fields on `App`, 53 `&mut self` methods** |
+   | biggest two | `central_panel_ui` **771**, `frame_ui` **727** — 16% of the file |
+   | `ui_tests.rs` | 561 lines, **14 tests** against 17 `*_ui` fns |
+
+   **The 105 fields are the problem, not the 9,562 lines.** Splitting `central_panel_ui`
+   into ten functions that each take `&mut self` moves lines without reducing coupling:
+   every one still reaches any of 105 fields, so nothing becomes independently testable
+   and the next defect hides just as well. **Extract state, not just functions** — the
+   unit that makes a pane comprehensible is the set of fields it owns.
+
+   **Doug: *"we have been incredibly lucky."* The sharper reading is that we were not
+   lucky — breakage went undetected.** The Context Bar was half-built from its first
+   commit; the source view refused MSL models outright; the specimen list hid the corpus.
+   Weeks each, all in daily use. That strengthens the case rather than weakening it:
+   the risk being bought down is **invisible** breakage, which is why the tests come first.
+
+   **Two traps, both hit today, both worse at scale:**
+   - **A test written against current code encodes current behaviour, defects included.**
+     The corpus test asserted the very hiding Doug then reported as a bug.
+   - **A UI test can pass while checking nothing.** `test_set_specimen_files` was undone
+     by the scratch poll, so "no specimen row is rendered" was true of an empty list.
+     **At a hundred tests, vacuous ones are worse than no tests** — they manufacture the
+     confidence that licenses the refactor. Every test earns its place by being seen to
+     **fail against a deliberately broken version**; that is the only evidence that
+     distinguishes the two.
+
+   Scope, ordering and the plan document are Doug's to set at the start of the session.
+
+5. **Then: one corpus list with a filter** (`docs/ideas.md` **#52**). One list widget
    over **three visible sources** — curated `specimens/`, scratch `.hrw-bridge/specimens/`, and
    the 2,626 MSL rows — with the reports as **columns and filter predicates**, never as separate
    views. **NOT a Test mode**, decided 2026-08-01: that loop *is* Specimen mode's loop, and
