@@ -611,6 +611,13 @@ pub struct App {
     /// Kept separate from the text so the pane distinguishes *"unreadable"* from
     /// *"nothing selected"*. Both would otherwise render the same blank.
     library_source_error: Option<String>,
+    /// Where the source pane is scrolled to, as of the last frame that drew it.
+    ///
+    /// Recorded so the horizontal offset is **checkable**. Layout is otherwise
+    /// Doug's to judge -- the accessibility tree carries no geometry -- but this
+    /// one number is what went wrong when a programmatic scroll centred long
+    /// lines and pushed their opening characters off-screen.
+    source_scroll_offset: egui::Vec2,
     // Every variable name in the compiled model — ground truth for which tree
     // leaves name something trackable. Rebuilt per compile alongside the
     // equation sheet, which is where the full classification lives.
@@ -1079,6 +1086,7 @@ impl App {
             cached_source: None,
             library_source_uri: None,
             library_source_error: None,
+            source_scroll_offset: egui::Vec2::ZERO,
             cached_highlight: None,
             known_variables: None,
             declaring_classes: HashMap::new(),
@@ -4344,7 +4352,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         let mut clicked_id: Option<String> = None;
         match source {
             Some(text) if !text.is_empty() => {
-                egui::ScrollArea::both()
+                let scroll_out = egui::ScrollArea::both()
                     .id_salt("specimen_source")
                     .auto_shrink(false)
                     .show(ui, |ui| {
@@ -4465,12 +4473,44 @@ egui::Panel::top("bar").show(ui, |ui| {
                             row.response.clone().on_hover_text(why);
                         }
                         if scroll_to == Some(line_1) || source_scroll_to == Some(line_1) {
-                            row.response.scroll_to_me(
-                                Some(egui::Align::Center),
-                            );
+                            // **Scroll to the line's START, not to the line.**
+                            //
+                            // This is a `ScrollArea::both`, and `scroll_to_me`
+                            // aligns on *both* axes. Centring a row horizontally
+                            // centres a line that may be 200 characters wide, so
+                            // its opening characters — the indentation, the
+                            // keyword, the declared name — end up off the left
+                            // edge. Doug, 2026-08-01: *"The text in the modelica
+                            // source view is positioned too far to the left. The
+                            // left-most characters in many source lines are being
+                            // cut off."*
+                            //
+                            // Latent before MSL models: a specimen's lines are
+                            // short and shallowly indented, so centring one moved
+                            // the view barely at all. A library file is nested
+                            // several packages deep with long signatures, and the
+                            // scroll now fires on every library load to reach the
+                            // declaration line.
+                            //
+                            // Collapsing the target to a sliver at the row's left
+                            // edge fixes both axes at once: vertically it still
+                            // centres the line, and horizontally the offset that
+                            // would centre a sliver at the content's left margin
+                            // is negative, so egui clamps it to 0 — the start of
+                            // the line, which is where reading begins.
+                            let mut target = row.response.rect;
+                            target.max.x = target.min.x + 1.0;
+                            ui.scroll_to_rect(target, Some(egui::Align::Center));
                         }
                     }
                 });
+                // **Observation hook, not decoration.** `ScrollArea` keeps its
+                // offset in `Memory` under an id derived from the parent `Ui`,
+                // which a test cannot reconstruct; the returned state is the only
+                // honest way to read it. One `Vec2` per frame buys a headless
+                // guard on the one layout property that has bitten -- the
+                // horizontal offset drifting off the left margin.
+                self.source_scroll_offset = scroll_out.state.offset;
             }
             _ => {
                 ui.weak("Select a specimen to view its source.");
@@ -6792,6 +6832,20 @@ impl App {
     /// **vacuously** because of it — "no specimen row is rendered" is true of a
     /// collapsed section and equally true of a list with nothing in it. The
     /// identical trap took the corpus test earlier the same day.
+    /// Put a specimen's source on screen and aim a programmatic scroll at a line,
+    /// without a compile.
+    pub(crate) fn test_set_source(&mut self, text: &str, scroll_to_line: u32) {
+        self.selected = Some(PathBuf::from("Fixture.mo"));
+        self.cached_source = Some(text.to_owned());
+        self.cached_highlight = None;
+        self.source_scroll_target = Some(scroll_to_line);
+        self.specimen_detail = SpecimenDetail::Source;
+    }
+
+    pub(crate) fn test_source_scroll_offset(&self) -> egui::Vec2 {
+        self.source_scroll_offset
+    }
+
     pub(crate) fn test_set_specimen_files(&mut self, names: &[&str]) {
         self.files = names.iter().map(PathBuf::from).collect();
         self.scratch_polled_at = Some(std::time::Instant::now());
@@ -6911,6 +6965,7 @@ impl App {
             cached_source: None,
             library_source_uri: None,
             library_source_error: None,
+            source_scroll_offset: egui::Vec2::ZERO,
             cached_highlight: None,
             known_variables: None,
             declaring_classes: HashMap::new(),

@@ -24,6 +24,26 @@
 //! **So the canvas views stay the fixture tours' job**, and that is now their
 //! focused purpose rather than an accident of what nobody automated.
 //!
+//! # Geometry is reachable when the app records it
+//!
+//! The table above is about the *accessibility tree*, and it is easy to read as
+//! "layout cannot be tested". That is too strong. The tree carries no geometry,
+//! but **a widget's own state is a number the app can keep**, and a number can
+//! be asserted on.
+//!
+//! `a_programmatic_source_scroll_keeps_the_left_margin` is the worked example.
+//! Doug reported source lines with their left-most characters cut off; the cause
+//! was `scroll_to_me` aligning on both axes in a `ScrollArea::both`. `ScrollArea`
+//! stores its offset in `Memory` under an id derived from the parent `Ui`, which
+//! a test cannot reconstruct — but `show` *returns* that state, so `app.rs`
+//! records it into `source_scroll_offset` and the test reads it. The old code
+//! measures 86 px of hidden left margin; the fixed code measures 0.
+//!
+//! **The general move: when a layout defect is reported, ask what number was
+//! wrong.** If the app can hold that number, the defect is testable, and it need
+//! not cost Doug a walk ever again. What stays genuinely his is what has no
+//! number — colour, proportion, whether a thing reads well.
+//!
 //! # Two harness facts that each cost a wrong diagnosis
 //!
 //! **A widget laid out off-screen is queryable but not clickable.** At the
@@ -487,5 +507,55 @@ fn a_filter_opens_both_sections() {
     assert!(
         h.query_by_label_contains("HRW specimens \u{2014} 1 of 2").is_some(),
         "and the header must report the match count against the total",
+    );
+}
+
+/// A programmatic scroll lands on the line's **start**, not its middle.
+///
+/// Doug, 2026-08-01: *"The text in the modelica source view is positioned too
+/// far to the left. The left-most characters in many source lines are being cut
+/// off."*
+///
+/// The source pane is a `ScrollArea::both`, and `Response::scroll_to_me` aligns
+/// on **both** axes \u{2014} so centring a row centred the *line*, and a long line
+/// centred horizontally has its opening characters off the left edge.
+///
+/// Latent until MSL models: a specimen's lines are short, so centring one barely
+/// moved the view. Library files are nested several packages deep with long
+/// signatures, and the scroll now fires on every library load to reach the
+/// declaration line.
+///
+/// **Layout is usually Doug's to judge** \u{2014} the accessibility tree records no
+/// geometry. This one is checkable anyway, because the thing that went wrong is
+/// a number egui stores: the scroll area's horizontal offset.
+#[test]
+fn a_programmatic_source_scroll_keeps_the_left_margin() {
+    // Long lines, so a horizontal centre would have somewhere to go, and deep
+    // indentation, so losing the left edge loses the part that identifies the
+    // line. This is the shape of real MSL source.
+    let long: String = (1..=60)
+        .map(|i| format!("        parameter Real veryLongIdentifierName{i} = {i}.0 \"a description that keeps the line wide\";"))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_source(&long, 40);
+    let mut h = harness(app);
+    h.run_steps(4);
+
+    let offset = h.state().test_source_scroll_offset();
+
+    assert_eq!(
+        offset.x, 0.0,
+        "a programmatic scroll must leave the horizontal offset at the left margin; \
+         at {} the opening characters of every line are off-screen, which is exactly \
+         what was reported",
+        offset.x,
+    );
+    assert!(
+        offset.y > 0.0,
+        "and it must still have scrolled VERTICALLY to the target line \u{2014} an offset \
+         of 0 on both axes would pass the check above while doing nothing at all",
     );
 }
