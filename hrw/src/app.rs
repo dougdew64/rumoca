@@ -592,6 +592,17 @@ pub struct App {
     cached_purpose_notes: HashMap<PathBuf, Option<String>>,
     // The selected specimen's Modelica source text, loaded on demand.
     cached_source: Option<String>,
+    /// Document URI of the file a **library model** was read from.
+    ///
+    /// Shown above the source, because the pane holds a whole package file that
+    /// declares many classes — without it, a reader who asked for `Resistor`
+    /// and sees `Basic.mo` has no way to tell the pane is showing the right thing.
+    library_source_uri: Option<String>,
+    /// Why the declaring file could not be read, if it could not.
+    ///
+    /// Kept separate from the text so the pane distinguishes *"unreadable"* from
+    /// *"nothing selected"*. Both would otherwise render the same blank.
+    library_source_error: Option<String>,
     // Every variable name in the compiled model — ground truth for which tree
     // leaves name something trackable. Rebuilt per compile alongside the
     // equation sheet, which is where the full classification lives.
@@ -1057,6 +1068,8 @@ impl App {
             scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
+            library_source_uri: None,
+            library_source_error: None,
             cached_highlight: None,
             known_variables: None,
             declaring_classes: HashMap::new(),
@@ -1313,6 +1326,11 @@ impl App {
         self.jump_target = None;
         self.scrolled_source_for = None;
         self.cached_source = None;
+        // Cleared *with* the text it labels, or the header would name the previous
+        // model's library file over an empty pane for the whole compile. The two
+        // are set together in the `Compiled` handler for the same reason.
+        self.library_source_uri = None;
+        self.library_source_error = None;
         self.cached_highlight = None;
         self.highlighted_eq_row = None;
         self.highlighted_source_line = None;
@@ -1397,6 +1415,7 @@ impl App {
                     path, model, stages, def_index, equation_sheet,
                     identifier_index, index_reduction_frames, dae,
                     pre_lowering_frames, connection_frames, flat,
+                    library_source,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
                         continue; // stale result
@@ -1436,6 +1455,35 @@ impl App {
                     self.cached_connection_anim = None;
                     self.cached_reduction_anim = None;
                     self.cached_before_incidence = None;
+                    // **A library model's source, seeded into the same cache a
+                    // specimen fills from disk.** Everything downstream —
+                    // highlighting, clickable identifiers, blamed lines, the
+                    // scroll-to-declaration — then works without knowing
+                    // where the text came from, which is the point: Doug asked
+                    // for the MSL source view to be *as functional as* a
+                    // specimen's, not for a second reduced one.
+                    if let Some(lib) = library_source {
+                        // A read failure is *reported*, never rendered as blank.
+                        match lib.text {
+                            Ok(text) => {
+                                self.library_source_error = None;
+                                self.cached_source = Some(text);
+                            }
+                            Err(why) => {
+                                self.library_source_error = Some(why);
+                                self.cached_source = None;
+                            }
+                        }
+                        // Landing at line 1 of a package file shows a header and
+                        // nothing asked for; `Resistor` starts 1,498 lines into
+                        // `Basic.mo`. The line is the compiler's, not a search.
+                        self.source_scroll_target = lib.decl_line;
+                        self.library_source_uri = Some(lib.uri);
+                        self.cached_highlight = None;
+                    } else {
+                        self.library_source_uri = None;
+                        self.library_source_error = None;
+                    }
                     if self.live_breakpoint_armed {
                         let _ = bridge::remove_live_trace_breakpoint();
                     }
@@ -4236,22 +4284,44 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// merging them — and that is much easier to keep straight in its own
     /// function than buried a thousand lines into a panel closure.
     fn specimen_source_ui(&mut self, ui: &mut egui::Ui) {
-        // **A library model has no file to read, and an empty pane would lie.**
-        // `selected` holds its qualified name, so `read_to_string` would fail and
-        // `unwrap_or_default` would render nothing at all — indistinguishable
-        // from a specimen whose file is empty. Say which it is.
-        if self.selected_is_library {
-            let name = self.selected.as_ref().map(|p| p.display().to_string()).unwrap_or_default();
+        // **Which file this is.** A library model's source is a whole package
+        // file declaring dozens of classes, so a reader who asked for `Resistor`
+        // and is looking at `Basic.mo` needs to be told. A specimen needs no such
+        // line: its file is the thing selected, and the name is already on screen.
+        if let Some(uri) = self.library_source_uri.clone() {
+            let file = std::path::Path::new(&uri)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(uri.as_str())
+                .to_owned();
+            let model = self.model.clone().unwrap_or_default();
+            ui.horizontal(|ui| {
+                ui.weak(file.clone())
+                    .on_hover_text(format!("{uri}\n\nthe library file declaring {model}"));
+                ui.weak("\u{00b7}");
+                ui.weak(format!("declares {model} among others"));
+            });
+            ui.separator();
+        }
+        // **A read failure is reported, never rendered as blank.** Blank would be
+        // indistinguishable from the refusal this replaced, and from an empty file.
+        if let Some(why) = self.library_source_error.clone() {
             ui.label(
-                egui::RichText::new(format!(
-                    "{name}
-
-This model comes from a loaded library, not from a specimen                      file, so there is no single source file to show here. Its IR is on the                      stage tabs."
-                ))
-                .color(ui.visuals().weak_text_color()),
+                egui::RichText::new(format!("cannot show this file\n\n{why}"))
+                    .color(crate::colors::ANIM_FAIL),
             );
             return;
         }
+        // A library model's text is already in the cache, seeded by the worker
+        // from the document it compiled — `get_or_insert_with` therefore does
+        // not run, and `selected` (a qualified name, not a path) is never read as
+        // one. A specimen still reads from its own file so live edits show.
+        //
+        // **This pane used to refuse library models outright**, claiming there was
+        // "no single source file to show". That was untrue: the worker reads that
+        // very file out of the session in order to compile it. Doug, 2026-08-01:
+        // *"The modelica source view for an MSL model should be just as functional
+        // as for an HRW specimen."*
         let source = self.selected.as_ref().map(|path| {
             self.cached_source.get_or_insert_with(|| {
                 std::fs::read_to_string(path).unwrap_or_default()
@@ -6756,6 +6826,8 @@ impl App {
             scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
+            library_source_uri: None,
+            library_source_error: None,
             cached_highlight: None,
             known_variables: None,
             declaring_classes: HashMap::new(),
@@ -7688,6 +7760,7 @@ mod tests {
             connection_frames: Vec::new(),
             flat: None,
             dae: None,
+            library_source: None,
         }).unwrap();
         app.drain_worker();
 
@@ -7717,6 +7790,7 @@ mod tests {
             connection_frames: Vec::new(),
             flat: None,
             dae: None,
+            library_source: None,
         }).unwrap();
         app.drain_worker();
 
@@ -7749,6 +7823,7 @@ mod tests {
             connection_frames: Vec::new(),
             flat: None,
             dae: None,
+            library_source: None,
         }).unwrap();
         app.drain_worker();
 
@@ -7782,6 +7857,7 @@ mod tests {
             connection_frames: Vec::new(),
             flat: None,
             dae: None,
+            library_source: None,
         }).unwrap();
         app.drain_worker();
 
@@ -7813,6 +7889,7 @@ mod tests {
             connection_frames: Vec::new(),
             flat: None,
             dae: None,
+            library_source: None,
         }).unwrap();
         app.drain_worker();
 

@@ -217,6 +217,37 @@ struct Located {
     /// `Some` for a library model, whose name the caller supplied in full.
     /// `None` for a specimen, whose model name comes from parsing it.
     qualified: Option<String>,
+    /// 1-based line where the requested class is declared, for a library model.
+    ///
+    /// **From `ClassDef::location.start_line`, so it is exact.** A library file
+    /// commonly declares dozens of classes across thousands of lines, and
+    /// `Modelica.Electrical.Analog.Basic.Resistor` opens 1,498 lines into
+    /// `Basic.mo`. Landing the reader at line 1 would show a package header and
+    /// nothing they asked for. Searching the text for `model Resistor` would be
+    /// **heuristic name matching**, which `docs/identity-and-provenance.md`
+    /// rules out; the compiler already knows the answer.
+    decl_line: Option<u32>,
+}
+
+/// The declaring file behind a **library model**, for the source view.
+///
+/// Carried rather than re-read from disk: this is the exact text the session
+/// parsed, so the source pane shows **what was compiled** rather than what the
+/// path holds now. The two are the same today and the distinction costs nothing
+/// to keep right.
+#[derive(Clone)]
+pub struct LibrarySource {
+    /// Document URI of the declaring file — shown, because the pane holds a
+    /// whole package file and the reader must know which one.
+    pub uri: String,
+    /// The file's text, or why it could not be read.
+    ///
+    /// A `Result` rather than an empty `String` so the pane can **say** what went
+    /// wrong. Blank-on-failure would be indistinguishable from the refusal this
+    /// replaced, and from a genuinely empty file.
+    pub text: Result<String, String>,
+    /// 1-based line of the requested class within the text.
+    pub decl_line: Option<u32>,
 }
 
 /// What actually became of a stage — **three outcomes, not two.**
@@ -718,6 +749,15 @@ pub enum FromWorker {
         /// Connection-expansion replay frames (MLS §9). Recorded by re-running
         /// flatten with an observer; empty for a model with no `connect()`.
         connection_frames: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
+        /// The declaring file's source, for a **library model**. `None` for a
+        /// specimen, which the UI reads from its own path so live edits show.
+        ///
+        /// **Sent because the source view is not optional for MSL models**
+        /// (Doug, 2026-08-01). The pane used to refuse them, claiming a library
+        /// model had "no single source file to show" — which was simply
+        /// untrue: the worker reads that very file out of the session in order
+        /// to compile it, and then dropped it on the floor.
+        library_source: Option<LibrarySource>,
     },
     /// A class opened by navigation: its qualified name and (on success) its
     /// resolved IR plus the DefIds it references, so navigation can continue.
@@ -1249,7 +1289,12 @@ impl WorkerState {
             })?
             .content
             .to_string();
-        Ok(Located { uri, source, qualified: Some(qualified.to_owned()) })
+        Ok(Located {
+            uri,
+            source,
+            qualified: Some(qualified.to_owned()),
+            decl_line: Some(class.location.start_line),
+        })
     }
 
     /// Compile a **specimen file** — read it from disk, register it with the
@@ -1335,11 +1380,13 @@ impl WorkerState {
                     source,
                     // Derived from the parse below: a specimen names its own model.
                     qualified: None,
+                    // A specimen file opens at its own model; nothing to skip past.
+                    decl_line: None,
                 })
                 .map_err(|e| format!("read error: {e}")),
             CompileTarget::Library(name) => self.locate_library_model(name),
         };
-        let Located { uri, source, qualified: given_qualified } = match located {
+        let Located { uri, source, qualified: given_qualified, decl_line } = match located {
             Ok(l) => l,
             Err(msg) => {
                 drop(output_capture.take());
@@ -1361,6 +1408,8 @@ impl WorkerState {
                     connection_frames: Vec::new(),
                     flat: None,
                     dae: None,
+                    // Nothing was located, so there is no source to show.
+                    library_source: None,
                 };
             }
         };
@@ -1382,6 +1431,31 @@ impl WorkerState {
             CompileTarget::File(p) => p.to_path_buf(),
             CompileTarget::Library(n) => PathBuf::from(n),
         };
+        // **Read from disk, not from `source`, and this is not an oversight.**
+        //
+        // Rumoca stores source-root documents with **empty content** —
+        // `Document::new(uri, String::new(), SyntaxFile::from_parsed(parsed))` in
+        // `session_impl_source_roots.rs`. A library keeps its parsed AST and
+        // discards its text, which across 2,553 MSL documents is the right call
+        // for a compiler. So `Located::source` is `""` for every library model,
+        // and `session.get_document(uri).content` cannot supply the pane.
+        //
+        // **The URI is a filesystem path** (`collect_modelica_files` walked it),
+        // and Rumoca's parsed-artifact cache is keyed on a hash of those files,
+        // so a file that changed since parsing would have invalidated the cache.
+        // Disk text and parsed text therefore agree by construction.
+        //
+        // Deliberately **not** fixed by giving `Located::source` the real text:
+        // that feeds `parse_to_ast` below, so it would change what the compile
+        // does for every library model and invalidate the 2,614/2,626 fidelity
+        // measurement. This capture is observation-only.
+        let library_source = matches!(target, CompileTarget::Library(_)).then(|| LibrarySource {
+            uri: uri.clone(),
+            // The error is carried, not swallowed: a blank pane is exactly the
+            // ambiguity this whole change exists to remove.
+            text: std::fs::read_to_string(&uri).map_err(|e| format!("cannot read {uri}: {e}")),
+            decl_line,
+        });
         let path_owned = PathBuf::from(&uri);
         let file_name = path_owned
             .file_name()
@@ -1752,6 +1826,7 @@ impl WorkerState {
             index_reduction_frames: ir_frames,
             pre_lowering_frames: pre_frames,
             connection_frames,
+            library_source,
             flat: compiled_flat,
             dae: compiled_dae,
         }
@@ -4254,6 +4329,76 @@ mod tests {
             path,
             std::path::PathBuf::from(NAME),
             "a library compile must report the qualified name it was asked for. Reporting              the document URI instead makes every result look stale to the UI, which is              indistinguishable from a compile that never finishes",
+        );
+    }
+
+    /// A library compile **carries the source of the file that declares the model**.
+    ///
+    /// The source view refused MSL models outright until 2026-08-01, on the stated
+    /// grounds that a library model had "no single source file to show". That was
+    /// never true — `locate_library_model` reads exactly that file out of the
+    /// session *in order to compile it*, then dropped it. Doug: *"The modelica
+    /// source view for an MSL model should be just as functional as for an HRW
+    /// specimen."*
+    ///
+    /// Checks the two things the pane cannot work without, and would otherwise fail
+    /// at silently: **non-empty text**, and a **declaration line inside it**.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_library_compile_carries_the_declaring_file_source() {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let out = w.compile_model_by_name("Modelica.Electrical.Analog.Basic.Resistor", &|_| {});
+        let FromWorker::Compiled { library_source, .. } = out else {
+            panic!("expected Compiled");
+        };
+        let lib = library_source.expect(
+            "a library compile must carry its declaring file: the source view has no other \
+             way to get it, and without it the pane renders empty",
+        );
+        let text = lib.text.clone().expect("the declaring file must be readable");
+        assert!(
+            !text.trim().is_empty(),
+            "empty source would render as a blank pane \u{2014} indistinguishable from the \
+             refusal this replaced",
+        );
+        assert!(
+            lib.uri.ends_with(".mo"),
+            "the URI names the declaring document, and it is shown to the reader: {}",
+            lib.uri,
+        );
+
+        // **The declaration line must land inside the file.** `Resistor` opens
+        // roughly 1,500 lines into `Basic.mo`, so a reader dropped at line 1 sees a
+        // package header and none of what they asked for. An out-of-range line
+        // scrolls nowhere and looks like the scroll is broken.
+        let lines = text.lines().count() as u32;
+        let decl = lib.decl_line.expect("a located class has a start line");
+        assert!(
+            decl >= 1 && decl <= lines,
+            "declaration line {decl} is outside the {lines}-line file it indexes",
+        );
+        let decl_text = text.lines().nth(decl as usize - 1).unwrap_or("");
+        assert!(
+            decl_text.contains("Resistor"),
+            "line {decl} should be Resistor\u{2019}s declaration, found: {decl_text:?}",
+        );
+    }
+
+    /// A **specimen** compile carries no library source, and must not.
+    ///
+    /// The pane reads a specimen from its own path so live edits show; seeding the
+    /// cache from the compile would silently freeze the text at whatever was last
+    /// compiled, and an edited file that keeps rendering its old contents is a far
+    /// worse failure than the one being fixed.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_specimen_compile_carries_no_library_source() {
+        let FromWorker::Compiled { library_source, .. } = compile_specimen_shared("RcCircuit") else {
+            panic!("expected Compiled");
+        };
+        assert!(
+            library_source.is_none(),
+            "a specimen\u{2019}s pane must keep reading from disk, or edits stop showing",
         );
     }
 
