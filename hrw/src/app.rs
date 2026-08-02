@@ -5287,6 +5287,95 @@ egui::Panel::top("bar").show(ui, |ui| {
             ui.separator();
     }
 
+    /// The **tour panel**: the picker at the top, the tour's markdown below.
+    ///
+    /// Lifted out of `frame_ui` on 2026-08-02.
+    ///
+    /// Returns the `hrw://` link the reader clicked, if any. **Returned rather
+    /// than dispatched**, because a tour link can load a specimen, change stage
+    /// and move the camera — the panel has no business doing any of that, and
+    /// `frame_ui` acts on it before the central panel renders so the whole frame
+    /// sees one consistent state.
+    ///
+    /// Re-reads the tour file immediately after a pick rather than waiting for
+    /// the poll: *"a click that appears to do nothing for a quarter second reads
+    /// as a broken button."*
+    fn tour_panel_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
+        self.poll_tour_file();
+        let tour_text = self.cached_tour.as_ref().map(|(t, _)| t.clone());
+        let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
+        register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
+        let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
+        let mut switch_to: Option<TourSource> = None;
+        egui::Panel::left("tour_panel")
+            .exact_size(panel_width)
+            .show(ui, |ui| {
+                // --- Top third: the tour list, laid out like the specimen list ---
+                //
+                // A vertical list rather than a wrapped bar: Doug, 2026-07-29 —
+                // "there are going to be too many fixture tours to fit into a bar."
+                // One fixture per capability still accumulates, and a bar degrades
+                // silently as it fills, which is the wrong failure mode for a list
+                // meant to be browsed.
+                let panel_height = ui.available_height();
+                let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), list_height),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        section_header(ui, "Tours");
+                        ui.add_space(4.0);
+                        if self.tours.is_empty() {
+                            ui.weak("(no tours yet)");
+                            return;
+                        }
+                        egui::ScrollArea::vertical().id_salt("tour_list").show(ui, |ui| {
+                            for source in &self.tours {
+                                let selected = self.selected_tour.as_ref() == Some(source);
+                                let resp = ui.selectable_label(selected, source.label());
+                                let resp = match source {
+                                    TourSource::AdHoc => resp.on_hover_text(
+                                        "Written by Claude to answer your last question. \
+                                         Ephemeral: regenerated, never stored.",
+                                    ),
+                                    TourSource::Fixture(p) => resp.on_hover_text(format!(
+                                        "Fixture tour \u{2014} a test with expected \
+                                         outcomes, kept and versioned.\n{}",
+                                        p.display(),
+                                    )),
+                                };
+                                if resp.clicked() {
+                                    switch_to = Some(source.clone());
+                                }
+                            }
+                        });
+                    },
+                );
+                ui.separator();
+
+                                    egui::ScrollArea::vertical()
+                    .id_salt("tour")
+                    .show(ui, |ui| {
+                    set_markdown_text_sizes(ui);
+                    match &tour_text {
+                        Some(text) => {
+                            egui_commonmark::CommonMarkViewer::new()
+                                .show(ui, &mut self.commonmark_cache, text);
+                        }
+                        None => Self::no_tour_ui(ui),
+                    }
+                });
+            });
+        if let Some(source) = switch_to {
+            self.select_tour(source);
+            // Re-read now rather than waiting up to a poll interval: a click that
+            // appears to do nothing for a quarter second reads as a broken button.
+            self.tour_polled_at = None;
+            self.poll_tour_file();
+        }
+        drain_hrw_hooks(&mut self.commonmark_cache, &tour_links)
+    }
+
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
         let has_point = self.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
@@ -6099,79 +6188,7 @@ impl App {
         let mut hrw_link_action: Option<HrwLink> = None;
 
         if self.ui_mode == UiMode::Tour {
-            self.poll_tour_file();
-            let tour_text = self.cached_tour.as_ref().map(|(t, _)| t.clone());
-            let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
-            register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
-            let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
-            let mut switch_to: Option<TourSource> = None;
-            egui::Panel::left("tour_panel")
-                .exact_size(panel_width)
-                .show(ui, |ui| {
-                    // --- Top third: the tour list, laid out like the specimen list ---
-                    //
-                    // A vertical list rather than a wrapped bar: Doug, 2026-07-29 —
-                    // "there are going to be too many fixture tours to fit into a bar."
-                    // One fixture per capability still accumulates, and a bar degrades
-                    // silently as it fills, which is the wrong failure mode for a list
-                    // meant to be browsed.
-                    let panel_height = ui.available_height();
-                    let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
-                    ui.allocate_ui_with_layout(
-                        egui::vec2(ui.available_width(), list_height),
-                        egui::Layout::top_down(egui::Align::Min),
-                        |ui| {
-                            section_header(ui, "Tours");
-                            ui.add_space(4.0);
-                            if self.tours.is_empty() {
-                                ui.weak("(no tours yet)");
-                                return;
-                            }
-                            egui::ScrollArea::vertical().id_salt("tour_list").show(ui, |ui| {
-                                for source in &self.tours {
-                                    let selected = self.selected_tour.as_ref() == Some(source);
-                                    let resp = ui.selectable_label(selected, source.label());
-                                    let resp = match source {
-                                        TourSource::AdHoc => resp.on_hover_text(
-                                            "Written by Claude to answer your last question. \
-                                             Ephemeral: regenerated, never stored.",
-                                        ),
-                                        TourSource::Fixture(p) => resp.on_hover_text(format!(
-                                            "Fixture tour \u{2014} a test with expected \
-                                             outcomes, kept and versioned.\n{}",
-                                            p.display(),
-                                        )),
-                                    };
-                                    if resp.clicked() {
-                                        switch_to = Some(source.clone());
-                                    }
-                                }
-                            });
-                        },
-                    );
-                    ui.separator();
-
-                                        egui::ScrollArea::vertical()
-                        .id_salt("tour")
-                        .show(ui, |ui| {
-                        set_markdown_text_sizes(ui);
-                        match &tour_text {
-                            Some(text) => {
-                                egui_commonmark::CommonMarkViewer::new()
-                                    .show(ui, &mut self.commonmark_cache, text);
-                            }
-                            None => Self::no_tour_ui(ui),
-                        }
-                    });
-                });
-            if let Some(source) = switch_to {
-                self.select_tour(source);
-                // Re-read now rather than waiting up to a poll interval: a click that
-                // appears to do nothing for a quarter second reads as a broken button.
-                self.tour_polled_at = None;
-                self.poll_tour_file();
-            }
-            hrw_link_action = drain_hrw_hooks(&mut self.commonmark_cache, &tour_links);
+            hrw_link_action = self.tour_panel_ui(ui);
         }
         if self.ui_mode == UiMode::Specimen {
         let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
