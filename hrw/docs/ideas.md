@@ -3199,3 +3199,55 @@ splitting `central_panel_ui` for the same reason.
 
 **Relates to:** [`tech-debt.md`](tech-debt.md)'s `app.rs` entry (up 42% in three days, logged
 rather than swept), #52.
+
+## 59. A draggable LHS/RHS divider, with 40/60 as the opening default
+
+**Doug, 2026-08-02.** The horizontal split between the left panel (tour text, or the specimen
+list plus source/purpose) and the right panel (stages, log, animations) is **fixed**, and he
+wants to drag it. **40/60 stays the default** when Specimen or Tour mode opens.
+
+### The problem it solves
+
+Every pane in HRW competes for the same width, and which one needs it **changes with the
+question**. Reading MSL source wants the left; comparing an equation sheet against an
+incidence matrix wants the right. Today neither can win, so the answer to "can I see enough
+of this?" is always *no, and there is nothing you can do*.
+
+This got sharper the moment MSL models became browsable. A library file is nested several
+packages deep with long signatures — `Blocks/Continuous.mo` lines run well past what 40% of
+the window shows — which is the same pressure that produced the horizontal-scroll defect Doug
+reported on 2026-08-01.
+
+### What is actually there now
+
+`LEFT_PANEL_WIDTH_FRACTION = 0.4` in `app.rs`, applied at **two call sites** as
+`ui.available_width() * LEFT_PANEL_WIDTH_FRACTION` — one for Tour mode, one for Specimen mode.
+So the constant is already named and centralised; what is missing is that the width is
+**recomputed from scratch every frame**, leaving nowhere for a drag to be remembered.
+
+### Shape of the work
+
+- The fraction becomes **state on `App` rather than a constant**, initialised to `0.4`.
+- egui's `SidePanel` has `resizable(true)` and reports its width, which is the natural
+  mechanism — but HRW draws this split with `available_width()` arithmetic, not a `SidePanel`.
+  **Check which it is before assuming**; converting the layout is a larger change than adding
+  a drag handle to one that is already a panel.
+- **Reset to 0.4 on entering a mode**, per Doug's requirement. Note this makes the default
+  *re-assert* on every mode switch, which is a deliberate choice and not the same as
+  persisting one width for the session — worth confirming that is what he meant if the two
+  ever feel different in use.
+- **Clamp both sides.** A divider draggable to zero can hide a panel with no way back, which
+  is a worse failure than a fixed split.
+
+### Testable, and by which half
+
+`source_scroll_offset` established the pattern (`ui-findings.md` H6): **geometry is checkable
+when the app records it.** Here the fraction *becomes* app state by definition, so the drag's
+effect is a number a headless test can read — that it changes, that it clamps, and that a mode
+switch restores `0.4`. **What stays Doug's** is whether the handle is findable and whether
+dragging it feels right.
+
+**Relates to:** the UI pause ([`ui-pause-plan.md`](ui-pause-plan.md)) — this adds a field to
+`App`, so it lands *after* the field-count ratchet exists, and is a fair early test of whether
+the ratchet does its job: the honest resolution is that the fraction belongs to whatever owns
+the layout, not to `App`.
