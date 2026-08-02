@@ -1364,6 +1364,24 @@ impl WorkerState {
                 };
             }
         };
+        // **What this compile calls itself, back to the UI.**
+        //
+        // For a specimen that is the file path. For a **library model it must be
+        // the qualified name**, not the document URI — the UI's three staleness
+        // checks compare the result's `path` against `App::selected`, which holds
+        // the qualified name because a library model has no file of its own (its
+        // package file may declare many classes).
+        //
+        // **This was a real bug on 2026-08-01.** The early-error return above
+        // already reported the qualified name; this success path reported the MSL
+        // *file* URI, so the two disagreed. Every successful library compile was
+        // then discarded as stale: the log showed the work happening, no stage
+        // ever landed, and the spinner span forever. The worker was inconsistent
+        // with itself, and only the success path was wrong.
+        let report_path = match target {
+            CompileTarget::File(p) => p.to_path_buf(),
+            CompileTarget::Library(n) => PathBuf::from(n),
+        };
         let path_owned = PathBuf::from(&uri);
         let file_name = path_owned
             .file_name()
@@ -1412,7 +1430,7 @@ impl WorkerState {
         // remaining struct fields with their default values — a Rust pattern
         // called "struct update syntax".
         emit(FromWorker::CompileProgress {
-            path: path_owned.clone(),
+            path: report_path.clone(),
             stages: StageBundle { parse: parse.clone(), ..Default::default() },
         });
 
@@ -1542,7 +1560,7 @@ impl WorkerState {
         drain_output(&mut output_capture, &log);
         log(LogLevel::StageEnd, format!("Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         emit(FromWorker::CompileProgress {
-            path: path_owned.clone(),
+            path: report_path.clone(),
             stages: StageBundle {
                 parse: parse.clone(),
                 resolve: resolve.clone(),
@@ -1643,7 +1661,7 @@ impl WorkerState {
                         ));
                         bundle.$field = stage.clone();
                         emit(FromWorker::CompileProgress {
-                            path: path_owned.clone(), stages: bundle.clone(),
+                            path: report_path.clone(), stages: bundle.clone(),
                         });
                         stage
                     }};
@@ -1661,7 +1679,7 @@ impl WorkerState {
                     ));
                     bundle.index_reduction = stage.clone();
                     emit(FromWorker::CompileProgress {
-                        path: path_owned.clone(), stages: bundle.clone(),
+                        path: report_path.clone(), stages: bundle.clone(),
                     });
                     (stage, frames)
                 };
@@ -1714,7 +1732,7 @@ impl WorkerState {
 
         // Build and return the final `Compiled` message with all ten stages.
         FromWorker::Compiled {
-            path: path_owned,
+            path: report_path,
             model,
             stages: StageBundle {
                 parse,
@@ -4211,6 +4229,32 @@ mod tests {
         let loc = &diags[0]["labels"][0]["location"];
         assert_eq!(loc["line"], 11, "the offending equation is on line 11: {loc}");
         assert!(loc["line_text"].as_str().is_some_and(|t| t.contains("small = big")), "{loc}");
+    }
+
+    /// A library compile reports the **qualified name** as its identity.
+    ///
+    /// **This is the bug that made every MSL model appear to hang.** The UI's
+    /// three staleness checks compare a result's `path` against `App::selected`,
+    /// which for a library model holds the qualified name. The worker's
+    /// early-error return already reported that; the success path reported the
+    /// MSL *file* URI instead. So a successful compile never matched, every
+    /// result was discarded as stale, and the UI showed a log full of work with
+    /// no stages and a spinner that never stopped.
+    ///
+    /// **The two returns disagreeing is the defect**, so this asserts they agree.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_library_compile_identifies_itself_by_qualified_name() {
+        const NAME: &str = "Modelica.Electrical.Analog.Basic.Resistor";
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let FromWorker::Compiled { path, .. } = w.compile_model_by_name(NAME, &|_| {}) else {
+            panic!("expected Compiled");
+        };
+        assert_eq!(
+            path,
+            std::path::PathBuf::from(NAME),
+            "a library compile must report the qualified name it was asked for. Reporting              the document URI instead makes every result look stale to the UI, which is              indistinguishable from a compile that never finishes",
+        );
     }
 
     /// **A broken specimen must not poison the next compile.**

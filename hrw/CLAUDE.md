@@ -69,6 +69,14 @@ fd-level `OutputCapture`, a rate limiter gating its own first fire, an announcem
 work was pending by absence. `fidelity.rs` had this discipline
 (`each_invariant_catches_its_own_violation`); the tooling around it did not.
 
+**INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment
+and its attributes sit *above* the item, so anything placed between them is adopted by the
+wrong one — the new test gets two `#[test]`s and **the old function silently stops being a
+test.** Nothing fails; the suite goes green. This has bitten three times: it broke Doug's
+debugger launch on 2026-07-31 and twice disabled
+`a_broken_specimen_does_not_poison_the_next_compile` on 2026-08-01.
+`doc_citations::no_function_has_two_test_attributes` now catches it.
+
 **TAG A CLAIM OF ABSENCE, or it rots unnoticed.** The must-fire rule pointed at silence; this
 is the same principle pointed at **absence**. When a document says something is not built,
 tag it so the claim is checkable:
@@ -185,8 +193,8 @@ reopen `docs/ideas.md` #52.
 ## Running things
 
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   429 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 489 tests — before committing
+cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   431 tests — between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 491 tests — before committing
 cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
 

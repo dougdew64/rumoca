@@ -398,6 +398,73 @@ Some prose.
         );
     }
 
+    /// No function carries two `#[test]` attributes.
+    ///
+    /// **The signature of an insertion that landed between another test's
+    /// attributes and its `fn`** — which silently un-tests that function while
+    /// double-registering the new one. Nothing fails: the suite goes green, the
+    /// harness just lists one name twice and one function stops being a test.
+    ///
+    /// **This has now happened three times.** On 2026-07-31 a misplaced
+    /// `#[cfg(test)]` let two helpers compile into `--bin hrw` and broke Doug's
+    /// debugger launch. On 2026-08-01 it silently disabled
+    /// `a_broken_specimen_does_not_poison_the_next_compile` — the regression
+    /// guard for upstream issue 1 — twice in one session, by the same author
+    /// making the same edit.
+    ///
+    /// **The rule it encodes: insert a test AFTER a function's closing brace,
+    /// never before its `fn` line.** A doc comment and its attributes sit above
+    /// the item, so anything placed between them is adopted by the wrong one.
+    #[test]
+    fn no_function_has_two_test_attributes() {
+        let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        collect_rust(&src, &mut files);
+        assert!(files.len() > 10, "only found {} sources — the walk is broken", files.len());
+
+        let mut offences = Vec::new();
+        for path in &files {
+            let Ok(text) = std::fs::read_to_string(path) else { continue };
+            let lines: Vec<&str> = text.lines().collect();
+            for (i, line) in lines.iter().enumerate() {
+                if line.trim() != "#[test]" {
+                    continue;
+                }
+                // Walk forward over attributes and doc comments. A second
+                // `#[test]` before reaching an item means both attach to it.
+                for l in lines.iter().skip(i + 1) {
+                    let s = l.trim();
+                    if s == "#[test]" {
+                        offences.push(format!("{}:{}", path.display(), i + 1));
+                        break;
+                    }
+                    if !(s.starts_with("#[") || s.starts_with("///") || s.is_empty()) {
+                        break;
+                    }
+                }
+            }
+        }
+        assert!(
+            offences.is_empty(),
+            "a function carries two `#[test]` attributes, which means a test was inserted              between another test's attributes and its `fn` — that other function is no              longer a test and nothing else will tell you:
+  {}",
+            offences.join("
+  "),
+        );
+    }
+
+    fn collect_rust(dir: &Path, out: &mut Vec<PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        for e in entries.flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                collect_rust(&p, out);
+            } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
+                out.push(p);
+            }
+        }
+    }
+
     // ----------------------------------------------------------------------
     // Stale-negative checking — `verification-plan.md` item 0b.
     //
