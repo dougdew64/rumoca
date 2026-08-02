@@ -1456,7 +1456,7 @@ impl WorkerState {
             text: std::fs::read_to_string(&uri).map_err(|e| format!("cannot read {uri}: {e}")),
             decl_line,
         });
-        // **The text that source *positions* are resolved against.**
+        // **The text everything user-facing is resolved against.**
         //
         // `IdentifierIndex::build` and `equation_sheet::build` turn each
         // variable's `source_span` byte offset into a line number by counting
@@ -1467,7 +1467,7 @@ impl WorkerState {
         //
         // Must be the same bytes the pane renders, or a span found here lands on
         // a different line there. Both now come from `library_source`.
-        let index_source: &str = library_source
+        let display_source: &str = library_source
             .as_ref()
             .and_then(|l| l.text.as_ref().ok())
             .map(String::as_str)
@@ -1488,7 +1488,24 @@ impl WorkerState {
         // We grab the first class name from `ast.classes` as the model name.
         log(LogLevel::StageStart, "Parse".to_owned());
         let t_stage = Instant::now();
-        let (parse, model) = match rumoca_phase_parse::parse_to_ast(&source, file_name) {
+        // **`display_source`, not `source`.** For a library model `source` is `""`
+        // -- Rumoca discards source-root text -- so this parsed an empty string
+        // and produced `{"classes":{},"within":null}` for **every MSL model**,
+        // shown as a *successful* stage. An empty green tab asserts "this model
+        // parsed to nothing", which is false, and is indistinguishable from a
+        // model that genuinely declares nothing. Worse than an error, which at
+        // least points somewhere. Fixed 2026-08-01 at Doug's request, after the
+        // source view made the disagreement visible: the pane showed a file full
+        // of declarations while the Parse tab claimed it held none.
+        //
+        // This is display-only for a library model. The pipeline below works from
+        // the session's resolved tree, never from this AST, so the stage now
+        // reports what Rumoca would parse without changing what it compiles.
+        //
+        // The **whole declaring file** is parsed, matching what the source view
+        // shows. A library file declares many classes and the reader is looking
+        // at all of them.
+        let (parse, model) = match rumoca_phase_parse::parse_to_ast(display_source, file_name) {
             Ok(ast) => {
                 // For a specimen, `ast.classes.keys().next()` is the model: the
                 // file declares one. For a **library** model the name was given,
@@ -1503,11 +1520,26 @@ impl WorkerState {
             }
             Err(e) => {
                 let msg = format!("{e:#}");
+                // **A library model keeps its name through a parse failure.**
+                //
+                // `None` here stops the pipeline dead: the big `match &model`
+                // below yields no stages at all. That was harmless while this
+                // parsed `""` and could not fail -- feeding it a real 60 KB file
+                // makes failure possible for the first time, and a model that
+                // compiles perfectly through the session would have gone blank
+                // because a *display* stage could not parse its declaring file.
+                //
+                // The name was supplied by the caller, so a parse of the file has
+                // no bearing on it. Only a specimen, whose name comes from the
+                // parse, genuinely loses it.
+                let model = given_qualified
+                    .as_ref()
+                    .and_then(|q| q.rsplit('.').next().map(str::to_owned));
                 (Stage::err_with_details(serde_json::json!({
                     "kind": "parse",
                     "message": msg,
                     "guidance": "Check the Modelica source for syntax errors.",
-                }), msg), None)
+                }), msg), model)
             }
         };
         // After each Rumoca API call, drain any `tracing` events that were
@@ -1713,7 +1745,7 @@ impl WorkerState {
                     Some(PhaseResult::Success(cr)) => {
                         Some(crate::equation_sheet::build(
                             &cr.dae,
-                            Some((&uri, index_source)),
+                            Some((&uri, display_source)),
                         ))
                     }
                     _ => None,
@@ -1722,7 +1754,7 @@ impl WorkerState {
                 let id_index = match result {
                     Some(PhaseResult::Success(cr)) => {
                         Some(crate::identifier_index::IdentifierIndex::build(
-                            &cr.dae, &uri, index_source,
+                            &cr.dae, &uri, display_source,
                         ))
                     }
                     _ => None,
@@ -4537,6 +4569,75 @@ mod tests {
             "only {checked} variables checked -- too few to have exercised anything",
         );
     }
+
+    /// The Parse stage of an MSL model **holds the classes its file declares**.
+    ///
+    /// It used to hold `{"classes":{},"within":null}` for every library model,
+    /// coloured as a success, because it parsed the empty string Rumoca keeps in
+    /// place of source-root text. **An empty green tab asserts "this model parsed
+    /// to nothing"** -- false, and indistinguishable from a model that genuinely
+    /// declares nothing. The source view made the contradiction visible: a pane
+    /// full of declarations beside a tab claiming the file held none.
+    ///
+    /// Asserts the requested class is **among** the classes parsed, not that it is
+    /// the only one: a library file declares many, and the reader is looking at
+    /// all of them in the source view.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn an_msl_models_parse_stage_holds_its_declaring_file() {
+        for (qualified, leaf) in [
+            ("Modelica.Electrical.Analog.Basic.Resistor", "Resistor"),
+            // A multi-class file: `Continuous.mo` declares CriticalDamping among
+            // dozens, ~62 KB in. If only the first class survived, this fails.
+            ("Modelica.Blocks.Continuous.CriticalDamping", "CriticalDamping"),
+        ] {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let FromWorker::Compiled { stages, model, .. } =
+                w.compile_model_by_name(qualified, &|_| {})
+            else {
+                panic!("{qualified}: expected Compiled");
+            };
+            let value = stages
+                .parse
+                .value
+                .as_ref()
+                .unwrap_or_else(|| panic!("{qualified}: the Parse stage produced no value"));
+            let classes = value
+                .get("classes")
+                .and_then(|c| c.as_object())
+                .unwrap_or_else(|| panic!("{qualified}: parse value has no classes map"));
+
+            assert!(
+                !classes.is_empty(),
+                "{qualified}: the Parse stage is empty and reports success, which claims \
+                 the file declares nothing while the source view shows it declaring plenty",
+            );
+            // **The AST is a tree, not a flat list.** `Continuous.mo` declares a
+            // *package* `Continuous` holding CriticalDamping among dozens, so a
+            // top-level lookup finds only the package. Descending is the point:
+            // it proves the whole file was parsed, not just its outer shell.
+            fn declares(value: &serde_json::Value, leaf: &str) -> bool {
+                match value.get("classes").and_then(|c| c.as_object()) {
+                    Some(map) => {
+                        map.contains_key(leaf) || map.values().any(|v| declares(v, leaf))
+                    }
+                    None => false,
+                }
+            }
+            assert!(
+                declares(value, leaf),
+                "{qualified}: parsed {} top-level classes, none of which declares {leaf}                  anywhere beneath it: {:?}",
+                classes.len(),
+                classes.keys().take(8).collect::<Vec<_>>(),
+            );
+            assert_eq!(
+                model.as_deref(),
+                Some(leaf),
+                "{qualified}: the model name must survive, since the caller supplied it",
+            );
+        }
+    }
+
 
 
 

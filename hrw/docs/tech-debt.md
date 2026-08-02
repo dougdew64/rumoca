@@ -259,6 +259,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
 | Item | Closed | Resolution |
 |---|---|---|
+| Parse stage empty for every MSL model | 2026-08-01 | Fixed — it parsed the empty string Rumoca keeps in place of source-root text; now parses the declaring file. Display-only, so the compile path is unchanged. All 2,553 MSL files verified to parse standalone. |
 | **`ui()` was 1,272 lines** | 2026-07-29 | → 325 via `FrameIntent`, which bundles the ~8 intent locals that egui's borrow rules force `ui()` to act on after its panel closures end. Now **410** and growing again — logged below, not re-opened. |
 | **The three animation views were near-identical** | 2026-07-29 | `playback::Playback<T>` — a **generic struct, not a trait**, deliberately: a trait would share the behaviour and leave the state declared three times, so it could still drift. `playback::Animated` is the small trait on top for the one thing that cannot be generic — what the current frame *means*. `animation_controls` went 8 positional parameters → 4. |
 | **No batch narrative regeneration** | 2026-07-29 | **Closed as obsolete.** The 14 `narrative.md` files it would have driven were retired. Debt that evaporated rather than got paid — one of the three legitimate outcomes. |
@@ -489,51 +490,3 @@ that already dominate the file.
 reporter ships with a must-fire test.** Retrofitting the existing 17 is the debt;
 not growing it is free. The Context Bar is the worked example — two guards, both
 of which fail against the code as it stood that morning.
-
-## The Parse stage is empty for every MSL model, and reports success
-
-**Found 2026-08-01** while fixing the source view, and **observed, not inferred**:
-compiling `Modelica.Electrical.Analog.Basic.Resistor` gives a Parse stage whose
-whole value is
-
-```json
-{"classes":{},"within":null}
-```
-
-**The cause is upstream of HRW and is a reasonable compiler decision.** Rumoca
-stores source-root documents with **empty content** —
-`Document::new(uri, String::new(), SyntaxFile::from_parsed(parsed))` in
-`crates/rumoca-compile/src/session/session_impl_source_roots.rs`. A library keeps
-its parsed AST and discards its text; across 2,553 MSL documents that is the
-right trade. HRW's `compile_target` then calls
-`parse_to_ast(&source, file_name)` with that empty string, which **succeeds** —
-an empty file is valid Modelica — and yields an AST with no classes.
-
-**So the Parse tab shows nothing and is coloured as a success.** Every later
-stage is correct, because the pipeline works from the resolved tree rather than
-from this parse. Only the Parse stage is affected.
-
-**This is the stale-negative shape in a stage view.** A tab that is empty *and*
-green asserts "this model parsed to nothing", which is false, and the reader has
-no way to tell it from a model that genuinely declares nothing. It is worse than
-an error, which at least points somewhere.
-
-**Not fixed with the source view, deliberately.** The obvious fix — give
-`Located::source` the real file text — changes what `parse_to_ast` receives for
-**every library model**, so it changes the compile path and **invalidates the
-2,614/2,626 fidelity measurement**. The source-view fix reads the file
-*alongside* the compile and leaves it byte-identical. Doing both at once would
-have mixed an observation-only change with a behavioural one.
-
-**Options, unranked and none yet chosen:**
-
-- Parse the declaring file for the Parse stage only, and re-run the fidelity
-  sweep. Truthful, and the sweep is a documented cost, not a blocker.
-- Mark the stage *not applicable* for library models rather than showing an empty
-  success — cheap, honest, and loses nothing that is there today.
-- Ask upstream whether a session can retain source-root text on request. This is
-  the kind of question `upstream-strategy.md` favours: concrete, cheap to answer,
-  and it comes with a reproduction.
-
-**Decide before the corpus list ships**, since browsing 2,626 MSL models is
-exactly what makes an empty Parse tab a thing Doug will hit repeatedly.
