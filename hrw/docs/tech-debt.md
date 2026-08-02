@@ -417,3 +417,75 @@ and `..._names_the_stage_before_a_model_exists`. The two branches share one
 test either. The point-at and follow rows are *labelled*, so an omission there is
 visible in a way the background's was not — which lowers the priority without
 removing it.
+
+## UI testing debt — the harness exists and almost nothing uses it
+
+**Logged 2026-08-01, at Doug's request**, immediately after the Context Bar defect
+above. That defect is this item's evidence, not a separate story: `egui_kittest`
+landed in the verification pause on the same day, and the bar it could have
+guarded shipped unguarded for weeks.
+
+**The debt is not "few tests". It is that the untested surface is invisible.**
+A missing unit test leaves a function that still looks untested. A missing UI
+test leaves a *screen that looks fine* — the reader cannot tell a pane that
+renders everything from a pane that renders most things, because **what is
+omitted leaves no gap where it was**. The Context Bar said three true things and
+skipped a fourth; nobody sees a fourth thing missing.
+
+### Measured 2026-08-01
+
+- **11 tests** in `src/ui_tests.rs`, against **17 `*_ui` functions** in `app.rs`.
+- **5 of the 11 are tour-link tests.** They exist because tours were the first
+  thing with a machine-checkable contract (`fixture_tour_links_all_resolve`), not
+  because tours are the highest-risk surface.
+- **Panes with no headless test at all:** `menu_bar_ui`, `equation_sheet_ui`,
+  `source_map_ui`, `specimen_source_ui`, the stage tab row, the chat panel, the
+  help panel, the log view, the Purpose tab, and the status bar's notices.
+
+### What the harness genuinely cannot see — and it is narrower than assumed
+
+`egui_kittest` queries the **accessibility tree**, so anything drawn straight to
+a `Painter` is invisible to it. Checked rather than presumed: HRW has ten painter
+call sites, and **most are decoration layered under real widgets** — the jump
+highlight in `tree.rs`, the selection fills, the stage-diff rule. Those panes are
+widget-based and **are** testable.
+
+Only two surfaces paint their content as text and are therefore genuinely out of
+reach: **`incidence_view.rs:457`** (the matrix cell glyphs) and
+**`spyplot.rs:289`**. The **animations are testable** — their controls, step
+labels and state text are ordinary widgets; only the matrix underneath is not.
+
+**This matters for the division of labour.** The standing plan is that fixture
+tours cover what cannot be automated, and that set is much smaller than it looked
+— which means tours should *not* be spent re-walking widget panes a headless
+test can hold. Two things stay Doug's alone regardless of harness reach:
+**colour** (fills carry meaning throughout HRW and the tree records no colour)
+and **layout** (a widget laid out off-screen is still in the tree — the reason
+the harness runs at 1600×1200).
+
+### Priority order for paying it down
+
+Not "write tests for all 17". The ordering follows the failure this item came
+from:
+
+1. **Panes that report** — the status bar's notices, the log view, the equation
+   sheet. Same shape as the Context Bar: they exist to say something, so a
+   partial report is both plausible and unnoticeable. **The must-fire rule
+   already covers these in principle and has never been applied to a pane.**
+2. **Panes whose emptiness is legitimate**, where "nothing here" and "broken"
+   look identical: `specimen_source_ui` (which was silently empty for library
+   models until 2026-08-01), the Purpose tab, the source map.
+3. **Everything reachable by a click that changes state elsewhere** — the stage
+   tab row, the mode switch. Cross-pane effects are where a test beats a walk,
+   since a human checks the pane they clicked in.
+
+**Do not chase a coverage number.** The metric that would matter is *panes whose
+reports are guarded*, and counting tests instead would reward the tour-link tests
+that already dominate the file.
+
+### The rule going forward
+
+**A new pane that reports something ships with a headless test, the way a new
+reporter ships with a must-fire test.** Retrofitting the existing 17 is the debt;
+not growing it is free. The Context Bar is the worked example — two guards, both
+of which fail against the code as it stood that morning.

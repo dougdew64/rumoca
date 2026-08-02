@@ -69,6 +69,15 @@ fd-level `OutputCapture`, a rate limiter gating its own first fire, an announcem
 work was pending by absence. `fidelity.rs` had this discipline
 (`each_invariant_catches_its_own_violation`); the tooling around it did not.
 
+**A PANE IS A REPORTER TOO, so a new pane that reports something ships with a headless
+test** (added 2026-08-01). The Context Bar showed three true things and silently omitted a
+fourth — the background — for weeks, because **a partial report leaves no gap where the
+missing part was**: everything on screen was correct. Doug caught it; nothing could have.
+Retrofitting the existing panes is logged in [`docs/tech-debt.md`](docs/tech-debt.md) ("UI
+testing debt"), which also records what `egui_kittest` genuinely cannot reach — **only two
+surfaces**, `incidence_view.rs` cells and `spyplot.rs`; the animations *are* testable.
+**Not growing the debt is free.**
+
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment
 and its attributes sit *above* the item, so anything placed between them is adopted by the
 wrong one — the new test gets two `#[test]`s and **the old function silently stops being a
