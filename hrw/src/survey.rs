@@ -600,3 +600,69 @@ mod tests {
         assert_eq!(classify("Modelica.Electrical.Analog.Basic.Resistor"), "Component");
     }
 }
+
+/// How many corpus matches the list renders before it stops.
+///
+/// **A cap that does not say so is a lie about coverage** — the same rule the
+/// long-run reports follow. The list prints how many were dropped.
+pub const MAX_LISTED: usize = 200;
+
+/// Does this row match the filter text?
+///
+/// **Deliberately simple, and the reason is who the filter is for.** Claude
+/// queries the survey CSV directly with real tooling when composing a
+/// just-in-time curriculum (`docs/ideas.md` #53) — it does not need a UI. This
+/// filter exists so *Doug* can find a model by mouse among 2,626, which wants
+/// substring search and little else. Building every curriculum axis as a control
+/// would be building the curriculum feature #53 says not to build, one widget at
+/// a time.
+///
+/// Case-insensitive, and matches the **name or the outcome**, so `failed` and
+/// `Spice3` are both useful queries. Whitespace-separated terms must **all**
+/// match, which makes `spice3 success` a narrowing rather than a widening.
+pub fn matches_filter(row: &SurveyRow, filter: &str) -> bool {
+    let needle = filter.trim().to_lowercase();
+    if needle.is_empty() {
+        return true;
+    }
+    let name = row.name.to_lowercase();
+    let outcome = row.outcome.to_lowercase();
+    needle
+        .split_whitespace()
+        .all(|term| name.contains(term) || outcome.contains(term))
+}
+
+#[cfg(test)]
+mod filter_tests {
+    use super::*;
+
+    fn row(name: &str, outcome: &str) -> SurveyRow {
+        SurveyRow { name: name.into(), outcome: outcome.into(), ..Default::default() }
+    }
+
+    /// The filter narrows, reports both verdicts, and treats terms as AND.
+    ///
+    /// **Must-fire:** a filter that matched everything would look identical to no
+    /// filter at all, and a list of 2,626 rows reads as "search is broken".
+    #[test]
+    fn the_filter_narrows_and_both_verdicts_fire() {
+        let rows = [
+            row("Modelica.Electrical.Spice3.Examples.Oscillator", "success"),
+            row("Modelica.Electrical.Analog.Basic.Resistor", "success"),
+            row("Modelica.Fluid.Examples.Tank", "failed:Flatten"),
+        ];
+
+        assert_eq!(rows.iter().filter(|r| matches_filter(r, "")).count(), 3,
+                   "an empty filter matches everything");
+        assert_eq!(rows.iter().filter(|r| matches_filter(r, "spice3")).count(), 1,
+                   "a name substring narrows");
+        assert_eq!(rows.iter().filter(|r| matches_filter(r, "SPICE3")).count(), 1,
+                   "and is case-insensitive");
+        assert_eq!(rows.iter().filter(|r| matches_filter(r, "failed")).count(), 1,
+                   "the outcome is searchable, which is how you find what broke");
+        assert_eq!(rows.iter().filter(|r| matches_filter(r, "electrical success")).count(), 2,
+                   "terms are AND, so adding one narrows");
+        assert_eq!(rows.iter().filter(|r| matches_filter(r, "spice3 fluid")).count(), 0,
+                   "and a contradictory pair matches nothing rather than everything");
+    }
+}

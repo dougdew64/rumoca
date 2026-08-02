@@ -302,3 +302,47 @@ fn the_load_verb_prefers_files_and_still_rejects_a_typo() {
         "a bare unknown name is a typo and must be reported, not guessed at",
     );
 }
+
+/// The corpus appears **only while filtering**, and a click opens the model.
+///
+/// **The "only while filtering" half is the design, not an optimisation.**
+/// Rendering 2,626 rows by default would bury the 18 curated specimens most
+/// sessions want and make the list useless as a browsing surface. That is why
+/// `#52` calls the filter a prerequisite rather than an enhancement — and it is
+/// the reason this merged into Specimen mode instead of becoming a Test mode.
+#[test]
+fn the_corpus_appears_only_while_filtering_and_opens_on_click() {
+    let mut h = harness(App::test_default());
+    h.state_mut().test_set_ui_mode_specimen();
+    h.run_steps(2);
+
+    assert!(
+        h.query_by_label_contains("MSL corpus").is_none(),
+        "with no filter the corpus must stay hidden, or 2,626 rows bury the specimens",
+    );
+
+    h.state_mut().test_set_filter("Spice3BenchmarkDifferentialPair");
+    h.run_steps(2);
+    assert!(
+        h.query_by_label_contains("MSL corpus").is_some(),
+        "filtering must reveal the corpus section — otherwise the corpus is unreachable",
+    );
+
+    // The row renders its LEAF name; the qualified name is 60 characters and
+    // would wrap every row.
+    let row = h.query_by_label_contains("Spice3BenchmarkDifferentialPair");
+    assert!(row.is_some(), "the matching model must be listed");
+    row.unwrap().click();
+    h.run_steps(2);
+
+    assert!(
+        h.state().test_selection_is_library(),
+        "clicking a corpus row must open it as a library model, not as a file",
+    );
+    assert_eq!(
+        h.state().test_selected_name().as_deref(),
+        Some("Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair"),
+        "and it must select the FULLY QUALIFIED name, since the leaf is only a label",
+    );
+}
+

@@ -185,8 +185,8 @@ reopen `docs/ideas.md` #52.
 ## Running things
 
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   427 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 487 tests — before committing
+cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   429 tests — between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 489 tests — before committing
 cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
 

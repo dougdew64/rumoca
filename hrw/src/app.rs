@@ -378,6 +378,16 @@ pub struct App {
     /// True when [`Self::selected`] names a **library model** rather than a file
     /// on disk. See [`Self::open_library_model`] for why the two share a field.
     selected_is_library: bool,
+    /// The MSL corpus, read from the survey once on first use.
+    ///
+    /// **The survey is the corpus definition** — the same rule `fidelity_msl`
+    /// follows. Re-enumerating models from the session here would be a second
+    /// definition of "which models exist", and the two would drift the moment
+    /// MSL moved.
+    corpus: Option<Vec<crate::survey::SurveyRow>>,
+    /// Filter text for the list. **Narrows every source**, so a curated specimen
+    /// and a corpus model are found the same way.
+    list_filter: String,
     /// Scratch specimens skipped because a curated specimen already owns the name.
     /// Reported rather than silently resolved: loading the wrong model would have
     /// Claude reason confidently about source Doug is not looking at.
@@ -973,6 +983,8 @@ impl App {
             specimen_purposes: HashMap::new(),
             scratch_specimens: HashSet::new(),
             selected_is_library: false,
+            corpus: None,
+            list_filter: String::new(),
             shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
@@ -1245,6 +1257,20 @@ impl App {
         self.worker.send(ToWorker::CompileLibraryModel(qualified.to_owned()));
         self.selected = Some(id);
         self.selected_is_library = true;
+    }
+
+    /// The corpus rows, read from the survey on first use.
+    ///
+    /// Returns an empty slice when the survey has not been generated — a fresh
+    /// clone has no `docs/reports/msl-survey.csv` until someone runs the survey,
+    /// and the list should degrade to curated specimens rather than error.
+    fn corpus_rows(&mut self) -> &[crate::survey::SurveyRow] {
+        self.corpus.get_or_insert_with(|| {
+            let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
+            std::fs::read_to_string(path)
+                .map(|t| crate::survey::parse_csv(&t))
+                .unwrap_or_default()
+        })
     }
 
     /// Clear everything that belonged to the previously loaded specimen.
@@ -5506,16 +5532,30 @@ impl App {
                     egui::vec2(ui.available_width(), list_height),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        section_header(ui, "Specimens");
+                        section_header(ui, "Models");
+                        ui.add_space(4.0);
+                        // The filter is a PREREQUISITE, not an enhancement:
+                        // 18 curated files need none, 2,644 rows do.
+                        ui.horizontal(|ui| {
+                            ui.label("\u{1f50d}");
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.list_filter)
+                                    .hint_text("filter by name or outcome")
+                                    .desired_width(f32::INFINITY),
+                            );
+                        });
                         ui.add_space(4.0);
 
+                        // **Report, but do not return** — this guard predates the
+                        // corpus and used to guard too much. An empty or unscanned
+                        // `specimens/` would take the 2,626 MSL models down with it,
+                        // leaving the whole corpus unreachable because a *different*
+                        // source was empty. Found 2026-08-01 by the headless test,
+                        // which runs with no specimens scanned.
                         if let Some(err) = &self.scan_error {
                             ui.colored_label(ui.visuals().error_fg_color, err);
-                            return;
-                        }
-                        if self.files.is_empty() {
+                        } else if self.files.is_empty() {
                             ui.weak("(no .mo specimens found)");
-                            return;
                         }
 
                         self.poll_scratch_specimens();
@@ -5539,6 +5579,14 @@ impl App {
                             let mut capture_specimen = false;
                             for path in &self.files {
                                 let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
+                                // One box narrows every source: a curated specimen
+                                // and a corpus model are found the same way.
+                                if !self.list_filter.trim().is_empty()
+                                    && !name.to_lowercase()
+                                        .contains(&self.list_filter.trim().to_lowercase())
+                                {
+                                    continue;
+                                }
                                 let selected = self.selected.as_deref() == Some(path.as_path());
                                 let can_capture = selected && !self.compiling && self.model.is_some();
                                 let can_recompile = selected && !self.compiling;
@@ -5599,7 +5647,59 @@ impl App {
                                     to_open = Some(path.clone());
                                 }
                             }
-                            if let Some(path) = recompile {
+                            // ---- The corpus: the 2,626 MSL models ----
+                            //
+                            // **Shown only while filtering, deliberately.** Rendering
+                            // 2,626 rows by default would bury the 18 curated specimens
+                            // that most sessions actually want, and make the list
+                            // unusable as a browsing surface. The filter is what makes
+                            // the corpus reachable, which is why #52 calls it a
+                            // prerequisite rather than an enhancement.
+                            let filter = self.list_filter.trim().to_owned();
+                            let mut open_model: Option<String> = None;
+                            if !filter.is_empty() {
+                                let rows = self.corpus_rows();
+                                let hits: Vec<(String, String)> = rows
+                                    .iter()
+                                    .filter(|r| crate::survey::matches_filter(r, &filter))
+                                    .map(|r| (r.name.clone(), r.outcome.clone()))
+                                    .collect();
+                                if !hits.is_empty() {
+                                    ui.add_space(6.0);
+                                    ui.separator();
+                                    ui.weak(format!("MSL corpus \u{2014} {} match(es)", hits.len()));
+                                    for (name, outcome) in hits.iter().take(crate::survey::MAX_LISTED)
+                                    {
+                                        let is_sel = self
+                                            .selected
+                                            .as_ref()
+                                            .map(|p| p.as_os_str() == name.as_str())
+                                            .unwrap_or(false);
+                                        // The leaf name reads; the qualified name is
+                                        // 60 characters and would wrap every row.
+                                        let leaf = name.rsplit('.').next().unwrap_or(name);
+                                        let label = egui::RichText::new(format!("\u{1f4e6} {leaf}"))
+                                            .color(crate::colors::INCIDENCE_CELL);
+                                        let resp = ui
+                                            .selectable_label(is_sel, label)
+                                            .on_hover_text(format!("{name}\n\noutcome: {outcome}"));
+                                        if resp.clicked() {
+                                            open_model = Some(name.clone());
+                                        }
+                                    }
+                                    // **No silent caps.** A truncated list that does not
+                                    // say so reads as "that is all there is".
+                                    if hits.len() > crate::survey::MAX_LISTED {
+                                        ui.weak(format!(
+                                            "\u{2026} and {} more \u{2014} narrow the filter",
+                                            hits.len() - crate::survey::MAX_LISTED,
+                                        ));
+                                    }
+                                }
+                            }
+                            if let Some(name) = open_model {
+                                self.open_library_model(&name);
+                            } else if let Some(path) = recompile {
                                 self.open(path);
                             } else if let Some(path) = to_open {
                                 if self.selected.as_ref() == Some(&path) {
@@ -6476,6 +6576,15 @@ impl App {
         self.selected_is_library
     }
 
+    pub(crate) fn test_set_filter(&mut self, s: &str) {
+        self.list_filter = s.to_owned();
+    }
+
+    pub(crate) fn test_set_ui_mode_specimen(&mut self) {
+        self.ui_mode = UiMode::Specimen;
+    }
+
+
     /// Drive a link the way a tour click would, without a rendered hyperlink.
     pub(crate) fn follow_link_for_test(&mut self, url: &str) {
         if let Some(link) = parse_hrw_link(url) {
@@ -6503,6 +6612,8 @@ impl App {
             specimen_purposes: HashMap::new(),
             scratch_specimens: HashSet::new(),
             selected_is_library: false,
+            corpus: None,
+            list_filter: String::new(),
             shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,

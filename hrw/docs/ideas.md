@@ -2306,7 +2306,7 @@ corpus to do it on.
 
 ---
 
-## 52. One corpus list with a filter — **NOT a Test mode** (decided 2026-08-01)
+## 52. One corpus list with a filter — **NOT a Test mode** — BUILT 2026-08-01
 
 **The mode was dropped before it was built.** Doug, 2026-08-01, questioning his own decision:
 
@@ -2359,6 +2359,30 @@ set.**
 - **Anything that needs the three reports kept apart.** If a case turns up that genuinely
   cannot be expressed as a filter, **that is the evidence that something Test-mode-shaped was
   right after all** — and it should reopen this decision rather than be worked around.
+
+### Delivered 2026-08-01
+
+Built in the order the analysis implied, and **step 1 was the one that mattered**:
+
+1. **Corpus addressability** — `ToWorker::CompileLibraryModel`, `App::open_library_model`, and
+   `hrw://load/<qualified>`. The worker could already compile any of the 2,626 models
+   (`compile_model_by_name`, built for the fidelity sweep) and **the UI had no way to ask**, so
+   a tour could not link to one. That, not the filter, was what blocked just-in-time curricula.
+2. **The corpus as a third list source**, shown **only while filtering** — 2,626 rows by
+   default would bury the 18 curated specimens and make the list useless for browsing.
+3. **The filter** — `survey::matches_filter`, case-insensitive, matching name *or* outcome,
+   with whitespace-separated terms ANDed so adding a word narrows. Deliberately modest: Claude
+   queries the CSV directly and is not its consumer.
+
+**A real bug the headless test found**, and it was not a test artifact: the specimen list
+returned early when `self.files` was empty, so **an empty or unscanned `specimens/` took the
+whole corpus down with it** — a different source being empty made 2,626 models unreachable.
+The guard predated the corpus and had come to guard too much. It now reports and continues.
+
+**One verb, not two.** `hrw://load/` reaches all three sources: files resolve first so the
+repo's own copy wins a name collision, a dotted name falls through to the library, and a bare
+unknown name is reported as a typo rather than guessed at. A separate `hrw://model/` would
+have split one gesture in two and needed merging later — the mistake Test mode was.
 
 ### Build the filter first regardless
 
