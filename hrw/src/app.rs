@@ -405,6 +405,87 @@ impl StageViewCaches {
 }
 
 
+/// Everything the left panel's **model list** owns.
+///
+/// Three sources behind one widget — curated `specimens/`, scratch
+/// `.hrw-bridge/specimens/`, and the 2,626-row MSL corpus — plus the filter that
+/// narrows all three and the bookkeeping that keeps them fresh.
+///
+/// # Why these ten and not the whole left panel
+///
+/// Measured 2026-08-02: each of these is read only by the list's own rendering
+/// and by the three methods that maintain it (`rescan`, `poll_scratch_specimens`,
+/// `corpus_rows`). **None is read by a stage view, the chat, or the source pane.**
+/// `selected` is the boundary — the list *produces* it and everything else
+/// consumes it, so it stays on `App` where the measurement found it genuinely
+/// shared.
+///
+/// # Why a struct rather than ten fields on `App`
+///
+/// It is the difference between "extract a function" and "extract state"
+/// (`docs/ui-pause-plan.md`). A `model_list_ui(&mut self, ..)` could still reach
+/// any of `App`'s fields, so nothing would become independently testable and the
+/// next defect would hide exactly as well as the last three did — the corpus
+/// hidden without a filter, the vacuous startup test, the shadowing notice.
+struct ModelListState {
+    /// Directory scanned for curated `.mo` specimens.
+    dir: String,
+    /// Every specimen currently listed, curated and scratch together.
+    files: Vec<PathBuf>,
+    /// One-line `// purpose:` hint per specimen, read at rescan, so the list
+    /// reads as an index of what each specimen teaches.
+    purposes: HashMap<PathBuf, String>,
+    /// Which entries of [`Self::files`] came from the gitignored scratch
+    /// directory (ideas #42). A set rather than a flag on the path, so `files`
+    /// stays a plain `Vec<PathBuf>` everything else can use.
+    scratch: HashSet<PathBuf>,
+    /// Scratch specimens skipped because a curated specimen owns the name.
+    /// Reported rather than silently resolved: loading a different model than
+    /// the name says would have Claude reason confidently about source Doug is
+    /// not looking at.
+    shadowed: Vec<String>,
+    /// Why the scan failed, if it did.
+    scan_error: Option<String>,
+    /// The MSL corpus, read from the survey on first use.
+    ///
+    /// **The survey is the corpus definition** — the same rule `fidelity_msl`
+    /// follows. Re-enumerating models from the session would be a second
+    /// definition of "which models exist", and the two would drift the moment
+    /// MSL moved.
+    corpus: Option<Vec<crate::survey::SurveyRow>>,
+    /// Filter text. **Narrows every source**, so a curated specimen and a corpus
+    /// model are found the same way.
+    filter: String,
+    /// A scratch specimen appeared since the list was last drawn.
+    ///
+    /// Holds the HRW section open, which is otherwise collapsed at startup. A
+    /// scratch specimen is written *for the question being asked right now*, so
+    /// it is the one file that must not need a click to be seen. Sticky for the
+    /// session rather than one frame: a section that sprang open and shut again
+    /// would read as a glitch.
+    scratch_arrived: bool,
+    /// When the scratch directory was last polled.
+    polled_at: Option<std::time::Instant>,
+}
+
+impl Default for ModelListState {
+    fn default() -> Self {
+        Self {
+            // The only field with a meaningful default; the rest are empty.
+            dir: DEFAULT_SPECIMEN_DIR.to_owned(),
+            files: Vec::new(),
+            purposes: HashMap::new(),
+            scratch: HashSet::new(),
+            shadowed: Vec::new(),
+            scan_error: None,
+            corpus: None,
+            filter: String::new(),
+            scratch_arrived: false,
+            polled_at: None,
+        }
+    }
+}
+
 /// The entire application state. In immediate-mode UI, this struct IS the
 /// application — every frame, `ui()` reads and writes these fields to decide
 /// what to render and how to react. Fields are grouped by concern:
@@ -435,43 +516,16 @@ pub struct App {
     library_status: String,
     libraries_busy: bool,
 
-    // ---- 3. Specimen directory + file list ----
-    // The left panel shows a list of `.mo` specimen files from this directory.
-    specimen_dir: String,
-    files: Vec<PathBuf>,
-    // Per-specimen one-line purpose hint (the `// purpose:` comment), scanned at
-    // rescan so the specimen list reads as an index of what each one teaches.
-    specimen_purposes: HashMap<PathBuf, String>,
-    /// Which entries of `files` came from the gitignored scratch directory rather
-    /// than the curated corpus (ideas #42). Held as a set rather than a flag on the
-    /// path so `files` stays a plain `Vec<PathBuf>` that everything else can use.
-    scratch_specimens: HashSet<PathBuf>,
+    // ---- 3. The model list ----
+    /// Everything the left panel's model list owns. See [`ModelListState`].
+    model_list: ModelListState,
     /// True when [`Self::selected`] names a **library model** rather than a file
     /// on disk. See [`Self::open_library_model`] for why the two share a field.
+    ///
+    /// **Stays on `App`, not in [`ModelListState`]**: it qualifies `selected`,
+    /// which is one of the four genuinely shared fields, and every reader of one
+    /// needs the other.
     selected_is_library: bool,
-    /// The MSL corpus, read from the survey once on first use.
-    ///
-    /// **The survey is the corpus definition** — the same rule `fidelity_msl`
-    /// follows. Re-enumerating models from the session here would be a second
-    /// definition of "which models exist", and the two would drift the moment
-    /// MSL moved.
-    corpus: Option<Vec<crate::survey::SurveyRow>>,
-    /// Filter text for the list. **Narrows every source**, so a curated specimen
-    /// and a corpus model are found the same way.
-    list_filter: String,
-    /// A scratch specimen appeared since the list was last drawn.
-    ///
-    /// Holds the HRW section open, which is otherwise collapsed at startup. A
-    /// scratch specimen is written *for the question being asked right now*, so
-    /// it is the one file that must not need a click to be seen. Sticky for the
-    /// session rather than one frame: it marks "this session has scratch work",
-    /// and a section that sprang open and shut again would read as a glitch.
-    scratch_arrived: bool,
-    /// Scratch specimens skipped because a curated specimen already owns the name.
-    /// Reported rather than silently resolved: loading the wrong model would have
-    /// Claude reason confidently about source Doug is not looking at.
-    shadowed_specimens: Vec<String>,
-    scan_error: Option<String>,
 
     // ---- 4. Current selection + compilation results ----
     // When the user clicks a specimen, `selected` records the path and
@@ -648,7 +702,8 @@ pub struct App {
     /// When the scratch specimen directory was last polled, so a specimen Claude
     /// writes mid-conversation appears without restarting HRW — the same reason
     /// `tour.md` is polled.
-    scratch_polled_at: Option<std::time::Instant>,
+    ///
+    /// Moved to [`ModelListState::polled_at`] on 2026-08-02.
     // Specimen purpose notes, loaded on demand from
     // docs/specimen-notebook/<Model>/purpose.md.
     cached_purpose_notes: HashMap<PathBuf, Option<String>>,
@@ -1058,16 +1113,8 @@ impl App {
             libraries_text: DEFAULT_LIBRARIES.to_owned(),
             library_status: String::new(),
             libraries_busy: false,
-            specimen_dir: DEFAULT_SPECIMEN_DIR.to_owned(),
-            files: Vec::new(),
-            specimen_purposes: HashMap::new(),
-            scratch_specimens: HashSet::new(),
+            model_list: ModelListState::default(),
             selected_is_library: false,
-            corpus: None,
-            list_filter: String::new(),
-            scratch_arrived: false,
-            shadowed_specimens: Vec::new(),
-            scan_error: None,
             selected: None,
             compiling: false,
             model: None,
@@ -1124,7 +1171,6 @@ impl App {
             tour_polled_at: None,
             aim_at_equation: None,
             seek_frame: None,
-            scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
             library_source_uri: None,
@@ -1182,21 +1228,21 @@ impl App {
     /// each `.mo` file for its `// purpose:` comment. Called at startup and
     /// when the user changes the directory in Settings.
     fn rescan(&mut self) {
-        self.files.clear();
-        self.scratch_specimens.clear();
-        self.shadowed_specimens.clear();
-        self.scan_error = None;
-        match std::fs::read_dir(&self.specimen_dir) {
+        self.model_list.files.clear();
+        self.model_list.scratch.clear();
+        self.model_list.shadowed.clear();
+        self.model_list.scan_error = None;
+        match std::fs::read_dir(&self.model_list.dir) {
             Ok(entries) => {
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if path.extension().and_then(|e| e.to_str()) == Some("mo") {
-                        self.files.push(path);
+                        self.model_list.files.push(path);
                     }
                 }
-                self.files.sort();
+                self.model_list.files.sort();
             }
-            Err(e) => self.scan_error = Some(format!("{}: {e}", self.specimen_dir)),
+            Err(e) => self.model_list.scan_error = Some(format!("{}: {e}", self.model_list.dir)),
         }
 
         // Scratch specimens Claude wrote to answer a question (ideas #42). Appended
@@ -1206,6 +1252,7 @@ impl App {
         // at. That is the "makes Claude guess" failure, so the collision is reported
         // and the scratch file is skipped rather than winning or losing quietly.
         let curated: HashSet<String> = self
+            .model_list
             .files
             .iter()
             .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_owned))
@@ -1216,10 +1263,10 @@ impl App {
                 continue;
             };
             if curated.contains(name) {
-                self.shadowed_specimens.push(name.to_owned());
+                self.model_list.shadowed.push(name.to_owned());
                 continue;
             }
-            self.scratch_specimens.insert(path.clone());
+            self.model_list.scratch.insert(path.clone());
             scratch.push(path);
         }
         // **Scratch first, matching the tour list** (Doug, 2026-07-29). The ephemeral,
@@ -1231,11 +1278,12 @@ impl App {
         // Safe to reorder because a scratch name colliding with a curated one is
         // skipped above, so `files` never holds two entries with the same file name and
         // `find_specimen`'s first-match cannot become ambiguous.
-        scratch.extend(std::mem::take(&mut self.files));
-        self.files = scratch;
+        scratch.extend(std::mem::take(&mut self.model_list.files));
+        self.model_list.files = scratch;
         // Scan each specimen's `// purpose:` hint (cheap; no compile), so the list
         // can show what each one demonstrates.
-        self.specimen_purposes = self
+        self.model_list.purposes = self
+            .model_list
             .files
             .iter()
             .filter_map(|p| read_purpose(p).map(|hint| (p.clone(), hint)))
@@ -1245,7 +1293,7 @@ impl App {
     /// Find a specimen by model name (e.g. "BouncingBall" → `specimens/BouncingBall.mo`).
     fn find_specimen(&self, name: &str) -> Option<PathBuf> {
         let with_ext = format!("{name}.mo");
-        self.files.iter().find(|p| {
+        self.model_list.files.iter().find(|p| {
             p.file_name().and_then(|f| f.to_str()) == Some(with_ext.as_str())
         }).cloned()
     }
@@ -1338,7 +1386,7 @@ impl App {
     /// clone has no `docs/reports/msl-survey.csv` until someone runs the survey,
     /// and the list should degrade to curated specimens rather than error.
     fn corpus_rows(&mut self) -> &[crate::survey::SurveyRow] {
-        self.corpus.get_or_insert_with(|| {
+        self.model_list.corpus.get_or_insert_with(|| {
             let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
             std::fs::read_to_string(path)
                 .map(|t| crate::survey::parse_csv(&t))
@@ -2295,7 +2343,7 @@ impl App {
                 .collect::<Vec<_>>(),
             "counts": {
                 "log_entries": self.log_entries.len(),
-                "specimen_files": self.files.len(),
+                "specimen_files": self.model_list.files.len(),
                 "resolved_def_ids": self.def_index.len(),
                 "known_variables": self.known_variables.as_ref().map(HashSet::len),
             },
@@ -2654,7 +2702,7 @@ impl App {
                 ui.strong("Specimen directory");
                 ui.horizontal(|ui| {
                     let changed = ui.add(
-                        egui::TextEdit::singleline(&mut self.specimen_dir)
+                        egui::TextEdit::singleline(&mut self.model_list.dir)
                             .desired_width(f32::INFINITY)
                             .font(egui::TextStyle::Monospace),
                     ).changed();
@@ -3296,7 +3344,7 @@ impl App {
                         .width(120.0);
                     let mut switch_to = None;
                     combo.show_ui(ui, |ui| {
-                        for path in &self.files {
+                        for path in &self.model_list.files {
                             let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
                             if ui.selectable_label(false, name).clicked() {
                                 switch_to = Some(path.clone());
@@ -3367,7 +3415,7 @@ impl App {
                         .width(120.0);
                     let mut switch_to = None;
                     combo.show_ui(ui, |ui| {
-                        for path in &self.files {
+                        for path in &self.model_list.files {
                             let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
                             let is_selected = self.selected.as_deref() == Some(path.as_path());
                             if ui.selectable_label(is_selected, name).clicked() {
@@ -4199,23 +4247,24 @@ impl App {
     /// repeated for an unchanged directory.
     fn poll_scratch_specimens(&mut self) {
         let due = self
-            .scratch_polled_at
+            .model_list
+            .polled_at
             .is_none_or(|last| last.elapsed() >= SCRATCH_POLL_INTERVAL);
         if !due {
             return;
         }
-        self.scratch_polled_at = Some(std::time::Instant::now());
+        self.model_list.polled_at = Some(std::time::Instant::now());
 
         let found: HashSet<PathBuf> = bridge::scratch_specimens().into_iter().collect();
         // Compare against what was *accepted* plus what was shadowed, so a scratch
         // file appearing under a curated name still triggers a rescan and gets
         // reported rather than being invisible until the next restart.
-        let known = self.scratch_specimens.len() + self.shadowed_specimens.len();
-        if found.len() != known || !found.iter().all(|p| self.scratch_specimens.contains(p)) {
+        let known = self.model_list.scratch.len() + self.model_list.shadowed.len();
+        if found.len() != known || !found.iter().all(|p| self.model_list.scratch.contains(p)) {
             // Only an *arrival* opens the section. A scratch specimen being
             // deleted is not a reason to show the reader anything.
             if found.len() > known {
-                self.scratch_arrived = true;
+                self.model_list.scratch_arrived = true;
             }
             self.rescan();
         }
@@ -5721,7 +5770,7 @@ impl App {
                         ui.horizontal(|ui| {
                             ui.label("\u{1f50d}");
                             ui.add(
-                                egui::TextEdit::singleline(&mut self.list_filter)
+                                egui::TextEdit::singleline(&mut self.model_list.filter)
                                     .hint_text("filter by name or outcome")
                                     .desired_width(f32::INFINITY),
                             );
@@ -5734,9 +5783,9 @@ impl App {
                         // leaving the whole corpus unreachable because a *different*
                         // source was empty. Found 2026-08-01 by the headless test,
                         // which runs with no specimens scanned.
-                        if let Some(err) = &self.scan_error {
+                        if let Some(err) = &self.model_list.scan_error {
                             ui.colored_label(ui.visuals().error_fg_color, err);
-                        } else if self.files.is_empty() {
+                        } else if self.model_list.files.is_empty() {
                             ui.weak("(no .mo specimens found)");
                         }
 
@@ -5744,12 +5793,12 @@ impl App {
                         // A scratch name that collides with a curated one is skipped,
                         // and said so out loud — silently loading a different model
                         // than the one named is the failure this guards against.
-                        if !self.shadowed_specimens.is_empty() {
+                        if !self.model_list.shadowed.is_empty() {
                             ui.colored_label(
                                 crate::colors::ANIM_FAIL,
                                 format!(
                                     "\u{26a0} ignored scratch specimen(s) shadowing curated names: {}",
-                                    self.shadowed_specimens.join(", "),
+                                    self.model_list.shadowed.join(", "),
                                 ),
                             );
                         }
@@ -5770,8 +5819,9 @@ impl App {
                             // has to say how many are inside it while it is shut. A
                             // collapsed section with no count is a section a reader has
                             // to open to learn whether opening it was worth it.
-                            let hrw_filter = self.list_filter.trim().to_lowercase();
+                            let hrw_filter = self.model_list.filter.trim().to_lowercase();
                             let hrw_hits = self
+                                .model_list
                                 .files
                                 .iter()
                                 .filter(|p| {
@@ -5782,11 +5832,11 @@ impl App {
                                 })
                                 .count();
                             let hrw_header = if hrw_filter.is_empty() {
-                                format!("HRW specimens \u{2014} {}", self.files.len())
+                                format!("HRW specimens \u{2014} {}", self.model_list.files.len())
                             } else {
                                 format!(
                                     "HRW specimens \u{2014} {hrw_hits} of {}",
-                                    self.files.len(),
+                                    self.model_list.files.len(),
                                 )
                             };
                             // **Forced open when a scratch specimen just arrived.**
@@ -5796,7 +5846,7 @@ impl App {
                             // the current question* would be the one file not on
                             // screen. Same rule as the filter: open when there is a
                             // reason to look.
-                            let hrw_open = if !hrw_filter.is_empty() || self.scratch_arrived {
+                            let hrw_open = if !hrw_filter.is_empty() || self.model_list.scratch_arrived {
                                 Some(true)
                             } else {
                                 None
@@ -5809,24 +5859,24 @@ impl App {
                             if hrw_hits == 0 {
                                 ui.weak("no match");
                             }
-                            for path in &self.files {
+                            for path in &self.model_list.files {
                                 let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("<?>");
                                 // One box narrows every source: a curated specimen
                                 // and a corpus model are found the same way.
-                                if !self.list_filter.trim().is_empty()
+                                if !self.model_list.filter.trim().is_empty()
                                     && !name.to_lowercase()
-                                        .contains(&self.list_filter.trim().to_lowercase())
+                                        .contains(&self.model_list.filter.trim().to_lowercase())
                                 {
                                     continue;
                                 }
                                 let selected = self.selected.as_deref() == Some(path.as_path());
                                 let can_capture = selected && !self.compiling && self.model.is_some();
                                 let can_recompile = selected && !self.compiling;
-                                let purpose = self.specimen_purposes.get(path);
+                                let purpose = self.model_list.purposes.get(path);
                                 // Scratch specimens are marked: "a probe Claude wrote for
                                 // one question" and "part of the curated corpus" carry very
                                 // different weight, and the list is where that shows.
-                                let is_scratch = self.scratch_specimens.contains(path);
+                                let is_scratch = self.model_list.scratch.contains(path);
                                 let label = if is_scratch {
                                     egui::RichText::new(format!("\u{270e} {name}"))
                                         .color(crate::colors::ANIM_EXPLORE)
@@ -5888,7 +5938,7 @@ impl App {
                             // code beneath it since the same day, and left behind. A
                             // comment that describes a design the code abandoned is
                             // worse than none: it is read as intent.
-                            let filter = self.list_filter.trim().to_owned();
+                            let filter = self.model_list.filter.trim().to_owned();
                             let mut open_model: Option<String> = None;
                             {
                                 let rows = self.corpus_rows();
@@ -6852,7 +6902,7 @@ impl App {
     }
 
     pub(crate) fn test_set_filter(&mut self, s: &str) {
-        self.list_filter = s.to_owned();
+        self.model_list.filter = s.to_owned();
     }
 
     /// Populate the HRW specimen list without touching the filesystem.
@@ -6937,8 +6987,8 @@ impl App {
     }
 
     pub(crate) fn test_set_specimen_files(&mut self, names: &[&str]) {
-        self.files = names.iter().map(PathBuf::from).collect();
-        self.scratch_polled_at = Some(std::time::Instant::now());
+        self.model_list.files = names.iter().map(PathBuf::from).collect();
+        self.model_list.polled_at = Some(std::time::Instant::now());
     }
 
     pub(crate) fn test_set_ui_mode_specimen(&mut self) {
@@ -6973,16 +7023,11 @@ impl App {
             libraries_text: String::new(),
             library_status: String::new(),
             libraries_busy: false,
-            specimen_dir: String::new(),
-            files: Vec::new(),
-            specimen_purposes: HashMap::new(),
-            scratch_specimens: HashSet::new(),
+            // **An empty `dir`, unlike the real default.** A test must not scan
+            // the developer's `specimens/`, or its results depend on what is
+            // checked out.
+            model_list: ModelListState { dir: String::new(), ..ModelListState::default() },
             selected_is_library: false,
-            corpus: None,
-            list_filter: String::new(),
-            scratch_arrived: false,
-            shadowed_specimens: Vec::new(),
-            scan_error: None,
             selected: None,
             compiling: false,
             model: None,
@@ -7039,7 +7084,6 @@ impl App {
             tour_polled_at: None,
             aim_at_equation: None,
             seek_frame: None,
-            scratch_polled_at: None,
             cached_purpose_notes: HashMap::new(),
             cached_source: None,
             library_source_uri: None,
@@ -8251,7 +8295,7 @@ mod tests {
     #[test]
     fn a_scratch_specimen_is_listed_and_marked() {
         let mut app = App::test_default();
-        app.specimen_dir = DEFAULT_SPECIMEN_DIR.to_owned();
+        app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
         app.rescan();
 
         let probe = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR)
@@ -8259,17 +8303,17 @@ mod tests {
         if !probe.exists() {
             return; // no probe written in this checkout
         }
-        assert!(app.files.contains(&probe), "scratch specimens join the list");
+        assert!(app.model_list.files.contains(&probe), "scratch specimens join the list");
         // Scratch sorts FIRST, matching the tour list: the just-written thing is the
         // one most likely wanted next, and burying it under 18 curated specimens made
         // the common case the awkward one.
         assert_eq!(
-            app.files.first(),
+            app.model_list.files.first(),
             Some(&probe),
             "scratch specimens lead the list: {:?}",
-            app.files.iter().take(3).collect::<Vec<_>>(),
+            app.model_list.files.iter().take(3).collect::<Vec<_>>(),
         );
-        assert!(app.scratch_specimens.contains(&probe), "and are marked as scratch");
+        assert!(app.model_list.scratch.contains(&probe), "and are marked as scratch");
         assert_eq!(
             app.find_specimen("ScratchProbe"),
             Some(probe),
@@ -8278,11 +8322,12 @@ mod tests {
 
         // The curated corpus is untouched and still unmarked.
         let curated = app
+            .model_list
             .files
             .iter()
             .find(|p| p.file_name().and_then(|n| n.to_str()) == Some("BouncingBall.mo"))
             .expect("BouncingBall is curated");
-        assert!(!app.scratch_specimens.contains(curated));
+        assert!(!app.model_list.scratch.contains(curated));
     }
 
     /// A scratch specimen may not shadow a curated one.
@@ -8304,15 +8349,15 @@ mod tests {
         }
 
         let mut app = App::test_default();
-        app.specimen_dir = DEFAULT_SPECIMEN_DIR.to_owned();
+        app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
         app.rescan();
 
         assert!(
-            app.shadowed_specimens.iter().any(|n| n == "BouncingBall.mo"),
+            app.model_list.shadowed.iter().any(|n| n == "BouncingBall.mo"),
             "the collision is reported: {:?}",
-            app.shadowed_specimens,
+            app.model_list.shadowed,
         );
-        assert!(!app.scratch_specimens.contains(&clash), "and the scratch file is skipped");
+        assert!(!app.model_list.scratch.contains(&clash), "and the scratch file is skipped");
         // The curated one still wins, and is what the name resolves to.
         let found = app.find_specimen("BouncingBall").expect("still findable");
         assert!(found.starts_with(DEFAULT_SPECIMEN_DIR), "curated wins: {found:?}");
@@ -8366,7 +8411,7 @@ mod tests {
     #[test]
     fn find_specimen_matches_by_filename() {
         let mut app = App::test_default();
-        app.files = vec![
+        app.model_list.files = vec![
             PathBuf::from("/specimens/BouncingBall.mo"),
             PathBuf::from("/specimens/Drivetrain.mo"),
         ];
@@ -8379,14 +8424,14 @@ mod tests {
     #[test]
     fn find_specimen_returns_none_for_missing() {
         let mut app = App::test_default();
-        app.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
+        app.model_list.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
         assert!(app.find_specimen("NonExistent").is_none());
     }
 
     #[test]
     fn find_specimen_does_not_match_substring() {
         let mut app = App::test_default();
-        app.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
+        app.model_list.files = vec![PathBuf::from("/specimens/BouncingBall.mo")];
         assert!(app.find_specimen("Bouncing").is_none());
     }
 
