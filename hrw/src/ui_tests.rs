@@ -356,3 +356,55 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
         "and it must select the FULLY QUALIFIED name, since the leaf is only a label",
     );
 }
+
+/// The **background** names both halves: specimen **and** stage.
+///
+/// The third kind of context, and the only one with no labelled row -- which is
+/// how half of it went missing in plain sight from the first commit of the bar
+/// (`b2732393`) until Doug counted three kinds and saw two on 2026-08-01.
+///
+/// **This is the must-fire rule aimed at the Context Bar.** The bar's entire job
+/// is to report what `focus.json` will carry, and `focus.json` carried the stage
+/// all along. An under-reporting reporter is the failure mode most likely to go
+/// unnoticed, because everything it *does* say is true.
+#[test]
+fn the_background_names_both_the_specimen_and_the_stage() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("MotorWithBrake.mo", "MotorWithBrake", crate::worker::StageKind::Flatten);
+    let mut h = harness(app);
+    h.run_steps(2);
+
+    assert!(
+        h.query_by_label_contains("MotorWithBrake \u{00b7} Flatten").is_some(),
+        "the specimen half of the background must be rendered",
+    );
+    assert!(
+        h.query_by_label_contains("\u{00b7} Flatten").is_some(),
+        "the STAGE half must be rendered too -- `docs/context-assembly.md`: \
+         \"Specimen and stage are always context, so they are always shown\". \
+         Emitting a fact the bar does not show is precisely the drift the bar exists \
+         to prevent",
+    );
+}
+
+/// A specimen with **no compiled model yet** still names its stage.
+///
+/// Mid-compile the model name is `None`, and the first fix would have shown a
+/// bare `Context` -- reading as *no context at all* at the one moment a reader is
+/// most likely to be watching. The stage is known the whole time; say it.
+#[test]
+fn the_background_names_the_stage_before_a_model_exists() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("MotorWithBrake.mo", "MotorWithBrake", crate::worker::StageKind::Flatten);
+    app.test_clear_model();
+    let mut h = harness(app);
+    h.run_steps(2);
+
+    assert!(
+        h.query_by_label_contains("\u{00b7} Flatten").is_some(),
+        "with a specimen selected but no model compiled, the stage is still context \
+         and must still be shown",
+    );
+}

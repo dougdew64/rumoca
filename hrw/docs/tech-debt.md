@@ -389,3 +389,31 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   than being it. The UI wording says "in" rather than "declared in", so it is honest — but a
   deeper resolution would need to walk into library class IRs that are loaded on demand.
   *File:* `app.rs`.
+
+## The Context Bar reported less than it emitted, and only Doug noticed
+
+**Who caught it: Doug** — which is the backward sweep trigger. Nothing in the
+toolchain could have: the bar had **no test of its own**, so every claim it made
+was true and the claims it *failed* to make cost nothing.
+
+Two distinct omissions in one widget, both invisible for the same reason:
+
+- the **stage** was never drawn, from the bar's first commit (`b2732393`);
+- the **specimen** was drawn only in the populated branch, so the empty-state
+  branch — the common case — rendered `Context — nothing assembled` while
+  `focus.json` was carrying both.
+
+**The general shape: a reporter that under-reports.** The must-fire rule says
+silence must be a failure, and the bar was never silent — it spoke, just
+incompletely. **Everything it said was correct**, which is why review, tests and
+daily use all passed over it. A partial report is harder to catch than no report,
+and this one sat in the widget whose single job is to make emission legible.
+
+**What now checks it:** `ui_tests::the_background_names_both_the_specimen_and_the_stage`
+and `..._names_the_stage_before_a_model_exists`. The two branches share one
+`background_ui`, so they can no longer drift apart.
+
+**What remains unswept:** the rest of `context_bar_ui`'s rows have no headless
+test either. The point-at and follow rows are *labelled*, so an omission there is
+visible in a way the background's was not — which lowers the priority without
+removing it.

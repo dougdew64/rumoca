@@ -4634,7 +4634,38 @@ This model comes from a loaded library, not from a specimen                     
         } else {
             "left-click a node to point at it"
         });
-        format!("\u{00b7} nothing assembled \u{2014} {}", ways.join(", or "))
+        // **Not "nothing assembled".** The background is always assembled and
+        // always emitted, so that wording made the bar contradict `focus.json`
+        // for every reader who had not yet clicked anything -- the majority
+        // state. What is missing is a *selection*, which is what this now says.
+        format!("\u{2014} {}", ways.join(", or "))
+    }
+
+    /// The **background**: specimen and stage, always context, always shown.
+    ///
+    /// `docs/context-assembly.md`: *"Specimen and stage are always context, so
+    /// they are always shown."* One renderer for both branches of
+    /// [`Self::context_bar_ui`], because the two drifted apart the moment there
+    /// were two of them -- the empty-state branch returned before ever reaching
+    /// the background, so the bar showed *no* context at all in the state a
+    /// reader is in most of the time.
+    ///
+    /// Both halves went unrendered in different ways: the stage was **never**
+    /// drawn (since `b2732393`, the commit that created the bar), and the
+    /// specimen was drawn only once something was pointed at. Found 2026-08-01
+    /// by Doug, who counted three kinds of context and saw two.
+    fn background_ui(&self, ui: &mut egui::Ui) {
+        match (&self.model, self.selected.is_some()) {
+            (Some(model), _) => {
+                ui.weak(format!("\u{00b7} {model} \u{00b7} {}", self.stage.name()));
+            }
+            // Mid-compile, or a compile that yielded no model name: still name
+            // the stage rather than showing a bare "Context".
+            (None, true) => {
+                ui.weak(format!("\u{00b7} {}", self.stage.name()));
+            }
+            (None, false) => {}
+        }
     }
 
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
@@ -4657,6 +4688,7 @@ This model comes from a loaded library, not from a specimen                     
                 let hint = self.empty_context_hint();
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Context").strong());
+                    self.background_ui(ui);
                     ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
                 });
                 ui.separator();
@@ -4675,11 +4707,14 @@ This model comes from a loaded library, not from a specimen                     
 
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new("Context").strong());
-            if let Some(model) = &self.model {
-                ui.weak(format!("\u{00b7} {model}"));
-            }
+            self.background_ui(ui);
             if let Some(point) = &self.pointed_at {
-                ui.weak(format!("\u{00b7} pointed at in {}", point.stage.name()));
+                // Worth saying only when it **differs** from the background
+                // stage; otherwise it repeats the line above as if it were a
+                // second, independent fact.
+                if point.stage != self.stage {
+                    ui.weak(format!("\u{00b7} pointed at in {}", point.stage.name()));
+                }
             }
             // An emission failure must be stated here, not swallowed. Otherwise
             // the bar claims context Claude does not have — it would still be
@@ -6627,6 +6662,11 @@ impl App {
         self.selected = Some(PathBuf::from(specimen));
         self.model = Some(model.to_owned());
         self.stage = stage;
+    }
+
+    /// Drop the model name, leaving the selection: the mid-compile state.
+    pub(crate) fn test_clear_model(&mut self) {
+        self.model = None;
     }
 
     fn test_with_sender() -> (Self, std::sync::mpsc::Sender<FromWorker>) {

@@ -235,6 +235,14 @@ Context   MotorWithBrake · Flatten
 ```
 
 - Specimen and stage are always context, so they are always shown.
+  **This line was the last part of the sketch to be true** (fixed 2026-08-01).
+  The bar shipped in `b2732393` never drawing the stage, and drew the specimen
+  only once something was pointed at, because the empty-state branch returned
+  before reaching the background. So in the state a reader is in *most* of the
+  time — nothing clicked yet — the bar said **"nothing assembled"** while
+  `focus.json` was carrying a specimen and a stage. Doug found it by counting
+  three kinds of context and seeing two. `background_ui` is now one renderer
+  called from both branches; `ui_tests.rs` holds the two guards.
 - "Pointing at" and "Following" keep the point/thread distinction in the
   vocabulary rather than hiding it.
 - The mention count says how much a question about `src.V` actually has behind
