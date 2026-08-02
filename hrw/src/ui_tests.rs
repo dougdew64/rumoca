@@ -559,3 +559,130 @@ fn a_programmatic_source_scroll_keeps_the_left_margin() {
          of 0 on both axes would pass the check above while doing nothing at all",
     );
 }
+
+// ===========================================================================
+// Baseline suite, chunk 1 — the panes whose job is to REPORT
+// ===========================================================================
+//
+// First by the priority in `docs/tech-debt.md`, because these share the Context
+// Bar's failure shape: a pane that exists to say something can under-report and
+// look perfectly fine, since everything it *does* say is true.
+//
+// Each pane gets the same pair — **it shows what it was given**, and **it says
+// something when it has nothing**. The second matters as much as the first: a
+// blank pane is indistinguishable from a broken one, which is exactly how
+// `specimen_source_ui` hid its MSL defect for weeks.
+
+/// The status bar renders the notice it was given.
+///
+/// Notices are how HRW refuses things. On 2026-07-30 Doug clicked a tour link
+/// that was correctly refused, with the reason on screen, and reported that
+/// nothing had happened — the text was there but styled as background chrome.
+/// A notice that is not *seen* has not been delivered.
+#[test]
+fn the_status_bar_shows_the_notice_it_was_given() {
+    let mut app = App::test_default();
+    app.test_set_notice("no specimen loaded — pick one on the left");
+    let h = harness(app);
+
+    assert!(
+        h.query_by_label_contains("no specimen loaded").is_some(),
+        "a notice must reach the screen; HRW has no other way to refuse an action",
+    );
+}
+
+/// With no notice, the status bar still says something.
+///
+/// The idle hint is the one thing on screen telling a new reader what to do
+/// first. An empty status bar would read as a UI that has nothing to offer.
+#[test]
+fn the_status_bar_offers_the_idle_hint_when_there_is_no_notice() {
+    let h = harness(App::test_default());
+
+    assert!(
+        h.query_by_label_contains("Left-click a tree node").is_some(),
+        "with nothing to report the status bar must still carry the opening hint",
+    );
+}
+
+/// The log view renders the entries it holds, at every level.
+///
+/// The log is the only pane that shows the compiler's own voice — Rumoca's
+/// `println!` diagnostics, captured at the file-descriptor level. If it drops a
+/// level silently, the missing lines are the ones nobody knows to look for.
+#[test]
+fn the_log_view_renders_every_entry_it_holds() {
+    use crate::worker::LogLevel;
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    // The central panel needs a loaded specimen before it draws its body, so the
+    // log view is unreachable without one — a fact worth knowing before writing
+    // any test that expects the right-hand side to render.
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_log(&[
+        (LogLevel::Info, "compiling RcCircuit.mo"),
+        (LogLevel::StageStart, "Flatten"),
+        (LogLevel::Stderr, "a diagnostic Rumoca printed"),
+        (LogLevel::Error, "something went wrong"),
+    ]);
+    let h = harness(app);
+
+    // Each level separately: a renderer that handled Info and dropped Stderr
+    // would look entirely healthy on a successful compile.
+    for expected in [
+        "compiling RcCircuit.mo",
+        "Flatten",
+        "a diagnostic Rumoca printed",
+        "something went wrong",
+    ] {
+        // **`get_all_…().next()`, not `query_…()`.** The singular query *panics*
+        // when two nodes match, and "Flatten" legitimately appears twice: once as
+        // this log entry and once as the stage tab. A test that cannot tolerate a
+        // second match is asserting something about the rest of the screen that it
+        // never meant to assert.
+        assert!(
+            h.get_all_by_label_contains(expected).next().is_some(),
+            "the log view dropped {expected:?} — a log that omits a level silently is \
+             worse than no log, because the omission looks like silence from the compiler",
+        );
+    }
+}
+
+/// An empty log says why it is empty.
+#[test]
+fn an_empty_log_view_says_so_rather_than_rendering_blank() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_view_empty_log();
+    let h = harness(app);
+
+    // **"compilation log", not "Select a specimen".** The shorter phrase also
+    // opens the source view's own empty state, and `query_by_label_contains`
+    // panics on two matches — so the loose query would have failed even with the
+    // pane working perfectly.
+    assert!(
+        h.query_by_label_contains("compilation log").is_some(),
+        "an empty log must explain itself; blank reads as a log view that is broken",
+    );
+}
+
+// **The equation sheet is deferred to a later chunk, and here is what tried to
+// test it.**
+//
+// `equation_sheet_ui` opens with `let Some(sheet) = &self.cached_equation_sheet
+// else { ui.weak("(no equation sheet)"); return; }` — which looks exactly like
+// the empty state this chunk is built to check. It is **unreachable**. There is
+// one call site (`app.rs`, the Flatten sub-view row) and it is gated on
+// `flatten_ready`, which is itself `cached_equation_sheet.is_some()`.
+//
+// The branch is defensive rather than wrong, so it stays. But a test asserting
+// that message would have been **testing a string, not a behaviour** — passing
+// forever regardless of what the pane does, which is the vacuity trap in its
+// purest form. Worth writing down, because the message reads as evidence that
+// the empty case is handled and reachable, and it is only the first of those.
+//
+// The sheet's real behaviour — that it renders the equations it holds — needs a
+// populated `EquationSheet`, so it belongs with the tests that compile a
+// specimen behind `slow-tests`.

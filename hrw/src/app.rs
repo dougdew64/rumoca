@@ -6846,6 +6846,31 @@ impl App {
         self.source_scroll_offset
     }
 
+    /// Put a message in the status bar, as any refusal or result would.
+    pub(crate) fn test_set_notice(&mut self, s: &str) {
+        self.notice = Some(s.to_owned());
+    }
+
+    /// Fill the compilation log and open the log view.
+    pub(crate) fn test_set_log(&mut self, lines: &[(crate::worker::LogLevel, &str)]) {
+        self.log_entries = lines
+            .iter()
+            .enumerate()
+            .map(|(i, (level, message))| LogEntry {
+                elapsed_secs: i as f64 * 0.1,
+                level: *level,
+                message: (*message).to_owned(),
+            })
+            .collect();
+        self.viewing_log = true;
+    }
+
+    /// Show the log view with nothing in it.
+    pub(crate) fn test_view_empty_log(&mut self) {
+        self.log_entries.clear();
+        self.viewing_log = true;
+    }
+
     pub(crate) fn test_set_specimen_files(&mut self, names: &[&str]) {
         self.files = names.iter().map(PathBuf::from).collect();
         self.scratch_polled_at = Some(std::time::Instant::now());
