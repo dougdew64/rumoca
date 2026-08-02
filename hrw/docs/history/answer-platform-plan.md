@@ -6,7 +6,7 @@ reasoning, which is still load-bearing, and for the record of a correction Doug 
 governs how work is chosen.
 **Read when:** you want to know *why* speculative features are permitted but stored prose is
 not, or what the 2026-07-29 reframe actually changed. **Not** when deciding what to do next —
-that is [`../../CLAUDE.md`](../../CLAUDE.md) and [`../current-work.md`](../current-work.md).
+that is [`../../CLAUDE.md`](../../CLAUDE.md). *(It also named `current-work.md`, deleted 2026-08-01 when its work finished.)*
 
 ## Where its content went
 

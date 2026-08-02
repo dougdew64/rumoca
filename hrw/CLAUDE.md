@@ -127,64 +127,58 @@ than the public API allowed.** Per arc: scout what state the phase holds (read t
 `docs/ideas.md` #19-#22. The log view is delivered. Pass-one closure record and the arc history
 are in [`DECISIONS.md`](DECISIONS.md).
 
-**[`docs/current-work.md`](docs/current-work.md) is the live step-by-step plan.** Delete it
-when the sweep's findings have landed.
-
-**The sequence (Doug, 2026-07-31) — each step's output is the next step's input:**
+**The sequence — each step's output is the next step's input.** Restructured 2026-08-01: the
+oracle test is **no longer a step** (see below).
 
 1. **The MSL survey** ✅ — `examples/survey_msl.rs`. Rumoca's reach across all 2,626 MSL models,
    plus the IR-shape metrics that stratify the sample.
 2. **Fidelity testing at scale** ✅ — F1-F9 over that corpus. **2,614 of 2,626 models green**
    (2026-08-01); 12 exceeded this machine's memory or the time limit.
-3. **One corpus list with a filter** — **NOT a Test mode** (`docs/ideas.md` **#52**, decided
-   2026-08-01). One list widget over three visible sources — curated `specimens/`, scratch
-   `.hrw-bridge/specimens/`, and the 2,626 MSL rows — with the reports as **columns and filter
-   predicates**, not as three views. **The filter is a prerequisite, not an enhancement**: 18
-   files need none, 2,644 do.
-   - **3b. PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** ✅ **COMPLETE
-     2026-08-01.** All six items landed: the must-fire convention,
-     **the stale-negative test** (a claim of *absence* must be checkable — the mirror of
-     `doc_citations.rs`), **clearing HRW's 67 clippy warnings and then denying them**,
-     shortening the pre-commit suite (#48), **headless UI testing with `egui_kittest`**
-     (dev-dependency, approved), and the run drivers — **resolved by splitting**, since
-     `promote-run` writes a published claim while the watchdog needs a crate and mid-run
-     editability. Doug: *"Anything which slows down your ability to help bring my ideas to
-     life is absolutely worth fixing now."*
-4. **Design and run the oracle test** — Rumoca vs System Modeler (#43). **Constrained by
-   [`docs/reports.md`](docs/reports.md):** it must emit the same `name` join key, because a
-   mismatch is only an admissible upstream finding when that model is *fidelity-green*.
-5. **Where oracle findings surface.** Mismatches become **columns and a filter** on the same
-   list, joined on `name`. **Per-item state — unfiled / filed / fixed upstream — does NOT go in
-   the list**: that is the status of a finding you intend to file, not a property of a model,
-   and filing state already lives in `docs/upstream-issues.md`. Putting workflow state in a
-   corpus browser is how a browser becomes a bug tracker.
+3. **The verification pause** ✅ — [`docs/verification-plan.md`](docs/verification-plan.md), all
+   six items landed 2026-08-01: the must-fire convention and its audit, the stale-negative test,
+   clippy cleared and denied, the pre-commit suite memoised (375s → 113s), **headless UI testing
+   with `egui_kittest`**, and the run drivers resolved by splitting.
+4. **← THE LIVE WORK: one corpus list with a filter** (`docs/ideas.md` **#52**). One list widget
+   over **three visible sources** — curated `specimens/`, scratch `.hrw-bridge/specimens/`, and
+   the 2,626 MSL rows — with the reports as **columns and filter predicates**, never as separate
+   views. **NOT a Test mode**, decided 2026-08-01: that loop *is* Specimen mode's loop, and
+   `DECISIONS.md` records why "mode" was the wrong unit.
 
-**[`docs/reports.md`](docs/reports.md) is the design authority for steps 3-5.** Its load-bearing
-claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
+   **The filter is a prerequisite, not an enhancement** — 18 files need none, 2,644 do.
+   **Merge the widget, not the corpora**: curated specimens have properties MSL rows do not, and
+   the sources stay visibly distinct.
 
-**One dependency the sequence hid, now met:**
+**[`docs/reports.md`](docs/reports.md) is the design authority for step 4.** Its load-bearing
+claim: **survey → eligible, fidelity → trustworthy, oracle → findings**, joined on `name`.
 
-- ~~Step 3 needs a compile-by-qualified-name path in the worker.~~ ✅ **`WorkerState::compile_model_by_name`
-  exists** — built for step 2, since checking HRW's representation of an MSL model means
-  compiling it *through HRW's own path*, which is the thing under test. *(Corrected 2026-08-01;
-  this was listed as missing after it shipped.)* Note **why it could not just call `compile`
-  with the library file**: a library file may declare many classes — `Blocks/Continuous.mo`
-  holds `CriticalDamping` among others — so "the first class in the file" is the wrong model.
-  The document is **located, not added**.
+**The oracle (#43) is a TRACK, not a step** *(2026-08-01, Doug)*. It was step 4 and gated the
+work; it does not belong there.
 
-**One risk in the ordering:**
+- **It never blocked the list**, and the list does not need it to be *tested* either: the survey
+  (2,626 rows) and the fidelity report (2,614) are two real sources with genuinely different
+  shapes — *browse* versus *exceptions* — which is what exercises a filter. A third report would
+  be **new columns, not a new shape**.
+- **Its value is elsewhere**: Doug's education (an independent adjudicator, which is why *oracle
+  first* is a standing practice — it corrects Claude's bias toward blaming its own specimen) and
+  **upstream**, where `upstream-strategy.md` calls differential testing the rarest thing Doug
+  brings.
+- **One constraint survives because it is free:** *if* an oracle report is ever produced, it must
+  emit the same `name` join key. That binds the **oracle's** design, not the filter's, and
+  retrofitting it later would cost the join.
 
-- **The n=1 risk, much reduced by the merge.** A dedicated mode built at step 3 would have been
-  fitted to *one* report and then asked to take a second at step 5. **Columns-and-filters over
-  one row set has no such shape to overfit** — a new report is new columns. What survives is
-  the join key: all three reports share the first four columns (`name`, `kind`, `outcome`,
-  `message`), and it is still worth **sketching the oracle report's columns during step 3** so
-  the filter is designed against two consumers rather than one.
+**A dependency the sequence used to hide, now met:**
 
-- **The signal that dropping the mode was wrong**, recorded so it is recognisable: a question
-  that genuinely **cannot be expressed as a filter** over the joined rows. That would mean
-  something Test-mode-shaped was right after all, and it should reopen `docs/ideas.md` #52
-  rather than be worked around.
+- ~~The list needs a compile-by-qualified-name path in the worker.~~ ✅
+  **`WorkerState::compile_model_by_name` exists** — built for step 2, since checking HRW's
+  representation of an MSL model means compiling it *through HRW's own path*, which is the thing
+  under test. Note **why it cannot just call `compile` with the library file**: a library file
+  may declare many classes — `Blocks/Continuous.mo` holds `CriticalDamping` among others — so
+  "the first class in the file" is the wrong model. The document is **located, not added**.
+
+**The signal that dropping the mode was wrong**, recorded so it stays recognisable rather than
+being rationalised away: a question that genuinely **cannot be expressed as a filter** over the
+joined rows. That would mean something Test-mode-shaped was right after all, and it should
+reopen `docs/ideas.md` #52.
 
 ---
 

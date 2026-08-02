@@ -1333,6 +1333,32 @@ new medium is not a licence for verbosity.
 
 ## 43. Three platforms, three questions — Wolfram and System Modeler as answer channels
 
+> **A TRACK, not a sequence step** *(2026-08-01, Doug)*. This was step 4 of the work sequence
+> and gated the corpus list. It has been taken off the sequence entirely — see `../CLAUDE.md`.
+>
+> **Why it was never a dependency.** The conflation was mine: *#43* is mostly a **practice** —
+> independence, the division of labour between the three platforms, and the standing *oracle
+> first, then Rumoca* rule. What the sequence called "the oracle test" is a sub-part: a
+> systematic Rumoca-vs-System-Modeler sweep producing a **report**. Once findings live in
+> [`upstream-issues.md`](upstream-issues.md) and the corpus list merely shows a column, that
+> sub-part's coupling to HRW feature work is **one column** — which the list handles by
+> construction, since it already reads two reports.
+>
+> **The practice half is already in use** and needs no build: it settled `IncompatibleConnect`
+> (upstream issue 2), and two fixture tours route through it.
+>
+> **Where the value actually is:** Doug's education — an independent implementation that can
+> adjudicate, which is exactly why *oracle first* exists as a rule; it corrects Claude's bias
+> toward blaming its own specimen. And **upstream**, where
+> [`upstream-strategy.md`](upstream-strategy.md) calls differential testing against a commercial
+> Modelica implementation *the rarest thing Doug brings*, and something a volunteer project
+> cannot cheaply do for itself.
+>
+> **One constraint survives, because it is free:** *if* an oracle report is ever produced it must
+> emit the same `name` join key as the survey and fidelity reports
+> ([`reports.md`](reports.md)). That binds the **oracle's** design, not the list's, and
+> retrofitting it later would cost the join.
+
 Requested 2026-07-29 (Doug), extending #42 beyond HRW:
 
 > I want you to view HRW as a platform for answering my questions, when you
@@ -3105,3 +3131,39 @@ each keeps one line saying what it was and where it landed; the reasoning is in 
   re-proposed, so deleting it would invite the proposal it exists to refuse.
 - **#42** and **#45** — **partly** delivered, and still live. #42's ad hoc tours and #45's
   diagnostic audits have shipped sub-items marked in place; each still has open work.
+
+---
+
+## 58. A reading path for HRW, then a structural pass on `app.rs`
+
+**Ported here 2026-08-01** when `current-work.md` was deleted — its work was done, but this
+reasoning was future-facing and lived nowhere else.
+
+### Why HRW now needs studying, like Rumoca does
+
+**33,964 lines across 33 modules**, against Rumoca's 138,987 across 53 crates — about a
+quarter, and no longer trivial. Doug, 2026-07-31: *"I'm definitely going to have to consider
+HRW to be a subject of focused study, just like rumoca."*
+
+But the complexity is **concentrated, not diffuse**: `app.rs` is 9,039 lines and `worker.rs`
+5,668 — **43% of all HRW code in two files.** And unlike Rumoca's, much of it is *accidental*
+rather than essential: a 9,000-line UI module is not inherent to what HRW does. **So part of
+the answer is not "study it harder" but "make it smaller."**
+
+### The gap a reading path fills
+
+HRW has ~19,000 lines of documentation across 64 files — generous against 34k of code — but
+[`architecture.md`](architecture.md) is a 1,500-line **reference**. It answers *"how does X
+work"*, never *"where do I start"*. Rumoca has [`compiler-phases/`](compiler-phases/) for
+exactly that; HRW has no equivalent.
+
+### Both are deferred until after the corpus list, on purpose
+
+The rule is one this project already holds — **skip debt a later phase will rewrite**
+(`feedback-tech-debt-sweeps-serve-future-phases`). The corpus list touches `app.rs` heavily:
+the specimen list becomes a filtered corpus browser. A structural pass or a reading path
+written before it would be **partly obsolete on arrival**, and `CLAUDE.md` already defers
+splitting `central_panel_ui` for the same reason.
+
+**Relates to:** [`tech-debt.md`](tech-debt.md)'s `app.rs` entry (up 42% in three days, logged
+rather than swept), #52.

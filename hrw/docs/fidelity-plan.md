@@ -457,3 +457,24 @@ same corpus.
 
 - *Does HRW tell the truth about Rumoca?* — this plan.
 - *Does Rumoca tell the truth about Modelica?* — System Modeler.
+
+
+## Triaging a violation — three categories, not one
+
+**Ported from `current-work.md` 2026-08-01**, whose work finished. This is the part of a
+sweep that is *not* "fixing bugs", and it is the part most easily skipped.
+
+**Nine of the twelve violations F6-F9 produced on their first run were the CHECK's fault, not
+HRW's.** So triage precedes fixing, and a violation means *something disagrees* — never
+*HRW is wrong*:
+
+| Category | Response |
+|---|---|
+| HRW misrepresents Rumoca | **a real bug** — fix HRW |
+| The check is wrong | fix the check; **the instrument is lying, not the subject** |
+| **Rumoca is odd, HRW rendered it faithfully** | **not a bug** — possibly an upstream finding |
+
+**Misclassifying either way is expensive**, and the third row is the one that needs care: it
+is the row where a real upstream finding gets "fixed" out of HRW, or where an HRW bug gets
+filed against Rumoca. Neither is recoverable cheaply — see `docs/upstream-strategy.md` on what
+a wrong report costs.

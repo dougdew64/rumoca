@@ -76,7 +76,6 @@ on a tab showing 48 equations.
 
 | Document | Covers |
 |---|---|
-| [`current-work.md`](current-work.md) | The fidelity sweep and the sequence around it. |
 | [`verification-plan.md`](verification-plan.md) | The six-item pause: must-fire tests, the stale-negative test, clearing clippy, a faster suite, headless UI testing, Rust drivers. |
 | [`source-tooling-plan.md`](source-tooling-plan.md) | **Part live.** Phases 1-5 delivered; **Phases 6 (tree rework) and 7 (canvas views) are unbuilt design work.** Read before touching the IR tree or a canvas view. |
 
@@ -126,6 +125,12 @@ Load-bearing paths, not documents. Moving any of them breaks the app or its test
 | Document | Status |
 |---|---|
 | [`history/answer-platform-plan.md`](history/answer-platform-plan.md) | Retired 2026-08-01. Its live items were moved out first — the file lists where each went. Kept for the "features are experimentable, stored prose is not" correction. |
+
+**Deleted 2026-08-01: `current-work.md`** — a live plan whose work finished. Its own header
+said to delete it once the sweep's findings had landed; they have. Its two unique sections were
+ported first: the three triage categories to [`fidelity-plan.md`](fidelity-plan.md), and the
+reading-path / `app.rs` reasoning to [`ideas.md`](ideas.md) **#58**. The sequence it carried now
+lives in [`../CLAUDE.md`](../CLAUDE.md).
 
 **Deleted 2026-08-01: `compiler-phases/end_to_end_tour.md`** (1,071 lines). HRW stopped showing
 it on 2026-07-29, but it stayed inside the teaching database where a later session would read
