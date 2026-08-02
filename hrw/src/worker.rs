@@ -4458,6 +4458,87 @@ mod tests {
         );
     }
 
+    /// **The compiler's byte offsets and the bytes on screen are the same bytes.**
+    ///
+    /// Doug asked whether displaying MSL source is a hack, and whether spans
+    /// agree between the source view and the stage trees. This is that question
+    /// made checkable.
+    ///
+    /// The pane's text does **not** come from the compiler: Rumoca discards
+    /// source-root text (`Document::new(uri, String::new(), ..)`), so HRW re-reads
+    /// the declaring file from disk. That leaves two paths to what ought to be one
+    /// string, and **agreement becomes a property to maintain rather than a
+    /// structural guarantee.** Rumoca's parsed-artifact cache is keyed on a
+    /// `blake3` hash of every file's bytes, recomputed on each load, so a file
+    /// edited behind the cache invalidates it -- but that is a chain of reasoning,
+    /// and this is a measurement.
+    ///
+    /// **Slicing is the sharp end.** `CriticalDamping` lives ~62,000 bytes into
+    /// `Continuous.mo`; if the two texts differed by a single byte anywhere before
+    /// it, the slice would land on unrelated characters. Nothing would crash, and
+    /// the pane would underline confident nonsense.
+    ///
+    /// Three files, deliberately: two where the model is the whole file, and one
+    /// multi-class file deep enough that a drifting offset could not stay hidden.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn compiler_spans_address_the_text_the_pane_shows() {
+        let mut checked = 0usize;
+        for name in [
+            "Modelica.Electrical.Analog.Basic.Resistor",
+            "Modelica.Mechanics.Rotational.Components.Inertia",
+            "Modelica.Blocks.Continuous.CriticalDamping",
+        ] {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let out = w.compile_model_by_name(name, &|_| {});
+            let FromWorker::Compiled { identifier_index, library_source, .. } = out else {
+                panic!("{name}: expected Compiled");
+            };
+            let idx = identifier_index.expect("index");
+            let text = library_source.expect("source").text.expect("readable");
+
+            for (var, v) in &idx.variables {
+                let leaf = var.rsplit('.').next().unwrap_or(var);
+                let (s, e) = v.source_byte_range;
+
+                // **In range, and on a character boundary.** A slice that is
+                // merely in range can still be nonsense; `get` returning None on
+                // a non-boundary is itself a disagreement signal.
+                let slice = text.get(s..e).unwrap_or_else(|| {
+                    panic!(
+                        "{name}: {var} spans {s}..{e}, which is not a valid slice of the \
+                         {}-byte file the pane renders",
+                        text.len(),
+                    )
+                });
+                assert!(
+                    slice.contains(leaf),
+                    "{name}: {var} spans {s}..{e}, which reads {slice:?} -- the compiler's \
+                     offsets do not address the text on screen, so every underline and \
+                     blamed line in this file points somewhere arbitrary",
+                );
+
+                // And the line the index reports must hold it too, since that,
+                // not the byte range, is what places the underline.
+                let line = text.lines().nth(v.source_line as usize - 1).unwrap_or("");
+                assert!(
+                    line.contains(leaf),
+                    "{name}: {var} is indexed at line {}, which reads {line:?}",
+                    v.source_line,
+                );
+                checked += 1;
+            }
+        }
+
+        // **Non-vacuity.** Every assertion above lives inside a loop that an empty
+        // index would skip entirely, leaving the test green while checking nothing.
+        assert!(
+            checked >= 10,
+            "only {checked} variables checked -- too few to have exercised anything",
+        );
+    }
+
+
 
     /// A **specimen** compile carries no library source, and must not.
     ///
