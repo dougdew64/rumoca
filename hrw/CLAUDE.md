@@ -189,6 +189,9 @@ oracle test is **no longer a step** (see below).
      **fail against a deliberately broken version**; that is the only evidence that
      distinguishes the two.
 
+   **The plan is [`docs/ui-pause-plan.md`](docs/ui-pause-plan.md)** — evidence per target,
+   the four steps, and what the pause will not do.
+
    **Claude decides the tests, the seams and the timing** — `DECISIONS.md`, *"Claude is the
    primary consumer of HRW's code"*. The mandate is delegated **judgement, not purpose**:
    Claude's effectiveness is instrumental, Doug's understanding is the goal, and every
