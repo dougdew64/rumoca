@@ -270,6 +270,35 @@ on `App` while the Context Bar's other nine fields moved.
 consequence of the job, not a defect, and they shrink when the three above are
 extracted rather than by being split further.
 
+## The file split — what the extraction made possible
+
+**2026-08-02, after the pause's four steps.** Measuring the result exposed the
+one thing the pause had *not* delivered: **`app.rs` grew**, 9,619 to 10,087
+lines. Everything moved *within* the file; nothing moved *out* of it. And the
+plan's own strongest evidence — that the file's size manufactures editing
+defects — produced five more instances that day (`ui-findings.md` R1–R4, plus a
+bare `{}` replacement that landed in an unrelated format string).
+
+| Module | Lines | Why it could move |
+|---|---|---|
+| `model_list.rs` | 533 | Owns its state, **returns an outcome** instead of acting |
+| `tour.rs` | 166 | Same: `select`/`poll` report *whether the selection changed* |
+
+`app.rs`: **10,087 → 9,434.**
+
+**The rule the split follows is "narrow first, move second", and it is not
+optional.** A module boundary is free only once a pane has stopped reaching into
+`App`; moving one that still takes `&mut App` would mean widening `App`'s fields,
+which undoes exactly the encapsulation the extraction bought. `tour_panel_ui`'s
+*rendering* stayed behind for that reason even though its state moved.
+
+**Stopping here, deliberately.** `context_bar_ui` and `specimen_source_ui` have
+their state extracted but still render through `&mut App`. Narrowing them is real
+work with its own risk, and the pause has already delivered its targets. The
+honest measure of whether this split worked is not the line count but **whether
+the R-series of editing defects stops recurring** — which only the next
+substantial edit can show.
+
 ## What this pause will not do
 
 - **No new features.** The corpus list with a filter (`ideas.md` #52) resumes after.

@@ -50,6 +50,8 @@ pub mod incidence_view;
 pub mod matching_anim;
 pub mod diagnostics;
 pub mod log_view;
+pub mod model_list;
+pub mod tour;
 pub mod modelica_lex;
 pub mod alias_anim;
 pub mod connection_anim;
