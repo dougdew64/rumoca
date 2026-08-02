@@ -6802,6 +6802,16 @@ impl App {
     // fields. Production encapsulation is unchanged; these exist only under
     // `cfg(test)` and say so by name.
 
+    /// Whether the right-hand side is showing the log rather than a stage.
+    pub(crate) fn test_viewing_log(&self) -> bool {
+        self.viewing_log
+    }
+
+    /// Put the right-hand side on the log, as it is while a compile runs.
+    pub(crate) fn test_view_log(&mut self) {
+        self.viewing_log = true;
+    }
+
     pub(crate) fn test_stage(&self) -> StageKind {
         self.stage
     }

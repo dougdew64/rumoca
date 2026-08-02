@@ -867,3 +867,122 @@ fn the_purpose_tab_says_when_nothing_is_selected() {
 // specimens. Sit on SourceMap for a model that has one, load a model that does
 // not, and the message appears. Reaching it needs a populated `EquationSheet`,
 // so it belongs with the `slow-tests`.
+
+// ===========================================================================
+// Baseline suite, chunk 3 — CROSS-PANE effects
+// ===========================================================================
+//
+// **This is the chunk a human walk is worst at.** A reader clicks something and
+// checks the pane they clicked in — the tab lit up, so the click worked. What
+// they do not check is the other three panes the same click moved, because
+// nothing draws their attention there.
+//
+// One stage-tab click does three things: sets `stage`, leaves the log view, and
+// emits a `Focus::Stage` that reaches the status bar. Two of those are invisible
+// from where the clicking happens.
+//
+// So each test below asserts an effect **somewhere other than where the click
+// landed**, and that is the whole point of the chunk.
+
+/// Clicking a stage tab **leaves the log view**.
+///
+/// `viewing_log` starts `true` so a compile has something to show. If a tab
+/// click did not clear it, the reader would click Flatten, watch the tab
+/// highlight, and go on reading the log — a stale pane that looks like a live
+/// one, since the log keeps its own content and never says which stage it is not
+/// showing.
+#[test]
+fn clicking_a_stage_tab_leaves_the_log_view() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_view_log();
+    let mut h = harness(app);
+    assert!(h.state().test_viewing_log(), "precondition: the log is showing");
+
+    h.get_all_by_label_contains("Flatten").next().expect("a Flatten tab").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_stage(),
+        crate::worker::StageKind::Flatten,
+        "the click must select the stage it names",
+    );
+    assert!(
+        !h.state().test_viewing_log(),
+        "and it must leave the log — otherwise the tab is highlighted while the pane \
+         beside it still shows something else entirely",
+    );
+}
+
+/// Clicking a stage tab **reaches the Context Bar**.
+///
+/// A tab click is a point-at: it emits `Focus::Stage`, making the stage the
+/// subject of the next question asked in the chat. Invisible from the tab row,
+/// so a reader who clicked a tab and then asked a question would have no way to
+/// tell the two were connected.
+///
+/// **The Context Bar, not the status bar** — a distinction the first draft of
+/// this test got wrong. `emit_focus` sets the notice to `None` on success *on
+/// purpose*: the Context Bar names the point and keeps naming it, while the
+/// status bar is for things that happen and are then over. A success message
+/// there would be noise that outlives its meaning.
+#[test]
+fn clicking_a_stage_tab_reaches_the_context_bar() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    let mut h = harness(app);
+
+    // **The background is always context**, so the bar is never truly empty —
+    // it names the specimen and stage before anything is pointed at. That is a
+    // deliberate change from 2026-08-01: the old "nothing assembled" wording
+    // made the bar contradict `focus.json`, which carries the background either
+    // way.
+    assert!(
+        h.query_by_label_contains("RcCircuit").is_some(),
+        "precondition: the background names the specimen even with nothing pointed at",
+    );
+    assert!(
+        h.query_by_label_contains("Pointing at").is_none(),
+        "precondition: nothing is pointed at yet",
+    );
+
+    h.get_all_by_label_contains("Flatten").next().expect("a Flatten tab").click();
+    h.run_steps(2);
+
+    assert!(
+        h.get_all_by_label_contains("Pointing at").next().is_some(),
+        "and the bar must say what is now pointed at, since that is what the next question \
+         will be about",
+    );
+}
+
+/// The Log button returns to the log **without disturbing the stage**.
+///
+/// The inverse of the first test, and the reason it is worth having: leaving the
+/// log is a side effect of choosing a stage, but returning to the log is *not* a
+/// choice of stage. If it reset `stage`, a reader who glanced at the log would
+/// lose their place in the pipeline and have no clue why.
+#[test]
+fn the_log_button_returns_without_changing_the_stage() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Flatten);
+    let mut h = harness(app);
+    assert!(!h.state().test_viewing_log(), "precondition: a stage is showing, not the log");
+
+    // **Exact label, not .** Several nodes carry "Log" as a substring,
+    // and the first one  returns is not the button -- the click landed
+    // somewhere harmless and the test read as "the Log button is broken".
+    h.get_by_label("Log").click();
+    h.run_steps(2);
+
+    assert!(h.state().test_viewing_log(), "the Log button must show the log");
+    assert_eq!(
+        h.state().test_stage(),
+        crate::worker::StageKind::Flatten,
+        "and must leave the selected stage alone — glancing at the log is not a decision \
+         about which stage you are studying",
+    );
+}
