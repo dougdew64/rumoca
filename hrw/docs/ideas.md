@@ -2368,8 +2368,16 @@ Built in the order the analysis implied, and **step 1 was the one that mattered*
    `hrw://load/<qualified>`. The worker could already compile any of the 2,626 models
    (`compile_model_by_name`, built for the fidelity sweep) and **the UI had no way to ask**, so
    a tour could not link to one. That, not the filter, was what blocked just-in-time curricula.
-2. **The corpus as a third list source**, shown **only while filtering** — 2,626 rows by
-   default would bury the 18 curated specimens and make the list useless for browsing.
+2. **The corpus as a third list source** — a **collapsed header carrying the model count**,
+   always visible, which opens when a filter is typed.
+
+   **The first version showed it only while filtering, and that was wrong.** Doug started HRW,
+   saw no MSL models and reported them "not showing" — exactly right from where he sat.
+   **An absence you cannot see is indistinguishable from a feature that was never built.**
+   Worse, the headless test had asserted the hidden behaviour, so **the test encoded the defect
+   as a requirement** and a green suite said the feature worked. It did work; it was invisible.
+   The collapsed header keeps the reason the first version existed — 2,626 rows must not bury
+   18 curated specimens — while making the corpus's existence impossible to miss.
 3. **The filter** — `survey::matches_filter`, case-insensitive, matching name *or* outcome,
    with whitespace-separated terms ANDed so adding a word narrows. Deliberately modest: Claude
    queries the CSV directly and is not its consumer.

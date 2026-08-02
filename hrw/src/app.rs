@@ -5657,17 +5657,46 @@ impl App {
                             // prerequisite rather than an enhancement.
                             let filter = self.list_filter.trim().to_owned();
                             let mut open_model: Option<String> = None;
-                            if !filter.is_empty() {
+                            {
                                 let rows = self.corpus_rows();
+                                let total = rows.len();
                                 let hits: Vec<(String, String)> = rows
                                     .iter()
                                     .filter(|r| crate::survey::matches_filter(r, &filter))
                                     .map(|r| (r.name.clone(), r.outcome.clone()))
                                     .collect();
-                                if !hits.is_empty() {
+                                if total > 0 {
                                     ui.add_space(6.0);
                                     ui.separator();
-                                    ui.weak(format!("MSL corpus \u{2014} {} match(es)", hits.len()));
+                                    // **Always visible, collapsed by default.**
+                                    //
+                                    // The first version rendered this section only
+                                    // while filtering, so an unfiltered list showed no
+                                    // sign the corpus existed at all — Doug started HRW
+                                    // and reported the MSL examples "not showing", which
+                                    // was exactly right from where he sat. **An absence
+                                    // you cannot see is indistinguishable from a feature
+                                    // that was never built**, and the headless test had
+                                    // asserted the hidden behaviour, so it encoded the
+                                    // defect as a requirement.
+                                    //
+                                    // Collapsed keeps the reason the first version
+                                    // existed: 2,626 rows must not bury 18 curated
+                                    // specimens. A filter opens it, because typing is
+                                    // already the intent to look.
+                                    let header = if filter.is_empty() {
+                                        format!("MSL corpus \u{2014} {total} models")
+                                    } else {
+                                        format!("MSL corpus \u{2014} {} of {total}", hits.len())
+                                    };
+                                    egui::CollapsingHeader::new(header)
+                                        .id_salt("corpus_list")
+                                        .default_open(false)
+                                        .open(if filter.is_empty() { None } else { Some(true) })
+                                        .show(ui, |ui| {
+                                            if hits.is_empty() {
+                                                ui.weak("no match");
+                                            }
                                     for (name, outcome) in hits.iter().take(crate::survey::MAX_LISTED)
                                     {
                                         let is_sel = self
@@ -5695,6 +5724,7 @@ impl App {
                                             hits.len() - crate::survey::MAX_LISTED,
                                         ));
                                     }
+                                        });
                                 }
                             }
                             if let Some(name) = open_model {

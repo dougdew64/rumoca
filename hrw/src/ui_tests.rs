@@ -303,35 +303,46 @@ fn the_load_verb_prefers_files_and_still_rejects_a_typo() {
     );
 }
 
-/// The corpus appears **only while filtering**, and a click opens the model.
+/// The corpus is **always visible**, and a click opens the model.
 ///
-/// **The "only while filtering" half is the design, not an optimisation.**
-/// Rendering 2,626 rows by default would bury the 18 curated specimens most
-/// sessions want and make the list useless as a browsing surface. That is why
-/// `#52` calls the filter a prerequisite rather than an enhancement — and it is
-/// the reason this merged into Specimen mode instead of becoming a Test mode.
+/// **This test asserted the opposite until 2026-08-01, and that is the lesson.**
+/// The first version rendered the corpus section only while filtering, and this
+/// test asserted the section was *absent* with an empty filter — so **the test
+/// encoded the defect as a requirement.** Doug started HRW, saw no MSL models,
+/// and reported them "not showing", which was exactly right from where he sat:
+/// **an absence you cannot see is indistinguishable from a feature that was
+/// never built.**
+///
+/// A green test suite said the feature worked. It did work — it was invisible.
+/// That is the class `egui_kittest` cannot catch on its own, because a test only
+/// checks the behaviour someone chose to assert.
+///
+/// The section is now a collapsed header carrying the model count, which keeps
+/// the reason the first version existed — 2,626 rows must not bury 18 curated
+/// specimens — while making the corpus's *existence* impossible to miss.
 #[test]
-fn the_corpus_appears_only_while_filtering_and_opens_on_click() {
+fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
     let mut h = harness(App::test_default());
     h.state_mut().test_set_ui_mode_specimen();
     h.run_steps(2);
 
     assert!(
-        h.query_by_label_contains("MSL corpus").is_none(),
-        "with no filter the corpus must stay hidden, or 2,626 rows bury the specimens",
+        h.query_by_label_contains("MSL corpus").is_some(),
+        "the corpus must announce itself with NO filter typed — its absence is          indistinguishable from it not being implemented, which is how it was reported",
+    );
+    assert!(
+        h.query_by_label_contains("2626").is_some()
+            || h.query_by_label_contains("2,626").is_some(),
+        "and it must say how many models it holds, so the header is evidence rather          than decoration",
     );
 
     h.state_mut().test_set_filter("Spice3BenchmarkDifferentialPair");
     h.run_steps(2);
-    assert!(
-        h.query_by_label_contains("MSL corpus").is_some(),
-        "filtering must reveal the corpus section — otherwise the corpus is unreachable",
-    );
 
     // The row renders its LEAF name; the qualified name is 60 characters and
     // would wrap every row.
     let row = h.query_by_label_contains("Spice3BenchmarkDifferentialPair");
-    assert!(row.is_some(), "the matching model must be listed");
+    assert!(row.is_some(), "filtering must reveal the matching model");
     row.unwrap().click();
     h.run_steps(2);
 
@@ -345,4 +356,3 @@ fn the_corpus_appears_only_while_filtering_and_opens_on_click() {
         "and it must select the FULLY QUALIFIED name, since the leaf is only a label",
     );
 }
-
