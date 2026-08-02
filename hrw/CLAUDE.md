@@ -189,7 +189,10 @@ oracle test is **no longer a step** (see below).
      **fail against a deliberately broken version**; that is the only evidence that
      distinguishes the two.
 
-   Scope, ordering and the plan document are Doug's to set at the start of the session.
+   **Claude decides the tests, the seams and the timing** — `DECISIONS.md`, *"Claude is the
+   primary consumer of HRW's code"*. The mandate is delegated **judgement, not purpose**:
+   Claude's effectiveness is instrumental, Doug's understanding is the goal, and every
+   refactoring commit must name the friction it removes so the delegation stays auditable.
 
 5. **Then: one corpus list with a filter** (`docs/ideas.md` **#52**). One list widget
    over **three visible sources** — curated `specimens/`, scratch `.hrw-bridge/specimens/`, and

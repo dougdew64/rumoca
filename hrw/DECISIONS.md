@@ -1769,3 +1769,53 @@ plausible is exactly what makes it the wrong trade.
 as a cost measure.** If cost becomes a genuine blocker, the honest moves are to
 make the *tree viewer* handle large values better, or to bound the *sweep*, not to
 change what the stage contains. Related: `docs/ideas.md` on tree rendering.
+
+## Claude is the primary consumer of HRW's code, and decides its tests and shape
+
+*2026-08-02, Doug.* Setting the purpose of the UI pause, and of testing generally:
+
+> *"My primary testing goal for this project is to provide the verification which you
+> declared earlier that you need to be effective. If you are effective, then we maintain
+> feature development velocity. If you are not effective, then this project will grind to
+> a halt. So, you will decide what tests you need and when to implement those tests as you
+> refactor. … You are the primary consumer of this code. You must do what you need to
+> this code to make it work for you."*
+
+**This is a delegation of judgement, not of purpose.** It extends
+`feedback-claude-is-the-context-consumer` from `focus.json` to the source itself: Doug reads
+HRW's code rarely and by audit, so code shaped for a human reader optimises for a reader who
+is not there. Claude picks the tests, the seams and the timing, unasked.
+
+### The limit, stated so it is not quietly overrun
+
+**Claude's effectiveness is instrumental. Doug's understanding is the goal.** Where the two
+diverge, understanding wins — the standing rule *"DO NOT optimise HRW to widen test
+scope"* is exactly that case already decided, and this mandate does not touch it. A change
+that makes the code easier for Claude while making HRW a worse instrument is a bad change,
+however much velocity it buys.
+
+### The standard Claude is held to
+
+**Refactor where there is evidence of friction, never where code merely looks large.** The
+same rule as *"start from the tour holes"*: items that arrive with evidence are the only
+ones whose priority is not a judgement call. Evidence means a defect the structure caused, a
+change that could not be made confidently, or a question that could not be answered without
+running something.
+
+**Every refactoring commit names the friction it removes.** That is what keeps the delegation
+auditable: Doug cannot review 9,562 lines, but he can read a claim and ask whether it is true.
+
+### The evidence on the table as of 2026-08-01
+
+- **The file's size caused defects directly.** `app.rs` at 9,562 lines pushed Claude to edit
+  by generated scripts with string anchors instead of targeted edits. That mechanism caused
+  attribute theft twice in one day (silently disabling a regression guard), leaked Rust
+  escapes into comment text, and produced one blind global replace Doug was right to reject.
+  **This is not an aesthetic argument.** It is the editing tax made visible as bugs.
+- **105 fields on `App` make blast radius unpredictable.** Threading one new field through
+  `FromWorker::Compiled` meant hunting every construction site; changing `source` meant
+  tracing by hand whether it fed the compile. That tracing is the tax that slows everything.
+- **Reasoning was wrong repeatedly where measurement was right.** *"Fidelity is unaffected"*,
+  *"a library model has no file to show"*, *"layout cannot be tested"* — three confident
+  claims, all false, all caught by running something. **So the highest-value investment is
+  making things cheap to check, not making them pleasant to read.**
