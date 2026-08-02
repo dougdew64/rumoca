@@ -109,7 +109,7 @@ happens to it.
 
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
-./scripts/promote-run.ps1 -Report C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
+cargo run -p hrw --example promote_run -- --report C:/tmp/fid-full.csv --profile C:/tmp/fid-full-memory.csv
 git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
@@ -124,7 +124,7 @@ against 901 s under load).
 ./scripts/measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 ```
 
-**F. Re-promote and commit.** `scripts/promote-run.ps1` refuses to replace a larger report with a
+**F. Re-promote and commit.** The promote step refuses to replace a larger report with a
 smaller one, so a mistake here fails loudly rather than quietly.
 
 **Then** triage — step 5 of the plan above, with its three categories.

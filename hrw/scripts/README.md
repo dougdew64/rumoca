@@ -11,14 +11,14 @@ procedure is [`../docs/long-runs.md`](../docs/long-runs.md); this page is only t
 | Script | Does |
 |---|---|
 | [`measure-fidelity.ps1`](measure-fidelity.ps1) | Runs F1-F9 **one model per process**, with a watchdog sampling free RAM and process size every 500 ms. Writes the fidelity report and a memory profile. |
-| [`promote-run.ps1`](promote-run.ps1) | Copies a finished run's CSVs into `../docs/reports/` and writes the provenance sidecar, including the `not_checked` bound. |
+| ~~`promote-run.ps1`~~ | **Moved to Rust 2026-08-01** — `cargo run -p hrw --example promote_run`. See *The split* below. |
 
 **Invoke from `hrw/`, not from here:**
 
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca\hrw
 .\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt -Out ... -Profile ...
-.\scripts\promote-run.ps1 -RunDir C:\Users\dougd\rumoca-runs\<run>
+cargo run -p hrw --example promote_run -- --run-dir C:\Users\dougd\rumoca-runs\<run>
 ```
 
 Both resolve their own paths from `$PSScriptRoot`, so they work from any working directory —
@@ -46,14 +46,27 @@ before reading the value, so it behaves identically either way — **this is loa
 tidying.** Without it the retry pass silently matches nothing, which is worse than omitting
 the flag, since the one-element default would at least have matched.
 
-## Their standing disposition
+## The split — why one moved to Rust and one did not
 
-Both meet all three conditions of `../docs/tech-debt.md`'s second trigger — re-run
-repeatedly, can fail silently, and have already produced defects only Doug caught. They are
-**candidates for a rewrite in Rust** (`../docs/verification-plan.md` item 3), with one real
-counter-argument recorded there: **a script is editable without a rebuild**, which mattered on
-2026-08-01 when the fidelity binary was locked by a running sweep and the watchdog needed
-fixing mid-run.
+`verification-plan.md` item 3 asked whether both drivers should become Rust binaries, and its
+checkpoint said to re-ask on newer evidence. Answered 2026-08-01: **they are not the same
+case.**
 
-That item has a checkpoint rather than a commitment: re-ask whether it earns the time once the
-earlier items land.
+| | `promote-run` → **Rust** | `measure-fidelity.ps1` → **stays** |
+|---|---|---|
+| Needs a memory-sampling crate | no | **yes** — a dependency needing Doug's approval |
+| Mid-run editability matters | no — runs for seconds, after the sweep | **yes** — the watchdog was fixed mid-run on 2026-08-01 while the binary was locked |
+| Writes a **published claim** | **yes** — the sidecar's `not_checked` sentence | no |
+
+**The published claim is what decided it.** That sentence travels to a maintainer *with* the
+table and is read as fact, and this project's rule is *speed on actions, **care on records***.
+Its logic — the two guards and the bound — now lives in `src/promote.rs` with tests; the
+driver is `examples/promote_run.rs`.
+
+**The watchdog keeps its recorded reason.** It is verified only by being run, which is a known
+gap rather than an exemption — see the must-fire audit in `../docs/verification-plan.md`.
+
+**One condition of the trigger genuinely weakened.** "Re-run repeatedly" was true while sweeps
+were daily; the corpus is now green and the suite runs after a rebase, before a PR, or when
+stage-JSON emission changes — a few times a year. That is the argument against converting the
+larger script, and it is honest to say so rather than convert on principle.

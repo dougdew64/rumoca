@@ -113,7 +113,7 @@ Load-bearing paths, not documents. Moving any of them breaks the app or its test
 | `specimen-notebook/<Model>/trace/` | the durable per-stage IR |
 | **`reports/msl-survey.csv`** | `fidelity_msl::corpus()` and `survey_msl` — **the corpus definition** |
 | **`reports/specimen-fidelity-report.csv`** | written by the pre-commit test in `src/fidelity.rs` |
-| `reports/msl-fidelity-*` | written by `scripts/promote-run.ps1`; the committed artifact |
+| `reports/msl-fidelity-*` | written by `examples/promote_run.rs`; the committed artifact |
 
 **Three of those are compiled-in paths**, so moving a report means editing code. See
 [`reports/README.md`](reports/README.md).

@@ -177,8 +177,8 @@ claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
 ## Running things
 
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   422 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~4min, 482 tests — before committing
+cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   425 tests — between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 485 tests — before committing
 cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
 
@@ -219,7 +219,7 @@ process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB
 
 - Long runs go in a **standalone terminal**, not VS Code's.
 - Output goes to `C:\Users\dougd\rumoca-runs\`, **never `C:\tmp`**, and is promoted into `docs/`
-  by `scripts/promote-run.ps1`, which writes the provenance sidecar.
+  by `cargo run -p hrw --example promote_run`, which writes the provenance sidecar.
 - **Do not rebuild an example while a run holds its binary.**
 - **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
   treats that as a crash and restarts it within seconds.

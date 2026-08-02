@@ -91,9 +91,11 @@ checker in the codebase without an automated one.
 
 #### The recorded reason, for the observers that cannot have one
 
-**The PowerShell drivers have no test harness**, so `scripts/measure-fidelity.ps1`'s watchdog
-narration, its retry-verdict clearing and `scripts/promote-run.ps1`'s guards are verified only
-by being run. On 2026-08-01 that verification was done deliberately and by hand — a seeded
+**PowerShell has no test harness**, so `scripts/measure-fidelity.ps1`'s watchdog narration and
+its retry-verdict clearing are verified only by being run. *(Updated 2026-08-01: the promotion
+guards were in this sentence until item 3 moved them to `src/promote.rs`, where they are now
+tested. This is the stale-negative class in miniature — a recorded limitation that stopped
+being true.)* On 2026-08-01 that verification was done deliberately and by hand — a seeded
 profile proving the retry clears the right rows, plus a control showing the array
 normalisation is load-bearing — but **it is not repeatable without a person.**
 
@@ -367,7 +369,7 @@ accumulate.
 
 ---
 
-### 3. Move the run drivers into Rust
+### 3. Move the run drivers into Rust — RESOLVED 2026-08-01 (split)
 
 `scripts/measure-fidelity.ps1` and `scripts/promote-run.ps1` meet all three conditions of the tech-debt
 trigger: re-run repeatedly, can fail silently, and have already produced defects only a human
@@ -386,6 +388,39 @@ mid-run editability is worth more than the verification.
 **Checkpoint before starting this one.** After items 0-2 land, re-ask whether it still earns
 the time — the trigger's own standard is evidence, and by then the evidence will be a month
 newer.
+
+#### The checkpoint's answer: they are not the same case
+
+Asked 2026-08-01 with items 0, 0b, 0c, 1 and 2 landed. **One condition of the trigger genuinely
+weakened**: "re-run repeatedly" was true while sweeps were daily, but the corpus is now green
+and the suite runs after a rebase, before a PR, or when stage-JSON emission changes — a few
+times a year. The trigger requires all three conditions, so that matters.
+
+But the two scripts differ in exactly the ways the item's own caveats name:
+
+| | `promote-run` (115 lines) | `measure-fidelity.ps1` (334 lines) |
+|---|---|---|
+| Needs a memory-sampling crate | **no** — zero sampling calls | **yes** → needs Doug's approval |
+| Mid-run editability matters | no — runs for seconds, *after* the sweep | **yes** — the watchdog was fixed mid-run on 2026-08-01 while the binary was locked |
+| Writes a **published claim** | **yes** — the sidecar's `not_checked` sentence | no |
+
+**The published claim decided it.** That sentence travels to a maintainer *with* the table and
+is read as fact, and this project's rule is *speed on actions, **care on records***. Both of
+the item's counter-arguments — the crate and the editability — apply to the **other** script.
+
+**Done, as "the driver is a Rust binary with tests":** `src/promote.rs` holds the two guards,
+the `not_checked` sentence and the profile parser, with three tests; `examples/promote_run.rs`
+is the driver. `scripts/promote-run.ps1` is deleted.
+
+**Verified as a port, not just as code:** run against the real 2,614-model snapshot, the
+sidecar it writes is identical to the PowerShell one field for field, and the `not_checked`
+sentence is **byte-identical**. Two incidental improvements: `run_verdicts` is now sorted
+(deterministic across runs, where insertion order was not) and the file no longer carries a
+UTF-8 BOM, which had forced readers to use `utf-8-sig`.
+
+**Done, as "a recorded decision", for the watchdog:** it stays in PowerShell. Mid-run
+editability is worth more than the verification *for that script*, and converting it would
+also require a dependency for one feature. Its recorded gap stands in item 0's audit.
 
 ## What success looks like, measurably
 

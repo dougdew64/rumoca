@@ -308,7 +308,7 @@ GB free**, and the 3 GB floor that keeps the desktop responsive leaves a practic
 **~9.9 GB** — *less than the 10 GB already configured*.
 
 So the headroom is exhausted: **the models want more than the hardware can safely provide.**
-That is a limit of the machine, not a defect in HRW or Rumoca, and `scripts/promote-run.ps1` writes it
+That is a limit of the machine, not a defect in HRW or Rumoca, and the promote step writes it
 into the report's sidecar as `not_checked` so the bound travels with the data rather than
 beside it.
 
@@ -353,11 +353,11 @@ functions — existed in neither.
 
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
-./scripts/promote-run.ps1 -RunDir C:/Users/dougd/rumoca-runs
+cargo run -p hrw --example promote_run -- --run-dir C:/Users/dougd/rumoca-runs
 git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
 
-`scripts/promote-run.ps1` **copies** (never moves) into `docs/` as `msl-fidelity-report.csv` plus a
+`examples/promote_run.rs` **copies** (never moves) into `docs/reports/` as `msl-fidelity-report.csv` plus a
 provenance sidecar, and **refuses to replace a larger report with a smaller one** unless
 forced — the likeliest accident is promoting a partial re-run over a complete sweep.
 

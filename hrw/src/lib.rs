@@ -69,6 +69,7 @@ pub mod survey;
 pub mod spyplot;
 pub mod tarjan_anim;
 pub mod tree;
+pub mod promote;
 pub mod worker;
 
 /// Headless UI tests (`docs/verification-plan.md` item 2). Test-only: the

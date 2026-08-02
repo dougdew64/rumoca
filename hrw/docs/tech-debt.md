@@ -106,10 +106,17 @@ mid-run is why it exists"* — and say which, rather than converting on principl
 
 #### Standing candidate
 
-`scripts/measure-fidelity.ps1` and `scripts/promote-run.ps1` meet all three conditions. **Not urgent**, and
-behind fidelity, the oracle test and Test mode — but on the list, with a day of evidence
-rather than taste behind it. The memory-sampling part needs a crate, and adding a dependency
-needs Doug's approval.
+~~`measure-fidelity.ps1` and `promote-run.ps1` meet all three conditions.~~ **Resolved
+2026-08-01 by splitting them** (`verification-plan.md` item 3). `promote-run` became
+`examples/promote_run.rs` with its guards tested in `src/promote.rs` — it writes a **published
+claim** and needed no crate. **`measure-fidelity.ps1` stays in PowerShell**, with the reason
+recorded: it needs process memory sampling, and being editable while a sweep holds the binary
+is why it exists in that form.
+
+**And one condition weakened, which is worth noticing about the trigger itself.** "Re-run
+repeatedly" was true while sweeps were daily; the corpus is green now and the suite runs a few
+times a year. A trigger whose conditions can lapse is working as intended — but it means the
+standing candidates list needs re-reading, not just appending to.
 
 ## Priority order — read this before choosing what to fix
 
