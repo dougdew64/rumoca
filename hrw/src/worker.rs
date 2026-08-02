@@ -94,6 +94,14 @@ pub enum ToWorker {
     SetLibraries(Vec<PathBuf>),
     /// Run parse → resolve on a specimen file.
     Compile(PathBuf),
+    /// Compile a model **already present in a loaded library**, by qualified name
+    /// — `Modelica.Electrical.Analog.Examples.CauerLowPassSC`.
+    ///
+    /// The corpus counterpart of [`Self::Compile`]. Until 2026-08-01 the worker
+    /// could do this (`compile_model_by_name`, built for the fidelity sweep) and
+    /// **the UI had no way to ask**, which meant a tour could not link to an MSL
+    /// model and the 2,626-model corpus was unreachable from the app.
+    CompileLibraryModel(String),
     /// Extract an arbitrary class from the resolved tree by qualified name, so
     /// the UI can navigate into a definition a `def_id`/`type_def_id` points at.
     OpenDef(String),
@@ -924,6 +932,7 @@ impl WorkerState {
         match msg {
             ToWorker::SetLibraries(roots) => Some(FromWorker::Libraries(self.load_libraries(roots))),
             ToWorker::Compile(path) => Some(self.compile(&path, emit)),
+            ToWorker::CompileLibraryModel(name) => Some(self.compile_model_by_name(&name, emit)),
             ToWorker::OpenDef(name) => Some(self.open_def(&name)),
             ToWorker::Simulate { path, model, t_end } => {
                 let result = self.simulate(&path, &model, t_end, emit);

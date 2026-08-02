@@ -247,3 +247,58 @@ fn a_tour_link_acts_when_clicked_in_isolation() {
          earlier stop first is the \"works on the second click\" bug",
     );
 }
+
+/// A tour link can address a **corpus model**, not only a specimen file.
+///
+/// **This was the gap that blocked just-in-time curricula.** A curriculum is
+/// delivered as an ad hoc tour — Claude writes `.hrw-bridge/tour.md` with the
+/// models in the chosen order — and until 2026-08-01 `hrw://load/` resolved only
+/// through `find_specimen`, which looks in `specimens/`. The worker could compile
+/// an MSL model by name (`compile_model_by_name`, built for the fidelity sweep)
+/// and **the UI had no way to ask**, so the 2,626-model corpus was unreachable
+/// from a tour no matter how good a filter got.
+///
+/// Asserts on **dispatch**, not on compilation: the point is that the request is
+/// made and the selection updated. Compiling an MSL model against the MSL costs
+/// seconds and belongs behind `slow-tests`.
+#[test]
+fn a_tour_link_can_address_a_corpus_model() {
+    let mut h = harness(App::test_default());
+    h.state_mut().follow_link_for_test("hrw://load/Modelica.Electrical.Analog.Basic.Resistor");
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_selected_name().as_deref(),
+        Some("Modelica.Electrical.Analog.Basic.Resistor"),
+        "a qualified name must select the corpus model, not fail as a missing specimen",
+    );
+    assert!(
+        h.state().test_selection_is_library(),
+        "and it must be marked as a library model — the source view reads `selected` from \
+         disk, so a library selection mistaken for a file renders an empty pane",
+    );
+}
+
+/// A curated specimen still wins, and a bare unknown name still fails loudly.
+///
+/// The fallback must not swallow a typo. `hrw://load/Typo` has no dot, so it is
+/// not a qualified name and must be reported rather than sent to the library to
+/// fail later with a worse message.
+#[test]
+fn the_load_verb_prefers_files_and_still_rejects_a_typo() {
+    let mut h = harness(App::test_default());
+
+    h.state_mut().follow_link_for_test("hrw://load/Drivetrain");
+    h.run_steps(2);
+    assert!(
+        !h.state().test_selection_is_library(),
+        "a curated specimen must resolve as a file, not fall through to the library",
+    );
+
+    h.state_mut().follow_link_for_test("hrw://load/NoSuchThing");
+    h.run_steps(2);
+    assert!(
+        h.query_by_label_contains("not found: NoSuchThing").is_some(),
+        "a bare unknown name is a typo and must be reported, not guessed at",
+    );
+}

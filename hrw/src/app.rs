@@ -375,6 +375,9 @@ pub struct App {
     /// than the curated corpus (ideas #42). Held as a set rather than a flag on the
     /// path so `files` stays a plain `Vec<PathBuf>` that everything else can use.
     scratch_specimens: HashSet<PathBuf>,
+    /// True when [`Self::selected`] names a **library model** rather than a file
+    /// on disk. See [`Self::open_library_model`] for why the two share a field.
+    selected_is_library: bool,
     /// Scratch specimens skipped because a curated specimen already owns the name.
     /// Reported rather than silently resolved: loading the wrong model would have
     /// Claude reason confidently about source Doug is not looking at.
@@ -969,6 +972,7 @@ impl App {
             files: Vec::new(),
             specimen_purposes: HashMap::new(),
             scratch_specimens: HashSet::new(),
+            selected_is_library: false,
             shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
@@ -1207,6 +1211,40 @@ impl App {
         diagnostics::record_action("specimen", path.display().to_string());
         self.worker.send(ToWorker::Compile(path.clone()));
         self.selected = Some(path);
+        // Cleared here, not only set in `open_library_model`: a specimen opened
+        // after a corpus model would otherwise still look like one, and the
+        // source view would refuse to read a file that is right there.
+        self.selected_is_library = false;
+    }
+
+    /// Open a model from a **loaded library** by qualified name — the corpus
+    /// counterpart of [`Self::open`].
+    ///
+    /// # Why the selection is a `PathBuf` holding a name
+    ///
+    /// `selected` identifies *what is loaded* and is compared for equality in
+    /// three staleness checks, which discard results for a model the user has
+    /// already navigated away from. A library model has no file of its own — it
+    /// lives inside a package file that may declare many classes, so the file
+    /// path would not identify it — and **the worker already established the
+    /// convention**: `compile_target` puts the qualified name in the result's
+    /// `path` field for a library target. Following it here keeps one identity
+    /// scheme and leaves the staleness checks working unchanged.
+    ///
+    /// `selected_is_library` records which kind it is, rather than sniffing the
+    /// string for dots. A model *file* could contain a dot; a flag cannot lie.
+    pub(crate) fn open_library_model(&mut self, qualified: &str) {
+        let id = PathBuf::from(qualified);
+        let same = self.selected.as_deref() == Some(id.as_path());
+        self.compiling = true;
+        self.clear_specimen_state(same);
+        self.log_entries.clear();
+        self.viewing_log = true;
+        self.jump_highlight = None;
+        diagnostics::record_action("corpus-model", qualified.to_owned());
+        self.worker.send(ToWorker::CompileLibraryModel(qualified.to_owned()));
+        self.selected = Some(id);
+        self.selected_is_library = true;
     }
 
     /// Clear everything that belonged to the previously loaded specimen.
@@ -1886,10 +1924,28 @@ impl App {
         }
         match action {
             HrwLink::LoadSpecimen(name) => {
+                // **One verb, three sources** — deliberately not a second verb.
+                //
+                // The corpus list shows curated specimens, scratch probes and the
+                // 2,626 MSL models in one widget (`docs/ideas.md` #52), so from a
+                // tour's point of view they are all just models. A separate
+                // `hrw://model/` verb would split one gesture in two and need
+                // merging later, which is the mistake Test mode was.
+                //
+                // Files first: a curated specimen and a library model could in
+                // principle share a name, and the repo's own copy should win.
                 if let Some(path) = self.find_specimen(&name) {
                     self.open(path);
+                } else if name.contains('.') {
+                    // A qualified name — ask the library. The worker reports
+                    // clearly if no such model is loaded, so nothing is guessed
+                    // at here.
+                    self.open_library_model(&name);
                 } else {
-                    self.notify(format!("specimen not found: {name}"));
+                    self.notify(format!(
+                        "not found: {name} - no specimen by that name, and it is not a \
+                         qualified model name (those contain dots)"
+                    ));
                 }
             }
             HrwLink::ShowSource(line) => {
@@ -4154,6 +4210,22 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// merging them — and that is much easier to keep straight in its own
     /// function than buried a thousand lines into a panel closure.
     fn specimen_source_ui(&mut self, ui: &mut egui::Ui) {
+        // **A library model has no file to read, and an empty pane would lie.**
+        // `selected` holds its qualified name, so `read_to_string` would fail and
+        // `unwrap_or_default` would render nothing at all — indistinguishable
+        // from a specimen whose file is empty. Say which it is.
+        if self.selected_is_library {
+            let name = self.selected.as_ref().map(|p| p.display().to_string()).unwrap_or_default();
+            ui.label(
+                egui::RichText::new(format!(
+                    "{name}
+
+This model comes from a loaded library, not from a specimen                      file, so there is no single source file to show here. Its IR is on the                      stage tabs."
+                ))
+                .color(ui.visuals().weak_text_color()),
+            );
+            return;
+        }
         let source = self.selected.as_ref().map(|path| {
             self.cached_source.get_or_insert_with(|| {
                 std::fs::read_to_string(path).unwrap_or_default()
@@ -6396,6 +6468,21 @@ impl App {
         self.model.as_deref()
     }
 
+    pub(crate) fn test_selected_name(&self) -> Option<String> {
+        self.selected.as_ref().map(|p| p.display().to_string())
+    }
+
+    pub(crate) fn test_selection_is_library(&self) -> bool {
+        self.selected_is_library
+    }
+
+    /// Drive a link the way a tour click would, without a rendered hyperlink.
+    pub(crate) fn follow_link_for_test(&mut self, url: &str) {
+        if let Some(link) = parse_hrw_link(url) {
+            self.dispatch_hrw_link(link);
+        }
+    }
+
     /// Put the right-hand side into the state a walked-into tour would leave.
     pub(crate) fn test_set_walked_state(&mut self, specimen: &str, model: &str, stage: StageKind) {
         self.selected = Some(PathBuf::from(specimen));
@@ -6415,6 +6502,7 @@ impl App {
             files: Vec::new(),
             specimen_purposes: HashMap::new(),
             scratch_specimens: HashSet::new(),
+            selected_is_library: false,
             shadowed_specimens: Vec::new(),
             scan_error: None,
             selected: None,
