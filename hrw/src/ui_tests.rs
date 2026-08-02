@@ -869,6 +869,80 @@ fn the_purpose_tab_says_when_nothing_is_selected() {
 // so it belongs with the `slow-tests`.
 
 // ===========================================================================
+// Baseline suite, chunk 4 — LAYOUT invariants
+// ===========================================================================
+//
+// **Every other test in this file is blind to layout, and that is not a gap in
+// the tests — it is a property of the accessibility tree.** A widget squeezed to
+// zero width, or pushed a thousand pixels off the right edge, is still in the
+// tree with its label intact. `query_by_label` finds it and every assertion
+// above passes on a screen showing nothing usable.
+//
+// Latent today only because the split is a fixed 40/60. `ideas.md` #59 makes the
+// width draggable and turns it live, which is why Doug raised it *before* the
+// refactor rather than after: *"implementing support for that draggable vertical
+// divider could seriously break our UI code."*
+//
+// **Two constraints on how, both measured rather than assumed (H12).** A blanket
+// "every widget is inside the viewport" is useless — at a healthy 1600x1200,
+// **153 of 232** widgets are legitimately outside it, because scroll content
+// extends past the clip rect by design. So the invariant names the chrome that
+// must *always* be reachable, and checks it across widths.
+
+/// The chrome a reader always needs is on screen and clickable, at every width.
+///
+/// **Named, not swept.** These are the widgets with nowhere else to go: the
+/// menus, the Log button, and the first and last stage tabs. The last tab is the
+/// interesting one — `Solve lowering` sits at the far right of the row, so it is
+/// the first thing a narrowing central panel pushes out of reach.
+///
+/// **Two properties, because "inside the viewport" alone is not enough.** A
+/// widget collapsed to zero width satisfies it and cannot be clicked, which is
+/// precisely how a dragged divider would fail.
+#[test]
+fn the_chrome_stays_on_screen_at_every_width() {
+    // 800x600 is egui's own default and the smallest anyone would plausibly use;
+    // 1600x1200 is what the rest of this file runs at.
+    for (w, h) in [(1600.0_f32, 1200.0_f32), (1280.0, 900.0), (1024.0, 768.0), (800.0, 600.0)] {
+        let mut app = App::test_default();
+        app.test_set_ui_mode_specimen();
+        app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Flatten);
+        let mut h_ = Harness::builder()
+            .with_size(eframe::egui::Vec2::new(w, h))
+            .build_ui_state(|ui, app: &mut App| app.frame_ui(ui), app);
+        h_.run_steps(2);
+
+        for label in ["File", "View", "Help", "Log", "Parse", "Solve lowering"] {
+            let node = h_
+                .query_by_label(label)
+                .unwrap_or_else(|| panic!("{w}x{h}: {label:?} is not rendered at all"));
+            let r = node.rect();
+
+            assert!(
+                r.min.x >= -0.5 && r.max.x <= w + 0.5,
+                "{w}x{h}: {label:?} spans x {}..{} — outside the window, so it is in the \
+                 accessibility tree but cannot be clicked",
+                r.min.x,
+                r.max.x,
+            );
+            assert!(
+                r.min.y >= -0.5 && r.max.y <= h + 0.5,
+                "{w}x{h}: {label:?} spans y {}..{} — outside the window",
+                r.min.y,
+                r.max.y,
+            );
+            assert!(
+                r.width() > 1.0 && r.height() > 1.0,
+                "{w}x{h}: {label:?} is {}x{} — collapsed to nothing, which satisfies every \
+                 in-the-viewport check and is still unusable",
+                r.width(),
+                r.height(),
+            );
+        }
+    }
+}
+
+// ===========================================================================
 // Baseline suite, chunk 3 — CROSS-PANE effects
 // ===========================================================================
 //
