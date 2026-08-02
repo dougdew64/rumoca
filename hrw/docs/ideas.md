@@ -2306,7 +2306,40 @@ corpus to do it on.
 
 ---
 
-## 52. One corpus list with a filter — **NOT a Test mode** — BUILT 2026-08-01
+## 52. One corpus list with a filter — **NOT a Test mode** — list BUILT, join NOT, and possibly never
+
+**Status, corrected 2026-08-02.** The heading read "BUILT 2026-08-01", which was wrong in a way
+worth keeping visible: the three items under *What to build instead* shipped, but **the argument
+this idea is actually built on did not.**
+
+That argument is the join — *"the reports do not want three views, they want to be columns and
+filters over one row set"*. The list reads `msl-survey.csv` and nothing else; no UI code reads
+the fidelity report at all. <!-- unbuilt: SurveyRow::fidelity_verdict -->
+
+**And Doug's question is why it may stay that way.** He asked: *"If the fidelity reports that
+there are zero violations, then there would be no value in adding all of that functionality to
+the specimen list, correct?"* Measured, and yes — all **2,614 rows are `outcome=ok` with
+`n_violations=0`.** A column that reads "ok" on every row is decoration; a filter predicate over
+a constant matches everything or nothing. Building it would produce a feature that *looks*
+finished and answers no question, which is worse than not building it.
+
+**The one real distinction the join would expose is a different one:** the survey has 2,626 rows
+and fidelity has 2,614, so the joined data separates **"never checked"** from **"checked and
+clean"** — the twelve models that exceeded this machine's limits. That is a genuine axis and a
+twelve-row answer, reachable faster by diffing two CSVs than by building a filter.
+
+**The decision point is the sweep of 2026-08-02 evening**, which is the first run to check Parse
+IR for real — those checks previously ran against `{"classes":{},"within":null}` for every MSL
+model and found nothing because there was nothing there. If that report is still all-zero, close
+this idea as complete and delete the join from the plan. If it produces violations, the join
+becomes the tool for reading them and the case rebuilds itself **from evidence rather than from
+this document**.
+
+**The lesson, recorded because it generalises:** this idea argued for the join *before the
+fidelity data existed*. An argument written before its evidence arrives does not automatically
+survive it, and a heading saying "BUILT" stopped anyone from re-checking. Doug asked the
+question Claude should have asked itself.
+
 
 **The mode was dropped before it was built.** Doug, 2026-08-01, questioning his own decision:
 
@@ -2679,8 +2712,15 @@ curriculum arriving *because* a question did.
 
 ### What this needs that does not exist yet
 
-1. **Query axes over the corpus** — #53's filter/sort, which is the enabler for all of them.
-   <!-- unbuilt: survey_filter -->
+1. ~~**Query axes over the corpus**~~ — **built 2026-08-01**: `survey::matches_filter`,
+   case-insensitive over name and outcome, terms ANDed. **Sorting is still absent**, and no
+   axis reaches beyond the survey's own columns. <!-- unbuilt: survey::sort_rows -->
+
+   *(This entry read "does not exist yet" until 2026-08-02, and its tag passed the whole time
+   — because the tag named `survey_filter` while the function shipped as `matches_filter`. **A
+   tag that resolves nothing is indistinguishable from a claim that is still true**, so the
+   checker was green on a stale claim. Name the symbol as it will actually be spelled, or the
+   tag checks nothing.)*
 2. **Per-phase timings**, for the performance curriculum specifically — #54 Part B, and the
    worker already logs them, so it is aggregation rather than instrumentation.
 3. **Nothing else.** The curriculum itself is an utterance, and utterances need no schema.
