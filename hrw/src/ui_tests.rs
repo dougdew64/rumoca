@@ -703,3 +703,167 @@ fn an_empty_log_view_says_so_rather_than_rendering_blank() {
 // The sheet's real behaviour — that it renders the equations it holds — needs a
 // populated `EquationSheet`, so it belongs with the tests that compile a
 // specimen behind `slow-tests`.
+
+// ===========================================================================
+// Baseline suite, chunk 2 — the panes whose emptiness is LEGITIMATE
+// ===========================================================================
+//
+// These are empty far more often than they are broken, which is exactly what
+// makes them dangerous: a blank pane trains the reader to shrug, so the one time
+// it is blank *because something failed* looks identical to the twenty times it
+// was blank for a good reason. `specimen_source_ui` hid the MSL defect this way
+// for weeks — Doug saw a refusal message and had no way to know its premise was
+// false.
+//
+// So every state gets a test, and each asserts a **distinguishable** message.
+// Two states that render the same words are not two states to a reader.
+
+/// With nothing selected, the source view says so.
+#[test]
+fn the_source_view_says_when_nothing_is_selected() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    let h = harness(app);
+
+    assert!(
+        h.query_by_label_contains("Select a specimen to view its source").is_some(),
+        "an unselected source view must invite a selection, not render blank",
+    );
+}
+
+/// A library file that cannot be read says **why**, and does not render blank.
+///
+/// This is the state that replaced a false refusal. Until 2026-08-01 the pane
+/// told Doug an MSL model had "no single source file to show" — untrue, the
+/// worker knew the file. The read can still genuinely fail, and when it does the
+/// reason has to reach the screen: blank here would be indistinguishable from
+/// the refusal it replaced, and from a file that is legitimately empty.
+#[test]
+fn an_unreadable_library_file_reports_why() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_library_source_error(
+        "Modelica.Electrical.Analog.Basic.Resistor",
+        "cannot read C:/msl/Basic.mo: The system cannot find the path specified. (os error 3)",
+    );
+    let h = harness(app);
+
+    assert!(
+        h.get_all_by_label_contains("cannot show this file").next().is_some(),
+        "the pane must announce that it cannot show the file",
+    );
+    assert!(
+        h.get_all_by_label_contains("os error 3").next().is_some(),
+        "and it must carry the underlying reason — 'cannot show this file' alone leaves \
+         the reader with nothing to act on, which is how the old false refusal read",
+    );
+}
+
+/// A readable library file shows its text **and names the file it came from**.
+///
+/// The header is not decoration. `Resistor` lands a reader inside `Basic.mo`
+/// among dozens of other classes, so without the filename there is no way to
+/// tell the pane is showing the right thing — or that the class they want is one
+/// of many in view.
+#[test]
+fn a_library_source_view_shows_its_text_and_names_its_file() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_library_source(
+        "Modelica.Electrical.Analog.Basic.Resistor",
+        "C:/msl/Modelica/Electrical/Analog/Basic.mo",
+        "within Modelica.Electrical.Analog;\npackage Basic\n  model Resistor\n  end Resistor;\nend Basic;\n",
+    );
+    let h = harness(app);
+
+    // **A single token, and one that appears only in the body.** The source view
+    // is syntax-highlighted, so every token is its own label — `"model Resistor"`
+    // never matches, however plainly it reads in the file. And `"Resistor"` alone
+    // would match the header, proving nothing about whether the text rendered.
+    assert!(
+        h.get_all_by_label_contains("within").next().is_some(),
+        "the declaring file's text must render",
+    );
+    assert!(
+        h.get_all_by_label_contains("Basic.mo").next().is_some(),
+        "and the file it came from must be named, or the reader cannot tell whether the \
+         pane is showing the class they asked for",
+    );
+}
+
+/// The Purpose tab distinguishes **compiled-but-unnoted** from the other empties.
+///
+/// `purpose_placeholder` picks a different message per state, and the useful part
+/// is that this one says *where a note would live*. An absence with an address is
+/// actionable; a bare "nothing here" is a dead end.
+#[test]
+fn the_purpose_tab_says_where_a_missing_note_would_live() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    // **A model with no notebook entry, deliberately.** The first draft used
+    // `RcCircuit`, which *has* a real `purpose.md` — so the pane correctly
+    // rendered the note and the test failed while nothing was wrong. A test for
+    // an empty state must be given a genuinely empty one.
+    app.test_show_purpose(Some("NoSuchSpecimen"), Some("NoSuchSpecimen.mo"));
+    let h = harness(app);
+
+    assert!(
+        h.get_all_by_label_contains("No purpose note for NoSuchSpecimen").next().is_some(),
+        "the tab must name the model it found no note for",
+    );
+    assert!(
+        h.get_all_by_label_contains("docs/specimen-notebook/NoSuchSpecimen/purpose.md")
+            .next()
+            .is_some(),
+        "and say where one would live — an absence with an address can be acted on",
+    );
+}
+
+/// Selected but not yet compiled reads as **waiting**, not as absent.
+///
+/// The distinction matters because the two resolve differently: one is a note
+/// somebody should write, the other is a compile that has not finished. Rendering
+/// the same words for both would make a slow compile look like missing work.
+#[test]
+fn the_purpose_tab_distinguishes_waiting_from_missing() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_show_purpose(None, Some("RcCircuit.mo"));
+    let h = harness(app);
+
+    assert!(
+        h.get_all_by_label_contains("Compiling RcCircuit").next().is_some(),
+        "with a selection but no model yet, the tab must read as waiting",
+    );
+    assert!(
+        h.query_by_label_contains("No purpose note").is_none(),
+        "and must NOT claim the note is missing — nothing has been looked for yet",
+    );
+}
+
+/// With nothing selected at all, the Purpose tab invites a selection.
+#[test]
+fn the_purpose_tab_says_when_nothing_is_selected() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_show_purpose(None, None);
+    let h = harness(app);
+
+    assert!(
+        h.get_all_by_label_contains("Select a specimen to see its purpose").next().is_some(),
+        "the third empty state needs its own words, or it collapses into one of the others",
+    );
+}
+
+// **The source map is deferred, for a reason worth recording.**
+//
+// `source_map_ui` opens with two empty states — `"(no equation sheet)"` and
+// `"(no source mapping available)"`. The first is unreachable for the same
+// reason as the equation sheet's (finding C1): its only call site is gated on
+// `flatten_ready`, which *is* `cached_equation_sheet.is_some()`.
+//
+// The second **is** reachable, and by a route worth knowing: the SourceMap tab is
+// only *offered* when `has_source_map`, but `flatten_view` persists across
+// specimens. Sit on SourceMap for a model that has one, load a model that does
+// not, and the message appears. Reaching it needs a populated `EquationSheet`,
+// so it belongs with the `slow-tests`.

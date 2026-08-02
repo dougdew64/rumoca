@@ -6846,6 +6846,38 @@ impl App {
         self.source_scroll_offset
     }
 
+    /// Show the Purpose tab, with the given model and selection.
+    ///
+    /// Both are inputs to `purpose_placeholder`, which picks a *different* message
+    /// for each combination — so a test that sets only one is testing a state the
+    /// pane does not distinguish.
+    pub(crate) fn test_show_purpose(&mut self, model: Option<&str>, selected: Option<&str>) {
+        self.specimen_detail = SpecimenDetail::Purpose;
+        self.model = model.map(str::to_owned);
+        self.selected = selected.map(PathBuf::from);
+    }
+
+    /// Put a library model on screen whose declaring file could not be read.
+    pub(crate) fn test_set_library_source_error(&mut self, qualified: &str, why: &str) {
+        self.selected = Some(PathBuf::from(qualified));
+        self.selected_is_library = true;
+        self.specimen_detail = SpecimenDetail::Source;
+        self.cached_source = None;
+        self.library_source_error = Some(why.to_owned());
+    }
+
+    /// Put a library model on screen with its declaring file's text.
+    pub(crate) fn test_set_library_source(&mut self, qualified: &str, uri: &str, text: &str) {
+        self.selected = Some(PathBuf::from(qualified));
+        self.selected_is_library = true;
+        self.specimen_detail = SpecimenDetail::Source;
+        self.model = Some(qualified.rsplit('.').next().unwrap_or(qualified).to_owned());
+        self.library_source_uri = Some(uri.to_owned());
+        self.library_source_error = None;
+        self.cached_source = Some(text.to_owned());
+        self.cached_highlight = None;
+    }
+
     /// Put a message in the status bar, as any refusal or result would.
     pub(crate) fn test_set_notice(&mut self, s: &str) {
         self.notice = Some(s.to_owned());

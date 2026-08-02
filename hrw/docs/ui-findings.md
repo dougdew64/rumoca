@@ -32,6 +32,8 @@ is where someone writing a test will actually be looking.
 | H5 | **State injected into `App` can be undone before the first frame.** `poll_scratch_specimens` fires on frame one and `rescan()`s an injected specimen list back to empty. `test_set_specimen_files` parks the poll for this reason. | **Silent vacuity** — the test passes while checking nothing. |
 | H6 | **Geometry is reachable when the app records it.** The accessibility tree carries none, but a widget's own state is a number: `ScrollArea::show` returns its offset, so `app.rs` stores it and a test reads it back. | Layout defects wrongly assumed untestable and left to Doug. |
 | H7 | **Only two surfaces are genuinely unreachable** — `incidence_view.rs` cell glyphs and `spyplot.rs`. The animations *are* testable; their controls and state labels are ordinary widgets. | Fixture tours spent re-walking panes a test could hold. |
+| H8 | **Syntax-highlighted source renders one label per token.** `"model Resistor"` never matches however plainly it reads in the file; query a single token, and pick one that appears **only** in the body or the assertion proves nothing. | Reads as "the source did not render" when it rendered perfectly. |
+| H9 | **A test for an empty state must be given a genuinely empty one.** The Purpose tab was handed `RcCircuit`, which *has* a real `purpose.md`, so the pane correctly rendered the note and the test failed with nothing wrong. Real specimen names are live data. | Wrong diagnosis pointed at the pane instead of the fixture. |
 
 ## Code findings — things about HRW itself
 
@@ -44,7 +46,8 @@ is where someone writing a test will actually be looking.
 | C3 | **20 `cached_*` fields, 40 invalidation sites, no completeness guard.** A missed invalidation renders stale plausible data. | **Scheduled** — `ui-pause-plan.md` step 2 removes the bug class rather than testing for it. |
 | C4 | **105 fields on `App`; 91 of them touched ten times or fewer.** Only `stage`, `stages`, `tracked_identifier`, `selected` are genuinely shared. | **Scheduled** — the field-count ratchet in `ui-pause-plan.md`. |
 | C5 | **`bridge::slice_source` tries `file_name` as a *relative* path.** Run from a directory holding a same-named file, it would slice the wrong one and emit a confident wrong excerpt. | **Mitigated 2026-08-01** by passing the full document URI, so the branch is no longer reached with a bare basename. **The relative test itself still stands** — open. |
-| C6 | **The animations are testable and have no tests.** H7 corrects the earlier assumption that they were out of reach. | **Open** — not in the pause's four steps. Belongs in `tech-debt.md`'s UI testing debt. |
+| C6 | **The animations are testable and have no tests.** H7 corrects the earlier assumption that they were out of reach. | **Logged** in `tech-debt.md` under the UI testing debt, 2026-08-02. Deliberately not scheduled: off the refactor's path. |
+| C7 | **`source_map_ui`'s `"(no source mapping available)"` is reachable, but only by a persisting sub-view.** The SourceMap tab is offered only when `has_source_map`, yet `flatten_view` survives a specimen change — sit on SourceMap, load a model without one, and the message appears. Its sibling `"(no equation sheet)"` is unreachable, like C1. | **Open** — reaching it needs a populated `EquationSheet`, so it belongs with the `slow-tests`. Recorded beside the deferral in `src/ui_tests.rs`. |
 
 ---
 
