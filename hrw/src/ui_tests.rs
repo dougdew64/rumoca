@@ -947,6 +947,32 @@ fn the_split_opens_at_the_default_fraction() {
     );
 }
 
+/// A fresh `App` **asks for the default before it has drawn anything**.
+///
+/// Doug, 2026-08-02: *"when HRW starts, too much horizontal space is given to the
+/// LHS."* A resizable `Panel` keeps its width in egui's memory, which eframe
+/// persists across runs — so a width dragged in one session returned in the next,
+/// and `default_size` never applied because a width was already remembered.
+///
+/// **`default_size` means "use this when nothing is remembered", which is not the
+/// same as "always start here".** Requesting the reset up front makes the opening
+/// width a property of HRW rather than of whatever the reader last did.
+///
+/// Asserts the *request*, before any frame runs — the drawn result is covered by
+/// `the_split_opens_at_the_default_fraction`, and neither test alone distinguishes
+/// "opened at 40% because nothing was stored" from "opened at 40% because HRW
+/// insisted".
+#[test]
+fn a_fresh_app_requests_the_default_split_before_drawing() {
+    let app = App::test_default();
+    assert!(
+        app.test_split_reset_pending(),
+        "startup must force the 40/60 default; without it a width dragged in a previous \
+         session is restored from egui's persisted memory and HRW opens wherever the \
+         reader last left it",
+    );
+}
+
 /// Switching modes **queues a reset**, so each mode opens at 40/60.
 ///
 /// Doug's requirement: *"The 40%/60% division will continue to be the default

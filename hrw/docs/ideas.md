@@ -3252,6 +3252,14 @@ per H6) and a one-frame **reset request**. The reset must happen during renderin
 at the mode switch, because `Panel::exact_size` collapses the size range to a point and that is
 what makes egui forget a dragged width.
 
+**The opening width is forced, not defaulted** *(fixed 2026-08-02, Doug: "when HRW starts, too
+much horizontal space is given to the LHS")*. A resizable `Panel` keeps its width in egui's
+memory, which eframe persists across runs — so a width dragged in one session came back in the
+next, and `default_size` never applied because a width was already remembered. **`default_size`
+means "use this when nothing is remembered", which is not "always start here."** `SplitState`
+now requests the reset before the first paint, which makes the opening width a property of HRW
+rather than of whatever the reader last did.
+
 **Both edges are clamped, and that is not fussiness.** A divider draggable to zero hides a panel
 *with no handle left to drag back*.
 

@@ -132,13 +132,33 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// egui's remembered width for that frame — so the reset has to happen *during*
 /// rendering, not when the mode changes. The flag carries the intent from the
 /// mode switch to the next paint.
-#[derive(Default)]
 struct SplitState {
     /// The left panel's share of the window as of the last frame that drew it.
     /// `None` until something has been drawn.
     fraction: Option<f32>,
     /// Force both panels back to [`LEFT_PANEL_WIDTH_FRACTION`] on the next paint.
     reset_pending: bool,
+}
+
+impl Default for SplitState {
+    fn default() -> Self {
+        Self {
+            fraction: None,
+            // **Reset on the very first paint, not just on mode switches.**
+            //
+            // Doug, 2026-08-02: *"when HRW starts, too much horizontal space is
+            // given to the LHS."* A resizable `Panel` keeps its width in egui's
+            // memory, which eframe persists across runs — so a width dragged in
+            // one session came back in the next, and `default_size` never
+            // applied because a stored width already existed.
+            //
+            // `default_size` is the wrong instrument for "always start here": it
+            // means *use this when nothing is remembered*. Requesting the reset
+            // up front makes the opening width a property of HRW rather than of
+            // whatever the reader last did, which is what Doug asked for.
+            reset_pending: true,
+        }
+    }
 }
 
 impl SplitState {
