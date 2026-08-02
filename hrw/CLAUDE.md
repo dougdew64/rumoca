@@ -249,6 +249,19 @@ process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB
 - **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
   treats that as a crash and restarts it within seconds.
 
+**A LARGE-SCALE SWEEP IS OWED** — Doug runs it **the evening of 2026-08-02**.
+Trigger 3 fired twice on 2026-08-01: the Parse stage of a library model went from
+`{"classes":{},"within":null}` to its declaring file's full AST, and every
+`Location` in that AST now carries the document URI instead of a basename.
+
+**The point is not compliance.** Four F-checks walk `StageKind::COMPILATION`,
+which begins with Parse — so they ran on all 2,626 MSL models in the last sweep
+**and found nothing, because there was nothing there**. Those greens were vacuous
+for that stage. This run is the first time Parse IR is really checked across the
+corpus. Expect it to cost more than the last one (12 models already exceeded this
+machine's limits), and treat new F7 violations as *information*, not regression:
+the shape checks have never seen a whole library AST.
+
 **When the fidelity checks run** (policy 2026-07-31; reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Small scale — the 16 curated specimens —
 **stays in the pre-commit run** (~90 s), answering *"did HRW drift from itself?"*, which is not

@@ -1472,13 +1472,6 @@ impl WorkerState {
             .and_then(|l| l.text.as_ref().ok())
             .map(String::as_str)
             .unwrap_or(&source);
-        let path_owned = PathBuf::from(&uri);
-        let file_name = path_owned
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("buffer.mo")
-            .to_owned();
-        let file_name = file_name.as_str();
 
         // =====================================================================
         // Stage 1: PARSE — source text to AST
@@ -1486,6 +1479,21 @@ impl WorkerState {
         // Rumoca API: `parse_to_ast(source, file_name)` parses Modelica source
         // into an AST. Returns `Ok(StoredDefinition)` or `Err` on syntax error.
         // We grab the first class name from `ast.classes` as the model name.
+        //
+        // **`&uri`, not the basename.** The `file_name` argument is stamped into
+        // every `Location` in the resulting AST, and the session parsed these same
+        // bytes with the full document URI. Passing a basename made HRW's parse
+        // differ from the compiler's own AST for the file — measured 2026-08-01 at
+        // **400 of 400** MSL documents, and **0 of 400** once the URI was passed.
+        // The bytes and every span already agreed; this one field did not.
+        //
+        // It is not cosmetic. `bridge::slice_source` resolves a location to a file
+        // by trying `file_name` as a path and falling back to the specimen path.
+        // A basename is not a path, and for a **library model the fallback is a
+        // qualified name**, so pointing at a Parse node emitted no excerpt at all.
+        // Worse, `Path::new("Resistor.mo").is_file()` is a *relative* test: run
+        // from a directory holding a same-named file, it would have sliced the
+        // wrong one and emitted a confident wrong excerpt.
         log(LogLevel::StageStart, "Parse".to_owned());
         let t_stage = Instant::now();
         // **`display_source`, not `source`.** For a library model `source` is `""`
@@ -1505,7 +1513,7 @@ impl WorkerState {
         // The **whole declaring file** is parsed, matching what the source view
         // shows. A library file declares many classes and the reader is looking
         // at all of them.
-        let (parse, model) = match rumoca_phase_parse::parse_to_ast(display_source, file_name) {
+        let (parse, model) = match rumoca_phase_parse::parse_to_ast(display_source, &uri) {
             Ok(ast) => {
                 // For a specimen, `ast.classes.keys().next()` is the model: the
                 // file declares one. For a **library** model the name was given,
@@ -4637,6 +4645,64 @@ mod tests {
             );
         }
     }
+
+    /// **HRW's parse of a library file is the compiler's own AST, byte for byte.**
+    ///
+    /// This is the guard on the whole "second source" question Doug asked: HRW
+    /// re-reads the declaring file from disk because Rumoca discards source-root
+    /// text, so there are two paths to what ought to be one artifact. If they can
+    /// diverge, the Parse tab shows something the compiler never saw.
+    ///
+    /// **They already agreed on bytes and spans and differed on one field.**
+    /// `parse_to_ast`'s `file_name` argument is stamped into every `Location`, and
+    /// passing a basename where the session used the full URI made **400 of 400**
+    /// MSL documents differ. Passing `&uri` makes it **0 of 400**. Nothing about
+    /// that is self-evident, which is why it is measured rather than assumed.
+    ///
+    /// Serialised comparison rather than structural: it is the serialised form
+    /// that reaches the stage tree, so it is the form whose agreement matters.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn hrw_reparse_of_a_library_file_matches_the_sessions_own_ast() {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        // Any compile populates the session with the MSL documents.
+        let _ = w.compile_model_by_name("Modelica.Electrical.Analog.Basic.Resistor", &|_| {});
+
+        let uris: Vec<String> = w
+            .session
+            .document_uris()
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
+
+        let mut compared = 0usize;
+        // A sample, not the whole 2,553: this runs in the pre-commit suite, and
+        // the property is uniform -- a divergence in how HRW calls `parse_to_ast`
+        // would show in the first handful, not only in the tail.
+        for uri in uris.iter().take(120) {
+            let Some(doc) = w.session.get_document(uri) else { continue };
+            let Some(session_ast) = doc.parsed() else { continue };
+            let Ok(text) = std::fs::read_to_string(uri) else { continue };
+            let Ok(mine) = rumoca_phase_parse::parse_to_ast(&text, uri) else {
+                panic!("{uri}: HRW cannot parse a file the session parsed");
+            };
+            assert_eq!(
+                serde_json::to_string(&mine).unwrap_or_default(),
+                serde_json::to_string(session_ast).unwrap_or_default(),
+                "{uri}: HRW's re-parse differs from the AST the session holds, so the \
+                 Parse tab would show something the compiler never saw",
+            );
+            compared += 1;
+        }
+
+        // **Non-vacuity.** Every `continue` above is a silent skip, and a session
+        // that produced no readable documents would leave this green.
+        assert!(
+            compared >= 50,
+            "only {compared} documents compared -- too few to have exercised the property",
+        );
+    }
+
 
 
 

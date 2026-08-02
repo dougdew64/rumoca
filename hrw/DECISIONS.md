@@ -1744,3 +1744,28 @@ worked around. Recorded so the signal is recognisable rather than rationalised a
 because the answer is unclear now, but because **the filter is required either way.** It is the
 one piece no decision changes, which makes it the safe thing to build while the rest is cheap
 to reverse.
+
+## Parse means "what parsing this file produced" — and will not be scoped
+
+*2026-08-01, Doug.* When the Parse stage was fixed to parse a library model's
+declaring file, the payload for a multi-class file turned out to be large:
+`Blocks/Continuous.mo` serialises to **~4-5 MB**, most of it classes the reader
+did not ask for. Claude raised scoping the tab to the requested class as an
+option, in the UI and to cut the fidelity sweep's cost.
+
+**Rejected, and the rule is general.** Doug: *"If 'parse' meant 'what parsing
+this file produced' before our code changes, it should continue to mean the exact
+same thing after our code changes. So, no scoping to reduce parse payloads or
+anything like. I will pay the costs in the UI and during the run of the fidelity
+test. As always, we are striving for correctness and accuracy."*
+
+**A stage's meaning is not a performance knob.** Scoping would have made the tab
+cheaper by making it answer a *different question* than its name promises, and a
+reader comparing Parse to Resolve would have been comparing two things neither of
+which was what they thought. That the cheaper version would still have looked
+plausible is exactly what makes it the wrong trade.
+
+**Do not re-propose scoping, truncating, or lazily materialising the Parse stage
+as a cost measure.** If cost becomes a genuine blocker, the honest moves are to
+make the *tree viewer* handle large values better, or to bound the *sweep*, not to
+change what the stage contains. Related: `docs/ideas.md` on tree rendering.
