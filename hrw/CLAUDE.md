@@ -136,20 +136,28 @@ when the sweep's findings have landed.
    plus the IR-shape metrics that stratify the sample.
 2. **Fidelity testing at scale** ✅ — F1-F9 over that corpus. **2,614 of 2,626 models green**
    (2026-08-01); 12 exceeded this machine's memory or the time limit.
-3. **Test mode + fidelity-report support** — load a report in the LHS, click a model, open it
-   compiled in the RHS (`docs/ideas.md` **#52**).
-   - **3b. PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** (agreed
-     2026-08-01). Six items *before* oracle testing and Test mode: the must-fire convention,
+3. **One corpus list with a filter** — **NOT a Test mode** (`docs/ideas.md` **#52**, decided
+   2026-08-01). One list widget over three visible sources — curated `specimens/`, scratch
+   `.hrw-bridge/specimens/`, and the 2,626 MSL rows — with the reports as **columns and filter
+   predicates**, not as three views. **The filter is a prerequisite, not an enhancement**: 18
+   files need none, 2,644 do.
+   - **3b. PAUSE — [`docs/verification-plan.md`](docs/verification-plan.md)** ✅ **COMPLETE
+     2026-08-01.** All six items landed: the must-fire convention,
      **the stale-negative test** (a claim of *absence* must be checkable — the mirror of
      `doc_citations.rs`), **clearing HRW's 67 clippy warnings and then denying them**,
      shortening the pre-commit suite (#48), **headless UI testing with `egui_kittest`**
-     (dev-dependency, approved), and moving the run drivers to Rust. Doug: *"Anything which
-     slows down your ability to help bring my ideas to life is absolutely worth fixing now."*
+     (dev-dependency, approved), and the run drivers — **resolved by splitting**, since
+     `promote-run` writes a published claim while the watchdog needs a crate and mid-run
+     editability. Doug: *"Anything which slows down your ability to help bring my ideas to
+     life is absolutely worth fixing now."*
 4. **Design and run the oracle test** — Rumoca vs System Modeler (#43). **Constrained by
    [`docs/reports.md`](docs/reports.md):** it must emit the same `name` join key, because a
    mismatch is only an admissible upstream finding when that model is *fidelity-green*.
-5. **Oracle-report support in Test mode**, with per-item state (unfiled / filed / fixed
-   upstream) that regeneration merges rather than overwrites.
+5. **Where oracle findings surface.** Mismatches become **columns and a filter** on the same
+   list, joined on `name`. **Per-item state — unfiled / filed / fixed upstream — does NOT go in
+   the list**: that is the status of a finding you intend to file, not a property of a model,
+   and filing state already lives in `docs/upstream-issues.md`. Putting workflow state in a
+   corpus browser is how a browser becomes a bug tracker.
 
 **[`docs/reports.md`](docs/reports.md) is the design authority for steps 3-5.** Its load-bearing
 claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
@@ -166,11 +174,17 @@ claim: **survey → eligible, fidelity → trustworthy, oracle → findings.**
 
 **One risk in the ordering:**
 
-- **The n=1 risk.** Test mode is built at step 3 with only *one* real report to
-  load, then asked to take a second at step 5 — an abstraction fitted to n=1. Half the
-  mitigation is made: all three reports share the first four columns (`name`, `kind`,
-  `outcome`, `message`). The other half is to **sketch the oracle report's columns during
-  step 3**, without building the oracle.
+- **The n=1 risk, much reduced by the merge.** A dedicated mode built at step 3 would have been
+  fitted to *one* report and then asked to take a second at step 5. **Columns-and-filters over
+  one row set has no such shape to overfit** — a new report is new columns. What survives is
+  the join key: all three reports share the first four columns (`name`, `kind`, `outcome`,
+  `message`), and it is still worth **sketching the oracle report's columns during step 3** so
+  the filter is designed against two consumers rather than one.
+
+- **The signal that dropping the mode was wrong**, recorded so it is recognisable: a question
+  that genuinely **cannot be expressed as a filter** over the joined rows. That would mean
+  something Test-mode-shaped was right after all, and it should reopen `docs/ideas.md` #52
+  rather than be worked around.
 
 ---
 

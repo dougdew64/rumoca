@@ -25,7 +25,7 @@ Started 2026-07-31.
 | 6 | **Fix**, re-run to green | likely a no-op — see step 5 |
 | 6b | **The verification pause** — [`verification-plan.md`](verification-plan.md), four items | **after 6, before 7** (agreed 2026-08-01) |
 | 7 | **The oracle test** — design, run (`ideas.md` #43) | after 6b |
-| 8 | **Test mode** (`ideas.md` #52) — somewhere to *look* at these reports | the payoff |
+| 8 | **One corpus list with a filter** (`ideas.md` #52) — **not a Test mode**, decided 2026-08-01 | the payoff |
 | 9 | **A reading path for HRW**, then a **structural pass on `app.rs`** | after 8, deliberately |
 
 Steps 1-4 are the machine's time; steps 5-9 are ours.
@@ -41,9 +41,10 @@ But the complexity is **concentrated, not diffuse**: `app.rs` is 9,039 lines and
 rather than essential: a 9,000-line UI module is not inherent to what HRW does. So part of
 the answer is not "study it harder" but "make it smaller".
 
-**Both are deferred until after Test mode on purpose**, and the reason is a rule this project
+**Both are deferred until after the corpus list on purpose**, and the reason is a rule this project
 already holds: `feedback-tech-debt-sweeps-serve-future-phases` — skip debt a later phase will
-rewrite. Test mode touches `app.rs` and adds a fourth `UiMode`, so a structural pass or a
+rewrite. The corpus list touches `app.rs` heavily — the specimen list becomes a filtered
+corpus browser — so a structural pass or a
 reading path written before it would be partly obsolete on arrival. CLAUDE.md already defers
 splitting `central_panel_ui` for exactly this reason.
 

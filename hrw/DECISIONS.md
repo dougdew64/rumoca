@@ -1679,3 +1679,68 @@ decide pre-existing versus introduced *before* diagnosing; track the clippy coun
 change. And **Claude cannot run the GUI** — for UI work it must say which parts are
 test-verified and which are only reasoned, rather than letting a report imply more than
 happened.
+
+## No Test mode — one corpus list with a filter instead (2026-08-01)
+
+Doug, questioning his own earlier decision:
+
+> More than once, we have both likened test mode to specimen mode. The more that I have
+> thought about that, the more that I have questioned whether it makes sense to have a new
+> test mode. After all we could simply add the MSL examples to the specimen list.
+
+**Dropped before it was built.** `docs/ideas.md` #52 is now the merged design; #53's deferred
+"should the two modes merge?" is answered.
+
+### Why "mode" was the wrong unit
+
+Every existing mode changes the left panel **and the interaction loop** — Tour reads stops and
+clicks links, Specimen picks from a list and inspects, Debug arms and steps. **Test mode's loop
+is *pick from a list, inspect the pipeline*, which is Specimen mode's loop exactly.** What
+differed was the list's source and its columns: a data question wearing a layout question's
+clothes. Two modes with the same layout, the same right-hand side and the same gestures read as
+important in a plan and as noise in the app.
+
+### The report composition argues FOR merging, which is what settled it
+
+`docs/reports.md` calls the three reports load-bearing — survey → *eligible*, fidelity →
+*trustworthy*, oracle → *findings* — and that looked like justification for a dedicated
+surface. It is the opposite.
+
+**The interesting question is never "show me the fidelity report."** It is the **join**:
+*fidelity-green **and** oracle-mismatched*, because `reports.md` makes fidelity-green a
+precondition of a mismatch being admissible. **Three views make that join something you do in
+your head; one list with filter predicates makes it a query** — which is exactly the "query
+axes over the corpus" #53 calls the enabler for everything else.
+
+So the reports do not want three views. **They want to be columns and filters over one row
+set.**
+
+### What replaces it
+
+One list widget over **three visible sources** — curated `specimens/`, scratch
+`.hrw-bridge/specimens/`, and the 2,626 MSL rows — with **the filter as a prerequisite, not an
+enhancement**: 18 files need none, 2,644 do. That is probably the real reason this felt like it
+needed its own mode.
+
+**Merge the widget, not the corpora.** Curated specimens have properties MSL rows do not — a
+`purpose.md`, a generated trace, System Modeler round-trip intent — and the sources stay
+visibly distinct, the same care #53 already required of scratch specimens.
+
+**Filing state does not go in the list.** Unfiled / filed / fixed-upstream is the status of a
+finding you intend to send upstream, not a property of a model, and it has a home in
+`docs/upstream-issues.md` under the standing rule that Claude never files. The list may *show*
+it as a column; the list is not where it is *managed*. **A corpus browser that grows a workflow
+becomes a bug tracker.**
+
+### What would prove this wrong
+
+**A question that genuinely cannot be expressed as a filter over the joined rows.** That would
+mean something Test-mode-shaped was right after all, and it should reopen #52 rather than be
+worked around. Recorded so the signal is recognisable rather than rationalised away.
+
+### The sequencing survives unchanged
+
+#53 said to build the filter *before* deciding whether the modes merge. That still holds — not
+because the answer is unclear now, but because **the filter is required either way.** It is the
+one piece no decision changes, which makes it the safe thing to build while the rest is cheap
+to reverse.

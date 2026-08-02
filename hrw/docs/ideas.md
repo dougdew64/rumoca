@@ -2280,7 +2280,73 @@ corpus to do it on.
 
 ---
 
-## 52. A "Test" mode — load a report, click a model, investigate it
+## 52. One corpus list with a filter — **NOT a Test mode** (decided 2026-08-01)
+
+**The mode was dropped before it was built.** Doug, 2026-08-01, questioning his own decision:
+
+> More than once, we have both likened test mode to specimen mode. The more that I have
+> thought about that, the more that I have questioned whether it makes sense to have a new
+> test mode. After all we could simply add the MSL examples to the specimen list.
+
+**He is right, and the reason is that "mode" is the wrong unit.** Every existing mode changes
+the left panel **and the interaction loop** — Tour reads stops and clicks links, Specimen
+picks from a list and inspects, Debug arms and steps. Test mode's loop is *pick from a list,
+inspect the pipeline*, which **is Specimen mode's loop exactly**. What differs is the list's
+source and its columns: a data question wearing a layout question's clothes. Two modes with
+the same layout, the same right-hand side and the same gestures would read as important in a
+plan and as noise in the app.
+
+### The composition argues FOR merging, which is the part that changed my mind
+
+[`reports.md`](reports.md) calls the three reports load-bearing — survey → *eligible*,
+fidelity → *trustworthy*, oracle → *findings* — and that looked like justification for a
+dedicated surface. It is the opposite.
+
+**The interesting question is never "show me the fidelity report."** It is the **join**:
+*models that are fidelity-green **and** oracle-mismatched*, because `reports.md` says a
+mismatch is only an admissible upstream finding when the model is fidelity-green. Three
+separate views make that join something you do in your head. **One list with filter predicates
+makes it a query** — which is exactly the "query axes over the corpus" that #53 calls the
+enabler for everything else.
+
+So the reports do not want three views. **They want to be columns and filters over one row
+set.**
+
+### What to build instead
+
+1. **One list widget, three visible sources** — curated `specimens/`, scratch
+   `.hrw-bridge/specimens/`, and the 2,626 MSL rows.
+2. **The filter is a prerequisite, not an enhancement.** Eighteen files need no filter; 2,644
+   do. Without it the merged list is unusable — which is probably the real reason this felt
+   like it needed its own mode.
+3. **Keep the sources visibly distinct.** Curated specimens have properties MSL rows do not: a
+   `purpose.md`, a generated trace, System Modeler round-trip intent. #53 already said *split,
+   do not repurpose* about scratch specimens, and the same care applies. **Merge the widget,
+   not the corpora.**
+
+### Two things that must NOT go in the list
+
+- **Oracle per-item state** (unfiled / filed / fixed upstream). That is not a property of a
+  model, it is the status of *a finding you intend to file* — and filing state already has a
+  home in [`upstream-issues.md`](upstream-issues.md). **Putting workflow state in a corpus
+  browser is how a browser becomes a bug tracker.**
+- **Anything that needs the three reports kept apart.** If a case turns up that genuinely
+  cannot be expressed as a filter, **that is the evidence that something Test-mode-shaped was
+  right after all** — and it should reopen this decision rather than be worked around.
+
+### Build the filter first regardless
+
+#53 deferred this decision pending the filter, and that sequencing still holds — not because
+the answer is unclear now, but because **the filter is required either way.** If the mode were
+right it needs a filter; since the merge is right it needs a filter. It is the one piece no
+decision changes, which makes it the safe thing to build while the decision is still cheap to
+reverse.
+
+**Everything below is the original 2026-07-31 proposal**, kept because the report-shape
+reasoning in it is still exactly right — it is *what the columns are* that survives, not *what
+the mode was*.
+
+---
 
 Doug, 2026-07-31, while the first full MSL survey was running:
 
@@ -2379,7 +2445,11 @@ rest of HRW already means by it.
 That makes this a much smaller feature than it sounds. The genuinely new parts are only:
 **loading and parsing a report**, **rendering a row**, and **compile-by-qualified-name**.
 
-### Wiring a new MODE — the checklist a new stage already has
+### ~~Wiring a new MODE — the checklist a new stage already has~~ — MOOT
+
+*(Superseded 2026-08-01: no new mode is being built. Kept because the checklist is correct for
+whenever a mode genuinely is added, and because it is a fair record of what the mode would
+have cost — six wiring sites, two of which the compiler would not have caught.)*
 
 `hrw-stage-diff-highlight-extend` records that a new *stage* must be wired into every
 per-stage system. A new **mode** has its own list, and it is shorter but not empty:
@@ -2460,8 +2530,14 @@ One list widget, three sources:
 2. `.hrw-bridge/specimens/` — Claude's scratch probes, ephemeral by construction
 3. **the survey — 2,626 MSL models**, filterable by shape
 
-Worth building the filter *before* deciding the two modes should merge: the merge may turn out
-to be obvious once the list is shared, or obviously wrong.
+~~Worth building the filter *before* deciding the two modes should merge: the merge may turn
+out to be obvious once the list is shared, or obviously wrong.~~
+
+**Decided 2026-08-01, and it was obvious: they merge.** Doug questioned whether Test mode
+should exist at all, and the answer is no — *mode* is the wrong unit, because Test mode's
+interaction loop **is** Specimen mode's. See #52, which now records the reasoning and what to
+build instead. **The filter-first sequencing survives the decision**: the filter is required
+either way, so it stays the thing to build while the rest is still cheap to reverse.
 
 ### A difficulty ladder, ordered by measured complexity
 

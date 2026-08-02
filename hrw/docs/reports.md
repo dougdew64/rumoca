@@ -2,11 +2,14 @@
 
 **Purpose:** how the survey, fidelity and oracle reports compose — survey says *eligible*,
 fidelity says *trustworthy*, oracle says *finding*.
-**Status:** authority for Test mode (#52) and the oracle test (#43).
-**Read when:** before building Test mode or designing the oracle test. It constrains how the
+**Status:** authority for the corpus list (#52) and the oracle test (#43).
+**Read when:** before building the corpus list or designing the oracle test. It constrains how the
 oracle is *designed*, not merely how its results are shown.
 
-Agreed with Doug 2026-07-31. **The design authority for Test mode
+Agreed with Doug 2026-07-31. *(Retitled 2026-08-01: the "Test mode" it was written for was
+dropped in favour of one corpus list with a filter — see #52. **Nothing about the reports
+changed**, which is the point: the composition below was always about the data, and it is what
+survived the mode.)* **The design authority for the corpus list
 (`docs/ideas.md` #52) and for the oracle test (#43)** — consult it before building either,
 because the composition below is a constraint on how the oracle test is *designed*, not
 merely on how its results are displayed.
@@ -51,7 +54,7 @@ cheapness.
 
 **All three reports must be joinable, and `name` is the join key** — the fully qualified
 model name, spelled identically. The shared first-four-columns decision (`name`, `kind`,
-`outcome`, `message`) was made so Test mode could have one loader; it turns out to matter
+`outcome`, `message`) was made so one loader could read all three; it turns out to matter
 more than that, because `name` is what lets the admissibility table above be *computed*
 rather than eyeballed.
 
@@ -74,8 +77,9 @@ reaches zero and stops being useful. Three reasons it is the opposite:
 
 ## Three reports, three default interactions
 
-Because their steady states differ, a single generic list is wrong. Same loader, same
-layout (`docs/ideas.md` #52), **different default filter**:
+Because their steady states differ, **a list with no default filter is wrong** — which is not
+the same as saying one list is wrong. Same widget, same loader, same layout
+(`docs/ideas.md` #52), **different default filter per source**:
 
 | Report | Interaction | LHS shows by default |
 |---|---|---|
@@ -85,6 +89,12 @@ layout (`docs/ideas.md` #52), **different default filter**:
 
 A fidelity report rendering 2,600 green rows would bury its own good news; the summary
 carries it instead, and the list carries the exceptions.
+
+**This table is why the merge works rather than an argument against it** *(2026-08-01)*. Three
+default filters over one widget is one widget; three widgets would be three things to keep in
+sync. And the question that actually matters is the **join** — *fidelity-green **and**
+oracle-mismatched*, which the section above makes a precondition of admissibility. Separate
+views make that join something you do in your head.
 
 ## The oracle report needs state the run did not produce
 
@@ -96,6 +106,17 @@ overwrite it.
 Concretely: the generated table stays generated, and the per-item state lives in a small
 side file keyed by model name, merged at load. Designing this in now is much cheaper than
 discovering it after the first oracle run has been triaged by hand.
+
+**Refined 2026-08-01, and the distinction is worth keeping sharp.** *Where the state lives* and
+*where it is managed* are different questions:
+
+- **It lives outside the generated table** — as above, and that is unchanged. Regeneration
+  merges rather than overwrites.
+- **The list may SHOW it as a column; the list is not where filing is managed.** Filing state
+  is the status of a finding you intend to send upstream, not a property of a model, and it
+  already has a home in [`upstream-issues.md`](upstream-issues.md) with a standing rule that
+  **Claude never files.** A corpus browser that grows a workflow becomes a bug tracker, and
+  this project already has the artifact that job belongs to.
 
 ## Click generates a draft; a human files it
 
