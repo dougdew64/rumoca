@@ -541,8 +541,8 @@ Some prose.
     #[test]
     fn app_does_not_regrow_its_field_count() {
         /// 105 before the pause (2026-08-02); 94 after `StageViewCaches`; 85
-        /// after `ModelListState`; 75 after `Viewport`.
-        const MAX_APP_FIELDS: usize = 75;
+        /// after `ModelListState`; 75 after `Viewport`; 72 after `TourState`.
+        const MAX_APP_FIELDS: usize = 72;
 
         let src = std::fs::read_to_string(
             Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),

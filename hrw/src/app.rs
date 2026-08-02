@@ -894,6 +894,115 @@ impl ModelListState {
 
 }
 
+/// Everything the **tour panel** owns.
+///
+/// The fourth grouping lifted off `App` during the UI pause, and the smallest.
+/// Its shape is `ModelListState`'s: the pane holds its own world, reports what
+/// changed, and leaves the consequences to the caller.
+///
+/// # The seam
+///
+/// Selecting a tour re-initialises the right-hand side, because a tour starts
+/// from its own first stop and leaving the previous tour's model on screen makes
+/// Stop 1 look as though it has already been done. **That reset is not this
+/// struct's business.** `select` and `poll` return *whether the selection
+/// changed*; `App::reset_for_new_tour` decides what that invalidates.
+#[derive(Default)]
+struct TourState {
+    /// The selected tour's text and the mtime it was read at.
+    cached: Option<(String, std::time::SystemTime)>,
+    /// Every tour on offer: the ad hoc one first when it exists, then fixtures.
+    available: Vec<TourSource>,
+    /// Which tour is showing.
+    selected: Option<TourSource>,
+    /// When the tour directory was last polled.
+    polled_at: Option<std::time::Instant>,
+}
+
+impl TourState {
+    /// Switch to `source`, discarding the previous text.
+    ///
+    /// Returns **true when the selection actually changed**, which is the
+    /// caller's cue to re-initialise the stage side. Re-clicking the tour already
+    /// showing returns false, so a reader partway through a specimen keeps it.
+    ///
+    /// Clears `cached` rather than letting the poll notice: without this the old
+    /// tour stays on screen until the next mtime comparison, and a reader who
+    /// just clicked a different tour sees the previous one for up to an interval.
+    fn select(&mut self, source: TourSource) -> bool {
+        let changed = self.selected.as_ref() != Some(&source);
+        self.selected = Some(source);
+        self.cached = None;
+        changed
+    }
+
+    /// The selected tour's text, if any has been read.
+    fn text(&self) -> Option<&str> {
+        self.cached.as_ref().map(|(t, _)| t.as_str())
+    }
+
+    /// Re-read the list and the selected tour, at most once per
+    /// [`TOUR_POLL_INTERVAL`]. Returns true when a tour was newly selected.
+    fn poll(&mut self) -> bool {
+        let mut newly_selected = false;
+        let due = self
+            .polled_at
+            .is_none_or(|last| last.elapsed() >= TOUR_POLL_INTERVAL);
+        if !due {
+            return false;
+        }
+        self.polled_at = Some(std::time::Instant::now());
+
+        // --- Rebuild the pick list ---
+        //
+        // Ad hoc first when it exists: it is the answer to the question just asked,
+        // and burying it under the fixtures would make the common case the awkward one.
+        let mut tours = Vec::new();
+        if std::path::Path::new(bridge::TOUR_FILE).exists() {
+            tours.push(TourSource::AdHoc);
+        }
+        tours.extend(bridge::fixture_tours().into_iter().map(TourSource::Fixture));
+        let list_changed = tours != self.available;
+        self.available = tours;
+
+        // A selection that no longer exists (the ad hoc tour was deleted, a fixture
+        // renamed) must not leave stale text on screen attributed to a live file.
+        if self.selected.as_ref().is_some_and(|t| !self.available.contains(t)) {
+            self.selected = None;
+            self.cached = None;
+        }
+        // Default to the ad hoc tour when one appears and nothing is chosen.
+        if self.selected.is_none() && self.available.contains(&TourSource::AdHoc) {
+            newly_selected |= self.select(TourSource::AdHoc);
+        }
+
+        // --- Re-read the selected tour if it changed on disk ---
+        let Some(selected) = self.selected.clone() else {
+            self.cached = None;
+            return newly_selected;
+        };
+        let path = selected.path();
+        let mtime = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok());
+        match mtime {
+            Some(mtime) => {
+                let unchanged =
+                    self.cached.as_ref().is_some_and(|(_, seen)| *seen == mtime);
+                if !unchanged || list_changed {
+                    self.cached =
+                        std::fs::read_to_string(&path).ok().map(|text| (text, mtime));
+                }
+            }
+            // The file vanished between listing and reading. Drop the text rather
+            // than keep a stale copy: for an ad hoc tour, absence is the normal state.
+            None => {
+                self.cached = None;
+                self.selected = None;
+            }
+        }
+        newly_selected
+    }
+}
+
 impl Default for ModelListState {
     fn default() -> Self {
         Self {
@@ -1146,23 +1255,13 @@ pub struct App {
     /// Consumed on the frame it is honoured, like `jump_target`, so it cannot re-scroll
     /// every frame and pin the view.
     source_scroll_target: Option<u32>,
-    /// The ad hoc tour from `.hrw-bridge/tour.md` (ideas #42), with the mtime it
-    /// was read at, so a tour Claude rewrites mid-conversation is picked up
-    /// without restarting HRW. `None` means no tour has been written — the
-    /// common case, not an error.
-    cached_tour: Option<(String, std::time::SystemTime)>,
-    /// Tours available to pick: the ad hoc one when it exists, then the fixtures.
-    /// Rebuilt by the poll, so a fixture Claude adds mid-session appears without a
-    /// restart — the same reason the scratch specimen list is polled.
-    tours: Vec<TourSource>,
-    /// Which of `tours` is showing. Defaults to the ad hoc tour when one exists,
-    /// because that is the answer to the question just asked.
-    selected_tour: Option<TourSource>,
-    /// When the tour file was last polled. Stat-ing once per frame would be
-    /// cheap but puts filesystem work in the paint path, which the debugging
-    /// conventions rule out; a few polls a second is indistinguishable to a
-    /// reader and keeps the render path clean.
-    tour_polled_at: Option<std::time::Instant>,
+    /// Everything the tour panel owns. See [`TourState`].
+    ///
+    /// Polled rather than watched: stat-ing once per frame would be cheap but
+    /// puts filesystem work in the paint path, which the debugging conventions
+    /// rule out. A few polls a second is indistinguishable to a reader, and a
+    /// tour Claude writes mid-conversation still appears without a restart.
+    tour: TourState,
     /// A pending camera aim from `hrw://…/equation/<n>`, consumed by whichever canvas
     /// view paints next. `None` means no link asked for one.
     ///
@@ -1636,10 +1735,7 @@ impl App {
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
             source_scroll_target: None,
-            cached_tour: None,
-            tours: Vec::new(),
-            selected_tour: None,
-            tour_polled_at: None,
+            tour: TourState::default(),
             aim_at_equation: None,
             seek_frame: None,
             cached_purpose_notes: HashMap::new(),
@@ -3899,7 +3995,7 @@ impl App {
                 matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
             let report_ready = report_stage && self.current_stage().value.is_some();
             if report_ready {
-                self.report_sub_view_row_ui(ui, intent);
+                self.report_sub_view_row_ui(ui);
             }
 
             // Whether the Index Reduction tab shows a Before/After split for
@@ -4218,60 +4314,13 @@ impl App {
     /// appearing a quarter-second late is imperceptible. Re-reads only when the
     /// mtime differs, so an unchanged tour costs one `stat` per poll and no
     /// markdown re-parse.
+    /// Re-read the tour list and the selected tour's text, at most once per
+    /// [`TOUR_POLL_INTERVAL`].
+    ///
+    /// So a tour Claude writes mid-conversation appears without restarting HRW.
     fn poll_tour_file(&mut self) {
-        let due = self
-            .tour_polled_at
-            .is_none_or(|last| last.elapsed() >= TOUR_POLL_INTERVAL);
-        if !due {
-            return;
-        }
-        self.tour_polled_at = Some(std::time::Instant::now());
-
-        // --- Rebuild the pick list ---
-        //
-        // Ad hoc first when it exists: it is the answer to the question just asked,
-        // and burying it under the fixtures would make the common case the awkward one.
-        let mut tours = Vec::new();
-        if std::path::Path::new(bridge::TOUR_FILE).exists() {
-            tours.push(TourSource::AdHoc);
-        }
-        tours.extend(bridge::fixture_tours().into_iter().map(TourSource::Fixture));
-        let list_changed = tours != self.tours;
-        self.tours = tours;
-
-        // A selection that no longer exists (the ad hoc tour was deleted, a fixture
-        // renamed) must not leave stale text on screen attributed to a live file.
-        if self.selected_tour.as_ref().is_some_and(|t| !self.tours.contains(t)) {
-            self.selected_tour = None;
-            self.cached_tour = None;
-        }
-        // Default to the ad hoc tour when one appears and nothing is chosen.
-        if self.selected_tour.is_none() && self.tours.contains(&TourSource::AdHoc) {
-            self.select_tour(TourSource::AdHoc);
-        }
-
-        // --- Re-read the selected tour if it changed on disk ---
-        let Some(selected) = self.selected_tour.clone() else {
-            self.cached_tour = None;
-            return;
-        };
-        let path = selected.path();
-        let mtime = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok());
-        match mtime {
-            Some(mtime) => {
-                let unchanged =
-                    self.cached_tour.as_ref().is_some_and(|(_, seen)| *seen == mtime);
-                if !unchanged || list_changed {
-                    self.cached_tour =
-                        std::fs::read_to_string(&path).ok().map(|text| (text, mtime));
-                }
-            }
-            // The file vanished between listing and reading. Drop the text rather
-            // than keep a stale copy: for an ad hoc tour, absence is the normal state.
-            None => {
-                self.cached_tour = None;
-                self.selected_tour = None;
-            }
+        if self.tour.poll() {
+            self.reset_for_new_tour();
         }
     }
 
@@ -4289,15 +4338,24 @@ impl App {
         //
         // Only on an actual change: re-clicking the tour already showing should not
         // throw away a specimen the reader is partway through.
-        if self.selected_tour.as_ref() != Some(&source) {
-            self.clear_specimen_state(false);
-            self.selected = None;
-            self.stage = StageKind::Parse;
-            self.viewing_log = false;
-            self.compiling = false;
+        if self.tour.select(source) {
+            self.reset_for_new_tour();
         }
-        self.selected_tour = Some(source);
-        self.cached_tour = None;
+    }
+
+    /// Re-initialise the right-hand side for a tour that just became current.
+    ///
+    /// **Stays on `App` deliberately.** A tour is a self-contained sequence
+    /// starting from its own first stop, which normally loads a specimen, so
+    /// switching tours must clear the stage side — but *stages, selection and the
+    /// log are not the tour panel's to touch*. [`TourState`] reports that the
+    /// selection changed; deciding what that invalidates is the application's job.
+    fn reset_for_new_tour(&mut self) {
+        self.clear_specimen_state(false);
+        self.selected = None;
+        self.stage = StageKind::Parse;
+        self.viewing_log = false;
+        self.compiling = false;
     }
 
     /// What tour mode shows when Claude has not written a tour.
@@ -5145,7 +5203,7 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// `&mut self` is right here for the same reason as the tab row: it reads
     /// `stage`, `stages` and the viewport, and writes the viewport — application
     /// state, not pane-local state.
-    fn report_sub_view_row_ui(&mut self, ui: &mut egui::Ui, intent: &mut FrameIntent) {
+    fn report_sub_view_row_ui(&mut self, ui: &mut egui::Ui) {
             // Set when a link names a sub-view this model has no tab for. Collected
             // here and posted after the borrows end, as `FrameIntent` does.
             let mut bad_sub_view: Option<String> = None;
@@ -5302,7 +5360,7 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// as a broken button."*
     fn tour_panel_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
         self.poll_tour_file();
-        let tour_text = self.cached_tour.as_ref().map(|(t, _)| t.clone());
+        let tour_text = self.tour.text().map(str::to_owned);
         let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
         register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
         let panel_width = ui.available_width() * LEFT_PANEL_WIDTH_FRACTION;
@@ -5325,13 +5383,13 @@ egui::Panel::top("bar").show(ui, |ui| {
                     |ui| {
                         section_header(ui, "Tours");
                         ui.add_space(4.0);
-                        if self.tours.is_empty() {
+                        if self.tour.available.is_empty() {
                             ui.weak("(no tours yet)");
                             return;
                         }
                         egui::ScrollArea::vertical().id_salt("tour_list").show(ui, |ui| {
-                            for source in &self.tours {
-                                let selected = self.selected_tour.as_ref() == Some(source);
+                            for source in &self.tour.available {
+                                let selected = self.tour.selected.as_ref() == Some(source);
                                 let resp = ui.selectable_label(selected, source.label());
                                 let resp = match source {
                                     TourSource::AdHoc => resp.on_hover_text(
@@ -5370,7 +5428,7 @@ egui::Panel::top("bar").show(ui, |ui| {
             self.select_tour(source);
             // Re-read now rather than waiting up to a poll interval: a click that
             // appears to do nothing for a quarter second reads as a broken button.
-            self.tour_polled_at = None;
+            self.tour.polled_at = None;
             self.poll_tour_file();
         }
         drain_hrw_hooks(&mut self.commonmark_cache, &tour_links)
@@ -7271,10 +7329,7 @@ impl App {
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
             source_scroll_target: None,
-            cached_tour: None,
-            tours: Vec::new(),
-            selected_tour: None,
-            tour_polled_at: None,
+            tour: TourState::default(),
             aim_at_equation: None,
             seek_frame: None,
             cached_purpose_notes: HashMap::new(),
@@ -8987,7 +9042,7 @@ mod tests {
         assert_eq!(app.selected, None, "the specimen is cleared");
         assert_eq!(app.model, None, "and so is the model");
         assert_eq!(app.stage, StageKind::Parse, "and the stage returns to the start");
-        assert_eq!(app.selected_tour, Some(b));
+        assert_eq!(app.tour.selected, Some(b));
     }
 
     #[test]
@@ -8996,9 +9051,9 @@ mod tests {
         app.poll_tour_file();
 
         assert!(
-            app.tours.iter().any(|t| matches!(t, TourSource::Fixture(_))),
+            app.tour.available.iter().any(|t| matches!(t, TourSource::Fixture(_))),
             "the checked-in fixture tours should be listed: {:?}",
-            app.tours.iter().map(TourSource::label).collect::<Vec<_>>(),
+            app.tour.available.iter().map(TourSource::label).collect::<Vec<_>>(),
         );
 
         // **A README is not a tour.** `docs/fixture-tours/` gained one on
@@ -9007,30 +9062,31 @@ mod tests {
         // exclusion in `bridge::fixture_tours` the picker offers a tour called
         // "README" whose stops do not exist. Pinned here because the next
         // directory README would reintroduce it silently.
-        let labels: Vec<String> = app.tours.iter().map(TourSource::label).collect();
+        let labels: Vec<String> = app.tour.available.iter().map(TourSource::label).collect();
         assert!(
             !labels.iter().any(|l| l.eq_ignore_ascii_case("README")),
             "README.md must not be offered as a tour: {labels:?}",
         );
-        if app.tours.contains(&TourSource::AdHoc) {
-            assert_eq!(app.tours[0], TourSource::AdHoc, "ad hoc sorts first");
-            assert_eq!(app.selected_tour, Some(TourSource::AdHoc), "and is selected by default");
+        if app.tour.available.contains(&TourSource::AdHoc) {
+            assert_eq!(app.tour.available[0], TourSource::AdHoc, "ad hoc sorts first");
+            assert_eq!(app.tour.selected, Some(TourSource::AdHoc), "and is selected by default");
         }
 
         // Selecting a fixture drops the previous text immediately rather than leaving
         // it on screen until the next poll.
         let fixture = app
-            .tours
+            .tour
+            .available
             .iter()
             .find(|t| matches!(t, TourSource::Fixture(_)))
             .cloned()
             .expect("a fixture exists");
         app.select_tour(fixture.clone());
-        assert!(app.cached_tour.is_none(), "old text cleared on switch");
-        app.tour_polled_at = None;
+        assert!(app.tour.cached.is_none(), "old text cleared on switch");
+        app.tour.polled_at = None;
         app.poll_tour_file();
-        assert_eq!(app.selected_tour, Some(fixture));
-        assert!(app.cached_tour.is_some(), "the chosen fixture is loaded");
+        assert_eq!(app.tour.selected, Some(fixture));
+        assert!(app.tour.cached.is_some(), "the chosen fixture is loaded");
     }
 
     /// Node paths in the **node-pointing** fixture resolve against the real IR.
