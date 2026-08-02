@@ -1724,7 +1724,23 @@ fn slice_source(
     start: usize,
     end: usize,
 ) -> Option<(String, String, String)> {
-    let path = if !file_name.is_empty() && Path::new(file_name).is_file() {
+    // **Absolute only.** `Path::new(file_name).is_file()` is resolved against the
+    // *current working directory*, so a bare `"Resistor.mo"` would match a
+    // same-named file wherever HRW happened to be launched from — and the excerpt
+    // would be sliced out of a stranger's file and emitted as fact.
+    //
+    // Nothing observed it: every `Location` HRW emits today carries a full
+    // document URI, because `parse_to_ast` is handed one (`worker.rs`). This is a
+    // guard on the *shape of the input*, not a fix for a live bug — which is
+    // exactly when it is cheapest to add, and it is the failure mode this project
+    // treats as unrecoverable: a **confident wrong answer**, indistinguishable
+    // from a right one.
+    //
+    // Falling back to the specimen when the name is relative is right, not a
+    // degradation: a relative `file_name` means the location came from a document
+    // this process cannot identify, and the specimen is the only file it *can*.
+    let named = Path::new(file_name);
+    let path = if !file_name.is_empty() && named.is_absolute() && named.is_file() {
         PathBuf::from(file_name)
     } else {
         specimen?.to_path_buf()
@@ -2835,6 +2851,41 @@ mod tests {
         let path = test_file_path();
         let (_, excerpt, _) = slice_source(&path, None, 0, 2).expect("file start should succeed");
         assert_eq!(excerpt.len(), 2);
+    }
+
+    /// A **relative** `file_name` is never resolved against the working directory.
+    ///
+    /// `Path::new("Cargo.toml").is_file()` is true whenever HRW runs from a crate
+    /// root — so the old code would open *that* file and emit an excerpt from it,
+    /// attributed to whatever location produced the name. Nothing crashes; the
+    /// answer is simply about a different file.
+    ///
+    /// **This guards a shape, not a live bug.** Every `Location` HRW emits today
+    /// carries a full document URI. That is precisely when the guard is cheapest,
+    /// and the failure it prevents — a confident wrong excerpt — is the one this
+    /// project treats as unrecoverable.
+    ///
+    /// Uses `Cargo.toml` deliberately: it is real, it is readable, and it is
+    /// nothing to do with Modelica, so a slice taken from it could only have come
+    /// from resolving the name against the wrong directory.
+    #[test]
+    fn slice_source_refuses_a_relative_name() {
+        let specimen = test_file_path();
+        assert!(
+            Path::new("Cargo.toml").is_file(),
+            "precondition: the test runs from the crate root, so a relative name WOULD \
+             resolve — without this the test proves nothing",
+        );
+
+        let (used, _, _) = slice_source("Cargo.toml", Some(Path::new(&specimen)), 0, 2)
+            .expect("it must fall back to the specimen, not fail");
+
+        assert_eq!(
+            used, specimen,
+            "a relative name must be ignored in favour of the specimen; resolving it \
+             against the working directory slices a stranger's file and reports it as \
+             the model's source",
+        );
     }
 
     #[test]

@@ -8264,6 +8264,89 @@ mod tests {
         );
     }
 
+    /// Every animation pane **says when it has nothing to show**.
+    ///
+    /// Finding C6: six animation panes, testable all along and never tested. The
+    /// earlier reading assumed they were out of reach because they sit near
+    /// `Painter` calls — checked, and wrong: their controls, step labels and
+    /// state text are ordinary widgets (H7).
+    ///
+    /// These are the **most** empty-prone panes in HRW. Most models have no
+    /// algebraic loop to tear, no alias eliminations, no `pre()` lowering. A
+    /// reader meets the empty state far more often than the animation, so a pane
+    /// that rendered blank would train them to read "nothing here" as normal —
+    /// and the one time it meant "this failed" would look identical.
+    ///
+    /// Asserts the empty state only. The populated case needs a real report and
+    /// belongs with the `slow-tests`.
+    #[test]
+    fn every_animation_pane_reports_having_nothing_to_show() {
+        use egui_kittest::Harness;
+        use egui_kittest::kittest::Queryable;
+
+        // `App::test_default` has no compiled stages, so every animation's source
+        // report is absent — which is the state under test.
+        type Pane = fn(&mut App, &mut egui::Ui);
+        let panes: [(&str, Pane, &str); 5] = [
+            ("tearing", |a, ui| a.tearing_anim_ui(ui), "no DAE available for tearing"),
+            ("alias", |a, ui| a.alias_anim_ui(ui), "no alias eliminations in this report"),
+            ("ic_plan", |a, ui| a.ic_plan_anim_ui(ui), "no initial-condition plan in this report"),
+            ("connection", |a, ui| a.connection_anim_ui(ui), "no connections in this model"),
+            ("pre_lowering", |a, ui| a.pre_lowering_anim_ui(ui), "no pre() lowering in this model"),
+        ];
+
+        for (name, render, expected) in panes {
+            let mut h = Harness::builder()
+                .with_size(egui::Vec2::new(900.0, 700.0))
+                .build_ui_state(move |ui, app: &mut App| render(app, ui), App::test_default());
+            h.run_steps(2);
+
+            assert!(
+                h.query_by_label_contains(expected).is_some(),
+                "the {name} animation renders blank with no report. A blank pane and a                  broken one are the same picture, and this is a pane readers meet empty                  most of the time",
+            );
+        }
+    }
+
+    /// The source map **says when the model has no source mapping**.
+    ///
+    /// Finding C12, and it is reachable by a route worth knowing: the SourceMap
+    /// sub-view is only *offered* when the sheet has source lines, but
+    /// `Viewport::flatten` survives a specimen change. Sit on SourceMap for a
+    /// model that has one, load a model that does not, and this is what you see.
+    ///
+    /// **Deferred as needing a compile, and that was wrong.** `EquationSheet`
+    /// derives `Default` and its fields are public, so the state is one struct
+    /// literal away — the deferral was an assumption about the type, not a fact
+    /// about it. Checking cost less than the deferral did.
+    ///
+    /// Its sibling `"(no equation sheet)"` stays unreachable (C1): the only call
+    /// site is gated on `flatten_ready`, which *is* `cached_equation_sheet
+    /// .is_some()`.
+    #[test]
+    fn the_source_map_reports_a_model_with_no_mapping() {
+        use egui_kittest::Harness;
+        use egui_kittest::kittest::Queryable;
+
+        let mut app = App::test_default();
+        // A sheet that exists but carries no source lines: the exact state a
+        // persisting sub-view lands the reader in.
+        app.cached_equation_sheet = Some(equation_sheet::EquationSheet::default());
+        app.viewport.flatten = FlattenView::SourceMap;
+
+        let mut h = Harness::builder()
+            .with_size(egui::Vec2::new(900.0, 700.0))
+            .build_ui_state(|ui, a: &mut App| a.source_map_ui(ui), app);
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains("no source mapping available").is_some(),
+            "a sheet with no source lines must say so. Rendering blank here is worse than              elsewhere: the reader arrived on this sub-view by inertia, not by choosing              it, so a blank pane looks like the tab they picked is broken",
+        );
+    }
+
+
+
     #[test]
     fn drain_worker_libraries_ok_updates_status() {
         let (mut app, tx) = App::test_with_sender();
