@@ -489,7 +489,7 @@ fn opening_the_hrw_section_reveals_its_specimens() {
 /// A filter opens **both** sections, so one box searches everything.
 ///
 /// The filter is the reason the corpus is reachable at all, and a section that
-/// stayed shut while matching would report "no results" by omission \u{2014} the
+/// stayed shut while matching would report "no results" by omission — the
 /// same absence-by-implication the Context Bar was fixed for.
 #[test]
 fn a_filter_opens_both_sections() {
@@ -517,7 +517,7 @@ fn a_filter_opens_both_sections() {
 /// off."*
 ///
 /// The source pane is a `ScrollArea::both`, and `Response::scroll_to_me` aligns
-/// on **both** axes \u{2014} so centring a row centred the *line*, and a long line
+/// on **both** axes — so centring a row centred the *line*, and a long line
 /// centred horizontally has its opening characters off the left edge.
 ///
 /// Latent until MSL models: a specimen's lines are short, so centring one barely
@@ -525,7 +525,7 @@ fn a_filter_opens_both_sections() {
 /// signatures, and the scroll now fires on every library load to reach the
 /// declaration line.
 ///
-/// **Layout is usually Doug's to judge** \u{2014} the accessibility tree records no
+/// **Layout is usually Doug's to judge** — the accessibility tree records no
 /// geometry. This one is checkable anyway, because the thing that went wrong is
 /// a number egui stores: the scroll area's horizontal offset.
 #[test]

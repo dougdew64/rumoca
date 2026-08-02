@@ -453,6 +453,73 @@ Some prose.
         );
     }
 
+    /// **No Rust escape may appear literally in comment text.**
+    ///
+    /// A comment is prose, so an escape sequence in one is not the character it
+    /// names — it is six literal characters a reader has to decode:
+    ///
+    /// ```text
+    /// // the offset that would centre it is negative \u{2014} egui clamps to 0     ESCAPE-OK
+    /// ```
+    ///
+    /// It also means the comment was *generated* rather than written: Rust source
+    /// produced from another language's string literals, where the escape survived
+    /// one layer too many.
+    ///
+    /// **This exists because a manual sweep did not hold.** Ten such lines were
+    /// cleaned out of `app.rs` and `worker.rs` on 2026-08-01, and three more
+    /// appeared in `ui_tests.rs` **the same evening**, written by the scripts that
+    /// added that day's tests. Doug, 2026-08-02: *"That problem was disruptive and
+    /// annoying yesterday."* A rule with nothing checking it rots like any other
+    /// claim, which is the must-fire rule pointed at Claude's own working habits.
+    ///
+    /// String *literals* are untouched: an escape is doing real work there.
+    #[test]
+    fn no_rust_escape_leaks_into_comment_text() {
+        let mut files = Vec::new();
+        collect_rust(Path::new(env!("CARGO_MANIFEST_DIR")).join("src").as_path(), &mut files);
+        assert!(!files.is_empty(), "found no sources to scan — the check would pass vacuously");
+
+        let mut offences = Vec::new();
+        let mut scanned = 0usize;
+        for f in &files {
+            let Ok(text) = std::fs::read_to_string(f) else { continue };
+            for (i, line) in text.lines().enumerate() {
+                let s = line.trim_start();
+                if !s.starts_with("//") {
+                    continue;
+                }
+                scanned += 1;
+                // **The opt-out.** A comment explaining this very bug has to be
+                // able to show one. Marking it is cheap and keeps the check
+                // absolute rather than heuristic.
+                if line.contains("ESCAPE-OK") {
+                    continue;
+                }
+                if line.contains("\\u{") {
+                    offences.push(format!(
+                        "{}:{}: {}",
+                        f.file_name().and_then(|n| n.to_str()).unwrap_or("?"),
+                        i + 1,
+                        s.trim(),
+                    ));
+                }
+            }
+        }
+
+        assert!(
+            scanned > 500,
+            "only {scanned} comment lines scanned — too few to have exercised anything",
+        );
+        assert!(
+            offences.is_empty(),
+            "Rust escapes are sitting in comment text, where they are not escapes at all \
+             but literal characters a reader must decode. Write the character itself, or \
+             mark the line ESCAPE-OK if it is demonstrating the bug:\n  {}",
+            offences.join("\n  "),
+        );
+    }
+
     fn collect_rust(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(entries) = std::fs::read_dir(dir) else { return };
         for e in entries.flatten() {
