@@ -219,6 +219,50 @@ does not depend on finishing it.
 
 ---
 
+## The `&mut self` audit — which signatures are finished
+
+**Measured 2026-08-02, at the end of the pause.** Every `*_ui` method takes
+`&mut self`, and that is *sometimes correct and sometimes unfinished*. A future
+session should not have to guess which, so here is the classification and the
+evidence behind it: the `App` fields each method touches, minus the nine the
+census found genuinely shared (`stage`, `stages`, `selected`,
+`tracked_identifier`, `model`, `compiling`, `viewing_log`, plus the two extracted
+groupings `viewport` and `stage_views`).
+
+**The test is simple: does the pane touch state that is nobody else's business?**
+If not, `&mut self` is the answer and narrowing it would mean passing five
+references to gain nothing.
+
+### Finished — touch only shared state
+
+`matching_anim_ui`, `tarjan_anim_ui`, `alias_anim_ui`, `ic_plan_anim_ui`,
+`background_ui`, `no_tour_ui`. **Leave these alone.**
+
+### Finished in practice — one or two fields, cohesive with the shared set
+
+`connection_anim_ui` (`connection_frames`), `tearing_anim_ui`
+(`live_breakpoint_armed`), `report_sub_view_row_ui` (`pending_sub_view`),
+`source_map_ui`, `stage_tab_bar_ui`, `menu_bar_ui`. Their extras are compile
+outputs or one-frame flags, not a pane's private world.
+
+### Unfinished — a `ModelListState` waiting to be written
+
+| Method | Its own fields | Would become |
+|---|---|---|
+| `context_bar_ui` | `pointed_at`, `point_error`, `tracking_summary`, `track_seq`, `context_seq`, `jump_matches`, `jump_index`, `jump_target`, `jump_highlight` | ~9 → 1 |
+| `specimen_source_ui` | `cached_source`, `cached_highlight`, `library_source_uri`, `library_source_error`, `source_scroll_target`, `source_scroll_offset`, `scrolled_source_for`, `identifier_index` | ~8 → 1 |
+| `tour_panel_ui` | `cached_tour`, `tours`, `selected_tour`, `tour_polled_at` | ~4 → 1 |
+
+**That is roughly 21 fields, which would take `App` from 75 to about 56** and meet
+step 4's ≤ 60 target. Each is the same shape as `ModelListState`: a pane with a
+private world that merely happens to live on `App`.
+
+### Aggregators — expected to touch everything
+
+`frame_ui` and `central_panel_ui` exist to orchestrate. Their field counts are a
+consequence of the job, not a defect, and they shrink when the three above are
+extracted rather than by being split further.
+
 ## What this pause will not do
 
 - **No new features.** The corpus list with a filter (`ideas.md` #52) resumes after.
