@@ -48,6 +48,46 @@ are *worse* than none — they manufacture the confidence that licenses the refa
 
 ---
 
+## The success criterion: `App`'s field count, ratcheted
+
+Doug asked whether the 105 fields get their own later round. **They do not — reducing them is
+the mechanism of this one.** "Extract state, not just functions" is otherwise an unfalsifiable
+claim, and a refactor that ends with 105 fields on `App` moved lines and nothing else.
+
+**Measured 2026-08-02, per field, by how often `App` touches it:**
+
+| Uses | Fields | What it means |
+|---|---|---|
+| 1–3 | **37** | Pane-local. They merely *live* on `App`. |
+| 4–10 | **54** | Pane-local plus a reset site or two. |
+| 11–25 | 10 | Moderately shared. |
+| **26+** | **4** | `stage` (66), `stages` (64), `tracked_identifier` (31), `selected` (30) |
+
+**91 of 105 fields are touched ten times or fewer.** The coupling is far shallower than the
+raw count suggests, and the irreducible core is *four* fields: the current stage, its results,
+what is being followed, and what is loaded. That is a real architecture rather than a pile —
+which is why extraction, not redesign, is the right instrument.
+
+**So each step below carries a field-count target**, and a test ratchets it:
+
+```
+App has at most N fields   →   lower N as each extraction lands
+```
+
+**A ratchet, deliberately.** It fails the moment a field is added to `App` without asking
+whether it belongs there — which is exactly the question nobody asked 105 times. It is the
+must-fire rule aimed at the refactor itself: *"extract state"* is a claim, and a claim with
+nothing checking it rots like any other.
+
+| After | Target | From |
+|---|---|---|
+| Step 2 (caches) | **≤ 86** | 20 cache fields → 1 |
+| Step 3 (left panel) | **≤ 76** | specimen list, filter, corpus, scratch polling |
+| Step 4 (central panel) | **≤ 60** | per-stage view state moves to its view |
+| Eventually | **~30** | with the 4-field core documented as irreducible |
+
+Steps beyond today continue the same ratchet; there is no separate "field problem" phase.
+
 ## Step 1 — The baseline suite
 
 **Goal: no pane changes what it renders without a test noticing.** Not coverage for its own
