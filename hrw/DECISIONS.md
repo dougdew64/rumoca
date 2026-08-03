@@ -2067,3 +2067,48 @@ committing that error itself, twice:
 before walking anything. An authoring aid that is confidently wrong is worse than none, because
 its output is trusted precisely where the author has no independent knowledge — and neither
 fault could fail a test, since both produce links that parse and resolve.
+
+---
+
+## 2026-08-03 — Four attempts at one scroll, and why measuring ended it
+
+The autoplay scroll took **four tries**. Recording the sequence because each failure
+was a *different* wrong idea, and the last one is a rule rather than a fix.
+
+| # | Approach | Why it failed |
+|---|---|---|
+| 1 | `fraction()` — the **clock** | Advances every frame, so the prose crept continuously. Worst under a deliberately paused animation. |
+| 2 | Beat **ordinal**, `index / (n-1)` | Constant distance per beat regardless of text between them. A stop with seven links and one with a single link moved the page equally. |
+| 3 | **Character offset** over the document | Rendered height per character is not constant: prose wraps in a narrow panel, a code block does not. Compounded by multiplying the fraction by the scroll *range* rather than the content height. |
+| 4 | **Measure it** | Split the markdown at the link's line, render both halves, and read the cursor between them. Exact by construction. |
+
+**Ideas 1–3 were all estimates, and the third was wrong in both directions at once** —
+which is what finally made the point. A constant can correct a bias; nothing corrects an
+estimator whose error changes sign with the content. **When a position can be measured,
+measuring is not the expensive option — it is the only one that terminates.**
+
+This is the second instance of the rule the LHS-divider episode produced ("the sixth
+attempt came from instrumenting rather than theorising"), reached from the other
+direction: there the fix came from *observing* the running app, here from making the app
+*report its own geometry*. Same principle, and `source_view.rs`'s
+`source_scroll_offset` was already the worked example — a widget's own state is a number
+the app can keep, and a number can be asserted on.
+
+### The other half: two clocks, not one
+
+`fraction()` (time) and `travel_t()` (position) look like the same quantity and are not.
+The progress bar tracks time; the text tracks the beat. Two of the four failures came
+from conflating them — attempt 1 directly, and the *"the link is not shown during the
+compile"* bug because the travel ran off `in_beat`, which is deliberately frozen while
+busy. **When the reader is shown the link** and **how long the beat lasts** are separate
+questions; `since_dispatch` answers the first and runs regardless of `busy`, so the text
+leads and the right-hand side follows.
+
+### What Doug's reports were worth
+
+Every one named the symptom precisely enough to distinguish the causes: *"the scrolling
+never pauses"*, then *"advanced by a constant number of tour prose lines"*, then *"the
+link which caused all of the changes on the RHS is not being shown … scrolls to a
+position below the link"* — that last one was **two bugs in one sentence**, and reading
+it as one is why attempt 3 shipped. **A report that separates its symptoms deserves a fix
+that separates its causes.**
