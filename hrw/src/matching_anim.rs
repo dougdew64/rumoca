@@ -684,4 +684,46 @@ mod tests {
         let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
         assert_eq!(matched, 3, "live mode should reach same final matching");
     }
+
+    /// **Frame numbering is a contract that tours depend on.**
+    ///
+    /// `hrw://stage/Structural/MatchingAnim/frame/<n>` puts a *number* in a
+    /// document, and `examples/frame_index` reads those numbers off this
+    /// sequence. If the sequence shifts, every such link silently lands on the
+    /// wrong step — the link checker cannot help, because a wrong-but-valid
+    /// index resolves fine.
+    ///
+    /// So this pins the smallest real case. **A failure here is not
+    /// necessarily a bug**: if the matching algorithm legitimately changes,
+    /// the right response is to re-run `frame_index` and update the tours,
+    /// which is `CLAUDE.md`'s guided-tour rule made mechanical.
+    #[test]
+    fn the_frame_sequence_tours_cite_is_pinned() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/specimen-notebook/SingleInertia/trace/structural.json");
+        let text = std::fs::read_to_string(&path).expect("SingleInertia has a committed trace");
+        let report: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
+        let mat = crate::incidence_view::IncidenceMatrix::from_report(&report)
+            .expect("SingleInertia's report carries an incidence matrix");
+        let anim = MatchingAnimation::from_incidence(&mat);
+        let steps = anim.steps();
+
+        assert_eq!(
+            steps.len(),
+            8,
+            "SingleInertia matches two equations with no displacement: try/explore/found/assign,              twice. A different count means the frame numbers in every tour have moved",
+        );
+        // Frame 3 is the one a tour would cite for "der(phi) gets matched".
+        assert!(
+            matches!(steps[3], MatchingStep::Assign { eq: 0, var: 0 }),
+            "frame 3 must be the assignment of the first unknown; found {:?}",
+            steps[3],
+        );
+        assert!(
+            matches!(steps[7], MatchingStep::Assign { eq: 1, var: 1 }),
+            "frame 7 must be the assignment of the second; found {:?}",
+            steps[7],
+        );
+    }
+
 }
