@@ -1,0 +1,53 @@
+{
+  "model": "UnbalancedShaft",
+  "specimen": "specimens/UnbalancedShaft.mo",
+  "specimen_fnv1a": "c1283a6cc791ba0e",
+  "rumoca_rev": "718f56c9",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": "unbalanced model: 2 equations, 3 unknowns (balance = -1)"
+    },
+    "structural": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "index_reduction": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "initialization": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "events": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "solve_lowering": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    }
+  },
+  "simulation": {
+    "simulated": false,
+    "error": "compilation did not reach solve lowering"
+  }
+}

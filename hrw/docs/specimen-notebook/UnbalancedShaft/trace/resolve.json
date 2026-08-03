@@ -1,0 +1,984 @@
+{
+  "def_id": 85,
+  "scope_id": 1,
+  "name": {
+    "text": "UnbalancedShaft",
+    "location": {
+      "start_line": 1,
+      "start_column": 7,
+      "end_line": 1,
+      "end_column": 22,
+      "start": 6,
+      "end": 21,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+    },
+    "token_number": 1,
+    "token_type": 64
+  },
+  "class_type": "Model",
+  "class_type_token": {
+    "text": "model",
+    "location": {
+      "start_line": 1,
+      "start_column": 1,
+      "end_line": 1,
+      "end_column": 6,
+      "start": 0,
+      "end": 5,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+    },
+    "token_number": 0,
+    "token_type": 41
+  },
+  "encapsulated": false,
+  "partial": false,
+  "expandable": false,
+  "operator_record": false,
+  "pure": true,
+  "purity_declared": false,
+  "causality": "Empty",
+  "description": [
+    {
+      "text": "A shaft whose drive torque no equation determines — DELIBERATELY BROKEN",
+      "location": {
+        "start_line": 1,
+        "start_column": 23,
+        "end_line": 1,
+        "end_column": 96,
+        "start": 22,
+        "end": 97,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+      },
+      "token_number": 2,
+      "token_type": 66
+    }
+  ],
+  "location": {
+    "start_line": 1,
+    "start_column": 7,
+    "end_line": 22,
+    "end_column": 20,
+    "start": 6,
+    "end": 1214,
+    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+  },
+  "extends": [],
+  "imports": [],
+  "classes": {},
+  "components": {
+    "J": {
+      "def_id": 89,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "J",
+      "name_token": {
+        "text": "J",
+        "location": {
+          "start_line": 15,
+          "start_column": 18,
+          "end_line": 15,
+          "end_column": 19,
+          "start": 968,
+          "end": 969,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+        },
+        "token_number": 18,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 15,
+              "start_column": 13,
+              "end_line": 15,
+              "end_column": 17,
+              "start": 963,
+              "end": 967,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 17,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 15,
+            "start_column": 3,
+            "end_line": 15,
+            "end_column": 12,
+            "start": 953,
+            "end": 962,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+          },
+          "token_number": 16,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "moment of inertia",
+          "location": {
+            "start_line": 15,
+            "start_column": 26,
+            "end_line": 15,
+            "end_column": 45,
+            "start": 976,
+            "end": 995,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+          },
+          "token_number": 21,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 4090672912011760635,
+            "start": 963,
+            "end": 969
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": true,
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.5",
+            "location": {
+              "start_line": 15,
+              "start_column": 22,
+              "end_line": 15,
+              "end_column": 25,
+              "start": 972,
+              "end": 975,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 20,
+            "token_type": 68
+          },
+          "span": {
+            "source": 4090672912011760635,
+            "start": 972,
+            "end": 975
+          }
+        }
+      },
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 15,
+        "start_column": 13,
+        "end_line": 15,
+        "end_column": 19,
+        "start": 963,
+        "end": 969,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "phi": {
+      "def_id": 90,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "phi",
+      "name_token": {
+        "text": "phi",
+        "location": {
+          "start_line": 16,
+          "start_column": 8,
+          "end_line": 16,
+          "end_column": 11,
+          "start": 1004,
+          "end": 1007,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+        },
+        "token_number": 24,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 16,
+              "start_column": 3,
+              "end_line": 16,
+              "end_column": 7,
+              "start": 999,
+              "end": 1003,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 23,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "angle",
+          "location": {
+            "start_line": 16,
+            "start_column": 23,
+            "end_line": 16,
+            "end_column": 30,
+            "start": 1019,
+            "end": 1026,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+          },
+          "token_number": 30,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedInteger",
+          "token": {
+            "text": "0",
+            "location": {
+              "start_line": 16,
+              "start_column": 20,
+              "end_line": 16,
+              "end_column": 21,
+              "start": 1016,
+              "end": 1017,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 28,
+            "token_type": 67
+          },
+          "span": {
+            "source": 4090672912011760635,
+            "start": 1016,
+            "end": 1017
+          }
+        }
+      },
+      "start_is_modification": true,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "start",
+                    "location": {
+                      "start_line": 16,
+                      "start_column": 12,
+                      "end_line": 16,
+                      "end_column": 17,
+                      "start": 1008,
+                      "end": 1013,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                    },
+                    "token_number": 26,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 4090672912011760635,
+                "start": 1008,
+                "end": 1013
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "0",
+                  "location": {
+                    "start_line": 16,
+                    "start_column": 20,
+                    "end_line": 16,
+                    "end_column": 21,
+                    "start": 1016,
+                    "end": 1017,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                  },
+                  "token_number": 28,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 4090672912011760635,
+                  "start": 1016,
+                  "end": 1017
+                }
+              }
+            },
+            "span": {
+              "source": 4090672912011760635,
+              "start": 1008,
+              "end": 1017
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {},
+      "location": {
+        "start_line": 16,
+        "start_column": 3,
+        "end_line": 16,
+        "end_column": 11,
+        "start": 999,
+        "end": 1007,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "w": {
+      "def_id": 91,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "w",
+      "name_token": {
+        "text": "w",
+        "location": {
+          "start_line": 17,
+          "start_column": 8,
+          "end_line": 17,
+          "end_column": 9,
+          "start": 1035,
+          "end": 1036,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+        },
+        "token_number": 33,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 17,
+              "start_column": 3,
+              "end_line": 17,
+              "end_column": 7,
+              "start": 1030,
+              "end": 1034,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 32,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "angular velocity",
+          "location": {
+            "start_line": 17,
+            "start_column": 21,
+            "end_line": 17,
+            "end_column": 39,
+            "start": 1048,
+            "end": 1066,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+          },
+          "token_number": 39,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedInteger",
+          "token": {
+            "text": "0",
+            "location": {
+              "start_line": 17,
+              "start_column": 18,
+              "end_line": 17,
+              "end_column": 19,
+              "start": 1045,
+              "end": 1046,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 37,
+            "token_type": 67
+          },
+          "span": {
+            "source": 4090672912011760635,
+            "start": 1045,
+            "end": 1046
+          }
+        }
+      },
+      "start_is_modification": true,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [
+        {
+          "Modification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "start",
+                    "location": {
+                      "start_line": 17,
+                      "start_column": 10,
+                      "end_line": 17,
+                      "end_column": 15,
+                      "start": 1037,
+                      "end": 1042,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                    },
+                    "token_number": 35,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 4090672912011760635,
+                "start": 1037,
+                "end": 1042
+              }
+            },
+            "value": {
+              "Terminal": {
+                "terminal_type": "UnsignedInteger",
+                "token": {
+                  "text": "0",
+                  "location": {
+                    "start_line": 17,
+                    "start_column": 18,
+                    "end_line": 17,
+                    "end_column": 19,
+                    "start": 1045,
+                    "end": 1046,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                  },
+                  "token_number": 37,
+                  "token_type": 67
+                },
+                "span": {
+                  "source": 4090672912011760635,
+                  "start": 1045,
+                  "end": 1046
+                }
+              }
+            },
+            "span": {
+              "source": 4090672912011760635,
+              "start": 1037,
+              "end": 1046
+            }
+          }
+        }
+      ],
+      "source_modification_each_flags": [
+        false
+      ],
+      "source_modification_final_flags": [
+        false
+      ],
+      "source_modification_redeclare_flags": [
+        false
+      ],
+      "modifications": {},
+      "location": {
+        "start_line": 17,
+        "start_column": 3,
+        "end_line": 17,
+        "end_column": 9,
+        "start": 1030,
+        "end": 1036,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "tau": {
+      "def_id": 92,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "tau",
+      "name_token": {
+        "text": "tau",
+        "location": {
+          "start_line": 18,
+          "start_column": 8,
+          "end_line": 18,
+          "end_column": 11,
+          "start": 1075,
+          "end": 1078,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+        },
+        "token_number": 42,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 18,
+              "start_column": 3,
+              "end_line": 18,
+              "end_column": 7,
+              "start": 1070,
+              "end": 1074,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+            },
+            "token_number": 41,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [
+        {
+          "text": "drive torque — NO EQUATION DETERMINES THIS, and that is the point",
+          "location": {
+            "start_line": 18,
+            "start_column": 12,
+            "end_line": 18,
+            "end_column": 79,
+            "start": 1079,
+            "end": 1148,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+          },
+          "token_number": 43,
+          "token_type": 66
+        }
+      ],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 4090672912011760635,
+            "start": 1070,
+            "end": 1078
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [],
+      "shape_expr": [],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 18,
+        "start_column": 3,
+        "end_line": 18,
+        "end_column": 11,
+        "start": 1070,
+        "end": 1078,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    }
+  },
+  "equations": [
+    {
+      "Simple": {
+        "lhs": {
+          "FunctionCall": {
+            "comp": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "der",
+                    "location": {
+                      "start_line": 20,
+                      "start_column": 3,
+                      "end_line": 20,
+                      "end_column": 6,
+                      "start": 1161,
+                      "end": 1164,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                    },
+                    "token_number": 46,
+                    "token_type": 15
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 4090672912011760635,
+                "start": 1161,
+                "end": 1164
+              }
+            },
+            "args": [
+              {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "phi",
+                        "location": {
+                          "start_line": 20,
+                          "start_column": 7,
+                          "end_line": 20,
+                          "end_column": 10,
+                          "start": 1165,
+                          "end": 1168,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                        },
+                        "token_number": 48,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 4090672912011760635,
+                    "start": 1165,
+                    "end": 1168
+                  }
+                }
+              }
+            ],
+            "span": {
+              "source": 4090672912011760635,
+              "start": 1161,
+              "end": 1168
+            }
+          }
+        },
+        "rhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "w",
+                  "location": {
+                    "start_line": 20,
+                    "start_column": 14,
+                    "end_line": 20,
+                    "end_column": 15,
+                    "start": 1172,
+                    "end": 1173,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                  },
+                  "token_number": 51,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 4090672912011760635,
+              "start": 1172,
+              "end": 1173
+            }
+          }
+        }
+      }
+    },
+    {
+      "Simple": {
+        "lhs": {
+          "Binary": {
+            "op": "Mul",
+            "lhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "J",
+                      "location": {
+                        "start_line": 21,
+                        "start_column": 3,
+                        "end_line": 21,
+                        "end_column": 4,
+                        "start": 1177,
+                        "end": 1178,
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                      },
+                      "token_number": 53,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 4090672912011760635,
+                  "start": 1177,
+                  "end": 1178
+                }
+              }
+            },
+            "rhs": {
+              "FunctionCall": {
+                "comp": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "der",
+                        "location": {
+                          "start_line": 21,
+                          "start_column": 7,
+                          "end_line": 21,
+                          "end_column": 10,
+                          "start": 1181,
+                          "end": 1184,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                        },
+                        "token_number": 55,
+                        "token_type": 15
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 4090672912011760635,
+                    "start": 1181,
+                    "end": 1184
+                  }
+                },
+                "args": [
+                  {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "w",
+                            "location": {
+                              "start_line": 21,
+                              "start_column": 11,
+                              "end_line": 21,
+                              "end_column": 12,
+                              "start": 1185,
+                              "end": 1186,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                            },
+                            "token_number": 57,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 4090672912011760635,
+                        "start": 1185,
+                        "end": 1186
+                      }
+                    }
+                  }
+                ],
+                "span": {
+                  "source": 4090672912011760635,
+                  "start": 1181,
+                  "end": 1186
+                }
+              }
+            },
+            "span": {
+              "source": 4090672912011760635,
+              "start": 1177,
+              "end": 1186
+            }
+          }
+        },
+        "rhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "tau",
+                  "location": {
+                    "start_line": 21,
+                    "start_column": 16,
+                    "end_line": 21,
+                    "end_column": 19,
+                    "start": 1190,
+                    "end": 1193,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+                  },
+                  "token_number": 60,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 4090672912011760635,
+              "start": 1190,
+              "end": 1193
+            }
+          }
+        }
+      }
+    }
+  ],
+  "initial_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "equation_keyword": {
+    "text": "equation",
+    "location": {
+      "start_line": 19,
+      "start_column": 1,
+      "end_line": 19,
+      "end_column": 9,
+      "start": 1150,
+      "end": 1158,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+    },
+    "token_number": 45,
+    "token_type": 24
+  },
+  "initial_equation_keyword": null,
+  "algorithm_keyword": null,
+  "initial_algorithm_keyword": null,
+  "end_name_token": {
+    "text": "UnbalancedShaft",
+    "location": {
+      "start_line": 22,
+      "start_column": 5,
+      "end_line": 22,
+      "end_column": 20,
+      "start": 1199,
+      "end": 1214,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnbalancedShaft.mo"
+    },
+    "token_number": 63,
+    "token_type": 64
+  },
+  "enum_literals": [],
+  "annotation": [],
+  "is_protected": false,
+  "is_final": false,
+  "is_inner": false,
+  "is_outer": false,
+  "is_replaceable": false,
+  "is_redeclare": false,
+  "constrainedby": null,
+  "array_subscripts": [],
+  "external": null
+}
