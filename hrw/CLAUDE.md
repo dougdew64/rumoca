@@ -110,6 +110,22 @@ proves it. Recorded 2026-08-02 after Doug pushed back on exactly that over-claim
 refactor's justification is blast radius and testability, measured in
 [`docs/ui-pause-plan.md`](docs/ui-pause-plan.md), and it did not need the help.
 
+**DO NOT COMMIT TROUBLESHOOTING INSTRUMENTATION, AND DO NOT CALL AN UNCONFIRMED FIX A FIX**
+*(Doug, 2026-08-03, after the LHS-width episode)*. Ten commits went into one 40 %-width bug:
+**two were pure instrumentation and four were fixes that did not work.**
+
+- **A probe lives in the working tree until it earns permanence.** It reaches Doug's running
+  app by being *edited* — he builds from the tree — so committing adds nothing and pushing adds
+  less. Commit it only once it is something the repository should keep, and say why.
+- **A fix that cannot be reproduced locally is a hypothesis.** Say so in the subject line, not
+  three paragraphs down. Four of those commits read as fixes and were not.
+
+**The cost is not tidiness.** This repository is **public**, and `docs/upstream-strategy.md`
+stakes Doug's credibility with Rumoca maintainers on work that is *reproducible and honestly
+bounded*. A log showing six superseded commits for one bug reads as thrashing, whatever the
+messages say. The failure was applying a work-product ritual — green suite, commit, push — to a
+probe, using *"is this verified?"* as the test instead of *"should the repository keep this?"*
+
 **TAG A CLAIM OF ABSENCE, or it rots unnoticed.** The must-fire rule pointed at silence; this
 is the same principle pointed at **absence**. When a document says something is not built,
 tag it so the claim is checkable:
