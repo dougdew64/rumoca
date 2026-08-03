@@ -107,7 +107,30 @@ pub fn not_checked_sentence(profile: &[ProfileRow]) -> String {
     let timeout: Vec<&ProfileRow> =
         profile.iter().filter(|r| r.verdict == "aborted:timeout").collect();
 
+    // **`free-ram` was omitted until 2026-08-03, and that made the sidecar lie.**
+    //
+    // It never showed because every earlier sweep's retries cleared its free-RAM
+    // aborts, so the count happened to be zero. The 2026-08-02 run had three that
+    // survived a retry, and the sentence reported 9 models unchecked out of 12 —
+    // in the one file whose entire job is to say what was *not* checked.
+    //
+    // Distinct from `proc-ceiling` and worth saying separately: a ceiling abort
+    // means the model wanted more than the run allows, which is a property of the
+    // model. A free-RAM abort means the machine had no room *at that moment*,
+    // which is a property of the machine — and is why re-running recovers some.
+    let free_ram: Vec<&ProfileRow> =
+        profile.iter().filter(|r| r.verdict == "aborted:free-ram").collect();
+
     let mut parts: Vec<String> = Vec::new();
+    if !free_ram.is_empty() {
+        let worst = free_ram.iter().map(|r| r.peak_ws_mb).max().unwrap_or(0);
+        parts.push(format!(
+            "{} model(s) were stopped because free memory ran out while they ran \
+             (reaching {:.1} GB) and were NOT checked",
+            free_ram.len(),
+            worst as f64 / 1024.0,
+        ));
+    }
     if !ceiling.is_empty() {
         let worst = ceiling.iter().map(|r| r.peak_ws_mb).max().unwrap_or(0);
         parts.push(format!(
@@ -162,6 +185,60 @@ mod tests {
         );
         // --force is the operator saying they know better, and must beat both.
         assert_eq!(guard(16, Some(2610), true), Verdict::Proceed);
+    }
+
+    /// **Every abort verdict is accounted for in the sentence.**
+    ///
+    /// The sidecar's whole job is to say what was *not* checked, so a verdict it
+    /// silently drops is the worst defect this file can have. `aborted:free-ram`
+    /// was dropped until 2026-08-03: it never showed because earlier sweeps'
+    /// retries cleared those aborts, and then a run had three that survived. The
+    /// sidecar reported **9 unchecked out of 12**.
+    ///
+    /// **Checks the property, not the three known kinds** — a verdict added to
+    /// the watchdog tomorrow fails this test rather than quietly vanishing.
+    #[test]
+    fn the_not_checked_sentence_accounts_for_every_abort() {
+        let rows: Vec<ProfileRow> = [
+            ("a", 11000, "aborted:proc-ceiling"),
+            ("b", 9000, "aborted:free-ram"),
+            ("c", 900, "aborted:timeout"),
+            ("d", 800, "ok"),
+        ]
+        .iter()
+        .map(|(n, m, v)| ProfileRow {
+            name: (*n).to_owned(),
+            peak_ws_mb: *m,
+            verdict: (*v).to_owned(),
+        })
+        .collect();
+
+        let sentence = not_checked_sentence(&rows);
+        let aborted = rows.iter().filter(|r| r.verdict != "ok").count();
+
+        // Summing the leading counts is crude and deliberate: it cannot be
+        // satisfied by *mentioning* a verdict without counting it.
+        let counted: usize = sentence
+            .split(" model(s)")
+            .filter_map(|s| s.rsplit(|c: char| !c.is_ascii_digit()).next())
+            .filter_map(|d| d.parse::<usize>().ok())
+            .sum();
+        assert_eq!(
+            counted, aborted,
+            "the sidecar accounts for {counted} of {aborted} aborted models. A verdict it \
+             does not count is a model silently reported as checked: {sentence:?}",
+        );
+
+        // And an all-clean run says nothing, rather than something empty.
+        let clean = vec![ProfileRow {
+            name: "a".to_owned(),
+            peak_ws_mb: 10,
+            verdict: "ok".to_owned(),
+        }];
+        assert!(
+            not_checked_sentence(&clean).is_empty(),
+            "a run with nothing unchecked must produce no sentence at all",
+        );
     }
 
     /// **The published sentence, checked in both directions.**

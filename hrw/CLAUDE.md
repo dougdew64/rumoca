@@ -332,18 +332,23 @@ process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB
 - **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
   treats that as a crash and restarts it within seconds.
 
-**A LARGE-SCALE SWEEP IS OWED** — Doug runs it **the evening of 2026-08-02**.
-Trigger 3 fired twice on 2026-08-01: the Parse stage of a library model went from
-`{"classes":{},"within":null}` to its declaring file's full AST, and every
-`Location` in that AST now carries the document URI instead of a basename.
+**THE OWED SWEEP IS DONE** — run 2026-08-02, promoted 2026-08-03. Trigger 3 had fired twice:
+the Parse stage of a library model went from `{"classes":{},"within":null}` to its declaring
+file's full AST, and every `Location` in it gained the document URI.
 
-**The point is not compliance.** Four F-checks walk `StageKind::COMPILATION`,
-which begins with Parse — so they ran on all 2,626 MSL models in the last sweep
-**and found nothing, because there was nothing there**. Those greens were vacuous
-for that stage. This run is the first time Parse IR is really checked across the
-corpus. Expect it to cost more than the last one (12 models already exceeded this
-machine's limits), and treat new F7 violations as *information*, not regression:
-the shape checks have never seen a whole library AST.
+**Result: 2,614 `ok`, 0 violations, 0 failed checks, 12 not checked** (3 free-RAM, 2
+proc-ceiling, 7 timeout — all limits of this machine, not findings).
+
+**And this zero counts, where the previous one did not.** Four F-checks walk
+`StageKind::COMPILATION`, which begins with Parse, so they ran on every model before too — and
+found nothing because there was nothing there. F7 samples up to 400 paths per stage and was
+getting about *two* from an empty AST. It now walks a real one. Mean peak memory rose
+1,228 → 1,353 MB, which is the ASTs being built.
+
+**What it establishes**: HRW's path grammar round-trips over real Modelica ASTs at corpus
+scale. **What it does not**: that HRW's AST equals Rumoca's — nothing in the sweep compares
+them. That equivalence is `worker::tests::hrw_reparse_of_a_library_file_matches_the_sessions_own_ast`,
+over 120 documents. **Representation is verified at corpus scale; equivalence at sample scale.**
 
 **When the fidelity checks run** (policy 2026-07-31; reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Small scale — the 16 curated specimens —
