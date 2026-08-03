@@ -129,25 +129,33 @@ const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 /// state a headless run never has — so this removes the difference rather than
 /// demonstrating it. If the symptom survives, the cause is elsewhere and this
 /// note is the record of what was already ruled out.
-const LEFT_PANEL_ID: &str = "left_panel";
+pub(crate) const LEFT_PANEL_ID: &str = "left_panel";
 
-/// How long the opening width is held at the default.
+/// Drop any left-panel width restored from a previous session.
 ///
-/// **A duration, not a frame count, and the distinction is not pedantic.** egui
-/// runs *multiple layout passes per frame*, so "frames" is not a unit the app can
-/// count — a budget of eight was spent before the harness had finished
-/// starting. What the reset needs to outlast is a *moment in wall-clock time*:
-/// the window is created unmaximized and maximizes shortly after, and eframe
-/// restores persisted egui memory around the same point.
+/// **Called once, from `App::new`, and that timing is the whole point.** eframe
+/// restores egui's memory wholesale when it creates the `Context`
+/// (`winit_integration::create_egui_context`), and that runs *before* the app
+/// factory — so `cc.egui_ctx` already holds whatever width the reader last
+/// dragged, and clearing it here lands exactly once, deterministically.
 ///
-/// A third of a second covers both, is imperceptible, and does not depend on
-/// knowing which one it was.
-const STARTUP_RESET: std::time::Duration = std::time::Duration::from_millis(300);
+/// # Why this replaced a timer
+///
+/// The first fix held the default for 300 ms to outlast "whatever overwrites the
+/// width after frame one". That worked and was a guess. Reading egui's source
+/// settled it: `PanelState` is stored with `get_persisted`, so the width is part
+/// of what eframe writes to disk.
+///
+/// **The symptom's direction confirms it.** Doug saw the panel too *wide*. A
+/// late window maximize predicts too *narrow* — frame one at the smaller size
+/// would store 40 % of a small window, a smaller fraction once maximized. Only a
+/// restored, previously-dragged width explains *wide*.
+pub(crate) fn clear_persisted_split(ctx: &egui::Context) {
+    ctx.data_mut(|d| {
+        d.remove::<egui::containers::panel::PanelState>(egui::Id::new(LEFT_PANEL_ID));
+    });
+}
 
-/// How long a mode switch holds the default.
-///
-/// One repaint is enough here — nothing is still settling — but a short
-/// window costs nothing and keeps one mechanism rather than two.
 const MODE_SWITCH_RESET: std::time::Duration = std::time::Duration::from_millis(50);
 
 const MIN_LEFT_FRACTION: f32 = 0.15;
@@ -169,11 +177,19 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// egui's remembered width for that frame — so the reset has to happen *during*
 /// rendering, not when the mode changes. The flag carries the intent from the
 /// mode switch to the next paint.
+#[derive(Default)]
 struct SplitState {
     /// The left panel's share of the window as of the last frame that drew it.
     /// `None` until something has been drawn.
     fraction: Option<f32>,
-    /// Hold the default until this instant. `None` once settled.
+    /// Hold the default until this instant. `None` once settled, and **`None` at
+    /// startup** — nothing is held there any more.
+    ///
+    /// The first fix for Doug's *"when HRW starts, too much horizontal space is
+    /// given to the LHS"* held the default for 300 ms, to outlast whatever
+    /// overwrote the width after frame one. [`clear_persisted_split`] removes the
+    /// cause instead, before the first frame, so `default_size` applies for the
+    /// reason it exists rather than being forced past a timer.
     ///
     /// **A countdown, not a flag, and the difference is the whole bug.** Doug,
     /// 2026-08-02: *"HRW starts in tour mode. And in tour mode, the LHS has too
@@ -194,26 +210,6 @@ struct SplitState {
     reset_until: Option<std::time::Instant>,
 }
 
-impl Default for SplitState {
-    fn default() -> Self {
-        Self {
-            fraction: None,
-            // **Reset on the very first paint, not just on mode switches.**
-            //
-            // Doug, 2026-08-02: *"when HRW starts, too much horizontal space is
-            // given to the LHS."* A resizable `Panel` keeps its width in egui's
-            // memory, which eframe persists across runs — so a width dragged in
-            // one session came back in the next, and `default_size` never
-            // applied because a stored width already existed.
-            //
-            // `default_size` is the wrong instrument for "always start here": it
-            // means *use this when nothing is remembered*. Requesting the reset
-            // up front makes the opening width a property of HRW rather than of
-            // whatever the reader last did, which is what Doug asked for.
-            reset_until: Some(std::time::Instant::now() + STARTUP_RESET),
-        }
-    }
-}
 
 impl SplitState {
     /// Configure a left panel: draggable, clamped, and reset when asked.
@@ -1221,6 +1217,11 @@ impl App {
         // loading, the worker spawn — can fail, and did once.
         diagnostics::init();
         diagnostics::record_action("session", "HRW started");
+
+        // Before the first frame: drop a panel width restored from a previous
+        // session, so the split opens where HRW says rather than where the
+        // reader last left it. See `clear_persisted_split`.
+        clear_persisted_split(&cc.egui_ctx);
 
         // Make every bundled font a fallback for BOTH families, so a glyph that
         // lives in only one (e.g. the → and ← arrows are in Hack/monospace but

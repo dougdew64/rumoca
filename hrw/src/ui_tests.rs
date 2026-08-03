@@ -959,36 +959,66 @@ fn the_split_opens_at_the_default_fraction() {
 // rather than replaced with a test of something adjacent, which would assert a
 // fact nobody doubted and imply cover that does not exist.
 
-/// The startup reset **survives more than one frame**.
+/// A width restored from a previous session **does not survive startup**.
 ///
-/// This is the distinction that mattered, and the one nothing was checking.
-/// Doug: *"HRW starts in tour mode. And in tour mode, the LHS has too much
-/// width. If I switch to specimen mode, then the LHS has the desired 40%."*
+/// This is the gap Doug named: *"UI state lives in three places — the app's
+/// fields, egui's memory, and the OS window — and our tests only see the first."*
+/// Two of the three divider regressions lived in the second, which is why none
+/// of them was caught.
 ///
-/// A one-frame reset was enough for a **mode switch** and not for **startup** —
-/// and specimen mode looked correct only because it is *only ever reached by a
-/// mode switch*, so it was always being reset. The asymmetry was the clue:
-/// nothing was wrong with either mode, only with the first frame.
+/// **`PanelState::load` closes it.** The width egui stores is a number a test can
+/// read, exactly as `Node::rect()` made geometry readable — the harness could
+/// always see this and no test had ever asked.
 ///
-/// Something lands after frame one — the window maximizes shortly after
-/// creation, and eframe restores persisted egui memory around the same point.
-/// **The test does not care which**, and neither does the fix: it asserts the
-/// reset is still in force several frames in, which is what outlasts either.
+/// Simulates the real failure: seed a wide width, as eframe's restore would, and
+/// require it gone.
 #[test]
-fn the_startup_reset_outlasts_the_first_frame() {
-    let mut h = harness(App::test_default()); // the harness has already run frames
+fn a_restored_panel_width_does_not_survive_startup() {
+    let ctx = eframe::egui::Context::default();
+    let id = eframe::egui::Id::new(crate::app::LEFT_PANEL_ID);
+
+    // What a previous session's drag leaves behind.
+    let wide = eframe::egui::containers::panel::PanelState {
+        outer_rect: eframe::egui::Rect::from_min_size(
+            eframe::egui::Pos2::ZERO,
+            eframe::egui::Vec2::new(1200.0, 900.0),
+        ),
+    };
+    ctx.data_mut(|d| d.insert_persisted(id, wide));
     assert!(
-        h.state().test_split_reset_pending(),
-        "after two frames the startup reset must still be in force; a one-frame reset is \
-         exactly what left tour mode wide while specimen mode looked fine",
+        eframe::egui::containers::panel::PanelState::load(&ctx, id).is_some(),
+        "precondition: the stored width is there to be cleared — without this the \
+         assertion below would pass on an empty context and prove nothing",
     );
 
-    // ...and it must expire, or the divider could never be dragged.
-    std::thread::sleep(std::time::Duration::from_millis(350));
-    h.run_steps(1);
+    crate::app::clear_persisted_split(&ctx);
+
     assert!(
-        !h.state().test_split_reset_pending(),
-        "the reset must expire, or dragging is impossible forever",
+        eframe::egui::containers::panel::PanelState::load(&ctx, id).is_none(),
+        "a width restored from a previous session must be dropped before the first \
+         frame; leaving it is what opened the panel wherever the reader last dragged it",
+    );
+}
+
+/// After startup the app stores a width **egui and the app agree on**.
+///
+/// The drawn fraction and the stored width are two different facts, and the
+/// divider bugs lived in the gap between them. This pins them together.
+#[test]
+fn the_stored_panel_width_matches_what_was_drawn() {
+    let h = harness(App::test_default());
+    let stored = eframe::egui::containers::panel::PanelState::load(
+        &h.ctx,
+        eframe::egui::Id::new(crate::app::LEFT_PANEL_ID),
+    )
+    .expect("the panel stores its width once drawn");
+
+    let drawn = h.state().test_split_fraction().expect("and the app records it");
+    let stored_fraction = stored.size().x / 1600.0;
+    assert!(
+        (stored_fraction - drawn).abs() < 0.01,
+        "egui stored {stored_fraction} while the app recorded {drawn}; when these \
+         disagree the app is reporting a width the reader is not looking at",
     );
 }
 
@@ -1017,32 +1047,6 @@ fn both_modes_open_at_the_same_split() {
     assert!(
         (tour_f - specimen_f).abs() < 0.001,
         "the two modes must open identically; tour drew {tour_f}, specimen {specimen_f}",
-    );
-}
-
-/// A fresh `App` **asks for the default before it has drawn anything**.
-///
-/// Doug, 2026-08-02: *"when HRW starts, too much horizontal space is given to the
-/// LHS."* A resizable `Panel` keeps its width in egui's memory, which eframe
-/// persists across runs — so a width dragged in one session returned in the next,
-/// and `default_size` never applied because a width was already remembered.
-///
-/// **`default_size` means "use this when nothing is remembered", which is not the
-/// same as "always start here".** Requesting the reset up front makes the opening
-/// width a property of HRW rather than of whatever the reader last did.
-///
-/// Asserts the *request*, before any frame runs — the drawn result is covered by
-/// `the_split_opens_at_the_default_fraction`, and neither test alone distinguishes
-/// "opened at 40% because nothing was stored" from "opened at 40% because HRW
-/// insisted".
-#[test]
-fn a_fresh_app_requests_the_default_split_before_drawing() {
-    let app = App::test_default();
-    assert!(
-        app.test_split_reset_pending(),
-        "startup must force the 40/60 default; without it a width dragged in a previous \
-         session is restored from egui's persisted memory and HRW opens wherever the \
-         reader last left it",
     );
 }
 
