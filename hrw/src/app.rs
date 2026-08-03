@@ -5206,37 +5206,73 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // reader who scrolled somewhere themselves.
                 let mut area = egui::ScrollArea::vertical().id_salt("tour");
                 if self.tour.autoplay.is_running()
-                    && let Some((content_h, max_scroll)) = self.tour.tour_scroll_metrics
+                    && let Some(max_scroll) = self.tour.tour_max_scroll
                 {
-                    // The fraction is a place in the *document*, so it multiplies the
-                    // content height — not the scroll range, which is the content
-                    // minus one viewport and would land everything short.
-                    let link_y = self.tour.autoplay.scroll_fraction() * content_h;
-                    // **Leave a little above the link**, so the line or two that
-                    // introduces it is on screen with it rather than scrolled off.
-                    // Doug asked for exactly this: the link and the text above it
-                    // together are what document the frame.
-                    let target = (link_y - TOUR_CONTEXT_ABOVE).clamp(0.0, max_scroll.max(0.0));
+                    // **Interpolate between two MEASURED positions.** Both come from
+                    // the split below, so neither is an estimate of anything.
+                    let to = self.tour.tour_link_y.unwrap_or(0.0);
+                    let from = self.tour.tour_prev_link_y.unwrap_or(0.0);
+                    let y = from + (to - from) * self.tour.autoplay.travel_t();
+                    // Leave a little above the link, so the line or two introducing
+                    // it stays on screen with it. Doug: "the frame link and the lines
+                    // of text above the link document the animation frame."
+                    let target = (y - TOUR_CONTEXT_ABOVE).clamp(0.0, max_scroll.max(0.0));
                     area = area.vertical_scroll_offset(target);
                 }
+
+                // **Where the current beat's link actually renders**, measured rather
+                // than estimated from character offsets.
+                //
+                // Two earlier attempts guessed this position — first from the beat's
+                // ordinal, then from the link's character offset over the document —
+                // and both were wrong, because rendered height per character is not
+                // constant: prose wraps in a narrow panel and a code block does not.
+                // **No constant corrects an estimate that is wrong in both
+                // directions**, so this stops estimating.
+                //
+                // The markdown is split at the link's line and rendered as two
+                // documents. The cursor between them *is* the link's y position. The
+                // split falls on a line start, and every link in these tours is its
+                // own paragraph, so no markdown construct is cut in half.
+                let mut measured: Option<f32> = None;
                 let out = area.show(ui, |ui| {
                     set_markdown_text_sizes(ui);
                     match &tour_text {
                         Some(text) => {
-                            egui_commonmark::CommonMarkViewer::new()
-                                .show(ui, &mut self.commonmark_cache, text);
+                            let split = self
+                                .tour
+                                .autoplay
+                                .current_byte_offset()
+                                .min(text.len());
+                            let top = ui.cursor().top();
+                            if split > 0 {
+                                egui_commonmark::CommonMarkViewer::new().show(
+                                    ui,
+                                    &mut self.commonmark_cache,
+                                    &text[..split],
+                                );
+                            }
+                            measured = Some(ui.cursor().top() - top);
+                            egui_commonmark::CommonMarkViewer::new().show(
+                                ui,
+                                &mut self.commonmark_cache,
+                                &text[split..],
+                            );
                         }
                         None => Self::no_tour_ui(ui),
                     }
                 });
-                // Record how far this pane *can* scroll, for the next frame. Measured
-                // rather than guessed: the content height depends on the rendered
-                // markdown, which depends on the panel width, which the divider can
-                // change mid-run.
-                self.tour.tour_scroll_metrics = Some((
-                    out.content_size.y,
-                    (out.content_size.y - out.inner_rect.height()).max(0.0),
-                ));
+
+                // A new beat means a new split, so the position measured last frame
+                // becomes the one to travel *from*.
+                let beat = self.tour.autoplay.progress().0;
+                if self.tour.tour_measured_beat != Some(beat) {
+                    self.tour.tour_prev_link_y = self.tour.tour_link_y.or(Some(0.0));
+                    self.tour.tour_measured_beat = Some(beat);
+                }
+                self.tour.tour_link_y = measured;
+                self.tour.tour_max_scroll =
+                    Some((out.content_size.y - out.inner_rect.height()).max(0.0));
             });
         if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
             self.log_split(msg);

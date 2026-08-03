@@ -101,8 +101,13 @@ const EXTERNAL_WEIGHT_MULTIPLIER: f64 = 2.5;
 #[derive(Debug, Clone, PartialEq)]
 pub struct TourLink {
     pub url: String,
-    /// Where this link is, as a fraction of the whole document (0.0 to 1.0).
-    pub doc_fraction: f32,
+    /// Byte offset of the **start of the line** this link is on.
+    ///
+    /// A byte offset rather than a fraction because the consumer splits the
+    /// markdown here and renders the two halves, which yields the link's exact
+    /// pixel position. A fraction can only ever be an estimate of that, and the
+    /// estimate was wrong in a direction no constant could correct.
+    pub byte_offset: usize,
 }
 
 /// One stop of a tour: a heading, its prose, and the links inside it in order.
@@ -113,8 +118,8 @@ pub struct TourStop {
     pub heading: String,
     /// Characters of prose, used to weight this stop's share of the run.
     pub prose_chars: usize,
-    /// Where the heading sits, for a stop that dispatches nothing.
-    pub heading_fraction: f32,
+    /// Byte offset of the heading line, for a stop that dispatches nothing.
+    pub heading_offset: usize,
     /// Every `hrw://` link in this stop, **in document order and not deduplicated**.
     ///
     /// Deduplicating would be wrong here in a way it is not for hook registration:
@@ -132,10 +137,10 @@ pub struct Beat {
     pub link: Option<String>,
     /// How long to remain here once the app is idle.
     pub dwell: Duration,
-    /// Where in the document this beat's link sits, 0.0 to 1.0. The tour text
-    /// scrolls **here** and holds, so the link being dispatched is on screen with
-    /// the prose that explains it.
-    pub doc_fraction: f32,
+    /// Byte offset of the line this beat's link is on. The tour text is split
+    /// here and rendered in two halves, so the seam **is** the link's position and
+    /// the scroll lands on it exactly.
+    pub byte_offset: usize,
 }
 
 /// Split tour markdown into stops.
@@ -153,14 +158,13 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
     let mut current: Option<TourStop> = None;
     let mut in_fence = false;
 
-    // Position bookkeeping, in characters rather than bytes so a document full of
-    // em-dashes and arrows does not skew its own fractions.
-    let total_chars = text.chars().count().max(1) as f32;
-    let mut seen_chars = 0usize;
+    // Byte offsets of line starts. Always char boundaries, so the consumer can
+    // split the string here without checking.
+    let mut seen_bytes = 0usize;
 
     for line in text.lines() {
-        let line_start = seen_chars as f32 / total_chars;
-        seen_chars += line.chars().count() + 1; // + the newline
+        let line_start = seen_bytes;
+        seen_bytes += line.len() + 1; // + the newline
         let trimmed = line.trim_start();
         if trimmed.starts_with("```") {
             in_fence = !in_fence;
@@ -180,7 +184,7 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
             current = Some(TourStop {
                 heading: rest.trim().to_owned(),
                 prose_chars: 0,
-                heading_fraction: line_start,
+                heading_offset: line_start,
                 links: Vec::new(),
             });
             continue;
@@ -193,7 +197,7 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
                 current = Some(TourStop {
                     heading: title.clone(),
                     prose_chars: 0,
-                    heading_fraction: 0.0,
+                    heading_offset: 0,
                     links: Vec::new(),
                 });
                 current.as_mut().expect("just set")
@@ -203,7 +207,7 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
         stop.links.extend(
             links_in_order(line)
                 .into_iter()
-                .map(|url| TourLink { url, doc_fraction: line_start }),
+                .map(|url| TourLink { url, byte_offset: line_start }),
         );
     }
     if let Some(done) = current.take() {
@@ -244,20 +248,20 @@ pub fn schedule(
     is_external: impl Fn(&str) -> bool,
 ) -> Vec<Beat> {
     // Every stop contributes at least one beat, so a prose-only stop still shows.
-    let mut raw: Vec<(usize, Option<String>, f64, f32)> = Vec::new();
+    let mut raw: Vec<(usize, Option<String>, f64, usize)> = Vec::new();
     for (i, stop) in stops.iter().enumerate() {
         let n = stop.links.len().max(1) as f64;
         // Prose is shared across the stop's beats: a long stop with one link
         // lingers, a long stop with six links moves through them.
         let per = (stop.prose_chars as f64 / n).max(1.0);
         if stop.links.is_empty() {
-            raw.push((i, None, per, stop.heading_fraction));
+            raw.push((i, None, per, stop.heading_offset));
             continue;
         }
         for link in &stop.links {
             let w =
                 if is_external(&link.url) { per * EXTERNAL_WEIGHT_MULTIPLIER } else { per };
-            raw.push((i, Some(link.url.clone()), w, link.doc_fraction));
+            raw.push((i, Some(link.url.clone()), w, link.byte_offset));
         }
     }
     if raw.is_empty() {
@@ -275,7 +279,7 @@ pub fn schedule(
 
     let mut beats: Vec<Beat> = Vec::with_capacity(raw.len());
     let mut spent_ms = 0u128;
-    for (idx, (stop, link, w, doc_fraction)) in raw.iter().enumerate() {
+    for (idx, (stop, link, w, byte_offset)) in raw.iter().enumerate() {
         let share = if floored {
             total_ms / raw.len() as f64
         } else {
@@ -293,7 +297,7 @@ pub fn schedule(
             stop: *stop,
             link: link.clone(),
             dwell: Duration::from_millis(ms as u64),
-            doc_fraction: *doc_fraction,
+            byte_offset: *byte_offset,
         });
     }
     beats
@@ -325,6 +329,10 @@ pub struct Autoplay {
     waiting: bool,
     /// Total time actually spent, including waits — what the recording will be.
     real_elapsed: Duration,
+    /// Time since the current beat was **dispatched**, which keeps running while
+    /// the app is busy. Drives [`Self::travel_t`] so the tour text moves to the
+    /// link *during* the compile it caused rather than after it.
+    since_dispatch: Duration,
     /// **Who paused matters.** A pause caused by the window losing focus should
     /// lift the moment focus returns; a pause the user asked for must survive
     /// clicking into another window and back, or the Pause button would be
@@ -347,6 +355,7 @@ impl Autoplay {
         self.index = 0;
         self.in_beat = Duration::ZERO;
         self.real_elapsed = Duration::ZERO;
+        self.since_dispatch = Duration::ZERO;
         self.waiting = true;
         if self.beats.is_empty() {
             self.phase = Some(Phase::Finished);
@@ -416,6 +425,9 @@ impl Autoplay {
             return None;
         }
         self.real_elapsed += dt;
+        // **Before the `busy` return.** The text must travel to the link while the
+        // compile it triggered is still running; see `travel_t`.
+        self.since_dispatch += dt;
         if busy {
             self.waiting = true;
             return None;
@@ -433,6 +445,7 @@ impl Autoplay {
         }
         self.index += 1;
         self.in_beat = Duration::ZERO;
+        self.since_dispatch = Duration::ZERO;
         match self.beats.get(self.index).cloned() {
             Some(next) => {
                 self.waiting = true;
@@ -467,52 +480,47 @@ impl Autoplay {
         ((done + self.in_beat.as_millis()) as f64 / total as f64).clamp(0.0, 1.0) as f32
     }
 
-    /// **Where the tour text should sit** — stepwise, not continuous.
+    /// **How far the text has travelled toward this beat's link**, 0.0 to 1.0.
     ///
-    /// Distinct from [`Self::fraction`], and the distinction is the whole point.
-    /// `fraction` is a clock and advances every frame; using it to scroll made the
-    /// prose creep the entire time a beat was on screen, so an animation frame the
-    /// tour had deliberately paused sat under text that would not hold still.
+    /// The caller interpolates the scroll offset between the previous link's
+    /// measured position and this one's; at 1.0 the text is on the link and
+    /// **stops**, leaving the rest of the beat for reading.
     ///
-    /// This travels to the new beat's position over [`SCROLL_TRAVEL`] and then
-    /// **stops**, leaving the rest of the beat for reading. Smoothstep rather than
-    /// linear so the motion starts and ends softly; a hard jump reads as a glitch
-    /// and a linear ramp reads as drift.
+    /// # It advances while the app is busy, and that is the fix
     ///
-    /// The travel is clamped to the beat's own dwell, so a short beat still arrives
-    /// rather than being cut off mid-slide.
+    /// Doug, 2026-08-03: *"while that log view is showing that compilation is
+    /// happening … the link which caused all of the changes on the RHS is not being
+    /// shown."* The travel used to run off `in_beat`, which [`Self::tick`] freezes at
+    /// zero for the whole compile — so the text sat at the *previous* beat's link
+    /// until the compile finished, which is precisely when the reader wants to see
+    /// **which link asked for this**.
     ///
-    /// **The destination is the link's place in the document**, not the beat's
-    /// ordinal. The first version used `index / (n - 1)`, which advanced by a
-    /// constant distance per beat regardless of how much text lay between them —
-    /// Doug, 2026-08-03: *"the scroll is being advanced by a constant number of tour
-    /// prose lines for each advancement."* A stop with seven links and a stop with
-    /// one moved the page equally, so the link being dispatched was rarely the link
-    /// on screen. `Beat::doc_fraction` is where the link actually is.
-    pub fn scroll_fraction(&self) -> f32 {
-        let n = self.beats.len();
-        if n == 0 {
-            return 0.0;
-        }
-        if self.phase() == Phase::Finished || self.index >= n {
+    /// So this runs off `since_dispatch`, which starts when the beat is dispatched
+    /// and keeps running regardless of `busy`. **The text leads and the right-hand
+    /// side follows**, rather than both arriving after the wait.
+    ///
+    /// The dwell is still not charged during a compile — that separation is the
+    /// point. *When the reader is shown the link* and *how long the beat lasts* are
+    /// different questions, and conflating them is what produced this bug.
+    pub fn travel_t(&self) -> f32 {
+        if self.beats.is_empty() {
             return 1.0;
         }
-        let to = self.beats[self.index].doc_fraction;
-        let from = if self.index == 0 {
-            0.0
-        } else {
-            self.beats[self.index - 1].doc_fraction
-        };
+        let travel = SCROLL_TRAVEL;
+        let t = (self.since_dispatch.as_secs_f32() / travel.as_secs_f32()).clamp(0.0, 1.0);
+        // Smoothstep: a hard jump reads as a glitch, a linear ramp as drift.
+        t * t * (3.0 - 2.0 * t)
+    }
 
-        let travel = SCROLL_TRAVEL.min(self.beats[self.index].dwell);
-        let t = if travel.is_zero() {
-            1.0
-        } else {
-            (self.in_beat.as_secs_f32() / travel.as_secs_f32()).clamp(0.0, 1.0)
-        };
-        // Smoothstep.
-        let eased = t * t * (3.0 - 2.0 * t);
-        from + (to - from) * eased
+    /// Byte offset in the tour text of the line the current beat's link is on.
+    ///
+    /// The consumer splits the markdown here and renders both halves, so the seam
+    /// is the link's exact pixel position — no estimate involved.
+    pub fn current_byte_offset(&self) -> usize {
+        self.beats
+            .get(self.index.min(self.beats.len().saturating_sub(1)))
+            .map(|b| b.byte_offset)
+            .unwrap_or(0)
     }
 
     /// The stop index currently showing, for the caption.
@@ -541,7 +549,7 @@ mod tests {
             stop,
             link: link.map(str::to_owned),
             dwell: Duration::from_secs(secs),
-            doc_fraction: stop as f32 * 0.25,
+            byte_offset: stop * 100,
         }
     }
 
@@ -701,106 +709,135 @@ Short.
         assert_eq!(ap.fraction(), 1.0);
     }
 
-    /// **The text holds still for most of every beat.**
+    /// **The text travels to the link and then stops.**
     ///
-    /// Doug, 2026-08-03: *"the scrolling never pauses when a frame is being
-    /// displayed."* The scroll was driven by `fraction()`, a **clock**, so the prose
-    /// crept every frame — worst exactly where the tour is best, with a deliberately
-    /// paused animation sitting under text that would not stay still.
-    ///
-    /// **Checks stillness as a property**, not the easing curve: after the travel
-    /// window, the position must not change again until the beat does. An
-    /// implementation that eased more slowly, or forgot to clamp, fails here.
+    /// Doug: *"the scrolling never pauses when a frame is being displayed."* The
+    /// travel used to be driven by `fraction()`, a **clock**, so the prose crept
+    /// every frame -- worst exactly where the tour is best, with a deliberately
+    /// paused animation under text that would not stay still.
     #[test]
     fn the_text_travels_then_stops_until_the_beat_changes() {
-        let beats = vec![
-            beat(0, Some("a"), 6),
-            beat(1, Some("b"), 6),
-            beat(2, Some("c"), 6),
-        ];
         let mut ap = Autoplay::default();
-        ap.start(beats);
-        ap.tick(Duration::from_millis(16), false); // arm the first beat
+        ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
+        assert_eq!(ap.travel_t(), 0.0, "a fresh beat has not travelled yet");
 
-        // Beat 0 sits at the top — there is nothing above it to travel from, which
-        // is why stillness is checked here and *movement* at the transition below.
         ap.tick(SCROLL_TRAVEL, false);
-        let arrived = ap.scroll_fraction();
+        assert_eq!(ap.travel_t(), 1.0, "and arrives within the travel window");
 
-        // Five seconds of ticking must not move it at all.
+        // Then it is STILL -- five seconds of ticking must not move it.
         for _ in 0..50 {
             ap.tick(Duration::from_millis(100), false);
             assert_eq!(
-                ap.scroll_fraction(),
-                arrived,
-                "the text must hold still for the rest of the beat; a reader cannot \
-                 read prose that is sliding, and the animation under it is paused",
+                ap.travel_t(),
+                1.0,
+                "the text must hold still for the rest of the beat; a reader cannot                  read prose that is sliding, and the animation under it is paused",
             );
         }
 
-        // **Non-vacuity, and the other half of the behaviour**: a new beat moves it.
-        // A `scroll_fraction` stuck at a constant would satisfy the loop above.
-        ap.tick(Duration::from_secs(2), false); // finishes beat 0, dispatches beat 1
+        // **Non-vacuity**: a new beat restarts the travel and re-aims it, so
+        // `travel_t` is not simply pinned at 1.0.
+        ap.tick(Duration::from_secs(2), false);
         assert_eq!(ap.progress().0, 2, "precondition: the beat advanced");
-        ap.tick(Duration::from_millis(16), false); // arm
-        ap.tick(SCROLL_TRAVEL, false);
-        let second = ap.scroll_fraction();
-        assert!(
-            second > arrived,
-            "a new beat must move the text to its place ({second} vs {arrived})",
-        );
-
-        // And it holds still there too, rather than only the first beat being stable.
-        for _ in 0..20 {
-            ap.tick(Duration::from_millis(100), false);
-            assert_eq!(ap.scroll_fraction(), second, "still on the second beat too");
-        }
+        assert!(ap.travel_t() < 1.0, "a new beat starts a new travel");
+        assert_eq!(ap.current_byte_offset(), 100, "and aims at the new link's line");
     }
 
-    /// The clock and the position are **different quantities**, and only one of them
-    /// advances continuously.
+    /// **The text reaches the link WHILE the app is still compiling.**
     ///
-    /// The progress bar should track time; the text should track the beat. Conflating
-    /// them is what produced the creeping scroll.
+    /// Doug, 2026-08-03: *"while that log view is showing that compilation is
+    /// happening, and when the RHS is navigated to the Structural -> Matching view,
+    /// the link which caused all of the changes on the RHS is not being shown."*
+    ///
+    /// The travel ran off `in_beat`, which `tick` freezes at zero for the whole
+    /// compile -- so the text stayed at the *previous* link until the compile
+    /// finished, which is exactly when a viewer wants to know **which link asked for
+    /// this**. `since_dispatch` runs regardless of `busy`, so the text leads and the
+    /// right-hand side follows.
+    ///
+    /// The dwell is still not charged during a compile, and keeping those apart is
+    /// the point: *when the reader is shown the link* and *how long the beat lasts*
+    /// are different questions, and conflating them produced this bug.
+    #[test]
+    fn the_text_reaches_the_link_while_the_app_is_still_busy() {
+        let mut ap = Autoplay::default();
+        ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("load"), 6)]);
+        ap.tick(Duration::from_millis(16), false);
+        ap.tick(Duration::from_secs(7), false); // finish beat 0, dispatch beat 1
+        assert_eq!(ap.progress().0, 2, "precondition: the load beat is showing");
+
+        // The compile starts. The clock is held...
+        ap.tick(SCROLL_TRAVEL, true);
+        // ...but the text has already arrived at the link that caused it.
+        assert_eq!(
+            ap.travel_t(),
+            1.0,
+            "the link must be on screen DURING its own compile, not after it",
+        );
+
+        // And the dwell genuinely was not charged.
+        let before = ap.progress().0;
+        for _ in 0..100 {
+            ap.tick(Duration::from_millis(100), true);
+        }
+        assert_eq!(ap.progress().0, before, "a busy app must not burn the dwell");
+        assert_eq!(ap.travel_t(), 1.0, "and the text stays on the link throughout");
+    }
+
+    /// The clock and the text are **different quantities**, and only one of them
+    /// advances continuously.
     #[test]
     fn the_progress_bar_tracks_time_while_the_text_tracks_the_beat() {
-        let beats = vec![
-            beat(0, None, 10),
-            beat(1, None, 10),
-        ];
         let mut ap = Autoplay::default();
-        ap.start(beats);
+        ap.start(vec![beat(0, None, 10), beat(1, None, 10)]);
         ap.tick(Duration::from_millis(16), false);
         ap.tick(SCROLL_TRAVEL, false);
 
-        let (f0, s0) = (ap.fraction(), ap.scroll_fraction());
+        let f0 = ap.fraction();
         ap.tick(Duration::from_secs(4), false);
-        let (f1, s1) = (ap.fraction(), ap.scroll_fraction());
 
-        assert!(f1 > f0, "the clock must keep running: {f0} -> {f1}");
-        assert_eq!(s1, s0, "the text must not: {s0} -> {s1}");
+        assert!(ap.fraction() > f0, "the clock must keep running: {f0} -> {}", ap.fraction());
+        assert_eq!(ap.travel_t(), 1.0, "the text must not");
     }
 
-    /// **A beat's scroll position is where its link actually is in the document.**
+    /// **A beat's position is the byte offset of its link's line, exactly.**
     ///
-    /// Two failed attempts preceded this. The first scrolled by the clock, so the
-    /// text crept continuously. The second scrolled by beat *ordinal* — Doug:
+    /// Two estimates preceded this and both failed. The first scrolled by the clock,
+    /// so the text crept continuously. The second scrolled by beat *ordinal* -- Doug:
     /// *"the scroll is being advanced by a constant number of tour prose lines for
-    /// each advancement"* — which spaced beats evenly regardless of how much text lay
-    /// between them, so a stop with seven links and a stop with one moved the page
-    /// the same distance and the dispatched link was rarely the link on screen.
+    /// each advancement"* -- which spaced beats evenly regardless of how much text
+    /// lay between them.
     ///
-    /// **Checks the correspondence, not the arithmetic**: a link late in the document
-    /// must land late, and a link's position must beat its own document offset rather
-    /// than its index in the run.
+    /// A character-offset *fraction* was the third, and it failed too, because
+    /// rendered height per character is not constant: prose wraps in a narrow panel
+    /// and a code block does not. **No constant corrects an estimate that is wrong in
+    /// both directions**, so `app.rs` splits the markdown at this offset and measures
+    /// the seam instead.
+    ///
+    /// **Checks the correspondence, not the arithmetic**: adjacent links stay close,
+    /// a link after a wall of prose lands far below it, and the offsets index the
+    /// text they claim to.
     #[test]
-    fn a_beats_position_follows_its_link_not_its_ordinal() {
-        // Stop 1 holds four links close together; stop 2 holds one, far below.
-        let filler = "padding prose line that occupies real document space\n".repeat(40);
-        let text = format!(
-            "# T\nintro\n\n## Crowded\n[a](hrw://x/1)\n[b](hrw://x/2)\n[c](hrw://x/3)\n\
-             [d](hrw://x/4)\n\n{filler}\n## Far below\n[e](hrw://x/5)\n",
-        );
+    fn a_beats_position_is_its_links_line_not_its_ordinal() {
+        // Built by joining lines rather than as one long literal. The first version
+        // used a `\` continuation, which left indentation in front of `[d]`, and the
+        // test then failed on its own fixture rather than on the code.
+        let mut lines: Vec<String> = vec![
+            "# T".to_owned(),
+            "intro".to_owned(),
+            String::new(),
+            "## Crowded".to_owned(),
+            "[a](hrw://x/1)".to_owned(),
+            "[b](hrw://x/2)".to_owned(),
+            "[c](hrw://x/3)".to_owned(),
+            "[d](hrw://x/4)".to_owned(),
+            String::new(),
+        ];
+        for _ in 0..40 {
+            lines.push("padding prose that occupies real document space".to_owned());
+        }
+        lines.push("## Far below".to_owned());
+        lines.push("[e](hrw://x/5)".to_owned());
+        let text = lines.join("\n");
         let stops = parse_stops(&text);
         let beats = schedule(&stops, Duration::from_secs(60), |_| false);
 
@@ -811,37 +848,38 @@ Short.
                 .unwrap_or_else(|| panic!("{u} missing from the run"))
         };
 
-        // The four crowded links sit close together, because they *are* close.
-        let (a, d) = (by_url("hrw://x/1"), by_url("hrw://x/4"));
-        assert!(
-            (d.doc_fraction - a.doc_fraction) < 0.15,
-            "four adjacent links must not span the document: {} to {}",
-            a.doc_fraction,
-            d.doc_fraction,
-        );
+        // **The offset must actually index this link's line.** This is the property
+        // `app.rs` relies on when it splits the string, and the one an ordinal or a
+        // fraction cannot provide.
+        for u in ["hrw://x/1", "hrw://x/4", "hrw://x/5"] {
+            let b = by_url(u);
+            assert!(
+                text[b.byte_offset..].starts_with('['),
+                "{u} must point at the start of its own line, got {:?}",
+                &text[b.byte_offset..(b.byte_offset + 20).min(text.len())],
+            );
+            assert!(
+                text[b.byte_offset..].contains(u),
+                "and that line must contain {u}",
+            );
+        }
 
-        // And the last one is genuinely far down, though it is only one beat later.
-        let e = by_url("hrw://x/5");
+        // Four adjacent links are close; the one past 40 lines of filler is not.
+        let (a, d, e) = (by_url("hrw://x/1"), by_url("hrw://x/4"), by_url("hrw://x/5"));
+        let crowded = d.byte_offset - a.byte_offset;
+        let gap = e.byte_offset - d.byte_offset;
         assert!(
-            e.doc_fraction > 0.7,
-            "a link after 40 lines of prose must land near the end, got {}",
-            e.doc_fraction,
-        );
-
-        // The ordinal scheme would have put these five beats at 0, .25, .5, .75, 1.
-        // The point is that the gap between d and e dwarfs the gaps among a..d.
-        assert!(
-            (e.doc_fraction - d.doc_fraction) > (d.doc_fraction - a.doc_fraction) * 2.0,
-            "the big gap in the document must be the big gap in the scroll",
+            gap > crowded * 10,
+            "the big gap in the document must be the big gap in the scroll              ({gap} bytes vs {crowded})",
         );
 
         // Positions must not go backwards; the walk reads top to bottom.
         for w in beats.windows(2) {
             assert!(
-                w[1].doc_fraction >= w[0].doc_fraction,
-                "beats must advance down the page: {:?} then {:?}",
-                w[0].doc_fraction,
-                w[1].doc_fraction,
+                w[1].byte_offset >= w[0].byte_offset,
+                "beats must advance down the page: {} then {}",
+                w[0].byte_offset,
+                w[1].byte_offset,
             );
         }
     }

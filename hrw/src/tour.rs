@@ -51,18 +51,21 @@ pub(crate) struct TourState {
     pub(crate) autoplay: crate::autoplay::Autoplay,
     /// Requested run length, from [`crate::autoplay::TOTAL_CHOICES`].
     pub(crate) autoplay_total: std::time::Duration,
-    /// `(content height, maximum scroll offset)` of the tour text, measured on the
-    /// last frame.
+    /// **Measured y of the current beat's link** inside the tour text.
     ///
-    /// Both are needed and they are not interchangeable: a beat's position is a
-    /// fraction of the **content**, while the offset it produces must be clamped to
-    /// the **scroll range** (content minus one viewport). Multiplying by the range,
-    /// as the first version did, lands every beat short by a viewport's worth.
-    ///
-    /// Measured rather than computed because the content height depends on the
-    /// rendered markdown, which depends on the panel width — and the divider can
-    /// change that mid-run.
-    pub(crate) tour_scroll_metrics: Option<(f32, f32)>,
+    /// `app.rs` splits the markdown at the link's line and renders both halves; the
+    /// cursor between them is this. Measured rather than estimated because two
+    /// estimates failed — by beat ordinal, then by character offset — and rendered
+    /// height per character is simply not constant: prose wraps in a narrow panel
+    /// and a code block does not.
+    pub(crate) tour_link_y: Option<f32>,
+    /// The previous beat's measured y, to travel *from*.
+    pub(crate) tour_prev_link_y: Option<f32>,
+    /// Which beat `tour_link_y` was measured for, so a beat change can roll the
+    /// current position into the previous one exactly once.
+    pub(crate) tour_measured_beat: Option<usize>,
+    /// Maximum scroll offset of the tour text, measured last frame — the clamp.
+    pub(crate) tour_max_scroll: Option<f32>,
 }
 
 impl Default for TourState {
@@ -77,7 +80,10 @@ impl Default for TourState {
             polled_at: None,
             autoplay: crate::autoplay::Autoplay::default(),
             autoplay_total: crate::autoplay::DEFAULT_TOTAL,
-            tour_scroll_metrics: None,
+            tour_link_y: None,
+            tour_prev_link_y: None,
+            tour_measured_beat: None,
+            tour_max_scroll: None,
         }
     }
 }
