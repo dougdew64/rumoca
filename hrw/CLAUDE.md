@@ -228,16 +228,20 @@ oracle test is **no longer a step** (see below).
    **What reopens it:** a report with a *non-constant* column. The oracle (#43) is the live
    candidate, since findings vary per model by construction.
 
-6. **← THE LIVE WORK: a draggable LHS/RHS divider** (`docs/ideas.md` **#59**, Doug's request).
-   The split is a fixed 40/60 constant recomputed every frame, so there is nowhere for a
-   dragged width to live. **40/60 stays the opening default.**
+6. **The draggable divider** ✅ — `docs/ideas.md` **#59**, built and confirmed working
+   2026-08-03. `SplitState`: both panels resizable, clamped to 15–75 %, opening at 40/60.
 
-   The pause prepared for this deliberately: the layout invariant
-   (`the_chrome_stays_on_screen_at_every_width`) exists, and **H15 names the failure to
-   expect** — at an extreme split the tab row *wraps and falls off the bottom*, not off the
-   side. Clamp both edges: a divider draggable to zero hides a panel with no way back.
+   **The split is a fraction of the window, not a stored pixel width**, and that distinction
+   was the bug: the first frame reports a window size that does not exist (5000 px observed),
+   so 40 % of it was stored as an absolute 2000 px and clamped to the 75 % maximum on the real
+   window. **Five attempts; the sixth came from instrumenting rather than theorising** —
+   `ui-findings.md` C15, and the rule it produced is in the rules section above.
 
-7. **Then, in rough order of value:** #46 (a failure specimen and tour per compiler phase —
+7. **← NOTHING IS LIVE.** Every step above is closed, so the next thing built is chosen rather
+   than resumed. **Doug has new features to describe (2026-08-03)** — hear those before
+   picking from this list, which is a standing menu and not a queue.
+
+   In rough order of value: #46 (a failure specimen and tour per compiler phase —
    the largest item serving the learning mission, since phases that only ever succeed cannot
    be diagnosed), #49 **re-scoped** (fixture tours were sized for "everything a test cannot
    reach", which the pause measured at *two surfaces*, so that entry now drives work sized for
