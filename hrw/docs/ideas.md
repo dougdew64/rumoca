@@ -3252,13 +3252,27 @@ per H6) and a one-frame **reset request**. The reset must happen during renderin
 at the mode switch, because `Panel::exact_size` collapses the size range to a point and that is
 what makes egui forget a dragged width.
 
-**The opening width is forced, not defaulted** *(fixed 2026-08-02, Doug: "when HRW starts, too
-much horizontal space is given to the LHS")*. A resizable `Panel` keeps its width in egui's
-memory, which eframe persists across runs — so a width dragged in one session came back in the
-next, and `default_size` never applied because a width was already remembered. **`default_size`
-means "use this when nothing is remembered", which is not "always start here."** `SplitState`
-now requests the reset before the first paint, which makes the opening width a property of HRW
-rather than of whatever the reader last did.
+**The split is a FRACTION of the window, not a stored pixel width** *(fixed 2026-08-03, and
+confirmed working; five attempts)*. Doug: *"when HRW starts, too much horizontal space is given
+to the LHS"* — it opened at 75 %, which is exactly `MAX_LEFT_FRACTION`, so the panel was being
+**clamped at its maximum** rather than landing on any particular width.
+
+Instrumenting settled in one restart what four theories had not:
+
+```text
+split: 0.400 of window (panel 2000px, available 5000px)
+split: 0.750 of window (panel 1290px, available 1720px)
+```
+
+**The first frame reports a 5000 px window that does not exist.** 40 % of it is 2000 px, egui
+stores that as an *absolute* width, and on the real 1720 px window it exceeds the maximum and
+clamps to 0.75. The stored width is now rewritten whenever the available width moves, which
+makes the fraction authoritative and gives window resizing the behaviour a reader expects.
+
+**Four superseded attempts, kept because the sequence is the lesson**: a one-frame force, a
+300 ms hold, unified panel ids, and clearing eframe's persisted `PanelState`. Each was a guess
+about numbers nobody had looked at, and each cost a round trip through Doug. **Instrument
+before theorising, once reproduction has failed even once** — `ui-findings.md` C15.
 
 **Both edges are clamped, and that is not fussiness.** A divider draggable to zero hides a panel
 *with no handle left to drag back*.
