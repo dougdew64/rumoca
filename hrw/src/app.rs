@@ -5344,110 +5344,131 @@ egui::Panel::top("bar").show(ui, |ui| {
         let has_tour = tour_text.is_some();
         let phase = self.tour.autoplay.phase();
 
-        ui.horizontal_wrapped(|ui| {
-            match phase {
-                Phase::Playing | Phase::Paused => {
-                    let (label, hover) = if phase == Phase::Playing {
-                        ("\u{23f8} Pause", "Hold the walk here.")
-                    } else {
-                        ("\u{25b6} Resume", "Continue from this beat.")
-                    };
-                    if ui.button(label).on_hover_text(hover).clicked() {
-                        if phase == Phase::Playing {
-                            self.tour.autoplay.pause();
-                        } else {
-                            self.tour.autoplay.resume();
-                        }
-                    }
-                    if ui
-                        .button("\u{23f9} Stop")
-                        .on_hover_text(
-                            "End the run. Whatever is on screen stays \u{2014} stopping \
-                             halfway leaves you looking at the thing you stopped for.",
-                        )
-                        .clicked()
-                    {
-                        self.tour.autoplay.stop();
-                        self.restore_mode_after_autoplay();
-                    }
-                }
-                Phase::Idle | Phase::Finished => {
-                    let play = ui
-                        .add_enabled(has_tour, egui::Button::new("\u{25b6} Play"))
-                        .on_hover_text(
-                            "Walk this tour by itself, for recording. The clock pauses \
-                             while a specimen compiles and while another window has \
-                             focus, so a slow machine makes a longer video, never a \
-                             broken one.",
-                        );
-                    if play.clicked() {
-                        self.start_autoplay();
-                    }
-                }
-            }
-
-            // The length picker. Disabled mid-run: changing the budget under a
-            // running schedule would leave the progress bar describing a plan that
-            // no longer exists.
-            ui.add_enabled_ui(!self.tour.autoplay.is_running(), |ui| {
-                let current = crate::autoplay::TOTAL_CHOICES
-                    .iter()
-                    .find(|(_, s)| *s == self.tour.autoplay_total.as_secs())
-                    .map(|(l, _)| *l)
-                    .unwrap_or("custom");
-                egui::ComboBox::from_id_salt("autoplay_total")
-                    .selected_text(current)
-                    .show_ui(ui, |ui| {
-                        for (label, secs) in crate::autoplay::TOTAL_CHOICES {
-                            let d = std::time::Duration::from_secs(secs);
-                            ui.selectable_value(&mut self.tour.autoplay_total, d, label);
-                        }
-                    })
-                    .response
-                    .on_hover_text(
-                        "Total length of the walk. Conventional social-video lengths \
-                         \u{2014} pick to fit where it is going.",
-                    );
-            });
-        });
-
-        if !self.tour.autoplay.is_running() {
-            return;
-        }
-
-        // --- The running readout ---
+        // **Same palette as the section headers above it** (Doug, 2026-08-03). The
+        // transport is a left-panel *bar*, like "Tours (8)" and "Specimens", not a
+        // loose row of buttons floating on the panel background — and it read as the
+        // latter because it was the only thing in the column without the navy frame.
         //
-        // A caption naming the stop, because a recording is watched by people who
-        // cannot see the cursor and have no idea which part of the tour they are in.
-        let (beat, total) = self.tour.autoplay.progress();
-        // **Margin above and below.** At 6px with no spacing the bar was clipped by
-        // its neighbours and its percentage was only half legible — Doug, 2026-08-03:
-        // *"the progress bar is not entirely visible because not enough vertical
-        // space is being provided"*. The bar carries the percentage text, so it needs
-        // room for a line of text, not for a rule.
-        ui.add_space(TOUR_PROGRESS_MARGIN);
-        ui.add(
-            egui::ProgressBar::new(self.tour.autoplay.fraction())
-                .desired_height(TOUR_PROGRESS_HEIGHT)
-                .show_percentage(),
-        );
-        ui.add_space(TOUR_PROGRESS_MARGIN);
-        if let Some(caption) = self
-            .tour
-            .autoplay
-            .current_stop()
-            .and_then(|i| self.autoplay_stop_heading(tour_text.as_deref(), i))
-        {
-            ui.label(egui::RichText::new(caption).strong());
-        }
-        ui.weak(format!(
-            "beat {beat}/{total} \u{00b7} {}",
-            match self.tour.autoplay.phase() {
-                Phase::Paused => "paused",
-                _ if self.compiling => "compiling \u{2014} clock held",
-                _ => "playing",
+        // `section_style` rather than copied colours: it already resolves light and
+        // dark mode, and a second copy of the palette is how the RHS tab colours and
+        // the LHS header colours would drift apart.
+        let style = section_style(ui);
+        style.frame.show(ui, |ui| {
+            ui.set_min_width(ui.available_width());
+            ui.horizontal_wrapped(|ui| {
+                match phase {
+                    Phase::Playing | Phase::Paused => {
+                        let (label, hover) = if phase == Phase::Playing {
+                            ("\u{23f8} Pause", "Hold the walk here.")
+                        } else {
+                            ("\u{25b6} Resume", "Continue from this beat.")
+                        };
+                        if ui.button(label).on_hover_text(hover).clicked() {
+                            if phase == Phase::Playing {
+                                self.tour.autoplay.pause();
+                            } else {
+                                self.tour.autoplay.resume();
+                            }
+                        }
+                        if ui
+                            .button("\u{23f9} Stop")
+                            .on_hover_text(
+                                "End the run. Whatever is on screen stays \u{2014} stopping \
+                                 halfway leaves you looking at the thing you stopped for.",
+                            )
+                            .clicked()
+                        {
+                            self.tour.autoplay.stop();
+                            self.restore_mode_after_autoplay();
+                        }
+                    }
+                    Phase::Idle | Phase::Finished => {
+                        let play = ui
+                            .add_enabled(has_tour, egui::Button::new("\u{25b6} Play"))
+                            .on_hover_text(
+                                "Walk this tour by itself, for recording. The clock pauses \
+                                 while a specimen compiles and while another window has \
+                                 focus, so a slow machine makes a longer video, never a \
+                                 broken one.",
+                            );
+                        if play.clicked() {
+                            self.start_autoplay();
+                        }
+                    }
+                }
+
+                // The length picker. Disabled mid-run: changing the budget under a
+                // running schedule would leave the progress bar describing a plan that
+                // no longer exists.
+                ui.add_enabled_ui(!self.tour.autoplay.is_running(), |ui| {
+                    let current = crate::autoplay::TOTAL_CHOICES
+                        .iter()
+                        .find(|(_, s)| *s == self.tour.autoplay_total.as_secs())
+                        .map(|(l, _)| *l)
+                        .unwrap_or("custom");
+                    egui::ComboBox::from_id_salt("autoplay_total")
+                        .selected_text(current)
+                        .show_ui(ui, |ui| {
+                            for (label, secs) in crate::autoplay::TOTAL_CHOICES {
+                                let d = std::time::Duration::from_secs(secs);
+                                ui.selectable_value(&mut self.tour.autoplay_total, d, label);
+                            }
+                        })
+                        .response
+                        .on_hover_text(
+                            "Total length of the walk. Conventional social-video lengths \
+                             \u{2014} pick to fit where it is going.",
+                        );
+                });
+            });
+
+            if !self.tour.autoplay.is_running() {
+                return;
             }
-        ));
+
+            // --- The running readout ---
+            //
+            // A caption naming the stop, because a recording is watched by people who
+            // cannot see the cursor and have no idea which part of the tour they are in.
+            let (beat, total) = self.tour.autoplay.progress();
+            let phase = self.tour.autoplay.phase();
+            // **Margin above and below.** At 6px with no spacing the bar was clipped by
+            // its neighbours and its percentage was only half legible — Doug, 2026-08-03:
+            // *"the progress bar is not entirely visible because not enough vertical
+            // space is being provided"*. The bar carries the percentage text, so it needs
+            // room for a line of text, not for a rule.
+            ui.add_space(TOUR_PROGRESS_MARGIN);
+            ui.add(
+                egui::ProgressBar::new(self.tour.autoplay.fraction())
+                    .desired_height(TOUR_PROGRESS_HEIGHT)
+                    .show_percentage(),
+            );
+            ui.add_space(TOUR_PROGRESS_MARGIN);
+            // The caption takes the header's `active_color` and the status line its
+            // `inactive_color`, so the bar reads as one element with a primary and a
+            // secondary line — the same relationship the section headers already have.
+            if let Some(caption) = self
+                .tour
+                .autoplay
+                .current_stop()
+                .and_then(|i| self.autoplay_stop_heading(tour_text.as_deref(), i))
+            {
+                ui.label(
+                    egui::RichText::new(caption).strong().size(13.0).color(style.active_color),
+                );
+            }
+            ui.label(
+                egui::RichText::new(format!(
+                    "beat {beat}/{total} \u{00b7} {}",
+                    match phase {
+                        Phase::Paused => "paused",
+                        _ if self.compiling => "compiling \u{2014} clock held",
+                        _ => "playing",
+                    }
+                ))
+                .color(style.inactive_color),
+            );
+        });
     }
 
     /// The heading of stop `index` in the tour text, for the running caption.
