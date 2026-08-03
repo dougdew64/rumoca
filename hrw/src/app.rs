@@ -3388,28 +3388,20 @@ impl App {
             // the state, and is the same rule every other pane here follows:
             // report the empty state, never vanish.
             if self.selected.is_none() {
-                ui.horizontal_wrapped(|ui| {
-                    ui.disable();
-                    self.stage_tab_bar_ui(ui, intent);
-                });
+                // **Not disabled from out here.** The row carries Debug mode's
+                // specimen switcher, which is the one control that *must* work
+                // when nothing is selected — it is how a specimen gets chosen.
+                // `stage_tab_bar_ui` disables the tabs itself, after the switcher.
+                ui.horizontal_wrapped(|ui| self.stage_tab_bar_ui(ui, intent));
             }
             if self.selected.is_none() {
                 if self.ui_mode == UiMode::Debug {
-                    let combo = egui::ComboBox::from_id_salt("specimen_switcher")
-                        .selected_text("(none)")
-                        .width(120.0);
-                    let mut switch_to = None;
-                    combo.show_ui(ui, |ui| {
-                        for path in &self.model_list.files {
-                            let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
-                            if ui.selectable_label(false, name).clicked() {
-                                switch_to = Some(path.clone());
-                            }
-                        }
-                    });
-                    if let Some(path) = switch_to {
-                        self.open(path);
-                    }
+                    // **Nothing here.** Debug mode's switcher lives in the tab
+                    // row above and is drawn unconditionally now, so a second
+                    // copy here put *two specimen selectors on screen* — one
+                    // disabled, one not — which is what Doug reported on
+                    // 2026-08-02. The row's copy already reads "(none)" and
+                    // already lists every specimen.
                 } else if self.ui_mode == UiMode::Tour {
                     // **Tour mode has no specimen list to select from**, so telling Doug
                     // to select one is advice he cannot take — the same species as the
@@ -4574,6 +4566,15 @@ egui::Panel::top("bar").show(ui, |ui| {
                     self.open(path);
                 }
                 ui.separator();
+            }
+            // **The tabs go inert without a specimen; the switcher above does
+            // not.** Drawn either way so the pipeline's phases are visible before
+            // anything is loaded, but a click must not set a stage that would
+            // linger and fire when a specimen arrived later. Disabling here
+            // rather than at the call site is what keeps the switcher usable —
+            // `Ui::disable` applies to everything drawn after it.
+            if self.selected.is_none() {
+                ui.disable();
             }
 
             if ui.selectable_label(self.viewing_log, "Log").clicked() {

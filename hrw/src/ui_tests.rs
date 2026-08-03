@@ -948,6 +948,17 @@ fn the_split_opens_at_the_default_fraction() {
     );
 }
 
+// **Debug mode's duplicate specimen selector is NOT covered by a test**, and the
+// reason is a harness limit rather than an oversight (H16): a closed `ComboBox`
+// puts its selected text nowhere the accessibility tree can see it, so "one
+// selector or two" is not a question this harness can be asked. `"Parse"` from
+// the tab row is visible in the same frame; `"(none)"` from the combo beside it
+// is not.
+//
+// Doug reported it on 2026-08-02 and Doug is the detector for it. Recorded here
+// rather than replaced with a test of something adjacent, which would assert a
+// fact nobody doubted and imply cover that does not exist.
+
 /// The startup reset **survives more than one frame**.
 ///
 /// This is the distinction that mattered, and the one nothing was checking.
