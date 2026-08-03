@@ -177,11 +177,15 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// egui's remembered width for that frame — so the reset has to happen *during*
 /// rendering, not when the mode changes. The flag carries the intent from the
 /// mode switch to the next paint.
-#[derive(Default)]
 struct SplitState {
     /// The left panel's share of the window as of the last frame that drew it.
     /// `None` until something has been drawn.
     fraction: Option<f32>,
+    /// How many more split changes to report to the log view.
+    ///
+    /// Startup is the interesting window and it is short; after that a resize is
+    /// the reader's own doing and needs no commentary.
+    reports_left: u8,
     /// Hold the default until this instant. `None` once settled, and **`None` at
     /// startup** — nothing is held there any more.
     ///
@@ -210,6 +214,12 @@ struct SplitState {
     reset_until: Option<std::time::Instant>,
 }
 
+impl Default for SplitState {
+    fn default() -> Self {
+        Self { fraction: None, reports_left: 6, reset_until: None }
+    }
+}
+
 
 impl SplitState {
     /// Configure a left panel: draggable, clamped, and reset when asked.
@@ -232,10 +242,37 @@ impl SplitState {
     }
 
     /// Record what was actually drawn, so the split is a number a test can read.
-    fn observe(&mut self, width: f32, avail: f32) {
-        if avail > 0.0 {
-            self.fraction = Some(width / avail);
+    ///
+    /// Returns a one-line report **when the split is not where HRW put it**, for
+    /// the log view. Three theories about the opening width have now been wrong,
+    /// and each was a guess about numbers nobody had looked at. This makes them
+    /// visible: `avail`, the width egui chose, and the resulting fraction.
+    ///
+    /// **Bounded, because an unbounded per-frame log is noise that buries the
+    /// thing it was added to show.** Only changes are reported, and only the
+    /// first few.
+    fn observe(&mut self, width: f32, avail: f32) -> Option<String> {
+        if avail <= 0.0 {
+            return None;
         }
+        let f = width / avail;
+        let moved = self.fraction.is_none_or(|old| (old - f).abs() > 0.001);
+        self.fraction = Some(f);
+        // **Only when it is wrong.** The log view is the *compile* log, and a
+        // routine startup measurement in it would break the one thing that view
+        // promises: empty means nothing has compiled. Reporting only the anomaly
+        // keeps that true and puts a line on screen exactly when there is
+        // something to explain — which is also better instrumentation, since a
+        // log that always says something is a log nobody reads.
+        let off_default = (f - LEFT_PANEL_WIDTH_FRACTION).abs() > 0.02;
+        if moved && off_default && self.reports_left > 0 {
+            self.reports_left -= 1;
+            return Some(format!(
+                "split: {:.3} of window (panel {:.0}px, available {:.0}px)",
+                f, width, avail,
+            ));
+        }
+        None
     }
 
     /// Whether the default is currently being held.
@@ -1881,6 +1918,20 @@ impl App {
             declaring_class: self.declaring_classes.get(name).map(String::as_str),
             stage_values,
         })
+    }
+
+    /// Put a split measurement in the log view.
+    ///
+    /// **The log, not a `dbg!`.** Doug is the only one who can see the real
+    /// window, so the number has to reach *him* — three theories about the
+    /// opening width have been wrong, each a guess about a figure nobody had
+    /// looked at.
+    fn log_split(&mut self, message: String) {
+        self.log_entries.push(crate::worker::LogEntry {
+            elapsed_secs: 0.0,
+            level: crate::worker::LogLevel::Info,
+            message,
+        });
     }
 
     /// Emit a stage or specimen capture, and record it as the point.
@@ -4975,7 +5026,9 @@ egui::Panel::top("bar").show(ui, |ui| {
                     }
                 });
             });
-        self.split.observe(shown.response.rect.width(), avail);
+        if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
+            self.log_split(msg);
+        }
         if let Some(source) = switch_to {
             self.select_tour(source);
             // Re-read now rather than waiting up to a poll interval: a click that
@@ -5900,7 +5953,9 @@ impl App {
                     }
                 }
             });
-        self.split.observe(shown.response.rect.width(), avail);
+        if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
+            self.log_split(msg);
+        }
         }
 
         // **The reset is consumed here, after both panels have had their chance
