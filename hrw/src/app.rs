@@ -352,6 +352,16 @@ impl SplitState {
 /// (the top third). The remaining two-thirds show source or purpose note.
 const SPECIMEN_LIST_HEIGHT_FRACTION: f32 = 1.0 / 3.0;
 
+/// How much tour text to keep **above** the link a beat is dispatching.
+///
+/// Doug, 2026-08-03: *"the scrolling should be paused with that frame link showing
+/// with perhaps a line or two of text which is above that frame link. The frame link
+/// and the lines of text above the link document the animation frame."*
+///
+/// Roughly two lines. Scrolling the link to the very top would put its introduction
+/// off-screen, and the pair — lead-in and link — is what names the frame.
+const TOUR_CONTEXT_ABOVE: f32 = 48.0;
+
 /// Fraction of available width given to the source column in the
 /// Flatten → SourceMap split view.
 const SOURCE_MAP_SPLIT_FRACTION: f32 = 0.45;
@@ -1224,7 +1234,7 @@ impl App {
         };
         let mut stops = crate::autoplay::parse_stops(&text);
         for stop in &mut stops {
-            stop.links.retain(|l| parse_hrw_link(l).is_some());
+            stop.links.retain(|l| parse_hrw_link(&l.url).is_some());
         }
         let beats = crate::autoplay::schedule(&stops, self.tour.autoplay_total, |l| {
             // An external hop leaves HRW, so it needs longer on screen: the viewer
@@ -5196,10 +5206,18 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // reader who scrolled somewhere themselves.
                 let mut area = egui::ScrollArea::vertical().id_salt("tour");
                 if self.tour.autoplay.is_running()
-                    && let Some(range) = self.tour.tour_scroll_range
+                    && let Some((content_h, max_scroll)) = self.tour.tour_scroll_metrics
                 {
-                    area = area
-                        .vertical_scroll_offset(self.tour.autoplay.scroll_fraction() * range);
+                    // The fraction is a place in the *document*, so it multiplies the
+                    // content height — not the scroll range, which is the content
+                    // minus one viewport and would land everything short.
+                    let link_y = self.tour.autoplay.scroll_fraction() * content_h;
+                    // **Leave a little above the link**, so the line or two that
+                    // introduces it is on screen with it rather than scrolled off.
+                    // Doug asked for exactly this: the link and the text above it
+                    // together are what document the frame.
+                    let target = (link_y - TOUR_CONTEXT_ABOVE).clamp(0.0, max_scroll.max(0.0));
+                    area = area.vertical_scroll_offset(target);
                 }
                 let out = area.show(ui, |ui| {
                     set_markdown_text_sizes(ui);
@@ -5215,8 +5233,10 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // rather than guessed: the content height depends on the rendered
                 // markdown, which depends on the panel width, which the divider can
                 // change mid-run.
-                self.tour.tour_scroll_range =
-                    Some((out.content_size.y - out.inner_rect.height()).max(0.0));
+                self.tour.tour_scroll_metrics = Some((
+                    out.content_size.y,
+                    (out.content_size.y - out.inner_rect.height()).max(0.0),
+                ));
             });
         if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
             self.log_split(msg);

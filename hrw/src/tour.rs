@@ -51,13 +51,18 @@ pub(crate) struct TourState {
     pub(crate) autoplay: crate::autoplay::Autoplay,
     /// Requested run length, from [`crate::autoplay::TOTAL_CHOICES`].
     pub(crate) autoplay_total: std::time::Duration,
-    /// How far the tour text can scroll, measured on the last frame.
+    /// `(content height, maximum scroll offset)` of the tour text, measured on the
+    /// last frame.
     ///
-    /// Kept so a running walk can scroll the prose in step with itself. Measured
-    /// rather than computed because the content height depends on the rendered
-    /// markdown, which depends on the panel width — and the divider can change
-    /// that mid-run.
-    pub(crate) tour_scroll_range: Option<f32>,
+    /// Both are needed and they are not interchangeable: a beat's position is a
+    /// fraction of the **content**, while the offset it produces must be clamped to
+    /// the **scroll range** (content minus one viewport). Multiplying by the range,
+    /// as the first version did, lands every beat short by a viewport's worth.
+    ///
+    /// Measured rather than computed because the content height depends on the
+    /// rendered markdown, which depends on the panel width — and the divider can
+    /// change that mid-run.
+    pub(crate) tour_scroll_metrics: Option<(f32, f32)>,
 }
 
 impl Default for TourState {
@@ -72,7 +77,7 @@ impl Default for TourState {
             polled_at: None,
             autoplay: crate::autoplay::Autoplay::default(),
             autoplay_total: crate::autoplay::DEFAULT_TOTAL,
-            tour_scroll_range: None,
+            tour_scroll_metrics: None,
         }
     }
 }
