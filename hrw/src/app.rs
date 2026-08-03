@@ -362,6 +362,14 @@ const SPECIMEN_LIST_HEIGHT_FRACTION: f32 = 1.0 / 3.0;
 /// off-screen, and the pair — lead-in and link — is what names the frame.
 const TOUR_CONTEXT_ABOVE: f32 = 48.0;
 
+/// Height of the autoplay progress bar, and the clear space above and below it.
+///
+/// The bar draws its percentage *inside* itself, so it has to be tall enough for a
+/// line of text rather than tall enough for a rule. At 6px with no surrounding space
+/// it was clipped between the transport row and the stop caption.
+const TOUR_PROGRESS_HEIGHT: f32 = 18.0;
+const TOUR_PROGRESS_MARGIN: f32 = 6.0;
+
 /// Fraction of available width given to the source column in the
 /// Flatten → SourceMap split view.
 const SOURCE_MAP_SPLIT_FRACTION: f32 = 0.45;
@@ -1249,8 +1257,31 @@ impl App {
             self.notify("this tour has no stops to play");
             return;
         }
+        // Remember where we started, so the run can put it back. A stop may
+        // legitimately leave Tour mode — `hrw://source/<line>` must, since the
+        // source only renders in Specimen mode — and `matching.md` ends Act 3 with
+        // exactly that, so the walk used to finish with the tour off screen.
+        self.tour.mode_before_autoplay = Some(self.ui_mode);
         if let Some(first) = self.tour.autoplay.start(beats) {
             self.dispatch_beat(first);
+        }
+    }
+
+    /// End a run and restore what it borrowed.
+    ///
+    /// **A walk is a round trip.** Called both when the last beat elapses and when
+    /// Stop is pressed, because a viewer who stops halfway is no more interested in
+    /// being left in Specimen mode than one who watches to the end.
+    ///
+    /// Only the *mode* is restored, not the stage or the specimen: those are the
+    /// result of the walk and worth keeping on screen. It is the **frame** the tour
+    /// was being read in that has to come back.
+    fn restore_mode_after_autoplay(&mut self) {
+        if let Some(mode) = self.tour.mode_before_autoplay.take()
+            && self.ui_mode != mode
+        {
+            self.ui_mode = mode;
+            self.split.request_reset(MODE_SWITCH_RESET);
         }
     }
 
@@ -1273,6 +1304,12 @@ impl App {
         let dt = std::time::Duration::from_secs_f32(ctx.input(|i| i.stable_dt).min(0.25));
         if let Some(next) = self.tour.autoplay.tick(dt, self.compiling) {
             self.dispatch_beat(next);
+        }
+        // The last beat has elapsed: put the mode back before the reader notices it
+        // moved. A stop that switched to Specimen mode (`hrw://source/<line>`) would
+        // otherwise leave the walk ending with no tour on screen.
+        if self.tour.autoplay.phase() == crate::autoplay::Phase::Finished {
+            self.restore_mode_after_autoplay();
         }
         // A timed run must keep painting even when nothing else asks it to.
         ctx.request_repaint();
@@ -5331,6 +5368,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                         .clicked()
                     {
                         self.tour.autoplay.stop();
+                        self.restore_mode_after_autoplay();
                     }
                 }
                 Phase::Idle | Phase::Finished => {
@@ -5382,11 +5420,18 @@ egui::Panel::top("bar").show(ui, |ui| {
         // A caption naming the stop, because a recording is watched by people who
         // cannot see the cursor and have no idea which part of the tour they are in.
         let (beat, total) = self.tour.autoplay.progress();
+        // **Margin above and below.** At 6px with no spacing the bar was clipped by
+        // its neighbours and its percentage was only half legible — Doug, 2026-08-03:
+        // *"the progress bar is not entirely visible because not enough vertical
+        // space is being provided"*. The bar carries the percentage text, so it needs
+        // room for a line of text, not for a rule.
+        ui.add_space(TOUR_PROGRESS_MARGIN);
         ui.add(
             egui::ProgressBar::new(self.tour.autoplay.fraction())
-                .desired_height(6.0)
+                .desired_height(TOUR_PROGRESS_HEIGHT)
                 .show_percentage(),
         );
+        ui.add_space(TOUR_PROGRESS_MARGIN);
         if let Some(caption) = self
             .tour
             .autoplay
@@ -9667,6 +9712,67 @@ mod tests {
         // which under 1-based numbering names no frame at all.
         assert_eq!(frame_link("Structural", "MatchingAnim", 0), "hrw://stage/Structural/MatchingAnim/frame/1");
         assert!(parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/0").is_none());
+    }
+
+    /// **A self-running walk puts the mode back when it ends.**
+    ///
+    /// Doug, 2026-08-03: *"at the completion of the tour, the mode is being switched
+    /// from tour mode to specimen mode."*
+    ///
+    /// The stop that does it is not wrong. `hrw://source/<line>` *must* switch to
+    /// Specimen mode, because that is the only place the source renders, and a reader
+    /// clicking it wants to be taken there. But `matching.md` ends Act 3 with one, so
+    /// an unattended run finished with the tour nowhere on screen — and the last two
+    /// stops played to nobody.
+    ///
+    /// **A walk is a round trip.** Only the mode is restored: the stage and the
+    /// specimen are the *result* of the walk and worth keeping.
+    #[test]
+    fn a_finished_walk_returns_to_the_mode_it_started_in() {
+        let mut app = App::test_default();
+        app.ui_mode = UiMode::Tour;
+        app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
+        app.tour.mode_before_autoplay = Some(UiMode::Tour);
+
+        app.dispatch_hrw_link(HrwLink::ShowSource(Some(9)));
+        assert_eq!(
+            app.ui_mode,
+            UiMode::Specimen,
+            "precondition: a source stop legitimately leaves Tour mode",
+        );
+
+        app.restore_mode_after_autoplay();
+        assert_eq!(app.ui_mode, UiMode::Tour, "the walk must put the mode back");
+        assert!(app.tour.mode_before_autoplay.is_none(), "and consume the record");
+
+        // Idempotent: a second call (Stop after Finished) must not fight the user.
+        app.ui_mode = UiMode::Specimen;
+        app.restore_mode_after_autoplay();
+        assert_eq!(
+            app.ui_mode,
+            UiMode::Specimen,
+            "with nothing recorded there is nothing to restore, and a stray call must \
+             not drag the user out of the mode they chose",
+        );
+    }
+
+    /// **Non-vacuity for the test above**: the scenario is real, not hypothetical.
+    ///
+    /// A tour with no mode-switching stop would make the round trip untestable and
+    /// the fix unnecessary. `matching.md` has one, near its end, which is why the bug
+    /// showed up as "at the completion of the tour".
+    #[test]
+    fn a_fixture_tour_really_does_contain_a_mode_switching_stop() {
+        let found = bridge::fixture_tours().into_iter().any(|p| {
+            std::fs::read_to_string(&p)
+                .map(|t| t.contains("hrw://source/"))
+                .unwrap_or(false)
+        });
+        assert!(
+            found,
+            "no fixture tour contains a `hrw://source/` stop, so nothing exercises \
+             the mode round trip — either a tour lost one or this guard is stale",
+        );
     }
 
     /// **Every stage can be pointed into, including the five with no sub-views.**

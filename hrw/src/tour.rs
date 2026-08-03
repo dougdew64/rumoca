@@ -66,6 +66,19 @@ pub(crate) struct TourState {
     pub(crate) tour_measured_beat: Option<usize>,
     /// Maximum scroll offset of the tour text, measured last frame — the clamp.
     pub(crate) tour_max_scroll: Option<f32>,
+
+    /// **The mode a self-running walk started in**, to return to when it ends.
+    ///
+    /// A tour stop may legitimately leave Tour mode: `hrw://source/<line>` switches
+    /// to Specimen mode because that is the only place the source renders, and a
+    /// reader clicking it wants to be taken there. `matching.md` ends Act 3 with one,
+    /// so a Play run finished in Specimen mode with the tour nowhere on screen —
+    /// Doug, 2026-08-03: *"at the completion of the tour, the mode is being switched
+    /// from tour mode to specimen mode."*
+    ///
+    /// **The stop is not wrong; the run just has to clean up after itself.** A walk
+    /// is a round trip, so it restores what it borrowed, on finishing *or* on Stop.
+    pub(crate) mode_before_autoplay: Option<crate::app::UiMode>,
 }
 
 impl Default for TourState {
@@ -84,6 +97,7 @@ impl Default for TourState {
             tour_prev_link_y: None,
             tour_measured_beat: None,
             tour_max_scroll: None,
+            mode_before_autoplay: None,
         }
     }
 }

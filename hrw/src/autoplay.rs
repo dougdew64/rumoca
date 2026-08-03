@@ -77,7 +77,24 @@ const MIN_BEAT: Duration = Duration::from_millis(900);
 /// for; the text tracks the *beat*, which changes in steps.
 const SCROLL_TRAVEL: Duration = Duration::from_millis(450);
 
-/// Beats that open another application get this much extra weight.
+/// **A beat that dispatches a link rests this much longer than plain prose.**
+///
+/// Doug, 2026-08-03: *"let's double the time that scrolling is paused at links"* —
+/// and earlier, drawing the same distinction: *"while that is ok while advancing
+/// through prose, my request is that when a link for a frame is encountered …"*.
+///
+/// A prose beat is read at reading speed. A link beat asks the viewer to look at the
+/// right-hand side, take in an algorithm step, and come back to the text — which is
+/// a different and slower job.
+///
+/// **The run length is fixed, so this takes time from prose-only stops rather than
+/// adding it.** That is the intended trade: the stops with links are where the tour
+/// is actually doing something. For absolutely longer pauses rather than relatively
+/// longer ones, pick a longer total.
+const LINK_WEIGHT_MULTIPLIER: f64 = 2.0;
+
+/// Beats that open another application get this much extra weight, on top of
+/// [`LINK_WEIGHT_MULTIPLIER`].
 ///
 /// Wolfram Desktop and System Modeler come to the front and need a moment to be
 /// *seen* — and, unlike an HRW beat, the viewer has to reorient to a different
@@ -259,8 +276,10 @@ pub fn schedule(
             continue;
         }
         for link in &stop.links {
-            let w =
-                if is_external(&link.url) { per * EXTERNAL_WEIGHT_MULTIPLIER } else { per };
+            let mut w = per * LINK_WEIGHT_MULTIPLIER;
+            if is_external(&link.url) {
+                w *= EXTERNAL_WEIGHT_MULTIPLIER;
+            }
             raw.push((i, Some(link.url.clone()), w, link.byte_offset));
         }
     }
