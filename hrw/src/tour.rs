@@ -124,6 +124,29 @@ impl TourState {
         self.cached.as_ref().map(|(t, _)| t.as_str())
     }
 
+    /// **Forget where the text was scrolled to.**
+    ///
+    /// These are pixel positions measured in *one particular document at one
+    /// particular beat*, so they mean nothing after a tour changes or a run starts
+    /// over — and they are worse than meaningless, because the scroll interpolates
+    /// **from** the stale value on the first frame of a new run.
+    ///
+    /// Doug, 2026-08-03: stop mid-tour, switch tours, switch back, press Play, and
+    /// *"the matching tour rescrolls very visibly from the stopped position back up
+    /// to the top before the tour begins playing."* The pane was correctly at the top
+    /// already; the *bookkeeping* still held the stopped position, so the first frame
+    /// aimed there and then travelled back.
+    ///
+    /// With these cleared, both ends of the interpolation are zero on the first beat,
+    /// so a tour that is already at the top does not move at all — which is the
+    /// behaviour asked for. `tour_max_scroll` is deliberately **kept**: it describes
+    /// the pane, not the position, and re-measures on the next frame anyway.
+    pub(crate) fn reset_scroll(&mut self) {
+        self.tour_link_y = None;
+        self.tour_prev_link_y = None;
+        self.tour_measured_beat = None;
+    }
+
     /// Re-read the list and the selected tour, at most once per
     /// [`TOUR_POLL_INTERVAL`]. Returns true when a tour was newly selected.
     pub(crate) fn poll(&mut self) -> bool {

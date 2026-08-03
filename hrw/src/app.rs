@@ -1262,6 +1262,17 @@ impl App {
         // source only renders in Specimen mode — and `matching.md` ends Act 3 with
         // exactly that, so the walk used to finish with the tour off screen.
         self.tour.mode_before_autoplay = Some(self.ui_mode);
+
+        // **Start from where the pane is, not from where the last run stopped.**
+        //
+        // These positions are measured per document per beat, and a stopped run
+        // leaves its last one behind. The first frame of a new run interpolates
+        // *from* that value, so pressing Play scrolled to the old spot and then
+        // travelled back — visibly, over the full travel window, before the tour
+        // had begun. Clearing them makes both ends of the first interpolation zero,
+        // so a tour already at the top simply does not move.
+        self.tour.reset_scroll();
+
         if let Some(first) = self.tour.autoplay.start(beats) {
             self.dispatch_beat(first);
         }
@@ -4122,6 +4133,10 @@ impl App {
         self.stage = StageKind::Parse;
         self.viewing_log = false;
         self.compiling = false;
+        // Scroll positions are measured in the *previous* document and mean nothing
+        // in this one. Keeping them let a new run interpolate from wherever the last
+        // one was stopped.
+        self.tour.reset_scroll();
     }
 
     /// What tour mode shows when Claude has not written a tour.
@@ -9775,6 +9790,64 @@ mod tests {
             "with nothing recorded there is nothing to restore, and a stray call must \
              not drag the user out of the mode they chose",
         );
+    }
+
+    /// **A new run does not scroll back from where the last one stopped.**
+    ///
+    /// Doug's sequence, 2026-08-03: watch `matching` to the middle, Stop, select
+    /// `frame-seeking`, select `matching` again, press Play — and *"the matching tour
+    /// rescrolls very visibly from the stopped position back up to the top before the
+    /// tour begins playing."*
+    ///
+    /// The pane itself was correct: re-selecting a tour puts it at the top. **The
+    /// bookkeeping was not.** `tour_link_y` and `tour_prev_link_y` are pixel positions
+    /// measured in one document at one beat, and nothing cleared them — so the first
+    /// frame of the new run interpolated *from* the stopped position and travelled
+    /// back over the full window.
+    ///
+    /// Cleared at both boundaries: selecting a tour, and starting a run. Either alone
+    /// would have fixed Doug's sequence; both are needed because a run can also be
+    /// restarted on the *same* tour without a selection change.
+    #[test]
+    fn starting_a_walk_forgets_where_the_last_one_stopped() {
+        let mut app = App::test_default();
+
+        // Stand in for a run stopped half way down a tour.
+        app.tour.tour_link_y = Some(4_000.0);
+        app.tour.tour_prev_link_y = Some(3_800.0);
+        app.tour.tour_measured_beat = Some(12);
+
+        // Boundary 1: choosing a tour. Positions from another document are not
+        // merely stale, they are measured against a different length of text.
+        app.reset_for_new_tour();
+        assert_eq!(app.tour.tour_link_y, None, "a new tour forgets the old positions");
+        assert_eq!(app.tour.tour_prev_link_y, None);
+        assert_eq!(app.tour.tour_measured_beat, None);
+
+        // Boundary 2: pressing Play, which also covers replaying the *same* tour
+        // with no selection change in between — the case boundary 1 cannot see.
+        //
+        // The staging order matters. `test_select_fixture_tour` routes through
+        // `select_tour`, which itself resets — so setting the stale values before it
+        // would let this assertion pass on boundary 1's work and prove nothing about
+        // Play at all.
+        assert!(
+            app.test_select_fixture_tour("matching"),
+            "the fixture must be readable, or Play below does nothing",
+        );
+        app.tour.tour_link_y = Some(4_000.0);
+        app.tour.tour_prev_link_y = Some(3_800.0);
+        app.test_start_autoplay();
+        assert_eq!(
+            app.tour.tour_link_y, None,
+            "pressing Play must start from the pane's own position; interpolating \
+             from the last run's makes the text scroll backwards before it begins",
+        );
+        assert_eq!(app.tour.tour_prev_link_y, None);
+
+        // Non-vacuity: the run really did start, so this is not passing because
+        // nothing happened.
+        assert_eq!(app.test_autoplay_phase(), crate::autoplay::Phase::Playing);
     }
 
     /// **Non-vacuity for the test above**: the scenario is real, not hypothetical.
