@@ -959,6 +959,44 @@ fn the_split_opens_at_the_default_fraction() {
 // rather than replaced with a test of something adjacent, which would assert a
 // fact nobody doubted and imply cover that does not exist.
 
+/// The split **survives the window changing size**, which is the real bug.
+///
+/// Four theories failed before the diagnostics named it (2026-08-03):
+///
+/// ```text
+/// split: 0.400 of window (panel 2000px, available 5000px)
+/// split: 0.750 of window (panel 1290px, available 1720px)
+/// ```
+///
+/// **The first frame reports a 5000 px window that does not exist.** 40 % of it
+/// is 2000 px; egui stores that as an *absolute* width; on the real 1720 px
+/// window 2000 px exceeds the maximum and clamps to 75 % — exactly what Doug saw.
+///
+/// **No headless test could have caught it, because the harness never resizes.**
+/// This one does, which is the smallest possible version of the third state
+/// location: the OS window. Everything else about the harness is unchanged.
+#[test]
+fn the_split_rescales_when_the_window_resizes() {
+    let mut h = Harness::builder()
+        .with_size(eframe::egui::Vec2::new(5000.0, 1200.0))
+        .build_ui_state(|ui, app: &mut App| app.frame_ui(ui), App::test_default());
+    h.run_steps(2);
+    let wide = h.state().test_split_fraction().expect("drew at the bogus size");
+    assert!((wide - 0.4).abs() < 0.05, "precondition: 40% of the first size, got {wide}");
+
+    // The window turns out to be far smaller — as it is on the first real frame.
+    h.set_size(eframe::egui::Vec2::new(1720.0, 1200.0));
+    h.run_steps(3);
+
+    let after = h.state().test_split_fraction().expect("drew at the real size");
+    assert!(
+        (after - 0.4).abs() < 0.05,
+        "the split must stay 40% of whatever the window is; it drew {after}. A stored \
+         PIXEL width from a larger window clamps to the maximum here, which is the 75% \
+         Doug saw at startup",
+    );
+}
+
 /// A width restored from a previous session **does not survive startup**.
 ///
 /// This is the gap Doug named: *"UI state lives in three places — the app's

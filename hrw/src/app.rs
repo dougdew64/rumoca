@@ -181,6 +181,11 @@ struct SplitState {
     /// The left panel's share of the window as of the last frame that drew it.
     /// `None` until something has been drawn.
     fraction: Option<f32>,
+    /// The window width the stored panel width was computed for.
+    ///
+    /// A change here means the *window* resized, not that the reader dragged —
+    /// and a stored pixel width is meaningless across that.
+    last_avail: Option<f32>,
     /// How many more split changes to report to the log view.
     ///
     /// Startup is the interesting window and it is short; after that a resize is
@@ -216,7 +221,7 @@ struct SplitState {
 
 impl Default for SplitState {
     fn default() -> Self {
-        Self { fraction: None, reports_left: 6, reset_until: None }
+        Self { fraction: None, last_avail: None, reports_left: 6, reset_until: None }
     }
 }
 
@@ -226,19 +231,53 @@ impl SplitState {
     ///
     /// Takes `avail` rather than reading it, because the caller is already
     /// inside the `Ui` whose width matters.
-    fn configure(&self, panel: egui::Panel, avail: f32) -> egui::Panel {
-        let default = avail * LEFT_PANEL_WIDTH_FRACTION;
-        let panel = panel
-            .resizable(true)
-            .default_size(default)
-            .size_range(avail * MIN_LEFT_FRACTION..=avail * MAX_LEFT_FRACTION);
-        if self.resetting() {
-            // Collapses the range to a point for this frame only, which is what
-            // makes egui forget a dragged width.
-            panel.exact_size(default)
-        } else {
-            panel
+    fn configure(&mut self, ctx: &egui::Context, panel: egui::Panel, avail: f32) -> egui::Panel {
+        let want = self.fraction.unwrap_or(LEFT_PANEL_WIDTH_FRACTION);
+
+        // **Rescale whenever the window changes size.**
+        //
+        // This is the fix for the bug four other theories missed, and the
+        // diagnostics named it exactly (2026-08-03):
+        //
+        // ```text
+        // split: 0.400 of window (panel 2000px, available 5000px)
+        // split: 0.750 of window (panel 1290px, available 1720px)
+        // ```
+        //
+        // **The first frame reports a 5000 px window that does not exist.** 40 %
+        // of it is 2000 px, egui stores that as an *absolute* width, and on the
+        // real 1720 px window 2000 px exceeds the maximum — so it clamps to
+        // 75 %, which is exactly what Doug saw.
+        //
+        // egui remembers a width; HRW means a *fraction*. Rewriting the stored
+        // width whenever `avail` moves makes the fraction authoritative, which
+        // also gives window resizing the behaviour a reader expects: the split
+        // keeps its proportions instead of holding a pixel count.
+        //
+        // A drag at a stable width is untouched — `avail` has not changed, so
+        // nothing is rewritten, and `observe` reads the new fraction back.
+        let resized = self.last_avail.is_none_or(|last| (last - avail).abs() > 1.0);
+        if resized || self.resetting() {
+            let id = egui::Id::new(LEFT_PANEL_ID);
+            let width = (want * avail).clamp(avail * MIN_LEFT_FRACTION, avail * MAX_LEFT_FRACTION);
+            let rect = egui::containers::panel::PanelState::load(ctx, id)
+                .map_or_else(
+                    || egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, avail)),
+                    |s| {
+                        let r = s.outer_rect;
+                        egui::Rect::from_min_size(r.min, egui::vec2(width, r.height()))
+                    },
+                );
+            ctx.data_mut(|d| {
+                d.insert_persisted(id, egui::containers::panel::PanelState { outer_rect: rect });
+            });
         }
+        self.last_avail = Some(avail);
+
+        panel
+            .resizable(true)
+            .default_size(want * avail)
+            .size_range(avail * MIN_LEFT_FRACTION..=avail * MAX_LEFT_FRACTION)
     }
 
     /// Record what was actually drawn, so the split is a number a test can read.
@@ -4974,9 +5013,10 @@ egui::Panel::top("bar").show(ui, |ui| {
         register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
         let avail = ui.available_width();
         let mut switch_to: Option<TourSource> = None;
+        let ctx = ui.ctx().clone();
         let shown = self
             .split
-            .configure(egui::Panel::left(LEFT_PANEL_ID), avail)
+            .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
                 // --- Top third: the tour list, laid out like the specimen list ---
                 //
@@ -5863,9 +5903,10 @@ impl App {
         }
         if self.ui_mode == UiMode::Specimen {
         let avail = ui.available_width();
+        let ctx = ui.ctx().clone();
         let shown = self
             .split
-            .configure(egui::Panel::left(LEFT_PANEL_ID), avail)
+            .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
                 let panel_height = ui.available_height();
                 let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
