@@ -934,6 +934,7 @@ fn the_stage_tabs_are_visible_before_a_specimen_is_chosen() {
 /// `ideas.md` #59. The fraction is a number the app keeps precisely so this is
 /// checkable — H6's rule, applied before the feature had a defect rather than
 /// after.
+
 #[test]
 fn the_split_opens_at_the_default_fraction() {
     let mut app = App::test_default();
@@ -944,6 +945,34 @@ fn the_split_opens_at_the_default_fraction() {
     assert!(
         (f - 0.4).abs() < 0.05,
         "the left panel should open at 40% of the window; drew {f}",
+    );
+}
+
+/// **Tour mode opens at the same fraction as Specimen mode.**
+///
+/// Doug, 2026-08-02: *"The LHS width for specimen mode is fixed. But, not for
+/// tour mode."*
+///
+/// The two panels used different egui ids, and egui stores a resizable panel's
+/// width **per id** — so they had two independent widths, and the same code
+/// produced different results depending on which mode a session started in.
+///
+/// **This test did not catch it and could not have**: the divergence lives in
+/// *stored* width, which a headless run never has. What it does is pin the two
+/// modes together from now on, so a future change cannot separate them silently.
+#[test]
+fn both_modes_open_at_the_same_split() {
+    let tour = harness(App::test_default());
+    let tour_f = tour.state().test_split_fraction().expect("tour panel drew");
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    let specimen = harness(app);
+    let specimen_f = specimen.state().test_split_fraction().expect("specimen panel drew");
+
+    assert!(
+        (tour_f - specimen_f).abs() < 0.001,
+        "the two modes must open identically; tour drew {tour_f}, specimen {specimen_f}",
     );
 }
 

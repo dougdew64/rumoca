@@ -113,6 +113,24 @@ const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 /// zero hides a panel *with no handle left to drag back* — the reader would have
 /// to know the layout resets on a mode switch to recover, which is exactly the
 /// kind of thing nobody knows at the moment they need it.
+/// **One id for both left panels**, so there is one stored width and one
+/// behaviour.
+///
+/// egui remembers a resizable panel's width per id, so `"tour_panel"` and
+/// `"specimen_panel"` had **two independent widths** — the same code producing
+/// different results depending on which mode a session happened to start in, and
+/// on what had been dragged in each. Doug, 2026-08-02: *"The LHS width for
+/// specimen mode is fixed. But, not for tour mode. Make tour mode the same as
+/// specimen mode."*
+///
+/// **Not reproduced headlessly.** Both modes measure 0.400 in the harness, with
+/// an empty tour, a short one, and one wide enough to force a scrollbar. The two
+/// ids were the only divergence left, and a stored width is exactly the kind of
+/// state a headless run never has — so this removes the difference rather than
+/// demonstrating it. If the symptom survives, the cause is elsewhere and this
+/// note is the record of what was already ruled out.
+const LEFT_PANEL_ID: &str = "left_panel";
+
 const MIN_LEFT_FRACTION: f32 = 0.15;
 const MAX_LEFT_FRACTION: f32 = 0.75;
 
@@ -4842,7 +4860,7 @@ egui::Panel::top("bar").show(ui, |ui| {
         let mut switch_to: Option<TourSource> = None;
         let shown = self
             .split
-            .configure(egui::Panel::left("tour_panel"), avail)
+            .configure(egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
                 // --- Top third: the tour list, laid out like the specimen list ---
                 //
@@ -5729,7 +5747,7 @@ impl App {
         let avail = ui.available_width();
         let shown = self
             .split
-            .configure(egui::Panel::left("specimen_panel"), avail)
+            .configure(egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
                 let panel_height = ui.available_height();
                 let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
@@ -7721,6 +7739,7 @@ mod tests {
              own the stages, the log or the context bar that opening a specimen resets",
         );
     }
+
 
     /// Every animation pane **says when it has nothing to show**.
     ///
