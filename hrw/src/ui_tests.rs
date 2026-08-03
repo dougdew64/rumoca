@@ -948,6 +948,39 @@ fn the_split_opens_at_the_default_fraction() {
     );
 }
 
+/// The startup reset **survives more than one frame**.
+///
+/// This is the distinction that mattered, and the one nothing was checking.
+/// Doug: *"HRW starts in tour mode. And in tour mode, the LHS has too much
+/// width. If I switch to specimen mode, then the LHS has the desired 40%."*
+///
+/// A one-frame reset was enough for a **mode switch** and not for **startup** —
+/// and specimen mode looked correct only because it is *only ever reached by a
+/// mode switch*, so it was always being reset. The asymmetry was the clue:
+/// nothing was wrong with either mode, only with the first frame.
+///
+/// Something lands after frame one — the window maximizes shortly after
+/// creation, and eframe restores persisted egui memory around the same point.
+/// **The test does not care which**, and neither does the fix: it asserts the
+/// reset is still in force several frames in, which is what outlasts either.
+#[test]
+fn the_startup_reset_outlasts_the_first_frame() {
+    let mut h = harness(App::test_default()); // the harness has already run frames
+    assert!(
+        h.state().test_split_reset_pending(),
+        "after two frames the startup reset must still be in force; a one-frame reset is \
+         exactly what left tour mode wide while specimen mode looked fine",
+    );
+
+    // ...and it must expire, or the divider could never be dragged.
+    std::thread::sleep(std::time::Duration::from_millis(350));
+    h.run_steps(1);
+    assert!(
+        !h.state().test_split_reset_pending(),
+        "the reset must expire, or dragging is impossible forever",
+    );
+}
+
 /// **Tour mode opens at the same fraction as Specimen mode.**
 ///
 /// Doug, 2026-08-02: *"The LHS width for specimen mode is fixed. But, not for
@@ -1017,9 +1050,15 @@ fn switching_modes_queues_a_split_reset() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     let mut h = harness(app);
+    // **Wait the startup hold out first.** It lasts 300 ms by design, so without
+    // this the assertion below would pass on the startup reset rather than on the
+    // mode switch -- true for the wrong reason, which is the vacuity this suite
+    // keeps catching.
+    std::thread::sleep(std::time::Duration::from_millis(350));
+    h.run_steps(1);
     assert!(
         !h.state().test_split_reset_pending(),
-        "precondition: nothing queued once a frame has drawn",
+        "precondition: the startup hold has expired, so what follows is the mode switch",
     );
 
     h.get_by_label("View").click();

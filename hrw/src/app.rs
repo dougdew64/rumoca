@@ -131,6 +131,25 @@ const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 /// note is the record of what was already ruled out.
 const LEFT_PANEL_ID: &str = "left_panel";
 
+/// How long the opening width is held at the default.
+///
+/// **A duration, not a frame count, and the distinction is not pedantic.** egui
+/// runs *multiple layout passes per frame*, so "frames" is not a unit the app can
+/// count — a budget of eight was spent before the harness had finished
+/// starting. What the reset needs to outlast is a *moment in wall-clock time*:
+/// the window is created unmaximized and maximizes shortly after, and eframe
+/// restores persisted egui memory around the same point.
+///
+/// A third of a second covers both, is imperceptible, and does not depend on
+/// knowing which one it was.
+const STARTUP_RESET: std::time::Duration = std::time::Duration::from_millis(300);
+
+/// How long a mode switch holds the default.
+///
+/// One repaint is enough here — nothing is still settling — but a short
+/// window costs nothing and keeps one mechanism rather than two.
+const MODE_SWITCH_RESET: std::time::Duration = std::time::Duration::from_millis(50);
+
 const MIN_LEFT_FRACTION: f32 = 0.15;
 const MAX_LEFT_FRACTION: f32 = 0.75;
 
@@ -154,8 +173,25 @@ struct SplitState {
     /// The left panel's share of the window as of the last frame that drew it.
     /// `None` until something has been drawn.
     fraction: Option<f32>,
-    /// Force both panels back to [`LEFT_PANEL_WIDTH_FRACTION`] on the next paint.
-    reset_pending: bool,
+    /// Hold the default until this instant. `None` once settled.
+    ///
+    /// **A countdown, not a flag, and the difference is the whole bug.** Doug,
+    /// 2026-08-02: *"HRW starts in tour mode. And in tour mode, the LHS has too
+    /// much width. If I switch to specimen mode, then the LHS has the desired
+    /// 40%. If I switch back to tour mode, then the LHS then has the same 40%."*
+    ///
+    /// A one-frame reset worked for **mode switches** and not for **startup** —
+    /// and specimen mode looked correct only because it is *only ever reached by
+    /// a mode switch*, so it was always being reset. The asymmetry was the clue:
+    /// nothing is wrong with either mode, only with the first frame.
+    ///
+    /// Something overwrites the width after frame one. The window is created
+    /// unmaximized and maximizes shortly after, and eframe restores persisted
+    /// egui memory around the same point — either would land after a single
+    /// forced frame and leave the panel wherever it was left. Rather than guess
+    /// which, **outlast both**: a handful of frames is imperceptible and does not
+    /// depend on knowing the cause.
+    reset_until: Option<std::time::Instant>,
 }
 
 impl Default for SplitState {
@@ -174,7 +210,7 @@ impl Default for SplitState {
             // means *use this when nothing is remembered*. Requesting the reset
             // up front makes the opening width a property of HRW rather than of
             // whatever the reader last did, which is what Doug asked for.
-            reset_pending: true,
+            reset_until: Some(std::time::Instant::now() + STARTUP_RESET),
         }
     }
 }
@@ -190,7 +226,7 @@ impl SplitState {
             .resizable(true)
             .default_size(default)
             .size_range(avail * MIN_LEFT_FRACTION..=avail * MAX_LEFT_FRACTION);
-        if self.reset_pending {
+        if self.resetting() {
             // Collapses the range to a point for this frame only, which is what
             // makes egui forget a dragged width.
             panel.exact_size(default)
@@ -203,6 +239,25 @@ impl SplitState {
     fn observe(&mut self, width: f32, avail: f32) {
         if avail > 0.0 {
             self.fraction = Some(width / avail);
+        }
+    }
+
+    /// Whether the default is currently being held.
+    fn resetting(&self) -> bool {
+        self.reset_until.is_some_and(|t| std::time::Instant::now() < t)
+    }
+
+    /// Hold the default for `window` from now.
+    fn request_reset(&mut self, window: std::time::Duration) {
+        self.reset_until = Some(std::time::Instant::now() + window);
+    }
+
+    /// Called once per frame, after both panels have had their chance at the
+    /// reset. Clearing it inside either would leave the other still holding a
+    /// dragged width on the frame a mode switch happens.
+    fn end_frame(&mut self) {
+        if !self.resetting() {
+            self.reset_until = None;
         }
     }
 }
@@ -2101,7 +2156,7 @@ impl App {
                 // means setting both — a tour should not have to tell Doug which mode
                 // to be in.
                 self.ui_mode = UiMode::Specimen;
-                self.split.reset_pending = true;
+                self.split.request_reset(MODE_SWITCH_RESET);
                 self.specimen_detail = SpecimenDetail::Source;
                 self.viewing_log = false;
                 self.source.scroll_target = line;
@@ -2845,7 +2900,7 @@ impl App {
             // already navigates to the incidence matrix.
             if self.tracked_identifier.is_some() {
                 self.ui_mode = UiMode::Specimen;
-                self.split.reset_pending = true;
+                self.split.request_reset(MODE_SWITCH_RESET);
                 self.specimen_detail = SpecimenDetail::Source;
             }
         }
@@ -3900,17 +3955,17 @@ egui::Panel::top("bar").show(ui, |ui| {
         ui.menu_button("View", |ui| {
             if ui.selectable_label(self.ui_mode == UiMode::Tour, "Tour").clicked() {
                 self.ui_mode = UiMode::Tour;
-                self.split.reset_pending = true;
+                self.split.request_reset(MODE_SWITCH_RESET);
                 ui.close();
             }
             if ui.selectable_label(self.ui_mode == UiMode::Specimen, "Specimen").clicked() {
                 self.ui_mode = UiMode::Specimen;
-                self.split.reset_pending = true;
+                self.split.request_reset(MODE_SWITCH_RESET);
                 ui.close();
             }
             if ui.selectable_label(self.ui_mode == UiMode::Debug, "Debug").clicked() {
                 self.ui_mode = UiMode::Debug;
-                self.split.reset_pending = true;
+                self.split.request_reset(MODE_SWITCH_RESET);
                 ui.close();
             }
         });
@@ -5849,7 +5904,7 @@ impl App {
         // **The reset is consumed here, after both panels have had their chance
         // at it.** Clearing it inside either one would leave the other still
         // holding a dragged width on the frame a mode switch happens.
-        self.split.reset_pending = false;
+        self.split.end_frame();
 
         // ---- Dispatch hrw:// link actions ----
         if let Some(action) = hrw_link_action {
@@ -5919,7 +5974,7 @@ impl App {
             self.set_tracked_identifier(name);
             if self.tracked_identifier.is_some() {
                 self.ui_mode = UiMode::Specimen;
-                self.split.reset_pending = true;
+                self.split.request_reset(MODE_SWITCH_RESET);
                 self.specimen_detail = SpecimenDetail::Source;
             }
         }
@@ -6616,7 +6671,7 @@ impl App {
 
     /// Whether a reset back to the 40/60 default is queued for the next paint.
     pub(crate) fn test_split_reset_pending(&self) -> bool {
-        self.split.reset_pending
+        self.split.resetting()
     }
 
     pub(crate) fn test_stage(&self) -> StageKind {
