@@ -65,6 +65,13 @@ it. These are longer than a capability tour on purpose.
 | Tour | Teaches |
 |---|---|
 | [`dae-construction.md`](dae-construction.md) | how the flat model becomes states/algebraics/parameters + residuals, why the equation count must equal the unknown count, and what an unbalanced model actually means — with excursions to Wolfram and System Modeler |
+| [`matching.md`](matching.md) | **animation-based** — bipartite matching by augmenting-path search: greedy success, the moment the algorithm backs up and re-homes an earlier assignment, and a system that is square but structurally singular |
+
+**An animation-based tour pauses on algorithm *steps*, not panes.** Its links are
+`hrw://stage/<Stage>/<View>/frame/<n>`, and the frame numbers come from
+`cargo run -p hrw --example frame_index -- <Model>`, which prints the ready-made link under each
+step. **Do not transcribe the frame number by hand** — links are 1-based and the internal step
+list is 0-based, and that tool spent a day telling authors otherwise.
 
 **Why the "keep it narrow" rule below does not bind these.** That rule protects *attention per
 expectation*, because a capability tour spends your surplus attention on finding off-stop bugs

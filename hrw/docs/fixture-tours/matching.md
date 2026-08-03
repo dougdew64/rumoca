@@ -1,0 +1,312 @@
+# Fixture tour — Matching: when greed is not enough
+
+**A curriculum tour**, and the second in the chain. `dae-construction.md` ended with DAE
+construction promising a **square system** and me saying that counting is a *necessary*
+condition, not a sufficient one. This is the phase that consumes the promise — and the third
+act is where square turns out not to be enough.
+
+**This is the first tour built on animations.** Its stops do not point at a pane; they point at
+a **step of an algorithm**, paused. That is the only way to see the thing worth seeing here,
+because what makes matching interesting is not its answer but the moment it **changes its
+mind**.
+
+Every frame number below came from `cargo run -p hrw --example frame_index -- <Model>`, read
+from the committed traces. **Frame numbers in that tool's output are 0-based and the links are
+1-based** — it prints the ready-made link precisely so nobody does that arithmetic by hand,
+after it spent a day telling authors the wrong number.
+
+**The animation shows its step in words**, above the matrix. Every `**Expected:**` line below
+quotes that text, so each is checkable without interpreting a picture.
+
+---
+
+## The problem this phase exists to solve
+
+You have a square system: *n* equations, *n* unknowns. You could hand the whole thing to a
+nonlinear solver and ask it to find all *n* values at once. For a real model that is a terrible
+idea — a 4,000-equation Newton iteration is slow, fragile, and tells you nothing when it fails.
+
+Almost always, you do not have to. Most equations determine **one** unknown given values you
+already have, so the system can be solved in an **order**: this equation gives that variable,
+which lets the next equation give another, and so on. Only the genuinely circular parts need to
+be solved simultaneously, and those parts are usually small.
+
+**Finding that order starts with deciding which equation is responsible for which unknown.**
+That is *matching*: pair each equation with exactly one unknown, using each unknown exactly
+once. It is a **maximum bipartite matching** — equations on one side, unknowns on the other, an
+edge wherever an equation mentions an unknown — and the standard algorithm is an
+augmenting-path search.
+
+Two things make this worth watching rather than reading about.
+
+**First, a greedy pass is not enough**, and the algorithm's recovery is the interesting part.
+**Second, matching does not respect how you wrote your equations** — and Act 2 makes that
+concrete in a way no explanation has.
+
+---
+
+## Act 1 — When greed works
+
+[BouncingBall → Structural → Matching animation](hrw://load/BouncingBall/Structural/MatchingAnim)
+
+`BouncingBall` has two equations and two unknowns:
+
+```modelica
+der(h) = v;      // f_x[0]
+der(v) = -g;     // f_x[1]
+```
+
+The unknowns are `der(h)` and `der(v)` — the derivatives, as always at this point in the chain.
+Eight frames, and no surprises in any of them. That is the point of starting here.
+
+[Frame 1 — start the search](hrw://stage/Structural/MatchingAnim/frame/1)
+
+**Expected:** `Starting augmenting-path search for equation 0: der(h) - v`.
+
+Even the easy case is *called* an augmenting-path search. The algorithm has one procedure and
+runs it every time; the easy case is just the procedure terminating immediately.
+
+[Frame 3 — a free variable](hrw://stage/Structural/MatchingAnim/frame/3)
+
+**Expected:** `Variable 0 (der(h)) is free — augmenting path found for eq 0`.
+
+**"Free" means no equation has claimed it yet.** `f_x[0]` mentions `der(h)`, nobody else holds
+it, so the search ends on its first step. An augmenting path of length one.
+
+[Frame 4 — the assignment](hrw://stage/Structural/MatchingAnim/frame/4)
+
+**Expected:** `Matched: equation 0 (der(h) - v) ↔ variable 0 (der(h))`.
+
+[Frame 8 — and again for the second equation](hrw://stage/Structural/MatchingAnim/frame/8)
+
+**Expected:** `Matched: equation 1 (der(v) - -g) ↔ variable 1 (der(v))`.
+
+Four frames per equation — try, explore, found free, assign — twice, and done. **This is what
+greedy success looks like**: every equation finds an unclaimed unknown on its first look, and
+nothing is ever revisited.
+
+If every model looked like this, matching would be a loop with no cleverness in it. The next
+act is why it is not.
+
+---
+
+## Act 2 — When greed fails, and the algorithm backs up
+
+[ProportionalLoop → Structural → Matching animation](hrw://load/ProportionalLoop/Structural/MatchingAnim)
+
+`ProportionalLoop` is an idealised servo loop with no integrator anywhere — every relation is
+instantaneous, so the feedback closes on itself:
+
+```modelica
+error       = reference - measurement;      // f_x[0]
+command     = controllerGain * error;       // f_x[1]
+measurement = plantGain * command;          // f_x[2]
+```
+
+Three equations, three unknowns (`error`, `command`, `measurement`), and **sixteen frames**
+instead of twelve. The extra four are the whole lesson.
+
+[Frame 4 — the greedy start](hrw://stage/Structural/MatchingAnim/frame/4)
+
+**Expected:** `Matched: equation 0 (error - (reference - measurement)) ↔ variable 0 (error)`.
+
+`f_x[0]` mentions both `error` and `measurement`. It looks at `error` first, finds it free, and
+takes it. **A perfectly reasonable choice that is about to turn out wrong.**
+
+[Frame 6 — and now the collision](hrw://stage/Structural/MatchingAnim/frame/6)
+
+**Expected:** `Equation 1 (command - controllerGain * error) exploring variable 0 (error)`.
+
+`f_x[1]` is `command = controllerGain * error`. It mentions `error` and `command`; it tries
+`error` first, and `error` is taken. **A greedy algorithm is now stuck.** Every option `f_x[1]`
+has is either claimed or not mentioned, and the naive response — give up and declare the system
+singular — would be *wrong*, because a perfect matching does exist.
+
+[**Frame 7 — the moment worth pausing on**](hrw://stage/Structural/MatchingAnim/frame/7)
+
+**Expected:** `Variable 0 (error) held by eq 0 (error - (reference - measurement)). Can eq 0 find an
+alternative?`
+
+**This is the augmenting path, and this question is the entire algorithm.**
+
+Rather than give up, the search asks the *current holder* to move. Not "is `error` free?" but
+"is `error` **freeable**?" — which is a different and much better question, because it is
+recursive. `f_x[0]` is now asked to redo its own search, under the constraint that it may not
+use `error`.
+
+The name makes sense from here. There is a path — `f_x[1] → error → f_x[0] → ?` — alternating
+between edges *not* in the matching and edges that *are*. If it ends at a free variable, you
+flip every edge along it, and the matching grows by exactly one. **Augmenting** means growing
+the matching by one, and the path is the route by which it grows.
+
+[Frame 9 — the recursive call succeeds](hrw://stage/Structural/MatchingAnim/frame/9)
+
+**Expected:** `Variable 2 (measurement) is free — augmenting path found for eq 0`.
+
+`f_x[0]` had a second option all along. `error = reference - measurement` mentions
+`measurement`, nothing holds it, and so the path terminates. Length three: `f_x[1] → error →
+f_x[0] → measurement`.
+
+[Frame 10 — the holder re-homes](hrw://stage/Structural/MatchingAnim/frame/10)
+
+**Expected:** `Matched: equation 0 (error - (reference - measurement)) ↔ variable 2 (measurement)`.
+
+[Frame 11 — which frees what was wanted](hrw://stage/Structural/MatchingAnim/frame/11)
+
+**Expected:** `Displacement succeeded — eq 1 can take variable 0 (error)`.
+
+[Frame 12 — and the original request completes](hrw://stage/Structural/MatchingAnim/frame/12)
+
+**Expected:** `Matched: equation 1 (command - controllerGain * error) ↔ variable 0 (error)`.
+
+Read frames 7 through 12 as a **call and its return**: 7 asks the question, 9–10 are the
+recursive call finding an alternative, 11–12 are the return unwinding it. On a bigger model
+that recursion nests — `RcCircuit` has 78 displacement steps in 233 frames — and it is the
+reason matching is not simply a loop.
+
+### The result, which is stranger than the process
+
+[Point at the finished matching](hrw://stage/Structural/Tree/node/matching)
+
+**Expected:** three pairs —
+
+| Equation, as you wrote it | is used to solve for |
+|---|---|
+| `error = reference - measurement` | **measurement** |
+| `command = controllerGain * error` | **error** |
+| `measurement = plantGain * command` | **command** |
+
+**Not one equation is matched to the variable on its left-hand side.**
+
+This is the part worth sitting with. Every Modelica introduction says that `=` is an
+**equation, not an assignment** — that the language is *acausal*, that you state relationships
+and the compiler decides direction. It is easy to nod at and hard to actually believe, because
+every line you write still *looks* like an assignment.
+
+Here is the compiler doing it. You wrote `command = controllerGain * error` as though it
+defines `command`. Matching decided that equation determines **`error`** — it will be evaluated
+as `error := command / controllerGain`. The causality you appeared to specify was never
+binding; **matching is where the real direction is chosen**, and it chose differently for all
+three.
+
+That is not a quirk of this model. It is what acausal modelling *means*, and this is the phase
+where the word stops being an adjective and becomes an algorithm.
+
+### The linear-algebra reading
+
+Build a matrix with one row per equation and one column per unknown, putting a mark wherever
+the equation mentions the unknown. **A matching is a choice of one mark per row and per
+column** — equivalently, a permutation of the columns that puts a mark everywhere on the
+diagonal.
+
+A perfect matching exists exactly when that matrix has full **structural rank**: the rank it
+would have for generic nonzero values, determined by the *pattern* alone. Matching computes
+structural rank, and the augmenting-path search is how.
+
+**This is the same rank thread `dae-construction.md` opened.** There, `balance = -(nullity)`
+counted a deficiency in the *shape* of the system. Here the shape is square and the deficiency,
+if any, is in its **connectivity**. Act 3 is a system that passes the first test and fails this
+one.
+
+---
+
+## Act 3 — When no augmenting path exists
+
+[CapacitorLoop → Structural → Matching animation](hrw://load/CapacitorLoop/Structural/MatchingAnim)
+
+```modelica
+Modelica.Electrical.Analog.Sources.ConstantVoltage src(V = 5);
+Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3);
+Modelica.Electrical.Analog.Basic.Ground gnd;
+equation
+  connect(src.p, C.p);
+  connect(src.n, C.n);
+  connect(src.n, gnd.p);
+```
+
+A capacitor wired directly across an ideal voltage source. **Fourteen equations, fourteen
+unknowns** — it passes DAE construction's balance check without complaint, which is exactly why
+it is the right counterexample. Everything the previous tour could check is fine.
+
+114 frames, with **34 displacement steps**. The algorithm works hard here, and that effort is
+itself informative: it does not fail quickly, it fails *exhaustively*.
+
+[Frame 111 — one more attempt](hrw://stage/Structural/MatchingAnim/frame/111)
+
+**Expected:** `Equation 13 (C.n.v - gnd.p.v) exploring variable 12 (gnd.p.v)`.
+
+[Frame 112 — ask the holder to move, as in Act 2](hrw://stage/Structural/MatchingAnim/frame/112)
+
+**Expected:** `Variable 12 (gnd.p.v) held by eq 8 (gnd.p.v - 0). Can eq 8 find an alternative?`
+
+Exactly the question from frame 7 of Act 2 — the same procedure, applied for the 38th time.
+
+[Frame 113 — but this time the answer is no](hrw://stage/Structural/MatchingAnim/frame/113)
+
+**Expected:** `Displacement failed — variable 12 (gnd.p.v) cannot be freed for eq 13`.
+
+[**Frame 114 — the algorithm gives up**](hrw://stage/Structural/MatchingAnim/frame/114)
+
+**Expected:** `Equation 13 (C.n.v - gnd.p.v) has no augmenting path — unmatched (rank
+deficiency)`.
+
+**"No augmenting path" is a much stronger statement than "I could not find one."** The search
+is exhaustive: it explored every alternating path from `f_x[13]`, and every one of them dead-ended
+on a variable whose holder had nowhere else to go. When that search completes without reaching
+a free variable, **no perfect matching exists** — not "not by this route", but at all. That is a
+theorem (Berge's), and it is why the algorithm is entitled to stop rather than keep trying.
+
+[Point at the failure](hrw://stage/Structural/Tree/node/error)
+
+**Expected:** `n_matched` is **13** of 14, `rank_deficiency` is **1**, the unmatched equation is
+`f_x[13]`, and the unmatched unknown is **`gnd.p.i`** — the current through the ground pin.
+
+Two things to take from that.
+
+**The diagnosis is specific.** It does not say "this model is broken". It names the one equation
+and the one variable that could not be paired, which is what makes the message actionable.
+`gnd.p.i` is the ground's current, and nothing in the model determines it — the capacitor
+voltage is fixed by the source, so the current that would charge it is unconstrained.
+
+**And `rank_deficiency: 1` is the number from the last tour, in its second form.** There,
+`balance = -1` meant one unknown too many. Here the counts are equal and the *rank* falls one
+short. Same deficiency of one, found by a different test — because counting and connectivity are
+different questions and a system can pass either while failing the other.
+
+[Show where the model says it](hrw://source/9)
+
+**Expected:** line 9, `connect(src.n, gnd.p);`.
+
+The physical reading: a capacitor across an ideal voltage source is over-constrained. The
+source insists on 5 V; the capacitor's voltage is a *state*, which wants its own initial value
+and its own dynamics. Both cannot hold. **The model is not a typo — it is a bad idealisation**,
+and this phase is where an idealisation that cannot be simulated is caught.
+
+---
+
+## What this tour cannot check
+
+Whether the **matrix view** makes the search legible — whether the moving highlight reads as
+"the algorithm is exploring here" or as flicker. That is the half `egui_kittest` cannot reach
+(`incidence_view.rs` cells are painted, not widgets), so it is exactly what a walked tour is
+for.
+
+Whether 114 frames is watchable in Act 3, or whether the honest thing is to seek straight to
+frame 111 and let the earlier 110 stay unwatched. **The Play button makes this an empirical
+question for the first time**, and it is worth running once at 90 seconds and once at three
+minutes before deciding.
+
+And whether Act 2's punchline — no equation matched to its own left-hand side — lands as
+*revelation* or as *arbitrary*. It is the strongest claim in the tour and the one I am least
+able to judge from this side.
+
+## What comes next in the chain
+
+Matching says *which* equation solves *which* unknown. It does not say **in what order** to
+evaluate them — and for `ProportionalLoop` there is no valid order at all: `error` needs
+`measurement`, which needs `command`, which needs `error`. A genuine cycle.
+
+Finding those cycles is **Tarjan's strongly-connected-components algorithm**, it turns the
+matched system into blocks that must be solved simultaneously, and it has its own animation
+(`TarjanAnim`). `ProportionalLoop` is the smallest model that produces a coupled block, which
+makes it the specimen for that tour too — the same three equations, one question later.

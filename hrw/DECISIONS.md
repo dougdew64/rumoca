@@ -2002,3 +2002,68 @@ since dispatching a beat needs `dispatch_hrw_link` and holding the clock needs `
 lays out its own content and exposes no per-heading anchor, so there is nothing to scroll *to*.
 Proportional scrolling drifts when stops differ in length; the stop caption above the pane
 covers that, and the alternative was no scrolling at all.
+
+---
+
+## 2026-08-03 — The matching tour, and two more defects in the tool that exists to prevent them
+
+`docs/fixture-tours/matching.md` — three acts on one algorithm, chosen from the corpus by
+counting displacement steps rather than by guessing which specimen was interesting:
+
+| Specimen | Frames | Displacements | Act |
+|---|---|---|---|
+| BouncingBall | 8 | **0** | 1 — greed works |
+| ProportionalLoop | 16 | **2** | 2 — greed fails, the algorithm backs up |
+| CapacitorLoop | 114 | 34 | 3 — no augmenting path exists |
+| TwoLoops / MixedLoop / RcCircuit / Drivetrain | 36 / 42 / 233 / 795 | 12 / 14 / 78 / 242 | too large to walk |
+
+`ProportionalLoop` is **the smallest model in the corpus where matching has to back up**, which
+is what makes the Act 1 / Act 2 pair one concept apart — the same design that worked for
+`SingleInertia` against `UnbalancedShaft`.
+
+**Act 2's real payload was not planned.** Reading the finished matching showed that **no
+equation is matched to the variable on its own left-hand side**: `error = reference -
+measurement` solves for `measurement`, `command = controllerGain * error` solves for `error`,
+and `measurement = plantGain * command` solves for `command`. Every Modelica introduction says
+`=` is an equation rather than an assignment; this is the compiler visibly doing it, on three
+lines that each *look* like assignments. That came out of the trace, not out of a plan for the
+tour.
+
+### Act 3 needed no instrumentation, because the trace was stale
+
+The scouting note said CapacitorLoop had no matching animation (`structural has_ir=false`), and
+that looked like a Rumoca instrumentation job: retain the partial matching on failure. **It was
+already retained.** `structural_stage`'s `Err` branch builds the incidence, re-runs
+`maximum_matching`, and emits `incidence` + `matching` + `error` via `Stage::recovered` — the
+committed trace simply predated that code and nobody had regenerated it.
+
+**A stale generated artifact reads exactly like a missing feature.** The manifest even
+contradicted itself in a way that should have been the tell: `structural has_ir=false` while
+`initialization`, `events` and `solve_lowering` all had IR, which cannot happen if the pipeline
+really stopped at structural. Regenerating cost one command and saved a Rumoca change that was
+not needed.
+
+### `frame_index` was wrong twice, in the same session, in the same way
+
+The tool exists so a tour author does not guess a frame number, because **a wrong-but-valid
+index resolves fine and lands on the wrong step, and no link checker can see it**. It was
+committing that error itself, twice:
+
+1. **Off by one.** It printed 0-based indices and closed with *"Frames are 0-based here and in
+   `hrw://…/frame/<n>`."* Links are **1-based** (`parse_hrw_link` does `checked_sub(1)`, so the
+   number matches the on-screen counter). Every link written from its output pointed one frame
+   early. Fixed by removing the arithmetic rather than correcting it: it now prints the
+   fully-formed link under each frame, through `app::frame_link`, which
+   `a_frame_link_round_trips_through_the_parser` binds to the parser.
+
+2. **Wrong names.** It printed `mat.equation_names()` — `f_x[0] (top-level model equation)` —
+   but `MatchingAnimation::from_incidence` stores `mat.equation_texts()`, so the animation
+   labels that equation `error - (reference - measurement)`. An author quoting the tool wrote an
+   expectation naming **a string that never appears on screen**, and the walk would fail on a
+   stop where nothing was wrong. Caught by auditing the drafted tour against
+   `matching_anim::step_description` rather than by trusting the tool.
+
+**The pattern worth keeping:** both were found by checking the tool against the *rendering path*
+before walking anything. An authoring aid that is confidently wrong is worse than none, because
+its output is trusted precisely where the author has no independent knowledge — and neither
+fault could fail a test, since both produce links that parse and resolve.

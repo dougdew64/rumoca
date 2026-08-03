@@ -1,0 +1,217 @@
+{
+  "incidence": {
+    "n_eq": 14,
+    "n_var": 14,
+    "unknown_names": [
+      "der(C.v)",
+      "src.v",
+      "C.i",
+      "src.i",
+      "src.p.v",
+      "src.p.i",
+      "src.n.v",
+      "src.n.i",
+      "C.p.v",
+      "C.p.i",
+      "C.n.v",
+      "C.n.i",
+      "gnd.p.v",
+      "gnd.p.i"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (equation from src)",
+        "unknowns": [
+          5,
+          7
+        ],
+        "equation_text": "0 - (src.p.i + src.n.i)"
+      },
+      {
+        "equation": "f_x[1] (equation from src)",
+        "unknowns": [
+          3,
+          5
+        ],
+        "equation_text": "src.i - src.p.i"
+      },
+      {
+        "equation": "f_x[2] (equation from src)",
+        "unknowns": [
+          1,
+          4,
+          6
+        ],
+        "equation_text": "src.v - (src.p.v - src.n.v)"
+      },
+      {
+        "equation": "f_x[3] (equation from src)",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "src.v - src.V"
+      },
+      {
+        "equation": "f_x[4] (equation from C)",
+        "unknowns": [
+          9,
+          11
+        ],
+        "equation_text": "0 - (C.p.i + C.n.i)"
+      },
+      {
+        "equation": "f_x[5] (equation from C)",
+        "unknowns": [
+          2,
+          9
+        ],
+        "equation_text": "C.i - C.p.i"
+      },
+      {
+        "equation": "f_x[6] (equation from C)",
+        "unknowns": [
+          8,
+          10
+        ],
+        "equation_text": "C.v - (C.p.v - C.n.v)"
+      },
+      {
+        "equation": "f_x[7] (equation from C)",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "C.i - C.C * der(C.v)"
+      },
+      {
+        "equation": "f_x[8] (equation from gnd)",
+        "unknowns": [
+          12
+        ],
+        "equation_text": "gnd.p.v - 0"
+      },
+      {
+        "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+        "unknowns": [
+          5,
+          9
+        ],
+        "equation_text": "src.p.i + C.p.i"
+      },
+      {
+        "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+        "unknowns": [
+          7,
+          11,
+          13
+        ],
+        "equation_text": "src.n.i + C.n.i + gnd.p.i"
+      },
+      {
+        "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+        "unknowns": [
+          4,
+          8
+        ],
+        "equation_text": "src.p.v - C.p.v"
+      },
+      {
+        "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+        "unknowns": [
+          6,
+          10
+        ],
+        "equation_text": "src.n.v - C.n.v"
+      },
+      {
+        "equation": "f_x[13] (connection equation: C.n.v = gnd.p.v)",
+        "unknowns": [
+          10,
+          12
+        ],
+        "equation_text": "C.n.v - gnd.p.v"
+      }
+    ]
+  },
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from src)",
+      "unknown": "src.p.i"
+    },
+    {
+      "equation": "f_x[1] (equation from src)",
+      "unknown": "src.i"
+    },
+    {
+      "equation": "f_x[2] (equation from src)",
+      "unknown": "src.p.v"
+    },
+    {
+      "equation": "f_x[3] (equation from src)",
+      "unknown": "src.v"
+    },
+    {
+      "equation": "f_x[4] (equation from C)",
+      "unknown": "C.n.i"
+    },
+    {
+      "equation": "f_x[5] (equation from C)",
+      "unknown": "C.i"
+    },
+    {
+      "equation": "f_x[6] (equation from C)",
+      "unknown": "C.n.v"
+    },
+    {
+      "equation": "f_x[7] (equation from C)",
+      "unknown": "der(C.v)"
+    },
+    {
+      "equation": "f_x[8] (equation from gnd)",
+      "unknown": "gnd.p.v"
+    },
+    {
+      "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+      "unknown": "C.p.i"
+    },
+    {
+      "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+      "unknown": "src.n.i"
+    },
+    {
+      "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+      "unknown": "C.p.v"
+    },
+    {
+      "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+      "unknown": "src.n.v"
+    }
+  ],
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 13 matched out of 14 equations and 14 unknowns; unmatched equations: f_x[13]; unmatched unknowns: gnd.p.i",
+    "n_equations": 14,
+    "n_unknowns": 14,
+    "n_matched": 13,
+    "rank_deficiency": 1,
+    "unmatched_equations": [
+      "f_x[13]"
+    ],
+    "unmatched_unknowns": [
+      "gnd.p.i"
+    ],
+    "unmatched_unknown_locations": [
+      {
+        "unknown": "gnd.p.i",
+        "location": {
+          "line": 9,
+          "column": 1,
+          "excerpt": "  connect(sr",
+          "line_text": "  connect(src.n, gnd.p);",
+          "byte_start": 460,
+          "byte_end": 472
+        }
+      }
+    ],
+    "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+  }
+}

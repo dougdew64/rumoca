@@ -12,7 +12,7 @@
           "end_column": 20,
           "start": 6,
           "end": 19,
-          "file_name": "CapacitorLoop.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
         },
         "token_number": 1,
         "token_type": 64
@@ -27,7 +27,7 @@
           "end_column": 6,
           "start": 0,
           "end": 5,
-          "file_name": "CapacitorLoop.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
         },
         "token_number": 0,
         "token_type": 41
@@ -49,7 +49,7 @@
             "end_column": 117,
             "start": 20,
             "end": 118,
-            "file_name": "CapacitorLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
           },
           "token_number": 2,
           "token_type": 66
@@ -62,7 +62,7 @@
         "end_column": 18,
         "start": 6,
         "end": 593,
-        "file_name": "CapacitorLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
       },
       "extends": [],
       "imports": [],
@@ -82,7 +82,7 @@
               "end_column": 57,
               "start": 288,
               "end": 291,
-              "file_name": "CapacitorLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
             },
             "token_number": 13,
             "token_type": 64
@@ -98,7 +98,7 @@
                   "end_column": 11,
                   "start": 237,
                   "end": 245,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 4,
                 "token_type": 64
@@ -112,7 +112,7 @@
                   "end_column": 22,
                   "start": 246,
                   "end": 256,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 6,
                 "token_type": 64
@@ -126,7 +126,7 @@
                   "end_column": 29,
                   "start": 257,
                   "end": 263,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 8,
                 "token_type": 64
@@ -140,7 +140,7 @@
                   "end_column": 37,
                   "start": 264,
                   "end": 271,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 10,
                 "token_type": 64
@@ -154,7 +154,7 @@
                   "end_column": 53,
                   "start": 272,
                   "end": 287,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 12,
                 "token_type": 64
@@ -168,7 +168,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 237,
                 "end": 291
               }
@@ -198,7 +198,7 @@
                           "end_column": 59,
                           "start": 292,
                           "end": 293,
-                          "file_name": "CapacitorLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                         },
                         "token_number": 15,
                         "token_type": 64
@@ -207,7 +207,7 @@
                     }
                   ],
                   "span": {
-                    "source": 7834402446754539961,
+                    "source": 12599994294566825294,
                     "start": 292,
                     "end": 293
                   }
@@ -224,20 +224,20 @@
                         "end_column": 63,
                         "start": 296,
                         "end": 297,
-                        "file_name": "CapacitorLoop.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                       },
                       "token_number": 17,
                       "token_type": 67
                     },
                     "span": {
-                      "source": 7834402446754539961,
+                      "source": 12599994294566825294,
                       "start": 296,
                       "end": 297
                     }
                   }
                 },
                 "span": {
-                  "source": 7834402446754539961,
+                  "source": 12599994294566825294,
                   "start": 292,
                   "end": 297
                 }
@@ -266,13 +266,13 @@
                     "end_column": 63,
                     "start": 296,
                     "end": 297,
-                    "file_name": "CapacitorLoop.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                   },
                   "token_number": 17,
                   "token_type": 67
                 },
                 "span": {
-                  "source": 7834402446754539961,
+                  "source": 12599994294566825294,
                   "start": 296,
                   "end": 297
                 }
@@ -286,7 +286,7 @@
             "end_column": 57,
             "start": 237,
             "end": 291,
-            "file_name": "CapacitorLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
           },
           "condition": null,
           "inner": false,
@@ -314,7 +314,7 @@
               "end_column": 47,
               "start": 345,
               "end": 346,
-              "file_name": "CapacitorLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
             },
             "token_number": 29,
             "token_type": 64
@@ -330,7 +330,7 @@
                   "end_column": 11,
                   "start": 302,
                   "end": 310,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 20,
                 "token_type": 64
@@ -344,7 +344,7 @@
                   "end_column": 22,
                   "start": 311,
                   "end": 321,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 22,
                 "token_type": 64
@@ -358,7 +358,7 @@
                   "end_column": 29,
                   "start": 322,
                   "end": 328,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 24,
                 "token_type": 64
@@ -372,7 +372,7 @@
                   "end_column": 35,
                   "start": 329,
                   "end": 334,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 26,
                 "token_type": 64
@@ -386,7 +386,7 @@
                   "end_column": 45,
                   "start": 335,
                   "end": 344,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 28,
                 "token_type": 64
@@ -400,7 +400,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 302,
                 "end": 346
               }
@@ -430,7 +430,7 @@
                           "end_column": 49,
                           "start": 347,
                           "end": 348,
-                          "file_name": "CapacitorLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                         },
                         "token_number": 31,
                         "token_type": 64
@@ -439,7 +439,7 @@
                     }
                   ],
                   "span": {
-                    "source": 7834402446754539961,
+                    "source": 12599994294566825294,
                     "start": 347,
                     "end": 348
                   }
@@ -456,20 +456,20 @@
                         "end_column": 56,
                         "start": 351,
                         "end": 355,
-                        "file_name": "CapacitorLoop.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                       },
                       "token_number": 33,
                       "token_type": 71
                     },
                     "span": {
-                      "source": 7834402446754539961,
+                      "source": 12599994294566825294,
                       "start": 351,
                       "end": 355
                     }
                   }
                 },
                 "span": {
-                  "source": 7834402446754539961,
+                  "source": 12599994294566825294,
                   "start": 347,
                   "end": 355
                 }
@@ -498,13 +498,13 @@
                     "end_column": 56,
                     "start": 351,
                     "end": 355,
-                    "file_name": "CapacitorLoop.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                   },
                   "token_number": 33,
                   "token_type": 71
                 },
                 "span": {
-                  "source": 7834402446754539961,
+                  "source": 12599994294566825294,
                   "start": 351,
                   "end": 355
                 }
@@ -518,7 +518,7 @@
             "end_column": 47,
             "start": 302,
             "end": 346,
-            "file_name": "CapacitorLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
           },
           "condition": null,
           "inner": false,
@@ -546,7 +546,7 @@
               "end_column": 46,
               "start": 400,
               "end": 403,
-              "file_name": "CapacitorLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
             },
             "token_number": 45,
             "token_type": 64
@@ -562,7 +562,7 @@
                   "end_column": 11,
                   "start": 360,
                   "end": 368,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 36,
                 "token_type": 64
@@ -576,7 +576,7 @@
                   "end_column": 22,
                   "start": 369,
                   "end": 379,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 38,
                 "token_type": 64
@@ -590,7 +590,7 @@
                   "end_column": 29,
                   "start": 380,
                   "end": 386,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 40,
                 "token_type": 64
@@ -604,7 +604,7 @@
                   "end_column": 35,
                   "start": 387,
                   "end": 392,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 42,
                 "token_type": 64
@@ -618,7 +618,7 @@
                   "end_column": 42,
                   "start": 393,
                   "end": 399,
-                  "file_name": "CapacitorLoop.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                 },
                 "token_number": 44,
                 "token_type": 64
@@ -632,7 +632,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 360,
                 "end": 403
               }
@@ -658,7 +658,7 @@
             "end_column": 46,
             "start": 360,
             "end": 403,
-            "file_name": "CapacitorLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
           },
           "condition": null,
           "inner": false,
@@ -689,7 +689,7 @@
                       "end_column": 14,
                       "start": 424,
                       "end": 427,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 50,
                     "token_type": 64
@@ -706,7 +706,7 @@
                       "end_column": 16,
                       "start": 428,
                       "end": 429,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 52,
                     "token_type": 64
@@ -715,7 +715,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 424,
                 "end": 429
               }
@@ -733,7 +733,7 @@
                       "end_column": 19,
                       "start": 431,
                       "end": 432,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 54,
                     "token_type": 64
@@ -750,7 +750,7 @@
                       "end_column": 21,
                       "start": 433,
                       "end": 434,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 56,
                     "token_type": 64
@@ -759,7 +759,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 431,
                 "end": 434
               }
@@ -781,7 +781,7 @@
                       "end_column": 14,
                       "start": 447,
                       "end": 450,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 61,
                     "token_type": 64
@@ -798,7 +798,7 @@
                       "end_column": 16,
                       "start": 451,
                       "end": 452,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 63,
                     "token_type": 64
@@ -807,7 +807,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 447,
                 "end": 452
               }
@@ -825,7 +825,7 @@
                       "end_column": 19,
                       "start": 454,
                       "end": 455,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 65,
                     "token_type": 64
@@ -842,7 +842,7 @@
                       "end_column": 21,
                       "start": 456,
                       "end": 457,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 67,
                     "token_type": 64
@@ -851,7 +851,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 454,
                 "end": 457
               }
@@ -873,7 +873,7 @@
                       "end_column": 14,
                       "start": 470,
                       "end": 473,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 72,
                     "token_type": 64
@@ -890,7 +890,7 @@
                       "end_column": 16,
                       "start": 474,
                       "end": 475,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 74,
                     "token_type": 64
@@ -899,7 +899,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 470,
                 "end": 475
               }
@@ -917,7 +917,7 @@
                       "end_column": 21,
                       "start": 477,
                       "end": 480,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 76,
                     "token_type": 64
@@ -934,7 +934,7 @@
                       "end_column": 23,
                       "start": 481,
                       "end": 482,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 78,
                     "token_type": 64
@@ -943,7 +943,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 477,
                 "end": 482
               }
@@ -963,7 +963,7 @@
           "end_column": 9,
           "start": 405,
           "end": 413,
-          "file_name": "CapacitorLoop.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
         },
         "token_number": 47,
         "token_type": 24
@@ -980,7 +980,7 @@
           "end_column": 18,
           "start": 580,
           "end": 593,
-          "file_name": "CapacitorLoop.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
         },
         "token_number": 104,
         "token_type": 64
@@ -1002,7 +1002,7 @@
                       "end_column": 24,
                       "start": 498,
                       "end": 508,
-                      "file_name": "CapacitorLoop.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                     },
                     "token_number": 83,
                     "token_type": 64
@@ -1011,7 +1011,7 @@
                 }
               ],
               "span": {
-                "source": 7834402446754539961,
+                "source": 12599994294566825294,
                 "start": 498,
                 "end": 508
               }
@@ -1032,7 +1032,7 @@
                             "end_column": 34,
                             "start": 509,
                             "end": 518,
-                            "file_name": "CapacitorLoop.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                           },
                           "token_number": 85,
                           "token_type": 64
@@ -1041,7 +1041,7 @@
                       }
                     ],
                     "span": {
-                      "source": 7834402446754539961,
+                      "source": 12599994294566825294,
                       "start": 509,
                       "end": 518
                     }
@@ -1058,20 +1058,20 @@
                           "end_column": 38,
                           "start": 521,
                           "end": 522,
-                          "file_name": "CapacitorLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                         },
                         "token_number": 87,
                         "token_type": 67
                       },
                       "span": {
-                        "source": 7834402446754539961,
+                        "source": 12599994294566825294,
                         "start": 521,
                         "end": 522
                       }
                     }
                   },
                   "span": {
-                    "source": 7834402446754539961,
+                    "source": 12599994294566825294,
                     "start": 509,
                     "end": 522
                   }
@@ -1092,7 +1092,7 @@
                             "end_column": 48,
                             "start": 524,
                             "end": 532,
-                            "file_name": "CapacitorLoop.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                           },
                           "token_number": 89,
                           "token_type": 64
@@ -1101,7 +1101,7 @@
                       }
                     ],
                     "span": {
-                      "source": 7834402446754539961,
+                      "source": 12599994294566825294,
                       "start": 524,
                       "end": 532
                     }
@@ -1118,20 +1118,20 @@
                           "end_column": 52,
                           "start": 535,
                           "end": 536,
-                          "file_name": "CapacitorLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                         },
                         "token_number": 91,
                         "token_type": 67
                       },
                       "span": {
-                        "source": 7834402446754539961,
+                        "source": 12599994294566825294,
                         "start": 535,
                         "end": 536
                       }
                     }
                   },
                   "span": {
-                    "source": 7834402446754539961,
+                    "source": 12599994294566825294,
                     "start": 524,
                     "end": 536
                   }
@@ -1152,7 +1152,7 @@
                             "end_column": 62,
                             "start": 538,
                             "end": 546,
-                            "file_name": "CapacitorLoop.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                           },
                           "token_number": 93,
                           "token_type": 64
@@ -1161,7 +1161,7 @@
                       }
                     ],
                     "span": {
-                      "source": 7834402446754539961,
+                      "source": 12599994294566825294,
                       "start": 538,
                       "end": 546
                     }
@@ -1178,20 +1178,20 @@
                           "end_column": 70,
                           "start": 549,
                           "end": 554,
-                          "file_name": "CapacitorLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                         },
                         "token_number": 95,
                         "token_type": 68
                       },
                       "span": {
-                        "source": 7834402446754539961,
+                        "source": 12599994294566825294,
                         "start": 549,
                         "end": 554
                       }
                     }
                   },
                   "span": {
-                    "source": 7834402446754539961,
+                    "source": 12599994294566825294,
                     "start": 538,
                     "end": 554
                   }
@@ -1212,7 +1212,7 @@
                             "end_column": 81,
                             "start": 556,
                             "end": 565,
-                            "file_name": "CapacitorLoop.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                           },
                           "token_number": 97,
                           "token_type": 64
@@ -1221,7 +1221,7 @@
                       }
                     ],
                     "span": {
-                      "source": 7834402446754539961,
+                      "source": 12599994294566825294,
                       "start": 556,
                       "end": 565
                     }
@@ -1238,20 +1238,20 @@
                           "end_column": 88,
                           "start": 568,
                           "end": 572,
-                          "file_name": "CapacitorLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CapacitorLoop.mo"
                         },
                         "token_number": 99,
                         "token_type": 71
                       },
                       "span": {
-                        "source": 7834402446754539961,
+                        "source": 12599994294566825294,
                         "start": 568,
                         "end": 572
                       }
                     }
                   },
                   "span": {
-                    "source": 7834402446754539961,
+                    "source": 12599994294566825294,
                     "start": 556,
                     "end": 572
                   }
@@ -1277,7 +1277,7 @@
               false
             ],
             "span": {
-              "source": 7834402446754539961,
+              "source": 12599994294566825294,
               "start": 498,
               "end": 572
             }

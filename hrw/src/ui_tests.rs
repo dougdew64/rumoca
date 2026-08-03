@@ -166,6 +166,7 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         "structural-vs-numerical-rank",
         "the-oracle",
         "dae-construction",
+        "matching",
     ] {
         assert!(
             h.query_by_label(tour).is_some(),

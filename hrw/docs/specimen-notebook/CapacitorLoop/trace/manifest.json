@@ -2,7 +2,7 @@
   "model": "CapacitorLoop",
   "specimen": "specimens/CapacitorLoop.mo",
   "specimen_fnv1a": "85d851eb99b13a47",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "718f56c9",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -25,12 +25,16 @@
       "has_ir": true,
       "note": null
     },
+    "dae": {
+      "has_ir": true,
+      "note": "1 state(s), 13 algebraic(s), 14 continuous equation(s)"
+    },
     "structural": {
-      "has_ir": false,
-      "note": "structural analysis failed: structurally singular system: 13 matched out of 14 equations and 14 unknowns; unmatched equations: f_x[13]; unmatched unknowns: gnd.p.i"
+      "has_ir": true,
+      "note": "singular"
     },
     "index_reduction": {
-      "has_ir": false,
+      "has_ir": true,
       "note": "still singular after index reduction: structurally singular system: 7 matched out of 8 equations and 8 unknowns; unmatched equations: f_x[7]; unmatched unknowns: gnd.p.i"
     },
     "initialization": {

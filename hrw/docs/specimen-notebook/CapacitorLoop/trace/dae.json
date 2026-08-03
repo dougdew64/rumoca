@@ -1,69 +1,76 @@
 {
-  "variables": {
-    "src.i": {
-      "name": "src.i",
+  "schema_version": 7,
+  "x": {
+    "C.v": {
+      "name": "C.v",
       "component_ref": {
         "local": false,
         "span": {
-          "source": 2336715272576324994,
-          "start": 161,
-          "end": 173
+          "source": 9396140468567088194,
+          "start": 106,
+          "end": 118
         },
         "parts": [
           {
-            "ident": "src",
+            "ident": "C",
             "span": {
-              "source": 2336715272576324994,
-              "start": 161,
-              "end": 173
+              "source": 9396140468567088194,
+              "start": 106,
+              "end": 118
             },
             "subs": []
           },
           {
-            "ident": "i",
+            "ident": "v",
             "span": {
-              "source": 2336715272576324994,
-              "start": 161,
-              "end": 173
+              "source": 9396140468567088194,
+              "start": 106,
+              "end": 118
             },
             "subs": []
           }
         ],
-        "def_id": 39462
+        "def_id": 39476
       },
       "source_span": {
-        "source": 2336715272576324994,
-        "start": 161,
-        "end": 173
+        "source": 9396140468567088194,
+        "start": 106,
+        "end": 118
       },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": false,
-      "start": null,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 14093691701382730553,
+            "start": 130,
+            "end": 131
+          }
+        }
+      },
+      "start_span": {
+        "source": 14093691701382730553,
+        "start": 130,
+        "end": 131
+      },
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricCurrent",
-      "unit": "A",
-      "display_unit": null,
-      "description": "Current flowing from pin p to pin n",
+      "nominal_span": null,
+      "unit": "V",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
+      "description": "Voltage drop of the two pins (= p.v - n.v)",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
+    }
+  },
+  "y": {
     "src.v": {
       "name": "src.v",
       "component_ref": {
@@ -100,33 +107,128 @@
         "start": 106,
         "end": 118
       },
-      "type_id": 6148,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": false,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricPotential",
+      "nominal_span": null,
       "unit": "V",
-      "display_unit": null,
-      "description": "Voltage drop of the two pins (= p.v - n.v)",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Voltage drop of the two pins (= p.v - n.v)",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
+    },
+    "C.i": {
+      "name": "C.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 2336715272576324994,
+          "start": 161,
+          "end": 173
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 2336715272576324994,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 2336715272576324994,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39475
+      },
+      "source_span": {
+        "source": 2336715272576324994,
+        "start": 161,
+        "end": 173
+      },
+      "dims": [],
+      "start": null,
+      "start_span": null,
+      "fixed": null,
+      "min": null,
+      "min_span": null,
+      "max": null,
+      "max_span": null,
+      "nominal": null,
+      "nominal_span": null,
+      "unit": "A",
+      "state_select": "Default",
+      "description": "Current flowing from pin p to pin n",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
+    },
+    "src.i": {
+      "name": "src.i",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 2336715272576324994,
+          "start": 161,
+          "end": 173
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 2336715272576324994,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 2336715272576324994,
+              "start": 161,
+              "end": 173
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39462
+      },
+      "source_span": {
+        "source": 2336715272576324994,
+        "start": 161,
+        "end": 173
+      },
+      "dims": [],
+      "start": null,
+      "start_span": null,
+      "fixed": null,
+      "min": null,
+      "min_span": null,
+      "max": null,
+      "max_span": null,
+      "nominal": null,
+      "nominal_span": null,
+      "unit": "A",
+      "state_select": "Default",
+      "description": "Current flowing from pin p to pin n",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "src.p.v": {
       "name": "src.p.v",
@@ -173,33 +275,22 @@
         "start": 112,
         "end": 134
       },
-      "type_id": 6147,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricPotential",
+      "nominal_span": null,
       "unit": "V",
-      "display_unit": null,
-      "description": "Potential at the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Potential at the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "src.p.i": {
       "name": "src.p.i",
@@ -246,33 +337,22 @@
         "start": 477,
         "end": 489
       },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": true,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricCurrent",
+      "nominal_span": null,
       "unit": "A",
-      "display_unit": null,
-      "description": "Current flowing into the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Current flowing into the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "src.n.v": {
       "name": "src.n.v",
@@ -319,33 +399,22 @@
         "start": 112,
         "end": 134
       },
-      "type_id": 6147,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricPotential",
+      "nominal_span": null,
       "unit": "V",
-      "display_unit": null,
-      "description": "Potential at the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Potential at the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "src.n.i": {
       "name": "src.n.i",
@@ -392,273 +461,22 @@
         "start": 477,
         "end": 489
       },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": true,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricCurrent",
+      "nominal_span": null,
       "unit": "A",
-      "display_unit": null,
+      "state_select": "Default",
       "description": "Current flowing into the pin",
-      "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "src.V": {
-      "name": "src.V",
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 2471142840645193943,
-          "start": 107,
-          "end": 119
-        },
-        "parts": [
-          {
-            "ident": "src",
-            "span": {
-              "source": 2471142840645193943,
-              "start": 107,
-              "end": 119
-            },
-            "subs": []
-          },
-          {
-            "ident": "V",
-            "span": {
-              "source": 2471142840645193943,
-              "start": 107,
-              "end": 119
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 39472
-      },
-      "source_span": {
-        "source": 2471142840645193943,
-        "start": 107,
-        "end": 119
-      },
-      "type_id": 6148,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 3,
-            "start_column": 3,
-            "end_line": 3,
-            "end_column": 12,
-            "start": 97,
-            "end": 106,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Electrical\\Analog\\Sources\\ConstantVoltage.mo"
-          },
-          "token_number": 12,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "dims": [],
-      "connected": false,
-      "start": {
-        "Literal": {
-          "value": {
-            "Integer": 1
-          },
-          "span": {
-            "source": 2471142840645193943,
-            "start": 126,
-            "end": 127
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": "ElectricPotential",
-      "unit": "V",
-      "display_unit": null,
-      "description": "Value of constant voltage",
-      "state_select": "Default",
-      "binding": {
-        "Literal": {
-          "value": {
-            "Integer": 5
-          },
-          "span": {
-            "source": 12599994294566825294,
-            "start": 296,
-            "end": 297
-          }
-        }
-      },
-      "binding_from_modification": true,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "C.i": {
-      "name": "C.i",
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 2336715272576324994,
-          "start": 161,
-          "end": 173
-        },
-        "parts": [
-          {
-            "ident": "C",
-            "span": {
-              "source": 2336715272576324994,
-              "start": 161,
-              "end": 173
-            },
-            "subs": []
-          },
-          {
-            "ident": "i",
-            "span": {
-              "source": 2336715272576324994,
-              "start": 161,
-              "end": 173
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 39475
-      },
-      "source_span": {
-        "source": 2336715272576324994,
-        "start": 161,
-        "end": 173
-      },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "dims": [],
-      "connected": false,
-      "start": null,
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": "ElectricCurrent",
-      "unit": "A",
-      "display_unit": null,
-      "description": "Current flowing from pin p to pin n",
-      "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "C.v": {
-      "name": "C.v",
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 9396140468567088194,
-          "start": 106,
-          "end": 118
-        },
-        "parts": [
-          {
-            "ident": "C",
-            "span": {
-              "source": 9396140468567088194,
-              "start": 106,
-              "end": 118
-            },
-            "subs": []
-          },
-          {
-            "ident": "v",
-            "span": {
-              "source": 9396140468567088194,
-              "start": 106,
-              "end": 118
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 39476
-      },
-      "source_span": {
-        "source": 9396140468567088194,
-        "start": 106,
-        "end": 118
-      },
-      "type_id": 6148,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "dims": [],
-      "connected": false,
-      "start": {
-        "Literal": {
-          "value": {
-            "Integer": 0
-          },
-          "span": {
-            "source": 14093691701382730553,
-            "start": 130,
-            "end": 131
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": "ElectricPotential",
-      "unit": "V",
-      "display_unit": null,
-      "description": "Voltage drop of the two pins (= p.v - n.v)",
-      "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "C.p.v": {
       "name": "C.p.v",
@@ -705,33 +523,22 @@
         "start": 112,
         "end": 134
       },
-      "type_id": 6147,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricPotential",
+      "nominal_span": null,
       "unit": "V",
-      "display_unit": null,
-      "description": "Potential at the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Potential at the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "C.p.i": {
       "name": "C.p.i",
@@ -778,33 +585,22 @@
         "start": 477,
         "end": 489
       },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": true,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricCurrent",
+      "nominal_span": null,
       "unit": "A",
-      "display_unit": null,
-      "description": "Current flowing into the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Current flowing into the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "C.n.v": {
       "name": "C.n.v",
@@ -851,33 +647,22 @@
         "start": 112,
         "end": 134
       },
-      "type_id": 6147,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricPotential",
+      "nominal_span": null,
       "unit": "V",
-      "display_unit": null,
-      "description": "Potential at the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Potential at the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "C.n.i": {
       "name": "C.n.i",
@@ -924,134 +709,22 @@
         "start": 477,
         "end": 489
       },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": true,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricCurrent",
+      "nominal_span": null,
       "unit": "A",
-      "display_unit": null,
+      "state_select": "Default",
       "description": "Current flowing into the pin",
-      "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "C.C": {
-      "name": "C.C",
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 14093691701382730553,
-          "start": 147,
-          "end": 163
-        },
-        "parts": [
-          {
-            "ident": "C",
-            "span": {
-              "source": 14093691701382730553,
-              "start": 147,
-              "end": 163
-            },
-            "subs": []
-          },
-          {
-            "ident": "C",
-            "span": {
-              "source": 14093691701382730553,
-              "start": 147,
-              "end": 163
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 39485
-      },
-      "source_span": {
-        "source": 14093691701382730553,
-        "start": 147,
-        "end": 163
-      },
-      "type_id": 6155,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 4,
-            "start_column": 3,
-            "end_line": 4,
-            "end_column": 12,
-            "start": 137,
-            "end": 146,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Electrical\\Analog\\Basic\\Capacitor.mo"
-          },
-          "token_number": 25,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "dims": [],
-      "connected": false,
-      "start": {
-        "Literal": {
-          "value": {
-            "Integer": 1
-          },
-          "span": {
-            "source": 14093691701382730553,
-            "start": 170,
-            "end": 171
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": "Capacitance",
-      "unit": "F",
-      "display_unit": null,
-      "description": "Capacitance",
-      "state_select": "Default",
-      "binding": {
-        "Literal": {
-          "value": {
-            "Real": 0.001
-          },
-          "span": {
-            "source": 12599994294566825294,
-            "start": 351,
-            "end": 355
-          }
-        }
-      },
-      "binding_from_modification": true,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "gnd.p.v": {
       "name": "gnd.p.v",
@@ -1098,33 +771,22 @@
         "start": 95,
         "end": 117
       },
-      "type_id": 6147,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricPotential",
+      "nominal_span": null,
       "unit": "V",
-      "display_unit": null,
-      "description": "Potential at the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Potential at the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "gnd.p.i": {
       "name": "gnd.p.i",
@@ -1171,57 +833,171 @@
         "start": 460,
         "end": 472
       },
-      "type_id": 6140,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": true,
-      "stream": false,
       "dims": [],
-      "connected": true,
       "start": null,
+      "start_span": null,
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": "ElectricCurrent",
+      "nominal_span": null,
       "unit": "A",
-      "display_unit": null,
-      "description": "Current flowing into the pin",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "Current flowing into the pin",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     }
   },
-  "variable_type_names": {
-    "src.i": "SI.Current",
-    "src.v": "SI.Voltage",
-    "src.p.v": "SI.ElectricPotential",
-    "src.p.i": "SI.Current",
-    "src.n.v": "SI.ElectricPotential",
-    "src.n.i": "SI.Current",
-    "src.V": "SI.Voltage",
-    "C.i": "SI.Current",
-    "C.v": "SI.Voltage",
-    "C.p.v": "SI.ElectricPotential",
-    "C.p.i": "SI.Current",
-    "C.n.v": "SI.ElectricPotential",
-    "C.n.i": "SI.Current",
-    "C.C": "SI.Capacitance",
-    "gnd.p.v": "SI.ElectricPotential",
-    "gnd.p.i": "SI.Current"
+  "u": {},
+  "w": {},
+  "p": {
+    "src.V": {
+      "name": "src.V",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 2471142840645193943,
+          "start": 107,
+          "end": 119
+        },
+        "parts": [
+          {
+            "ident": "src",
+            "span": {
+              "source": 2471142840645193943,
+              "start": 107,
+              "end": 119
+            },
+            "subs": []
+          },
+          {
+            "ident": "V",
+            "span": {
+              "source": 2471142840645193943,
+              "start": 107,
+              "end": 119
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39472
+      },
+      "source_span": {
+        "source": 2471142840645193943,
+        "start": 107,
+        "end": 119
+      },
+      "dims": [],
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 5.0
+          },
+          "span": {
+            "source": 12599994294566825294,
+            "start": 296,
+            "end": 297
+          }
+        }
+      },
+      "start_span": {
+        "source": 12599994294566825294,
+        "start": 296,
+        "end": 297
+      },
+      "fixed": null,
+      "min": null,
+      "min_span": null,
+      "max": null,
+      "max_span": null,
+      "nominal": null,
+      "nominal_span": null,
+      "unit": "V",
+      "state_select": "Default",
+      "description": "Value of constant voltage",
+      "causality": "parameter",
+      "is_tunable": true,
+      "origin": "source"
+    },
+    "C.C": {
+      "name": "C.C",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14093691701382730553,
+          "start": 147,
+          "end": 163
+        },
+        "parts": [
+          {
+            "ident": "C",
+            "span": {
+              "source": 14093691701382730553,
+              "start": 147,
+              "end": 163
+            },
+            "subs": []
+          },
+          {
+            "ident": "C",
+            "span": {
+              "source": 14093691701382730553,
+              "start": 147,
+              "end": 163
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39485
+      },
+      "source_span": {
+        "source": 14093691701382730553,
+        "start": 147,
+        "end": 163
+      },
+      "dims": [],
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.001
+          },
+          "span": {
+            "source": 12599994294566825294,
+            "start": 351,
+            "end": 355
+          }
+        }
+      },
+      "start_span": {
+        "source": 12599994294566825294,
+        "start": 351,
+        "end": 355
+      },
+      "fixed": null,
+      "min": null,
+      "min_span": null,
+      "max": null,
+      "max_span": null,
+      "nominal": null,
+      "nominal_span": null,
+      "unit": "F",
+      "state_select": "Default",
+      "description": "Capacitance",
+      "causality": "parameter",
+      "is_tunable": true,
+      "origin": "source"
+    }
   },
-  "variable_final_flags": {},
-  "equations": [
+  "constants": {},
+  "z": {},
+  "m": {},
+  "f_x": [
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -1246,40 +1022,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 228,
-                        "end": 231
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "parts": [
                         {
                           "ident": "src",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 228,
-                            "end": 231
+                            "source": 13756986950433633865,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "p",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 228,
-                            "end": 231
+                            "source": 13756986950433633865,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "i",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 228,
-                            "end": 231
+                            "source": 13756986950433633865,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": null
+                      "def_id": 39467
                     }
                   },
                   "subscripts": [],
@@ -1297,40 +1073,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 234,
-                        "end": 237
+                        "source": 13894313153045674889,
+                        "start": 477,
+                        "end": 489
                       },
                       "parts": [
                         {
                           "ident": "src",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 234,
-                            "end": 237
+                            "source": 13894313153045674889,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "n",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 234,
-                            "end": 237
+                            "source": 13894313153045674889,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "i",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 234,
-                            "end": 237
+                            "source": 13894313153045674889,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": null
+                      "def_id": 39471
                     }
                   },
                   "subscripts": [],
@@ -1360,15 +1136,12 @@
         "start": 224,
         "end": 225
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "src"
-        }
-      },
+      "origin": "equation from src",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -1379,16 +1152,16 @@
                   "local": false,
                   "span": {
                     "source": 2336715272576324994,
-                    "start": 241,
-                    "end": 242
+                    "start": 161,
+                    "end": 173
                   },
                   "parts": [
                     {
                       "ident": "src",
                       "span": {
                         "source": 2336715272576324994,
-                        "start": 241,
-                        "end": 242
+                        "start": 161,
+                        "end": 173
                       },
                       "subs": []
                     },
@@ -1396,13 +1169,13 @@
                       "ident": "i",
                       "span": {
                         "source": 2336715272576324994,
-                        "start": 241,
-                        "end": 242
+                        "start": 161,
+                        "end": 173
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 5563
+                  "def_id": 39462
                 }
               },
               "subscripts": [],
@@ -1420,40 +1193,40 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 2336715272576324994,
-                    "start": 245,
-                    "end": 248
+                    "source": 13756986950433633865,
+                    "start": 477,
+                    "end": 489
                   },
                   "parts": [
                     {
                       "ident": "src",
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 245,
-                        "end": 248
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "subs": []
                     },
                     {
                       "ident": "p",
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 245,
-                        "end": 248
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "subs": []
                     },
                     {
                       "ident": "i",
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 245,
-                        "end": 248
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": null
+                  "def_id": 39467
                 }
               },
               "subscripts": [],
@@ -1476,15 +1249,12 @@
         "start": 241,
         "end": 242
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "src"
-        }
-      },
+      "origin": "equation from src",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -1495,16 +1265,16 @@
                   "local": false,
                   "span": {
                     "source": 9396140468567088194,
-                    "start": 407,
-                    "end": 408
+                    "start": 106,
+                    "end": 118
                   },
                   "parts": [
                     {
                       "ident": "src",
                       "span": {
                         "source": 9396140468567088194,
-                        "start": 407,
-                        "end": 408
+                        "start": 106,
+                        "end": 118
                       },
                       "subs": []
                     },
@@ -1512,13 +1282,13 @@
                       "ident": "v",
                       "span": {
                         "source": 9396140468567088194,
-                        "start": 407,
-                        "end": 408
+                        "start": 106,
+                        "end": 118
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 5576
+                  "def_id": 39463
                 }
               },
               "subscripts": [],
@@ -1539,40 +1309,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 9396140468567088194,
-                        "start": 411,
-                        "end": 414
+                        "source": 13756986950433633865,
+                        "start": 112,
+                        "end": 134
                       },
                       "parts": [
                         {
                           "ident": "src",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 411,
-                            "end": 414
+                            "source": 13756986950433633865,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "p",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 411,
-                            "end": 414
+                            "source": 13756986950433633865,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "v",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 411,
-                            "end": 414
+                            "source": 13756986950433633865,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": 5577
+                      "def_id": 39466
                     }
                   },
                   "subscripts": [],
@@ -1590,40 +1360,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 9396140468567088194,
-                        "start": 417,
-                        "end": 420
+                        "source": 13894313153045674889,
+                        "start": 112,
+                        "end": 134
                       },
                       "parts": [
                         {
                           "ident": "src",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 417,
-                            "end": 420
+                            "source": 13894313153045674889,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "n",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 417,
-                            "end": 420
+                            "source": 13894313153045674889,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "v",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 417,
-                            "end": 420
+                            "source": 13894313153045674889,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": 5578
+                      "def_id": 39470
                     }
                   },
                   "subscripts": [],
@@ -1653,15 +1423,12 @@
         "start": 407,
         "end": 408
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "src"
-        }
-      },
+      "origin": "equation from src",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -1671,31 +1438,31 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 2471142840645193943,
-                    "start": 257,
-                    "end": 258
+                    "source": 9396140468567088194,
+                    "start": 106,
+                    "end": 118
                   },
                   "parts": [
                     {
                       "ident": "src",
                       "span": {
-                        "source": 2471142840645193943,
-                        "start": 257,
-                        "end": 258
+                        "source": 9396140468567088194,
+                        "start": 106,
+                        "end": 118
                       },
                       "subs": []
                     },
                     {
                       "ident": "v",
                       "span": {
-                        "source": 2471142840645193943,
-                        "start": 257,
-                        "end": 258
+                        "source": 9396140468567088194,
+                        "start": 106,
+                        "end": 118
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": null
+                  "def_id": 39463
                 }
               },
               "subscripts": [],
@@ -1714,16 +1481,16 @@
                   "local": false,
                   "span": {
                     "source": 2471142840645193943,
-                    "start": 261,
-                    "end": 262
+                    "start": 107,
+                    "end": 119
                   },
                   "parts": [
                     {
                       "ident": "src",
                       "span": {
                         "source": 2471142840645193943,
-                        "start": 261,
-                        "end": 262
+                        "start": 107,
+                        "end": 119
                       },
                       "subs": []
                     },
@@ -1731,13 +1498,13 @@
                       "ident": "V",
                       "span": {
                         "source": 2471142840645193943,
-                        "start": 261,
-                        "end": 262
+                        "start": 107,
+                        "end": 119
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 6037
+                  "def_id": 39472
                 }
               },
               "subscripts": [],
@@ -1760,15 +1527,12 @@
         "start": 257,
         "end": 258
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "src"
-        }
-      },
+      "origin": "equation from src",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -1793,40 +1557,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 228,
-                        "end": 231
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "parts": [
                         {
                           "ident": "C",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 228,
-                            "end": 231
+                            "source": 13756986950433633865,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "p",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 228,
-                            "end": 231
+                            "source": 13756986950433633865,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "i",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 228,
-                            "end": 231
+                            "source": 13756986950433633865,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": null
+                      "def_id": 39480
                     }
                   },
                   "subscripts": [],
@@ -1844,40 +1608,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 234,
-                        "end": 237
+                        "source": 13894313153045674889,
+                        "start": 477,
+                        "end": 489
                       },
                       "parts": [
                         {
                           "ident": "C",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 234,
-                            "end": 237
+                            "source": 13894313153045674889,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "n",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 234,
-                            "end": 237
+                            "source": 13894313153045674889,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         },
                         {
                           "ident": "i",
                           "span": {
-                            "source": 2336715272576324994,
-                            "start": 234,
-                            "end": 237
+                            "source": 13894313153045674889,
+                            "start": 477,
+                            "end": 489
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": null
+                      "def_id": 39484
                     }
                   },
                   "subscripts": [],
@@ -1907,15 +1671,12 @@
         "start": 224,
         "end": 225
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "C"
-        }
-      },
+      "origin": "equation from C",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -1926,16 +1687,16 @@
                   "local": false,
                   "span": {
                     "source": 2336715272576324994,
-                    "start": 241,
-                    "end": 242
+                    "start": 161,
+                    "end": 173
                   },
                   "parts": [
                     {
                       "ident": "C",
                       "span": {
                         "source": 2336715272576324994,
-                        "start": 241,
-                        "end": 242
+                        "start": 161,
+                        "end": 173
                       },
                       "subs": []
                     },
@@ -1943,13 +1704,13 @@
                       "ident": "i",
                       "span": {
                         "source": 2336715272576324994,
-                        "start": 241,
-                        "end": 242
+                        "start": 161,
+                        "end": 173
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 5563
+                  "def_id": 39475
                 }
               },
               "subscripts": [],
@@ -1967,40 +1728,40 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 2336715272576324994,
-                    "start": 245,
-                    "end": 248
+                    "source": 13756986950433633865,
+                    "start": 477,
+                    "end": 489
                   },
                   "parts": [
                     {
                       "ident": "C",
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 245,
-                        "end": 248
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "subs": []
                     },
                     {
                       "ident": "p",
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 245,
-                        "end": 248
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "subs": []
                     },
                     {
                       "ident": "i",
                       "span": {
-                        "source": 2336715272576324994,
-                        "start": 245,
-                        "end": 248
+                        "source": 13756986950433633865,
+                        "start": 477,
+                        "end": 489
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": null
+                  "def_id": 39480
                 }
               },
               "subscripts": [],
@@ -2023,15 +1784,12 @@
         "start": 241,
         "end": 242
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "C"
-        }
-      },
+      "origin": "equation from C",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -2042,16 +1800,16 @@
                   "local": false,
                   "span": {
                     "source": 9396140468567088194,
-                    "start": 407,
-                    "end": 408
+                    "start": 106,
+                    "end": 118
                   },
                   "parts": [
                     {
                       "ident": "C",
                       "span": {
                         "source": 9396140468567088194,
-                        "start": 407,
-                        "end": 408
+                        "start": 106,
+                        "end": 118
                       },
                       "subs": []
                     },
@@ -2059,13 +1817,13 @@
                       "ident": "v",
                       "span": {
                         "source": 9396140468567088194,
-                        "start": 407,
-                        "end": 408
+                        "start": 106,
+                        "end": 118
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 5576
+                  "def_id": 39476
                 }
               },
               "subscripts": [],
@@ -2086,40 +1844,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 9396140468567088194,
-                        "start": 411,
-                        "end": 414
+                        "source": 13756986950433633865,
+                        "start": 112,
+                        "end": 134
                       },
                       "parts": [
                         {
                           "ident": "C",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 411,
-                            "end": 414
+                            "source": 13756986950433633865,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "p",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 411,
-                            "end": 414
+                            "source": 13756986950433633865,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "v",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 411,
-                            "end": 414
+                            "source": 13756986950433633865,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": 5577
+                      "def_id": 39479
                     }
                   },
                   "subscripts": [],
@@ -2137,40 +1895,40 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 9396140468567088194,
-                        "start": 417,
-                        "end": 420
+                        "source": 13894313153045674889,
+                        "start": 112,
+                        "end": 134
                       },
                       "parts": [
                         {
                           "ident": "C",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 417,
-                            "end": 420
+                            "source": 13894313153045674889,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "n",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 417,
-                            "end": 420
+                            "source": 13894313153045674889,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         },
                         {
                           "ident": "v",
                           "span": {
-                            "source": 9396140468567088194,
-                            "start": 417,
-                            "end": 420
+                            "source": 13894313153045674889,
+                            "start": 112,
+                            "end": 134
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": 5578
+                      "def_id": 39483
                     }
                   },
                   "subscripts": [],
@@ -2200,15 +1958,12 @@
         "start": 407,
         "end": 408
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "C"
-        }
-      },
+      "origin": "equation from C",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -2218,31 +1973,31 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 14093691701382730553,
-                    "start": 200,
-                    "end": 201
+                    "source": 2336715272576324994,
+                    "start": 161,
+                    "end": 173
                   },
                   "parts": [
                     {
                       "ident": "C",
                       "span": {
-                        "source": 14093691701382730553,
-                        "start": 200,
-                        "end": 201
+                        "source": 2336715272576324994,
+                        "start": 161,
+                        "end": 173
                       },
                       "subs": []
                     },
                     {
                       "ident": "i",
                       "span": {
-                        "source": 14093691701382730553,
-                        "start": 200,
-                        "end": 201
+                        "source": 2336715272576324994,
+                        "start": 161,
+                        "end": 173
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": null
+                  "def_id": 39475
                 }
               },
               "subscripts": [],
@@ -2264,16 +2019,16 @@
                       "local": false,
                       "span": {
                         "source": 14093691701382730553,
-                        "start": 204,
-                        "end": 205
+                        "start": 147,
+                        "end": 163
                       },
                       "parts": [
                         {
                           "ident": "C",
                           "span": {
                             "source": 14093691701382730553,
-                            "start": 204,
-                            "end": 205
+                            "start": 147,
+                            "end": 163
                           },
                           "subs": []
                         },
@@ -2281,13 +2036,13 @@
                           "ident": "C",
                           "span": {
                             "source": 14093691701382730553,
-                            "start": 204,
-                            "end": 205
+                            "start": 147,
+                            "end": 163
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": 4059
+                      "def_id": 39485
                     }
                   },
                   "subscripts": [],
@@ -2309,31 +2064,31 @@
                           "component_ref": {
                             "local": false,
                             "span": {
-                              "source": 14093691701382730553,
-                              "start": 210,
-                              "end": 211
+                              "source": 9396140468567088194,
+                              "start": 106,
+                              "end": 118
                             },
                             "parts": [
                               {
                                 "ident": "C",
                                 "span": {
-                                  "source": 14093691701382730553,
-                                  "start": 210,
-                                  "end": 211
+                                  "source": 9396140468567088194,
+                                  "start": 106,
+                                  "end": 118
                                 },
                                 "subs": []
                               },
                               {
                                 "ident": "v",
                                 "span": {
-                                  "source": 14093691701382730553,
-                                  "start": 210,
-                                  "end": 211
+                                  "source": 9396140468567088194,
+                                  "start": 106,
+                                  "end": 118
                                 },
                                 "subs": []
                               }
                             ],
-                            "def_id": null
+                            "def_id": 39476
                           }
                         },
                         "subscripts": [],
@@ -2371,15 +2126,12 @@
         "start": 200,
         "end": 201
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "C"
-        }
-      },
+      "origin": "equation from C",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -2389,40 +2141,40 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 3863566413367295742,
-                    "start": 222,
-                    "end": 225
+                    "source": 10712131675900935278,
+                    "start": 95,
+                    "end": 117
                   },
                   "parts": [
                     {
                       "ident": "gnd",
                       "span": {
-                        "source": 3863566413367295742,
-                        "start": 222,
-                        "end": 225
+                        "source": 10712131675900935278,
+                        "start": 95,
+                        "end": 117
                       },
                       "subs": []
                     },
                     {
                       "ident": "p",
                       "span": {
-                        "source": 3863566413367295742,
-                        "start": 222,
-                        "end": 225
+                        "source": 10712131675900935278,
+                        "start": 95,
+                        "end": 117
                       },
                       "subs": []
                     },
                     {
                       "ident": "v",
                       "span": {
-                        "source": 3863566413367295742,
-                        "start": 222,
-                        "end": 225
+                        "source": 10712131675900935278,
+                        "start": 95,
+                        "end": 117
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 4072
+                  "def_id": 39490
                 }
               },
               "subscripts": [],
@@ -2457,15 +2209,12 @@
         "start": 222,
         "end": 223
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": "gnd"
-        }
-      },
+      "origin": "equation from gnd",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Add",
           "lhs": {
@@ -2582,15 +2331,12 @@
         "start": 477,
         "end": 489
       },
-      "origin": {
-        "FlowSum": {
-          "description": "src.p.i + C.p.i = 0"
-        }
-      },
+      "origin": "flow sum equation: src.p.i + C.p.i = 0",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Add",
           "lhs": {
@@ -2768,15 +2514,12 @@
         "start": 460,
         "end": 472
       },
-      "origin": {
-        "FlowSum": {
-          "description": "src.n.i + C.n.i + gnd.p.i = 0"
-        }
-      },
+      "origin": "flow sum equation: src.n.i + C.n.i + gnd.p.i = 0",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -2893,16 +2636,12 @@
         "start": 112,
         "end": 134
       },
-      "origin": {
-        "Connection": {
-          "lhs": "src.p.v",
-          "rhs": "C.p.v"
-        }
-      },
+      "origin": "connection equation: src.p.v = C.p.v",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -3019,16 +2758,12 @@
         "start": 95,
         "end": 117
       },
-      "origin": {
-        "Connection": {
-          "lhs": "src.n.v",
-          "rhs": "C.n.v"
-        }
-      },
+      "origin": "connection equation: src.n.v = C.n.v",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -3145,34 +2880,27 @@
         "start": 95,
         "end": 117
       },
-      "origin": {
-        "Connection": {
-          "lhs": "C.n.v",
-          "rhs": "gnd.p.v"
-        }
-      },
+      "origin": "connection equation: C.n.v = gnd.p.v",
       "scalar_count": 1
     }
   ],
   "structured_equations": [],
-  "assert_equations": [],
   "initial_equations": [],
   "initial_structured_equations": [],
-  "initial_assert_equations": [],
-  "algorithms": [],
-  "initial_algorithms": [],
-  "when_clauses": [],
+  "f_z": [],
+  "f_m": [],
+  "f_c": [],
+  "relation": [],
+  "synthetic_root_conditions": [],
+  "scheduled_time_events": [],
+  "scheduled_root_conditions": [],
+  "event_actions": [],
+  "constructor_exprs": [],
+  "schedules": [],
+  "triggered_conditions": [],
+  "intervals": {},
+  "timings": {},
   "functions": {},
-  "is_partial": false,
-  "class_type": "Model",
-  "model_description": "A capacitor directly across an ideal voltage source — an ill-posed initialization (RC blow-up)",
-  "definite_roots": [],
-  "branches": [],
-  "optional_edges": [],
-  "potential_roots": [],
-  "top_level_connectors": [],
-  "top_level_input_components": [],
-  "oc_break_edge_scalar_count": 0,
   "enum_literal_ordinals": {
     "StateSelect.never": 1,
     "StateSelect.'never'": 1,
@@ -4091,214 +3819,260 @@
     "Modelica.Utilities.Types.TokenType.'NoToken'": 7,
     "TokenType.'NoToken'": 7
   },
-  "symbol_ancestry": {
-    "5563": [
-      87,
-      157,
-      4014,
-      4026,
-      5514,
-      5563
-    ],
-    "39462": [
-      87,
-      157,
-      4014,
-      4026,
-      5514,
-      5563
-    ],
-    "5576": [
-      87,
-      157,
-      4014,
-      4026,
-      5519,
-      5576
-    ],
-    "39463": [
-      87,
-      157,
-      4014,
-      4026,
-      5519,
-      5576
-    ],
-    "5571": [
-      87,
-      157,
-      4014,
-      4026,
-      5517,
-      5571
-    ],
-    "39466": [
-      87,
-      157,
-      4014,
-      4026,
-      5517,
-      5571
-    ],
-    "5572": [
-      87,
-      157,
-      4014,
-      4026,
-      5517,
-      5572
-    ],
-    "39467": [
-      87,
-      157,
-      4014,
-      4026,
-      5517,
-      5572
-    ],
-    "5561": [
-      87,
-      157,
-      4014,
-      4026,
-      5513,
-      5561
-    ],
-    "39470": [
-      87,
-      157,
-      4014,
-      4026,
-      5513,
-      5561
-    ],
-    "5562": [
-      87,
-      157,
-      4014,
-      4026,
-      5513,
-      5562
-    ],
-    "39471": [
-      87,
-      157,
-      4014,
-      4026,
-      5513,
-      5562
-    ],
-    "6037": [
-      87,
-      157,
-      4014,
-      4030,
-      6004,
-      6037
-    ],
-    "39472": [
-      87,
-      157,
-      4014,
-      4030,
-      6004,
-      6037
-    ],
-    "39475": [
-      87,
-      157,
-      4014,
-      4026,
-      5514,
-      5563
-    ],
-    "39476": [
-      87,
-      157,
-      4014,
-      4026,
-      5519,
-      5576
-    ],
-    "39479": [
-      87,
-      157,
-      4014,
-      4026,
-      5517,
-      5571
-    ],
-    "39480": [
-      87,
-      157,
-      4014,
-      4026,
-      5517,
-      5572
-    ],
-    "39483": [
-      87,
-      157,
-      4014,
-      4026,
-      5513,
-      5561
-    ],
-    "39484": [
-      87,
-      157,
-      4014,
-      4026,
-      5513,
-      5562
-    ],
-    "4059": [
-      87,
-      157,
-      4014,
-      4022,
-      4035,
-      4059
-    ],
-    "39485": [
-      87,
-      157,
-      4014,
-      4022,
-      4035,
-      4059
-    ],
-    "5569": [
-      87,
-      157,
-      4014,
-      4026,
-      5516,
-      5569
-    ],
-    "39490": [
-      87,
-      157,
-      4014,
-      4026,
-      5516,
-      5569
-    ],
-    "5570": [
-      87,
-      157,
-      4014,
-      4026,
-      5516,
-      5570
-    ],
-    "39491": [
-      87,
-      157,
-      4014,
-      4026,
-      5516,
-      5570
-    ]
+  "metadata": {
+    "is_partial": false,
+    "class_type": "Model",
+    "variable_starts": {
+      "src.V": {
+        "Literal": {
+          "value": {
+            "Integer": 5
+          },
+          "span": {
+            "source": 12599994294566825294,
+            "start": 296,
+            "end": 297
+          }
+        }
+      },
+      "C.v": {
+        "Literal": {
+          "value": {
+            "Integer": 0
+          },
+          "span": {
+            "source": 14093691701382730553,
+            "start": 130,
+            "end": 131
+          }
+        }
+      },
+      "C.C": {
+        "Literal": {
+          "value": {
+            "Real": 0.001
+          },
+          "span": {
+            "source": 12599994294566825294,
+            "start": 351,
+            "end": 355
+          }
+        }
+      }
+    },
+    "interface_flow_count": 0,
+    "overconstrained_interface_count": 0,
+    "oc_break_edge_scalar_count": 0,
+    "model_description": "A capacitor directly across an ideal voltage source — an ill-posed initialization (RC blow-up)",
+    "symbol_ancestry": {
+      "5563": [
+        87,
+        157,
+        4014,
+        4026,
+        5514,
+        5563
+      ],
+      "39462": [
+        87,
+        157,
+        4014,
+        4026,
+        5514,
+        5563
+      ],
+      "5576": [
+        87,
+        157,
+        4014,
+        4026,
+        5519,
+        5576
+      ],
+      "39463": [
+        87,
+        157,
+        4014,
+        4026,
+        5519,
+        5576
+      ],
+      "5571": [
+        87,
+        157,
+        4014,
+        4026,
+        5517,
+        5571
+      ],
+      "39466": [
+        87,
+        157,
+        4014,
+        4026,
+        5517,
+        5571
+      ],
+      "5572": [
+        87,
+        157,
+        4014,
+        4026,
+        5517,
+        5572
+      ],
+      "39467": [
+        87,
+        157,
+        4014,
+        4026,
+        5517,
+        5572
+      ],
+      "5561": [
+        87,
+        157,
+        4014,
+        4026,
+        5513,
+        5561
+      ],
+      "39470": [
+        87,
+        157,
+        4014,
+        4026,
+        5513,
+        5561
+      ],
+      "5562": [
+        87,
+        157,
+        4014,
+        4026,
+        5513,
+        5562
+      ],
+      "39471": [
+        87,
+        157,
+        4014,
+        4026,
+        5513,
+        5562
+      ],
+      "6037": [
+        87,
+        157,
+        4014,
+        4030,
+        6004,
+        6037
+      ],
+      "39472": [
+        87,
+        157,
+        4014,
+        4030,
+        6004,
+        6037
+      ],
+      "39475": [
+        87,
+        157,
+        4014,
+        4026,
+        5514,
+        5563
+      ],
+      "39476": [
+        87,
+        157,
+        4014,
+        4026,
+        5519,
+        5576
+      ],
+      "39479": [
+        87,
+        157,
+        4014,
+        4026,
+        5517,
+        5571
+      ],
+      "39480": [
+        87,
+        157,
+        4014,
+        4026,
+        5517,
+        5572
+      ],
+      "39483": [
+        87,
+        157,
+        4014,
+        4026,
+        5513,
+        5561
+      ],
+      "39484": [
+        87,
+        157,
+        4014,
+        4026,
+        5513,
+        5562
+      ],
+      "4059": [
+        87,
+        157,
+        4014,
+        4022,
+        4035,
+        4059
+      ],
+      "39485": [
+        87,
+        157,
+        4014,
+        4022,
+        4035,
+        4059
+      ],
+      "5569": [
+        87,
+        157,
+        4014,
+        4026,
+        5516,
+        5569
+      ],
+      "39490": [
+        87,
+        157,
+        4014,
+        4026,
+        5516,
+        5569
+      ],
+      "5570": [
+        87,
+        157,
+        4014,
+        4026,
+        5516,
+        5570
+      ],
+      "39491": [
+        87,
+        157,
+        4014,
+        4026,
+        5516,
+        5570
+      ]
+    }
   }
 }

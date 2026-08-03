@@ -1,0 +1,383 @@
+{
+  "incidence": {
+    "n_eq": 8,
+    "n_var": 8,
+    "unknown_names": [
+      "der(C.v)",
+      "C.i",
+      "src.p.v",
+      "src.p.i",
+      "src.n.i",
+      "C.n.v",
+      "C.n.i",
+      "gnd.p.i"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (equation from src)",
+        "unknowns": [
+          3,
+          4
+        ],
+        "equation_text": "-(src.p.i + src.n.i)"
+      },
+      {
+        "equation": "f_x[1] (equation from src)",
+        "unknowns": [
+          2,
+          5
+        ],
+        "equation_text": "src.V - (src.p.v - C.n.v)"
+      },
+      {
+        "equation": "f_x[2] (equation from C)",
+        "unknowns": [
+          1,
+          6
+        ],
+        "equation_text": "-(C.i + C.n.i)"
+      },
+      {
+        "equation": "f_x[3] (equation from C)",
+        "unknowns": [
+          2,
+          5
+        ],
+        "equation_text": "C.v - (src.p.v - C.n.v)"
+      },
+      {
+        "equation": "f_x[4] (equation from C)",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "C.i - C.C * der(C.v)"
+      },
+      {
+        "equation": "f_x[5] (flow sum equation: src.p.i + C.p.i = 0)",
+        "unknowns": [
+          1,
+          3
+        ],
+        "equation_text": "src.p.i + C.i"
+      },
+      {
+        "equation": "f_x[6] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+        "unknowns": [
+          4,
+          6,
+          7
+        ],
+        "equation_text": "src.n.i + C.n.i + gnd.p.i"
+      },
+      {
+        "equation": "f_x[7] (connection equation: C.n.v = gnd.p.v)",
+        "unknowns": [
+          5
+        ],
+        "equation_text": "C.n.v"
+      }
+    ]
+  },
+  "before": {
+    "n_equations": 14,
+    "n_unknowns": 14,
+    "n_matched": 13,
+    "matching": [
+      {
+        "equation": "f_x[0] (equation from src)",
+        "unknown": "src.p.i"
+      },
+      {
+        "equation": "f_x[1] (equation from src)",
+        "unknown": "src.i"
+      },
+      {
+        "equation": "f_x[2] (equation from src)",
+        "unknown": "src.p.v"
+      },
+      {
+        "equation": "f_x[3] (equation from src)",
+        "unknown": "src.v"
+      },
+      {
+        "equation": "f_x[4] (equation from C)",
+        "unknown": "C.n.i"
+      },
+      {
+        "equation": "f_x[5] (equation from C)",
+        "unknown": "C.i"
+      },
+      {
+        "equation": "f_x[6] (equation from C)",
+        "unknown": "C.n.v"
+      },
+      {
+        "equation": "f_x[7] (equation from C)",
+        "unknown": "der(C.v)"
+      },
+      {
+        "equation": "f_x[8] (equation from gnd)",
+        "unknown": "gnd.p.v"
+      },
+      {
+        "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+        "unknown": "C.p.i"
+      },
+      {
+        "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+        "unknown": "src.n.i"
+      },
+      {
+        "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+        "unknown": "C.p.v"
+      },
+      {
+        "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+        "unknown": "src.n.v"
+      }
+    ],
+    "incidence": {
+      "n_eq": 14,
+      "n_var": 14,
+      "unknown_names": [
+        "der(C.v)",
+        "src.v",
+        "C.i",
+        "src.i",
+        "src.p.v",
+        "src.p.i",
+        "src.n.v",
+        "src.n.i",
+        "C.p.v",
+        "C.p.i",
+        "C.n.v",
+        "C.n.i",
+        "gnd.p.v",
+        "gnd.p.i"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (equation from src)",
+          "unknowns": [
+            5,
+            7
+          ],
+          "equation_text": "0 - (src.p.i + src.n.i)"
+        },
+        {
+          "equation": "f_x[1] (equation from src)",
+          "unknowns": [
+            3,
+            5
+          ],
+          "equation_text": "src.i - src.p.i"
+        },
+        {
+          "equation": "f_x[2] (equation from src)",
+          "unknowns": [
+            1,
+            4,
+            6
+          ],
+          "equation_text": "src.v - (src.p.v - src.n.v)"
+        },
+        {
+          "equation": "f_x[3] (equation from src)",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "src.v - src.V"
+        },
+        {
+          "equation": "f_x[4] (equation from C)",
+          "unknowns": [
+            9,
+            11
+          ],
+          "equation_text": "0 - (C.p.i + C.n.i)"
+        },
+        {
+          "equation": "f_x[5] (equation from C)",
+          "unknowns": [
+            2,
+            9
+          ],
+          "equation_text": "C.i - C.p.i"
+        },
+        {
+          "equation": "f_x[6] (equation from C)",
+          "unknowns": [
+            8,
+            10
+          ],
+          "equation_text": "C.v - (C.p.v - C.n.v)"
+        },
+        {
+          "equation": "f_x[7] (equation from C)",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "C.i - C.C * der(C.v)"
+        },
+        {
+          "equation": "f_x[8] (equation from gnd)",
+          "unknowns": [
+            12
+          ],
+          "equation_text": "gnd.p.v - 0"
+        },
+        {
+          "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+          "unknowns": [
+            5,
+            9
+          ],
+          "equation_text": "src.p.i + C.p.i"
+        },
+        {
+          "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+          "unknowns": [
+            7,
+            11,
+            13
+          ],
+          "equation_text": "src.n.i + C.n.i + gnd.p.i"
+        },
+        {
+          "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+          "unknowns": [
+            4,
+            8
+          ],
+          "equation_text": "src.p.v - C.p.v"
+        },
+        {
+          "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+          "unknowns": [
+            6,
+            10
+          ],
+          "equation_text": "src.n.v - C.n.v"
+        },
+        {
+          "equation": "f_x[13] (connection equation: C.n.v = gnd.p.v)",
+          "unknowns": [
+            10,
+            12
+          ],
+          "equation_text": "C.n.v - gnd.p.v"
+        }
+      ]
+    }
+  },
+  "reduction": {
+    "states_before": [
+      "C.v"
+    ],
+    "states_after": [
+      "C.v"
+    ],
+    "demoted_states": [],
+    "n_states_before": 1,
+    "n_states_after": 1,
+    "steps": [
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted"
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok"
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok"
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 substituted"
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "6 eliminated"
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "src.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":2471142840645193943,\"start\":261,\"end\":262}}}"
+      },
+      {
+        "variable": "gnd.p.v",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":3863566413367295742,\"start\":222,\"end\":225}}}"
+      },
+      {
+        "variable": "src.i",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39467}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}}"
+      },
+      {
+        "variable": "C.p.i",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"C.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"C\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}}"
+      },
+      {
+        "variable": "C.p.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39466}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}}"
+      },
+      {
+        "variable": "src.n.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"C.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"C\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39483}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      }
+    ],
+    "stopped_at": null,
+    "funnel_completed": true
+  },
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 7 matched out of 8 equations and 8 unknowns; unmatched equations: f_x[7]; unmatched unknowns: gnd.p.i",
+    "n_equations": 8,
+    "n_unknowns": 8,
+    "n_matched": 7,
+    "rank_deficiency": 1,
+    "unmatched_equations": [
+      "f_x[7]"
+    ],
+    "unmatched_unknowns": [
+      "gnd.p.i"
+    ],
+    "unmatched_unknown_locations": [
+      {
+        "unknown": "gnd.p.i",
+        "location": {
+          "line": 9,
+          "column": 1,
+          "excerpt": "  connect(sr",
+          "line_text": "  connect(src.n, gnd.p);",
+          "byte_start": 460,
+          "byte_end": 472
+        }
+      }
+    ],
+    "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+  }
+}
