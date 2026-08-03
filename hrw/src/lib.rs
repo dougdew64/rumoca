@@ -39,6 +39,7 @@
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
 pub mod app;
+pub mod autoplay;
 pub mod bridge;
 pub mod canvas;
 pub mod colors;

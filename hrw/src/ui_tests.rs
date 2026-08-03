@@ -165,6 +165,7 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         "camera-aiming",
         "structural-vs-numerical-rank",
         "the-oracle",
+        "dae-construction",
     ] {
         assert!(
             h.query_by_label(tour).is_some(),
@@ -175,6 +176,60 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         h.query_by_label("README").is_none(),
         "README.md is documentation ABOUT the tours, not a tour — offering it would \
          give the picker an entry whose stops do not exist",
+    );
+}
+
+/// **The Play button exists, and the running readout reports.**
+///
+/// The pane-is-a-reporter rule applied to the transport built on 2026-08-03: a
+/// self-running tour whose progress readout silently rendered nothing would look
+/// exactly like one that was working, because the *stage side* would still be
+/// moving. That is the partial-report shape the Context Bar defect had — every
+/// visible thing correct, and the missing part leaving no gap where it was.
+///
+/// The clock itself is tested in `autoplay::tests`, without a window. This test's
+/// job is only that the button is reachable and the readout reaches the screen.
+#[test]
+fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
+    let mut h = harness(App::test_default());
+
+    // Exact label, not `contains`: the animation views have their own Play button,
+    // and a substring query matches both.
+    assert!(
+        h.query_by_label("\u{25b6} Play").is_some(),
+        "tour mode must offer a Play button; it is the whole transport",
+    );
+
+    // Choose the curriculum tour, which is the one this was built to record.
+    assert!(
+        h.state_mut().test_select_fixture_tour("dae-construction"),
+        "the fixture tour must be readable, or the run below is vacuous",
+    );
+    h.run_steps(2);
+
+    h.state_mut().test_start_autoplay();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_autoplay_phase(),
+        crate::autoplay::Phase::Playing,
+        "clicking Play must actually start the clock",
+    );
+
+    // Non-vacuity: a real tour schedules many beats, not one.
+    let (_, total) = h.state().test_autoplay_progress();
+    assert!(total >= 15, "the DAE tour should schedule ~20 beats, got {total}");
+
+    // The readout is on screen. Its exact wording is the UI's business; that it
+    // says *something* about which beat is showing is this test's business.
+    assert!(
+        h.query_by_label_contains("beat 1/").is_some(),
+        "the running walk must say where it is — a progress readout that renders \
+         nothing is indistinguishable from a walk that is not running",
+    );
+    assert!(
+        h.query_by_label("\u{23f8} Pause").is_some(),
+        "a running walk must offer Pause, or a recording cannot be stopped mid-take",
     );
 }
 

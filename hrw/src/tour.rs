@@ -29,7 +29,6 @@ use crate::bridge;
 /// Stop 1 look as though it has already been done. **That reset is not this
 /// struct's business.** `select` and `poll` return *whether the selection
 /// changed*; `App::reset_for_new_tour` decides what that invalidates.
-#[derive(Default)]
 pub(crate) struct TourState {
     /// The selected tour's text and the mtime it was read at.
     pub(crate) cached: Option<(String, std::time::SystemTime)>,
@@ -39,6 +38,43 @@ pub(crate) struct TourState {
     pub(crate) selected: Option<TourSource>,
     /// When the tour directory was last polled.
     pub(crate) polled_at: Option<std::time::Instant>,
+
+    /// **The self-running walk** of whichever tour is showing.
+    ///
+    /// Lives here rather than on `App` because it plays *this* tour and means
+    /// nothing without one — `app_does_not_regrow_its_field_count` asked the
+    /// question ("does the new field belong on App, or on the pane that owns
+    /// it?") and this was the answer. The seam is the one this struct already
+    /// documents: the pane holds its own world, and `App` keeps the
+    /// consequences, since dispatching a beat needs `dispatch_hrw_link` and
+    /// knowing when to hold the clock needs `compiling`.
+    pub(crate) autoplay: crate::autoplay::Autoplay,
+    /// Requested run length, from [`crate::autoplay::TOTAL_CHOICES`].
+    pub(crate) autoplay_total: std::time::Duration,
+    /// How far the tour text can scroll, measured on the last frame.
+    ///
+    /// Kept so a running walk can scroll the prose in step with itself. Measured
+    /// rather than computed because the content height depends on the rendered
+    /// markdown, which depends on the panel width — and the divider can change
+    /// that mid-run.
+    pub(crate) tour_scroll_range: Option<f32>,
+}
+
+impl Default for TourState {
+    /// Hand-written for one field: `autoplay_total` starts at
+    /// [`crate::autoplay::DEFAULT_TOTAL`] rather than at zero, and a derived
+    /// `Default` would schedule every beat into no time at all.
+    fn default() -> Self {
+        Self {
+            cached: None,
+            available: Vec::new(),
+            selected: None,
+            polled_at: None,
+            autoplay: crate::autoplay::Autoplay::default(),
+            autoplay_total: crate::autoplay::DEFAULT_TOTAL,
+            tour_scroll_range: None,
+        }
+    }
 }
 
 impl TourState {

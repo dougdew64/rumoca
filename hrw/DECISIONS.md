@@ -1943,3 +1943,62 @@ say something, and the one that failed is not the silent member of that set.
 This is the pane-is-a-reporter rule reaching a pane that had already shipped, and it is the
 first time a *curriculum* tour found a defect — the mechanism `project-tours-multiply-testing`
 predicted, arriving from the direction nobody had aimed it.
+
+---
+
+## 2026-08-03 — Tours can run themselves (the Play button)
+
+**Why:** Doug shared an HRW screenshot on LinkedIn and it drew immediate interest. Explaining
+*what a tour is* in prose, to people who have never seen the tool, turned out to be harder than
+showing one — so a tour needs to walk itself for long enough to be screen-recorded.
+
+`src/autoplay.rs` is **pure**: `Duration` and `&str` arithmetic, no egui, no `App`, and no clock
+of its own — `Autoplay::tick` is *told* how much time passed. That is the whole reason a timing
+feature is testable at all. **A schedule that can only be checked by watching it is a schedule
+nobody checks**, and the two properties that matter (the run lasts exactly as long as promised;
+a stop with more prose gets more time) are plain assertions here and stopwatch work anywhere
+else.
+
+### The three decisions that shape a watchable recording
+
+1. **A beat is a link, not a stop.** `dae-construction.md` has 7 stops and ~20 links. Advancing
+   per *stop* gives seven jumps separated by stillness; advancing per *link* keeps something
+   moving — the tree opens, a node highlights, another highlights — which reads as a
+   demonstration rather than a slideshow.
+
+2. **Time is weighted by prose length.** Stops are not equal, and prose length is a crude but
+   good proxy now that the prose is load-bearing. A stop that sets up the phase earns longer
+   than one that points at a field.
+
+3. **The clock stops while the app is busy.** A `load` beat compiles a specimen. Counting the
+   compile against the dwell would spend the budget on a spinner and cut away exactly as the
+   interesting frame arrived. `tick` takes a `busy` flag and does not advance.
+
+   **This is the one place the promised duration is deliberately not honoured**, and the trade
+   is the right way round: a recording that runs eight seconds long is fine; one that cuts away
+   mid-compile is not. `real_elapsed()` reports the true cost.
+
+**Focus pauses the walk, and only its own pause lifts.** An external stop brings Wolfram or
+System Modeler forward; a clock still running behind another window would advance HRW while
+nobody was watching, and the recording would return to a tour that had moved on. Focus
+returning resumes — but a *user* pause survives the round trip, or pressing Pause and then
+clicking any other window would silently restart the take. The two pauses are indistinguishable
+in `phase()` and must not behave alike, which is why `paused_by_focus` exists and is tested.
+
+**Run length is a picker, not a constant** (30s / 60s / 90s / 3min, default 90s). These are
+conventional social-video lengths rather than a measured optimum; the guidance moves and the
+judgement is the author's.
+
+### Where the state lives, and who decided
+
+The two fields went on `App` first, and **`app_does_not_regrow_its_field_count` refused them** —
+its message asks *"does the new field belong on App, or on the pane that owns it?"* The answer
+was `TourState`: autoplay plays *this* tour and means nothing without one. The seam is the one
+`TourState` already documents — the pane holds its own world, and `App` keeps the consequences,
+since dispatching a beat needs `dispatch_hrw_link` and holding the clock needs `compiling`.
+**The ratchet did the design review**, which is what it was built for.
+
+**The prose scrolls with the walk**, proportionally rather than by heading. `egui_commonmark`
+lays out its own content and exposes no per-heading anchor, so there is nothing to scroll *to*.
+Proportional scrolling drifts when stops differ in length; the stop caption above the pane
+covers that, and the alternative was no scrolling at all.

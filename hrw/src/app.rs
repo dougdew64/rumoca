@@ -1210,6 +1210,75 @@ impl App {
         }
     }
 
+    /// Build and begin a self-running walk of the tour currently showing.
+    ///
+    /// Only links that **parse** become beats. A tour that names a verb in prose
+    /// would otherwise contribute a beat that dispatches nothing and stalls the run
+    /// on a blank screen — and since `parse_hrw_link` is the same gate
+    /// `fixture_tour_links_all_resolve` applies, a scheduled run and a checked tour
+    /// cannot disagree about what a link is.
+    fn start_autoplay(&mut self) {
+        let Some(text) = self.tour.text().map(str::to_owned) else {
+            self.notify("no tour is showing \u{2014} pick one first");
+            return;
+        };
+        let mut stops = crate::autoplay::parse_stops(&text);
+        for stop in &mut stops {
+            stop.links.retain(|l| parse_hrw_link(l).is_some());
+        }
+        let beats = crate::autoplay::schedule(&stops, self.tour.autoplay_total, |l| {
+            // An external hop leaves HRW, so it needs longer on screen: the viewer
+            // has to reorient to a different window, which prestarting the app
+            // removes the launch cost of but not the cost of.
+            matches!(
+                parse_hrw_link(l),
+                Some(HrwLink::OpenNotebook(_) | HrwLink::OpenInSystemModeler(_))
+            )
+        });
+        if beats.is_empty() {
+            self.notify("this tour has no stops to play");
+            return;
+        }
+        if let Some(first) = self.tour.autoplay.start(beats) {
+            self.dispatch_beat(first);
+        }
+    }
+
+    /// Advance a running tour by one frame.
+    ///
+    /// **Pauses itself when the window loses focus.** An external stop brings
+    /// Wolfram Desktop or System Modeler to the front, and a clock that kept
+    /// running behind another window would advance HRW while nobody was watching
+    /// it — the recording would return to a tour that had moved on without them.
+    /// Clicking back into HRW resumes. That makes an external hop as long as the
+    /// viewer wants rather than as long as the schedule guessed.
+    fn tick_autoplay(&mut self, ctx: &egui::Context) {
+        if !self.tour.autoplay.is_running() {
+            return;
+        }
+        self.tour.autoplay.set_focused(ctx.input(|i| i.focused));
+
+        // `stable_dt` rather than `unstable_dt`: a single slow frame should not
+        // jump the walk forward by its own hitch.
+        let dt = std::time::Duration::from_secs_f32(ctx.input(|i| i.stable_dt).min(0.25));
+        if let Some(next) = self.tour.autoplay.tick(dt, self.compiling) {
+            self.dispatch_beat(next);
+        }
+        // A timed run must keep painting even when nothing else asks it to.
+        ctx.request_repaint();
+    }
+
+    /// Apply one beat: dispatch its link, if it has one.
+    ///
+    /// A prose-only beat is not a no-op — it is a deliberate pause on the stop's
+    /// caption, which is how a title card and a section break get their moment.
+    fn dispatch_beat(&mut self, beat: crate::autoplay::Beat) {
+        let Some(link) = beat.link.as_deref().and_then(parse_hrw_link) else {
+            return;
+        };
+        self.dispatch_hrw_link(link);
+    }
+
     /// Three-phase live-debug lifecycle shared by Matching, Tarjan, and Reduction views.
     ///
     /// Returns `SpawnLive` when the ack handshake completes and the caller
@@ -5083,10 +5152,32 @@ egui::Panel::top("bar").show(ui, |ui| {
                     },
                 );
                 ui.separator();
+                self.autoplay_controls_ui(ui, &tour_text);
+                ui.separator();
 
-                                    egui::ScrollArea::vertical()
-                    .id_salt("tour")
-                    .show(ui, |ui| {
+                // **The prose scrolls with the walk.**
+                //
+                // Without this the stage side moves while the tour text sits at the
+                // top, and a viewer of the recording cannot tell which stop they are
+                // in — which matters more here than it would have a week ago, now
+                // that the prose is load-bearing rather than captioning.
+                //
+                // Driven by elapsed *fraction* rather than by locating the stop's
+                // heading in the rendered markdown: `egui_commonmark` lays out its
+                // own content and exposes no anchor per heading, so there is nothing
+                // to scroll *to*. Proportional scrolling is an approximation, and an
+                // honest one — it drifts from the exact heading position when stops
+                // differ in length, which the caption above the pane covers.
+                //
+                // **Only while running.** Forcing the offset when idle would fight a
+                // reader who scrolled somewhere themselves.
+                let mut area = egui::ScrollArea::vertical().id_salt("tour");
+                if self.tour.autoplay.is_running()
+                    && let Some(range) = self.tour.tour_scroll_range
+                {
+                    area = area.vertical_scroll_offset(self.tour.autoplay.fraction() * range);
+                }
+                let out = area.show(ui, |ui| {
                     set_markdown_text_sizes(ui);
                     match &tour_text {
                         Some(text) => {
@@ -5096,6 +5187,12 @@ egui::Panel::top("bar").show(ui, |ui| {
                         None => Self::no_tour_ui(ui),
                     }
                 });
+                // Record how far this pane *can* scroll, for the next frame. Measured
+                // rather than guessed: the content height depends on the rendered
+                // markdown, which depends on the panel width, which the divider can
+                // change mid-run.
+                self.tour.tour_scroll_range =
+                    Some((out.content_size.y - out.inner_rect.height()).max(0.0));
             });
         if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
             self.log_split(msg);
@@ -5108,6 +5205,135 @@ egui::Panel::top("bar").show(ui, |ui| {
             self.poll_tour_file();
         }
         drain_hrw_hooks(&mut self.commonmark_cache, &tour_links)
+    }
+
+    /// **The Play button** — transport for a self-running tour.
+    ///
+    /// Built 2026-08-03 for recording a walk as video, after a LinkedIn screenshot
+    /// drew interest and explaining *what a tour is* to people who have never seen
+    /// HRW proved harder in prose than in motion.
+    ///
+    /// The controls sit between the tour list and the tour text rather than in the
+    /// menu bar, because they belong to the tour showing below them and a recording
+    /// should show the viewer where the run came from.
+    ///
+    /// **Everything decidable lives in [`crate::autoplay`]**; this function only
+    /// draws. That split is what lets the schedule and the clock be tested without
+    /// a window, which for a *timing* feature is the difference between a checkable
+    /// claim and a stopwatch.
+    fn autoplay_controls_ui(&mut self, ui: &mut egui::Ui, tour_text: &Option<String>) {
+        use crate::autoplay::Phase;
+
+        let has_tour = tour_text.is_some();
+        let phase = self.tour.autoplay.phase();
+
+        ui.horizontal_wrapped(|ui| {
+            match phase {
+                Phase::Playing | Phase::Paused => {
+                    let (label, hover) = if phase == Phase::Playing {
+                        ("\u{23f8} Pause", "Hold the walk here.")
+                    } else {
+                        ("\u{25b6} Resume", "Continue from this beat.")
+                    };
+                    if ui.button(label).on_hover_text(hover).clicked() {
+                        if phase == Phase::Playing {
+                            self.tour.autoplay.pause();
+                        } else {
+                            self.tour.autoplay.resume();
+                        }
+                    }
+                    if ui
+                        .button("\u{23f9} Stop")
+                        .on_hover_text(
+                            "End the run. Whatever is on screen stays \u{2014} stopping \
+                             halfway leaves you looking at the thing you stopped for.",
+                        )
+                        .clicked()
+                    {
+                        self.tour.autoplay.stop();
+                    }
+                }
+                Phase::Idle | Phase::Finished => {
+                    let play = ui
+                        .add_enabled(has_tour, egui::Button::new("\u{25b6} Play"))
+                        .on_hover_text(
+                            "Walk this tour by itself, for recording. The clock pauses \
+                             while a specimen compiles and while another window has \
+                             focus, so a slow machine makes a longer video, never a \
+                             broken one.",
+                        );
+                    if play.clicked() {
+                        self.start_autoplay();
+                    }
+                }
+            }
+
+            // The length picker. Disabled mid-run: changing the budget under a
+            // running schedule would leave the progress bar describing a plan that
+            // no longer exists.
+            ui.add_enabled_ui(!self.tour.autoplay.is_running(), |ui| {
+                let current = crate::autoplay::TOTAL_CHOICES
+                    .iter()
+                    .find(|(_, s)| *s == self.tour.autoplay_total.as_secs())
+                    .map(|(l, _)| *l)
+                    .unwrap_or("custom");
+                egui::ComboBox::from_id_salt("autoplay_total")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        for (label, secs) in crate::autoplay::TOTAL_CHOICES {
+                            let d = std::time::Duration::from_secs(secs);
+                            ui.selectable_value(&mut self.tour.autoplay_total, d, label);
+                        }
+                    })
+                    .response
+                    .on_hover_text(
+                        "Total length of the walk. Conventional social-video lengths \
+                         \u{2014} pick to fit where it is going.",
+                    );
+            });
+        });
+
+        if !self.tour.autoplay.is_running() {
+            return;
+        }
+
+        // --- The running readout ---
+        //
+        // A caption naming the stop, because a recording is watched by people who
+        // cannot see the cursor and have no idea which part of the tour they are in.
+        let (beat, total) = self.tour.autoplay.progress();
+        ui.add(
+            egui::ProgressBar::new(self.tour.autoplay.fraction())
+                .desired_height(6.0)
+                .show_percentage(),
+        );
+        if let Some(caption) = self
+            .tour
+            .autoplay
+            .current_stop()
+            .and_then(|i| self.autoplay_stop_heading(tour_text.as_deref(), i))
+        {
+            ui.label(egui::RichText::new(caption).strong());
+        }
+        ui.weak(format!(
+            "beat {beat}/{total} \u{00b7} {}",
+            match self.tour.autoplay.phase() {
+                Phase::Paused => "paused",
+                _ if self.compiling => "compiling \u{2014} clock held",
+                _ => "playing",
+            }
+        ));
+    }
+
+    /// The heading of stop `index` in the tour text, for the running caption.
+    ///
+    /// Re-parsed rather than stored with the schedule: the tour file is re-read
+    /// whenever it changes on disk, and a caption cached at Play time would keep
+    /// naming a stop that had since been rewritten. Doug regenerates tours *while*
+    /// walking them, which makes that the normal case rather than an edge one.
+    fn autoplay_stop_heading(&self, text: Option<&str>, index: usize) -> Option<String> {
+        let stops = crate::autoplay::parse_stops(text?);
+        stops.get(index).map(|s| s.heading.clone())
     }
 
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
@@ -5887,6 +6113,11 @@ impl App {
         // first Debug click does not pay for it. No-op after the first few
         // frames. See `Prewarm`.
         self.tick_prewarm(ui.ctx());
+
+        // A self-running tour advances here, after `drain_worker` so `compiling`
+        // reflects this frame rather than the last one — the clock must see the
+        // compile finish on the frame it finishes.
+        self.tick_autoplay(ui.ctx());
 
         // ---- Top menu bar ----
         self.menu_bar_ui(ui);
@@ -6814,6 +7045,38 @@ impl App {
     /// Whether the right-hand side is showing the log rather than a stage.
     pub(crate) fn test_viewing_log(&self) -> bool {
         self.viewing_log
+    }
+
+    /// Select a fixture tour by file stem, as clicking it in the picker would.
+    ///
+    /// Reads the file immediately rather than waiting for the poll interval, so a
+    /// headless test does not have to sleep to see the tour it just chose.
+    pub(crate) fn test_select_fixture_tour(&mut self, stem: &str) -> bool {
+        let Some(path) = bridge::fixture_tours()
+            .into_iter()
+            .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(stem))
+        else {
+            return false;
+        };
+        self.select_tour(TourSource::Fixture(path));
+        self.tour.polled_at = None;
+        self.poll_tour_file();
+        self.tour.text().is_some()
+    }
+
+    /// Start a self-running walk, as the Play button does.
+    pub(crate) fn test_start_autoplay(&mut self) {
+        self.start_autoplay();
+    }
+
+    /// The autoplay clock's phase, for asserting a run is actually under way.
+    pub(crate) fn test_autoplay_phase(&self) -> crate::autoplay::Phase {
+        self.tour.autoplay.phase()
+    }
+
+    /// Beats done and beats total, as the readout shows them.
+    pub(crate) fn test_autoplay_progress(&self) -> (usize, usize) {
+        self.tour.autoplay.progress()
     }
 
     /// Put the right-hand side on the log, as it is while a compile runs.
