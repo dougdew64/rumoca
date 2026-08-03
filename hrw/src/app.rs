@@ -283,7 +283,13 @@ impl SplitState {
     /// Record what was actually drawn, so the split is a number a test can read.
     ///
     /// Returns a one-line report **when the split is not where HRW put it**, for
-    /// the log view. Three theories about the opening width have now been wrong,
+    /// the log view.
+    ///
+    /// **Provisional.** This exists because five attempts at the opening width
+    /// failed and the sixth succeeded the moment somebody looked at the numbers.
+    /// Whether it stays is logged in `docs/tech-debt.md` — *"Remove the split
+    /// reporting once the LHS width has proven itself"* — with the trigger being
+    /// a stretch of ordinary use without a surprise, not a date. Three theories about the opening width have now been wrong,
     /// and each was a guess about numbers nobody had looked at. This makes them
     /// visible: `avail`, the width egui chose, and the resulting fraction.
     ///

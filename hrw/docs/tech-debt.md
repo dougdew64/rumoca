@@ -498,3 +498,27 @@ that already dominate the file.
 reporter ships with a must-fire test.** Retrofitting the existing 17 is the debt;
 not growing it is free. The Context Bar is the worked example — two guards, both
 of which fail against the code as it stood that morning.
+
+## Remove the split reporting once the LHS width has proven itself
+
+**Logged 2026-08-03 at Doug's request**, immediately after the width was confirmed working.
+
+`SplitState::observe` writes up to six lines per session to the diagnostics file recording the
+available width, the panel width and the resulting fraction. It exists because **five attempts
+at the opening width failed and the sixth succeeded the moment somebody looked at the numbers**
+(`ui-findings.md` C15).
+
+**It is committed, which under `CLAUDE.md`'s probe rule makes it a decision rather than a
+drift.** The case for keeping it: it is capped, it writes only to the diagnostics file, it costs
+nothing per frame, and if the width ever misbehaves again it turns another five-attempt loop
+into one restart. The case for removing it: it was added to diagnose a bug that is now fixed,
+and instrumentation that outlives its question is how a codebase accretes noise nobody dares
+delete.
+
+**The trigger is confidence, not a date.** Remove it when the width has survived a stretch of
+ordinary use — different window sizes, a maximise, a restart or two — without a surprise. If it
+is still there and nothing has gone wrong for weeks, that is the answer.
+
+**If it is removed, remove the whole path**: `reports_left`, `log_split`, and the
+`record_action("split", ..)` call. Leaving a disabled reporter behind is worse than either
+choice, because the next reader cannot tell whether it is off on purpose.
