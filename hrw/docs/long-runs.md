@@ -54,6 +54,20 @@ cargo build -p hrw --release --example fidelity_msl
 > path, rebuild release before running a sweep** — `cargo build` is seconds against a run that
 > is hours.
 
+**4. Nothing heavy runs alongside it — including Claude.**
+
+> The watchdog aborts a model when **free RAM drops below 3 GB**, and it samples *during* the
+> run. So anything that takes memory while the sweep is going does not merely slow it: it
+> **turns green models into `aborted:free-ram` rows**, and the run looks like it found
+> something when it found contention.
+>
+> **`cargo test -p hrw --lib --features slow-tests` is the specific hazard**, because 49 of
+> its tests compile specimens against the MSL. `cargo build` is the other — and rebuilding an
+> example the run is executing fails outright with `LNK1104`, which at least announces itself.
+>
+> Added 2026-08-03. **Claude must not run the suite, a build, or a survey while a sweep is in
+> progress**, and should say so rather than assume the constraint is understood.
+
 ---
 
 ## The MSL survey
