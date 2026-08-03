@@ -1,189 +1,6 @@
 {
-  "variables": {
-    "J": {
-      "name": "J",
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 7246065629093561282,
-          "start": 181,
-          "end": 187
-        },
-        "parts": [
-          {
-            "ident": "J",
-            "span": {
-              "source": 7246065629093561282,
-              "start": 181,
-              "end": 187
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 39461
-      },
-      "source_span": {
-        "source": 7246065629093561282,
-        "start": 181,
-        "end": 187
-      },
-      "type_id": 0,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 3,
-            "start_column": 3,
-            "end_line": 3,
-            "end_column": 12,
-            "start": 171,
-            "end": 180,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/SingleInertia.mo"
-          },
-          "token_number": 4,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "dims": [],
-      "connected": false,
-      "start": {
-        "Literal": {
-          "value": {
-            "Real": 1.0
-          },
-          "span": {
-            "source": 7246065629093561282,
-            "start": 190,
-            "end": 193
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": null,
-      "unit": null,
-      "display_unit": null,
-      "description": "moment of inertia",
-      "state_select": "Default",
-      "binding": {
-        "Literal": {
-          "value": {
-            "Real": 1.0
-          },
-          "span": {
-            "source": 7246065629093561282,
-            "start": 190,
-            "end": 193
-          }
-        }
-      },
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
-    "tau": {
-      "name": "tau",
-      "component_ref": {
-        "local": false,
-        "span": {
-          "source": 7246065629093561282,
-          "start": 227,
-          "end": 235
-        },
-        "parts": [
-          {
-            "ident": "tau",
-            "span": {
-              "source": 7246065629093561282,
-              "start": 227,
-              "end": 235
-            },
-            "subs": []
-          }
-        ],
-        "def_id": 39462
-      },
-      "source_span": {
-        "source": 7246065629093561282,
-        "start": 227,
-        "end": 235
-      },
-      "type_id": 0,
-      "variability": {
-        "Parameter": {
-          "text": "parameter",
-          "location": {
-            "start_line": 4,
-            "start_column": 3,
-            "end_line": 4,
-            "end_column": 12,
-            "start": 217,
-            "end": 226,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/SingleInertia.mo"
-          },
-          "token_number": 11,
-          "token_type": 48
-        }
-      },
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
-      "dims": [],
-      "connected": false,
-      "start": {
-        "Literal": {
-          "value": {
-            "Real": 1.0
-          },
-          "span": {
-            "source": 7246065629093561282,
-            "start": 238,
-            "end": 241
-          }
-        }
-      },
-      "fixed": null,
-      "min": null,
-      "max": null,
-      "nominal": null,
-      "quantity": null,
-      "unit": null,
-      "display_unit": null,
-      "description": "applied torque",
-      "state_select": "Default",
-      "binding": {
-        "Literal": {
-          "value": {
-            "Real": 1.0
-          },
-          "span": {
-            "source": 7246065629093561282,
-            "start": 238,
-            "end": 241
-          }
-        }
-      },
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
-    },
+  "schema_version": 7,
+  "x": {
     "phi": {
       "name": "phi",
       "component_ref": {
@@ -211,13 +28,7 @@
         "start": 262,
         "end": 270
       },
-      "type_id": 0,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": false,
       "start": {
         "Literal": {
           "value": {
@@ -230,25 +41,24 @@
           }
         }
       },
+      "start_span": {
+        "source": 7246065629093561282,
+        "start": 279,
+        "end": 282
+      },
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": null,
+      "nominal_span": null,
       "unit": null,
-      "display_unit": null,
-      "description": "angle",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "angle",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     },
     "w": {
       "name": "w",
@@ -277,13 +87,7 @@
         "start": 295,
         "end": 301
       },
-      "type_id": 0,
-      "variability": "Empty",
-      "causality": "Empty",
-      "flow": false,
-      "stream": false,
       "dims": [],
-      "connected": false,
       "start": {
         "Literal": {
           "value": {
@@ -296,37 +100,156 @@
           }
         }
       },
+      "start_span": {
+        "source": 7246065629093561282,
+        "start": 310,
+        "end": 313
+      },
       "fixed": null,
       "min": null,
+      "min_span": null,
       "max": null,
+      "max_span": null,
       "nominal": null,
-      "quantity": null,
+      "nominal_span": null,
       "unit": null,
-      "display_unit": null,
-      "description": "angular velocity",
       "state_select": "Default",
-      "binding": null,
-      "binding_from_modification": false,
-      "evaluate": false,
-      "is_discrete_type": false,
-      "is_primitive": true,
-      "from_expandable_connector": false,
-      "is_overconstrained": false,
-      "is_protected": false,
-      "oc_record_path": null,
-      "oc_eq_constraint_size": null
+      "description": "angular velocity",
+      "causality": "local",
+      "is_tunable": false,
+      "origin": "source"
     }
   },
-  "variable_type_names": {
-    "J": "Real",
-    "tau": "Real",
-    "phi": "Real",
-    "w": "Real"
+  "y": {},
+  "u": {},
+  "w": {},
+  "p": {
+    "J": {
+      "name": "J",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 7246065629093561282,
+          "start": 181,
+          "end": 187
+        },
+        "parts": [
+          {
+            "ident": "J",
+            "span": {
+              "source": 7246065629093561282,
+              "start": 181,
+              "end": 187
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39461
+      },
+      "source_span": {
+        "source": 7246065629093561282,
+        "start": 181,
+        "end": 187
+      },
+      "dims": [],
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 7246065629093561282,
+            "start": 190,
+            "end": 193
+          }
+        }
+      },
+      "start_span": {
+        "source": 7246065629093561282,
+        "start": 190,
+        "end": 193
+      },
+      "fixed": null,
+      "min": null,
+      "min_span": null,
+      "max": null,
+      "max_span": null,
+      "nominal": null,
+      "nominal_span": null,
+      "unit": null,
+      "state_select": "Default",
+      "description": "moment of inertia",
+      "causality": "parameter",
+      "is_tunable": true,
+      "origin": "source"
+    },
+    "tau": {
+      "name": "tau",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 7246065629093561282,
+          "start": 227,
+          "end": 235
+        },
+        "parts": [
+          {
+            "ident": "tau",
+            "span": {
+              "source": 7246065629093561282,
+              "start": 227,
+              "end": 235
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 39462
+      },
+      "source_span": {
+        "source": 7246065629093561282,
+        "start": 227,
+        "end": 235
+      },
+      "dims": [],
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 7246065629093561282,
+            "start": 238,
+            "end": 241
+          }
+        }
+      },
+      "start_span": {
+        "source": 7246065629093561282,
+        "start": 238,
+        "end": 241
+      },
+      "fixed": null,
+      "min": null,
+      "min_span": null,
+      "max": null,
+      "max_span": null,
+      "nominal": null,
+      "nominal_span": null,
+      "unit": null,
+      "state_select": "Default",
+      "description": "applied torque",
+      "causality": "parameter",
+      "is_tunable": true,
+      "origin": "source"
+    }
   },
-  "variable_final_flags": {},
-  "equations": [
+  "constants": {},
+  "z": {},
+  "m": {},
+  "f_x": [
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -341,21 +264,21 @@
                         "local": false,
                         "span": {
                           "source": 7246065629093561282,
-                          "start": 350,
-                          "end": 353
+                          "start": 262,
+                          "end": 270
                         },
                         "parts": [
                           {
                             "ident": "phi",
                             "span": {
                               "source": 7246065629093561282,
-                              "start": 350,
-                              "end": 353
+                              "start": 262,
+                              "end": 270
                             },
                             "subs": []
                           }
                         ],
-                        "def_id": 91
+                        "def_id": 39463
                       }
                     },
                     "subscripts": [],
@@ -382,21 +305,21 @@
                   "local": false,
                   "span": {
                     "source": 7246065629093561282,
-                    "start": 357,
-                    "end": 358
+                    "start": 295,
+                    "end": 301
                   },
                   "parts": [
                     {
                       "ident": "w",
                       "span": {
                         "source": 7246065629093561282,
-                        "start": 357,
-                        "end": 358
+                        "start": 295,
+                        "end": 301
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 92
+                  "def_id": 39464
                 }
               },
               "subscripts": [],
@@ -419,15 +342,12 @@
         "start": 346,
         "end": 349
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": ""
-        }
-      },
+      "origin": "top-level model equation",
       "scalar_count": 1
     },
     {
-      "residual": {
+      "lhs": null,
+      "rhs": {
         "Binary": {
           "op": "Sub",
           "lhs": {
@@ -441,21 +361,21 @@
                       "local": false,
                       "span": {
                         "source": 7246065629093561282,
-                        "start": 362,
-                        "end": 363
+                        "start": 181,
+                        "end": 187
                       },
                       "parts": [
                         {
                           "ident": "J",
                           "span": {
                             "source": 7246065629093561282,
-                            "start": 362,
-                            "end": 363
+                            "start": 181,
+                            "end": 187
                           },
                           "subs": []
                         }
                       ],
-                      "def_id": 89
+                      "def_id": 39461
                     }
                   },
                   "subscripts": [],
@@ -478,21 +398,21 @@
                             "local": false,
                             "span": {
                               "source": 7246065629093561282,
-                              "start": 370,
-                              "end": 371
+                              "start": 295,
+                              "end": 301
                             },
                             "parts": [
                               {
                                 "ident": "w",
                                 "span": {
                                   "source": 7246065629093561282,
-                                  "start": 370,
-                                  "end": 371
+                                  "start": 295,
+                                  "end": 301
                                 },
                                 "subs": []
                               }
                             ],
-                            "def_id": 92
+                            "def_id": 39464
                           }
                         },
                         "subscripts": [],
@@ -526,21 +446,21 @@
                   "local": false,
                   "span": {
                     "source": 7246065629093561282,
-                    "start": 375,
-                    "end": 378
+                    "start": 227,
+                    "end": 235
                   },
                   "parts": [
                     {
                       "ident": "tau",
                       "span": {
                         "source": 7246065629093561282,
-                        "start": 375,
-                        "end": 378
+                        "start": 227,
+                        "end": 235
                       },
                       "subs": []
                     }
                   ],
-                  "def_id": 90
+                  "def_id": 39462
                 }
               },
               "subscripts": [],
@@ -563,33 +483,27 @@
         "start": 362,
         "end": 363
       },
-      "origin": {
-        "ComponentEquation": {
-          "component": ""
-        }
-      },
+      "origin": "top-level model equation",
       "scalar_count": 1
     }
   ],
   "structured_equations": [],
-  "assert_equations": [],
   "initial_equations": [],
   "initial_structured_equations": [],
-  "initial_assert_equations": [],
-  "algorithms": [],
-  "initial_algorithms": [],
-  "when_clauses": [],
+  "f_z": [],
+  "f_m": [],
+  "f_c": [],
+  "relation": [],
+  "synthetic_root_conditions": [],
+  "scheduled_time_events": [],
+  "scheduled_root_conditions": [],
+  "event_actions": [],
+  "constructor_exprs": [],
+  "schedules": [],
+  "triggered_conditions": [],
+  "intervals": {},
+  "timings": {},
   "functions": {},
-  "is_partial": false,
-  "class_type": "Model",
-  "model_description": "A single rotating inertia driven by an ideal torque source",
-  "definite_roots": [],
-  "branches": [],
-  "optional_edges": [],
-  "potential_roots": [],
-  "top_level_connectors": [],
-  "top_level_input_components": [],
-  "oc_break_edge_scalar_count": 0,
   "enum_literal_ordinals": {
     "StateSelect.never": 1,
     "StateSelect.'never'": 1,
@@ -1508,38 +1422,96 @@
     "Modelica.Utilities.Types.TokenType.'NoToken'": 7,
     "TokenType.'NoToken'": 7
   },
-  "symbol_ancestry": {
-    "89": [
-      85,
-      89
-    ],
-    "39461": [
-      85,
-      89
-    ],
-    "90": [
-      85,
-      90
-    ],
-    "39462": [
-      85,
-      90
-    ],
-    "91": [
-      85,
-      91
-    ],
-    "39463": [
-      85,
-      91
-    ],
-    "92": [
-      85,
-      92
-    ],
-    "39464": [
-      85,
-      92
-    ]
+  "metadata": {
+    "is_partial": false,
+    "class_type": "Model",
+    "variable_starts": {
+      "J": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 7246065629093561282,
+            "start": 190,
+            "end": 193
+          }
+        }
+      },
+      "tau": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 7246065629093561282,
+            "start": 238,
+            "end": 241
+          }
+        }
+      },
+      "phi": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 7246065629093561282,
+            "start": 279,
+            "end": 282
+          }
+        }
+      },
+      "w": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 7246065629093561282,
+            "start": 310,
+            "end": 313
+          }
+        }
+      }
+    },
+    "interface_flow_count": 0,
+    "overconstrained_interface_count": 0,
+    "oc_break_edge_scalar_count": 0,
+    "model_description": "A single rotating inertia driven by an ideal torque source",
+    "symbol_ancestry": {
+      "89": [
+        85,
+        89
+      ],
+      "39461": [
+        85,
+        89
+      ],
+      "90": [
+        85,
+        90
+      ],
+      "39462": [
+        85,
+        90
+      ],
+      "91": [
+        85,
+        91
+      ],
+      "39463": [
+        85,
+        91
+      ],
+      "92": [
+        85,
+        92
+      ],
+      "39464": [
+        85,
+        92
+      ]
+    }
   }
 }

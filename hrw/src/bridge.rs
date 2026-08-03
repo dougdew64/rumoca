@@ -235,6 +235,7 @@ pub const STAGE_FILE_NAMES: &[&str] = &[
     "instantiate.json",
     "typecheck.json",
     "flatten.json",
+    "dae.json",
     "structural.json",
     "index_reduction.json",
     "initialization.json",
@@ -933,6 +934,10 @@ fn phase_source(stage: StageKind) -> Value {
         StageKind::Flatten => {
             ("crates/rumoca-compile", "Session::compile_model_strict_reachable_with_recovery")
         }
+        // DAE construction runs inside the same reachable-closure pipeline as
+        // Flatten; `to_dae_with_options_traced` is the traced entry HRW calls
+        // separately to record pre()-lowering frames.
+        StageKind::Dae => ("crates/rumoca-phase-dae", "to_dae_with_options_traced"),
         StageKind::Structural => ("crates/rumoca-phase-structural", "build_structural_report"),
         StageKind::IndexReduction => (
             "crates/rumoca-phase-structural",

@@ -1819,3 +1819,53 @@ auditable: Doug cannot review 9,562 lines, but he can read a claim and ask wheth
   *"a library model has no file to show"*, *"layout cannot be tested"* — three confident
   claims, all false, all caught by running something. **So the highest-value investment is
   making things cheap to check, not making them pleasant to read.**
+
+---
+
+## 2026-08-03 — The DAE gets a tab, and the node link loses its mandatory sub-view
+
+**The pipeline built a DAE and never showed it.** `StageKind` ran
+`Flatten → Structural`, so the artifact the whole chain is organised around — the MLS
+Appendix B partition into `x`/`y`/`u`/`p`/`z`/`m` and `f_x`/`f_z`/`f_m`/`f_c` — was the one
+thing a tour about DAE construction could not point at. `docs/fixture-tours/dae-construction.md`
+had to teach it from its *neighbours*, inferring the count from Flatten's balance check on one
+side and Structural's `n_unknowns` on the other.
+
+**This was not the "phase internals" change it looked like.** Doug flagged it as a departure
+from depending only on phase-boundary IR, and it is worth recording why it is not:
+`rumoca-ir-dae` is a **boundary IR**, exactly like `rumoca-ir-flat`; `Dae` already implements
+`Serialize`; and HRW already **held** the value in `cached_dae`. No `crates/rumoca-*` file was
+touched. **The whole change was a missing tab** — which is its own small lesson about how a
+gap can look structural when it is clerical.
+
+The stage note reports what the tour needs without opening anything:
+`2 state(s), 0 algebraic(s), 2 continuous equation(s)`.
+
+**Three guard tests caught the wiring the checklist names**, rather than the wiring being
+remembered: `stage_file_names_covers_all_pipeline_stages`, `stage_kind_all_is_exhaustive`
+(11 → 12) and `stage_pairs_names_match_stage_file_names` each failed until their system knew
+about `Dae`. That is the CLAUDE.md rule *"new pipeline stages must be wired into ALL per-stage
+systems"* being enforced instead of merely written down.
+
+### The hole the new tab exposed
+
+`HrwLink::PointAtNode` carried a **mandatory** `SubView`, while `SwitchStage` had carried an
+`Option<SubView>` since it was written. The consequence went unnoticed for as long as it did
+because nothing had wanted it: **five stages — Parse, Resolve, Instantiate, Typecheck and now
+DAE — render one generic tree and have no `SubView` variants at all**, so no
+`stage/<Stage>/<SubView>/node/<path>` could name a node in any of them. **The richest noun in
+the link vocabulary was unavailable on precisely the stages with the least else to point at.**
+
+`stage/<Stage>/node/<path>` now parses, and `describe()` renders it back. **The four-segment
+form is still refused** for a stage with no such sub-view: a link naming a view that does not
+exist is malformed, not silently downgraded to "somewhere in the stage" — the quiet-wrong-place
+failure a link checker cannot see.
+
+**The checker found this, before the tour was walked.** Every `hrw://stage/Dae/Tree/node/…`
+in the rewritten tour failed to parse, and `fixture_tour_links_all_resolve` said so on the
+next test run. That is the case `docs/fixture-tours/` exists to buy, and it paid here for the
+first time on a link form rather than a typo.
+
+`a_node_link_reaches_every_stage_including_the_tree_only_ones` checks the **property over
+`StageKind::ALL`**, not the five known names, so a tree-only stage added later fails the test
+rather than quietly inheriting the hole.

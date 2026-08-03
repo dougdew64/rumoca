@@ -237,9 +237,35 @@ oracle test is **no longer a step** (see below).
    window. **Five attempts; the sixth came from instrumenting rather than theorising** —
    `ui-findings.md` C15, and the rule it produced is in the rules section above.
 
-7. **← NOTHING IS LIVE.** Every step above is closed, so the next thing built is chosen rather
-   than resumed. **Doug has new features to describe (2026-08-03)** — hear those before
-   picking from this list, which is a standing menu and not a queue.
+7. **← LIVE: Doug's education, along the chain from DAE onward** *(Doug, 2026-08-03:
+   "we really haven't invested much time or effort into my education… now, I want to spend a
+   while investing in my education")*. The subject is
+   `docs/compiler-phases/the-chain-of-problems.md`, starting at its leftmost item, and the
+   instruments are **HRW, System Modeler and Wolfram Desktop together** — explicitly *not*
+   text answers in conversation.
+
+   **"Understand" is defined by trial and error**, and the completion signal is Doug's:
+   *"we'll know I've accomplished my goal when I stop requesting improvements."* So HRW is
+   changed — **even substantially** — whenever a change would teach better. Doug's standing
+   authorisation covers the Rumoca instrumentation too: *"if you determine that we need to
+   change how we instrument Rumoca in order to enable you to create effective, high-value
+   tours, then we will stop and change how we instrument Rumoca."*
+
+   **The delivery vehicle is a fixture tour, not a conversational plan** — Doug's own
+   instruction, because a plan scrolls out of the conversation and a versioned tour does not.
+   Tours here are **live documents, extensions of the conversation**: regenerate one *while*
+   Doug is walking it, and use it to motivate the questions he brings back.
+
+   **Delivered so far:** `docs/fixture-tours/dae-construction.md`, the first *curriculum*
+   tour — `SingleInertia` (2 equations, 2 unknowns) against `UnbalancedShaft` (2 and 3,
+   balance −1), one line apart. Composing it exposed two gaps that were then fixed rather
+   than written around: **the DAE had no tab**, and **the five tree-only stages could not be
+   pointed into** (`DECISIONS.md`, 2026-08-03).
+
+   **Next in the chain:** index reduction, on `Drivetrain` — where a square system is no
+   longer enough because ideal gears make a state non-independent.
+
+   The standing menu below is **not** this work, and is picked from only when this is idle.
 
    In rough order of value: #46 (a failure specimen and tour per compiler phase —
    the largest item serving the learning mission, since phases that only ever succeed cannot

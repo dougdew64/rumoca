@@ -2,7 +2,7 @@
   "model": "SingleInertia",
   "specimen": "specimens/SingleInertia.mo",
   "specimen_fnv1a": "bd63cd719f7b1ef5",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "718f56c9",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -24,6 +24,10 @@
     "flatten": {
       "has_ir": true,
       "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "2 state(s), 0 algebraic(s), 2 continuous equation(s)"
     },
     "structural": {
       "has_ir": true,

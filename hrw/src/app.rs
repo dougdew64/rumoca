@@ -1827,6 +1827,12 @@ impl App {
             StageKind::Instantiate => self.stages.resolve.value.as_ref(),
             StageKind::Typecheck => self.stages.instantiate.value.as_ref(),
             StageKind::Flatten => self.stages.typecheck.value.as_ref(),
+            // **No diff for DAE.** Its predecessor is the flat model, whose
+            // shape shares almost no paths with the DAE's partitioned form —
+            // the highlight would light up everything and mean nothing. The
+            // interesting comparison is not path-wise; it is the partition
+            // itself, which is what the stage exists to show.
+            StageKind::Dae => None,
             // The structural report is a different shape from the flat model —
             // no path-aligned previous, so nothing to highlight.
             StageKind::Structural => None,
@@ -2291,7 +2297,9 @@ impl App {
             HrwLink::PointAtNode(kind, sub, path) => {
                 self.stage = kind;
                 self.viewing_log = false;
-                self.pending_sub_view = Some(sub);
+                // `None` leaves whatever sub-view the stage is already showing, which
+                // for a tree-only stage is its only one.
+                self.pending_sub_view = sub;
                 // `jump_target` already forces ancestors open and scrolls, and is
                 // consumed on the frame it is honoured — the same one-shot discipline
                 // as the camera aim and the frame seek.
@@ -4742,6 +4750,15 @@ egui::Panel::top("bar").show(ui, |ui| {
                      pre-instantiation whole-tree typecheck; it fails on the full MSL.",
                 )),
                 (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
+                (StageKind::Dae, "DAE", &self.stages.dae, Some(
+                    "DAE construction (Rumoca phase 6): the flat equation list becomes a \
+                     mathematical system. Variables are partitioned into states (x), \
+                     algebraics (y), inputs (u), parameters (p) and discretes (z, m); \
+                     equations into the MLS Appendix B partitions — f_x (continuous), \
+                     f_z / f_m (discrete updates), f_c (conditions). The note reports the \
+                     counts, and it is the count that decides everything downstream: \
+                     matching cannot assign one equation per unknown unless they agree.",
+                )),
                 (StageKind::Structural, "Structural", &self.stages.structural, Some(
                     "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
                      (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
@@ -6405,7 +6422,20 @@ enum HrwLink {
     /// This was the last and largest parity gap. A node path is the capture's **richest
     /// noun** — it is what a left-click produces, and what most of Doug's questions have
     /// been about — and until 2026-07-29 a tour could open a tree but not point into it.
-    PointAtNode(StageKind, SubView, Vec<Seg>),
+    ///
+    /// **The sub-view is optional, and omitting it is the only form that works for five
+    /// stages.** Parse, Resolve, Instantiate, Typecheck and DAE render one generic tree
+    /// and have no `SubView` variants at all, so a four-segment
+    /// `stage/<Stage>/<SubView>/node/<path>` cannot name a node in any of them.
+    /// `SwitchStage` had carried an `Option<SubView>` since it was written; this one did
+    /// not, and the asymmetry meant **the richest noun was unavailable on the stages with
+    /// the least else to point at.**
+    ///
+    /// Found 2026-08-03 while rewriting `docs/fixture-tours/dae-construction.md` against
+    /// the new DAE tab: every `hrw://stage/Dae/Tree/node/…` in it failed to parse, and
+    /// `fixture_tour_links_all_resolve` said so before the tour was ever walked — the
+    /// case the link checker exists for.
+    PointAtNode(StageKind, Option<SubView>, Vec<Seg>),
     /// `hrw://follow/<name>` — follow an identifier, as a right-click Follow would.
     ///
     /// The other half of the composition primitives: the capture has always carried a
@@ -6481,7 +6511,10 @@ impl HrwLink {
                 // +1 back to the 1-based form the link was written in.
                 format!("stage/{}/{}/frame/{}", kind.slug(), sub.slug(), n + 1)
             }
-            Self::PointAtNode(kind, sub, path) => format!(
+            Self::PointAtNode(kind, None, path) => {
+                format!("stage/{}/node/{}", kind.slug(), bridge::describe_path(path))
+            }
+            Self::PointAtNode(kind, Some(sub), path) => format!(
                 "stage/{}/{}/node/{}",
                 kind.slug(),
                 sub.slug(),
@@ -6537,10 +6570,22 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::PointAtNode(
                 kind,
-                SubView::from_slug(kind, view)?,
+                Some(SubView::from_slug(kind, view)?),
                 bridge::parse_path(path)?,
             ))
         }
+        // **Without a sub-view — the only form the five tree-only stages can use.**
+        // Deliberately not a fallback for a *misspelled* sub-view: that string would
+        // have to parse as a path segment, and `parse_path` rejects what is not one.
+        // A typo'd view slug still fails the arm above and then fails here, which is
+        // the behaviour a tour author needs — a link that silently degraded to
+        // "somewhere in the stage" is the quiet-wrong-place failure the checker
+        // cannot see.
+        ["stage", stage, "node", path] => Some(HrwLink::PointAtNode(
+            StageKind::from_slug(stage)?,
+            None,
+            bridge::parse_path(path)?,
+        )),
         ["stage", stage, view, "frame", n] => {
             let kind = StageKind::from_slug(stage)?;
             // **1-based, matching the frame counter on screen** ("Frame 3/11"). Links
@@ -7656,6 +7701,7 @@ mod tests {
                 StageKind::Instantiate => bundle.instantiate = stage,
                 StageKind::Typecheck => bundle.typecheck = stage,
                 StageKind::Flatten => bundle.flatten = stage,
+                StageKind::Dae => bundle.dae = stage,
                 StageKind::Structural => bundle.structural = stage,
                 StageKind::IndexReduction => bundle.index_reduction = stage,
                 StageKind::Initialization => bundle.initialization = stage,
@@ -9093,7 +9139,8 @@ mod tests {
         app.model = Some("RcCircuit".to_owned());
         app.stages = StageBundle {
             parse: ok.clone(), resolve: ok.clone(), instantiate: ok.clone(),
-            typecheck: ok.clone(), flatten: ok.clone(), structural: ok.clone(),
+            typecheck: ok.clone(), flatten: ok.clone(), dae: ok.clone(),
+            structural: ok.clone(),
             index_reduction: ok.clone(), initialization: ok.clone(), events: ok.clone(),
             solve_lowering: ok.clone(),
         };
@@ -9190,7 +9237,7 @@ mod tests {
         app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
         app.dispatch_hrw_link(HrwLink::PointAtNode(
             StageKind::Structural,
-            SubView::Structural(StructuralView::Tree),
+            Some(SubView::Structural(StructuralView::Tree)),
             path.clone(),
         ));
         assert_eq!(app.context.jump_target.as_ref(), Some(&path), "scrolls to it");
@@ -9220,7 +9267,7 @@ mod tests {
             panic!("should parse");
         };
         assert_eq!(stage, StageKind::Structural);
-        assert_eq!(sub, SubView::Structural(StructuralView::Tree));
+        assert_eq!(sub, Some(SubView::Structural(StructuralView::Tree)));
         assert_eq!(bridge::describe_path(&path), "error.unmatched_unknowns[0]");
 
         // The tree root is a legitimate target.
@@ -9230,6 +9277,52 @@ mod tests {
         ));
         // A malformed path fails the whole link rather than pointing somewhere near.
         assert!(parse_hrw_link("hrw://stage/Structural/Tree/node/a..b").is_none());
+    }
+
+    /// **Every stage can be pointed into, including the five with no sub-views.**
+    ///
+    /// Parse, Resolve, Instantiate, Typecheck and DAE render one generic tree and have
+    /// no `SubView` variants, so the four-segment `node` form cannot name a node in any
+    /// of them — the richest noun in the link vocabulary was unavailable on the stages
+    /// with the least else to point at. Found 2026-08-03 when the DAE tour's
+    /// `hrw://stage/Dae/Tree/node/x` links all failed to parse.
+    ///
+    /// **Checks the property, not the five known names**: a tree-only stage added later
+    /// fails here rather than quietly inheriting the hole.
+    #[test]
+    fn a_node_link_reaches_every_stage_including_the_tree_only_ones() {
+        let mut tree_only = 0usize;
+        for &kind in StageKind::ALL {
+            let uri = format!("hrw://stage/{}/node/x", kind.slug());
+            let parsed = parse_hrw_link(&uri);
+            assert!(
+                matches!(&parsed, Some(HrwLink::PointAtNode(k, None, _)) if *k == kind),
+                "{uri} must point into {}, got {parsed:?}",
+                kind.name(),
+            );
+
+            // Round-trip, so the form a capture *writes* is one a tour can read back.
+            let Some(link) = parsed else { unreachable!() };
+            assert_eq!(link.describe(), format!("stage/{}/node/x", kind.slug()));
+
+            if SubView::from_slug(kind, "Tree").is_none() {
+                tree_only += 1;
+                // And the four-segment form is still refused for these — a link
+                // naming a sub-view the stage does not have is malformed, not
+                // silently downgraded to "somewhere in the stage".
+                assert!(
+                    parse_hrw_link(&format!("hrw://stage/{}/Tree/node/x", kind.slug()))
+                        .is_none(),
+                    "{} has no Tree sub-view; naming one must fail",
+                    kind.name(),
+                );
+            }
+        }
+        assert!(
+            tree_only >= 5,
+            "expected at least the five tree-only stages, found {tree_only} — if a stage \
+             gained sub-views that is fine, but check this test still covers the case",
+        );
     }
 
     /// A link can set the follow, independently of what is pointed at.
@@ -9272,7 +9365,7 @@ mod tests {
             HrwLink::Follow("C.v".to_owned()),
             HrwLink::PointAtNode(
                 StageKind::Structural,
-                SubView::Structural(StructuralView::Tree),
+                Some(SubView::Structural(StructuralView::Tree)),
                 vec![Seg::Key("blocks".into())],
             ),
             HrwLink::SeekFrame(

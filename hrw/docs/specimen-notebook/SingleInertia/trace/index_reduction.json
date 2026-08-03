@@ -35,20 +35,59 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
         "unknowns": [
           0
         ],
         "equation_text": "der(phi) - w"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
         "unknowns": [
           1
         ],
         "equation_text": "J * der(w) - tau"
       }
     ]
+  },
+  "before": {
+    "n_equations": 2,
+    "n_unknowns": 2,
+    "n_matched": 2,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "unknown": "der(phi)"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "unknown": "der(w)"
+      }
+    ],
+    "incidence": {
+      "n_eq": 2,
+      "n_var": 2,
+      "unknown_names": [
+        "der(phi)",
+        "der(w)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "der(phi) - w"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "J * der(w) - tau"
+        }
+      ]
+    }
   },
   "reduction": {
     "states_before": [

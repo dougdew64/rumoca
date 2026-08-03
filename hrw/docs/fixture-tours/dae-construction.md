@@ -11,6 +11,10 @@ not remembered.
 **The two models differ by one line.** That is the whole design: one variable's worth of
 difference, so the concept is not buried in detail.
 
+*(Rewritten 2026-08-03. The first version taught DAE construction from its neighbours because
+HRW had no DAE tab — writing the tour is what exposed that. It now references the DAE
+directly.)*
+
 ```modelica
 // SingleInertia                    // UnbalancedShaft
 parameter Real tau = 1.0;           Real tau;   // no equation determines this
@@ -20,38 +24,47 @@ parameter Real tau = 1.0;           Real tau;   // no equation determines this
 
 ---
 
-## Stop 1 — What the flat model hands over
+## Stop 1 — The DAE itself
 
-[SingleInertia → Flatten → EquationSheet](hrw://load/SingleInertia/Flatten/EquationSheet)
+[SingleInertia → DAE](hrw://load/SingleInertia/Dae)
 
-**Expected:** the equation sheet for a two-equation model, with the variables classified —
-`phi` and `w` as **states**, `J` and `tau` as **parameters**.
+**Expected:** the DAE tree, and a tab note reading
+**`2 state(s), 0 algebraic(s), 2 continuous equation(s)`**.
 
-That classification *is* DAE construction's job. Flattening produced a flat list of equations
-and variables; something has to decide which variables are **differentiated** (and therefore
-carry the system's memory), which are solved algebraically at each instant, and which never
-change. Everything downstream — matching, BLT, tearing, the integrator — is organised around
-that partition.
+This is the artifact the whole chain is organised around, and until 2026-08-03 HRW built it
+and never showed it. Open `x` and `p`:
 
-**Why `phi` and `w` are states and `J` is not:** a variable is a state because `der()` is
-applied to it, not because it seems important. Both equations here differentiate something:
-`der(phi) = w` and `J * der(w) = tau`.
+[Point at `x`](hrw://stage/Dae/node/x) — the **states**: `phi` and `w`.
 
-## Stop 2 — The count
+[Point at `p`](hrw://stage/Dae/node/p) — the **parameters**: `J` and `tau`.
+
+**A variable is a state because `der()` is applied to it**, not because it seems important.
+`J` is every bit as necessary to the physics and is not a state, because nothing differentiates
+it. That distinction is the partition, and the partition is DAE construction's job.
+
+The names are the MLS Appendix B vocabulary, which is why they are single letters: `x` states,
+`y` algebraics, `u` inputs, `p` parameters, `z`/`m` discretes. `y` is **empty** here — this
+model has no variable that must be solved for at each instant without being differentiated.
+
+## Stop 2 — The equations, and the count
+
+[Point at `f_x`](hrw://stage/Dae/node/f_x)
+
+**Expected:** two continuous equations — the residual form of `der(phi) = w` and
+`J * der(w) = tau`.
+
+`f_x` is the partition MLS calls `0 = f_x(v, c)`. **Two equations, two states.**
 
 [SingleInertia → Structural → Tree](hrw://load/SingleInertia/Structural/Tree)
 
 [Point at `n_unknowns`](hrw://stage/Structural/Tree/node/n_unknowns)
 
-**Expected:** `n_unknowns` is **2**, and `n_equations` beside it is **2**.
+**Expected:** `n_unknowns` is **2**, matching `n_equations` beside it.
 
-**This equality is the precondition for everything that follows.** A DAE with more unknowns
-than equations has no unique solution; with fewer, it is over-determined. Matching — the next
-chain item — is an assignment of *one equation to each unknown*, and an assignment cannot
-exist unless the counts agree.
-
-So DAE construction ends with a claim: *here is a square system*. The rest of the pipeline
-is entitled to assume it.
+**This equality is the precondition for everything downstream.** Matching — the next chain
+item — assigns *one equation to each unknown*, and no such assignment can exist unless the
+counts agree. So DAE construction ends by making a claim: *here is a square system*. The rest
+of the pipeline is entitled to assume it.
 
 ## Stop 3 — The same model, one unknown more
 
@@ -85,20 +98,25 @@ Handed a system that is not square, the honest thing is to refuse rather than to
 matching over the wrong number of unknowns. The chain is a sequence of contracts, and this is
 the first one being enforced.
 
-## Stop 5 — And the gap this tour cannot close
+## Stop 5 — What the DAE does not yet tell you
 
-Go back to [SingleInertia → Flatten → EquationSheet](hrw://load/SingleInertia/Flatten/EquationSheet)
-and look at the tab row.
+Go back to [SingleInertia → DAE](hrw://load/SingleInertia/Dae) and open `metadata`.
 
-**Expected:** there is **no DAE tab.** The stages run `… Typecheck → Flatten → Structural …`.
+[Point at `metadata`](hrw://stage/Dae/node/metadata)
 
-**HRW builds the DAE and never shows it.** Everything above was inferred from its *neighbours*:
-the partition from Flatten's equation sheet, the count from Structural's tree, the failure
-from a note on Flatten's tab. The DAE itself — its residuals, its partition as Rumoca
-represents it, the moment a flat equation list becomes a mathematical system — has no view.
+**Expected:** `is_partial`, `class_type`, and `variable_starts` — carrying the `start` value of
+each of `J`, `tau`, `phi`, `w`. All of it describes **what was declared**, and none of it
+describes **how any particular equation came to be**.
 
-Found 2026-08-03 while writing this tour, which is the argument for writing tours before
-building views: the gap named itself.
+The DAE is a *result*. It says `phi` is a state; it does not say which flat equation caused
+that, or in what order the partitioning happened. **That is the difference between a boundary
+IR and a phase's internals** — everything here is what DAE construction *produced*, not what
+it *did*.
+
+The stages that do show their work — matching, Tarjan, tearing — show it as **frames**, and
+`examples/frame_index` will tell a tour author which frame handles which identifier. DAE
+construction has no such replay, and whether it needs one is exactly the sort of thing this
+tour exists to find out.
 
 ---
 

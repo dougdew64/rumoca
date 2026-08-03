@@ -26,8 +26,8 @@ use std::path::PathBuf;
 use hrw::worker::{compile_specimen, simulate_specimen, FromWorker, Stage};
 
 /// The pipeline stages, in order, as they appear in the app's tabs.
-const STAGES: [&str; 10] = [
-    "parse", "resolve", "instantiate", "typecheck", "flatten", "structural", "index_reduction",
+const STAGES: [&str; 11] = [
+    "parse", "resolve", "instantiate", "typecheck", "flatten", "dae", "structural", "index_reduction",
     "initialization", "events", "solve_lowering",
 ];
 
@@ -100,12 +100,13 @@ fn generate_trace(name: &str) -> Result<(), String> {
         return Err("expected a Compiled result".into());
     };
     let model = model.unwrap_or_else(|| name.to_owned());
-    let by_name: [(&str, &Stage); 10] = [
+    let by_name: [(&str, &Stage); 11] = [
         ("parse", &stages.parse),
         ("resolve", &stages.resolve),
         ("instantiate", &stages.instantiate),
         ("typecheck", &stages.typecheck),
         ("flatten", &stages.flatten),
+        ("dae", &stages.dae),
         ("structural", &stages.structural),
         ("index_reduction", &stages.index_reduction),
         ("initialization", &stages.initialization),

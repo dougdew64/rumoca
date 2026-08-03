@@ -35,14 +35,14 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
         "unknowns": [
           0
         ],
         "equation_text": "der(phi) - w"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
         "unknowns": [
           1
         ],

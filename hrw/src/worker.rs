@@ -402,6 +402,16 @@ pub enum StageKind {
     Instantiate,
     Typecheck,
     Flatten,
+    /// **DAE construction** — the flat equation list becomes a mathematical
+    /// system: variables partitioned into states/algebraics/parameters, and
+    /// equations into the MLS Appendix B partitions (`f_x`, `f_z`, `f_m`, `f_c`).
+    ///
+    /// Added 2026-08-03. It was **built and never shown** — `rumoca-ir-dae` is a
+    /// boundary IR like `rumoca-ir-flat`, and HRW simply had no tab for it, so
+    /// the leftmost mathematical step of the chain was invisible. Found while
+    /// writing `docs/fixture-tours/dae-construction.md`, which had to teach the
+    /// step from its neighbours.
+    Dae,
     Structural,
     IndexReduction,
     Initialization,
@@ -413,7 +423,7 @@ pub enum StageKind {
 impl StageKind {
     pub const ALL: &[StageKind] = &[
         StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
-        StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
+        StageKind::Typecheck, StageKind::Flatten, StageKind::Dae, StageKind::Structural,
         StageKind::IndexReduction, StageKind::Initialization, StageKind::Events,
         StageKind::SolveLowering, StageKind::Simulation,
     ];
@@ -428,7 +438,7 @@ impl StageKind {
     /// easy to fall into and silent until something calls `get`.
     pub const COMPILATION: &[StageKind] = &[
         StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
-        StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
+        StageKind::Typecheck, StageKind::Flatten, StageKind::Dae, StageKind::Structural,
         StageKind::IndexReduction, StageKind::Initialization, StageKind::Events,
         StageKind::SolveLowering,
     ];
@@ -441,6 +451,7 @@ impl StageKind {
             StageKind::Instantiate => "Instantiate",
             StageKind::Typecheck => "Typecheck",
             StageKind::Flatten => "Flatten",
+            StageKind::Dae => "DAE",
             StageKind::Structural => "Structural",
             StageKind::IndexReduction => "Index reduction",
             StageKind::Initialization => "Initialization",
@@ -468,6 +479,7 @@ impl StageKind {
             StageKind::Instantiate => "Instantiate",
             StageKind::Typecheck => "Typecheck",
             StageKind::Flatten => "Flatten",
+            StageKind::Dae => "Dae",
             StageKind::Structural => "Structural",
             StageKind::IndexReduction => "IndexReduction",
             StageKind::Initialization => "Initialization",
@@ -485,6 +497,7 @@ impl StageKind {
             "Instantiate" => Some(Self::Instantiate),
             "Typecheck" => Some(Self::Typecheck),
             "Flatten" => Some(Self::Flatten),
+            "Dae" => Some(Self::Dae),
             "Structural" => Some(Self::Structural),
             "IndexReduction" => Some(Self::IndexReduction),
             "Initialization" => Some(Self::Initialization),
@@ -513,6 +526,7 @@ pub struct StageBundle {
     pub instantiate: Stage,
     pub typecheck: Stage,
     pub flatten: Stage,
+    pub dae: Stage,
     pub structural: Stage,
     pub index_reduction: Stage,
     pub initialization: Stage,
@@ -531,6 +545,7 @@ impl StageBundle {
             StageKind::Instantiate => &self.instantiate,
             StageKind::Typecheck => &self.typecheck,
             StageKind::Flatten => &self.flatten,
+            StageKind::Dae => &self.dae,
             StageKind::Structural => &self.structural,
             StageKind::IndexReduction => &self.index_reduction,
             StageKind::Initialization => &self.initialization,
@@ -542,13 +557,14 @@ impl StageBundle {
 
     /// All ten stages as (name, optional JSON value) pairs, for
     /// `bridge::write_stages` and similar bulk consumers.
-    pub fn as_stage_pairs(&self) -> [(&'static str, Option<&serde_json::Value>); 10] {
+    pub fn as_stage_pairs(&self) -> [(&'static str, Option<&serde_json::Value>); 11] {
         [
             ("parse", self.parse.value.as_ref()),
             ("resolve", self.resolve.value.as_ref()),
             ("instantiate", self.instantiate.value.as_ref()),
             ("typecheck", self.typecheck.value.as_ref()),
             ("flatten", self.flatten.value.as_ref()),
+            ("dae", self.dae.value.as_ref()),
             ("structural", self.structural.value.as_ref()),
             ("index_reduction", self.index_reduction.value.as_ref()),
             ("initialization", self.initialization.value.as_ref()),
@@ -1722,10 +1738,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat) = match &model {
+        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None)
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None)
             }
             Some(simple_name) => {
                 // A library model was named in full by the caller. Qualifying its
@@ -1824,6 +1840,30 @@ impl WorkerState {
                     _ => None,
                 };
 
+                // **The DAE stage.** `rumoca-ir-dae` is a boundary IR like
+                // `rumoca-ir-flat`, and `Dae` implements `Serialize`, so this is
+                // the same one-liner every other stage uses — there was never
+                // anything to build, only a tab nobody had added.
+                //
+                // Its note is the balance, because that is the claim DAE
+                // construction makes and the one everything downstream relies
+                // on: matching cannot assign one equation per unknown unless the
+                // counts agree. A model that fails the balance check never
+                // reaches here, and its Flatten note says why.
+                let dae_stage = match &dae {
+                    Some(d) => {
+                        let n_x = d.variables.states.len();
+                        let n_y = d.variables.algebraics.len();
+                        let n_eq = d.continuous.equations.len();
+                        let mut s = Stage::from_ser(d);
+                        s.note = Some(format!(
+                            "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
+                        ));
+                        s
+                    }
+                    None => Stage::default(),
+                };
+
                 // `pre()`-lowering replay frames (idea #40).
                 //
                 // Re-runs **DAE construction** over the flat model rather than
@@ -1849,7 +1889,7 @@ impl WorkerState {
                     _ => (Vec::new(), None),
                 };
 
-                (flatten, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
+                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
             }
         };
 
@@ -1860,7 +1900,7 @@ impl WorkerState {
         drop(output_capture.take());
         log(LogLevel::Info, format!("done ({:.1}ms total)", t0.elapsed().as_secs_f64() * 1000.0));
 
-        // Build and return the final `Compiled` message with all ten stages.
+        // Build and return the final `Compiled` message with every stage.
         FromWorker::Compiled {
             path: report_path,
             model,
@@ -1870,6 +1910,7 @@ impl WorkerState {
                 instantiate,
                 typecheck,
                 flatten,
+                dae: dae_stage,
                 structural,
                 index_reduction,
                 initialization,
@@ -5552,8 +5593,11 @@ mod tests {
     fn stage_kind_all_is_exhaustive() {
         assert_eq!(
             StageKind::ALL.len(),
-            11,
-            "StageKind::ALL should list every variant (currently 11 stages)"
+            12,
+            "StageKind::ALL should list every variant (currently 12: 11 pipeline stages \
+             plus Simulation). Adding one means wiring it into every per-stage system — \
+             stage-diff highlight, stage-file publishing and the notebook trace — which is \
+             why this count is asserted rather than derived from the enum."
         );
         // Every name is non-empty and unique.
         let names: Vec<&str> = StageKind::ALL.iter().map(|s| s.name()).collect();
