@@ -522,3 +522,66 @@ is still there and nothing has gone wrong for weeks, that is the answer.
 **If it is removed, remove the whole path**: `reports_left`, `log_split`, and the
 `record_action("split", ..)` call. Leaving a disabled reporter behind is worse than either
 choice, because the next reader cannot tell whether it is off on purpose.
+
+## `cargo fmt --all -- --check` fails, and it is `hrw/`'s fault alone
+
+**Logged 2026-08-03 at Doug's request**, after `cargo fmt` was ruled out mid-change as too
+disruptive to run in passing.
+
+### This is a live CI failure, not a tidiness preference
+
+Three facts, each measured rather than assumed:
+
+- **Upstream CI runs it.** `.github/workflows/ci.yml:86` — `cargo fmt --all -- --check`.
+- **`hrw` is a workspace member.** `Cargo.toml:62`. So `--all` includes it.
+- **The `crates/` are already clean and `hrw/` is not.** Running the exact CI command under the
+  pinned toolchain (`rust-toolchain.toml`, `nightly-2026-02-27`) reports **zero** hunks under
+  `crates/` and roughly **900** under `hrw/`.
+
+So the fmt job is red on this branch, and **`hrw/` is the entire reason.** That was not known
+when the entry was requested — the assumption was that formatting was merely unenforced.
+
+Worst offenders: `worker.rs` (276 hunks), `app.rs` (231), `bridge.rs` (56), `fidelity.rs` (42),
+`tree.rs` (32), `ui_tests.rs` (30). Long tail across most other modules.
+
+### What this does and does not block
+
+**It does not block upstreaming.** An upstream PR is a cherry-pick of `crates/rumoca-*` changes
+only (`CLAUDE.md`, the separable-commits rule), and those are clean. The instrumentation
+commits would pass CI on arrival.
+
+**It does block having a trustworthy green build**, which `docs/upstream-strategy.md` stakes
+Doug's credibility on: work that is *reproducible and honestly bounded*. A maintainer glancing
+at the fork sees a failing check and cannot tell that it is confined to a directory their PR
+will never contain.
+
+### Why it is not fixed in passing
+
+**`cargo fmt` would touch ~900 sites across most of `hrw/`**, which buries whatever change it
+rides along with. This was hit for real on 2026-08-03: wrapping the playback bar in a frame
+left one closure body under-indented, and the correct-looking fix — run `fmt` — would have made
+a four-line change unreviewable. It was re-indented by hand over a fixed line range instead.
+
+### How to do it
+
+**One commit, containing nothing else.** The whole value is that it is mechanically verifiable:
+a reviewer confirms `cargo fmt --all` was run and the tests still pass, and reads none of it.
+
+1. Run the full suite first and record the count, so "the same tests pass" is checkable.
+2. `cargo fmt --all`, then `cargo clippy -p hrw --all-targets` (**check the exit code**, per
+   `CLAUDE.md` — a compile error survives a warning-count grep).
+3. Full suite again, `--features slow-tests`. Same count, no failures.
+4. Commit with a subject that says it is formatting only, and push nothing else with it.
+
+**Two things to watch.** `doc_citations` asserts on source structure — the field-count ratchet
+parses `pub struct App` by line shape, and the two-`#[test]` check scans attributes; both should
+survive reformatting, but they are the tests most likely to be sensitive to it, so run them
+first. And the `#[rustfmt::skip]` escape hatch exists for any table-shaped literal whose
+alignment carries meaning: **prefer skipping a block to accepting a formatting that makes data
+harder to read**, since the source is a learning artifact here.
+
+### Then keep it clean
+
+Once green, formatting becomes a pre-commit step rather than a project. Until then, **do not run
+`cargo fmt` as part of unrelated work** — hand-indent the block and note it, as
+`f3c6fb90` did.
