@@ -2306,34 +2306,46 @@ corpus to do it on.
 
 ---
 
-## 52. One corpus list with a filter — **NOT a Test mode** — list BUILT, join NOT, and possibly never
+## 52. One corpus list with a filter — **NOT a Test mode** — CLOSED 2026-08-03, join deleted
 
-**Status, corrected 2026-08-02.** The heading read "BUILT 2026-08-01", which was wrong in a way
-worth keeping visible: the three items under *What to build instead* shipped, but **the argument
-this idea is actually built on did not.**
+**Closed 2026-08-03. The list shipped; the join was deleted rather than built, on evidence.**
 
-That argument is the join — *"the reports do not want three views, they want to be columns and
-filters over one row set"*. The list reads `msl-survey.csv` and nothing else; no UI code reads
-the fidelity report at all. <!-- unbuilt: SurveyRow::fidelity_verdict -->
+The three items under *What to build instead* were delivered 2026-08-01. **The argument this
+idea rests on was not**, and will not be: *"the reports do not want three views, they want to be
+columns and filters over one row set."* The list reads `msl-survey.csv` and nothing else; no UI
+code reads the fidelity report. <!-- unbuilt: SurveyRow::fidelity_verdict -->
 
-**And Doug's question is why it may stay that way.** He asked: *"If the fidelity reports that
-there are zero violations, then there would be no value in adding all of that functionality to
-the specimen list, correct?"* Measured, and yes — all **2,614 rows are `outcome=ok` with
-`n_violations=0`.** A column that reads "ok" on every row is decoration; a filter predicate over
-a constant matches everything or nothing. Building it would produce a feature that *looks*
-finished and answers no question, which is worse than not building it.
+**Doug asked the question that settled it**, before any code was written: *"If the fidelity
+reports that there are zero violations, then there would be no value in adding all of that
+functionality to the specimen list, correct?"*
 
-**The one real distinction the join would expose is a different one:** the survey has 2,626 rows
-and fidelity has 2,614, so the joined data separates **"never checked"** from **"checked and
-clean"** — the twelve models that exceeded this machine's limits. That is a genuine axis and a
-twelve-row answer, reachable faster by diffing two CSVs than by building a filter.
+**The sweep of 2026-08-02 answered yes, and it is the answer that counts** — the first run to
+check Parse IR for real. Every previous sweep ran those checks against
+`{"classes":{},"within":null}` and found nothing because there was nothing there, so the earlier
+zero was vacuous. This one walked a real Modelica AST: mean peak memory rose 1,228 → 1,353 MB,
+and F7 went from sampling roughly *two* nodes of the Parse stage to its 400-path cap.
 
-**The decision point is the sweep of 2026-08-02 evening**, which is the first run to check Parse
-IR for real — those checks previously ran against `{"classes":{},"within":null}` for every MSL
-model and found nothing because there was nothing there. If that report is still all-zero, close
-this idea as complete and delete the join from the plan. If it produces violations, the join
-becomes the tool for reading them and the case rebuilds itself **from evidence rather than from
-this document**.
+**Result: 2,614 rows, `outcome=ok`, `n_violations=0`, no failed checks.**
+
+So a fidelity column would read `ok` on every row and a fidelity predicate would match
+everything or nothing. **Building it would produce a feature that looks finished and answers no
+question**, which is worse than not building it.
+
+### What would reopen this
+
+**A report with a non-constant column.** The oracle (#43) is the live candidate: a
+System Modeler differential run produces *findings*, which vary per model by construction. If
+that report ever exists, the join becomes worth what this idea claimed — and the one constraint
+already recorded still applies free: **it must emit the same `name` join key.**
+
+**Or a fidelity sweep that stops being all-green.** The twelve models that exceed this machine's
+limits are the standing reminder that "all-green" means "all-green among those checked".
+
+### The distinction the join would have exposed, and how to get it cheaply
+
+The survey has 2,626 rows and fidelity has 2,614, so joined data separates **"never checked"**
+from **"checked and clean"**. That is a real axis and a twelve-row answer — obtainable by
+diffing two CSVs, which is what `docs/reports/` is for.
 
 **The lesson, recorded because it generalises:** this idea argued for the join *before the
 fidelity data existed*. An argument written before its evidence arrives does not automatically

@@ -214,12 +214,19 @@ oracle test is **no longer a step** (see below).
    way — the honest test is whether `ui-findings.md`'s R-series stops recurring, which only
    the next substantial edit can show.
 
-5. **The corpus list** ✅ *(list)* — `docs/ideas.md` **#52**. Three sources behind one filter,
-   built 2026-08-01. **The join it argued for is unbuilt and may stay so**: all 2,614 fidelity
-   rows read `outcome=ok, n_violations=0`, so a fidelity column would be a constant and a
-   fidelity predicate would match everything or nothing. **The sweep of 2026-08-02 decides it**
-   — the first run to check Parse IR for real. All-zero closes #52; violations rebuild the
-   case from evidence.
+5. **The corpus list** ✅ **CLOSED 2026-08-03** — `docs/ideas.md` **#52**. Three sources behind
+   one filter, built 2026-08-01. **The join it argued for was deleted rather than built**, on
+   the sweep's evidence: 2,614 rows, `outcome=ok`, `n_violations=0`, no failed checks. A
+   fidelity column would read `ok` on every row and a fidelity predicate would match everything
+   or nothing.
+
+   **The zero counts this time, and did not before.** Earlier sweeps ran those checks against
+   `{"classes":{},"within":null}` and found nothing because there was nothing there. The
+   2026-08-02 run walked a real Modelica AST — mean peak memory 1,228 → 1,353 MB, and F7 went
+   from sampling ~2 nodes of the Parse stage to its 400-path cap.
+
+   **What reopens it:** a report with a *non-constant* column. The oracle (#43) is the live
+   candidate, since findings vary per model by construction.
 
 6. **← THE LIVE WORK: a draggable LHS/RHS divider** (`docs/ideas.md` **#59**, Doug's request).
    The split is a fixed 40/60 constant recomputed every frame, so there is nowhere for a
@@ -236,8 +243,11 @@ oracle test is **no longer a step** (see below).
    reach", which the pause measured at *two surfaces*, so that entry now drives work sized for
    a world that no longer exists), and #43 as a track.
 
-**[`docs/reports.md`](docs/reports.md) is the design authority for step 4.** Its load-bearing
-claim: **survey → eligible, fidelity → trustworthy, oracle → findings**, joined on `name`.
+**[`docs/reports.md`](docs/reports.md) held the design authority for the corpus list.** Its
+load-bearing claim — **survey → eligible, fidelity → trustworthy, oracle → findings**, joined
+on `name` — **is now half retired.** The list shipped; the join did not, because two of the
+three reports turned out to be constants (see step 5). The claim stands for the *oracle*, whose
+findings vary per model by construction, and that is the case which would reopen it.
 
 **The oracle (#43) is a TRACK, not a step** *(2026-08-01, Doug)*. It was step 4 and gated the
 work; it does not belong there.
@@ -250,9 +260,10 @@ work; it does not belong there.
   first* is a standing practice — it corrects Claude's bias toward blaming its own specimen) and
   **upstream**, where `upstream-strategy.md` calls differential testing the rarest thing Doug
   brings.
-- **One constraint survives because it is free:** *if* an oracle report is ever produced, it must
-  emit the same `name` join key. That binds the **oracle's** design, not the filter's, and
-  retrofitting it later would cost the join.
+- **One constraint survives because it is free, and it is now the only live piece of the join:**
+  *if* an oracle report is ever produced, it must emit the same `name` join key. That binds the
+  **oracle's** design, and retrofitting it later would cost the join that #52 deleted for want
+  of a non-constant column.
 
 **A dependency the sequence used to hide, now met:**
 
@@ -265,8 +276,9 @@ work; it does not belong there.
 
 **The signal that dropping the mode was wrong**, recorded so it stays recognisable rather than
 being rationalised away: a question that genuinely **cannot be expressed as a filter** over the
-joined rows. That would mean something Test-mode-shaped was right after all, and it should
-reopen `docs/ideas.md` #52.
+list's rows. That would mean something Test-mode-shaped was right after all, and it should
+reopen `docs/ideas.md` #52 — which is now closed, so reopening it is a deliberate act rather
+than a drift.
 
 ---
 

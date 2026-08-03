@@ -2,9 +2,23 @@
 
 **Purpose:** how the survey, fidelity and oracle reports compose — survey says *eligible*,
 fidelity says *trustworthy*, oracle says *finding*.
-**Status:** authority for the corpus list (#52) and the oracle test (#43).
+**Status:** **half retired 2026-08-03.** Authority for the oracle test (#43); **no longer
+authority for the corpus list**, which shipped without the join this document argued for.
 **Read when:** before building the corpus list or designing the oracle test. It constrains how the
 oracle is *designed*, not merely how its results are shown.
+
+> **What the sweep did to this document, 2026-08-03.** The composition below is an argument
+> that three reports want to be *columns and predicates over one row set* rather than three
+> views. **Two of the three turned out to be constants.** The 2026-08-02 fidelity sweep — the
+> first to check Parse IR for real rather than against an empty AST — returned 2,614 rows of
+> `outcome=ok, n_violations=0`. A column that reads `ok` everywhere is decoration, and a
+> predicate over a constant matches everything or nothing, so **`ideas.md` #52 deleted the join
+> rather than building it.**
+>
+> **The argument is not wrong; its premise was untested.** It was written before any fidelity
+> data existed. What survives is the part about the *oracle*, whose findings vary per model by
+> construction — and the free constraint that it must emit the same `name` key, which is the
+> only piece of the join still worth protecting.
 
 Agreed with Doug 2026-07-31. *(Retitled 2026-08-01: the "Test mode" it was written for was
 dropped in favour of one corpus list with a filter — see #52. **Nothing about the reports
