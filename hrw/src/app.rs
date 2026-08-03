@@ -6848,6 +6848,24 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     }
 }
 
+/// **The link that seeks frame `index`** of an animated view, where `index` is
+/// 0-based as the algorithm's step list numbers it.
+///
+/// Exists so nobody performs this `+ 1` by hand. Links are **1-based**, matching
+/// the counter on screen ("Frame 3/11"); every internal frame list is 0-based.
+/// `examples/frame_index` printed the 0-based number and told the author it worked
+/// directly in a link — so every link written from its output landed **one frame
+/// early**, which is precisely the failure that tool exists to prevent: a
+/// wrong-but-valid index resolves fine and simply shows the wrong step, and no link
+/// checker can see it.
+///
+/// Found 2026-08-03 while scouting a matching-animation tour.
+/// `a_frame_link_round_trips_through_the_parser` binds this to `parse_hrw_link`, so
+/// the two cannot drift again.
+pub fn frame_link(stage: &str, view: &str, index: usize) -> String {
+    format!("hrw://stage/{stage}/{view}/frame/{}", index + 1)
+}
+
 /// Scan markdown text for all unique `hrw://` URLs (for hook registration).
 fn extract_hrw_links(text: &str) -> Vec<String> {
     let mut links = Vec::new();
@@ -9540,6 +9558,35 @@ mod tests {
         ));
         // A malformed path fails the whole link rather than pointing somewhere near.
         assert!(parse_hrw_link("hrw://stage/Structural/Tree/node/a..b").is_none());
+    }
+
+    /// **A frame link built by `frame_link` seeks the frame it names.**
+    ///
+    /// Binds the formatter to the parser so the 0-based/1-based seam has exactly one
+    /// crossing. `examples/frame_index` printed 0-based indices and told the author
+    /// they worked verbatim in `hrw://…/frame/<n>`; the parser subtracts one, so
+    /// every link written from that output pointed one step early. **Nothing could
+    /// have caught it** — the link parses, resolves, and lands on a real frame that
+    /// is simply the wrong one, which is the whole failure mode `frame_index` was
+    /// built to remove.
+    #[test]
+    fn a_frame_link_round_trips_through_the_parser() {
+        for index in [0usize, 1, 6, 15, 40] {
+            let uri = frame_link("Structural", "MatchingAnim", index);
+            assert_eq!(
+                parse_hrw_link(&uri),
+                Some(HrwLink::SeekFrame(
+                    StageKind::Structural,
+                    SubView::Structural(StructuralView::MatchingAnim),
+                    index,
+                )),
+                "{uri} must seek frame {index}, not its neighbour",
+            );
+        }
+        // Frame 0 is reachable — as `frame/1`. The `checked_sub` rejects `frame/0`,
+        // which under 1-based numbering names no frame at all.
+        assert_eq!(frame_link("Structural", "MatchingAnim", 0), "hrw://stage/Structural/MatchingAnim/frame/1");
+        assert!(parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/0").is_none());
     }
 
     /// **Every stage can be pointed into, including the five with no sub-views.**

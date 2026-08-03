@@ -130,7 +130,22 @@ fn main() {
                 continue;
             }
         }
-        println!("  frame {n:>4}  {line}");
+        // **The link, fully formed** — not a number for the author to adjust.
+        //
+        // This used to print the 0-based index and then claim it worked verbatim in
+        // `hrw://…/frame/<n>`. It does not: links are 1-based, matching the counter
+        // on screen, and `parse_hrw_link` subtracts one. So every link written from
+        // this output landed **one frame early** — a wrong-but-valid index that
+        // resolves fine, shows the wrong step, and no link checker can see. That is
+        // exactly the failure this tool exists to prevent, and it was committing it.
+        //
+        // Fixed 2026-08-03 by emitting the link instead of a number, through
+        // `hrw::app::frame_link`, which `a_frame_link_round_trips_through_the_parser`
+        // binds to the parser.
+        println!(
+            "  frame {n:>4}  {line}\n              {}",
+            hrw::app::frame_link("Structural", "MatchingAnim", n),
+        );
         shown += 1;
     }
 
@@ -138,5 +153,6 @@ fn main() {
         println!("  (no frame mentions {:?})", filter.unwrap_or_default());
     }
     println!();
-    println!("Frames are 0-based here and in `hrw://…/frame/<n>`.");
+    println!("Frame numbers above are 0-based, as the algorithm's step list numbers them.");
+    println!("The links are 1-based, matching the counter on screen. Copy the link, not the number.");
 }
