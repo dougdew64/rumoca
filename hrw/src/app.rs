@@ -264,15 +264,23 @@ impl SplitState {
         // keeps that true and puts a line on screen exactly when there is
         // something to explain — which is also better instrumentation, since a
         // log that always says something is a log nobody reads.
-        let off_default = (f - LEFT_PANEL_WIDTH_FRACTION).abs() > 0.02;
-        if moved && off_default && self.reports_left > 0 {
-            self.reports_left -= 1;
-            return Some(format!(
-                "split: {:.3} of window (panel {:.0}px, available {:.0}px)",
-                f, width, avail,
-            ));
+        if !moved || self.reports_left == 0 {
+            return None;
         }
-        None
+        self.reports_left -= 1;
+        let msg = format!(
+            "split: {:.3} of window (panel {:.0}px, available {:.0}px)",
+            f, width, avail,
+        );
+        // **Always to the diagnostics file, only anomalies to the log view.**
+        //
+        // The log view is the *compile* log and is cleared when a specimen
+        // loads, which is how the first attempt at this instrument destroyed its
+        // own evidence: Doug had to open a specimen to reach the log, and
+        // opening one wiped the startup lines. The session file survives that,
+        // and Claude can read it directly.
+        crate::diagnostics::record_action("split", msg.clone());
+        ((f - LEFT_PANEL_WIDTH_FRACTION).abs() > 0.02).then_some(msg)
     }
 
     /// Whether the default is currently being held.
@@ -7851,6 +7859,8 @@ mod tests {
              own the stages, the log or the context bar that opening a specimen resets",
         );
     }
+
+
 
 
     /// Every animation pane **says when it has nothing to show**.
