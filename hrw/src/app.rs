@@ -5178,12 +5178,19 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // in — which matters more here than it would have a week ago, now
                 // that the prose is load-bearing rather than captioning.
                 //
-                // Driven by elapsed *fraction* rather than by locating the stop's
+                // Driven by beat *position* rather than by locating the stop's
                 // heading in the rendered markdown: `egui_commonmark` lays out its
                 // own content and exposes no anchor per heading, so there is nothing
                 // to scroll *to*. Proportional scrolling is an approximation, and an
                 // honest one — it drifts from the exact heading position when stops
                 // differ in length, which the caption above the pane covers.
+                //
+                // **`scroll_fraction`, not `fraction`.** The first version used the
+                // clock, so the text crept continuously and never held still — Doug,
+                // 2026-08-03: *"the scrolling never pauses when a frame is being
+                // displayed"*, which was worst exactly where the tour is best, with a
+                // deliberately paused animation under sliding prose. `scroll_fraction`
+                // travels to the new beat's place and then stops.
                 //
                 // **Only while running.** Forcing the offset when idle would fight a
                 // reader who scrolled somewhere themselves.
@@ -5191,7 +5198,8 @@ egui::Panel::top("bar").show(ui, |ui| {
                 if self.tour.autoplay.is_running()
                     && let Some(range) = self.tour.tour_scroll_range
                 {
-                    area = area.vertical_scroll_offset(self.tour.autoplay.fraction() * range);
+                    area = area
+                        .vertical_scroll_offset(self.tour.autoplay.scroll_fraction() * range);
                 }
                 let out = area.show(ui, |ui| {
                     set_markdown_text_sizes(ui);

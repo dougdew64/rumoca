@@ -64,6 +64,19 @@ pub const DEFAULT_TOTAL: Duration = Duration::from_secs(90);
 /// second on a 30s run and read as a glitch rather than a step.
 const MIN_BEAT: Duration = Duration::from_millis(900);
 
+/// How long the tour text takes to travel to a new beat's position.
+///
+/// **After this, it holds still for the rest of the beat.** Doug, 2026-08-03:
+/// *"the scrolling never pauses when a frame is being displayed."* The scroll was
+/// driven by [`Autoplay::fraction`], which is a **clock** — it advances every frame,
+/// so the prose crept continuously while the reader was trying to read it, and a
+/// paused animation sat under text that would not stay still.
+///
+/// Position and time are different quantities and this is where they part company.
+/// The progress bar still tracks the clock, because that is what a progress bar is
+/// for; the text tracks the *beat*, which changes in steps.
+const SCROLL_TRAVEL: Duration = Duration::from_millis(450);
+
 /// Beats that open another application get this much extra weight.
 ///
 /// Wolfram Desktop and System Modeler come to the front and need a moment to be
@@ -413,6 +426,43 @@ impl Autoplay {
         ((done + self.in_beat.as_millis()) as f64 / total as f64).clamp(0.0, 1.0) as f32
     }
 
+    /// **Where the tour text should sit** — stepwise, not continuous.
+    ///
+    /// Distinct from [`Self::fraction`], and the distinction is the whole point.
+    /// `fraction` is a clock and advances every frame; using it to scroll made the
+    /// prose creep the entire time a beat was on screen, so an animation frame the
+    /// tour had deliberately paused sat under text that would not hold still.
+    ///
+    /// This travels to the new beat's position over [`SCROLL_TRAVEL`] and then
+    /// **stops**, leaving the rest of the beat for reading. Smoothstep rather than
+    /// linear so the motion starts and ends softly; a hard jump reads as a glitch
+    /// and a linear ramp reads as drift.
+    ///
+    /// The travel is clamped to the beat's own dwell, so a short beat still arrives
+    /// rather than being cut off mid-slide.
+    pub fn scroll_fraction(&self) -> f32 {
+        let n = self.beats.len();
+        if n <= 1 {
+            return 0.0;
+        }
+        if self.phase() == Phase::Finished || self.index >= n {
+            return 1.0;
+        }
+        let pos = |i: usize| i as f32 / (n - 1) as f32;
+        let to = pos(self.index);
+        let from = if self.index == 0 { 0.0 } else { pos(self.index - 1) };
+
+        let travel = SCROLL_TRAVEL.min(self.beats[self.index].dwell);
+        let t = if travel.is_zero() {
+            1.0
+        } else {
+            (self.in_beat.as_secs_f32() / travel.as_secs_f32()).clamp(0.0, 1.0)
+        };
+        // Smoothstep.
+        let eased = t * t * (3.0 - 2.0 * t);
+        from + (to - from) * eased
+    }
+
     /// The stop index currently showing, for the caption.
     pub fn current_stop(&self) -> Option<usize> {
         self.beats.get(self.index.min(self.beats.len().saturating_sub(1))).map(|b| b.stop)
@@ -582,6 +632,86 @@ Short.
         assert!(ap.tick(Duration::from_millis(1_100), false).is_none(), "last beat, so no next");
         assert_eq!(ap.phase(), Phase::Finished, "the run ends rather than looping");
         assert_eq!(ap.fraction(), 1.0);
+    }
+
+    /// **The text holds still for most of every beat.**
+    ///
+    /// Doug, 2026-08-03: *"the scrolling never pauses when a frame is being
+    /// displayed."* The scroll was driven by `fraction()`, a **clock**, so the prose
+    /// crept every frame — worst exactly where the tour is best, with a deliberately
+    /// paused animation sitting under text that would not stay still.
+    ///
+    /// **Checks stillness as a property**, not the easing curve: after the travel
+    /// window, the position must not change again until the beat does. An
+    /// implementation that eased more slowly, or forgot to clamp, fails here.
+    #[test]
+    fn the_text_travels_then_stops_until_the_beat_changes() {
+        let beats = vec![
+            Beat { stop: 0, link: Some("a".into()), dwell: Duration::from_secs(6) },
+            Beat { stop: 1, link: Some("b".into()), dwell: Duration::from_secs(6) },
+            Beat { stop: 2, link: Some("c".into()), dwell: Duration::from_secs(6) },
+        ];
+        let mut ap = Autoplay::default();
+        ap.start(beats);
+        ap.tick(Duration::from_millis(16), false); // arm the first beat
+
+        // Beat 0 sits at the top — there is nothing above it to travel from, which
+        // is why stillness is checked here and *movement* at the transition below.
+        ap.tick(SCROLL_TRAVEL, false);
+        let arrived = ap.scroll_fraction();
+
+        // Five seconds of ticking must not move it at all.
+        for _ in 0..50 {
+            ap.tick(Duration::from_millis(100), false);
+            assert_eq!(
+                ap.scroll_fraction(),
+                arrived,
+                "the text must hold still for the rest of the beat; a reader cannot \
+                 read prose that is sliding, and the animation under it is paused",
+            );
+        }
+
+        // **Non-vacuity, and the other half of the behaviour**: a new beat moves it.
+        // A `scroll_fraction` stuck at a constant would satisfy the loop above.
+        ap.tick(Duration::from_secs(2), false); // finishes beat 0, dispatches beat 1
+        assert_eq!(ap.progress().0, 2, "precondition: the beat advanced");
+        ap.tick(Duration::from_millis(16), false); // arm
+        ap.tick(SCROLL_TRAVEL, false);
+        let second = ap.scroll_fraction();
+        assert!(
+            second > arrived,
+            "a new beat must move the text to its place ({second} vs {arrived})",
+        );
+
+        // And it holds still there too, rather than only the first beat being stable.
+        for _ in 0..20 {
+            ap.tick(Duration::from_millis(100), false);
+            assert_eq!(ap.scroll_fraction(), second, "still on the second beat too");
+        }
+    }
+
+    /// The clock and the position are **different quantities**, and only one of them
+    /// advances continuously.
+    ///
+    /// The progress bar should track time; the text should track the beat. Conflating
+    /// them is what produced the creeping scroll.
+    #[test]
+    fn the_progress_bar_tracks_time_while_the_text_tracks_the_beat() {
+        let beats = vec![
+            Beat { stop: 0, link: None, dwell: Duration::from_secs(10) },
+            Beat { stop: 1, link: None, dwell: Duration::from_secs(10) },
+        ];
+        let mut ap = Autoplay::default();
+        ap.start(beats);
+        ap.tick(Duration::from_millis(16), false);
+        ap.tick(SCROLL_TRAVEL, false);
+
+        let (f0, s0) = (ap.fraction(), ap.scroll_fraction());
+        ap.tick(Duration::from_secs(4), false);
+        let (f1, s1) = (ap.fraction(), ap.scroll_fraction());
+
+        assert!(f1 > f0, "the clock must keep running: {f0} -> {f1}");
+        assert_eq!(s1, s0, "the text must not: {s0} -> {s1}");
     }
 
     /// **Losing focus pauses; regaining it resumes — but only its own pause.**
