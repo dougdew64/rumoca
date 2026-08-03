@@ -1,0 +1,524 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 15.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     22821,        515]
+NotebookOptionsPosition[     18781,        463]
+NotebookOutlinePosition[     19103,        477]
+CellTagsIndexPosition[     19060,        474]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["Why \"2 equations, 3 unknowns\" is not \"no solution\"", "Title",ExpressionUUID->"b4af95da-75fc-0748-b910-15a6e74b3518"],
+
+Cell[TextData[{
+ "Companion to ",
+ Cell[BoxData[Cell["hrw/docs/fixture-tours/dae-construction.md",
+   Background->None,ExpressionUUID->"0e56426e-6ebf-d24a-9aa7-b5ccde351baf"]], 
+  "InlineCode",ExpressionUUID->"4bc5d789-a99a-3d4d-b493-48ce520f0a5e"],
+ ", Stop 4."
+}], "Text",ExpressionUUID->"2ea001ae-5a83-0045-846f-6e5e8d0529a3"],
+
+Cell[TextData[{
+ "Rumoca refuses ",
+ Cell[BoxData[Cell["UnbalancedShaft",
+   Background->None,ExpressionUUID->"251b1292-c7f2-7e47-95c7-f1d2b7582749"]], 
+  "InlineCode",ExpressionUUID->"522d42e4-9dd0-6943-8815-ad79ee85cdf4"],
+ " with **",
+ Cell[BoxData[
+ Cell["unbalanced model: 2 equations, 3 unknowns (balance = -1)",
+   Background->None,ExpressionUUID->"aa8bf7e4-d8a5-474f-80e2-87159058cc80"]], 
+  "InlineCode",ExpressionUUID->"c5274c3d-b5d6-e84f-a2b8-74a7f7fb9737"],
+ "** (",
+ Cell[BoxData[Cell["rumoca::todae::ED001",
+   Background->None,ExpressionUUID->"8f646b32-f73c-c846-96b8-f4a70f6bf110"]], 
+  "InlineCode",ExpressionUUID->"938d539d-7a03-3344-b502-2d48df941b6f"],
+ "). The natural way to hear that is ",
+ StyleBox["\"the equations are inconsistent \[LongDash] there is no solution.\
+\"",
+  FontSlant->Italic],
+ StyleBox["That reading is exactly backwards, and it is worth one notebook to \
+see why.",
+  FontWeight->Bold],
+ " The problem is not that there is no solution. It is that there are ",
+ StyleBox["infinitely many",
+  FontWeight->Bold],
+ ", and nothing in the model chooses between them. This notebook shows that \
+directly, and then shows that Rumoca's balance number is a quantity you \
+already know from linear algebra: the ",
+ StyleBox["dimension of a nullspace",
+  FontWeight->Bold],
+ ". "
+}], "Text",ExpressionUUID->"a226bb06-ec80-a34c-8d11-4dfcb69fa300"],
+
+Cell["The two models", "Section",ExpressionUUID->"b14006bf-46c6-ff40-8921-854aa455ac92"],
+
+Cell["They differ by one line. ", "Text",ExpressionUUID->"6579a54a-5bbf-c847-b61e-5ff7884dea06"],
+
+Cell["\<\
+model SingleInertia                    model UnbalancedShaft
+  parameter Real J   = 1.0;              parameter Real J = 0.5;
+  parameter Real tau = 1.0;   <-- HERE   Real tau;            <-- HERE
+  Real phi(start=0), w(start=0);         Real phi(start=0), w(start=0);
+equation                               equation
+  der(phi) = w;                          der(phi) = w;
+  J*der(w) = tau;                        J*der(w) = tau;
+end SingleInertia;                     end UnbalancedShaft;\
+\>", "Program",ExpressionUUID->"f386bcb0-5b41-e345-b9fb-1dfcea62e818"],
+
+Cell[TextData[{
+ "In the first, ",
+ StyleBox["tau", "TI"],
+ " is a ",
+ StyleBox["parameter",
+  FontWeight->Bold],
+ ": known before the simulation starts. In the second it is a ",
+ StyleBox["variable",
+  FontWeight->Bold],
+ ": something the equations are supposed to determine. No equation was added \
+to determine it. "
+}], "Text",ExpressionUUID->"18fa5ddd-361d-ad4e-8920-56b87051a4d7"],
+
+Cell["What the solver actually faces at one instant", "Section",ExpressionUUID->"ddc9ae35-7558-0d46-a392-9e01aa686bc8"],
+
+Cell[TextData[{
+ "This is the step most worth slowing down on. A DAE is not solved \"all at \
+once over time\" \[LongDash] at each instant the integrator knows the current \
+",
+ StyleBox["states",
+  FontWeight->Bold],
+ " and must solve for the ",
+ StyleBox["derivatives",
+  FontWeight->Bold],
+ "."
+}], "Text",ExpressionUUID->"cb050a69-8cca-d844-aba1-f939888e3229"],
+
+Cell[TextData[{
+ "So the unknowns are ",
+ Cell[BoxData[Cell["der(phi)",
+   Background->None,ExpressionUUID->"4f8789a3-b0cb-0448-b50f-c481e0eb38f6"]], 
+  "InlineCode",ExpressionUUID->"cfcff229-1fdd-b04b-8ef9-fd05e4c7479c"],
+ " and ",
+ Cell[BoxData[Cell["der(w)",
+   Background->None,ExpressionUUID->"983cf62e-0883-8c40-ae04-45efac4ca565"]], 
+  "InlineCode",ExpressionUUID->"3786d310-5c7e-4242-acc6-b795ae588b1c"],
+ ", ",
+ StyleBox["not",
+  FontSlant->Italic],
+ " ",
+ StyleBox["phi", "TI"],
+ " and ",
+ StyleBox["w", "TI"],
+ ". You can confirm this is Rumoca's view rather than a convenient story: \
+HRW's structural trace for ",
+ Cell[BoxData[Cell["SingleInertia",
+   Background->None,ExpressionUUID->"83eb48e0-c17d-cb49-879f-4ee5cfb50f6d"]], 
+  "InlineCode",ExpressionUUID->"d838d34f-966d-8540-a116-6e7871a667ab"],
+ " lists ",
+ Cell[BoxData[Cell["unknown_names = [\"der(phi)\", \"der(w)\"]",
+   Background->None,ExpressionUUID->"582a2277-8b89-2c47-827b-fc0658a0dab6"]], 
+  "InlineCode",ExpressionUUID->"5527d470-6283-8148-9468-bad7b82eed28"],
+ "."
+}], "Text",ExpressionUUID->"62e620bf-e5c3-b04d-83d3-5815b018db8e"],
+
+Cell[TextData[{
+ "Writing ",
+ StyleBox["dphi", "TI"],
+ " for ",
+ Cell[BoxData[Cell["der(phi)",
+   Background->None,ExpressionUUID->"70525b03-f416-f942-b23f-f65a21b48e18"]], 
+  "InlineCode",ExpressionUUID->"282ffe56-5411-6b49-b42a-c0d365e27d27"],
+ " and ",
+ StyleBox["dw", "TI"],
+ " for ",
+ Cell[BoxData[Cell["der(w)",
+   Background->None,ExpressionUUID->"3b76576c-134b-0f49-a9c5-b81f592fc137"]], 
+  "InlineCode",ExpressionUUID->"d4752997-96e6-e347-9e4b-f19a38216882"],
+ ", and moving everything to residual form: "
+}], "Text",ExpressionUUID->"c7251c16-5cbc-2c4a-9368-e2f9ec06cd36"],
+
+Cell["eqs = {dphi - w == 0, J*dw - tau == 0};", "Program",ExpressionUUID->"bd5f38f9-f347-e34b-9d71-afb1fa5b9278"],
+
+Cell["The balanced model: one answer", "Subsection",ExpressionUUID->"7346eb0c-7dec-b447-9f4a-b0f872ce8254"],
+
+Cell[TextData[{
+ StyleBox["w", "TI"],
+ ", ",
+ Cell[BoxData[Cell["J",
+   Background->None,ExpressionUUID->"b0529807-f61b-f84f-b12b-92d89451c751"]], 
+  "InlineCode",ExpressionUUID->"59dd4aa7-d246-4447-9f61-769c44247920"],
+ " and ",
+ StyleBox["tau", "TI"],
+ " are all known here, so the only unknowns are the two derivatives. "
+}], "Text",ExpressionUUID->"30329422-97c2-cc43-858a-3681e9ee8372"],
+
+Cell["Solve[eqs, {dphi, dw}]", "Program",ExpressionUUID->"8a8f0e82-8818-0d42-b687-485a956bfad7"],
+
+Cell[TextData[{
+ "One solution, and it is unique: ",
+ Cell[BoxData[Cell["dphi -> w",
+   Background->None,ExpressionUUID->"6a60371d-c442-5a49-a2a0-cedca1d0bcb9"]], 
+  "InlineCode",ExpressionUUID->"40f7c0fe-99a6-ac43-bcd0-7d2197320e96"],
+ ", ",
+ Cell[BoxData[Cell["dw -> tau/J",
+   Background->None,ExpressionUUID->"ea70ce65-999b-fa4e-a917-1dfb820dbdcd"]], 
+  "InlineCode",ExpressionUUID->"29fd47b7-8fdf-0b46-b7ec-5ca4087b4d45"],
+ ". The integrator can take a step. "
+}], "Text",ExpressionUUID->"d238eb85-ff9a-0748-826f-d96f74a55bfe"],
+
+Cell["The unbalanced model: a whole family", "Subsection",ExpressionUUID->"37dbf684-fce4-0b4a-b735-54469086932b"],
+
+Cell[TextData[{
+ "Now ",
+ StyleBox["tau", "TI"],
+ " joins the unknowns. Nothing else about the model changes. "
+}], "Text",ExpressionUUID->"f56dda06-784e-0e42-b453-a0d4f9cad069"],
+
+Cell["Solve[eqs, {dphi, dw, tau}]", "Program",ExpressionUUID->"0771be71-19c7-0b4b-bf88-6180c3b41831"],
+
+Cell[TextData[{
+ "Two things to notice, and the second is the point of the notebook.",
+ StyleBox["First, Wolfram warns you",
+  FontWeight->Bold],
+ " \[LongDash] ",
+ Cell[BoxData[Cell["\<\
+Solve::svars: Equations may not give solutions for all \"solve\" variables.\
+\>",
+   Background->None,ExpressionUUID->"21def47b-761f-ec4d-bdf0-a351a1ef1f60"]], 
+  "InlineCode",ExpressionUUID->"f679426b-2d93-b34b-aa5b-2377b99eae65"],
+ " That is an independent implementation telling you the same thing Rumoca \
+did, in different vocabulary. Rumoca calls it ",
+ Cell[BoxData[Cell["balance = -1",
+   Background->None,ExpressionUUID->"f8f4496e-ed61-8247-8214-defc9e76e086"]], 
+  "InlineCode",ExpressionUUID->"ee642d02-c219-a74e-812b-4a4a9c6a31df"],
+ "; Wolfram calls it \"may not give solutions for all solve variables.\"",
+ StyleBox["Second, the result is not empty.",
+  FontWeight->Bold],
+ " It is ",
+ Cell[BoxData[Cell["{dphi -> w, tau -> dw J}",
+   Background->None,ExpressionUUID->"bf76fc32-46c1-cb4e-ae64-939cdc537948"]], 
+  "InlineCode",ExpressionUUID->"00cbf991-dc67-7b41-9a09-f53c69895a1a"],
+ " \[LongDash] a perfectly good solution, for *any value of ",
+ StyleBox["dw", "TI"],
+ " you like",
+ StyleBox[". Pick an angular acceleration, any angular acceleration, and \
+there is a torque that produces it. That is not a contradiction. It is a ",
+  FontSlant->Italic],
+ StyleBox["one-parameter family",
+  FontSlant->Italic],
+ "*, and the model gives no reason to prefer a member of it. "
+}], "Text",ExpressionUUID->"e5a98509-4585-a24a-ba88-1fcfabb2dd6e"],
+
+Cell["\<\
+Solve[eqs, {dphi, dw, tau}] === {}   (* False: solutions exist *)\
+\>", "Program",ExpressionUUID->"f3fb001a-92aa-974e-bb77-88e8e4c9fe50"],
+
+Cell[TextData[{
+ "A simulator cannot proceed, not because it is stuck, but because it would \
+have to ",
+ StyleBox["choose arbitrarily",
+  FontWeight->Bold],
+ " \[LongDash] and a physical simulation that silently invents a torque is \
+worse than one that refuses. "
+}], "Text",ExpressionUUID->"c53ed74a-ef80-ac4a-a660-d71d616b5dcf"],
+
+Cell["The same fact in linear algebra", "Section",ExpressionUUID->"f30f5b86-2ea1-4f4a-9bc0-869939d2c7fb"],
+
+Cell[TextData[{
+ "Both models are linear in their unknowns, so write each as a matrix acting \
+on the unknown vector.",
+ StyleBox["Balanced",
+  FontWeight->Bold],
+ ", unknowns ",
+ Cell[BoxData[Cell["{dphi, dw}",
+   Background->None,ExpressionUUID->"411f2943-c100-304d-b64b-d260fc38899c"]], 
+  "InlineCode",ExpressionUUID->"cfeefa12-80cf-1543-b6ab-a9eb617c3ba8"],
+ ": "
+}], "Text",ExpressionUUID->"c10e42fe-08ea-8045-93b3-6bca717dff04"],
+
+Cell["\<\
+Ab = {{1, 0}, {0, J}};
+{Dimensions[Ab], MatrixRank[Ab], NullSpace[Ab]}\
+\>", "Program",ExpressionUUID->"4b678e97-d598-be44-b917-09d210bc5c1c"],
+
+Cell[TextData[{
+ "2x2, rank 2, nullspace ",
+ StyleBox["empty",
+  FontWeight->Bold],
+ ". A square full-rank system: exactly one solution.",
+ StyleBox["Unbalanced",
+  FontWeight->Bold],
+ ", unknowns ",
+ Cell[BoxData[Cell["{dphi, dw, tau}",
+   Background->None,ExpressionUUID->"fbc21d2b-6a79-e341-bb71-d6ce82864ad5"]], 
+  "InlineCode",ExpressionUUID->"fcd14439-bbf1-424d-bb27-687155b8c271"],
+ ": "
+}], "Text",ExpressionUUID->"179341e4-dfe5-fc41-b734-78362e5f850d"],
+
+Cell["\<\
+Au = {{1, 0, 0}, {0, J, -1}};
+{Dimensions[Au], MatrixRank[Au], NullSpace[Au]}\
+\>", "Program",ExpressionUUID->"2a94875e-2226-0a4e-83c4-cee2edc1bcf2"],
+
+Cell[TextData[{
+ "2x3, rank 2, nullspace ",
+ StyleBox["one-dimensional",
+  FontWeight->Bold],
+ ", spanned by ",
+ Cell[BoxData[Cell["{0, -1, -J}",
+   Background->None,ExpressionUUID->"c3f01801-ec2a-5c4d-8bd3-f7e571b9d2db"]], 
+  "InlineCode",ExpressionUUID->"8ab9dc58-1977-244b-8f66-30955a664e22"],
+ "."
+}], "Text",ExpressionUUID->"c07d10ef-c074-d24a-a4e9-149544f2fd37"],
+
+Cell[TextData[{
+ "That vector ",
+ StyleBox["is",
+  FontSlant->Italic],
+ " the ambiguity, written down. It says: leave ",
+ StyleBox["dphi", "TI"],
+ " alone, change ",
+ StyleBox["dw", "TI"],
+ " by one unit, change ",
+ StyleBox["tau", "TI"],
+ " by ",
+ Cell[BoxData[Cell["J",
+   Background->None,ExpressionUUID->"f057fa49-5148-584b-a5e0-472b10e59d3d"]], 
+  "InlineCode",ExpressionUUID->"672c0ae5-4d11-024b-8920-c27e05593d66"],
+ " units, and both equations still hold exactly. Which is just ",
+ Cell[BoxData[Cell["tau = J*dw",
+   Background->None,ExpressionUUID->"ff33fbf4-2ec6-b147-a1f4-7c1014d6b17b"]], 
+  "InlineCode",ExpressionUUID->"de96d0df-ccf5-ab4f-88dc-d1e30f5b408f"],
+ " restated \[LongDash] the second equation, with nothing left to pin either \
+side down. "
+}], "Text",ExpressionUUID->"3e5d6179-3a11-cc42-ac3e-76b90db0c100"],
+
+Cell["The identity worth carrying forward", "Subsection",ExpressionUUID->"ae7ae1cf-96d1-ac47-9296-a3de147fb82c"],
+
+Cell["\<\
+Length[NullSpace[Au]]    (* 1 *)
+2 - 3                    (* -1, Rumoca's balance *)\
+\>", "Program",ExpressionUUID->"85d19019-8e69-1f42-a188-8fc382866bc4"],
+
+Cell[TextData[{
+ StyleBox["balance = -(nullity)",
+  FontWeight->Bold],
+ ", when the equations are independent. Rumoca's error code is reporting the \
+dimension of the space of solutions it would have had to choose from. ",
+ Cell[BoxData[Cell["balance = -1",
+   Background->None,ExpressionUUID->"00e7178f-af6f-0c45-9284-0819e4ed5773"]], 
+  "InlineCode",ExpressionUUID->"c3741393-47a0-5b45-8fa7-0c13bf94b70d"],
+ " means a one-parameter family; ",
+ Cell[BoxData[Cell["balance = -3",
+   Background->None,ExpressionUUID->"327d25ff-947e-4044-9131-99c523eb8799"]], 
+  "InlineCode",ExpressionUUID->"0207ece2-957b-f548-8485-15ae2061b7ee"],
+ " would mean a three-parameter family."
+}], "Text",ExpressionUUID->"21214c70-a62e-2047-afe7-07a8198d9497"],
+
+Cell[TextData[{
+ "By rank-nullity, ",
+ Cell[BoxData[Cell["rank + nullity = 3",
+   Background->None,ExpressionUUID->"f96bc771-b8e9-c84f-a151-6f298dddbfe1"]], 
+  "InlineCode",ExpressionUUID->"f5ea98a3-5ef9-4040-8c14-b6f37576f948"],
+ ": the two independent equations kill two of the three degrees of freedom, \
+and one survives. That surviving degree of freedom is ",
+ StyleBox["tau", "TI"],
+ ". "
+}], "Text",ExpressionUUID->"8024a03e-0301-3143-89d6-f9b24f3c850e"],
+
+Cell["Two honest caveats", "Section",ExpressionUUID->"fca00b74-46d5-2e42-b63f-95b8234ed958"],
+
+Cell[TextData[{
+ StyleBox["These systems are linear; real ones usually are not.",
+  FontWeight->Bold],
+ " For a nonlinear DAE the matrix above is the ",
+ StyleBox["Jacobian",
+  FontWeight->Bold],
+ " of the residuals with respect to the unknowns, and rank is evaluated at a \
+point rather than once for all time. The counting argument survives; the \
+\"one matrix answers it forever\" convenience does not.",
+ StyleBox["Rumoca's check is cheaper than any of this.",
+  FontWeight->Bold],
+ " It compares two integers \[LongDash] equations against unknowns \
+\[LongDash] and never builds a matrix or computes a rank. That is deliberate \
+and it is ",
+ StyleBox["good",
+  FontSlant->Italic],
+ " compiler behaviour: it catches the overwhelmingly common authoring error \
+(declare a variable, forget its equation) before doing any expensive \
+analysis. The price is that counting cannot see a system that is square but \
+",
+ StyleBox["structurally singular",
+  FontWeight->Bold],
+ " \[LongDash] right number of equations, wrong connectivity. That failure \
+exists and has its own specimen, ",
+ Cell[BoxData[Cell["CapacitorLoop",
+   Background->None,ExpressionUUID->"fea83533-4106-a947-87d1-e8525177603a"]], 
+  "InlineCode",ExpressionUUID->"c3939bcf-c225-0047-8a19-7a02bf572576"],
+ ", and it is caught later, by structural analysis."
+}], "Text",ExpressionUUID->"0dd2a0ef-2bf4-214f-aaf4-361d7d0ce3d8"],
+
+Cell[TextData[{
+ "So: ",
+ StyleBox["counting is a necessary condition, not a sufficient one.",
+  FontWeight->Bold],
+ " DAE construction checks the necessary one. That is why there is another \
+phase after it. "
+}], "Text",ExpressionUUID->"d095c5c3-a3af-5f48-a7a6-08820b4a67b5"],
+
+Cell["The trajectory, for comparison", "Section",ExpressionUUID->"9125960d-1a78-ed42-bf6f-05a1f1d09eca"],
+
+Cell[TextData[{
+ "What the balanced model actually does, with ",
+ Cell[BoxData[Cell["J = 1",
+   Background->None,ExpressionUUID->"c95641a1-8118-fd40-b960-9d7dbd80b5ae"]], 
+  "InlineCode",ExpressionUUID->"dc98d34b-eb69-f44f-93d5-0d780b6848ae"],
+ ", ",
+ Cell[BoxData[Cell["tau = 1",
+   Background->None,ExpressionUUID->"2610e750-a8f1-6d4f-ae9a-bab573f1e701"]], 
+  "InlineCode",ExpressionUUID->"8ab506f9-25b7-9043-8b3d-0fb1b17ee5f0"],
+ ", both states starting at zero: "
+}], "Text",ExpressionUUID->"e10f6b71-b62d-2044-8d09-239594c405ee"],
+
+Cell["\<\
+DSolve[{phi'[t] == w[t], w'[t] == 1, phi[0] == 0, w[0] == 0}, {phi, w}, t]\
+\>", "Program",ExpressionUUID->"7140fffa-c70c-b44e-ad8d-d946866c3713"],
+
+Cell[TextData[{
+ Cell[BoxData[Cell["w(t) = t",
+   Background->None,ExpressionUUID->"cfd12a94-9cdf-f941-ac0f-9d3365150110"]], 
+  "InlineCode",ExpressionUUID->"39e94e5f-8c10-8448-a2e0-d1f2cd047e3d"],
+ " and ",
+ Cell[BoxData[Cell["phi(t) = t^2/2",
+   Background->None,ExpressionUUID->"1d24aa04-7a67-e045-b7f8-cf9445f78131"]], 
+  "InlineCode",ExpressionUUID->"2baeae36-7a38-0d45-9251-b4ea0d4dc236"],
+ " \[LongDash] constant torque on constant inertia gives constant angular \
+acceleration, so velocity ramps linearly and angle goes quadratic.",
+ StyleBox["Checkable in System Modeler:",
+  FontWeight->Bold],
+ " simulate ",
+ Cell[BoxData[Cell["SingleInertia",
+   Background->None,ExpressionUUID->"4d90cb28-92fc-4c49-b1f4-c9cceb7754df"]], 
+  "InlineCode",ExpressionUUID->"6abac1eb-02c6-ad4a-907f-83a518fc40d9"],
+ " to ",
+ Cell[BoxData[Cell["t = 2",
+   Background->None,ExpressionUUID->"f045a137-4bbd-1d44-85b7-0bcea768fd70"]], 
+  "InlineCode",ExpressionUUID->"64253ba5-51c8-b04c-80bf-12c6795a8349"],
+ " and ",
+ StyleBox["phi", "TI"],
+ " should read exactly ",
+ StyleBox["2.0",
+  FontWeight->Bold],
+ ", ",
+ StyleBox["w", "TI"],
+ " exactly ",
+ StyleBox["2.0",
+  FontWeight->Bold],
+ ". At ",
+ Cell[BoxData[Cell["t = 1",
+   Background->None,ExpressionUUID->"83cb4d75-0308-f74e-8dd4-5971de527048"]], 
+  "InlineCode",ExpressionUUID->"ee577036-20e0-a24d-9733-726653a43b1f"],
+ ", ",
+ Cell[BoxData[Cell["phi = 0.5",
+   Background->None,ExpressionUUID->"acf4ba58-add1-7c4d-9fdc-e73ddf3e1c19"]], 
+  "InlineCode",ExpressionUUID->"bfa0dcb4-99e8-074e-a40a-155553b3cfaa"],
+ "."
+}], "Text",ExpressionUUID->"cecf60e3-7326-934b-a775-070710747278"],
+
+Cell[TextData[{
+ "And the thing worth watching while you do: ",
+ StyleBox["phi", "TI"],
+ " and ",
+ StyleBox["w", "TI"],
+ " have trajectories; ",
+ Cell[BoxData[Cell["J",
+   Background->None,ExpressionUUID->"efa4a3aa-deae-344a-918d-d2038863c29f"]], 
+  "InlineCode",ExpressionUUID->"daedb126-8886-4644-a3a5-0d0683696edd"],
+ " and ",
+ StyleBox["tau", "TI"],
+ " are flat lines. ",
+ StyleBox["That is what \"state\" means, made visible",
+  FontWeight->Bold],
+ " \[LongDash] a state is a quantity carrying a value forward through time, \
+which is why ",
+ Cell[BoxData[Cell["der()",
+   Background->None,ExpressionUUID->"eaa5ce6a-d179-2041-a3dd-28905a14d364"]], 
+  "InlineCode",ExpressionUUID->"f6e212d6-3c0d-fe44-977c-51fcd255934c"],
+ " applies to it and why the integrator solves for its derivative. ",
+ Cell[BoxData[Cell["J",
+   Background->None,ExpressionUUID->"0390f38e-05a7-2d4e-93d6-ce655386b4f0"]], 
+  "InlineCode",ExpressionUUID->"9a0b7713-065a-0549-8c0c-551e8bf6f0e4"],
+ " matters to the physics just as much and is not a state, because nothing \
+differentiates it."
+}], "Text",ExpressionUUID->"9f458fd1-f090-794b-a6e8-a7731d089c65"]
+},
+FrontEndVersion->"15.0 for Microsoft Windows (64-bit) (May 19, 2026)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"244b5e8e-f000-764f-a7f5-4a24041345c7"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[554, 20, 126, 0, 70, "Title",ExpressionUUID->"b4af95da-75fc-0748-b910-15a6e74b3518"],
+Cell[683, 22, 335, 6, 70, "Text",ExpressionUUID->"2ea001ae-5a83-0045-846f-6e5e8d0529a3"],
+Cell[1015, 30, 1408, 30, 70, "Text",ExpressionUUID->"a226bb06-ec80-a34c-8d11-4dfcb69fa300"],
+Cell[2396, 62, 88, 0, 70, "Section",ExpressionUUID->"b14006bf-46c6-ff40-8921-854aa455ac92"],
+Cell[2487, 64, 96, 0, 70, "Text",ExpressionUUID->"6579a54a-5bbf-c847-b61e-5ff7884dea06"],
+Cell[2586, 66, 579, 9, 70, "Program",ExpressionUUID->"f386bcb0-5b41-e345-b9fb-1dfcea62e818"],
+Cell[3159, 77, 397, 11, 70, "Text",ExpressionUUID->"18fa5ddd-361d-ad4e-8920-56b87051a4d7"],
+Cell[3548, 90, 119, 0, 70, "Section",ExpressionUUID->"ddc9ae35-7558-0d46-a392-9e01aa686bc8"],
+Cell[3670, 92, 374, 10, 70, "Text",ExpressionUUID->"cb050a69-8cca-d844-aba1-f939888e3229"],
+Cell[4037, 104, 1139, 26, 70, "Text",ExpressionUUID->"62e620bf-e5c3-b04d-83d3-5815b018db8e"],
+Cell[5153, 132, 595, 14, 70, "Text",ExpressionUUID->"c7251c16-5cbc-2c4a-9368-e2f9ec06cd36"],
+Cell[5737, 148, 113, 0, 70, "Program",ExpressionUUID->"bd5f38f9-f347-e34b-9d71-afb1fa5b9278"],
+Cell[5853, 150, 107, 0, 70, "Subsection",ExpressionUUID->"7346eb0c-7dec-b447-9f4a-b0f872ce8254"],
+Cell[5963, 152, 400, 9, 70, "Text",ExpressionUUID->"30329422-97c2-cc43-858a-3681e9ee8372"],
+Cell[6357, 163, 96, 0, 70, "Program",ExpressionUUID->"8a8f0e82-8818-0d42-b687-485a956bfad7"],
+Cell[6456, 165, 542, 10, 70, "Text",ExpressionUUID->"d238eb85-ff9a-0748-826f-d96f74a55bfe"],
+Cell[6991, 177, 113, 0, 70, "Subsection",ExpressionUUID->"37dbf684-fce4-0b4a-b735-54469086932b"],
+Cell[7107, 179, 182, 4, 70, "Text",ExpressionUUID->"f56dda06-784e-0e42-b453-a0d4f9cad069"],
+Cell[7288, 185, 101, 0, 70, "Program",ExpressionUUID->"0771be71-19c7-0b4b-bf88-6180c3b41831"],
+Cell[7392, 187, 1574, 31, 70, "Text",ExpressionUUID->"e5a98509-4585-a24a-ba88-1fcfabb2dd6e"],
+Cell[8938, 220, 149, 2, 70, "Program",ExpressionUUID->"f3fb001a-92aa-974e-bb77-88e8e4c9fe50"],
+Cell[9088, 224, 339, 7, 70, "Text",ExpressionUUID->"c53ed74a-ef80-ac4a-a660-d71d616b5dcf"],
+Cell[9423, 233, 105, 0, 70, "Section",ExpressionUUID->"f30f5b86-2ea1-4f4a-9bc0-869939d2c7fb"],
+Cell[9531, 235, 445, 10, 70, "Text",ExpressionUUID->"c10e42fe-08ea-8045-93b3-6bca717dff04"],
+Cell[9969, 247, 155, 3, 70, "Program",ExpressionUUID->"4b678e97-d598-be44-b917-09d210bc5c1c"],
+Cell[10124, 252, 473, 12, 70, "Text",ExpressionUUID->"179341e4-dfe5-fc41-b734-78362e5f850d"],
+Cell[10588, 266, 162, 3, 70, "Program",ExpressionUUID->"2a94875e-2226-0a4e-83c4-cee2edc1bcf2"],
+Cell[10750, 271, 377, 9, 70, "Text",ExpressionUUID->"c07d10ef-c074-d24a-a4e9-149544f2fd37"],
+Cell[11121, 282, 851, 20, 70, "Text",ExpressionUUID->"3e5d6179-3a11-cc42-ac3e-76b90db0c100"],
+Cell[11955, 304, 112, 0, 70, "Subsection",ExpressionUUID->"ae7ae1cf-96d1-ac47-9296-a3de147fb82c"],
+Cell[12070, 306, 169, 3, 70, "Program",ExpressionUUID->"85d19019-8e69-1f42-a188-8fc382866bc4"],
+Cell[12239, 311, 751, 13, 70, "Text",ExpressionUUID->"21214c70-a62e-2047-afe7-07a8198d9497"],
+Cell[12980, 326, 470, 9, 70, "Text",ExpressionUUID->"8024a03e-0301-3143-89d6-f9b24f3c850e"],
+Cell[13444, 337, 92, 0, 70, "Section",ExpressionUUID->"fca00b74-46d5-2e42-b63f-95b8234ed958"],
+Cell[13539, 339, 1420, 28, 70, "Text",ExpressionUUID->"0dd2a0ef-2bf4-214f-aaf4-361d7d0ce3d8"],
+Cell[14934, 369, 283, 6, 70, "Text",ExpressionUUID->"d095c5c3-a3af-5f48-a7a6-08820b4a67b5"],
+Cell[15214, 377, 104, 0, 70, "Section",ExpressionUUID->"9125960d-1a78-ed42-bf6f-05a1f1d09eca"],
+Cell[15321, 379, 544, 10, 70, "Text",ExpressionUUID->"e10f6b71-b62d-2044-8d09-239594c405ee"],
+Cell[15858, 391, 158, 2, 70, "Program",ExpressionUUID->"7140fffa-c70c-b44e-ad8d-d946866c3713"],
+Cell[16017, 395, 1662, 39, 70, "Text",ExpressionUUID->"cecf60e3-7326-934b-a775-070710747278"],
+Cell[17643, 436, 1159, 25, 70, "Text",ExpressionUUID->"9f458fd1-f090-794b-a6e8-a7731d089c65"]
+}
+]
+*)
+
+(* End of internal cache information *)

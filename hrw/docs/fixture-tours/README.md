@@ -39,6 +39,14 @@ far came from attention left spare by a short tour, which is why they stay short
 
 ## The tours
 
+**There are two kinds, and they are judged differently.** Both are run by
+`fixture_tour_links_all_resolve` and both hold every `**Expected:**` line to being violable —
+that discipline is common to all of them. What differs is what a walk is *for*.
+
+### Capability tours — the subject is HRW
+
+Each verifies one feature. A failed stop implicates exactly one thing.
+
 | Tour | Verifies |
 |---|---|
 | [`node-pointing.md`](node-pointing.md) | pointing at a tree node, and following an identifier |
@@ -46,6 +54,23 @@ far came from attention left spare by a short tour, which is why they stay short
 | [`camera-aiming.md`](camera-aiming.md) | whether the canvas camera lands where a link says |
 | [`structural-vs-numerical-rank.md`](structural-vs-numerical-rank.md) | **cross-platform** — two stops in HRW, then a notebook, because full structural rank with numerical singularity is a thing HRW cannot show |
 | [`the-oracle.md`](the-oracle.md) | **cross-platform** — a model Rumoca accepts and System Modeler rejects |
+
+### Curriculum tours — the subject is the compiler, and HRW is the instrument
+
+Each teaches one step of
+[`the-chain-of-problems.md`](../compiler-phases/the-chain-of-problems.md). **The prose is
+load-bearing** (Doug, 2026-08-03): a stop is the explanation, and the pane is the evidence for
+it. These are longer than a capability tour on purpose.
+
+| Tour | Teaches |
+|---|---|
+| [`dae-construction.md`](dae-construction.md) | how the flat model becomes states/algebraics/parameters + residuals, why the equation count must equal the unknown count, and what an unbalanced model actually means — with excursions to Wolfram and System Modeler |
+
+**Why the "keep it narrow" rule below does not bind these.** That rule protects *attention per
+expectation*, because a capability tour spends your surplus attention on finding off-stop bugs
+in HRW. A curriculum tour is spending it on the concept instead. The rule it does keep is the
+one that matters for both: **claims stay austere and trace-sourced, however long the prose
+gets.** Length is bought with explanation, never with hedging.
 
 Cross-platform tours may route through Wolfram Desktop or System Modeler when the point cannot
 be made in HRW. Their notebooks are versioned in [`notebooks/`](notebooks/) — a *fixture*

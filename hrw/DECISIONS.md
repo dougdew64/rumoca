@@ -1869,3 +1869,77 @@ first time on a link form rather than a typo.
 `a_node_link_reaches_every_stage_including_the_tree_only_ones` checks the **property over
 `StageKind::ALL`**, not the five known names, so a tree-only stage added later fails the test
 rather than quietly inheriting the hole.
+
+---
+
+## 2026-08-03 — Tour prose becomes load-bearing, and curriculum tours split from capability tours
+
+**Doug's instruction:** assume thorough explanations beat terse ones until he says otherwise;
+assume **the prose of a tour is load-bearing**, not captioning; and link out to System Modeler
+or Wolfram Desktop where those answer better than prose.
+
+**The apparent conflict with the fixture-tour rules is not real, and getting that right is the
+whole decision.** Those rules cap **claims**, not **words**. *"Every `**Expected:**` line must
+be violable"* exists because a hedged expectation teaches Doug to read expectations loosely —
+it says nothing about how much explanation surrounds one. The first `dae-construction.md` was
+terse in its *prose* because its *claims* had to be tight; that was a conflation, not a
+constraint the rules imposed.
+
+**The rule that did collide is *"one capability per tour, and keep it narrow"*,** whose stated
+reason is that the scarce resource is *attention per expectation*. That reason is about
+**capability** tours, where Doug's surplus attention produces off-stop findings about HRW. A
+curriculum tour spends attention on the **concept**. So `docs/fixture-tours/README.md` now
+separates the two kinds, and states what survives in both: **claims stay austere and
+trace-sourced however long the prose gets; length is bought with explanation, never with
+hedging.**
+
+### The echo-chamber risk, and why it did not block this
+
+CLAUDE.md records that the project's clearest failure was `end_to_end_tour.md`, a solo attempt
+at explanation, and that **stored regenerable prose builds an echo chamber a later session
+mistakes for fact**. That rule was waiting on evidence of real use, and Doug supplying the
+instruction *is* that evidence — the precondition is met, not overridden.
+
+The residual risk is narrow and real: long explanations can launder a plausible guess into the
+repository. The existing mitigation fits without inventing anything — **load-bearing claims
+carry provenance; untagged prose is a lead, not a fact**. A paragraph that cannot be tagged is
+a signal that the explanation has run past what was verified.
+
+### The division of labour between the four instruments
+
+Settled here rather than re-derived per tour:
+
+| | Answers | Uniquely because |
+|---|---|---|
+| **HRW** | what *Rumoca* did | the only view of this compiler's internals |
+| **System Modeler** | what a mature independent implementation does | independence (the oracle), plus actual trajectories |
+| **Wolfram Desktop** | what the *mathematics* says | symbolic; the algorithm by hand; the general case |
+| **Tour prose** | **why the step exists at all** | purpose is not visible in any of the three |
+
+**The last row is the one not to outsource.** No tool can show why a phase is in the pipeline,
+because that is about the problem being solved rather than the artifact produced.
+
+Two stops in `dae-construction.md` were rewritten as excursions on this basis. *"`phi` is a
+state"* could only be restated in prose; System Modeler plotting `phi(t)` against a flat `J`
+makes it **ostensive**. And *"2 equations, 3 unknowns is not simulable"* invites the reading
+*"no solution"*, which is **backwards** — `Solve` returns a one-parameter family, and Wolfram's
+own `Solve::svars` warning is an independent implementation reaching Rumoca's `ED001` in
+different vocabulary. `docs/fixture-tours/notebooks/dae-balance.nb` carries it, including the
+identity **balance = −(nullity)**, which connects the compiler's integer to rank-nullity.
+
+### The defect the rewrite found
+
+**The DAE stage rendered a blank tab for its own failure.** On `UnbalancedShaft`, every stage
+*downstream* said "not reached (ToDae failed earlier)" while the phase that actually refused
+said nothing — because `flatten_stage` had adopted the `FailedPhase::ToDae` error in 2026-07-29,
+correctly at the time, since Flatten was then the last tab before Structural. **The succeeding
+stage reported the failure and the failing stage reported nothing.**
+
+`dae_absent_stage` fixes it **additively** — Flatten keeps its copy. The DAE tab now carries
+`rumoca::todae::ED001`, the counts, the balance, the `reading` line, and the MLS §4.9 guidance.
+`the_dae_stage_explains_its_own_absence` checks the **property**: every stage with no IR must
+say something, and the one that failed is not the silent member of that set.
+
+This is the pane-is-a-reporter rule reaching a pane that had already shipped, and it is the
+first time a *curriculum* tour found a defect — the mechanism `project-tours-multiply-testing`
+predicted, arriving from the direction nobody had aimed it.

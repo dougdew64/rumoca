@@ -25,6 +25,10 @@
       "has_ir": true,
       "note": "unbalanced model: 2 equations, 3 unknowns (balance = -1)"
     },
+    "dae": {
+      "has_ir": true,
+      "note": "unbalanced model: 2 equations, 3 unknowns (balance = -1)"
+    },
     "structural": {
       "has_ir": false,
       "note": "not reached (ToDae failed earlier)"

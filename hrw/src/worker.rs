@@ -1848,8 +1848,26 @@ impl WorkerState {
                 // Its note is the balance, because that is the claim DAE
                 // construction makes and the one everything downstream relies
                 // on: matching cannot assign one equation per unknown unless the
-                // counts agree. A model that fails the balance check never
-                // reaches here, and its Flatten note says why.
+                // counts agree.
+                //
+                // **And when there is no DAE, this stage says why itself.**
+                // `flatten_stage` has carried the `FailedPhase::ToDae` error
+                // since 2026-07-29, which was right when Flatten was the last
+                // tab before Structural — it was the only place left to put it.
+                // With a DAE tab that attribution became actively misleading:
+                // **Flatten succeeded.** The phase that failed is this one, and
+                // on 2026-08-03 it was the only stage in the pipeline rendering
+                // a blank tab for its own failure while `structural`,
+                // `index_reduction`, `initialization`, `events` and
+                // `solve_lowering` all correctly read "not reached (ToDae failed
+                // earlier)". The stage whose failure it was said the least.
+                //
+                // Deliberately **additive**: Flatten keeps its copy. Two tabs
+                // explaining the same stop is redundant; a learner opening the
+                // DAE tab of a model with no DAE and finding nothing is a dead
+                // end, and the tour that found this
+                // (`docs/fixture-tours/dae-construction.md`) walks exactly that
+                // path.
                 let dae_stage = match &dae {
                     Some(d) => {
                         let n_x = d.variables.states.len();
@@ -1861,7 +1879,7 @@ impl WorkerState {
                         ));
                         s
                     }
-                    None => Stage::default(),
+                    None => dae_absent_stage(result, &source),
                 };
 
                 // `pre()`-lowering replay frames (idea #40).
@@ -3073,6 +3091,52 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             Stage::info(format!("needs inner declaration(s) for: {}", missing_inners.join(", ")))
         }
         None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+    }
+}
+
+/// **Why there is no DAE** — the DAE stage when construction produced nothing.
+///
+/// Every *downstream* stage already explained its own emptiness ("not reached
+/// (ToDae failed earlier)"), and until 2026-08-03 the stage that actually failed
+/// rendered a blank tab. The asymmetry was invisible while DAE construction had no
+/// tab of its own: `flatten_stage` adopted the `FailedPhase::ToDae` error because
+/// Flatten was the last tab before Structural, and that made **the succeeding stage
+/// the one that reported the failure.**
+///
+/// The failure modes are distinguished because they mean different things to a reader:
+///
+/// - **`ToDae`** — this phase ran and refused. The typed error says why, and for the
+///   commonest case (`ToDaeError::Unbalanced`, `rumoca::todae::ED001`) it carries the
+///   equation and unknown counts that make the refusal checkable.
+/// - **anything earlier** — this phase never ran, so it has nothing of its own to say
+///   and names the phase that stopped first instead. Claiming a DAE-construction
+///   problem here would blame the wrong phase.
+///
+/// Found by `docs/fixture-tours/dae-construction.md`, whose counterexample stop opens
+/// this exact tab on `UnbalancedShaft`.
+fn dae_absent_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
+    match result {
+        Some(PhaseResult::Failed { phase: FailedPhase::ToDae, error, error_code, diagnostics }) => {
+            let msg = if diagnostics.is_empty() {
+                error.clone()
+            } else {
+                format!("{error}  ({} diagnostic(s))", diagnostics.len())
+            };
+            Stage::err_with_details(
+                dae_construction_error_to_json(error, error_code, diagnostics, source),
+                msg,
+            )
+        }
+        Some(PhaseResult::Failed { phase, .. }) => {
+            Stage::info(format!("not reached ({phase} failed earlier)"))
+        }
+        Some(PhaseResult::NeedsInner { missing_inners, .. }) => {
+            Stage::info(format!("needs inner declaration(s) for: {}", missing_inners.join(", ")))
+        }
+        // Success with no DAE cannot happen (the DAE is how success is defined), and
+        // `None` is the no-result case Flatten already reports. Neither is worth a
+        // second claim from this stage.
+        _ => Stage::default(),
     }
 }
 
@@ -4921,6 +4985,68 @@ mod tests {
             err["reading"].as_str().is_some_and(|r| r.contains("nothing to determine it")),
             "the direction of the imbalance is the actionable half: {}",
             err["reading"],
+        );
+    }
+
+    /// **The stage that failed must not be the quietest one.**
+    ///
+    /// On `UnbalancedShaft` every stage downstream of DAE construction said "not
+    /// reached (ToDae failed earlier)", and the DAE tab — the phase that actually
+    /// refused — rendered blank. The attribution was a leftover: `flatten_stage`
+    /// adopted the `FailedPhase::ToDae` error in 2026-07-29 because Flatten was then
+    /// the last tab before Structural, so **the succeeding stage reported the
+    /// failure and the failing stage reported nothing.**
+    ///
+    /// Found by walking `docs/fixture-tours/dae-construction.md`, whose
+    /// counterexample stop opens this tab expecting an explanation — the pane-is-a-
+    /// reporter rule reaching a pane that was already shipping.
+    ///
+    /// **Checks the property, not the message**: any stage that produced no IR must
+    /// say something, and the one that failed must say at least as much as the ones
+    /// that merely never ran.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn the_dae_stage_explains_its_own_absence() {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared("UnbalancedShaft")
+        else {
+            panic!("expected Compiled");
+        };
+
+        let dae = &stages.dae;
+        assert!(
+            dae.note_is_error(),
+            "DAE construction refused; its own tab must record that as an error, not silence",
+        );
+        let err = dae
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .expect("the DAE tab must carry the structured payload of its own failure");
+        assert_eq!(err["kind"], "dae_construction");
+        assert_eq!(err["error_code"], "rumoca::todae::ED001");
+        assert_eq!(err["n_equations"], 2);
+        assert_eq!(err["n_unknowns"], 3);
+        assert_eq!(err["balance"], -1);
+
+        // The property. Every stage with no IR explains itself, and the DAE — the
+        // one that failed — is not the silent member of that set.
+        for &kind in StageKind::COMPILATION {
+            let s = stages.get(kind);
+            if s.value.is_some() {
+                continue;
+            }
+            assert!(
+                s.note.is_some(),
+                "{} produced no IR and gave no reason — an empty pane with no note is \
+                 indistinguishable from a pane that is still loading",
+                kind.name(),
+            );
+        }
+
+        // Non-vacuity: this specimen must actually fail where the test assumes.
+        assert!(
+            stages.structural.note.as_deref().is_some_and(|n| n.contains("ToDae")),
+            "UnbalancedShaft must still fail in ToDae, or this test is checking nothing",
         );
     }
 
