@@ -5123,10 +5123,26 @@ egui::Panel::top("bar").show(ui, |ui| {
                     egui::vec2(ui.available_width(), list_height),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        section_header(ui, "Tours");
+                        // **The header states the count**, so "I do not see the new
+                        // tour" is answerable at a glance instead of by reasoning.
+                        //
+                        // Doug reported exactly that on 2026-08-03 with two tours
+                        // freshly written and a picker test asserting both were on
+                        // screen — so the code was provably right and the report was
+                        // still true, which left nothing to look at. A list that says
+                        // how many it found and where it looked distinguishes "the
+                        // directory has six" from "the pane is showing six of eight",
+                        // and those need opposite fixes.
+                        //
+                        // The same partial-report shape as the Context Bar defect:
+                        // every tour on screen was correct, and the missing ones left
+                        // no gap where they had been.
+                        let n = self.tour.available.len();
+                        section_header(ui, &format!("Tours ({n})"));
                         ui.add_space(4.0);
                         if self.tour.available.is_empty() {
                             ui.weak("(no tours yet)");
+                            ui.weak(bridge::FIXTURE_TOURS_DIR);
                             return;
                         }
                         egui::ScrollArea::vertical().id_salt("tour_list").show(ui, |ui| {

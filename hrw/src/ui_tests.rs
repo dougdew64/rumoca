@@ -180,6 +180,42 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
     );
 }
 
+/// **The Tours header states how many it found, and the number is true.**
+///
+/// Doug, 2026-08-03: *"I don't see new tours in the tours list"* — with two tours
+/// freshly written and `the_tour_picker_shows_every_fixture_and_no_readme` asserting
+/// both were on screen. The code was provably right and the report was still true,
+/// which left nothing to look at and no way to tell "the directory has six" from
+/// "the pane is showing six of eight". **Those need opposite fixes.**
+///
+/// The same partial-report shape as the Context Bar defect: every tour on screen was
+/// correct, and the missing ones left no gap where they had been. A count converts
+/// that into something checkable at a glance.
+///
+/// **Asserts the count against the filesystem, not against a literal**, so adding a
+/// tour cannot make the header quietly wrong.
+#[test]
+fn the_tours_header_counts_what_is_actually_on_disk() {
+    let h = harness(App::test_default());
+
+    let on_disk = crate::bridge::fixture_tours().len();
+    assert!(on_disk >= 7, "expected the committed fixtures, found {on_disk}");
+
+    // The ad hoc tour is offered too when `.hrw-bridge/tour.md` exists, so the
+    // header is either the fixture count or one more.
+    let with_adhoc = on_disk + 1;
+    let shown = [on_disk, with_adhoc]
+        .into_iter()
+        .find(|n| h.query_by_label(&format!("Tours ({n})")).is_some());
+
+    assert!(
+        shown.is_some(),
+        "the Tours header must state a count matching the {on_disk} tours on disk \
+         (or {with_adhoc} with the ad hoc tour). A header with no count cannot \
+         distinguish a missing file from a pane that failed to list it.",
+    );
+}
+
 /// **The Play button exists, and the running readout reports.**
 ///
 /// The pane-is-a-reporter rule applied to the transport built on 2026-08-03: a
