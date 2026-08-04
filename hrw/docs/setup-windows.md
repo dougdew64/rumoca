@@ -215,6 +215,30 @@ files there need `git add -f` to be tracked.
 | Visuals freeze, HRW exits with code 101 | GPU device loss — confirm `WGPU_BACKEND=gl` is in effect and that you launched from the dropdown |
 | Specimens fail to compile | MSL not staged (step 3) |
 | Tests fail intermittently, or hang | Missing `--test-threads=1` |
+| A feature behaves as it did *before* a change you know landed | **The running HRW is holding `hrw.exe`, so the last build never relinked.** See below. |
+
+### `Access is denied. (os error 5)` — a stale binary that looks current
+
+**Windows locks a running executable.** With HRW open, `cargo build -p hrw` compiles
+everything, fails at the *link* step with `Access is denied. (os error 5)`, and leaves the
+**previous `hrw.exe` in place**. The library and the whole test suite still build, so
+`cargo test` passes against code the running app does not contain.
+
+**This is the trap:** the failure is one line at the end of a long build, and everything else
+about the run looks healthy.
+
+It cost a troubleshooting cycle on 2026-08-03 — a tour-link click that "did nothing" and could
+not be reproduced by three headless tests. Restarting HRW resolved it, and the bug was never
+found in the code, which is the signature of this rather than of a defect.
+
+**So when a symptom does not match the source, check the binary before reading the code:**
+
+```powershell
+Get-Item target/debug/hrw.exe | Select-Object LastWriteTime   # older than your edit?
+Get-Process hrw | Select-Object Id, StartTime                 # started before that build?
+```
+
+Close HRW, rebuild, confirm the timestamp moved, and only then start diagnosing.
 
 ## Before a long run: stop rust-analyzer
 
