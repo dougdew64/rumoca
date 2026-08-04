@@ -216,6 +216,110 @@ fn the_tours_header_counts_what_is_actually_on_disk() {
     );
 }
 
+/// **Clicking a tour link dispatches it** — the interaction the whole tour system
+/// rests on, and until 2026-08-03 the one with no test.
+///
+/// Doug: *"I'm attempting to read through a tour manually without playing the tour.
+/// Unfortunately, clicking on the tour links now causes nothing to happen."*
+///
+/// Everything else about tours was guarded — that the links *resolve*
+/// (`fixture_tour_links_all_resolve`), that dispatch does the right thing
+/// (`app::tests`), that the picker lists them — and the click joining those two
+/// halves was covered by nothing at all. A whole feature can be verified end to end
+/// with a hole exactly where the user touches it.
+#[test]
+fn clicking_a_tour_link_dispatches_it() {
+    let mut h = harness(App::test_default());
+    // **`.mo`, not a bare stem.** `find_specimen` matches on `file_name()` against
+    // `"{name}.mo"`, so a stem here makes the lookup miss and the click looks dead
+    // when it was the fixture that was wrong.
+    h.state_mut().test_set_specimen_files(&["RcCircuit.mo"]);
+    assert!(
+        h.state_mut().test_select_fixture_tour("node-pointing"),
+        "the fixture must be readable, or the click below has nothing to hit",
+    );
+    h.run_steps(2);
+
+    // **A link near the top of the document, deliberately.** `node-pointing.md`
+    // carries its first on line 17. A link far down a long tour is in the
+    // accessibility tree but clipped by the scroll area, so the click lands on
+    // nothing and the test reads as "the feature is broken" — the harness trap this
+    // file's own header warns about.
+    h.get_by_label_contains("RcCircuit \u{2192} Structural").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_selected_name().as_deref(),
+        Some("RcCircuit.mo"),
+        "clicking a load link must select the specimen it names",
+    );
+}
+
+/// **A link far down a long tour dispatches too.**
+///
+/// Separated from the near-top case because they fail for different reasons and a
+/// single test could not tell them apart. `matching.md` is 15k characters and its
+/// first link sits about 17% in — well below the fold at any window size — which is
+/// exactly the shape Doug reads manually.
+///
+/// If this passes and manual clicking still misbehaves, the cause is **not** link
+/// dispatch, and the next place to look is what the pane does to the click before
+/// the link sees it.
+#[test]
+fn a_link_far_down_a_long_tour_still_dispatches() {
+    let mut h = harness(App::test_default());
+    h.state_mut().test_set_specimen_files(&["BouncingBall.mo"]);
+    assert!(
+        h.state_mut().test_select_fixture_tour("matching"),
+        "the fixture must be readable, or the click below has nothing to hit",
+    );
+    h.run_steps(2);
+
+    h.get_by_label_contains("BouncingBall \u{2192} Structural").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_selected_name().as_deref(),
+        Some("BouncingBall.mo"),
+        "a link below the fold must dispatch like any other",
+    );
+}
+
+/// **Links still work after a walk has been played and stopped.**
+///
+/// The state Doug reads tours in is rarely a fresh one — he plays, stops, and then
+/// goes back to reading manually. That leaves autoplay holding a schedule: `stop()`
+/// clears the beats but a *finished* run does not, so `current_byte_offset` kept
+/// naming the last link and the tour text stayed rendered as **two** markdown
+/// documents for all subsequent manual reading.
+///
+/// Splitting is now gated on a walk actually running, so the idle path is byte for
+/// byte the plain one. This test pins that: a click after a run must behave exactly
+/// like a click before one.
+#[test]
+fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
+    let mut h = harness(App::test_default());
+    h.state_mut().test_set_specimen_files(&["RcCircuit.mo"]);
+    assert!(h.state_mut().test_select_fixture_tour("node-pointing"));
+    h.run_steps(2);
+
+    // Play, then stop — the state manual reading actually happens in.
+    h.state_mut().test_start_autoplay();
+    h.run_steps(2);
+    h.state_mut().test_stop_autoplay();
+    h.run_steps(2);
+    h.state_mut().test_clear_model();
+
+    h.get_by_label_contains("RcCircuit \u{2192} Structural").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.state().test_selected_name().as_deref(),
+        Some("RcCircuit.mo"),
+        "a stopped walk must leave the tour readable and its links live",
+    );
+}
+
 /// **The Play button exists, and the running readout reports.**
 ///
 /// The pane-is-a-reporter rule applied to the transport built on 2026-08-03: a

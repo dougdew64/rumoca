@@ -5291,11 +5291,21 @@ egui::Panel::top("bar").show(ui, |ui| {
                     set_markdown_text_sizes(ui);
                     match &tour_text {
                         Some(text) => {
-                            let split = self
-                                .tour
-                                .autoplay
-                                .current_byte_offset()
-                                .min(text.len());
+                            // **Only split while a walk is running.**
+                            //
+                            // The split exists to measure one beat's link position.
+                            // Idle, it buys nothing — and it does not go away by
+                            // itself: a *finished* run keeps its beats, so
+                            // `current_byte_offset` still names the last link and the
+                            // document stayed cut in two for all subsequent manual
+                            // reading. Rendering one markdown document as two is not
+                            // free of consequence, and doing it when nothing needs it
+                            // is a difference from the plain path with no upside.
+                            let split = if self.tour.autoplay.is_running() {
+                                self.tour.autoplay.current_byte_offset().min(text.len())
+                            } else {
+                                0
+                            };
                             let top = ui.cursor().top();
                             if split > 0 {
                                 egui_commonmark::CommonMarkViewer::new().show(
@@ -7246,6 +7256,12 @@ impl App {
     /// Start a self-running walk, as the Play button does.
     pub(crate) fn test_start_autoplay(&mut self) {
         self.start_autoplay();
+    }
+
+    /// Stop a run, as the Stop button does.
+    pub(crate) fn test_stop_autoplay(&mut self) {
+        self.tour.autoplay.stop();
+        self.restore_mode_after_autoplay();
     }
 
     /// The autoplay clock's phase, for asserting a run is actually under way.
