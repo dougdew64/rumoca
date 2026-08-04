@@ -1999,12 +1999,34 @@ impl WorkerState {
                 // part of a second-long call. Same family as the "DAE pipeline"
                 // fiction removed 2026-08-04: a log that states a number the
                 // reader will misread is not reporting, it is misreporting.
+                // **Says where the trace output is, not only where the work was.**
+                //
+                // Doug, 2026-08-04: *"when I check the Rumoca tracing checkbox, some
+                // phases show rumoca trace log lines and some phases do not."*
+                // Measured on `SingleInertia`: **all 44 traces sit in this bracket**,
+                // and Instantiate, Typecheck, Flatten and DAE construction show none.
+                //
+                // That is correct — those phases ran here, so their events were
+                // emitted and drained here, and the entries below emit nothing
+                // because reading a captured artifact is not running a phase. But the
+                // previous wording said only that the *work* happened inside the
+                // call, which left the empty brackets looking like missing
+                // instrumentation. **The reader was left to infer the one thing the
+                // sentence existed to tell them.**
+                //
+                // Stated rather than rearranged: the traces could be sorted into the
+                // brackets below by their `[rumoca_phase_*]` target, and that was
+                // considered and declined. They were emitted in one contiguous call,
+                // and regrouping them would present an interleaving that did not
+                // happen — the log describes what occurred, not what would read most
+                // tidily.
                 log(
                     LogLevel::Info,
                     "Instantiate, Typecheck, Flatten and DAE construction all ran inside \
-                     that call. Their entries below time HRW turning each captured \
-                     artifact into a view, not the phase itself; Structural onward is \
-                     real work."
+                     that call \u{2014} so with tracing on, their trace output is the \
+                     block above, not under their own entries. Those entries time HRW \
+                     turning each captured artifact into a view, which emits nothing. \
+                     Structural onward is real work and traces under its own name."
                         .to_owned(),
                 );
 
@@ -6183,6 +6205,37 @@ mod tests {
                  not show that they belong to the phase",
             );
         }
+
+        // **The notice matches where the traces actually are.**
+        //
+        // Doug asked why some phases show trace lines and others do not. For four of
+        // them the answer is that they ran inside the Rumoca compile call, so their
+        // events are in *its* bracket and their own entries are empty. That is
+        // correct behaviour and confusing without a sentence saying so — and a
+        // sentence that stops being true is worse than none.
+        //
+        // So this pins both halves together: the four brackets are empty of traces,
+        // AND the notice tells the reader where to look instead.
+        let empty_of_traces = |name: &str| -> bool {
+            let Some((s, e)) = bracket(name) else { return false };
+            !logs[s..=e].iter().any(|x| matches!(x.level, LogLevel::Trace))
+        };
+        for phase in ["Instantiate", "Typecheck", "Flatten", "DAE construction"] {
+            assert!(
+                empty_of_traces(phase),
+                "{phase} now carries trace output of its own. That is a better world, \
+                 but the notice still tells readers to look in the compile bracket \
+                 \u{2014} update it",
+            );
+        }
+        assert!(
+            logs.iter().any(|e| {
+                matches!(e.level, LogLevel::Info)
+                    && e.message.contains("their trace output is the block above")
+            }),
+            "the four brackets are empty of traces and nothing explains why. That is \
+             exactly the question a reader is left holding \u{2014} it was asked",
+        );
     }
 
     /// **The "no instrumentation" claim is still true.**
