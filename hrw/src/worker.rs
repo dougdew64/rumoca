@@ -1704,15 +1704,21 @@ impl WorkerState {
                 };
                 // Rumoca API: `session.resolved()` triggers (or reuses) full
                 // name resolution and returns the resolved `ClassTree`.
-                match self.session.resolved() {
+                // **`tree()`, not `resolved()`.** `resolved()` ends with a deep
+                // clone of the whole resolved tree — measured at ~487ms on this
+                // workspace, over 38,855 defs and 6,521 classes, which was the
+                // single largest cost in a compile. `tree()` returns `&ClassTree`
+                // from the same cached `Arc` and was already public; HRW was
+                // simply calling the copying one. Everything below only reads.
+                match self.session.tree() {
                     Ok(rt) => {
                         // Extract just this model's class definition from the
                         // full resolved tree (which includes the entire MSL).
-                        let stage = extract_class(&rt.0, &qualified);
+                        let stage = extract_class(rt, &qualified);
                         if let Some(v) = &stage.value {
                             // Build the DefId→DefInfo lookup for all DefIds
                             // referenced in this model's IR.
-                            def_index = build_def_index(&rt.0, v);
+                            def_index = build_def_index(rt, v);
                         }
                         // **Resolve ends here**, before the phases that merely use
                         // its output. Its bracket used to close after Instantiate,
