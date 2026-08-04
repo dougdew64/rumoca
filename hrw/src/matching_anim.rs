@@ -107,6 +107,40 @@ impl MatchingAnimation {
     }
 
     /// Build the animation trace from a parsed incidence matrix (recorded mode).
+    /// Build from **frames captured during the compile**, with the matrix supplying
+    /// only the names and shape to draw them against.
+    ///
+    /// The distinction from [`Self::from_incidence`] is provenance, not output.
+    /// `from_incidence` re-runs matching when the tab is opened; because matching is
+    /// deterministic the two agree, but the animation then replays a search that
+    /// produced nothing, while the blocks on screen came from a different execution
+    /// nobody watched.
+    ///
+    /// Added 2026-08-04 alongside `rumoca-phase-structural`'s capture scope. Doug:
+    /// *"our ability to play animations is tremendously valuable and I want to
+    /// preserve that. But I want to capture the data for those animations during the
+    /// actual compilation rather than use replays."*
+    ///
+    /// **Falls back when the capture is empty**, which is the honest behaviour for a
+    /// compile that ran before the scope existed, or a stage reached with no matching
+    /// to record — an empty animation would say the algorithm did nothing.
+    pub fn from_captured_frames(
+        mat: &IncidenceMatrix,
+        frames: &[rumoca_phase_structural::matching::MatchingFrame],
+    ) -> Self {
+        if frames.is_empty() {
+            return Self::from_incidence(mat);
+        }
+        Self {
+            playback: Playback::recorded(frames.to_vec(), FRAME_INTERVAL),
+            n_eq: mat.n_eq(),
+            n_var: mat.n_var(),
+            equation_names: mat.equation_texts().to_vec(),
+            unknown_names: mat.unknown_names().to_vec(),
+            rows: mat.rows().to_vec(),
+        }
+    }
+
     pub fn from_incidence(mat: &IncidenceMatrix) -> Self {
         let eq_vars: Vec<HashSet<usize>> = mat
             .rows()

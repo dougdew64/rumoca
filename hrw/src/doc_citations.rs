@@ -597,7 +597,17 @@ Some prose.
         /// removals tighten it**; leaving the bound at 58 would have banked a free slot
         /// for the next field to occupy without argument, which is the whole thing this
         /// test exists to prevent.
-        const MAX_APP_FIELDS: usize = 57;
+        ///
+        /// **Raised to 58 on 2026-08-04 for `matching_frames`**, and the question was
+        /// answered rather than waved through. It is a *compile output* — frames
+        /// captured from `build_structural_report`'s own matching run — and it belongs
+        /// exactly where its three siblings already are: `index_reduction_frames`,
+        /// `connection_frames` and `pre_lowering_frames`. All four arrive on
+        /// `FromWorker::Compiled`, outlive any one pane, and are read by animations
+        /// that can be opened from more than one stage. Pushing this one into
+        /// `matching_anim` would split a set that is uniform today and make the odd
+        /// member the one nobody expects.
+        const MAX_APP_FIELDS: usize = 58;
 
         let src = std::fs::read_to_string(
             Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),

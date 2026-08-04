@@ -964,6 +964,8 @@ pub struct App {
     identifier_index: Option<identifier_index::IdentifierIndex>,
     tracked_identifier: Option<String>,
     index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+    /// The matching search, captured from the compile that produced the blocks.
+    matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
     // Idea #40: replay of `pre()` lowering, on the Events stage. The frames are
     // recorded by re-running DAE construction over the flat model, since the
     // pass runs inside construction and the finished DAE has nothing left to
@@ -1499,6 +1501,7 @@ impl App {
             identifier_index: None,
             tracked_identifier: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             cached_flat: None,
@@ -1766,7 +1769,7 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
-                    identifier_index, index_reduction_frames, dae,
+                    identifier_index, index_reduction_frames, matching_frames, dae,
                     pre_lowering_frames, connection_frames, flat,
                     library_source,
                 } => {
@@ -1791,6 +1794,7 @@ impl App {
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
                     self.index_reduction_frames = index_reduction_frames;
+                    self.matching_frames = matching_frames;
                     self.pre_lowering_frames = pre_lowering_frames;
                     self.connection_frames = connection_frames;
                     self.cached_flat = flat;
@@ -3235,7 +3239,13 @@ impl App {
     if self.stage_views.matching_anim.is_none() {
         let inc = self.stage_views.incidence.as_ref().unwrap();
         self.stage_views.matching_anim = Some(
-            inc.as_ref().map(matching_anim::MatchingAnimation::from_incidence)
+            // Frames from the compile, not a re-derivation on tab open.
+            inc.as_ref().map(|m| {
+                matching_anim::MatchingAnimation::from_captured_frames(
+                    m,
+                    &self.matching_frames,
+                )
+            })
         );
     }
     if let Some(Some(anim)) = &mut self.stage_views.matching_anim {
@@ -7459,6 +7469,7 @@ impl App {
             identifier_index: None,
             tracked_identifier: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             cached_flat: None,
@@ -8562,6 +8573,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8592,6 +8604,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8625,6 +8638,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8659,6 +8673,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8691,6 +8706,7 @@ mod tests {
             equation_sheet: None,
             identifier_index: None,
             index_reduction_frames: Vec::new(),
+            matching_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,

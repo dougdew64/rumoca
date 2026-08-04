@@ -768,6 +768,9 @@ pub enum FromWorker {
         identifier_index: Option<crate::identifier_index::IdentifierIndex>,
         /// Index-reduction animation frames (empty if no reduction occurred).
         index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+        /// Every step of the matching search, **from the run that produced the
+        /// blocks above** — not a re-derivation performed when the tab opens.
+        matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
         /// `pre()`-lowering replay frames (idea #40). Recorded by re-running DAE
         /// construction over the flat model with an observer attached — the pass
         /// runs *inside* construction, so the finished DAE cannot be replayed.
@@ -1485,6 +1488,7 @@ impl WorkerState {
                     equation_sheet: None,
                     identifier_index: None,
                     index_reduction_frames: Vec::new(),
+                    matching_frames: Vec::new(),
                     pre_lowering_frames: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
@@ -1888,10 +1892,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat) = match &model {
+        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat, matching_frames) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None)
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, Vec::new())
             }
             Some(simple_name) => {
                 // A library model was named in full by the caller. Qualifying its
@@ -2173,7 +2177,20 @@ impl WorkerState {
 
                 // Structural onward is HRW's own work on the DAE, not a reading of
                 // the compile's output — so it sits outside the bracket.
-                let structural = run_stage!("Structural analysis", structural_stage(result, &source), structural);
+                let (structural, matching_frames) = {
+                    log(LogLevel::StageStart, "Structural analysis".to_owned());
+                    let t = Instant::now();
+                    let (stage, frames) = structural_stage(result, &source);
+                    drain_traces(&log);
+                    log(LogLevel::StageEnd, format!(
+                        "Structural analysis ({:.1}ms)", t.elapsed().as_secs_f64() * 1000.0
+                    ));
+                    bundle.structural = stage.clone();
+                    emit(FromWorker::CompileProgress {
+                        path: report_path.clone(), stages: bundle.clone(),
+                    });
+                    (stage, frames)
+                };
                 let (index_reduction, ir_frames) = {
                     log(LogLevel::StageStart, "Index reduction".to_owned());
                     let t = Instant::now();
@@ -2203,7 +2220,7 @@ impl WorkerState {
                     _ => None,
                 };
 
-                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
+                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat, matching_frames)
             }
         };
 
@@ -2235,6 +2252,7 @@ impl WorkerState {
             equation_sheet,
             identifier_index,
             index_reduction_frames: ir_frames,
+            matching_frames,
             pre_lowering_frames: pre_frames,
             connection_frames,
             library_source,
@@ -2532,12 +2550,28 @@ fn unmatched_unknown_locations(
     )
 }
 
-fn structural_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
+fn structural_stage(
+    result: Option<&PhaseResult>,
+    source: &str,
+) -> (Stage, Vec<rumoca_phase_structural::matching::MatchingFrame>) {
     if let Some(stage) = not_reached_stage(result) {
-        return stage;
+        return (stage, Vec::new());
     }
     let cr = unwrap_success(result);
-    match rumoca_phase_structural::build_structural_report(&cr.dae) {
+
+    // **The animation's frames come from this run.** Until 2026-08-04 the matching
+    // animation re-ran `maximum_matching` on the incidence matrix when its tab was
+    // opened — deterministic, so it agreed, but it agreed by luck of the algorithm
+    // and described an execution that produced nothing. The frames now come from
+    // the matching that produced the blocks below.
+    //
+    // Opened around the *singular* path too, deliberately: a model that fails to
+    // match is the one whose search is most worth watching, and
+    // `build_structural_report` runs matching before it decides to fail.
+    rumoca_phase_structural::matching::start_capture();
+    let report = rumoca_phase_structural::build_structural_report(&cr.dae);
+    let matching_frames = rumoca_phase_structural::matching::take_capture();
+    let stage = match report {
         Ok(rep) => {
             let inc = rumoca_phase_structural::build_incidence(&cr.dae);
             let mut json = structural_to_json(&rep);
@@ -2563,7 +2597,8 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             };
             Stage::recovered(json, note)
         }
-    }
+    };
+    (stage, matching_frames)
 }
 
 /// Structural analysis of the DAE **after** index reduction. Runs the
@@ -6383,6 +6418,68 @@ mod tests {
 
         // Empty is not failure.
         assert!(!resolve_diagnostics_indicate_failure(&Diagnostics::new()));
+    }
+
+    /// **The matching animation's frames come from the compile.**
+    ///
+    /// Doug, 2026-08-04: *"our ability to play animations is tremendously valuable
+    /// and I want to preserve that. But I want to capture the data for those
+    /// animations during the actual compilation rather than use replays."*
+    ///
+    /// Until then the animation re-ran `maximum_matching` on the incidence matrix
+    /// when its tab was opened. Deterministic, so it agreed — but it agreed **by luck
+    /// of the algorithm**, and the search a reader watched described an execution
+    /// that produced nothing, while the blocks on screen came from one nobody saw.
+    ///
+    /// **Checked against the report, not against a number.** The captured frames must
+    /// end at the matching the report published; a re-derivation that happened to
+    /// differ would show a search converging on the wrong answer, which is the one
+    /// failure this change exists to make impossible.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn the_matching_animation_is_fed_by_the_compile() {
+        use rumoca_phase_structural::matching::MatchingStep;
+
+        let FromWorker::Compiled { matching_frames, stages, .. } =
+            compile_specimen_shared("ProportionalLoop")
+        else {
+            panic!("expected Compiled");
+        };
+
+        assert!(
+            !matching_frames.is_empty(),
+            "no frames captured \u{2014} the animation would fall back to re-deriving, \
+             silently, and this change would have done nothing",
+        );
+
+        // ProportionalLoop is the corpus's smallest model whose matching has to back
+        // up, so a capture of the real run must contain a displacement. A capture of
+        // the wrong thing very likely would not.
+        assert!(
+            matching_frames
+                .iter()
+                .any(|f| matches!(f.step, MatchingStep::TryDisplace { .. })),
+            "ProportionalLoop's search displaces an earlier assignment; frames \
+             without one are not this model's search",
+        );
+
+        // **The frames must land on the matching the report published.** The last
+        // frame's state is the algorithm's answer; the report's `matching` is what
+        // every downstream stage used.
+        let published = stages.structural.value.as_ref()
+            .and_then(|v| v.get("matching"))
+            .and_then(|m| m.as_array())
+            .expect("the structural report carries its matching");
+        let final_frame = matching_frames.last().expect("checked non-empty");
+        let matched_in_frames =
+            final_frame.match_eq.iter().filter(|m| m.is_some()).count();
+        assert_eq!(
+            matched_in_frames,
+            published.len(),
+            "the captured search ends on a different matching than the report \
+             published \u{2014} the animation would replay a run that did not produce \
+             what the rest of the pipeline used",
+        );
     }
 
     /// Simulation also emits log entries with timing.
