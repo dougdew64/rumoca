@@ -1729,33 +1729,11 @@ impl WorkerState {
                         // they need it to resolve component types and dimensions —
                         // but they are their own phases and bracket themselves.
                         let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source, &log);
-                        // **Not a phase, and no longer logged as one.**
-                        //
-                        // Connection expansion (MLS §9) happens inside Rumoca's own
-                        // flatten. This re-runs it purely to capture frames for the
-                        // Connections view — so a `StageStart`/`StageEnd` pair here
-                        // told the reader the compile had a connection-expansion step
-                        // between Typecheck and Flatten. **It does not.** Doug,
-                        // 2026-08-04: *"that suggests that the connection replay is a
-                        // fiction, invented for logging."* It was.
-                        //
-                        // Reported as one `Info` line stating what HRW did and why,
-                        // because the cost is real and hiding it would be its own
-                        // inaccuracy — but it is HRW's cost, not the compiler's, and
-                        // the shape of the entry now says so.
-                        let t_conn = Instant::now();
-                        connection_frames = record_connection_frames(&rt.0, &qualified);
-                        // Discarded, not drained: these events are the *replay's*,
-                        // and reporting them would duplicate what Rumoca's own
-                        // flatten emits under the Flatten phase below.
-                        clear_traces();
-                        log(LogLevel::Info, format!(
-                            "HRW re-ran connection expansion to capture {} frame(s) for the \
-                             Connections view ({:.1}ms). Rumoca does this inside flatten; \
-                             this is HRW observing it, not a compiler phase.",
-                            connection_frames.len(),
-                            t_conn.elapsed().as_secs_f64() * 1000.0,
-                        ));
+                        // **The connection replay is gone** (2026-08-04). Connection
+                        // frames now arrive from the compile below, through
+                        // `rumoca-phase-flatten`'s capture scope. Nothing happens
+                        // here at all, which is the accurate amount of work for a
+                        // step the chain does not have.
                         instantiate = i;
                         typecheck = t;
                         stage
@@ -1888,12 +1866,34 @@ impl WorkerState {
                         .to_owned(),
                 );
                 let t_compile = Instant::now();
+
+                // **Capture the animation data from the run that actually happens.**
+                //
+                // Doug, 2026-08-04: *"I very much want to measure the compilation as
+                // it actually happened rather than make use of replays … our ability
+                // to play animations is tremendously valuable and I want to preserve
+                // that. But I want to capture the data for those animations during
+                // the actual compilation."*
+                //
+                // These scopes are the Rumoca-side addition that makes that possible
+                // (`rumoca-phase-flatten`/`-dae`, 2026-08-04). Both replays are gone:
+                // the Connections and pre()-lowering views now show the compilation
+                // below, not a second one configured to look like it.
+                rumoca_phase_flatten::connections::trace::start_capture();
+                rumoca_phase_dae::start_pre_lowering_capture();
                 // Uncached, for the reason spelled out in `simulate` above: a
                 // cached result means the phases did not run, so nothing can be
                 // observed happening — breakpoints, tracing, or timing.
                 let report = self
                     .session
                     .compile_model_strict_reachable_uncached_with_recovery(&qualified);
+                // Taken immediately, before anything else can run: `take_capture`
+                // closes the scope, so this both collects the frames and guarantees
+                // no later work can add to them.
+                connection_frames =
+                    rumoca_phase_flatten::connections::trace::take_capture();
+                let pre_frames = rumoca_phase_dae::take_pre_lowering_capture();
+
                 drain_traces(&log);
                 drain_output(&mut output_capture, &log);
                 // Closed here, where the call returns. The old bracket closed
@@ -2053,47 +2053,16 @@ impl WorkerState {
                 let events = run_stage!("Events", events_stage(result), events);
                 let solve_lowering = run_stage!("Solve lowering", solve_lowering_stage(result), solve_lowering);
 
-                // `pre()`-lowering replay frames (idea #40).
-                //
-                // Re-runs **DAE construction** over the flat model rather than
-                // the pass alone. The pass runs *inside* construction, so the
-                // DAE above already has its `__pre__` slots and no `pre()` calls
-                // left — replaying the pass on it would produce nothing. The
-                // flat model is the last artifact from before it ran.
-                //
-                // The rebuilt DAE is discarded: this is purely observation, and
-                // the compile's own result is what every other stage shows.
-                let t_pre = Instant::now();
-                let (pre_frames, flat) = match result {
-                    Some(PhaseResult::Success(cr)) => {
-                        let frames = std::cell::RefCell::new(Vec::new());
-                        let _ = rumoca_phase_dae::to_dae_with_options_traced(
-                            &cr.flat,
-                            Default::default(),
-                            Some(&|f: &rumoca_phase_dae::PreLoweringFrame| {
-                                frames.borrow_mut().push(f.clone());
-                            }),
-                        );
-                        (frames.into_inner(), Some(cr.flat.clone()))
-                    }
-                    _ => (Vec::new(), None),
+                // **The pre()-lowering replay is gone** (2026-08-04, idea #40's
+                // frames kept, its replay removed). It re-ran the whole of DAE
+                // construction over the flat model to capture the pass's frames;
+                // they now come from the compile that produced the DAE every other
+                // stage shows, through `rumoca-phase-dae`'s capture scope. The
+                // flat model is still cloned, because the Flatten view needs it.
+                let flat = match result {
+                    Some(PhaseResult::Success(cr)) => Some(cr.flat.clone()),
+                    _ => None,
                 };
-                // **The other replay, and the same rule.** `to_dae_with_options_traced`
-                // re-runs the whole of DAE construction to capture `pre()`-lowering
-                // frames. Its events are a *second* execution of work already
-                // reported under the Rumoca compile above, so draining them into the
-                // log would duplicate that phase's output under no phase at all.
-                //
-                // Discarded, and the replay stated as one line — the same treatment
-                // as the connection replay, for the same reason: real cost, HRW's
-                // cost, not a step in the chain.
-                clear_traces();
-                log(LogLevel::Info, format!(
-                    "HRW re-ran DAE construction to capture {} pre()-lowering frame(s) \
-                     for the Events view ({:.1}ms). Observation, not a compiler phase.",
-                    pre_frames.len(),
-                    t_pre.elapsed().as_secs_f64() * 1000.0,
-                ));
 
                 (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
             }
@@ -3103,55 +3072,6 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
             .map(|(e, v)| serde_json::json!({ "equation": e, "variable": v }))
             .collect::<Vec<_>>(),
     })
-}
-
-/// Record connection expansion (MLS §9) by re-running flatten with an observer.
-///
-/// The session's own compile has already flattened, without an observer — the
-/// frames exist only while the pass runs, so the only way to see them is to run
-/// it again. This is the same shape as the `pre()`-lowering replay: a second
-/// run of a pure function, paid for deliberately. Doug, on this trade:
-/// *"This project is for learning, not for production performance.
-/// Debuggability is of the highest priority."*
-///
-/// The options must match `rumoca_compile`'s own (`flatten_options_for_tree`),
-/// or the recorded frames would describe a flatten that never happened.
-/// `strict_connection_validation: true` is the one that matters here — it is
-/// what makes an incompatible-connector model fail rather than expand.
-///
-/// Returns an empty vec on any failure: this is an observation extra, and a
-/// model that will not instantiate has already reported that on its own tab.
-fn record_connection_frames(
-    tree: &rumoca_ir_ast::ClassTree,
-    model_name: &str,
-) -> Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame> {
-    use rumoca_phase_flatten::connections::trace::ConnectionFrame;
-
-    let Ok(mut overlay) = rumoca_phase_instantiate::instantiate_model(tree, model_name) else {
-        return Vec::new();
-    };
-    // Typecheck mutates the overlay (it annotates types and dimensions), and
-    // flatten reads those annotations — so the overlay must go through it even
-    // though its diagnostics are ignored here.
-    let _ = rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name);
-
-    let frames = std::cell::RefCell::new(Vec::new());
-    {
-        let sink = |f: &ConnectionFrame| frames.borrow_mut().push(f.clone());
-        let options = rumoca_phase_flatten::FlattenOptions {
-            strict_connection_validation: true,
-            simplify_variable_names: false,
-            materialize_structured_families: false,
-        };
-        let _ = rumoca_phase_flatten::flatten_ref_with_options_traced(
-            tree,
-            &overlay,
-            model_name,
-            options,
-            Some(&sink),
-        );
-    }
-    frames.into_inner()
 }
 
 /// Instantiate the model directly from the resolved tree and serialize the
@@ -5417,15 +5337,21 @@ mod tests {
     /// The connection-expansion replay reaches HRW with real frames (MLS §9).
     ///
     /// End to end through the worker for the same reason the `pre()` test is:
-    /// the interesting part is *where the frames come from*. The session's own
-    /// compile flattens without an observer, so `record_connection_frames` has
-    /// to re-run instantiate + typecheck + flatten to see anything. Get that
-    /// sequence wrong — skip the typecheck, use different `FlattenOptions` —
-    /// and the result is silently zero frames, or frames describing a flatten
-    /// that never happened. A unit test on the animation type cannot catch it.
+    /// the interesting part is **where the frames come from**.
+    ///
+    /// Until 2026-08-04 they came from a replay — HRW re-ran instantiate +
+    /// typecheck + flatten with an observer, because the session's compile
+    /// flattened without one. Get that sequence wrong (skip the typecheck, use
+    /// different `FlattenOptions`) and the result was silently zero frames, or
+    /// frames describing a flatten that never happened.
+    ///
+    /// They now come from **the compile itself**, through
+    /// `rumoca-phase-flatten`'s capture scope. This test still earns its keep:
+    /// it is what proves the scope is opened and taken around the right call, and
+    /// a non-zero count here is the only evidence the animation is fed at all.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
-    fn the_connection_replay_reaches_hrw_with_real_frames() {
+    fn connection_frames_reach_hrw_from_the_real_compile() {
         use rumoca_phase_flatten::connections::trace::ConnectionStep;
 
         let FromWorker::Compiled { connection_frames, .. } =
@@ -5493,7 +5419,7 @@ mod tests {
     /// have caught getting that wrong — it would just have shown zero frames.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
-    fn the_pre_lowering_replay_reaches_hrw_with_real_frames() {
+    fn pre_lowering_frames_reach_hrw_from_the_real_compile() {
         use rumoca_phase_dae::PreLoweringStep;
 
         let FromWorker::Compiled { pre_lowering_frames, flat, .. } =
@@ -5932,73 +5858,16 @@ mod tests {
         );
     }
 
-    /// **The connection replay flattens the same way the real compile does.**
-    ///
-    /// `record_connection_frames` re-runs instantiate → typecheck → flatten with a
-    /// frame sink, because the sink is a parameter of
-    /// `flatten_ref_with_options_traced` and the session API calls the *untraced*
-    /// `flatten_ref_with_options` with no way to pass an observer through. So the
-    /// Connections view is populated by a **second flatten**, and it is only
-    /// trustworthy while that flatten is configured like the first.
-    ///
-    /// **Two copies of three booleans in two crates, and nothing joined them.**
-    /// Change `flatten_options_for_tree` upstream and the view would silently show an
-    /// expansion the compile never performed — a wrong picture with no symptom, which
-    /// is the worst thing a view of a compiler can be.
-    ///
-    /// Compared at the source level because `flatten_options_for_tree` is
-    /// `pub(super)`: HRW cannot call it, which is itself part of why the replay
-    /// exists. **The real fix is to thread an observer through the compile path and
-    /// delete the replay** — additive, observation-only, upstreamable. This guard is
-    /// what keeps the view honest until then.
-    #[test]
-    fn the_connection_replay_matches_the_real_flatten_options() {
-        let support = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("hrw/ has a parent")
-            .join("crates/rumoca-compile/src/session/compile_support.rs");
-        let upstream = std::fs::read_to_string(&support)
-            .unwrap_or_else(|e| panic!("{}: {e}", support.display()));
-        let ours = std::fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/worker.rs"),
-        )
-        .expect("worker.rs must be readable");
-
-        // The upstream defaults, as the compile actually sets them.
-        let block_start = upstream
-            .find("fn flatten_options_for_tree()")
-            .expect("rumoca-compile must still define flatten_options_for_tree");
-        let block = &upstream[block_start..block_start + 900.min(upstream.len() - block_start)];
-
-        // And ours, from `record_connection_frames`.
-        let ours_start = ours
-            .find("fn record_connection_frames(")
-            .expect("record_connection_frames must exist");
-        let ours_block = &ours[ours_start..ours_start + 1400.min(ours.len() - ours_start)];
-
-        for field in [
-            "strict_connection_validation",
-            "simplify_variable_names",
-            "materialize_structured_families",
-        ] {
-            let read = |src: &str| -> bool {
-                let at = src
-                    .find(field)
-                    .unwrap_or_else(|| panic!("{field} not found; the options changed shape"));
-                let tail = &src[at..];
-                let colon = tail.find(':').expect("a struct field has a colon");
-                tail[colon..].contains("true")
-                    && tail[colon..].find("true") < tail[colon..].find(',')
-            };
-            assert_eq!(
-                read(ours_block),
-                read(block),
-                "the connection replay sets {field} differently from the compile it is \
-                 supposed to mirror. The Connections view would show an expansion that \
-                 never happened, with nothing on screen to say so.",
-            );
-        }
-    }
+    // **The connection-replay parity test was deleted on 2026-08-04**, and its
+    // deletion is the point. It compared HRW's replay flatten options against
+    // `flatten_options_for_tree` upstream, because the Connections view was
+    // populated by a *second* flatten that had to be configured like the first.
+    //
+    // There is no second flatten now. The frames come from the compile that
+    // produced the flat model, so the two cannot disagree — the question the test
+    // asked can no longer be posed. **A guard removed because the hazard is gone
+    // beats a guard that passes**, and it is why the Rumoca API change was worth
+    // making rather than testing around.
 
     /// **HRW's own replays are never logged as phases, and nesting is real.**
     ///
@@ -6044,14 +5913,20 @@ mod tests {
             );
         }
 
-        // 2. The replays are still *reported*. Silence would be its own inaccuracy:
-        //    the cost is real and a reader comparing timings must be able to see it.
+        // 2. **There is no replay to report.** This assertion was the opposite for
+        //    a few hours on 2026-08-04: while HRW still re-ran connection expansion
+        //    and DAE construction, hiding that cost would have been its own
+        //    inaccuracy, so the test required it to be stated.
+        //
+        //    Then the Rumoca capture scopes landed and both replays were deleted, so
+        //    the honest assertion inverted. **A log that mentions a replay now would
+        //    mean one came back** — which would silently double the compile and put
+        //    the animations back on data from a second execution.
         assert!(
-            logs.iter().any(|e| {
-                matches!(e.level, LogLevel::Info) && e.message.contains("HRW re-ran")
-            }),
-            "no replay was reported at all; hiding HRW's cost is not the fix for \
-             mislabelling it",
+            !logs.iter().any(|e| e.message.contains("HRW re-ran")),
+            "a replay is being performed again. Frames come from the compile itself \
+             via the capture scopes; re-running a phase to observe it makes the view \
+             describe an execution the user never asked for.",
         );
 
         // 3. Brackets balance, so the depth a reader sees means something.
