@@ -39,58 +39,14 @@
 use eframe::egui;
 use serde_json::Value;
 
+use crate::json_read::parse_list;
+
 use crate::str_vec;
 
 /// Parsed index-reduction report, ready for rendering.
 ///
 /// Built from the `reduction` sub-object of the structural report JSON.
 /// The fields mirror the JSON structure but are strongly typed.
-/// Parse every element of a JSON list, **counting failures instead of dropping them**.
-///
-/// The distinction this exists to preserve, and which `filter_map` destroys:
-///
-/// - `key` **absent** → the compiler produced no such list. Empty result, no problem
-///   recorded. This is the common, legitimate case.
-/// - `key` **present but not a list**, or an **element that will not parse** → a
-///   defect. The element is still excluded (there is nothing to show for it), but a
-///   line is added to `problems` so the pane can say a row is missing.
-///
-/// Added by the 2026-08-04 tech-debt sweep. `filter_map` with `?` inside reads as
-/// careful defensive parsing and is **indistinguishable at the call site from silent
-/// data loss** — the same shape, whether the closure returns `None` because the entry
-/// does not qualify or because the parser did not understand it.
-fn parse_list<T>(
-    parent: &Value,
-    key: &str,
-    problems: &mut Vec<String>,
-    parse: impl Fn(&Value) -> Option<T>,
-) -> Vec<T> {
-    let Some(raw) = parent.get(key) else {
-        // Absent. The compiler had nothing to say here, which is not a problem.
-        return Vec::new();
-    };
-    let Some(arr) = raw.as_array() else {
-        problems.push(format!("`{key}` is present in the report but is not a list"));
-        return Vec::new();
-    };
-    let mut out = Vec::with_capacity(arr.len());
-    let mut bad = 0usize;
-    for element in arr {
-        match parse(element) {
-            Some(v) => out.push(v),
-            None => bad += 1,
-        }
-    }
-    if bad > 0 {
-        problems.push(format!(
-            "{bad} of {} `{key}` entries could not be read \u{2014} they are missing from \
-             the list below",
-            arr.len(),
-        ));
-    }
-    out
-}
-
 pub struct ReductionView {
     // Did the funnel complete successfully (all steps ran without error)?
     funnel_completed: bool,

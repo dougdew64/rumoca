@@ -89,6 +89,11 @@ pub struct PlanContext {
 pub struct IcPlanAnimation {
     playback: Playback<IcBlock>,
     context: PlanContext,
+    /// Parts of the plan report this parser could not read. Rendered above the
+    /// header, because the messages below it — *"the plan is empty"*, *"nothing has
+    /// to be solved at t=0"* — are positive claims about the model that become false
+    /// the moment a block is lost in parsing.
+    problems: Vec<String>,
 }
 
 impl IcPlanAnimation {
@@ -98,34 +103,42 @@ impl IcPlanAnimation {
     /// for a model whose initialization *failed* (the stage then carries an
     /// `error` instead). A failed initialization has no plan to walk.
     pub fn from_report(report: &serde_json::Value) -> Option<Self> {
+        // Required: a model whose initialization failed carries an `error` instead,
+        // and has no plan to walk.
+        report.get("blocks")?.as_array()?;
+        let mut problems = Vec::new();
         let blocks: Vec<IcBlock> =
-            report.get("blocks")?.as_array()?.iter().filter_map(parse_block).collect();
+            crate::json_read::parse_list(report, "blocks", &mut problems, parse_block);
 
         let determinacy = report.get("determinacy");
         let relax = report.get("relaxation_hint");
+        // **`dropped_equations` is the sharpest case in this file.** It lists the
+        // equations the compiler *threw away* to make initialization solvable, so an
+        // entry lost in parsing **under-reports what was discarded** — the reader is
+        // told the compiler relaxed less than it did, which is the opposite of the
+        // thing the hint exists to disclose. Silent until the 2026-08-04 sweep.
         let context = PlanContext {
             verdict: determinacy
                 .and_then(|d| d.get("verdict"))
                 .and_then(serde_json::Value::as_str)
                 .map(str::to_owned),
             dropped_equations: relax
-                .and_then(|r| r.get("dropped_equations"))
-                .and_then(serde_json::Value::as_array)
-                .map(|a| a.iter().filter_map(serde_json::Value::as_u64).map(|n| n as usize).collect())
+                .map(|r| {
+                    crate::json_read::parse_list(r, "dropped_equations", &mut problems, |v| {
+                        v.as_u64().map(|n| n as usize)
+                    })
+                })
                 .unwrap_or_default(),
             pinned_unknowns: relax
-                .and_then(|r| r.get("pinned_unknowns"))
-                .and_then(serde_json::Value::as_array)
-                .map(|a| {
-                    a.iter()
-                        .filter_map(serde_json::Value::as_str)
-                        .map(str::to_owned)
-                        .collect()
+                .map(|r| {
+                    crate::json_read::parse_list(r, "pinned_unknowns", &mut problems, |v| {
+                        v.as_str().map(str::to_owned)
+                    })
                 })
                 .unwrap_or_default(),
         };
 
-        Some(Self { playback: Playback::recorded(blocks, FRAME_INTERVAL), context })
+        Some(Self { playback: Playback::recorded(blocks, FRAME_INTERVAL), context, problems })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -135,6 +148,9 @@ impl IcPlanAnimation {
     /// Render the header, the controls, and the plan walk. No Debug button:
     /// see the module note on why this phase has no live trace to offer.
     pub fn ui(&mut self, ui: &mut egui::Ui) {
+        for p in &self.problems {
+            ui.colored_label(ui.visuals().error_fg_color, format!("\u{26a0} {p}"));
+        }
         self.render_header(ui);
 
         if self.playback.is_empty() {

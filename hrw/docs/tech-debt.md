@@ -499,18 +499,38 @@ so a caller **cannot render the caption and forget the problems** — which is w
 `app.rs` sites did, each with `ui.weak(mat.caption())` and nothing else. Dim grey is also the
 wrong weight for a warning. Four tests including the clean-report negative.
 
+### `alias_anim.rs` and `ic_plan_anim.rs` — the same shape, two sharper consequences
+
+- **`alias_anim`: a dropped elimination corrupts a count, not just a frame.**
+  `unknowns_before` is computed as `n_unknowns + frames.len()`, so an unreadable entry makes the
+  animation narrate removing *n* variables from a system it simultaneously reports as one
+  variable smaller than it actually was.
+- **`ic_plan_anim`: `dropped_equations` is the sharpest case in HRW.** It lists the equations the
+  compiler **threw away** to make initialization solvable, so a lost entry under-reports what was
+  discarded — telling the reader the compiler relaxed *less* than it did, which is the exact
+  opposite of what the hint exists to disclose.
+- Both render problems **above** their own "nothing here" messages, which are positive claims
+  (*"No alias eliminations in this model"*, *"Nothing has to be solved at t=0"*) that become
+  false the moment an entry is lost.
+
+**`parse_list` moved to [`src/json_read.rs`](../src/json_read.rs)** now that three views use it,
+with the module docs carrying the whole argument and three tests of its own. Its docs state
+explicitly what it is *not* for: a `filter_map` that genuinely filters one enum variant out of a
+frame stream is correct and must **not** be converted.
+
 ### Outstanding from this finding
 
-- **The remaining sites are unaudited**, and the classification so far is: **2 genuine filters**
-  (`matching_anim`, `tarjan_anim` — both `match f.step { Variant => Some, _ => None }`, where
-  `None` honestly means *this frame is not the kind being collected*), **6 fixed**
-  (`reduction_view` 3, `incidence_view` 3), and **~23 unexamined** — `worker.rs` 12,
-  `ic_plan_anim` 6, `bridge.rs` 3, `alias_anim` 1, `tearing_anim` 1.
-- **`ic_plan_anim` and `alias_anim` are next**, being the same view-of-a-report shape as the two
-  fixed; `worker.rs`'s twelve are mostly IR-walking rather than report-parsing and need the
-  question asked individually.
-- Each needs the same question asked: *does `None` here mean "does not qualify" or "could not
-  read"?* Only the second is a defect.
+Running classification of the 31 sites: **2 genuine filters** (`matching_anim`, `tarjan_anim`),
+**13 fixed** (`reduction_view` 3, `incidence_view` 3, `ic_plan_anim` 6, `alias_anim` 1), and
+**16 unexamined** — `worker.rs` 12, `bridge.rs` 3, `tearing_anim` 1.
+
+- **`worker.rs`'s twelve are mostly IR-walking rather than report-parsing** and need the question
+  asked individually; several are likely genuine filters.
+- **`bridge.rs`'s three** feed `focus.json`, which is Claude's input — governed by
+  `feedback-emitter-correct-reasoner-supplements`, so a silent drop there is a wrong *answer*
+  rather than a wrong *pane*. Highest remaining priority of the three groups.
+- The question for each: *does `None` here mean "does not qualify" or "could not read"?* Only the
+  second is a defect.
 - **`parse_list` lives in `reduction_view.rs`** and should move somewhere shared once a second
   view uses it. Not moved yet — one caller is not a pattern.
 - **The predicate-vs-parse ambiguity has no mechanical guard.** A `filter_map` that filters and

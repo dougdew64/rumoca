@@ -54,6 +54,10 @@ pub struct AliasAnimation {
     /// Unknown count before any elimination, so the running state can say what
     /// the system has shrunk *from*. `None` when the report did not carry it.
     unknowns_before: Option<usize>,
+    /// Eliminations the report listed that this parser could not read. Rendered at
+    /// the top of the pane; see `from_report` for why a dropped one corrupts
+    /// `unknowns_before` as well as the frame list.
+    problems: Vec<String>,
 }
 
 impl AliasAnimation {
@@ -65,25 +69,41 @@ impl AliasAnimation {
     /// substitution being made.
     pub fn from_report(report: &serde_json::Value) -> Option<Self> {
         let red = report.get("reduction")?;
-        let frames: Vec<AliasFrame> = red
-            .get("eliminations")?
-            .as_array()?
-            .iter()
-            .filter_map(|e| {
+        // **A dropped elimination is not just a missing frame.** `unknowns_before`
+        // below is computed as `n_unknowns + frames.len()`, so an entry this parser
+        // could not read **understates the size of the original system** — the
+        // animation would then narrate removing three variables from a system that
+        // it also reports as one variable smaller than it was. Silent until the
+        // 2026-08-04 sweep.
+        //
+        // `eliminations` is required here (the `?` below) rather than optional as in
+        // `reduction_view`, because an alias animation with no eliminations has
+        // nothing to animate at all.
+        red.get("eliminations")?.as_array()?;
+        let mut problems = Vec::new();
+        let frames: Vec<AliasFrame> = crate::json_read::parse_list(
+            red,
+            "eliminations",
+            &mut problems,
+            |e| {
                 Some(AliasFrame {
                     variable: e.get("variable")?.as_str()?.to_owned(),
                     replacement: crate::reduction_view::abbreviate_expr(
                         e.get("replacement")?.as_str()?,
                     ),
                 })
-            })
-            .collect();
+            },
+        );
         let unknowns_before = report.get("n_unknowns").and_then(serde_json::Value::as_u64).map(
             // The report's count is the system *after* elimination, so the
             // starting size is that plus the variables this pass removed.
             |n| n as usize + frames.len(),
         );
-        Some(Self { playback: Playback::recorded(frames, FRAME_INTERVAL), unknowns_before })
+        Some(Self {
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
+            unknowns_before,
+            problems,
+        })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -93,6 +113,12 @@ impl AliasAnimation {
     /// Render the controls and the reveal. No Debug button: see the module note
     /// on why this phase has no live trace to offer.
     pub fn ui(&mut self, ui: &mut egui::Ui) {
+        // Above everything, including the "no eliminations" message below — which
+        // would otherwise be flatly false when the eliminations existed and this
+        // parser could not read them.
+        for p in &self.problems {
+            ui.colored_label(ui.visuals().error_fg_color, format!("\u{26a0} {p}"));
+        }
         if self.playback.is_empty() {
             ui.label("No alias eliminations in this model.");
             ui.weak(

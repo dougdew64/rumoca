@@ -48,6 +48,7 @@ pub mod expr_format;
 pub mod field_help;
 pub mod identifier_index;
 pub mod incidence_view;
+pub mod json_read;
 pub mod matching_anim;
 pub mod diagnostics;
 pub mod log_view;
