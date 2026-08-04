@@ -486,13 +486,41 @@ BouncingBall / ProportionalLoop / CapacitorLoop, exactly the numbers in `matchin
 the defect was latent, agreeing by determinism, which is the reasoning the capture scopes exist
 to stop relying on. Third defect in that one file.
 
+**3. Panes carry their provenance, and absence is checked as a class.** `Stage` gained a
+`Provenance` field — `Empty` / `Compiler` / `Hrw` — set by the constructors rather than by hand.
+
+**The line is drawn at "is this a function of THIS RUN's compiler output?"**, not at "did HRW do
+arithmetic". Selecting fields, reshaping into JSON and summarising compiler-produced counts are
+all `Compiler`; what makes content `Hrw` is HRW **executing an algorithm the compiler also
+runs**, or synthesising a structure it never emitted. That line is crisp because both removed
+fictions land unambiguously on the far side of it — and a fuzzy taxonomy would have been filled
+in by habit.
+
+`Stage::computed` is the only way to produce `Hrw`, and it **demands a written reason** the UI
+shows. It is unused, marked `#[expect(dead_code)]` so that **the scaffolding removes itself**
+the moment a caller appears. The friction sits on fabrication rather than on honesty: the
+alternative to a supported path is not that nobody derives content, it is somebody calling
+`Stage::ok` with synthesised JSON — which is what happened to the BLT tabs.
+
+`no_stage_shows_content_hrw_invented` checks every stage of four specimens, **two of which
+fail** (`UnbalancedShaft`, balance −1; `CapacitorLoop`, singular) because a healthy model
+populates every pane and never takes the branch the fabrication took. Verified by mutation.
+
 ### Still open
 
-**The panes themselves have no provenance.** Both mechanisms above are about *reaching* a
-re-derivation and *naming* a bracket. Neither says where a pane's contents came from, so
-"absence is stated, never filled" is still enforced case by case rather than as a class.
+**Provenance does not yet detect a fabrication — it makes one *expressible*.** A pane that
+calls `Stage::ok` with synthesised JSON still claims `Compiler`, and nothing compares the pane's
+values against the compiler's artifact. **That comparison is the verb-check work** (the fidelity
+pass Doug approved on 2026-08-04): with provenance recorded, a check can say *"this stage claims
+Compiler, so every value in it must appear in the artifact"* — which is a real assertion, where
+before there was no claim to test against.
 
-**The shape worth exploring, not yet chosen:**
+**Also unpinned: the animation and sub-view surfaces.** `IncidenceMatrix`, `ReductionView`,
+`Plot` and the four animations carry no provenance. They are all fed from captures or
+`from_report` today, and the `#[cfg(test)]` gate stops the re-deriving path — but that is a
+statement about *which constructor exists*, not about what a given view is showing.
+
+**The shape worth exploring for those, not yet chosen:**
 
 - **Provenance on the pane, not just in the code.** Every stage view already knows whether it
   came from a capture, an artifact read, or HRW's own derivation. If that were *data* rather

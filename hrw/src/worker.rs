@@ -297,6 +297,43 @@ pub enum Outcome {
 /// `#[derive(Clone, Default)]` — `Clone` because the progressive-streaming
 /// pattern sends clones mid-compile; `Default` gives "not yet computed"
 /// (`None`/`None`/`Ok`).
+/// **Where a pane's content came from** — the data half of Charter Decision 7.
+///
+/// A stage tab is a claim: *this is what the compiler has for this phase*. Until
+/// 2026-08-04 nothing recorded whether that was true, so a pane that HRW had
+/// computed itself was indistinguishable from one the compiler produced — which is
+/// how the BLT tabs came to render a decomposition for a system the compiler had
+/// refused to decompose.
+///
+/// **The line is drawn at "is this content a function of THIS RUN's compiler
+/// output?"**, not at "did HRW do any arithmetic". Selecting fields, reshaping them
+/// into JSON, and computing a summary from compiler-produced counts are all
+/// [`Compiler`](Self::Compiler): the facts are the compiler's and HRW is presenting
+/// them. What makes content [`Hrw`](Self::Hrw) is HRW **executing an algorithm the
+/// compiler also runs**, or synthesising a structure the compiler never emitted.
+/// That is the crisp version of the distinction, and it is crisp because both
+/// removed fictions land unambiguously on the far side of it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Provenance {
+    /// No content — `value` is `None`, so there is nothing that could be misread.
+    /// A stage stating an absence lives here, which is the correct place for it.
+    #[default]
+    Empty,
+    /// Every value shown is a function of an artifact the compiler produced on this
+    /// run. HRW selected, reshaped and summarised; it added no facts of its own.
+    Compiler,
+    /// Contains content HRW produced that the compiler did not — a re-executed
+    /// algorithm, or a structure synthesised to fill a pane.
+    ///
+    /// **No production stage is allowed to be this today**, and
+    /// `no_stage_shows_content_hrw_invented` fails if one becomes it. The variant
+    /// exists so that a future pane which genuinely needs derived content has a way
+    /// to say so — and so that saying so is a deliberate act with a test failure
+    /// attached, rather than the silent default it used to be. Build one with
+    /// [`Stage::computed`], which makes you write down why.
+    Hrw,
+}
+
 #[derive(Clone, Default)]
 pub struct Stage {
     pub value: Option<serde_json::Value>,
@@ -304,6 +341,9 @@ pub struct Stage {
     /// Which of the three outcomes this stage reached. Prefer the constructors
     /// below to setting this by hand.
     pub outcome: Outcome,
+    /// Where [`value`](Self::value) came from. Set by the constructors; see
+    /// [`Provenance`].
+    pub provenance: Provenance,
 }
 
 /// Constructors for the possible stage outcomes. `pub(crate)` — only the worker
@@ -313,28 +353,86 @@ pub struct Stage {
 impl Stage {
     /// Stage succeeded and produced an IR tree to display.
     pub(crate) fn ok(value: serde_json::Value) -> Self {
-        Stage { value: Some(value), note: None, outcome: Outcome::Ok }
+        Stage {
+            value: Some(value),
+            note: None,
+            outcome: Outcome::Ok,
+            provenance: Provenance::Compiler,
+        }
+    }
+
+    /// **A pane whose content HRW produced, with a written reason.**
+    ///
+    /// The only way to build a [`Provenance::Hrw`] stage, and deliberately more
+    /// expensive to call than [`ok`](Self::ok): it demands a `why` that the UI shows,
+    /// so a reader is never looking at HRW's own work believing it to be the
+    /// compiler's. **Unused in production**, and
+    /// `no_stage_shows_content_hrw_invented` fails if that changes without the same
+    /// commit dealing with the display.
+    ///
+    /// This exists because the alternative to a supported path is not "nobody does
+    /// it" — it is somebody calling `ok` with synthesised JSON, which is exactly what
+    /// happened to the BLT tabs. **The friction belongs here, not on honesty.**
+    /// `expect` rather than `allow`, deliberately: the moment anything calls this the
+    /// lint stops firing, the expectation goes unfulfilled, and the compiler says so.
+    /// **The scaffolding removes itself when the case it anticipates arrives**, which
+    /// is the difference between a kept-for-later API and a quietly dead one.
+    #[expect(dead_code, reason = "\
+        no production pane derives its own content today; kept as the only legal way \
+        to do so, with a test pinning that it stays unused - see the type docs")]
+    pub(crate) fn computed(value: serde_json::Value, why: impl Into<String>) -> Self {
+        Stage {
+            value: Some(value),
+            note: Some(why.into()),
+            outcome: Outcome::Flagged,
+            provenance: Provenance::Hrw,
+        }
     }
     /// Stage failed — no IR, just an error message (rendered red).
     /// `impl Into<String>` accepts both `String` and `&str` — a Rust ergonomic
     /// pattern so callers can pass either without explicit conversion.
     pub(crate) fn err(note: impl Into<String>) -> Self {
-        Stage { value: None, note: Some(note.into()), outcome: Outcome::Failed }
+        Stage {
+            value: None,
+            note: Some(note.into()),
+            outcome: Outcome::Failed,
+            provenance: Provenance::Empty,
+        }
     }
     /// A non-error status note for a stage with no IR of its own to show.
+    ///
+    /// **This is where "absence is stated, never filled" lives.** A phase that did not
+    /// run reaches the user through here, carrying `None` — so there is no content to
+    /// be misread as the compiler's, and `a_phase_that_did_not_run_shows_nothing`
+    /// checks that as a class rather than one tab at a time.
     pub(crate) fn info(note: impl Into<String>) -> Self {
-        Stage { value: None, note: Some(note.into()), outcome: Outcome::Ok }
+        Stage {
+            value: None,
+            note: Some(note.into()),
+            outcome: Outcome::Ok,
+            provenance: Provenance::Empty,
+        }
     }
     /// A best-effort IR plus an error note — a recovered parse tree, a singular
     /// structural analysis, surplus initial conditions. [`Outcome::Flagged`]:
     /// **the value is real and downstream stages consume it.**
     pub(crate) fn recovered(value: serde_json::Value, note: impl Into<String>) -> Self {
-        Stage { value: Some(value), note: Some(note.into()), outcome: Outcome::Flagged }
+        Stage {
+            value: Some(value),
+            note: Some(note.into()),
+            outcome: Outcome::Flagged,
+            provenance: Provenance::Compiler,
+        }
     }
     /// A successful IR plus an informational (non-error) note — e.g. the
     /// index-reduction stage's "already index-1" / "reduced from singular".
     pub(crate) fn ok_with_note(value: serde_json::Value, note: impl Into<String>) -> Self {
-        Stage { value: Some(value), note: Some(note.into()), outcome: Outcome::Ok }
+        Stage {
+            value: Some(value),
+            note: Some(note.into()),
+            outcome: Outcome::Ok,
+            provenance: Provenance::Compiler,
+        }
     }
 
     /// Serialize a value to JSON and wrap in a successful Stage, or return an
@@ -359,6 +457,9 @@ impl Stage {
             value: Some(serde_json::json!({ "error": error })),
             note: Some(note.into()),
             outcome: Outcome::Failed,
+            // The payload is the compiler's diagnostics, reshaped for display —
+            // HRW selected and wrapped, it did not invent a failure.
+            provenance: Provenance::Compiler,
         }
     }
 
@@ -6390,6 +6491,79 @@ mod tests {
             "the notice quotes a different count than the log actually contains \
              ({filed} filed under the four phases): {}",
             notice.message,
+        );
+    }
+
+    /// **No pane shows content HRW invented — checked across every stage of several
+    /// specimens, including the ones that fail.**
+    ///
+    /// This is the class-level version of the fix applied one tab at a time on
+    /// 2026-08-04. The BLT tabs of a structurally singular model rendered blocks HRW
+    /// had computed itself, and **nothing about the pane distinguished them from the
+    /// compiler's**: well-formed JSON, every path resolving, the fidelity suite
+    /// green. What was missing was any record of *where the content came from*.
+    ///
+    /// Two invariants, and the second is the one with teeth:
+    ///
+    /// 1. **No production stage is [`Provenance::Hrw`]**. `Stage::computed` is the
+    ///    only way to become one and nothing calls it, so this is a claim of absence
+    ///    pinned to something that can fail — the moment a pane starts deriving its
+    ///    own content, this test says so and the same commit must deal with how the
+    ///    UI declares it.
+    /// 2. **A stage with no content and a stage with content are told apart by the
+    ///    type, not by inspection.** `Empty` exactly when `value` is `None`.
+    ///
+    /// **Specimens deliberately include failures.** A healthy model reaches every
+    /// phase, so its stages are all populated and the interesting branch — a phase
+    /// that produced nothing — is never taken. `UnbalancedShaft` (balance −1) and
+    /// `CapacitorLoop` (structurally singular) are the ones that exercise it.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn no_stage_shows_content_hrw_invented() {
+        let mut checked = 0usize;
+        let mut empties = 0usize;
+        for model in ["SingleInertia", "UnbalancedShaft", "CapacitorLoop", "Drivetrain"] {
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(model) else {
+                panic!("{model}: expected a compiled result");
+            };
+            // `get` rather than `as_stage_pairs`, which yields only the values —
+            // provenance is a property of the *stage*, and reading it off the value
+            // is the very inspection this replaces.
+            for kind in StageKind::COMPILATION {
+                let (name, stage) = (kind.name(), stages.get(*kind));
+                checked += 1;
+                assert_ne!(
+                    stage.provenance,
+                    Provenance::Hrw,
+                    "{model}/{name} shows content HRW produced rather than the \
+                     compiler's. That may be legitimate \u{2014} but it must be \
+                     declared where the user can see it, and this test is the prompt \
+                     to do that rather than let the pane pass as the compiler's",
+                );
+                let empty = stage.provenance == Provenance::Empty;
+                assert_eq!(
+                    empty,
+                    stage.value.is_none(),
+                    "{model}/{name}: provenance says {:?} while value.is_none() is {}. \
+                     These must agree, or 'this pane is showing nothing' becomes a \
+                     judgement call made by reading the pane",
+                    stage.provenance,
+                    stage.value.is_none(),
+                );
+                if empty {
+                    empties += 1;
+                }
+            }
+        }
+        // **Non-vacuity, both halves.** Without content-bearing stages the Hrw check
+        // is trivial; without empty ones the consistency check never sees the branch
+        // that the fabrication took.
+        assert!(checked >= 30, "only {checked} stage(s) examined");
+        assert!(
+            empties > 0,
+            "no stage across four specimens \u{2014} two of which fail \u{2014} came \
+             back empty. Either the specimens all now succeed, or absence stopped \
+             being represented as absence, which is the defect this guards",
         );
     }
 
