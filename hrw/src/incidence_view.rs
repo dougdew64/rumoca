@@ -49,6 +49,25 @@ use crate::str_vec;
 /// struct owns all its data (no lifetime dependency on the JSON), so the
 /// borrow on the app state is released after construction.
 pub struct IncidenceMatrix {
+    /// **What the report contained that this parser could not resolve.**
+    ///
+    /// Added by the 2026-08-04 sweep, which found three silent-loss sites here — the
+    /// most consequential in HRW, because this matrix is the object the matching and
+    /// BLT tours teach on:
+    ///
+    /// 1. A non-numeric entry in a row's `unknowns` **dropped a column**, so the
+    ///    matrix would show an equation not depending on a variable it depends on.
+    /// 2. A BLT block whose member names did not resolve **lost those members and was
+    ///    still displayed**, so a four-equation coupled block could render as a
+    ///    one-equation block — a decomposition that is simply wrong.
+    /// 3. An unresolved matching pair was skipped, and `n_matched` **is the
+    ///    structural rank** (`caption` reports rank deficiency from it). A dropped
+    ///    pair makes a fully-matched system look singular, which is the single
+    ///    conclusion the matching curriculum turns on.
+    ///
+    /// None of these could have been caught downstream: every one produces a
+    /// well-formed matrix that is quietly a different matrix.
+    problems: Vec<String>,
     // Dimensions: n_eq equations (rows) x n_var unknowns (columns).
     n_eq: usize,
     n_var: usize,
@@ -112,10 +131,11 @@ impl IncidenceMatrix {
             return None;
         }
 
+        let mut problems: Vec<String> = Vec::new();
         let mut equation_names = Vec::with_capacity(n_eq);
         let mut equation_texts = Vec::with_capacity(n_eq);
         let mut rows = Vec::with_capacity(n_eq);
-        for r in rows_json {
+        for (row_i, r) in rows_json.iter().enumerate() {
             let eq_name = r
                 .get("equation")
                 .and_then(Value::as_str)
@@ -128,11 +148,28 @@ impl IncidenceMatrix {
                 .to_owned();
             equation_names.push(eq_name);
             equation_texts.push(eq_text);
-            let mut cols: Vec<usize> = r
-                .get("unknowns")
-                .and_then(Value::as_array)
-                .map(|a| a.iter().filter_map(|v| v.as_u64().map(|x| x as usize)).collect())
-                .unwrap_or_default();
+            // **A dropped column is a different sparsity pattern.** This was
+            // `filter_map(|v| v.as_u64())`, so a non-numeric entry silently removed a
+            // dependency — the equation would appear not to involve a variable it
+            // does, and every structural conclusion drawn from the picture would be
+            // drawn from the wrong matrix.
+            let mut cols: Vec<usize> = Vec::new();
+            if let Some(a) = r.get("unknowns").and_then(Value::as_array) {
+                let mut bad = 0usize;
+                for v in a {
+                    match v.as_u64() {
+                        Some(x) => cols.push(x as usize),
+                        None => bad += 1,
+                    }
+                }
+                if bad > 0 {
+                    problems.push(format!(
+                        "row {row_i}: {bad} of {} column index(es) were not numbers \u{2014} \
+                         those dependencies are missing from the matrix",
+                        a.len(),
+                    ));
+                }
+            }
             cols.sort_unstable();
             rows.push(cols);
         }
@@ -161,6 +198,18 @@ impl IncidenceMatrix {
                     matched_col[r] = Some(c);
                     col_matched[c] = true;
                     n_matched += 1;
+                } else {
+                    // **`n_matched` IS the structural rank** — `caption` reports rank
+                    // deficiency by comparing it against `min(n_eq, n_var)`. A pair
+                    // skipped here therefore makes a fully-matched system read as
+                    // singular, which is the one conclusion the matching curriculum
+                    // turns on. Silently skipping was the behaviour until 2026-08-04.
+                    problems.push(format!(
+                        "the matching pairs `{eq_name}` with `{var_name}`, and \
+                         {} is not in this matrix \u{2014} the pair is missing, so the \
+                         structural rank shown below is too low",
+                        if eq_index.contains_key(eq_name) { "the unknown" } else { "the equation" },
+                    ));
                 }
             }
         }
@@ -183,6 +232,30 @@ impl IncidenceMatrix {
                 let var_indices: Vec<usize> = var_names.iter()
                     .filter_map(|n| var_index.get(n.as_str()).copied())
                     .collect();
+                // **A block that lost members is a wrong block, not a smaller one.**
+                //
+                // The `filter_map`s above drop any member whose name is not in this
+                // matrix, and the push below only required *one* survivor — so a
+                // four-equation coupled block could be drawn as a one-equation block,
+                // which is a decomposition the compiler never produced. Same family
+                // as the fabricated BLT tabs Doug found on 2026-08-04, arriving by a
+                // different route.
+                //
+                // Still drawn rather than suppressed: a block with real members
+                // carries real information, and hiding it would trade one silent loss
+                // for another. What changes is that the loss is now stated.
+                if eq_indices.len() != eq_names.len() || var_indices.len() != var_names.len() {
+                    problems.push(format!(
+                        "a {} BLT block names {} equation(s) and {} unknown(s), of which \
+                         {} and {} are in this matrix \u{2014} it is drawn below with the \
+                         members that resolved, so its size is understated",
+                        if coupled { "coupled" } else { "single" },
+                        eq_names.len(),
+                        var_names.len(),
+                        eq_indices.len(),
+                        var_indices.len(),
+                    ));
+                }
                 if !eq_indices.is_empty() && !var_indices.is_empty() {
                     blt_blocks.push(BltOverlay { eq_indices, var_indices, coupled });
                 }
@@ -190,6 +263,7 @@ impl IncidenceMatrix {
         }
 
         Some(IncidenceMatrix {
+            problems,
             n_eq,
             n_var,
             equation_names,
@@ -203,7 +277,43 @@ impl IncidenceMatrix {
         })
     }
 
+    /// What the parser could not resolve — empty when the report read cleanly.
+    ///
+    /// **Rendered by the caller, above the matrix**, because every entry here means
+    /// the picture below is not the compiler's picture. See the field's docs for the
+    /// three ways that used to happen silently.
+    pub fn problems(&self) -> &[String] {
+        &self.problems
+    }
+
+    /// Render the caption above the canvas, **with the problems if there are any**.
+    ///
+    /// One method rather than two calls at each site, because the emphasis is the
+    /// point: the caption is drawn `weak` (dim grey), and a warning in dim grey is a
+    /// warning nobody reads. When anything failed to resolve, the caption switches to
+    /// the error colour and every problem is listed under it.
+    ///
+    /// **The caller must not be able to render the caption and forget the problems**,
+    /// which is exactly what happened when both were available separately: the two
+    /// call sites in `app.rs` had `ui.weak(mat.caption())` and nothing else.
+    pub fn caption_ui(&self, ui: &mut egui::Ui) {
+        if self.problems.is_empty() {
+            ui.weak(self.caption());
+            return;
+        }
+        ui.colored_label(ui.visuals().error_fg_color, self.caption());
+        for p in &self.problems {
+            ui.colored_label(ui.visuals().error_fg_color, format!("  \u{26a0} {p}"));
+        }
+    }
+
     /// One-line summary shown above the canvas.
+    ///
+    /// **Leads with a warning when anything failed to resolve.** The rank it reports
+    /// is computed from `n_matched`, which a dropped matching pair understates — so
+    /// on a report this parser could not fully read, the deficiency shown here may be
+    /// HRW's and not the model's, and saying "rank deficient" without that caveat is
+    /// the exact false conclusion the sweep was looking for.
     pub fn caption(&self) -> String {
         let nnz: usize = self.rows.iter().map(|r| r.len()).sum();
         let total = self.n_eq * self.n_var;
@@ -218,10 +328,20 @@ impl IncidenceMatrix {
         } else {
             format!(" · {}/{} matched (full rank)", self.n_matched, self.n_eq.min(self.n_var))
         };
+        let caveat = if self.problems.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " \u{26a0} {} part(s) of the report could not be read, so this matrix \
+                 is INCOMPLETE and the rank above may be HRW's fault rather than the \
+                 model's \u{2014}",
+                self.problems.len(),
+            )
+        };
         format!(
-            "{}×{} incidence · {} non-zeros ({:.1}% dense){} — \
+            "{}\u{00d7}{} incidence \u{00b7} {} non-zeros ({:.1}% dense){}{} \u{2014} \
              hover a cell to inspect, click to capture",
-            self.n_eq, self.n_var, nnz, density, rank_info,
+            self.n_eq, self.n_var, nnz, density, rank_info, caveat,
         )
     }
 
@@ -714,5 +834,98 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&report).unwrap();
         assert_eq!(mat.n_matched, 0);
         assert_eq!(mat.matched_col[0], None);
+    }
+
+    /// A 2x2 report that reads cleanly, for the three tests below to perturb.
+    fn clean_report() -> Value {
+        serde_json::json!({
+            "incidence": {
+                "n_eq": 2, "n_var": 2,
+                "unknown_names": ["x", "y"],
+                "rows": [
+                    { "equation": "e0", "unknowns": [0, 1] },
+                    { "equation": "e1", "unknowns": [1] },
+                ],
+            },
+            "matching": [
+                { "equation": "e0", "unknown": "x" },
+                { "equation": "e1", "unknown": "y" },
+            ],
+        })
+    }
+
+    /// **A clean report reports no problems**, or the warning means nothing.
+    #[test]
+    fn a_report_that_reads_cleanly_has_no_problems() {
+        let mat = IncidenceMatrix::from_report(&clean_report()).expect("parses");
+        assert!(mat.problems().is_empty(), "{:?}", mat.problems());
+        assert_eq!(mat.n_matched, 2);
+        assert!(
+            !mat.caption().contains("INCOMPLETE"),
+            "a clean matrix must not carry the caveat: {}",
+            mat.caption(),
+        );
+    }
+
+    /// **A dropped column is reported.** It was silently removed until 2026-08-04,
+    /// which makes the equation appear not to involve a variable that it does — every
+    /// structural conclusion below then comes from the wrong matrix.
+    #[test]
+    fn a_non_numeric_column_index_is_reported_not_dropped() {
+        let mut report = clean_report();
+        report["incidence"]["rows"][0]["unknowns"] = serde_json::json!([0, "oops"]);
+        let mat = IncidenceMatrix::from_report(&report).expect("parses");
+
+        assert_eq!(mat.rows()[0], vec![0], "the unreadable index has nothing to draw");
+        assert_eq!(mat.problems().len(), 1, "{:?}", mat.problems());
+        assert!(mat.problems()[0].contains("row 0"), "{:?}", mat.problems()[0]);
+        assert!(
+            mat.caption().contains("INCOMPLETE"),
+            "the caption above the matrix must say the picture is partial: {}",
+            mat.caption(),
+        );
+    }
+
+    /// **An unresolved matching pair is reported**, because `n_matched` *is* the
+    /// structural rank and `caption` reports deficiency from it. Skipping the pair
+    /// silently makes a fully-matched system read as singular — the single conclusion
+    /// the matching curriculum turns on.
+    #[test]
+    fn an_unresolvable_matching_pair_is_reported() {
+        let mut report = clean_report();
+        report["matching"][1]["unknown"] = serde_json::json!("not_a_variable");
+        let mat = IncidenceMatrix::from_report(&report).expect("parses");
+
+        assert_eq!(mat.n_matched, 1, "the pair genuinely could not be applied");
+        assert_eq!(mat.problems().len(), 1, "{:?}", mat.problems());
+        assert!(
+            mat.problems()[0].contains("structural rank"),
+            "the notice must name the consequence, not just the parse failure: {:?}",
+            mat.problems()[0],
+        );
+        // Without the caveat this caption reads "1/2 matched (rank deficiency 1)" —
+        // a false claim that this model is structurally singular.
+        assert!(mat.caption().contains("INCOMPLETE"), "{}", mat.caption());
+    }
+
+    /// **A BLT block that lost members is reported.** It was still drawn, at its
+    /// reduced size, so a coupled block could appear as a single-equation block —
+    /// a decomposition the compiler never produced.
+    #[test]
+    fn a_blt_block_with_unresolvable_members_is_reported() {
+        let mut report = clean_report();
+        report["blocks"] = serde_json::json!([{
+            "kind": "coupled",
+            "equations": ["e0", "e1", "e_ghost"],
+            "unknowns": ["x", "y"],
+        }]);
+        let mat = IncidenceMatrix::from_report(&report).expect("parses");
+
+        assert_eq!(mat.problems().len(), 1, "{:?}", mat.problems());
+        assert!(
+            mat.problems()[0].contains("3 equation(s)") && mat.problems()[0].contains("2 and 2"),
+            "the notice must give both sizes so the gap is visible: {:?}",
+            mat.problems()[0],
+        );
     }
 }

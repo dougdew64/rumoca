@@ -476,10 +476,41 @@ parse failure.** A model full of `when` clauses would have carried that label wi
 screen to hint the label came from HRW rather than the compiler. The three cases (countable and
 zero, countable and non-zero, not countable) are now distinct.
 
+### `incidence_view.rs` — three sites, the most consequential in HRW
+
+Audited and fixed second, because this matrix is the object the matching and BLT tours teach on.
+
+1. **A dropped column.** A non-numeric entry in a row's `unknowns` was removed silently, so the
+   matrix showed an equation **not depending on a variable it depends on**. Every structural
+   conclusion a reader draws from the picture would come from a different matrix.
+2. **A BLT block that lost members was still drawn**, at its reduced size — a four-equation
+   coupled block could appear as a one-equation block, a decomposition the compiler never
+   produced. Same family as the fabricated BLT tabs, reached by a different route.
+3. **An unresolved matching pair was skipped, and `n_matched` *is* the structural rank** —
+   `caption` reports deficiency by comparing it against `min(n_eq, n_var)`. A dropped pair makes
+   a fully-matched system read as **singular**, which is the single conclusion the matching
+   curriculum turns on.
+
+**None of the three could have been caught downstream**: each produces a well-formed matrix that
+is quietly a *different* matrix.
+
+`caption()` now leads with a warning when anything failed to resolve, and `caption_ui()` exists
+so a caller **cannot render the caption and forget the problems** — which is what the three
+`app.rs` sites did, each with `ui.weak(mat.caption())` and nothing else. Dim grey is also the
+wrong weight for a warning. Four tests including the clean-report negative.
+
 ### Outstanding from this finding
 
-- **The other 30 sites are unaudited.** Each needs the same question asked: *does `None` here
-  mean "does not qualify" or "could not read"?* Only the second is a defect.
+- **The remaining sites are unaudited**, and the classification so far is: **2 genuine filters**
+  (`matching_anim`, `tarjan_anim` — both `match f.step { Variant => Some, _ => None }`, where
+  `None` honestly means *this frame is not the kind being collected*), **6 fixed**
+  (`reduction_view` 3, `incidence_view` 3), and **~23 unexamined** — `worker.rs` 12,
+  `ic_plan_anim` 6, `bridge.rs` 3, `alias_anim` 1, `tearing_anim` 1.
+- **`ic_plan_anim` and `alias_anim` are next**, being the same view-of-a-report shape as the two
+  fixed; `worker.rs`'s twelve are mostly IR-walking rather than report-parsing and need the
+  question asked individually.
+- Each needs the same question asked: *does `None` here mean "does not qualify" or "could not
+  read"?* Only the second is a defect.
 - **`parse_list` lives in `reduction_view.rs`** and should move somewhere shared once a second
   view uses it. Not moved yet — one caller is not a pattern.
 - **The predicate-vs-parse ambiguity has no mechanical guard.** A `filter_map` that filters and

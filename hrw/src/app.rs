@@ -3965,7 +3965,7 @@ impl App {
                         cols[0].label(egui::RichText::new("Before (raw DAE)")
                             .strong().color(crate::colors::ANIM_FAIL));
                         if let Some(mat) = before_cached {
-                            cols[0].weak(mat.caption());
+                            mat.caption_ui(&mut cols[0]);
                             mat.ui(
                                 &mut cols[0], &mut self.viewport.before_incidence,
                                 &mut intent.canvas_capture, self.viewport.highlighted_eq_row, None,
@@ -3977,7 +3977,7 @@ impl App {
                         cols[1].label(egui::RichText::new("After (reduced)")
                             .strong().color(crate::colors::ANIM_PATH_FOUND));
                         if let Some(mat) = after_cached {
-                            cols[1].weak(mat.caption());
+                            mat.caption_ui(&mut cols[1]);
                             let tracked_col = self.tracked_identifier.as_deref()
                                 .and_then(|name| mat.column_index(name));
                             mat.ui(
@@ -3994,7 +3994,7 @@ impl App {
                             .and_then(incidence_view::IncidenceMatrix::from_report)
                     });
                     if let Some(mat) = cached {
-                        ui.weak(mat.caption());
+                        mat.caption_ui(ui);
                         let tracked_col = self.tracked_identifier.as_deref()
                             .and_then(|name| mat.column_index(name));
                         mat.ui(ui, &mut self.viewport.incidence, &mut intent.canvas_capture, self.viewport.highlighted_eq_row, tracked_col);
