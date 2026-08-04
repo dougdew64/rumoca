@@ -20,17 +20,24 @@
 //! resolves fine and simply lands on the wrong step. That is the quiet failure
 //! this removes.
 //!
-//! # It reads the frames HRW will show, not a re-derivation
+//! # It reads the frames HRW will show — and that claim went stale once
 //!
-//! The numbering must match what the reader sees, so this drives the same
-//! `MatchingAnimation::from_incidence` the panel does and enumerates its
-//! `steps()`. Recomputing the matching independently would be a *second*
-//! definition of the frame sequence, and the two would drift the first time
-//! either changed.
+//! **Rewritten 2026-08-04.** This tool used to compile nothing. It read the
+//! committed structural trace and called `MatchingAnimation::from_incidence`,
+//! justified by a header saying it *"drives the same constructor the panel
+//! does"*. **That stopped being true the same day the panel switched to captured
+//! frames**, and nothing failed: matching is deterministic, so the two agreed —
+//! by luck of the algorithm, exactly the reasoning the capture scopes were built
+//! to stop relying on.
 //!
-//! Input is the specimen's committed trace (`docs/specimen-notebook/<Model>/
-//! trace/structural.json`), which is generated and therefore correct by
-//! construction — the same rule the rest of the notebook follows.
+//! It now **compiles the specimen and reads `matching_frames` off the
+//! result** — the identical values `App` hands to the animation. Two sources of
+//! frame numbering cannot drift apart when there is only one.
+//!
+//! This is the **third** defect in this file, after the 0-based/1-based link
+//! confusion and printing `equation_names()` where the animation renders
+//! `equation_texts()`. All three shared one shape: a tool built so an author
+//! would not have to guess, confidently supplying a wrong answer.
 
 use std::path::PathBuf;
 
@@ -47,47 +54,63 @@ fn main() {
     };
     let filter = args.next();
 
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("docs/specimen-notebook")
-        .join(&model)
-        .join("trace/structural.json");
-    let Ok(text) = std::fs::read_to_string(&path) else {
-        eprintln!("no structural trace for {model} at {}", path.display());
-        eprintln!("generate one first:  cargo run -p hrw --example gen_trace -- {model}");
-        std::process::exit(1);
-    };
-    let report: serde_json::Value = match serde_json::from_str(&text) {
-        Ok(v) => v,
+    // **A real compile, because the frames must be the compile's.**
+    //
+    // The committed trace (`docs/specimen-notebook/<Model>/trace/structural.json`)
+    // still supplies the incidence matrix's names and shape — it is generated and
+    // correct by construction — but it holds no frames, because frames are a record
+    // of an *execution* and a trace file is a record of a *result*. That distinction
+    // is the whole reason the capture scopes exist.
+    let specimen = PathBuf::from(format!("{}/specimens/{model}.mo", env!("CARGO_MANIFEST_DIR")));
+    let libs = vec![PathBuf::from(format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR")))];
+    let compiled = match hrw::worker::compile_specimen(&specimen, libs) {
+        Ok(c) => c,
         Err(e) => {
-            eprintln!("{}: {e}", path.display());
+            eprintln!("{model}: compile failed: {e}");
+            eprintln!("(a specimen that does not compile has no matching to animate)");
             std::process::exit(1);
         }
     };
+    let hrw::worker::FromWorker::Compiled { stages, matching_frames, .. } = compiled else {
+        eprintln!("{model}: the worker returned something other than a compiled result");
+        std::process::exit(1);
+    };
 
-    let Some(mat) = IncidenceMatrix::from_report(&report) else {
+    let Some(report) = stages.structural.value.as_ref() else {
+        eprintln!("{model}: structural analysis produced no report");
+        std::process::exit(1);
+    };
+    let Some(mat) = IncidenceMatrix::from_report(report) else {
         eprintln!("{model}: the structural report carries no incidence matrix");
         eprintln!("(a model that fails before structural analysis has no matching to animate)");
         std::process::exit(1);
     };
-    let anim = MatchingAnimation::from_incidence(&mat);
+
+    // **No fallback.** If the capture is empty this prints nothing and says so.
+    // Re-deriving here would resurrect precisely the defect this rewrite removed,
+    // and `from_incidence` is now `#[cfg(test)]` so it is not reachable anyway.
+    let Some(anim) = MatchingAnimation::from_captured_frames(&mat, &matching_frames) else {
+        eprintln!("{model}: the compile recorded no matching frames for this system");
+        eprintln!("(nothing to number \u{2014} a tour cannot link to a frame that does not exist)");
+        std::process::exit(1);
+    };
+
     // **`equation_texts`, not `equation_names` — what the viewer actually reads.**
     //
-    // `MatchingAnimation::from_incidence` stores `mat.equation_texts()` and
-    // `step_description` renders those, so the animation labels equation 0 of
-    // `ProportionalLoop` as `error - (reference - measurement)`. This tool printed
-    // `equation_names()` instead — `f_x[0] (top-level model equation)` — so a tour
-    // author quoting it wrote an expectation naming a string **that never appears on
-    // screen**, and the walk would fail on a stop where nothing was actually wrong.
+    // The animation stores `mat.equation_texts()` and `step_description` renders
+    // those, so equation 0 of `ProportionalLoop` is labelled
+    // `error - (reference - measurement)`. This tool printed `equation_names()`
+    // instead — `f_x[0] (top-level model equation)` — so a tour author quoting it
+    // wrote an expectation naming a string **that never appears on screen**, and the
+    // walk would fail on a stop where nothing was actually wrong.
     //
     // Found 2026-08-03 while auditing `docs/fixture-tours/matching.md` against the
-    // strings the animation renders. The same fault class as the off-by-one fixed
-    // the same day: this tool exists so an author does not guess, and it was
-    // supplying confident wrong answers.
+    // strings the animation renders.
     let eqs = mat.equation_texts();
     let vars = mat.unknown_names();
     let name = |v: &[String], i: usize| v.get(i).cloned().unwrap_or_else(|| format!("#{i}"));
 
-    println!("{model}: {} frames", anim.steps().len());
+    println!("{model}: {} frames (captured during this compile)", anim.steps().len());
     println!("  link form:  hrw://stage/Structural/MatchingAnim/frame/<n>");
     println!();
 
@@ -95,9 +118,7 @@ fn main() {
     for (n, step) in anim.steps().iter().enumerate() {
         // `var` is what a tour points at; `eq` is which equation was trying.
         let (var, line) = match step {
-            MatchingStep::TryEquation(e) => {
-                (None, format!("try equation {}", name(eqs, *e)))
-            }
+            MatchingStep::TryEquation(e) => (None, format!("try equation {}", name(eqs, *e))),
             MatchingStep::Explore { eq, var } => (
                 Some(*var),
                 format!("explore {} x {}", name(eqs, *eq), name(vars, *var)),
@@ -149,8 +170,7 @@ fn main() {
         // `hrw://…/frame/<n>`. It does not: links are 1-based, matching the counter
         // on screen, and `parse_hrw_link` subtracts one. So every link written from
         // this output landed **one frame early** — a wrong-but-valid index that
-        // resolves fine, shows the wrong step, and no link checker can see. That is
-        // exactly the failure this tool exists to prevent, and it was committing it.
+        // resolves fine, shows the wrong step, and no link checker can see.
         //
         // Fixed 2026-08-03 by emitting the link instead of a number, through
         // `hrw::app::frame_link`, which `a_frame_link_round_trips_through_the_parser`

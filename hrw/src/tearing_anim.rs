@@ -206,6 +206,10 @@ impl TearingAnimation {
         })
     }
 
+    /// **Re-runs tearing over its own freshly-built BLT. Test-only, enforced by the
+    /// compiler** — see [`crate::matching_anim::MatchingAnimation::from_incidence`]
+    /// for why a `cfg` replaced a source-text grep on 2026-08-04.
+    #[cfg(test)]
     pub fn record(dae: &rumoca_ir_dae::Dae) -> Self {
         // `walk_blocks` takes `&dyn Fn`, so the accumulator needs interior
         // mutability — the same shape the phase's observer contract forces.

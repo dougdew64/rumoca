@@ -489,6 +489,27 @@ impl StageKind {
         }
     }
 
+    /// The name this phase carries in the **log**, which is not always its tab name.
+    ///
+    /// A third naming, alongside [`name`](Self::name) and [`slug`](Self::slug), and it
+    /// exists for the same reason as the second: the log says *"DAE construction"* and
+    /// *"Structural analysis"* where the tabs say *"DAE"* and *"Structural"*, because a
+    /// bracket names an **activity** while a tab names an **artifact**.
+    ///
+    /// **Why this is a function and not eleven string literals** *(2026-08-04)*. The
+    /// bracket names used to be free-form literals at the emit sites, connected to
+    /// nothing — which is precisely how the log came to contain a bracket called
+    /// **"DAE pipeline"**, a phase that does not exist, invented to give five real
+    /// phases a tidy parent. A name that must come from a `StageKind` cannot be
+    /// invented without inventing a phase.
+    pub fn log_name(self) -> &'static str {
+        match self {
+            StageKind::Dae => "DAE construction",
+            StageKind::Structural => "Structural analysis",
+            other => other.name(),
+        }
+    }
+
     /// Parse a PascalCase slug (as used in `hrw://stage/<Slug>` URLs) into a stage kind.
     pub fn from_slug(s: &str) -> Option<Self> {
         match s {
@@ -778,17 +799,25 @@ pub enum FromWorker {
         /// The same three searches over the **index-reduced** system, which is a
         /// different DAE — see `StructuralFrames`.
         reduced_frames: StructuralFrames,
-        /// `pre()`-lowering replay frames (idea #40). Recorded by re-running DAE
-        /// construction over the flat model with an observer attached — the pass
-        /// runs *inside* construction, so the finished DAE cannot be replayed.
+        /// `pre()`-lowering frames (idea #40), **captured during the compile above**
+        /// by `rumoca_phase_dae`'s capture scope. The pass runs *inside* DAE
+        /// construction, so the finished DAE cannot be re-walked to recover them —
+        /// which is why the scope exists rather than a second pass.
+        ///
+        /// *(Comment corrected 2026-08-04: it read "replay frames … recorded by
+        /// re-running DAE construction", describing the mechanism this replaced
+        /// earlier the same day.)*
         pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
         /// The flat model, for a live-debug replay of `pre()` lowering. It is the
         /// last artifact from *before* that pass runs.
         flat: Option<rumoca_ir_flat::Model>,
         /// The raw DAE for live-debug replay of index reduction.
         dae: Option<rumoca_ir_dae::Dae>,
-        /// Connection-expansion replay frames (MLS §9). Recorded by re-running
-        /// flatten with an observer; empty for a model with no `connect()`.
+        /// Connection-expansion frames (MLS §9), **captured during the compile
+        /// above**; empty for a model with no `connect()`. *(Comment corrected
+        /// 2026-08-04: it read "replay frames … recorded by re-running flatten".
+        /// That re-run was the fiction Doug named first — "the connection replay is
+        /// a fiction, invented for logging" — and it is gone.)*
         connection_frames: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
         /// The declaring file's source, for a **library model**. `None` for a
         /// specimen, which the UI reads from its own path so live edits show.
@@ -974,6 +1003,27 @@ fn make_log<'a>(
     // about is a log that stopped being true by hand.
     let depth = std::cell::Cell::new(0u8);
     move |level, msg| {
+        // **A bracket must name something that exists — checked at every emit.**
+        //
+        // Placed here rather than only in a test because a test compiles *one*
+        // specimen: it would catch an invented bracket on `SingleInertia` and miss
+        // one that only appears on a model that fails at flatten, or is singular, or
+        // has no `connect()`. This fires on **every bracket of every compile**, and
+        // Doug runs a dev build, so it fires in his session rather than in CI.
+        //
+        // `debug_assert!` deliberately: a release build should not abort a compile
+        // over a log defect, and the sweep runs release-ish profiles where the cost
+        // of the check on every line is not worth paying. See
+        // `bracket_names_a_real_phase` for what "exists" means and why "DAE pipeline"
+        // did not.
+        debug_assert!(
+            !matches!(level, LogLevel::StageStart | LogLevel::StageEnd)
+                || bracket_names_a_real_phase(&msg),
+            "log bracket {msg:?} names no compiler phase and is on no allow-list. \
+             A bracket claims that the named thing ran and that everything nested \
+             inside belongs to it; an invented name makes both claims uncheckable, \
+             which is what \"DAE pipeline\" did until 2026-08-04",
+        );
         // `StageEnd` un-nests *before* it prints, so a phase's closing line sits at
         // the same indent as its opening line rather than one level in.
         if level == LogLevel::StageEnd {
@@ -1139,7 +1189,16 @@ impl WorkerState {
             self.session.compile_model_strict_reachable_uncached_with_recovery(&qualified);
         // Drain any tracing events that Rumoca emitted during compilation.
         drain_traces(&log);
-        log(LogLevel::StageEnd, format!("Compile ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
+        // **Closes with the name it opened with.** It read `"Compile (…ms)"` against a
+        // `"Compile (for simulation)"` start until 2026-08-04, found by the
+        // emit-time bracket check the moment it was added — on the *simulation* path,
+        // which the log tests never walk because they compile and stop. A reader
+        // scanning for where the compile ended was looking for a name that was never
+        // printed, and the balance check saw one start and one end and was content.
+        log(LogLevel::StageEnd, format!(
+            "Compile (for simulation) ({:.1}ms)",
+            t_stage.elapsed().as_secs_f64() * 1000.0,
+        ));
         // Pattern-match on the `PhaseResult` to extract the successful
         // `CompileResult` (which contains the `Dae`), or return an error.
         // The `?`-like early returns use `return Err(...)` because we're in
@@ -6334,6 +6393,122 @@ mod tests {
         );
     }
 
+    /// **An invented bracket name is rejected.** The must-fire half, and it runs fast
+    /// because it needs no compile — the predicate is pure.
+    ///
+    /// `"DAE pipeline"` is the real string that was in HRW's log until 2026-08-04: a
+    /// bracket wrapping five genuine phases under a parent that does not exist,
+    /// written because it read tidily. Doug found it walking the DAE tour. **A test
+    /// that only checked real names against real logs would have passed the entire
+    /// time that string was shipping**, so the negative case is the test.
+    #[test]
+    fn the_bracket_check_rejects_an_invented_phase() {
+        for invented in [
+            "DAE pipeline",
+            "DAE pipeline (12.0ms)",
+            "Lowering pipeline",
+            "Frontend",
+            "Analysis",
+        ] {
+            assert!(
+                !bracket_names_a_real_phase(invented),
+                "{invented:?} is accepted as a log bracket. It names no StageKind and \
+                 is on no allow-list, so it is a phase that does not exist \u{2014} \
+                 which is exactly what \"DAE pipeline\" was",
+            );
+        }
+
+        // Every real phase is accepted, with and without its closing timing.
+        for k in StageKind::COMPILATION {
+            assert_eq!(bracket_phase_name(k.log_name()), Some(k.log_name()));
+            assert_eq!(
+                bracket_phase_name(&format!("{} (0.1ms)", k.log_name())),
+                Some(k.log_name()),
+                "a closing bracket's timing suffix must not hide its name",
+            );
+        }
+        // And the argued non-phase brackets, including the compile's long qualifier.
+        assert_eq!(
+            bracket_phase_name("Rumoca compile \u{2014} full pipeline; HRW takes the flat model"),
+            Some("Rumoca compile"),
+        );
+        for b in NON_PHASE_BRACKETS {
+            assert_eq!(bracket_phase_name(b), Some(*b));
+        }
+    }
+
+    /// **Every bracket in a real compile names something that exists, and they pair.**
+    ///
+    /// Two claims a log makes that nothing checked before 2026-08-04:
+    ///
+    /// 1. **The name is real.** Covered as a class now: a bracket name must come from
+    ///    a `StageKind::log_name()` or the argued `NON_PHASE_BRACKETS` list.
+    /// 2. **The nesting is real.** The pre-existing balance check counted starts
+    ///    against ends, which a *mismatched* pair satisfies perfectly — open
+    ///    `Flatten`, close `Typecheck`, and the count is still zero while the
+    ///    indentation on screen tells the reader that one phase contains another.
+    ///    This walks a stack of names instead.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn every_log_bracket_names_a_real_phase_and_pairs_with_its_own_end() {
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!(
+                "{}/specimens/SingleInertia.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            w.compile(&path, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            });
+        }
+        let logs = logs.into_inner().unwrap();
+
+        let brackets: Vec<_> = logs
+            .iter()
+            .filter(|e| matches!(e.level, LogLevel::StageStart | LogLevel::StageEnd))
+            .collect();
+        // Non-vacuity: a compile that logged nothing would pass every loop below.
+        assert!(
+            brackets.len() >= 20,
+            "only {} bracket(s) in the log \u{2014} this cannot detect a bad one",
+            brackets.len(),
+        );
+
+        let mut stack: Vec<&'static str> = Vec::new();
+        for e in &brackets {
+            let Some(name) = bracket_phase_name(&e.message) else {
+                panic!(
+                    "log bracket {:?} names no phase. Every bracket is a claim that the \
+                     named thing ran and that what is nested inside belongs to it \
+                     \u{2014} a name that exists nowhere makes both claims unverifiable",
+                    e.message,
+                );
+            };
+            match e.level {
+                LogLevel::StageStart => stack.push(name),
+                LogLevel::StageEnd => match stack.pop() {
+                    Some(open) => assert_eq!(
+                        open, name,
+                        "bracket {:?} closes while {open:?} is the innermost open one. \
+                         The counts still balance, so the old check passed \u{2014} but \
+                         the indentation now shows one phase containing another that it \
+                         does not",
+                        e.message,
+                    ),
+                    None => panic!("{:?} closes a bracket that was never opened", e.message),
+                },
+                _ => unreachable!("filtered above"),
+            }
+        }
+        assert!(
+            stack.is_empty(),
+            "left open at the end of the compile: {stack:?}",
+        );
+    }
+
     /// **The "no instrumentation" claim is still true.**
     ///
     /// `UNINSTRUMENTED_PHASES` tells the reader that silence from these phases means
@@ -7830,6 +8005,54 @@ fn clear_traces() {
 /// Every event carries its emitting target (`[rumoca_phase_instantiate::connections]`),
 /// so the block can be split by **what each line says about itself** rather than by
 /// guesswork. See `attribute_traces`.
+/// **Brackets that are legitimately not a compiler phase.** Exhaustive, and each
+/// entry carries why it is allowed.
+///
+/// - `Rumoca compile` — a real *call*, not a phase. It brackets the four phases that
+///   run inside `compile_model_strict_reachable_uncached_with_recovery`, and its
+///   number is that call's own duration. Naming the call is a fact about what HRW
+///   did; naming a *phase* that spans those four would be the "DAE pipeline" fiction
+///   again, which is why this list is short and argued rather than open.
+/// - `Compile (for simulation)` — the simulate path's own call. Distinct from the
+///   above because it is a *different* compile, and a reader watching a simulation
+///   needs to see that a compile happened rather than infer it.
+/// - `Integration` — the solver run. Genuinely not a compiler phase at all;
+///   `StageKind::Simulation` exists but is not in `COMPILATION`, and the log names
+///   the *activity* (integrating) rather than the artifact (a simulation).
+const NON_PHASE_BRACKETS: &[&str] =
+    &["Rumoca compile", "Compile (for simulation)", "Integration"];
+
+/// **Does this `StageStart`/`StageEnd` message name something that actually exists?**
+///
+/// A bracket is a claim: *this named thing ran, and what is nested inside it belongs
+/// to that thing*. Until 2026-08-04 the log carried a bracket called **"DAE
+/// pipeline"** — five real phases given an invented parent because it read tidily.
+/// Doug found it walking the tour that teaches DAE construction, and named the class:
+/// *"logging is supposed to accurately describe what actually happened."*
+///
+/// Accepts a **prefix** match, because brackets carry qualifiers a reader needs — a
+/// timing on close (`"Flatten (0.2ms)"`) and, for the compile, a description
+/// (`"Rumoca compile — full pipeline; …"`). The *name* is what must be real;
+/// what follows it is commentary.
+/// Returns the canonical name, so the caller can also check that brackets **pair**.
+///
+/// Longest match wins. Nothing in the current set is a prefix of another, but a future
+/// `"Flatten"`/`"Flatten connections"` pair would silently mis-pair under first-match,
+/// and a mis-paired bracket is a nesting claim that is wrong — the same class of
+/// falsehood as an invented name.
+pub(crate) fn bracket_phase_name(msg: &str) -> Option<&'static str> {
+    StageKind::COMPILATION
+        .iter()
+        .map(|k| k.log_name())
+        .chain(NON_PHASE_BRACKETS.iter().copied())
+        .filter(|known| msg.starts_with(known))
+        .max_by_key(|known| known.len())
+}
+
+pub(crate) fn bracket_names_a_real_phase(msg: &str) -> bool {
+    bracket_phase_name(msg).is_some()
+}
+
 type CapturedTraces = Vec<(LogLevel, String)>;
 
 fn take_traces() -> CapturedTraces {

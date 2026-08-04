@@ -111,9 +111,10 @@ impl TarjanAnimation {
     /// exact inverses by construction, so storing both would be a second copy of one
     /// fact and a chance for them to disagree.
     ///
-    /// **Falls back when either capture is empty** — an animation with no frames
-    /// would say the algorithm did nothing, which is worse than a faithful
-    /// re-derivation.
+    /// **Returns `None` when either capture is empty.** *(Corrected 2026-08-04: this
+    /// said "falls back to a faithful re-derivation", which was true until the
+    /// fallback was removed that day for drawing blocks the compiler never built.
+    /// The caller states the absence instead.)*
     pub fn from_captured_frames(
         mat: &IncidenceMatrix,
         matching_frames: &[rumoca_phase_structural::matching::MatchingFrame],
@@ -156,6 +157,13 @@ impl TarjanAnimation {
         })
     }
 
+    /// **Re-runs matching AND Tarjan from scratch. Test-only, enforced by the
+    /// compiler** — see [`crate::matching_anim::MatchingAnimation::from_incidence`]
+    /// for why a `cfg` replaced a source-text grep on 2026-08-04.
+    ///
+    /// This is the constructor that drew a non-empty SCC animation for `CapacitorLoop`,
+    /// a system whose compile produced no blocks at all.
+    #[cfg(test)]
     pub fn from_incidence(mat: &IncidenceMatrix) -> Option<Self> {
         let n_eq = mat.n_eq();
         let n_var = mat.n_var();

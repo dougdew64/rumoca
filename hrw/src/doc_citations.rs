@@ -545,13 +545,31 @@ Some prose.
     ///
     /// **`start_live` may re-run anything.** A live debug session *is* the user
     /// asking to execute an algorithm again under a debugger; that is the feature,
-    /// not a replay of a compile. Tests may too. And a *fallback* is allowed where a
-    /// capture can be legitimately absent — `record`/`from_incidence` still exist,
-    /// because an empty animation would claim the algorithm did nothing, which is
-    /// worse than a faithful re-derivation.
+    /// not a replay of a compile. Tests may too.
     ///
     /// What must not happen is a **default path** that re-derives: that is what makes
     /// the picture describe a run nobody saw.
+    ///
+    /// # This test is no longer the primary guarantee
+    ///
+    /// *(2026-08-04.)* It checks a **string** — that `app.rs` does not contain
+    /// `from_incidence`. That works and is fragile in the way this project forbids
+    /// everywhere else: a re-export, an alias, a wrapper, or moving the call into
+    /// another module defeats it in silence, and nothing here decides identity by
+    /// substring (`docs/identity-and-provenance.md`).
+    ///
+    /// All three re-deriving constructors are now `#[cfg(test)]`, so **the UI cannot
+    /// call them because in a non-test build they do not exist.** What this test
+    /// still adds is the *other* half, which a `cfg` cannot express: that the
+    /// captured constructors **are** reached from the UI. A world where nothing
+    /// re-derives because nothing is animated at all would satisfy the compiler and
+    /// fail here.
+    ///
+    /// An earlier version of this comment described `record`/`from_incidence` as a
+    /// permitted **fallback** for an absent capture. That was true until the same
+    /// day, when the fallbacks were removed for drawing blocks the compiler never
+    /// built; the captured constructors return `None` and the panes state the
+    /// absence.
     #[test]
     fn no_animation_re_runs_a_phase_by_default() {
         let app = std::fs::read_to_string(

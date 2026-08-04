@@ -449,6 +449,49 @@ a replay's output *is* identical by construction — see the scope table in
 recorded**, which is what the capture scopes now make possible and did not exist before
 2026-08-04.
 
+### Paid 2026-08-04, first pass — the two mechanisms, not the whole category
+
+**1. Re-derivation is now impossible from the UI, by the compiler rather than by grep.**
+`MatchingAnimation::from_incidence`, `TarjanAnimation::from_incidence` and
+`TearingAnimation::record` are `#[cfg(test)]`. The previous guard was
+`doc_citations::no_animation_re_runs_a_phase_by_default` asserting that `app.rs` does not
+*contain the string* `from_incidence` — which works, and which a re-export, an alias, a wrapper
+or a move to another module defeats silently. **A substring was deciding a safety property in
+the test suite of a project whose own rule is that no substring decides identity.** The test
+stays for the half a `cfg` cannot state: that the *captured* constructors are reached.
+
+**2. A log bracket must name something that exists — checked at every emit.**
+`StageKind::log_name()` plus an argued three-entry `NON_PHASE_BRACKETS` list, asserted in
+`make_log` under `debug_assert!`. A test would have checked one specimen; this checks **every
+bracket of every compile in Doug's dev build**. Brackets must also *pair by name*, which the
+old count-based balance check cannot see: open `Flatten`, close `Typecheck`, and the count is
+still zero while the indentation tells the reader one phase contains another.
+
+**It found a real defect within seconds of being added** — the simulate path opened
+`"Compile (for simulation)"` and closed `"Compile (…ms)"`. Two names for one bracket, on the
+path the log tests never walk because they compile and stop.
+
+**Three stale doc comments corrected the same day**, all describing behaviour removed hours
+earlier: two `from_captured*` constructors still promised a re-derivation fallback they no
+longer have, and `FromWorker::Compiled` still called the pre-lowering and connection frames
+*"replay frames … recorded by re-running"*. **The source is a learning artifact here, so it is
+held to the same rule as a pane.**
+
+**And `examples/frame_index.rs` was rewritten**, which is the one with teeth: the tool that
+generates the frame numbers the matching tour cites was re-deriving from a committed trace
+while the panel rendered captured frames. Its header claimed it *"drives the same constructor
+the panel does"*, true until the panel changed. It now compiles the specimen and reads
+`matching_frames` off the result. **Verified against the tour: 8 / 16 / 114 frames for
+BouncingBall / ProportionalLoop / CapacitorLoop, exactly the numbers in `matching.md`** — so
+the defect was latent, agreeing by determinism, which is the reasoning the capture scopes exist
+to stop relying on. Third defect in that one file.
+
+### Still open
+
+**The panes themselves have no provenance.** Both mechanisms above are about *reaching* a
+re-derivation and *naming* a bracket. Neither says where a pane's contents came from, so
+"absence is stated, never filled" is still enforced case by case rather than as a class.
+
 **The shape worth exploring, not yet chosen:**
 
 - **Provenance on the pane, not just in the code.** Every stage view already knows whether it

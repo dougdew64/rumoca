@@ -121,9 +121,14 @@ impl MatchingAnimation {
     /// preserve that. But I want to capture the data for those animations during the
     /// actual compilation rather than use replays."*
     ///
-    /// **Falls back when the capture is empty**, which is the honest behaviour for a
-    /// compile that ran before the scope existed, or a stage reached with no matching
-    /// to record — an empty animation would say the algorithm did nothing.
+    /// **Returns `None` when the capture is empty or does not fit this matrix.**
+    ///
+    /// *(Corrected 2026-08-04: this said "falls back", which had stopped being true
+    /// the same day the fallback was removed. The body below returns `None` and the
+    /// caller states the absence — `App::structural_unavailable`. A doc comment
+    /// describing behaviour the function no longer has is the same defect class as a
+    /// pane describing a run that did not happen, and the source is a learning
+    /// artifact here, so it is held to the rule too.)*
     pub fn from_captured_frames(
         mat: &IncidenceMatrix,
         frames: &[rumoca_phase_structural::matching::MatchingFrame],
@@ -164,6 +169,26 @@ impl MatchingAnimation {
         })
     }
 
+    /// **Re-runs matching from scratch. Test-only, and enforced by the compiler.**
+    ///
+    /// Gated `#[cfg(test)]` on 2026-08-04. It has had no production caller since the
+    /// capture scopes landed, and what *guarded* that was
+    /// `doc_citations::no_animation_re_runs_a_phase_by_default` — a **grep of
+    /// `app.rs` for the string `from_incidence`**. That guard works and is fragile in
+    /// the specific way this project forbids elsewhere: a re-export, an alias, a
+    /// wrapper, or moving the call into any other module defeats it silently, and
+    /// nothing decides identity by substring here (`docs/identity-and-provenance.md`).
+    ///
+    /// Compiling it out of the binary makes the claim structural instead: the UI
+    /// cannot call this, because in a non-test build **it does not exist.** The
+    /// remaining value of the grep is that it also asserts the capture path *is*
+    /// reached, which a `cfg` cannot say.
+    ///
+    /// Kept rather than deleted because
+    /// `worker::tests::hrw_rederived_matching_matches_rumocas_report` cross-checks
+    /// HRW's own matching against Rumoca's report — a genuine fidelity test that
+    /// needs an independent implementation to compare against.
+    #[cfg(test)]
     pub fn from_incidence(mat: &IncidenceMatrix) -> Self {
         let eq_vars: Vec<HashSet<usize>> = mat
             .rows()
