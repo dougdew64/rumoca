@@ -1687,14 +1687,18 @@ impl WorkerState {
                         // Stages 3+4 (Instantiate + Typecheck) piggyback on the
                         // resolved tree — they need it to resolve component types
                         // and dimensions.
-                        log(LogLevel::StageStart, "Instantiate + Typecheck".to_owned());
-                        let t_sub = Instant::now();
-                        let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source);
+                        let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source, &log);
                         // Connection expansion (MLS §9) records its own replay.
-                        // It re-runs flatten, so it is timed inside this block
-                        // rather than pretending to be free.
+                        // It re-runs flatten, so it is bracketed rather than
+                        // pretending to be free — and named for what it is, since
+                        // it is not one of the pipeline's phases.
+                        let t_conn = Instant::now();
+                        log(LogLevel::StageStart, "Connection replay (HRW)".to_owned());
                         connection_frames = record_connection_frames(&rt.0, &qualified);
-                        log(LogLevel::StageEnd, format!("Instantiate + Typecheck ({:.1}ms)", t_sub.elapsed().as_secs_f64() * 1000.0));
+                        log(LogLevel::StageEnd, format!(
+                            "Connection replay (HRW) ({:.1}ms)",
+                            t_conn.elapsed().as_secs_f64() * 1000.0
+                        ));
                         instantiate = i;
                         typecheck = t;
                         stage
@@ -3087,10 +3091,23 @@ fn instantiate_and_typecheck(
     tree: &rumoca_ir_ast::ClassTree,
     model_name: &str,
     source: &str,
+    log: &dyn Fn(LogLevel, String),
 ) -> (Stage, Stage) {
+    // **Two brackets, not one.** These are two Rumoca phases and two HRW tabs, and
+    // they were logged as a single "Instantiate + Typecheck" entry -- so Typecheck
+    // had a tab whose timing could not be seen, and a reader counting phases in the
+    // log came up one short. Doug asked whether every Rumoca phase is accounted for;
+    // this was one of the two places it was not.
+    let t_inst = std::time::Instant::now();
+    log(LogLevel::StageStart, "Instantiate".to_owned());
     match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
         Ok(mut overlay) => {
             let instantiate = Stage::from_ser(&overlay);
+            log(LogLevel::StageEnd, format!(
+                "Instantiate ({:.1}ms)", t_inst.elapsed().as_secs_f64() * 1000.0
+            ));
+            let t_tc = std::time::Instant::now();
+            log(LogLevel::StageStart, "Typecheck".to_owned());
             let typecheck = match rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name) {
                 Ok(()) => Stage::from_ser(&overlay),
                 Err(diags) => {
@@ -3112,11 +3129,20 @@ fn instantiate_and_typecheck(
                     Stage::recovered(json, format!("typecheck: {n} diagnostic(s)"))
                 }
             };
+            log(LogLevel::StageEnd, format!(
+                "Typecheck ({:.1}ms)", t_tc.elapsed().as_secs_f64() * 1000.0
+            ));
             (instantiate, typecheck)
         }
         Err(e) => {
             let msg = format!("{e}");
             let error_json = instantiate_error_to_json(&e);
+            // Instantiate failed, so Typecheck never ran. Closing Instantiate's
+            // bracket and opening no Typecheck bracket is the accurate report:
+            // a phase that did not run should not appear to have taken 0.0ms.
+            log(LogLevel::StageEnd, format!(
+                "Instantiate ({:.1}ms) \u{2014} failed", t_inst.elapsed().as_secs_f64() * 1000.0
+            ));
             (
                 Stage::err_with_details(error_json, format!("instantiate failed: {msg}")),
                 Stage::info("not reached (instantiate failed)"),
@@ -6004,6 +6030,109 @@ mod tests {
         let notice = uninstrumented_notice();
         for (phase, _, _) in UNINSTRUMENTED_PHASES {
             assert!(notice.contains(phase), "the notice must name {phase}: {notice}");
+        }
+    }
+
+    /// **Every Rumoca phase crate is either shown or deliberately excluded.**
+    ///
+    /// Doug, 2026-08-04: *"have we correctly accounted for all rumoca phases in the
+    /// logs and our stage tabs now?"* — a question I had answered wrongly three times
+    /// by reasoning from silence. This makes it a matter of record instead.
+    ///
+    /// **The failure mode it guards is a phase HRW never mentions.** A tab that
+    /// should not exist is visible and gets questioned; a phase with no tab is
+    /// invisible, and a student mapping the chain has no way to learn it was there.
+    /// That is the wrong-negative shape again, and the reason `rumoca-phase-codegen`
+    /// is named below rather than merely absent.
+    ///
+    /// Add a phase crate upstream and this fails until it is either given a stage or
+    /// listed here with a reason — which is the only way the answer stays true across
+    /// a rebase.
+    #[test]
+    fn every_rumoca_phase_crate_is_shown_or_explained() {
+        /// Which HRW stage tab shows each Rumoca phase.
+        ///
+        /// Checked against `StageKind::ALL`, **not** against `worker.rs` text: HRW
+        /// does not name every phase crate directly — resolution runs through the
+        /// session inside `rumoca-compile` — so "does the source mention it" answers
+        /// the wrong question and fails on `rumoca-phase-resolve`, which is plainly
+        /// shown. **What matters is whether a reader can see the phase**, and a tab
+        /// is what they see.
+        const PHASE_TO_STAGE: &[(&str, &str)] = &[
+            ("rumoca-phase-parse", "Parse"),
+            ("rumoca-phase-resolve", "Resolve"),
+            ("rumoca-phase-instantiate", "Instantiate"),
+            ("rumoca-phase-typecheck", "Typecheck"),
+            ("rumoca-phase-flatten", "Flatten"),
+            ("rumoca-phase-dae", "DAE"),
+            // One crate, three tabs: structural analysis, index reduction and the
+            // IC plan (`build_ic_plan`) all live here. Naming one is enough to
+            // establish the phase is reachable.
+            ("rumoca-phase-structural", "Structural"),
+            ("rumoca-phase-solve", "Solve lowering"),
+        ];
+
+        /// Phase crates HRW deliberately does not run, and why.
+        const NOT_IN_HRWS_PATH: &[(&str, &str)] = &[(
+            "rumoca-phase-codegen",
+            "HRW simulates through `rumoca-sim` and the solver crates rather than \
+             generating code; codegen serves the MLIR/native execution path \
+             (`rumoca-exec-mlir`), which HRW does not take. It is not a gap in the \
+             chain HRW shows \u{2014} it is a different branch of it.",
+        )];
+
+        let crates = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("hrw/ has a parent")
+            .join("crates");
+
+        let mut phase_crates: Vec<String> = std::fs::read_dir(&crates)
+            .expect("crates/ must be readable")
+            .flatten()
+            .filter_map(|e| {
+                let n = e.file_name().to_string_lossy().into_owned();
+                (n.starts_with("rumoca-phase-") && e.path().is_dir()).then_some(n)
+            })
+            .collect();
+        phase_crates.sort();
+        assert!(
+            phase_crates.len() >= 9,
+            "expected the workspace's phase crates, found {phase_crates:?}",
+        );
+
+        let stage_names: Vec<&str> = StageKind::ALL.iter().map(|s| s.name()).collect();
+
+        for krate in &phase_crates {
+            let shown = PHASE_TO_STAGE.iter().find(|(k, _)| k == krate);
+            let excused = NOT_IN_HRWS_PATH.iter().any(|(k, _)| k == krate);
+            assert!(
+                shown.is_some() || excused,
+                "{krate} is a Rumoca phase that HRW neither shows nor explains. Give it \
+                 a stage tab, or add it to NOT_IN_HRWS_PATH with the reason \u{2014} an \
+                 unmentioned phase is invisible to someone learning the chain from HRW, \
+                 which is the one kind of gap nobody notices.",
+            );
+            if let Some((_, stage)) = shown {
+                assert!(
+                    stage_names.contains(stage),
+                    "{krate} maps to a stage named {stage:?}, which is not in \
+                     StageKind::ALL ({stage_names:?})",
+                );
+            }
+            assert!(
+                !(shown.is_some() && excused),
+                "{krate} is both mapped to a stage and excused; the exclusion is stale",
+            );
+        }
+
+        // Neither table may name a crate that no longer exists. **A missing
+        // directory is exactly what made three earlier claims here self-confirming**
+        // — it greps as zero, reads as "nothing there", and proves nothing.
+        for (krate, _) in PHASE_TO_STAGE.iter().chain(NOT_IN_HRWS_PATH.iter()) {
+            assert!(
+                crates.join(krate).is_dir(),
+                "{krate} is named in this test but is not a crate",
+            );
         }
     }
 
