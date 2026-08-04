@@ -23,6 +23,37 @@ Doug, 2026-07-30:
 > wrong.**
 
 That last clause is the whole scope. **A Rumoca bug faithfully rendered is a PASS here.**
+
+## What this programme does NOT check, stated because it was read as checking it
+
+*Added 2026-08-04, after a day spent removing fictions from HRW's log and UI that had stood
+while this suite reported 2,614 green rows and zero violations.*
+
+**F1-F9 verify NOUNS. Every fiction removed that day was a VERB.**
+
+The checks ask: *is this structure what Rumoca produced?* They do not ask, and cannot ask:
+
+| Question | Checked by F1-F9 |
+|---|---|
+| Is this IR what Rumoca produced? | ✅ yes, at corpus scale |
+| Did the phase this pane names actually run? | ❌ no |
+| Did HRW compute this itself when the compiler produced nothing? | ❌ no |
+| Is this view the compilation, or a re-run of the algorithm? | ❌ no |
+| Do the log's order, nesting and attribution describe what happened? | ❌ no |
+
+**A fabricated BLT block passes every one of these checks** — it is well-formed, it round-trips
+through JSON, every path in it resolves. **A replay passes by construction**, because producing
+output indistinguishable from the compiler's is what makes a replay good.
+
+So the green result is real and its scope is narrow, and **the danger is not the gap but the
+confidence.** A corpus-scale zero makes *"is HRW faithful?"* feel answered when what was
+answered is *"is HRW's IR faithful?"* — a strict subset. Cite this suite only with its scope
+attached; see the accuracy rule at the top of [`../CLAUDE.md`](../CLAUDE.md).
+
+**Extending the programme to verbs is not proposed here.** The verbs are checked today by
+roughly a dozen assertions in `worker.rs` (bracket balance, trace containment, no-replay,
+attribution counts), which is thin and is logged as such in
+[`tech-debt.md`](tech-debt.md).
 Finding compiler bugs is a different effort with a different instrument (#43's oracle), and
 mixing them would make every failure ambiguous again — which is the cost #51 could not pay.
 

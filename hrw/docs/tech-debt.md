@@ -138,6 +138,15 @@ Feature *experimentation* stays cheap. **Unavailability does not.** Building the
 feature costs some tokens; a missing capability the night before an assignment costs
 Doug the assignment.
 
+0. **Anything that shows Doug something FALSE** *(inserted 2026-08-04, above the previous
+   rank 1, which it outranks)*. A fabricated pane, a log line describing work that did not
+   happen, a view derived by HRW and presented as the compiler's. **A gap is recoverable and
+   a fiction is not**: a gap sends Doug to ask, while a fiction sends him away satisfied and
+   wrong, with nothing to prompt a second look. He named this his top priority — *"in order
+   for me to learn about Rumoca, HRW must accurately represent Rumoca"* — and authorised the
+   cost: *"we will pause and fix code as often as necessary in order to deliver accuracy."*
+   **This rank does not wait for a sweep and does not wait for slack.** See the accuracy rule
+   at the top of [`../CLAUDE.md`](../CLAUDE.md).
 1. **Anything that forces Claude to guess instead of verify** — a phase not emitting
    its data, a broken bridge, a claim that cannot be checked. **This is the
    catastrophic case, not a missing tour.** On 2026-07-29 the textbook shape of a
@@ -418,6 +427,43 @@ and `..._names_the_stage_before_a_model_exists`. The two branches share one
 test either. The point-at and follow rows are *labelled*, so an omission there is
 visible in a way the background's was not — which lowers the priority without
 removing it.
+
+## Verb coverage — the fictions are fixed, the gap that allowed them is not
+
+**Logged 2026-08-04, at the end of the day spent removing them.** Priority: **rank 0** by the
+list above, which is a statement about what a *new* fiction would cost, not a claim that this
+item must be paid before anything else.
+
+**The measured state.** Every claim HRW makes about *what the compiler did* — which phase ran,
+in what order, nested inside what, whether a view came from the compile or from HRW re-running
+the algorithm, whether a pane's contents exist at all — is checked today by roughly **a dozen
+assertions in `worker.rs`**: bracket balance, trace containment, the no-replay guard, the
+attribution count, and the per-condition absence tests added the same day. That is thin
+protection for the category that produced **every fiction found**, and it exists only where a
+fiction was actually found. **Nothing generalises it.**
+
+**Why the obvious answer is the wrong one.** Extending F1-F9 does not reach this. Those checks
+compare HRW's structures to Rumoca's, and a fabricated block *is* a well-formed structure while
+a replay's output *is* identical by construction — see the scope table in
+[`fidelity-plan.md`](fidelity-plan.md). A verb check has to assert against **what the compile
+recorded**, which is what the capture scopes now make possible and did not exist before
+2026-08-04.
+
+**The shape worth exploring, not yet chosen:**
+
+- **Provenance on the pane, not just in the code.** Every stage view already knows whether it
+  came from a capture, an artifact read, or HRW's own derivation. If that were *data* rather
+  than an implicit fact about which branch built it, a single test could assert that no pane
+  reports derived content without saying so — one check covering the whole class instead of
+  one per fiction.
+- **A must-fire for absence**, matching the existing one for silence: a pane whose source
+  produced nothing must fail a test if it renders content anyway.
+- **The cheap interim, already partly true:** every new pane and every new log claim gets its
+  own assertion at the time it is written, per the pane-is-a-reporter rule.
+
+**Do not treat this as swept because the fictions are gone.** The fictions were found by Doug
+walking two tours, not by any check, and the next one will be found the same way unless the
+category acquires coverage.
 
 ## UI testing debt — the harness exists and almost nothing uses it
 

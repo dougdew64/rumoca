@@ -8,7 +8,8 @@ Rust/egui observatory for studying the Rumoca Modelica compiler.
 **[`docs/README.md`](docs/README.md) is the document index** — every file, its purpose, and
 whether it is live. Go there rather than guessing.
 
-Purpose, scope and binding decisions are in [`docs/CHARTER.md`](docs/CHARTER.md) (v1.1) —
+Purpose, scope and binding decisions are in [`docs/CHARTER.md`](docs/CHARTER.md) (v1.2 —
+**Decision 7, Accuracy, ranks above everything else in this repository**) —
 consult it for any design question; **do not re-litigate settled decisions in-session.**
 Append any nontrivial implementation choice to [`DECISIONS.md`](DECISIONS.md) with a one-line
 rationale.
@@ -35,8 +36,59 @@ how he learns, which nothing else in this repository carries. The short form:
 
 ## The rules
 
+**EDUCATION IS THE PURPOSE, AND ACCURACY IS ITS PRECONDITION** *(Doug, 2026-08-04, the day
+this rule was found missing)*. HRW exists so Doug can learn Rumoca. **A tool that
+misrepresents Rumoca does not teach him less — it teaches him something false, and he has no
+way to tell which parts are which.** Accuracy therefore outranks every other consideration in
+this repository: features, polish, performance, a tidy log, a complete-looking pane, and **the
+cost of a change to the Rumoca crates**.
+
+**STOP AND FIX, AS OFTEN AS NECESSARY** — Doug's standing authorisation, in his words: *"We
+will pause and fix code as often as necessary in order to deliver accuracy."* A day spent
+removing fictions is not a detour from the curriculum. 2026-08-04 was spent entirely on it and
+was the correct use of the day.
+
+**NOTHING HRW SHOWS MAY BE INVENTED.** Every number, structure, tree, animation frame and log
+line must be traceable to something Rumoca **actually did on this run**. Three corollaries,
+each bought with a fiction removed on 2026-08-04:
+
+- **Absence is stated, never filled.** A pane with nothing to show says the compiler produced
+  nothing and why. It does not derive a plausible substitute. The BLT tabs of a structurally
+  singular model rendered blocks HRW had computed itself, and a learner reading them would have
+  concluded the compiler decomposed a system it had refused to touch.
+- **A derived view declares that it is derived.** Re-running a phase to observe it is
+  sometimes the only way to see inside it, and that is **legitimate when labelled**. What is
+  forbidden is presenting the re-run as the compilation. Every replay in HRW is now gone,
+  replaced by capture scopes recording the real run — but the rule is about the label, not the
+  mechanism, because the label was never the part that was blocked.
+- **A log line describes what happened, not what reads well.** The "DAE pipeline" bracket named
+  a phase that does not exist, in order to give five phases a tidy parent. Ordering, nesting and
+  attribution are claims, and a claim that reads nicely is still a claim.
+
+**WHY THIS RULE WAS MISSING — and what its absence predicts.** The rules below protect against
+*missing* reports (must-fire), *unchecked* claims of absence, and *misidentified* things (no
+heuristic name-matching). **None of them forbade invented content**, so none of the fictions
+ever felt like a violation: each was written as *"here is a way to show him this"*, and HRW's
+tests check data while the falsehood lived in what the pane **claimed**.
+
+The trap that hid it is worth naming, because it will recur in a new dress:
+**[`fidelity-plan.md`](docs/fidelity-plan.md)'s programme verifies the NOUN, and its success
+felt like it verified everything.** 2,614 green rows answers *"is HRW's IR faithful?"* Every
+fiction removed on 2026-08-04 was about a **verb** — what the compiler did, in what order, what
+it declined to do, whether it ran at all — and **not one of F1-F9 could have caught a single
+one of them.** A fabricated BLT block is well-formed and round-trips; a good replay is
+*by construction* indistinguishable in its output. **A large green result covers the territory
+it measured and no more, and the confidence it produces does not know that.**
+
 **Instrumentation of the Rumoca crates is intended, and must stay additive,
-observation-only, and upstreamable.** Across a crate boundary a phase's `pub(crate)` internals
+observation-only, and upstreamable.** **The checklist below is a quality bar, not a
+discouragement** — added 2026-08-04, because its cumulative weight had become one. Every
+Rumoca edit carried a checklist and every HRW edit carried none, so when two paths led to the
+same pane, the ungated one won and the fiction accumulated. The capture scopes that replaced
+every replay landed in **two days** once Doug priced it explicitly: *"it is much better to
+defend a rumoca api change to the repo maintainers than to defend replays."* They were
+**unpriced, not difficult.** When accuracy needs a Rumoca change, the change is the cheap
+option. Across a crate boundary a phase's `pub(crate)` internals
 are unreachable, so "accessing internals" means **additively widening visibility / adding
 observation hooks in `../crates/rumoca-*`**. Semantics-preserving, so HRW stays faithful to
 real Rumoca and rebases stay clean.
@@ -411,6 +463,15 @@ getting about *two* from an empty AST. It now walks a real one. Mean peak memory
 scale. **What it does not**: that HRW's AST equals Rumoca's — nothing in the sweep compares
 them. That equivalence is `worker::tests::hrw_reparse_of_a_library_file_matches_the_sessions_own_ast`,
 over 120 documents. **Representation is verified at corpus scale; equivalence at sample scale.**
+
+**AND IT SAYS NOTHING ABOUT WHAT THE COMPILER DID** *(added 2026-08-04, after the fictions)*.
+Every F-check asks about a **noun**: is this structure what Rumoca produced? The claims HRW
+makes about **verbs** — which phase ran, in what order, nested inside what, how long it took,
+what it declined to do, and whether a view came from the compile or from HRW re-running the
+algorithm — **are outside the programme entirely.** That is not a flaw in the checks; it is
+their scope. The flaw was reading a corpus-scale green as an answer to "is HRW faithful?"
+**Whenever this file, a commit message or a report cites the sweep as evidence of fidelity,
+the noun/verb split must be stated with it.**
 
 **When the fidelity checks run** (policy 2026-07-31; reasoning in
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Small scale — the 16 curated specimens —

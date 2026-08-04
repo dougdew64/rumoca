@@ -8,7 +8,7 @@ re-litigate one of its decisions in-session; amend the charter or accept it.
 
 **How Rumoca Works — a mastery project in the mathematics and computer science of modeling and simulating deterministic systems**
 
-*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
+*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
 
 ---
 
@@ -43,6 +43,18 @@ Rumoca's own architecture cooperates with this purpose. It is a multi-crate Rust
 **Decision 4 — Compilation and simulation toolchain.** Models are compiled and simulated with Rumoca, the glass box. Every specimen therefore runs through two independent compilers, constituting a standing differential-testing rig. Disagreement between the toolchains is the most valuable event the setup can produce: it is either a Modelica semantic subtlety (learning), a Rumoca defect (contribution), or undisclosed System Modeler behavior (exactly what the glass box exists to see around). Once Rumoca's pipeline is transparent, System Modeler ceases to be opaque in any way that matters — it becomes a reference oracle, a well-upholstered instance of the same pipeline.
 
 **Decision 5 — No web deployment.** As stated in Scope. Native builds only; Astro shelved; nothing foreclosed.
+
+**Decision 7 — Accuracy, and its rank (adopted v1.2, August 4, 2026).** *Numbered 7 and placed here for reading order; adopted after Decisions 1-6.* **Everything the instrumentation displays must be traceable to something the compiler actually did on the run being observed.** Absence is stated, never filled with a plausible substitute; a view derived by the observatory rather than recorded from the compiler declares itself as derived; and the ordering, nesting and attribution of a log are claims about what happened, held to the same standard as its contents.
+
+**Rank: accuracy outranks every other consideration in the instrumentation** — features, polish, performance, completeness of a pane, and the cost of a change to the Rumoca crates. Where the two conflict, the Rumoca change is the cheap option, because Decision 6's glass box is worth nothing if the glass distorts.
+
+**Rationale, from the failure that produced this decision.** On August 4, 2026, after a corpus-scale fidelity programme had reported 2,614 models green with zero violations, Doug walked the first two curriculum tours and found the observatory's log and UI carrying fictions: a named phase that does not exist, phases re-run and presented as the compilation, and decomposition blocks rendered for a system the compiler had refused to decompose. **The fidelity programme could not have caught any of them** — it verifies that a structure matches what Rumoca produced, and a fabricated structure is well-formed while a replay's output is identical by construction. Doug's statement of the principle:
+
+> *"My top priority continues to be education. HRW is merely a tool to help me learn. In order for me to learn about Rumoca, HRW must accurately represent Rumoca."*
+
+**Consequence, binding: the work stops for accuracy whenever accuracy requires it** — *"we will pause and fix code as often as necessary in order to deliver accuracy."* A day removing fictions is curriculum work, not a detour from it. This is a standing authorisation and does not need to be re-sought.
+
+**Why it belongs in the charter rather than a rules file.** Section 1's central proposition is a *proxy claim*: understanding Rumoca yields the underlying math and CS. **The proxy holds only while the observatory is faithful.** An instrument that misrepresents the compiler does not slow the bet down — it silently substitutes a different subject, and the learner cannot tell which parts were substituted. Accuracy is therefore a precondition of the charter's purpose, not a quality attribute of its tooling.
 
 **Decision 6 — Instrumentation.** A Rust/egui observatory application, developed in Visual Studio Code with the Claude Code extension, with the VS Code debugger treated as a first-class learning instrument. The app loads a System Modeler-authored model, compiles it via Rumoca linked as a library (git/path dependency on the Rumoca workspace, since v0.8+ distributes binaries via GitHub releases rather than crates.io), and runs simulations — so that a breakpoint can be set inside a compiler phase while it processes a specimen. Your model, their phase, your breakpoint: the curriculum in one gesture.
 

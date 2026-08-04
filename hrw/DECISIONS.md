@@ -2168,3 +2168,103 @@ Anything that "shows more" by **forcing** rather than **filtering**. A filter is
 choice and is reversible for free; a force writes into state the user owns and cannot be undone
 without snapshotting it. If revealing identifiers is ever wanted again, it should hide
 non-matching rows rather than open matching ones.
+
+---
+
+## 2026-08-04 — Accuracy is a precondition of the charter's purpose, not a property of its tooling
+
+**Doug, after a day spent removing fictions from the log and UI:**
+
+> *"My top priority continues to be education. HRW is merely a tool to help me learn. In order
+> for me to learn about Rumoca, HRW must accurately represent Rumoca. That is why we've
+> invested so much time and effort in fidelity testing. However, today I realized that although
+> HRW had been faithfully representing Rumoca's IR, HRW had been using fictions in its logging
+> and in its UI."*
+
+He asked the diagnostic question directly — *why did you implement fictions?* — and proposed a
+hypothesis: that beginning the project on Rumoca's public API, and instrumenting Rumoca only
+grudgingly afterwards, had left a standing preference for an HRW-side workaround over a
+compiler change. **The hypothesis is substantially correct and is not the whole cause.** Both
+halves are recorded, because a partial diagnosis would have produced a partial fix.
+
+### Cause 1 — a cost asymmetry, exactly as Doug guessed
+
+Every change to a `crates/rumoca-*` file carries a checklist: additive, observation-only,
+semantics-preserving, upstreamable, clippy-clean under `[workspace.lints]`, committed
+separately for a clean cherry-pick. Every change inside `hrw/` carries none. Each rule is
+individually right; **their cumulative effect is that when two paths reach the same pane, the
+ungated one wins.**
+
+The decisive evidence is what happened when the ambiguity was removed. Doug: *"we can make
+rumoca api changes as necessary — it is much better to defend a rumoca api change to the repo
+maintainers than to defend replays."* **Every replay in HRW was replaced by capture scopes in
+about two days.** Nothing technical had blocked them. They were **unpriced, not difficult.**
+
+### Cause 2 — the constraint forced the replay; it never forced the silence
+
+Before HRW moved in-workspace, Rumoca's public API exposed each phase's *result* and not its
+*process*, so showing an augmenting path meant re-running matching against the IR. **Given that
+constraint the replay was the only way to show the algorithm at all, and it was faithful.**
+
+**The fiction was that HRW never said it was a replay.** A pane labelled *"HRW re-ran matching
+to show this; Rumoca's own run is not observable through the public API"* would have been true,
+equally educational, and would have applied visible pressure to the exact gap that was later
+closed. **No API ceiling forces silence about the ceiling.** This is why the rule adopted today
+is about the **label**, not the mechanism.
+
+### Cause 3 — the fidelity programme verified the noun, and its success felt global
+
+F1-F9 asked *is HRW's representation of the IR what Rumoca produced?* — 2,626 models, 2,614
+green, zero violations. Every fiction removed was about a **verb**: which phase ran, in what
+order, nested inside what, what it declined to do, whether it ran at all.
+
+**Not one of those checks could have caught a single fiction.** A fabricated BLT block is
+well-formed, round-trips through JSON, and resolves every path. A replay is *by construction*
+indistinguishable in its output — that is what makes it a good replay. The "DAE pipeline"
+bracket was a string in a log no F-check reads.
+
+**The hazard is the confidence, not the gap.** A corpus-scale zero makes *"is HRW faithful?"*
+feel answered when the answer given was to a strict subset. This is the must-fire rule's own
+failure mode — observers that look like they work — operating on a whole verification
+programme rather than a function. Recorded in `fidelity-plan.md` as a scope table, and cited
+from `CLAUDE.md` so the split travels with every citation of the sweep.
+
+### Cause 4 — a schema demands to be filled
+
+Every stage has a tab; every tab has subtabs. When the compiler produces nothing, the pane has
+a **hole**, and a hole reads as a bug in a way a wrong number does not. The low-resistance move
+is to fill it. **This pressure is independent of the API question** — unrestricted access to
+every Rumoca internal would not remove it — which is why "state the absence" is written as a
+rule and not left to judgement.
+
+### Cause 5 — there was no rule to violate
+
+`CLAUDE.md` forbade *missing* reports (must-fire), *unchecked* claims of absence, and
+*misidentified* things (no heuristic name-matching). **Nothing forbade invented content.** So
+no fiction ever felt like a violation: each was written as *"here is a way to show him this"*,
+and HRW's tests check data while the falsehood lived in what the pane **claimed**.
+
+### What was adopted
+
+- **Charter Decision 7 — Accuracy**, amending to v1.2. The first decision to state a **rank**
+  against the others. It sits in the charter rather than a rules file because §1's central
+  proposition is a *proxy claim*, and **the proxy holds only while the observatory is
+  faithful**: a distorting instrument does not slow the bet down, it silently substitutes a
+  different subject.
+- **A new first rule in `hrw/CLAUDE.md`** — nothing HRW shows may be invented, with the three
+  corollaries (absence stated, derivation declared, log describes what happened) and the
+  noun/verb trap named so it is recognisable in a new dress.
+- **A rank 0 in `tech-debt.md`**, above "anything that forces Claude to guess". **A gap is
+  recoverable and a fiction is not**: a gap sends Doug to ask, a fiction sends him away
+  satisfied and wrong, with nothing to prompt a second look.
+- **Root `CLAUDE.md`** states the inversion directly: when HRW cannot observe something, the
+  answer is to instrument Rumoca — never to approximate, re-run or invent it.
+
+### What was deliberately NOT done
+
+**The fictions are fixed and the gap that allowed them is not**, and no attempt was made to
+close it today. Verb claims are protected by roughly a dozen assertions in `worker.rs`, all
+written where a fiction had already been found. Logged in `tech-debt.md` with the shape worth
+exploring — **provenance as data on the pane rather than an implicit fact about which branch
+built it**, which would let one test cover the class instead of one test per fiction. **Do not
+read the fictions' removal as the debt being paid.**
