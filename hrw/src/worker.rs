@@ -1723,14 +1723,18 @@ impl WorkerState {
         self.last_resolve_failed = resolve.note_is_error();
 
         // =====================================================================
-        // Stages 5-10: DAE pipeline (Flatten → Solve lowering)
+        // Stages 5-11: Flatten → DAE construction → Solve lowering
         // =====================================================================
-        // These stages come from a single Rumoca pipeline invocation:
-        // `compile_model_strict_reachable_with_recovery`. This one call runs
-        // flatten → DAE construction internally. Then we extract individual
-        // stage results from the returned `PhaseResult` using the
-        // `*_stage()` functions, and run structural analysis / index
-        // reduction / initialization / events / solve lowering ourselves.
+        // **Flatten and DAE construction happen inside one Rumoca call**
+        // (`compile_model_strict_reachable_with_recovery`); their `*_stage()`
+        // functions only *extract* the results from the returned `PhaseResult`.
+        // Structural analysis, index reduction, initialization, events and solve
+        // lowering are run here, so their timings are real work.
+        //
+        // That difference is why the call is bracketed separately in the log. It
+        // used to be bracketed as a "DAE pipeline" spanning flatten → solve
+        // lowering, which named a phase that is not a pipeline and claimed five
+        // phases it does not contain (fixed 2026-08-04).
         //
         // Each stage emits a `CompileProgress` so its tab colours in the UI
         // as soon as it's known.
@@ -1752,8 +1756,22 @@ impl WorkerState {
                     None => self.session.qualify_model_name(&uri, simple_name),
                 };
 
-                log(LogLevel::StageStart, "DAE pipeline (flatten → solve lowering)".to_owned());
-                let t_pipeline = Instant::now();
+                // **Named for what this call does, not for a phase.** It logged
+                // "DAE pipeline (flatten → solve lowering)" until 2026-08-04 —
+                // Doug: *"our logs contain a fiction about a DAE pipeline which
+                // includes the phases which follow the DAE phase."* Two things
+                // were wrong with it: DAE construction is a **phase**, not a
+                // pipeline, and the span it claimed reached five phases past it.
+                //
+                // The bracket is kept because it is the only honest timing in
+                // this block: flatten and DAE construction really do happen
+                // inside this one call, so the per-stage figures below are
+                // *extraction* time for those two and real work for the rest.
+                log(
+                    LogLevel::StageStart,
+                    "Rumoca compile \u{2014} flatten and DAE construction".to_owned(),
+                );
+                let t_compile = Instant::now();
                 // Uncached, for the reason spelled out in `simulate` above: a
                 // cached result means the phases did not run, so nothing can be
                 // observed happening — breakpoints, tracing, or timing.
@@ -1762,6 +1780,29 @@ impl WorkerState {
                     .compile_model_strict_reachable_uncached_with_recovery(&qualified);
                 drain_traces(&log);
                 drain_output(&mut output_capture, &log);
+                // Closed here, where the call returns. The old bracket closed
+                // after solve lowering, which is what let it claim to span
+                // phases it had nothing to do with.
+                log(
+                    LogLevel::StageEnd,
+                    format!(
+                        "Rumoca compile ({:.1}ms)",
+                        t_compile.elapsed().as_secs_f64() * 1000.0
+                    ),
+                );
+                // **Say which of the timings below are real.** Flatten and DAE
+                // construction ran inside the call that just ended, so their
+                // stage entries time an *extraction* — `DAE construction (0.1ms)`
+                // would otherwise read as the phase being nearly free when it is
+                // part of a second-long call. Same family as the "DAE pipeline"
+                // fiction removed 2026-08-04: a log that states a number the
+                // reader will misread is not reporting, it is misreporting.
+                log(
+                    LogLevel::Info,
+                    "Flatten and DAE construction ran inside that call \u{2014} their \
+                     times below are extraction only; the later stages are real work"
+                        .to_owned(),
+                );
 
                 let result = report.requested_result.as_ref();
 
@@ -1814,32 +1855,21 @@ impl WorkerState {
                 }
 
                 let flatten = run_stage!("Flatten", flatten_stage(result, &source), flatten);
-                let structural = run_stage!("Structural analysis", structural_stage(result, &source), structural);
-                let (index_reduction, ir_frames) = {
-                    log(LogLevel::StageStart, "Index reduction".to_owned());
-                    let t = Instant::now();
-                    let (stage, frames) = index_reduction_stage(result, &source);
-                    drain_traces(&log);
-                    log(LogLevel::StageEnd, format!(
-                        "Index reduction ({:.1}ms)", t.elapsed().as_secs_f64() * 1000.0
-                    ));
-                    bundle.index_reduction = stage.clone();
-                    emit(FromWorker::CompileProgress {
-                        path: report_path.clone(), stages: bundle.clone(),
-                    });
-                    (stage, frames)
-                };
-                let initialization = run_stage!("Initialization", initialization_stage(result), initialization);
-                let events = run_stage!("Events", events_stage(result), events);
-                let solve_lowering = run_stage!("Solve lowering", solve_lowering_stage(result), solve_lowering);
 
-                log(LogLevel::StageEnd, format!("DAE pipeline ({:.1}ms)", t_pipeline.elapsed().as_secs_f64() * 1000.0));
-
+                // **DAE construction, logged in its true position.** Until
+                // 2026-08-04 this stage was built *after* solve lowering and
+                // never logged at all — so the log showed the chain jumping
+                // Flatten → Structural, with the phase they both depend on
+                // missing. Doug found it walking the tour that teaches it.
+                //
+                // Moved here rather than logged where it stood: logging it in
+                // place would have reported DAE construction *finishing after*
+                // the five phases that consume its output, which is a second
+                // fiction in place of the first.
                 let dae = match result {
                     Some(PhaseResult::Success(cr)) => Some(cr.dae.clone()),
                     _ => None,
                 };
-
                 // **The DAE stage.** `rumoca-ir-dae` is a boundary IR like
                 // `rumoca-ir-flat`, and `Dae` implements `Serialize`, so this is
                 // the same one-liner every other stage uses — there was never
@@ -1868,19 +1898,42 @@ impl WorkerState {
                 // end, and the tour that found this
                 // (`docs/fixture-tours/dae-construction.md`) walks exactly that
                 // path.
-                let dae_stage = match &dae {
-                    Some(d) => {
-                        let n_x = d.variables.states.len();
-                        let n_y = d.variables.algebraics.len();
-                        let n_eq = d.continuous.equations.len();
-                        let mut s = Stage::from_ser(d);
-                        s.note = Some(format!(
-                            "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
-                        ));
-                        s
-                    }
-                    None => dae_absent_stage(result, &source),
+                let dae_stage = run_stage!(
+                    "DAE construction",
+                    match &dae {
+                        Some(d) => {
+                            let n_x = d.variables.states.len();
+                            let n_y = d.variables.algebraics.len();
+                            let n_eq = d.continuous.equations.len();
+                            let mut s = Stage::from_ser(d);
+                            s.note = Some(format!(
+                                "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
+                            ));
+                            s
+                        }
+                        None => dae_absent_stage(result, &source),
+                    },
+                    dae
+                );
+
+                let structural = run_stage!("Structural analysis", structural_stage(result, &source), structural);
+                let (index_reduction, ir_frames) = {
+                    log(LogLevel::StageStart, "Index reduction".to_owned());
+                    let t = Instant::now();
+                    let (stage, frames) = index_reduction_stage(result, &source);
+                    drain_traces(&log);
+                    log(LogLevel::StageEnd, format!(
+                        "Index reduction ({:.1}ms)", t.elapsed().as_secs_f64() * 1000.0
+                    ));
+                    bundle.index_reduction = stage.clone();
+                    emit(FromWorker::CompileProgress {
+                        path: report_path.clone(), stages: bundle.clone(),
+                    });
+                    (stage, frames)
                 };
+                let initialization = run_stage!("Initialization", initialization_stage(result), initialization);
+                let events = run_stage!("Events", events_stage(result), events);
+                let solve_lowering = run_stage!("Solve lowering", solve_lowering_stage(result), solve_lowering);
 
                 // `pre()`-lowering replay frames (idea #40).
                 //
@@ -5612,6 +5665,47 @@ mod tests {
         assert!(stage_starts.contains(&"Solve lowering"), "missing Solve lowering stage start");
         assert_eq!(stage_starts.len(), stage_ends.len(), "every stage start should have a matching end");
         assert!(logs.iter().any(|e| matches!(e.level, LogLevel::Info)), "should have at least one info entry");
+
+        // **DAE construction is logged, and in its true position.**
+        //
+        // Doug, 2026-08-04: *"our logs do not report the begin or end of that DAE
+        // phase. Worse, our logs contain a fiction about a DAE pipeline which
+        // includes the phases which follow the DAE phase."* The stage had a tab, a
+        // trace file and a tour, and the log skipped straight from Flatten to
+        // Structural — while a bracket labelled "DAE pipeline" claimed to span five
+        // phases that come *after* DAE construction.
+        //
+        // **Order is asserted, not just presence.** Logging it where it used to be
+        // built would have reported DAE construction finishing after the phases that
+        // consume its output — a second fiction in place of the first.
+        let pos = |name: &str| {
+            stage_starts.iter().position(|s| *s == name).unwrap_or_else(|| {
+                panic!("no `{name}` stage start in {stage_starts:?}")
+            })
+        };
+        assert!(
+            pos("Flatten") < pos("DAE construction"),
+            "DAE construction must be logged after Flatten: {stage_starts:?}",
+        );
+        assert!(
+            pos("DAE construction") < pos("Structural analysis"),
+            "and before the phases that consume the DAE: {stage_starts:?}",
+        );
+        assert!(
+            stage_ends.contains(&"DAE construction"),
+            "a phase that starts must also be reported as ending: {stage_ends:?}",
+        );
+
+        // **The fiction stays gone.** Named as a substring so a revival under any
+        // wording ("DAE pipeline (flatten -> ...)") is caught.
+        for e in &logs {
+            assert!(
+                !e.message.contains("DAE pipeline"),
+                "the DAE is a phase, not a pipeline, and the old bracket claimed a \
+                 span reaching five phases past it: {:?}",
+                e.message,
+            );
+        }
     }
 
     /// Simulation also emits log entries with timing.
