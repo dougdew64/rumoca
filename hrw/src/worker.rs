@@ -5948,15 +5948,40 @@ mod tests {
                          silence from a phase that speaks \u{2014} remove the entry.",
                     );
                 }
-                // Claimed to be HRW-derived rather than a Rumoca phase. The check is
-                // that no such crate exists: if one appears, the claim is stale and
-                // the tab may have become a real phase.
+                // **Claimed to render DAE data without calling Rumoca.** Checked by
+                // reading the stage function: if it names any `rumoca_phase_*`, a
+                // real algorithm runs and the tab can emit traces after all.
+                //
+                // This check exists because the first version only asked whether a
+                // crate named `rumoca-phase-<tab>` existed — which is *no evidence at
+                // all*, and duly passed for Initialization, whose
+                // `initialization_stage` calls
+                // `rumoca_phase_structural::build_ic_plan` on its eleventh line.
+                //
+                // **Bounded, and honestly so**: it reads the stage function's own
+                // body, so a Rumoca call hidden inside a helper would escape it. That
+                // is a weaker guarantee than the crate-count branch above and is
+                // stated rather than implied.
                 None => {
-                    let guess = format!("rumoca-phase-{}", phase.to_lowercase());
+                    let worker = std::fs::read_to_string(
+                        Path::new(env!("CARGO_MANIFEST_DIR")).join("src/worker.rs"),
+                    )
+                    .expect("worker.rs must be readable");
+                    let needle = format!("fn {}_stage(", phase.to_lowercase());
+                    let start = worker.find(&needle).unwrap_or_else(|| {
+                        panic!("{phase} claims to be HRW-derived but has no {needle}")
+                    });
+                    let body_end = worker[start..]
+                        .find("\nfn ")
+                        .map(|e| start + e)
+                        .unwrap_or(worker.len());
+                    let body = &worker[start..body_end];
                     assert!(
-                        !crates.join(&guess).is_dir(),
-                        "{phase} is described as HRW-derived ({why}), but {guess} now \
-                         exists \u{2014} recheck whether this tab still comes from the DAE",
+                        !body.contains("rumoca_phase_"),
+                        "{phase} is described as rendering DAE data ({why}), but \
+                         {needle} calls into a rumoca_phase_* crate \u{2014} a real \
+                         algorithm runs, so the tab can emit tracing and must not be \
+                         listed as permanently silent",
                     );
                 }
             }
@@ -6813,20 +6838,21 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
     // below is what removed it**: it failed with "now has 8 tracing call site(s)"
     // the moment the crate changed, which is the whole point of pinning a claim of
     // absence to something that can notice.
-    // **Not Rumoca phases at all.** `initialization_stage` and `events_stage` are
-    // HRW code reading `cr.dae` — the data is produced during DAE construction and
-    // these tabs are HRW's *reading* of it. No Rumoca call runs, so no Rumoca event
-    // can be emitted. Their silence is structural rather than a gap to be filled,
-    // which is why instrumenting Rumoca will never make them speak.
-    (
-        "Initialization",
-        None,
-        "HRW derives this tab from the DAE; no Rumoca phase runs here",
-    ),
+    // **Events is a reading, not a computation.** `events_stage` renders
+    // `dae.conditions`, `dae.discrete` and `dae.events` — data Rumoca produced
+    // during DAE construction — and calls no Rumoca function of its own. So no
+    // Rumoca event can be emitted under this tab, and instrumenting upstream will
+    // never make it speak. The data is real; only the *phase* is not.
+    //
+    // **Initialization was listed here and should not have been.** It calls
+    // `rumoca_phase_structural::build_ic_plan`, a real algorithm in an instrumented
+    // crate — the claim was written after reading the first ten lines of
+    // `initialization_stage` and stopping before the call. The
+    // `calls-no-Rumoca-function` check below exists because of that.
     (
         "Events",
         None,
-        "HRW derives this tab from the DAE; no Rumoca phase runs here",
+        "HRW renders this tab from `dae.events`; no Rumoca function is called",
     ),
 ];
 
