@@ -1029,8 +1029,6 @@ pub struct App {
     // Variable name -> the class that declares it, when that is not the
     // specimen. See `build_declaring_classes`.
     declaring_classes: HashMap<String, String>,
-    // "Reveal identifiers" — expand every tree path leading to a variable.
-    expand_trackable: bool,
 
 
     // ---- 14. Pending stage from hrw:// link ----
@@ -1517,7 +1515,6 @@ impl App {
             cached_purpose_notes: HashMap::new(),
             known_variables: None,
             declaring_classes: HashMap::new(),
-            expand_trackable: false,
             pending_stage: None,
             pending_sub_view: None,
             pending_live_debug: None,
@@ -3908,22 +3905,19 @@ impl App {
                         Some(value) => {
                             let label = self.model.as_deref().unwrap_or("model");
                             let prev = self.previous_stage_value();
-                            // Finding trackable names in a large IR means
-                            // opening nodes at random. This opens exactly
-                            // the paths that lead to one.
-                            ui.horizontal(|ui| {
-                                ui.checkbox(
-                                    &mut intent.expand_trackable,
-                                    "Reveal identifiers",
-                                ).on_hover_text(
-                                    "Expand every path leading to a variable of \
-                                     this model. Underlined values can be \
-                                     right-clicked to track.",
-                                );
-                                if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
-                                    ui.weak(format!("({n} in this model)"));
-                                }
-                            });
+                            // **The count, without the checkbox that used to sit
+                            // beside it.** "Reveal identifiers" was removed
+                            // 2026-08-04 (`DECISIONS.md`). The count is a plain
+                            // fact about the model and costs one line, so it
+                            // stays; finding a *particular* identifier is what
+                            // Follow does, and it scrolls to the match instead
+                            // of opening every path that might contain one.
+                            if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
+                                ui.weak(format!(
+                                    "{n} identifier(s) in this model \u{2014} right-click an \
+                                     underlined value to follow one",
+                                ));
+                            }
                             // A node link that does not resolve must SAY so. The tree
                             // otherwise expands as far as it can and stops, which looks
                             // like "it opened something" rather than "that path is
@@ -3943,7 +3937,7 @@ impl App {
                                 tracked: self.tracked_identifier.as_deref(),
                                 known_variables: self.known_variables.as_ref(),
                                 declaring_classes: Some(&self.declaring_classes),
-                                expand_trackable: intent.expand_trackable,
+
                                 jump_to: jump_to.as_deref(),
                                 highlight: self.context.jump_highlight.as_deref(),
                             };
@@ -3997,7 +3991,7 @@ impl App {
                         tracked: self.tracked_identifier.as_deref(),
                         known_variables: self.known_variables.as_ref(),
                         declaring_classes: Some(&self.declaring_classes),
-                        expand_trackable: intent.expand_trackable,
+
                         // A navigated library class is a different IR, so a
                         // jump target addressed into the stage tree would
                         // land on an unrelated node or nothing at all. The
@@ -5668,6 +5662,12 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // the haystack bigger. Here the target is already known: the
                 // user said which identifier they are following, so the app
                 // should not also make them find it.
+                //
+                // **That checkbox was removed 2026-08-04**, and this is what it
+                // was superseded by. The supersession had been recorded here for
+                // days while the control stayed on screen — worth noting, because
+                // a comment saying "X failed" is not the same as deleting X, and
+                // only Doug using it closed the gap.
                 let n = self.context.jump_matches.len();
                 if n == 0 {
                     // Meaningful, not a failure — the same information as
@@ -6454,10 +6454,7 @@ impl App {
         // `hrw_link_action` is deliberately *not* in here: the left panel
         // collects it and it is acted on immediately above, before the central
         // panel renders, so it is not deferred state.
-        let mut intent = FrameIntent {
-            expand_trackable: self.expand_trackable,
-            ..FrameIntent::default()
-        };
+        let mut intent = FrameIntent::default();
 
         // `CentralPanel` fills all remaining space after top/bottom/left/right
         // panels have claimed theirs. This is where the main content lives.
@@ -6477,7 +6474,6 @@ impl App {
         // "collect intent, act later" pattern used throughout this function.
         let FrameIntent {
             tree: tree_actions,
-            expand_trackable,
             canvas_capture,
             want_stage_ask,
             go_back,
@@ -6489,7 +6485,6 @@ impl App {
         } else if go_back {
             self.nav.pop();
         }
-        self.expand_trackable = expand_trackable;
         // The tree is the only producer of these three; earlier revisions
         // declared parallel locals for other views to write into, but nothing
         // ever did, so `nav_to.or(tree_actions.nav_to)` was always the latter.
@@ -6530,7 +6525,8 @@ impl App {
         // it any longer would re-scroll every frame — pinning the view the way
         // the source view's reverse-tracking scroll did before it was gated on
         // change — and would keep those headers forced open, which is the
-        // "Reveal identifiers" complaint all over again.
+        // "Reveal identifiers" complaint all over again — which is literally
+        // what removed that checkbox on 2026-08-04.
         self.context.jump_target = None;
 
         // ---- End of frame: publish diagnostics ----
@@ -6663,8 +6659,6 @@ struct FrameIntent {
     /// What the IR tree wants: capture, debug-capture, navigate, track.
     tree: tree::TreeActions,
     /// Copied out of `self` because the stage-tree block holds an immutable
-    /// borrow of `self` (via `current_stage`); written back at the end.
-    expand_trackable: bool,
     /// A spy-plot or incidence block was clicked — treated identically to a
     /// tree-node click for capture purposes.
     canvas_capture: Option<Vec<Seg>>,
@@ -7479,7 +7473,6 @@ impl App {
             cached_purpose_notes: HashMap::new(),
             known_variables: None,
             declaring_classes: HashMap::new(),
-            expand_trackable: false,
             pending_live_debug: None,
             live_breakpoint_armed: false,
             pending_stage: None,

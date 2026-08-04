@@ -2112,3 +2112,59 @@ link which caused all of the changes on the RHS is not being shown … scrolls t
 position below the link"* — that last one was **two bugs in one sentence**, and reading
 it as one is why attempt 3 shipped. **A report that separates its symptoms deserves a fix
 that separates its causes.**
+
+---
+
+## 2026-08-04 — "Reveal identifiers" deleted, and the rule it leaves behind
+
+> **A view option must not mutate state the user owns.**
+
+Doug, walking `dae-construction.md`: *"if I check the box to reveal identifiers, I can't
+uncheck the box to restore a tree to the condition it had been in before checking the box."*
+
+### The mechanism, which the code had half-noticed
+
+`CollapsingHeader::default_open` is ignored once egui has remembered a header's state, so the
+toggle used `open(Some(true))` — which **writes** *open* into that memory. Unticking therefore
+returned **control** and not **state**: you could collapse things again, by hand, one at a
+time, with no record of which had been closed before. `tree.rs` even said *"an explicit mode
+the user turns off to get control back"* — accurate, and it never noticed that control is not
+what the user wanted back.
+
+**A checkbox promises reversibility.** This one was a one-way door in a toggle's clothing, and
+that mismatch is the defect independent of whether the feature was useful.
+
+### It was already recorded as failed, twice, and shipped anyway
+
+- `app.rs` — *"'Reveal identifiers' tried to solve this by expanding every path that leads to
+  **any** trackable name — which surfaces N nodes to reveal one, making the haystack bigger."*
+  Follow → jump-to-match replaced it.
+- `tree.rs` — *"which is exactly how 'Reveal identifiers' failed: the node was revealed and the
+  user still could not find it."*
+- A third site names it as the anti-pattern to avoid: releasing forced-open headers after a
+  jump, so as not to repeat *"the 'Reveal identifiers' complaint all over again."*
+
+**Three passes routed around it and none removed it.** That is the finding worth keeping: **a
+comment saying "X failed" is not the same as deleting X**, and a superseded control left on
+screen still costs the user a wrong turn. Doug's report is the third record of this defect and
+the first from use.
+
+### What went, what stayed
+
+Gone: the checkbox, `App::expand_trackable`, the `FrameIntent` round trip, `TreeOptions::
+expand_trackable`, and `collect_trackable_ancestors`. `force_open` **stays** — `jump_to` still
+needs it, for exactly one frame, which is the rationing the rule implies.
+
+Kept: the identifier **count**, now a plain label that also says what to do
+(*"right-click an underlined value to follow one"*). It is a fact about the model, it costs one
+line, and it was never the part that misbehaved.
+
+`MAX_APP_FIELDS` lowered 58 → 57. **A ratchet only ratchets if removals tighten it**; leaving
+the bound would bank a free slot for the next field to take without argument.
+
+### Where the rule applies next
+
+Anything that "shows more" by **forcing** rather than **filtering**. A filter is a rendering
+choice and is reversible for free; a force writes into state the user owns and cannot be undone
+without snapshotting it. If revealing identifiers is ever wanted again, it should hide
+non-matching rows rather than open matching ones.

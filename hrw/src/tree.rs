@@ -107,9 +107,6 @@ pub struct TreeOptions<'a> {
     /// specimen. Lets "Go to definition" work from a variable name, not only
     /// from a DefId field.
     pub declaring_classes: Option<&'a HashMap<String, String>>,
-    /// Expand every path that leads to a trackable name, so they can be found
-    /// without hunting through collapsed nodes.
-    pub expand_trackable: bool,
     /// Scroll this node into view and open everything above it, for one frame.
     ///
     /// The "jump to the followed identifier" control. Set for a single frame:
@@ -158,9 +155,6 @@ pub fn tree_ui(
     if let Some(t) = opts.tracked {
         collect_tracked_ancestors(value, t, &mut expansion.default_open);
     }
-    if opts.expand_trackable && opts.known_variables.is_some() {
-        collect_trackable_ancestors(value, &opts, &mut expansion.force_open);
-    }
     // Every ancestor of the jump target, so the row exists to be scrolled to.
     // `force_open`, not `default_open`: the whole point is to open headers the
     // user has already collapsed, and `default_open` is ignored once egui has
@@ -181,51 +175,31 @@ pub fn tree_ui(
 ///
 /// The distinction is not cosmetic. `CollapsingHeader::default_open` applies
 /// only the **first** time a header is shown; once egui has stored that
-/// header's state — frame one — it is ignored. So a set computed later, such as
-/// when the user ticks "Reveal identifiers", cannot move anything through
-/// `default_open`. Forcing with `open(Some(true))` works, but takes the header
-/// out of the user's hands for as long as it applies.
+/// header's state — frame one — it is ignored. So a set computed later cannot
+/// move anything through `default_open`. Forcing with `open(Some(true))` works,
+/// but **writes** the open state into egui's memory, which is why forcing is
+/// rationed to things that last one frame.
 ///
-/// So: the reveal toggle *forces*, because it is an explicit mode the user
-/// turns off to get control back. Tracking only *suggests*, because it persists
-/// and you must still be able to collapse things while it is on.
+/// **"Reveal identifiers" was the counter-example, removed 2026-08-04.** It
+/// forced open every path to any variable and stayed on until unticked — and
+/// unticking could not put the tree back, because the forcing had already
+/// overwritten what the user had collapsed. Doug: *"if I check the box to reveal
+/// identifiers, I can't uncheck the box to restore a tree to the condition it
+/// had been in before checking the box."* The rule it produced is in
+/// `DECISIONS.md`: **a view option must not mutate state the user owns.**
+///
+/// So `force_open` now serves only `jump_to`, which lasts a single frame:
+/// afterwards the headers are open on their own and the user may collapse them.
+/// Tracking only *suggests* via `default_open`, because it persists and you must
+/// still be able to collapse things while it is on.
 #[derive(Default)]
 struct Expansion {
     /// Opened if the header has no remembered state — the path to a tracked
     /// identifier.
     default_open: HashSet<*const Value>,
-    /// Opened regardless of remembered state — "Reveal identifiers".
+    /// Opened regardless of remembered state. **Only `jump_to` uses this now**,
+    /// and only for one frame — see the note above on why forcing is rationed.
     force_open: HashSet<*const Value>,
-}
-
-/// Mark every node whose subtree contains a trackable name, so those paths can
-/// be opened.
-///
-/// Mirrors [`collect_tracked_ancestors`], but keyed on "is a variable of the
-/// compiled model" rather than on one particular identifier.
-fn collect_trackable_ancestors(
-    value: &Value,
-    opts: &TreeOptions<'_>,
-    ancestors: &mut HashSet<*const Value>,
-) -> bool {
-    let dominated = match value {
-        // `any` would short-circuit and leave later siblings' paths closed, so
-        // fold to visit every child.
-        Value::Object(map) => map.iter().fold(false, |found, (k, v)| {
-            let here = trackable_name(k, v, opts).is_some()
-                || collect_trackable_ancestors(v, opts, ancestors);
-            found || here
-        }),
-        Value::Array(arr) => arr.iter().fold(false, |found, v| {
-            let here = collect_trackable_ancestors(v, opts, ancestors);
-            found || here
-        }),
-        _ => false,
-    };
-    if dominated {
-        ancestors.insert(value as *const Value);
-    }
-    dominated
 }
 
 // Render one node of the JSON tree recursively.
@@ -372,7 +346,8 @@ fn node_ui(
 /// **Centred**, not merely made visible. A match scrolled to the very bottom
 /// edge is technically on screen and practically still lost — which is exactly
 /// how "Reveal identifiers" failed: the node was revealed and the user still
-/// could not find it.
+/// could not find it. That checkbox was removed on 2026-08-04; this is the
+/// behaviour that replaced it.
 fn scroll_if_jump_target(is_target: bool, resp: &egui::Response) {
     if is_target {
         resp.scroll_to_me(Some(egui::Align::Center));

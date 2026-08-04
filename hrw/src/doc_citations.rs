@@ -550,7 +550,13 @@ Some prose.
         /// neither, so there is no pane to push it into. This is the intended outcome of
         /// a ratchet, not a defeat of one — it forced the question and the answer was
         /// recorded rather than assumed.
-        const MAX_APP_FIELDS: usize = 58;
+        ///
+        /// **Lowered to 57 on 2026-08-04**, when `expand_trackable` went with the
+        /// "Reveal identifiers" checkbox (`DECISIONS.md`). **A ratchet only ratchets if
+        /// removals tighten it**; leaving the bound at 58 would have banked a free slot
+        /// for the next field to occupy without argument, which is the whole thing this
+        /// test exists to prevent.
+        const MAX_APP_FIELDS: usize = 57;
 
         let src = std::fs::read_to_string(
             Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
