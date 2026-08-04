@@ -199,6 +199,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > His governing statement, which is a direction rather than a specification: *"I will probably
 > be best served if you have more information about how I'm using HRW rather than less."*
 >
+> **Read #61 with it** — *quizzes: the same visualizations run backwards*, raised minutes
+> later and answering the question #60 left open (should HRW ever **prompt**? yes, and this is
+> the form). #60 is the passive half, #61 the active one: observation says what Doug *looked
+> at*, a wrong quiz answer says what he *believes*. Neither is designed before the tours are
+> walked.
+>
 > **Also expect questions about the tours themselves.** They are the live work; see the
 > education entry below.
 

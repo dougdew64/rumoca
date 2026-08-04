@@ -3435,3 +3435,77 @@ entry and this idea are two halves of one loop**, written the same evening.
 **Do not design this before walking the existing tours.** Doug's reason is the right one: the
 experience of using `dae-construction.md` and `matching.md` is what will say which signals
 actually matter, and building to a guess would produce the wrong instrument confidently.
+
+---
+
+## 61. Quizzes — the same visualizations, run backwards
+
+**Raised by Doug, 2026-08-03**, immediately after #60 and as its natural completion:
+
+> *"Perhaps the same HRW visualizations which are being used now to deliver information can
+> also be used for convenient quizzes. For example, there might be a quiz which requires that I
+> correct on the next cell in a matrix that will be impacted by a matching algorithm. Along with
+> the questions which I ask you here, my answers during those quizzes would be a measurement
+> for you."*
+
+**It makes sense, and "quiz" undersells it.** Three properties make this different in kind from
+putting questions in an app.
+
+### 1. HRW already holds the answer key, and it cannot rot
+
+The matching animation's frames *are* the ground truth: "which cell next?" is literally the
+content of frame *n+1*. So a question is **self-authoring** (any specimen with a trace
+generates them), **self-grading** (an exact index comparison, no heuristic and no answer key to
+maintain), and **incapable of going stale**, because the key is the algorithm rather than a
+transcription of it. That last point is the one paper cannot match — and it is the same
+property that makes the fixture tours' numbers trustworthy.
+
+### 2. It inverts the composition primitive rather than adding one
+
+Today Doug points at a thing to **ask** about it. Here he points at a thing to **answer**. Same
+gesture, same noun, opposite direction — and the primitives are frozen
+(`CLAUDE.md`), so **this must not become a third primitive.** It is the existing point-at with
+a different consumer.
+
+**The machinery is further along than it looks:** `incidence_view.rs` already hit-tests cells
+(`hovered_cell`, `response.clicked()` — lines 308 and 443). What is missing is the *question*
+and the *grading*, not the pointing.
+
+### 3. It resolves the question #60 left open
+
+#60 recorded *"whether HRW should prompt"* as deliberately undecided and warned against
+smuggling it in with passive observation. **Doug has now answered it**: yes, and this is the
+form. So #61 is not a separate feature — it is #60's active half, and the two should be read
+together.
+
+**The signals differ in kind, and that is the point.** Passive observation says what Doug
+*looked at*. A wrong quiz answer says what he *believes*, localized to one algorithm step.
+That is the more diagnostic of the two by a wide margin, and it is the only one that can be
+wrong.
+
+### Where this beats paper, and where it does not
+
+**The dividing line is selection versus construction.** HRW wins where the answer is a *choice
+over a structure already on screen*: which cell, which equation fails, which block is coupled,
+which variable to tear, what order to evaluate. Paper still wins where the answer is *built*:
+differentiate this constraint, write the residual, derive the Jacobian entry. **A quiz that
+tries to accept a constructed answer would be re-implementing a worse text editor**, and the
+line should be held.
+
+### The risk worth designing against
+
+**"Predict the next frame" can be passed by pattern-matching the animation.** A learner who has
+watched enough matching runs can anticipate the mechanics without holding the concept — and
+would score well while learning little, which is the worst outcome available here because it
+would also mislead the measurement.
+
+Two mitigations, both cheap: prefer questions whose mechanical answer *requires* the concept
+(*"which equation will fail to find an augmenting path?"* cannot be answered by watching, only
+by understanding rank deficiency), and ask for the **reason** alongside the click, which is a
+question Claude can grade even though HRW cannot.
+
+### Not before the tours are walked
+
+Same constraint as #60, and Doug set it: the experience of using `dae-construction.md` and
+`matching.md` is what will say which steps are worth asking about. **A quiz on a step nobody
+found confusing measures nothing.**
