@@ -1725,10 +1725,15 @@ impl WorkerState {
                             "Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0
                         ));
 
-                        // Instantiate and Typecheck piggyback on the resolved tree —
-                        // they need it to resolve component types and dimensions —
-                        // but they are their own phases and bracket themselves.
-                        let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source, &log);
+                        // **Instantiate and Typecheck are not run here any more**
+                        // (2026-08-04). HRW used to run them itself for their two
+                        // tabs, and the session's compile below ran them *again* on
+                        // its way to the flat model — so the tabs showed one
+                        // execution and everything downstream came from another.
+                        // Their artifacts now come from the compile, through
+                        // `rumoca_compile::observe`, and are turned into stages
+                        // alongside Flatten and DAE construction.
+                        let (i, t) = (Stage::default(), Stage::default());
                         // **The connection replay is gone** (2026-08-04). Connection
                         // frames now arrive from the compile below, through
                         // `rumoca-phase-flatten`'s capture scope. Nothing happens
@@ -1881,6 +1886,9 @@ impl WorkerState {
                 // below, not a second one configured to look like it.
                 rumoca_phase_flatten::connections::trace::start_capture();
                 rumoca_phase_dae::start_pre_lowering_capture();
+                // And the two overlays, so the Instantiate and Typecheck tabs show
+                // this compile rather than a separate one HRW ran for them.
+                rumoca_compile::observe::start_typed_model_capture();
                 // Uncached, for the reason spelled out in `simulate` above: a
                 // cached result means the phases did not run, so nothing can be
                 // observed happening — breakpoints, tracing, or timing.
@@ -1893,6 +1901,7 @@ impl WorkerState {
                 connection_frames =
                     rumoca_phase_flatten::connections::trace::take_capture();
                 let pre_frames = rumoca_phase_dae::take_pre_lowering_capture();
+                let typed = rumoca_compile::observe::take_typed_model_capture();
 
                 drain_traces(&log);
                 drain_output(&mut output_capture, &log);
@@ -1915,12 +1924,63 @@ impl WorkerState {
                 // reader will misread is not reporting, it is misreporting.
                 log(
                     LogLevel::Info,
-                    "That call re-ran resolve, instantiate and typecheck on its way to \
-                     flatten and DAE construction, which is why their traces appear \
-                     twice. Flatten and DAE construction below time an *extraction* \
-                     from its result; Structural onward is real work."
+                    "Instantiate, Typecheck, Flatten and DAE construction all ran inside \
+                     that call. Their entries below time HRW turning each captured \
+                     artifact into a view, not the phase itself; Structural onward is \
+                     real work."
                         .to_owned(),
                 );
+
+                // **Instantiate and Typecheck, extracted from the compile above.**
+                //
+                // Bracketed here rather than before it, because here is where HRW
+                // does the work — turning a captured overlay into a stage. The
+                // phases themselves ran inside the call, which the Info line below
+                // says. Timing them where they *appear* rather than where they
+                // *ran* was the last piece of the same inaccuracy.
+                let t_inst = Instant::now();
+                log(LogLevel::StageStart, "Instantiate".to_owned());
+                instantiate = match &typed.instantiated {
+                    Some(o) => Stage::from_ser(o),
+                    None => Stage::info("not reached (the compile stopped before instantiate)"),
+                };
+                log(LogLevel::StageEnd, format!(
+                    "Instantiate ({:.1}ms)", t_inst.elapsed().as_secs_f64() * 1000.0
+                ));
+
+                let t_tc = Instant::now();
+                log(LogLevel::StageStart, "Typecheck".to_owned());
+                typecheck = match (&typed.typechecked, typed.typecheck_diagnostics.is_empty()) {
+                    (Some(o), _) => Stage::from_ser(o),
+                    // Typecheck failed: the diagnostics are the artifact, and the
+                    // instantiated overlay is the last good state to show beside them.
+                    (None, false) => {
+                        let mut json = typed
+                            .instantiated
+                            .as_ref()
+                            .map(ser_value)
+                            .unwrap_or_else(|| serde_json::json!({}));
+                        let n = typed.typecheck_diagnostics.len();
+                        let diag_json =
+                            diagnostics_to_json(&typed.typecheck_diagnostics, &source);
+                        json.as_object_mut().unwrap().insert("error".to_owned(), serde_json::json!({
+                            "kind": "typecheck",
+                            "message": format!("Typecheck reported {n} diagnostic(s)"),
+                            "diagnostics": diag_json,
+                            "guidance": "Typecheck validates types, dimensions, and units across \
+                                the instantiated model. The overlay above is partial \u{2014} it \
+                                reflects work completed before the error.",
+                        }));
+                        Stage::recovered(json, format!("typecheck: {n} diagnostic(s)"))
+                    }
+                    (None, true) => {
+                        Stage::info("not reached (the compile stopped before typecheck)")
+                    }
+                };
+                log(LogLevel::StageEnd, format!(
+                    "Typecheck ({:.1}ms)", t_tc.elapsed().as_secs_f64() * 1000.0
+                ));
+
 
                 let result = report.requested_result.as_ref();
 
@@ -2919,61 +2979,6 @@ fn structural_error_to_json(
         }),
     }
 }
-
-/// Convert an `InstantiateError` into structured JSON for UI rendering.
-fn instantiate_error_to_json(e: &rumoca_phase_instantiate::InstantiateError) -> serde_json::Value {
-    use rumoca_phase_instantiate::InstantiateError;
-    let msg = format!("{e}");
-    let mut json = serde_json::json!({
-        "kind": "instantiate",
-        "message": msg,
-    });
-    let obj = json.as_object_mut().unwrap();
-    match e {
-        InstantiateError::ModelNotFound(name)
-        | InstantiateError::ModelNotFoundWithSpan { name, .. } => {
-            obj.insert("error_code".to_owned(), "EI001".into());
-            obj.insert("detail".to_owned(), format!("Model `{name}` could not be found in the loaded libraries.").into());
-            obj.insert("guidance".to_owned(), "Check that the model name is spelled correctly, the package is loaded, \
-                and the model is exported (not encapsulated).".into());
-        }
-        InstantiateError::TypeNotFound { name, .. } => {
-            obj.insert("error_code".to_owned(), "EI030".into());
-            obj.insert("detail".to_owned(), format!("Type `{name}` is referenced but not defined.").into());
-            obj.insert("guidance".to_owned(), "Check that the type exists in the loaded libraries and is \
-                accessible from the model's scope.".into());
-        }
-        InstantiateError::InvalidModPath { path, .. } => {
-            obj.insert("error_code".to_owned(), "EI002".into());
-            obj.insert("detail".to_owned(), format!("Modification path `{path}` does not correspond to a valid element.").into());
-            obj.insert("guidance".to_owned(), "Check the component path — it may reference a non-existent \
-                sub-component or use an incorrect dotted path.".into());
-        }
-        InstantiateError::ModTypeMismatch { path, expected, found, .. } => {
-            obj.insert("error_code".to_owned(), "EI003".into());
-            obj.insert("detail".to_owned(), format!("Modification for `{path}` expects type `{expected}` but found `{found}`.").into());
-            obj.insert("guidance".to_owned(), "The modification value type must match the component's declared type.".into());
-        }
-        InstantiateError::StructuralParamError { name, msg: param_msg, .. } => {
-            obj.insert("error_code".to_owned(), "EI004".into());
-            obj.insert("detail".to_owned(), format!("Structural parameter `{name}` could not be evaluated: {param_msg}").into());
-            obj.insert("guidance".to_owned(), "Structural parameters (like array sizes) must be evaluable at \
-                compile time. Check that their values are constant expressions.".into());
-        }
-        InstantiateError::ArrayDimMismatch { name, expected, found, .. } => {
-            obj.insert("error_code".to_owned(), "EI005".into());
-            obj.insert("detail".to_owned(), format!("Array `{name}` was declared with dimension {expected} but found {found}.").into());
-            obj.insert("guidance".to_owned(), "Array dimensions must agree between the declaration and the \
-                modification or binding equation.".into());
-        }
-        _ => {
-            obj.insert("guidance".to_owned(), "Instantiation expands a model's class hierarchy into a flat \
-                component tree. Check that all component types are declared and modifications are valid.".into());
-        }
-    }
-    json
-}
-
 /// Convert a `SolveModelLowerError` into structured JSON for UI rendering.
 fn solve_lower_error_to_json(e: &rumoca_phase_solve::SolveModelLowerError) -> serde_json::Value {
     use rumoca_phase_solve::SolveModelLowerError;
@@ -3073,101 +3078,6 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
             .collect::<Vec<_>>(),
     })
 }
-
-/// Instantiate the model directly from the resolved tree and serialize the
-/// resulting `InstanceOverlay` for the Instantiate tab; then run the instanced
-/// typecheck, which enriches the *same* overlay in place (evaluated dimensions,
-/// resolved component types), and serialize it again for the Typecheck tab.
-/// The cross-stage diff between the two shows exactly what typecheck contributed.
-///
-/// Rumoca API:
-/// - `instantiate_model(tree, name)` — creates an `InstanceOverlay` (the model
-///   with all inherited/extended components resolved and enumerated).
-/// - `typecheck_instanced(tree, &mut overlay, name)` — enriches the overlay
-///   in place with type information (dimensions, component types). The `&mut`
-///   means it MODIFIES the overlay — which is why we serialize it BEFORE
-///   typecheck (for the Instantiate tab) and AFTER (for the Typecheck tab).
-///
-/// *(This doc block sat above `record_connection_frames` until 2026-08-01, because that
-/// function was inserted between it and its own -- and a doc comment attaches to the NEXT
-/// item, so it had been silently documenting the wrong function. Clippy's
-/// `doc_lazy_continuation` was pointing at it the whole time.)*
-///
-/// `source` is the specimen text, so a diagnostic's labels can be reported as line
-/// numbers rather than byte offsets (ideas #45).
-fn instantiate_and_typecheck(
-    tree: &rumoca_ir_ast::ClassTree,
-    model_name: &str,
-    source: &str,
-    log: &dyn Fn(LogLevel, String),
-) -> (Stage, Stage) {
-    // **Two brackets, not one.** These are two Rumoca phases and two HRW tabs, and
-    // they were logged as a single "Instantiate + Typecheck" entry -- so Typecheck
-    // had a tab whose timing could not be seen, and a reader counting phases in the
-    // log came up one short. Doug asked whether every Rumoca phase is accounted for;
-    // this was one of the two places it was not.
-    let t_inst = std::time::Instant::now();
-    log(LogLevel::StageStart, "Instantiate".to_owned());
-    match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
-        Ok(mut overlay) => {
-            let instantiate = Stage::from_ser(&overlay);
-            // **Drain inside the bracket.** Doug, 2026-08-04: *"rumoca trace log
-            // lines tend not to appear between our major phase start/end log
-            // lines."* Events are buffered until something drains them, so a drain
-            // placed after the bracket reports this phase's output under whatever
-            // comes next. Draining here is what puts a phase's trace *inside* the
-            // phase.
-            drain_traces(log);
-            log(LogLevel::StageEnd, format!(
-                "Instantiate ({:.1}ms)", t_inst.elapsed().as_secs_f64() * 1000.0
-            ));
-            let t_tc = std::time::Instant::now();
-            log(LogLevel::StageStart, "Typecheck".to_owned());
-            let typecheck = match rumoca_phase_typecheck::typecheck_instanced(tree, &mut overlay, model_name) {
-                Ok(()) => Stage::from_ser(&overlay),
-                Err(diags) => {
-                    let mut json = ser_value(&overlay);
-                    // Shared helper, so `labels` — the source location of each problem —
-                    // survives here as it does everywhere else. This block used to build
-                    // its own diagnostic JSON and drop them.
-                    let collected: Vec<rumoca_core::Diagnostic> = diags.iter().cloned().collect();
-                    let diag_json = diagnostics_to_json(&collected, source);
-                    let n = collected.len();
-                    json.as_object_mut().unwrap().insert("error".to_owned(), serde_json::json!({
-                        "kind": "typecheck",
-                        "message": format!("Typecheck reported {n} diagnostic(s)"),
-                        "diagnostics": diag_json,
-                        "guidance": "Typecheck validates types, dimensions, and units across the \
-                            instantiated model. The overlay above is partial — it reflects work \
-                            completed before the error.",
-                    }));
-                    Stage::recovered(json, format!("typecheck: {n} diagnostic(s)"))
-                }
-            };
-            drain_traces(log);
-            log(LogLevel::StageEnd, format!(
-                "Typecheck ({:.1}ms)", t_tc.elapsed().as_secs_f64() * 1000.0
-            ));
-            (instantiate, typecheck)
-        }
-        Err(e) => {
-            let msg = format!("{e}");
-            let error_json = instantiate_error_to_json(&e);
-            // Instantiate failed, so Typecheck never ran. Closing Instantiate's
-            // bracket and opening no Typecheck bracket is the accurate report:
-            // a phase that did not run should not appear to have taken 0.0ms.
-            drain_traces(log);
-            log(LogLevel::StageEnd, format!(
-                "Instantiate ({:.1}ms) \u{2014} failed", t_inst.elapsed().as_secs_f64() * 1000.0
-            ));
-            (
-                Stage::err_with_details(error_json, format!("instantiate failed: {msg}")),
-                Stage::info("not reached (instantiate failed)"),
-            )
-        }
-    }
-}
-
 /// Extract just the Flatten stage from the reachable-closure pipeline's
 /// `PhaseResult` (the flat IR on success, or per-phase status/error).
 ///
@@ -6012,8 +5922,10 @@ mod tests {
         // would fail on correct behaviour; requiring none-outside would too. What was
         // actually broken is that *none* landed inside, and that is what this checks.
         let bracket = |name: &str| -> Option<(usize, usize)> {
+            // `starts_with`, because a bracket may carry a qualifier after its
+            // name ("Rumoca compile — full pipeline; …").
             let start = logs.iter().position(|e| {
-                matches!(e.level, LogLevel::StageStart) && e.message == name
+                matches!(e.level, LogLevel::StageStart) && e.message.starts_with(name)
             })?;
             let end = logs[start..]
                 .iter()
@@ -6024,8 +5936,19 @@ mod tests {
             Some((start, end))
         };
 
+        // **Each phase's trace inside the bracket where that phase actually ran.**
+        //
+        // Which is not always the bracket named after it, and that is the point.
+        // Resolve runs in HRW, so its traces belong under `Resolve`. Typecheck runs
+        // *inside the session's compile* — HRW's `Typecheck` entry times turning the
+        // captured overlay into a view — so its traces belong under `Rumoca compile`.
+        //
+        // Asserting typecheck traces under the Typecheck bracket was right until
+        // 2026-08-04 and became wrong the moment HRW stopped running typecheck
+        // itself. The test failing on that change is the test working: it was
+        // pinned to where the work happens, and the work moved.
         for (phase, target) in [
-            ("Typecheck", "rumoca_phase_typecheck"),
+            ("Rumoca compile", "rumoca_phase_typecheck"),
             ("Resolve", "rumoca_phase_resolve"),
         ] {
             let (start, end) = bracket(phase)
