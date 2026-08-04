@@ -775,6 +775,9 @@ pub enum FromWorker {
         tarjan_frames: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
         /// Tearing decisions, one segment per coupled block.
         tearing_frames: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
+        /// The same three searches over the **index-reduced** system, which is a
+        /// different DAE — see `StructuralFrames`.
+        reduced_frames: StructuralFrames,
         /// `pre()`-lowering replay frames (idea #40). Recorded by re-running DAE
         /// construction over the flat model with an observer attached — the pass
         /// runs *inside* construction, so the finished DAE cannot be replayed.
@@ -1495,6 +1498,7 @@ impl WorkerState {
                     matching_frames: Vec::new(),
                     tarjan_frames: Vec::new(),
                     tearing_frames: Vec::new(),
+                    reduced_frames: StructuralFrames::default(),
                     pre_lowering_frames: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
@@ -1898,10 +1902,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat, structural_frames) = match &model {
+        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat, structural_frames, reduced_frames) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, StructuralFrames { matching: Vec::new(), tarjan: Vec::new(), tearing: Vec::new() })
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, StructuralFrames::default(), StructuralFrames::default())
             }
             Some(simple_name) => {
                 // A library model was named in full by the caller. Qualifying its
@@ -2197,10 +2201,10 @@ impl WorkerState {
                     });
                     (stage, frames)
                 };
-                let (index_reduction, ir_frames) = {
+                let (index_reduction, ir_frames, reduced_frames) = {
                     log(LogLevel::StageStart, "Index reduction".to_owned());
                     let t = Instant::now();
-                    let (stage, frames) = index_reduction_stage(result, &source);
+                    let (stage, frames, reduced) = index_reduction_stage(result, &source);
                     drain_traces(&log);
                     log(LogLevel::StageEnd, format!(
                         "Index reduction ({:.1}ms)", t.elapsed().as_secs_f64() * 1000.0
@@ -2209,7 +2213,7 @@ impl WorkerState {
                     emit(FromWorker::CompileProgress {
                         path: report_path.clone(), stages: bundle.clone(),
                     });
-                    (stage, frames)
+                    (stage, frames, reduced)
                 };
                 let initialization = run_stage!("Initialization", initialization_stage(result), initialization);
                 let events = run_stage!("Events", events_stage(result), events);
@@ -2226,7 +2230,7 @@ impl WorkerState {
                     _ => None,
                 };
 
-                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat, structural_frames)
+                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat, structural_frames, reduced_frames)
             }
         };
 
@@ -2261,6 +2265,7 @@ impl WorkerState {
             matching_frames: structural_frames.matching,
             tarjan_frames: structural_frames.tarjan,
             tearing_frames: structural_frames.tearing,
+            reduced_frames,
             pre_lowering_frames: pre_frames,
             connection_frames,
             library_source,
@@ -2559,6 +2564,12 @@ fn unmatched_unknown_locations(
 }
 
 /// Frames captured from one structural run, for the three animations it feeds.
+///
+/// **A compile produces two of these**, over two different systems: the raw DAE
+/// (the Structural tab) and the index-reduced one (the Index Reduction tab). Keeping
+/// them apart is not tidiness — on `Drivetrain` the two differ by 97 equations
+/// against 20, so frames from one would address rows the other does not have.
+#[derive(Default, Clone)]
 pub struct StructuralFrames {
     pub matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
     pub tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
@@ -2646,9 +2657,13 @@ fn structural_stage(
 fn index_reduction_stage(
     result: Option<&PhaseResult>,
     source: &str,
-) -> (Stage, Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>) {
+) -> (
+    Stage,
+    Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+    StructuralFrames,
+) {
     if let Some(stage) = not_reached_stage(result) {
-        return (stage, Vec::new());
+        return (stage, Vec::new(), StructuralFrames::default());
     }
     let cr = unwrap_success(result);
     let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
@@ -2658,7 +2673,29 @@ fn index_reduction_stage(
     );
     let mut reduced = cr.dae.clone();
     let (reduction, frames) = index_reduce_for_structural_analysis(&mut reduced);
-    match rumoca_phase_structural::build_structural_report(&reduced) {
+
+    // **Capture the reduced system's own structural run.**
+    //
+    // This tab shows matching, Tarjan and tearing over the *reduced* DAE — a
+    // different system from the Structural tab's, by 97 equations against 20 on
+    // `Drivetrain`. Its animations were the last place still re-deriving, and the
+    // reason the captured-frames constructors needed a fallback at all: there was
+    // simply no capture for this system to offer them.
+    //
+    // Opened **here**, after the `raw_ok` probe above, and not before: that probe
+    // runs a full `build_structural_report` on the *raw* DAE, and tearing's capture
+    // appends a segment per loop rather than overwriting — so an earlier scope would
+    // splice the raw system's loops into this one's.
+    rumoca_phase_structural::matching::start_capture();
+    rumoca_phase_structural::tarjan::start_capture();
+    rumoca_phase_structural::tearing::start_capture();
+    let report = rumoca_phase_structural::build_structural_report(&reduced);
+    let reduced_frames = StructuralFrames {
+        matching: rumoca_phase_structural::matching::take_capture(),
+        tarjan: rumoca_phase_structural::tarjan::take_capture(),
+        tearing: rumoca_phase_structural::tearing::take_capture(),
+    };
+    match report {
         Ok(rep) => {
             let inc = rumoca_phase_structural::build_incidence(&reduced);
             let note = if raw_ok {
@@ -2673,7 +2710,7 @@ fn index_reduction_stage(
                 &before_inc, &before_match_eq, Some(&cr.dae),
             ));
             obj.insert("reduction".to_owned(), reduction.to_json());
-            (Stage::ok_with_note(json, note), frames)
+            (Stage::ok_with_note(json, note), frames, reduced_frames)
         }
         Err(e) => {
             let msg = format!("{e}");
@@ -2688,7 +2725,7 @@ fn index_reduction_stage(
             ));
             obj.insert("reduction".to_owned(), reduction.to_json());
             obj.insert("error".to_owned(), structural_error_to_json(&e, source));
-            (Stage::recovered(json, format!("still singular after index reduction: {msg}")), frames)
+            (Stage::recovered(json, format!("still singular after index reduction: {msg}")), frames, reduced_frames)
         }
     }
 }
@@ -6612,6 +6649,56 @@ mod tests {
                  tracking loop boundaries",
             );
         }
+    }
+
+    /// **Two systems, two captures, and they do not fit each other.**
+    ///
+    /// The matching, Tarjan and tearing views render under Structural *and* Index
+    /// Reduction, over two different DAEs. `Drivetrain` is the specimen where that
+    /// gap is unmistakable: **97 equations raw, 20 after reduction.**
+    ///
+    /// Until 2026-08-04 the Index Reduction tab had no capture of its own, which is
+    /// why the captured constructors needed a re-deriving fallback at all — and, for
+    /// a few hours, why they were briefly handed the *raw* system's frames to draw
+    /// over the reduced matrix. Doug's question about those fallbacks is what
+    /// surfaced it.
+    ///
+    /// **Asserts they are genuinely different**, not merely both present: two
+    /// captures of the same system would be the bug wearing a second field.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn the_reduced_system_has_its_own_captured_frames() {
+        let FromWorker::Compiled { matching_frames, reduced_frames, .. } =
+            compile_specimen_shared("Drivetrain")
+        else {
+            panic!("expected Compiled");
+        };
+
+        let raw_n = matching_frames
+            .first()
+            .map(|f| f.match_eq.len())
+            .expect("the raw system was matched");
+        let reduced_n = reduced_frames
+            .matching
+            .first()
+            .map(|f| f.match_eq.len())
+            .expect("the reduced system was matched \u{2014} without this the Index \
+                     Reduction tab has nothing to animate and falls back to re-deriving");
+
+        assert!(
+            raw_n > reduced_n,
+            "index reduction should shrink Drivetrain's system; raw {raw_n}, reduced \
+             {reduced_n}. If they are equal, both captures describe the same run and \
+             the second is not being taken where I think it is.",
+        );
+
+        // The size check inside the animation constructors keys on exactly this, so
+        // state the invariant the UI depends on: neither frame set fits the other's
+        // matrix, which is why picking by stage is not optional.
+        assert_ne!(
+            raw_n, reduced_n,
+            "the two frame sets must not be interchangeable",
+        );
     }
 
     /// Simulation also emits log entries with timing.

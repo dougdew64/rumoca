@@ -686,6 +686,39 @@ at all** — verified, not assumed:
 done** (the first was CapacitorLoop's stale trace). The cost of checking is one grep;
 the cost of not checking is planning an arc around imaginary work.
 
+### Why the fallbacks existed, and why they no longer fire
+
+Doug: *"for from_incidence / record, I'm still not understanding why we have not yet
+solved whatever problems must be solved to eliminate the replay."* The answer turned
+out to be **one gap, not several**.
+
+The matching, Tarjan and tearing views render under **two** stages — Structural over
+the raw DAE, Index Reduction over the reduced one — and only the raw system had a
+capture. So on the Index Reduction tab there were no frames to offer, and the
+constructors fell back to re-deriving. That single gap was the whole reason a fallback
+path existed, *and* the reason tearing-under-index-reduction was still a replay: the
+same missing capture, seen from two directions.
+
+`index_reduction_stage` runs `build_structural_report` on the reduced DAE, so the fix
+was to open the same three scopes around **that** call. One placement detail matters:
+the scopes open *after* the function's `raw_ok` probe, which runs a full structural
+report on the raw DAE — and tearing's capture appends a segment per loop rather than
+overwriting, so an earlier scope would splice the raw system's loops into the reduced
+system's animation.
+
+`Drivetrain` is the specimen that makes this visible: **97 equations raw, 20 reduced**.
+`the_reduced_system_has_its_own_captured_frames` asserts the two captures genuinely
+differ, because two captures of the same system would be the bug wearing a second
+field.
+
+**What remains of the fallbacks.** `from_incidence` and `record` still exist and are
+still re-derivations, but nothing in normal operation reaches them: both stages now
+carry frames, and `structural_frames_for_stage` picks. They are a safety net for a
+capture that is absent or does not fit the matrix — and the size check that routes to
+them is itself the guard against the mismatch described below. Deleting them would
+turn a faithful re-derivation into an empty animation, which is a worse answer to
+"what did the algorithm do".
+
 ### "Eliminated" was an over-claim, corrected the same day
 
 Doug, reading the closing summary: *"my understanding is that from_incidence /

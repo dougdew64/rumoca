@@ -604,13 +604,16 @@ pub enum UiMode {
 struct CompileFrames {
     /// Index reduction's demotions and differentiations.
     index_reduction: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
-    /// The matching search that produced the BLT blocks.
-    matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
-    /// The SCC search over the dependency graph, from the same run.
-    tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
-    /// Tearing decisions, **one segment per coupled block** — a flat list would
-    /// splice several loops' reasoning into one animation.
-    tearing: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
+    /// Matching, Tarjan and tearing over the **raw** DAE — the Structural tab.
+    structural: crate::worker::StructuralFrames,
+    /// The same three over the **index-reduced** DAE — the Index Reduction tab.
+    ///
+    /// Two sets because they are two systems: on `Drivetrain` the reduced one has
+    /// 20 equations to the raw one's 97, so frames from either address rows the
+    /// other does not have. `structural_frames_for_stage` picks between them, in
+    /// one place, because choosing at each call site is the mistake already made
+    /// once here.
+    reduced: crate::worker::StructuralFrames,
     /// `pre()` lowering, on the Events stage (idea #40).
     pre_lowering: Vec<rumoca_phase_dae::PreLoweringFrame>,
     /// Connection expansion (MLS §9).
@@ -1793,7 +1796,7 @@ impl App {
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
                     identifier_index, index_reduction_frames, matching_frames,
-                    tarjan_frames, tearing_frames, dae,
+                    tarjan_frames, tearing_frames, reduced_frames, dae,
                     pre_lowering_frames, connection_frames, flat,
                     library_source,
                 } => {
@@ -1819,9 +1822,12 @@ impl App {
                     self.identifier_index = identifier_index;
                     self.frames = CompileFrames {
                         index_reduction: index_reduction_frames,
-                        matching: matching_frames,
-                        tarjan: tarjan_frames,
-                        tearing: tearing_frames,
+                        structural: crate::worker::StructuralFrames {
+                            matching: matching_frames,
+                            tarjan: tarjan_frames,
+                            tearing: tearing_frames,
+                        },
+                        reduced: reduced_frames,
                         pre_lowering: pre_lowering_frames,
                         connection: connection_frames,
                     };
@@ -1958,6 +1964,24 @@ impl App {
     /// `StageBundle::get()` for the ten real stages; Simulation returns the
     /// always-empty placeholder (the Simulation view is the plot pane, rendered
     /// specially — not the generic tree inspector).
+    /// **The captured frames for the system the current tab is showing.**
+    ///
+    /// The matching, Tarjan and tearing views render under **two** stages, over two
+    /// different DAEs: Structural analyses the raw system, Index Reduction the
+    /// reduced one. On `Drivetrain` those differ by 97 equations against 20, so a
+    /// frame set from the wrong tab addresses rows the matrix does not have.
+    ///
+    /// One accessor rather than the choice repeated at three call sites: this is
+    /// exactly the decision I got wrong once already by fixing it for tearing and
+    /// not carrying the reasoning to the other two.
+    fn structural_frames_for_stage(&self) -> &crate::worker::StructuralFrames {
+        if self.stage == StageKind::IndexReduction {
+            &self.frames.reduced
+        } else {
+            &self.frames.structural
+        }
+    }
+
     fn current_stage(&self) -> &Stage {
         match self.stage {
             StageKind::Simulation => &self.simulation,
@@ -3267,11 +3291,12 @@ impl App {
     if self.stage_views.matching_anim.is_none() {
         let inc = self.stage_views.incidence.as_ref().unwrap();
         self.stage_views.matching_anim = Some(
-            // Frames from the compile, not a re-derivation on tab open.
+            // Frames from the compile, and from the SYSTEM this tab is showing:
+            // Structural animates the raw DAE, Index Reduction the reduced one.
             inc.as_ref().map(|m| {
                 matching_anim::MatchingAnimation::from_captured_frames(
                     m,
-                    &self.frames.matching,
+                    &self.structural_frames_for_stage().matching,
                 )
             })
         );
@@ -3333,13 +3358,10 @@ impl App {
     if self.stage_views.tarjan_anim.is_none() {
         let inc = self.stage_views.incidence.as_ref().unwrap();
         self.stage_views.tarjan_anim = Some(
-            // Both searches from the compile, not re-derived on tab open.
+            // Both searches from the compile, and from the system this tab shows.
             inc.as_ref().and_then(|m| {
-                tarjan_anim::TarjanAnimation::from_captured_frames(
-                    m,
-                    &self.frames.matching,
-                    &self.frames.tarjan,
-                )
+                let f = self.structural_frames_for_stage();
+                tarjan_anim::TarjanAnimation::from_captured_frames(m, &f.matching, &f.tarjan)
             })
         );
     }
@@ -3474,12 +3496,16 @@ impl App {
             // HRW builds itself — the captured frames came from
             // `build_structural_report` on the raw one, so using them there would
             // animate a different system than the tab is showing.
-            let captured = (self.stage == StageKind::Structural)
-                .then_some(self.stages.structural.value.as_ref())
-                .flatten()
-                .and_then(|report| {
-                    tearing_anim::TearingAnimation::from_captured(report, &self.frames.tearing)
-                });
+            // Both the report and the frames must come from the same system: the
+            // Structural tab tears the raw DAE, Index Reduction the reduced one.
+            // Pairing one tab's report with the other's frames is the mismatch this
+            // whole set of captures exists to make impossible.
+            let captured = self.stages.get(self.stage).value.as_ref().and_then(|report| {
+                tearing_anim::TearingAnimation::from_captured(
+                    report,
+                    &self.structural_frames_for_stage().tearing,
+                )
+            });
             self.stage_views.tearing_anim = Some(match captured {
                 Some(anim) => Some(anim),
                 None => self.tearing_dae().map(|dae| tearing_anim::TearingAnimation::record(&dae)),
@@ -8626,6 +8652,7 @@ mod tests {
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
             tearing_frames: Vec::new(),
+            reduced_frames: crate::worker::StructuralFrames::default(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8659,6 +8686,7 @@ mod tests {
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
             tearing_frames: Vec::new(),
+            reduced_frames: crate::worker::StructuralFrames::default(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8695,6 +8723,7 @@ mod tests {
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
             tearing_frames: Vec::new(),
+            reduced_frames: crate::worker::StructuralFrames::default(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8732,6 +8761,7 @@ mod tests {
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
             tearing_frames: Vec::new(),
+            reduced_frames: crate::worker::StructuralFrames::default(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8767,6 +8797,7 @@ mod tests {
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
             tearing_frames: Vec::new(),
+            reduced_frames: crate::worker::StructuralFrames::default(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
