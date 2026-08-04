@@ -45,6 +45,52 @@ use crate::str_vec;
 ///
 /// Built from the `reduction` sub-object of the structural report JSON.
 /// The fields mirror the JSON structure but are strongly typed.
+/// Parse every element of a JSON list, **counting failures instead of dropping them**.
+///
+/// The distinction this exists to preserve, and which `filter_map` destroys:
+///
+/// - `key` **absent** → the compiler produced no such list. Empty result, no problem
+///   recorded. This is the common, legitimate case.
+/// - `key` **present but not a list**, or an **element that will not parse** → a
+///   defect. The element is still excluded (there is nothing to show for it), but a
+///   line is added to `problems` so the pane can say a row is missing.
+///
+/// Added by the 2026-08-04 tech-debt sweep. `filter_map` with `?` inside reads as
+/// careful defensive parsing and is **indistinguishable at the call site from silent
+/// data loss** — the same shape, whether the closure returns `None` because the entry
+/// does not qualify or because the parser did not understand it.
+fn parse_list<T>(
+    parent: &Value,
+    key: &str,
+    problems: &mut Vec<String>,
+    parse: impl Fn(&Value) -> Option<T>,
+) -> Vec<T> {
+    let Some(raw) = parent.get(key) else {
+        // Absent. The compiler had nothing to say here, which is not a problem.
+        return Vec::new();
+    };
+    let Some(arr) = raw.as_array() else {
+        problems.push(format!("`{key}` is present in the report but is not a list"));
+        return Vec::new();
+    };
+    let mut out = Vec::with_capacity(arr.len());
+    let mut bad = 0usize;
+    for element in arr {
+        match parse(element) {
+            Some(v) => out.push(v),
+            None => bad += 1,
+        }
+    }
+    if bad > 0 {
+        problems.push(format!(
+            "{bad} of {} `{key}` entries could not be read \u{2014} they are missing from \
+             the list below",
+            arr.len(),
+        ));
+    }
+    out
+}
+
 pub struct ReductionView {
     // Did the funnel complete successfully (all steps ran without error)?
     funnel_completed: bool,
@@ -63,6 +109,20 @@ pub struct ReductionView {
     differentiated_rows: Vec<DiffRow>,
     // Variables removed by symbolic substitution.
     eliminations: Vec<Elimination>,
+    /// **What the report contained that this view could not read.**
+    ///
+    /// Added 2026-08-04 by the tech-debt sweep. Every list above used to be built
+    /// with `filter_map`, so an entry the parser could not understand was **silently
+    /// dropped** — the pane then showed four differentiated rows where the compiler
+    /// had produced five, with nothing on screen where the fifth had been.
+    ///
+    /// **A partial report leaves no gap where the missing part was**, which is the
+    /// same defect the Context Bar had, and the reason `CLAUDE.md` requires a pane to
+    /// ship with a test. It matters most here of anywhere in HRW: `differentiated_rows`
+    /// *is* the Pantelides output, and the tech-debt file's own priority-1 example is
+    /// a case where reasoning about that list being empty would have been confidently
+    /// wrong.
+    unreadable: Vec<String>,
 }
 
 // An equation that was created by differentiating an existing constraint,
@@ -91,8 +151,22 @@ impl ReductionView {
     /// is already index-1 and no reduction was needed, or the structural
     /// phase failed before reaching index reduction).
     ///
-    /// The parsing is defensive: each field uses `?` (the try operator) or
-    /// `.unwrap_or_default()` to handle missing/malformed data gracefully.
+    /// # Missing is not the same as unreadable
+    ///
+    /// *(Rewritten 2026-08-04.)* This used to say the parsing was *"defensive: each
+    /// field uses `?` or `.unwrap_or_default()` to handle missing/malformed data
+    /// **gracefully**"* — and graceful meant **silent**. The two cases were collapsed:
+    ///
+    /// - **Absent** — the compiler produced no such list. Legitimate, extremely
+    ///   common (an already-index-1 model has no eliminations), and correctly shown
+    ///   as nothing.
+    /// - **Present but unreadable** — the list is there and this parser could not
+    ///   understand it, or one entry in it. That is a *defect*, and rendering it as
+    ///   an empty list tells the reader the compiler did nothing.
+    ///
+    /// They now go different ways: absent yields an empty list, unreadable is
+    /// recorded in [`unreadable`](Self::unreadable) and shown in the pane. **No entry
+    /// is ever dropped without a count of it appearing on screen.**
     pub fn from_report(report: &Value) -> Option<ReductionView> {
         let red = report.get("reduction")?;
 
@@ -106,50 +180,30 @@ impl ReductionView {
 
         let demoted_states = str_vec(red.get("demoted_states"));
 
-        let steps: Vec<(String, String)> = red
-            .get("steps")
-            .and_then(Value::as_array)
-            .map(|a| {
-                a.iter()
-                    .filter_map(|s| {
-                        let step = s.get("step")?.as_str()?.to_owned();
-                        let outcome = s.get("outcome")?.as_str()?.to_owned();
-                        Some((step, outcome))
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+        let mut unreadable = Vec::new();
 
-        let differentiated_rows: Vec<DiffRow> = red
-            .get("differentiated_rows")
-            .and_then(Value::as_array)
-            .map(|a| {
-                a.iter()
-                    .filter_map(|r| {
-                        Some(DiffRow {
-                            equation_origin: r.get("equation_origin")?.as_str()?.to_owned(),
-                            for_state: r.get("for_state")?.as_str()?.to_owned(),
-                        })
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+        let steps: Vec<(String, String)> = parse_list(red, "steps", &mut unreadable, |s| {
+            let step = s.get("step")?.as_str()?.to_owned();
+            let outcome = s.get("outcome")?.as_str()?.to_owned();
+            Some((step, outcome))
+        });
 
-        let eliminations: Vec<Elimination> = red
-            .get("eliminations")
-            .and_then(Value::as_array)
-            .map(|a| {
-                a.iter()
-                    .filter_map(|e| {
-                        let replacement = e.get("replacement")?.as_str()?;
-                        Some(Elimination {
-                            variable: e.get("variable")?.as_str()?.to_owned(),
-                            display: abbreviate_expr(replacement),
-                        })
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+        let differentiated_rows: Vec<DiffRow> =
+            parse_list(red, "differentiated_rows", &mut unreadable, |r| {
+                Some(DiffRow {
+                    equation_origin: r.get("equation_origin")?.as_str()?.to_owned(),
+                    for_state: r.get("for_state")?.as_str()?.to_owned(),
+                })
+            });
+
+        let eliminations: Vec<Elimination> =
+            parse_list(red, "eliminations", &mut unreadable, |e| {
+                let replacement = e.get("replacement")?.as_str()?;
+                Some(Elimination {
+                    variable: e.get("variable")?.as_str()?.to_owned(),
+                    display: abbreviate_expr(replacement),
+                })
+            });
 
         Some(ReductionView {
             funnel_completed,
@@ -160,6 +214,7 @@ impl ReductionView {
             steps,
             differentiated_rows,
             eliminations,
+            unreadable,
         })
     }
 
@@ -176,6 +231,19 @@ impl ReductionView {
             .id_salt("reduction_view")
             .auto_shrink(false)
             .show(ui, |ui| {
+                // **First, and in the error colour**: anything the report contained
+                // that this view could not read. It goes above the summary because a
+                // reader who scrolls past it would be reading an incomplete list
+                // believing it complete — which is the failure this records.
+                for problem in &self.unreadable {
+                    ui.colored_label(
+                        ui.visuals().error_fg_color,
+                        format!("\u{26a0} {problem}"),
+                    );
+                }
+                if !self.unreadable.is_empty() {
+                    ui.add_space(8.0);
+                }
                 self.summary(ui);
                 ui.add_space(8.0);
                 self.funnel_steps(ui);
@@ -653,5 +721,96 @@ mod tests {
         let view = ReductionView::from_report(&report).expect("should parse");
         assert_eq!(view.eliminations[0].variable, "z");
         assert_eq!(view.eliminations[0].display, "a * 2");
+    }
+
+    /// A minimal report with a well-formed `reduction` object, for the two tests
+    /// below to perturb. Kept tiny so the perturbation is the only difference.
+    fn report_with(rows: serde_json::Value) -> Value {
+        serde_json::json!({
+            "reduction": {
+                "funnel_completed": true,
+                "n_states_before": 2,
+                "n_states_after": 1,
+                "differentiated_rows": rows,
+            }
+        })
+    }
+
+    /// **A row the parser cannot read is reported, not dropped.**
+    ///
+    /// This is the defect the 2026-08-04 sweep found: every list here was built with
+    /// `filter_map`, so an entry missing a field vanished and the pane showed a
+    /// shorter list with **nothing where the missing row had been**. A partial report
+    /// leaves no gap, so nothing prompts a second look.
+    ///
+    /// It matters most on this view of any in HRW. `differentiated_rows` *is* the
+    /// Pantelides output, and `tech-debt.md`'s priority-1 example is a case where
+    /// reasoning from that list would have been confidently wrong.
+    #[test]
+    fn an_unreadable_row_is_counted_rather_than_silently_dropped() {
+        let report = report_with(serde_json::json!([
+            { "equation_origin": "eq[1]", "for_state": "phi" },
+            { "equation_origin": "eq[2]" },
+        ]));
+        let view = ReductionView::from_report(&report).expect("should parse");
+
+        assert_eq!(
+            view.differentiated_rows.len(),
+            1,
+            "the malformed row has nothing to render, so it is still excluded",
+        );
+        assert_eq!(
+            view.unreadable.len(),
+            1,
+            "but its absence must be REPORTED. Dropping it silently shows one \
+             differentiated equation where the compiler produced two, and the pane \
+             gives the reader no reason to doubt it",
+        );
+        assert!(
+            view.unreadable[0].contains("1 of 2") && view.unreadable[0].contains("differentiated_rows"),
+            "the notice must say how many and which list: {:?}",
+            view.unreadable[0],
+        );
+    }
+
+    /// **Absent is not unreadable.** The other half, and the one that keeps the
+    /// notice meaningful: an already-index-1 model has no differentiated rows at all,
+    /// and saying so in red would train the reader to ignore the warning.
+    #[test]
+    fn a_list_the_compiler_never_emitted_is_not_a_problem() {
+        let report = serde_json::json!({
+            "reduction": {
+                "funnel_completed": true,
+                "n_states_before": 1,
+                "n_states_after": 1,
+            }
+        });
+        let view = ReductionView::from_report(&report).expect("should parse");
+        assert!(view.differentiated_rows.is_empty());
+        assert!(
+            view.unreadable.is_empty(),
+            "a list the compiler never produced is not a parse failure: {:?}",
+            view.unreadable,
+        );
+
+        // And a well-formed list is likewise silent.
+        let clean = report_with(serde_json::json!([
+            { "equation_origin": "eq[1]", "for_state": "phi" },
+        ]));
+        let view = ReductionView::from_report(&clean).expect("should parse");
+        assert_eq!(view.differentiated_rows.len(), 1);
+        assert!(view.unreadable.is_empty(), "{:?}", view.unreadable);
+    }
+
+    /// A list that is present but is not a list at all is a defect too — the shape
+    /// changed under us, which is exactly what the fidelity suite exists to notice
+    /// and what this view would otherwise render as "nothing happened".
+    #[test]
+    fn a_list_that_is_not_a_list_is_reported() {
+        let report = report_with(serde_json::json!("eq[1], eq[2]"));
+        let view = ReductionView::from_report(&report).expect("should parse");
+        assert!(view.differentiated_rows.is_empty());
+        assert_eq!(view.unreadable.len(), 1, "{:?}", view.unreadable);
+        assert!(view.unreadable[0].contains("is not a list"), "{:?}", view.unreadable[0]);
     }
 }

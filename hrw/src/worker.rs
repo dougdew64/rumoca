@@ -3220,14 +3220,36 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
     }
     let cr = unwrap_success(result);
     let json = events_to_json(&cr.dae);
-    let total = json["summary"]
-        .as_object()
-        .map(|s| s.values().filter_map(serde_json::Value::as_u64).sum::<u64>())
-        .unwrap_or(0);
-    if total == 0 {
-        Stage::ok_with_note(json, "no events — this model is a smooth (continuous) system")
-    } else {
-        Stage::ok(json)
+    // **"Smooth" is a claim about the model, so it is only made when it was read.**
+    //
+    // Found by the 2026-08-04 sweep. This was `.unwrap_or(0)` followed by
+    // `if total == 0 { "no events — this model is a smooth (continuous)
+    // system" }` — so a summary that could not be read as an object produced the
+    // number zero, and zero produced a **positive physical assertion about Doug's
+    // model**. A model full of `when` clauses would have been labelled smooth, and
+    // nothing on screen would have hinted that the label came from a failure to read
+    // rather than from the compiler.
+    //
+    // The three cases are now distinct: countable and zero (smooth), countable and
+    // non-zero (events), and *not countable* (say so). See the accuracy rule at the
+    // top of `CLAUDE.md` — absence is stated, never filled.
+    match json["summary"].as_object() {
+        Some(s) => {
+            let total: u64 = s.values().filter_map(serde_json::Value::as_u64).sum();
+            if total == 0 {
+                Stage::ok_with_note(
+                    json,
+                    "no events \u{2014} this model is a smooth (continuous) system",
+                )
+            } else {
+                Stage::ok(json)
+            }
+        }
+        None => Stage::recovered(
+            json,
+            "the event summary could not be read, so HRW cannot say whether this \
+             model has events \u{2014} the tree below is the raw event IR",
+        ),
     }
 }
 

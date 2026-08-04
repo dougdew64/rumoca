@@ -428,6 +428,65 @@ test either. The point-at and follow rows are *labelled*, so an omission there i
 visible in a way the background's was not — which lowers the priority without
 removing it.
 
+## Sweep 2026-08-04 (comprehensive) — silent data loss in the JSON readers
+
+**Scope override, at Doug's direction:** *"comprehensive is an override for this sweep because
+we've changed a lot of code today and discovered some real problems today."* The standing rule
+is next-phase-scoped; this one is not, and the justification is recorded so the rule does not
+erode into "sweep everything, always."
+
+**Measured at the start** (compare the 2026-08-01 sweep): `app.rs` **10,598** lines (9,434 at
+the UI pause, 9,900 on 2026-08-03), `worker.rs` **8,466**, 583 `#[test]`s, **0** TODO/FIXME
+markers, **6** `#[allow]`/`#[expect]` attributes.
+
+### The finding: `filter_map` with `?` is silent data loss wearing defensive-parsing clothes
+
+Every JSON reader that turns a compiler report into a view was built this way. At the call site
+it reads as careful parsing. What it actually does is **drop any entry the parser does not
+understand, leaving no gap where it was** — the same shape as the Context Bar defect, which is
+why `CLAUDE.md` requires a pane to ship with a test.
+
+**Two cases were collapsed into one**, and separating them is the whole fix:
+
+| Case | Truth | Old behaviour | Now |
+|---|---|---|---|
+| key **absent** | the compiler produced nothing here | empty list | empty list ✅ |
+| key present, **not a list** | the report's shape changed | empty list ❌ | reported |
+| one **entry unreadable** | a row is missing | shorter list ❌ | reported with a count |
+
+**Measured spread: 31 `filter_map` sites** — `worker.rs` 12, `ic_plan_anim` 6, `bridge.rs` 3,
+`reduction_view` 3, `incidence_view` 3, and one each in `alias_anim`, `matching_anim`,
+`tarjan_anim`, `tearing_anim`. **Not all are fiction-generating** — some genuinely filter by a
+predicate, where returning `None` means *this entry does not qualify* rather than *I could not
+read it*. The two are indistinguishable from the call site, which is the deeper problem.
+
+**Fixed: `reduction_view.rs`**, via a `parse_list` helper that separates absent from unreadable
+and records what it could not read; the pane renders it **above the summary, in the error
+colour**, because a reader who scrolls past would be reading an incomplete list believing it
+complete. Three tests, including the negative case.
+
+**This view first, deliberately.** `differentiated_rows` *is* the Pantelides output, index
+reduction is the next link in Doug's chain, and the priority-1 example at the top of this file
+is a case where reasoning about that list would have been confidently wrong.
+
+**Also fixed: `events_stage` asserted smoothness from a failure to read.** `.unwrap_or(0)` on an
+unreadable summary produced zero, and zero produced *"no events — this model is a smooth
+(continuous) system"* — **a positive physical claim about Doug's model, manufactured from a
+parse failure.** A model full of `when` clauses would have carried that label with nothing on
+screen to hint the label came from HRW rather than the compiler. The three cases (countable and
+zero, countable and non-zero, not countable) are now distinct.
+
+### Outstanding from this finding
+
+- **The other 30 sites are unaudited.** Each needs the same question asked: *does `None` here
+  mean "does not qualify" or "could not read"?* Only the second is a defect.
+- **`parse_list` lives in `reduction_view.rs`** and should move somewhere shared once a second
+  view uses it. Not moved yet — one caller is not a pattern.
+- **The predicate-vs-parse ambiguity has no mechanical guard.** A `filter_map` that filters and
+  one that silently loses data are the same expression. Worth thinking about whether the parsing
+  ones can be made to look different at the call site, which is what `parse_list` does for one
+  file.
+
 ## Simulation never worked on a corpus model, and nothing could have found it
 
 **Found by Doug 2026-08-04**, pressing Run on `Modelica.Blocks.Continuous.SecondOrder`:
