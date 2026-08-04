@@ -172,23 +172,41 @@ impl TearingAnimation {
             return None;
         }
 
-        let names = |b: &serde_json::Value, key: &str| -> Vec<String> {
-            b.get(key)
-                .and_then(serde_json::Value::as_array)
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|v| v.as_str().map(str::to_owned))
-                        .collect()
-                })
-                .unwrap_or_default()
+        // **A name this parser cannot read is refused, not dropped** — the same rule
+        // as the count check above, for the same reason.
+        //
+        // `filter_map(|v| v.as_str())` silently removed any non-string member until
+        // the 2026-08-04 sweep, so a coupled block of four equations could be drawn
+        // and labelled as a block of three. Tearing is *about* which variables in a
+        // block get torn, so a block with a member missing does not merely look
+        // smaller — it makes the tear look like a different choice over a different
+        // system.
+        //
+        // Refusing suits this constructor specifically: it already returns `None`
+        // when the capture and the report disagree on block count, because "an
+        // animation that quietly pairs them would be a wrong picture with no
+        // symptom". An unreadable member name is the same disagreement one level
+        // down, and the caller (`App::structural_unavailable`) already knows how to
+        // say a tearing animation is not available.
+        let names = |b: &serde_json::Value, key: &str| -> Option<Vec<String>> {
+            let Some(raw) = b.get(key) else {
+                // Absent is legitimate: a block need not list both sides.
+                return Some(Vec::new());
+            };
+            let arr = raw.as_array()?;
+            arr.iter()
+                .map(|v| v.as_str().map(str::to_owned))
+                .collect::<Option<Vec<String>>>()
         };
         let blocks: Vec<BlockNames> = coupled
             .iter()
-            .map(|b| BlockNames {
-                equations: names(b, "equations"),
-                unknowns: names(b, "unknowns"),
+            .map(|b| {
+                Some(BlockNames {
+                    equations: names(b, "equations")?,
+                    unknowns: names(b, "unknowns")?,
+                })
             })
-            .collect();
+            .collect::<Option<Vec<BlockNames>>>()?;
 
         // Frames carry the block they belong to, so the flat playback the view
         // expects is rebuilt by tagging each segment with its index.

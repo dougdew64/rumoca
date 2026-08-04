@@ -3233,18 +3233,41 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
     // The three cases are now distinct: countable and zero (smooth), countable and
     // non-zero (events), and *not countable* (say so). See the accuracy rule at the
     // top of `CLAUDE.md` — absence is stated, never filled.
-    match json["summary"].as_object() {
-        Some(s) => {
-            let total: u64 = s.values().filter_map(serde_json::Value::as_u64).sum();
-            if total == 0 {
-                Stage::ok_with_note(
-                    json,
-                    "no events \u{2014} this model is a smooth (continuous) system",
-                )
-            } else {
-                Stage::ok(json)
+    // Counted before the `match` so the borrow of `json` ends here — the arms below
+    // move it into a `Stage`.
+    // **The entries have to be countable too, not just the summary.**
+    //
+    // The first version of this fix (earlier the same day) replaced `.unwrap_or(0)`
+    // on the *object* but left `filter_map(as_u64)` on its *values* — so a summary
+    // that was present but held a non-numeric count still summed to zero, and zero
+    // still produced the smoothness claim. The sweep's own audit of `filter_map`
+    // sites caught it, three commits after the fix that was supposed to close this.
+    let counted: Option<(u64, usize, usize)> = json["summary"].as_object().map(|s| {
+        let mut total: u64 = 0;
+        let mut uncountable = 0usize;
+        for v in s.values() {
+            match v.as_u64() {
+                Some(n) => total += n,
+                None => uncountable += 1,
             }
         }
+        (total, uncountable, s.len())
+    });
+
+    match counted {
+        Some((_, uncountable, n)) if uncountable > 0 => Stage::recovered(
+            json,
+            format!(
+                "{uncountable} of {n} event counts could not be read, so HRW cannot \
+                 say whether this model has events \u{2014} the tree below is the raw \
+                 event IR",
+            ),
+        ),
+        Some((0, _, _)) => Stage::ok_with_note(
+            json,
+            "no events \u{2014} this model is a smooth (continuous) system",
+        ),
+        Some(_) => Stage::ok(json),
         None => Stage::recovered(
             json,
             "the event summary could not be read, so HRW cannot say whether this \

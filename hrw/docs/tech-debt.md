@@ -518,19 +518,38 @@ with the module docs carrying the whole argument and three tests of its own. Its
 explicitly what it is *not* for: a `filter_map` that genuinely filters one enum variant out of a
 frame stream is correct and must **not** be converted.
 
-### Outstanding from this finding
+### Audit complete — and the headline count was inflated by test code
 
-Running classification of the 31 sites: **2 genuine filters** (`matching_anim`, `tarjan_anim`),
-**13 fixed** (`reduction_view` 3, `incidence_view` 3, `ic_plan_anim` 6, `alias_anim` 1), and
-**16 unexamined** — `worker.rs` 12, `bridge.rs` 3, `tearing_anim` 1.
+**The `filter_map` audit is finished.** Final classification of the 31 sites:
 
-- **`worker.rs`'s twelve are mostly IR-walking rather than report-parsing** and need the question
-  asked individually; several are likely genuine filters.
-- **`bridge.rs`'s three** feed `focus.json`, which is Claude's input — governed by
-  `feedback-emitter-correct-reasoner-supplements`, so a silent drop there is a wrong *answer*
-  rather than a wrong *pane*. Highest remaining priority of the three groups.
-- The question for each: *does `None` here mean "does not qualify" or "could not read"?* Only the
-  second is a defect.
+| | Count | Where |
+|---|---|---|
+| **Fixed** (silent data loss) | 15 | `ic_plan_anim` 6, `reduction_view` 3, `incidence_view` 3, `alias_anim` 1, `tearing_anim` 1, `worker.rs` 1 |
+| **Genuine filters**, correct as they stand | 3 | `matching_anim`, `tarjan_anim` (one enum variant out of a frame stream), `worker.rs:3434` (`var_idx: Option` — `None` means *this equation is unmatched*, which is the fact being reported) |
+| **Test code** | 13 | `worker.rs` 10, `bridge.rs` 3 |
+
+**The correction worth keeping: the per-file counts came from an unfiltered `grep -c`, so they
+counted assertions inside `mod tests`.** `bridge.rs` was called "the highest remaining priority"
+on that basis — its emitter has **no** `filter_map` at all, and all three sites are test
+assertions. `worker.rs` had 2 production sites, not 12. **A measurement that does not exclude
+test code is not a measurement of the product**, and it produced a wrong priority call in this
+very sweep, which is the sort of thing this file exists to remember.
+
+### Two findings the audit produced that the first pass missed
+
+- **`events_stage` was fixed twice.** The first fix (three commits earlier, same day) replaced
+  `.unwrap_or(0)` on the summary *object* but left `filter_map(as_u64)` on its *values* — so a
+  summary that was present but held a non-numeric count still summed to zero, and zero still
+  produced *"this model is a smooth (continuous) system"*. **The audit caught the fix's own
+  blind spot.** Four cases are now distinct: unreadable object, unreadable entries, zero, and
+  non-zero.
+- **`tearing_anim` refuses rather than reports**, unlike the other four. That constructor
+  already returns `None` when the capture and the report disagree on block count, because *"an
+  animation that quietly pairs them would be a wrong picture with no symptom"* — and an
+  unreadable member name is the same disagreement one level down. Tearing is *about* which
+  variables in a block get torn, so a block missing a member does not look smaller, it looks
+  like a different choice over a different system. The caller already says the animation is
+  unavailable.
 - **`parse_list` lives in `reduction_view.rs`** and should move somewhere shared once a second
   view uses it. Not moved yet — one caller is not a pattern.
 - **The predicate-vs-parse ambiguity has no mechanical guard.** A `filter_map` that filters and
