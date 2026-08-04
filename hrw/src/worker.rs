@@ -1378,6 +1378,13 @@ impl WorkerState {
         // produced them.
         clear_traces();
 
+        // **Say up front which phases cannot speak.** Only when tracing is on,
+        // because that is the only time their silence is a question the reader is
+        // asking. See `UNINSTRUMENTED_PHASES`.
+        if self.tracing_guard.is_some() {
+            log(LogLevel::Info, uninstrumented_notice());
+        }
+
         // Start capturing stdout/stderr from Rumoca library calls.
         // Some Rumoca phases print diagnostics via `println!`/`eprintln!` rather
         // than returning them as structured errors. `OutputCapture` intercepts
@@ -5854,6 +5861,127 @@ mod tests {
         );
     }
 
+    /// **The "no instrumentation" claim is still true.**
+    ///
+    /// `UNINSTRUMENTED_PHASES` tells the reader that silence from these phases means
+    /// *unwired*, not *quiet*. That is a claim of **absence**, and this project's
+    /// standing rule is that a claim of absence rots unnoticed unless something
+    /// fails when it stops being true — acting on a wrong positive means going to
+    /// look and finding nothing, while acting on a wrong negative means **not
+    /// looking**.
+    ///
+    /// So this counts tracing call sites in each named crate. Instrument one of them
+    /// upstream and this fails until the entry is removed, which is the only way the
+    /// notice can stay honest across a rebase.
+    ///
+    /// **Both directions.** A listed crate must have none, *and* a crate known to be
+    /// instrumented must not be listed — otherwise an over-broad list would silence
+    /// real output in the reader's mind, which is the same defect pointed the other
+    /// way.
+    #[test]
+    fn the_uninstrumented_phase_list_matches_the_crates() {
+        // `tracing::debug!` and friends, plus the bare form after a `use tracing::…`.
+        fn tracing_sites(crate_dir: &Path) -> usize {
+            fn walk(dir: &Path, out: &mut usize) {
+                let Ok(entries) = std::fs::read_dir(dir) else { return };
+                for e in entries.flatten() {
+                    let p = e.path();
+                    if p.is_dir() {
+                        walk(&p, out);
+                    } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
+                        let Ok(src) = std::fs::read_to_string(&p) else { continue };
+                        // Only `tracing`'s macros count: the parser's generated code
+                        // uses `parol_runtime::log::trace`, which HRW never sees, and
+                        // treating that as instrumentation would make the notice lie
+                        // in the more damaging direction.
+                        let uses_tracing = src.contains("use tracing")
+                            || src.contains("tracing::");
+                        for m in ["tracing::debug!", "tracing::info!", "tracing::warn!",
+                                  "tracing::trace!", "tracing::error!"] {
+                            *out += src.matches(m).count();
+                        }
+                        // **Crate-local trace macros count too.** Counting only
+                        // `tracing::` undercounted `rumoca-phase-structural` by
+                        // 27 — it wraps every call in `structural_trace!`, so the
+                        // naive count read the *best* instrumented phase as the
+                        // worst. A test that undercounts here would let a genuinely
+                        // instrumented crate stay on the silent list.
+                        *out += src.matches("_trace!(").count();
+                        if uses_tracing && !src.contains("parol_runtime::log") {
+                            for m in ["\n    debug!(", "\n    info!(", "\n    warn!(",
+                                      "\n    trace!("] {
+                                *out += src.matches(m).count();
+                            }
+                        }
+                    }
+                }
+            }
+            let mut n = 0;
+            walk(&crate_dir.join("src"), &mut n);
+            n
+        }
+
+        let crates = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("hrw/ has a parent")
+            .join("crates");
+        assert!(crates.is_dir(), "the Rumoca crates must be beside hrw/: {crates:?}");
+
+        for (phase, krate, why) in UNINSTRUMENTED_PHASES {
+            match krate {
+                // Backed by a real crate: it must genuinely emit nothing.
+                Some(krate) => {
+                    let dir = crates.join(krate);
+                    assert!(
+                        dir.is_dir(),
+                        "{phase} names {krate}, which is not a crate. An absent \
+                         directory greps as zero call sites, so a wrong crate name \
+                         makes this whole notice a self-confirming fiction \u{2014} \
+                         which is exactly how the first draft claimed two phases were \
+                         uninstrumented when they were not phases at all.",
+                    );
+                    let n = tracing_sites(&dir);
+                    assert_eq!(
+                        n, 0,
+                        "{phase} is listed as silent ({why}), but {krate} now has {n} \
+                         tracing call site(s). The log is telling readers to expect \
+                         silence from a phase that speaks \u{2014} remove the entry.",
+                    );
+                }
+                // Claimed to be HRW-derived rather than a Rumoca phase. The check is
+                // that no such crate exists: if one appears, the claim is stale and
+                // the tab may have become a real phase.
+                None => {
+                    let guess = format!("rumoca-phase-{}", phase.to_lowercase());
+                    assert!(
+                        !crates.join(&guess).is_dir(),
+                        "{phase} is described as HRW-derived ({why}), but {guess} now \
+                         exists \u{2014} recheck whether this tab still comes from the DAE",
+                    );
+                }
+            }
+        }
+
+        // The other direction: a crate that *is* instrumented must not be listed.
+        for krate in ["rumoca-phase-flatten", "rumoca-phase-dae"] {
+            assert!(
+                tracing_sites(&crates.join(krate)) > 0,
+                "{krate} was expected to be instrumented; if that changed, this test's \
+                 own premise is stale and the notice needs rechecking",
+            );
+            assert!(
+                !UNINSTRUMENTED_PHASES.iter().any(|(_, k, _)| *k == Some(krate)),
+                "{krate} emits tracing but is listed as silent",
+            );
+        }
+
+        // And the notice actually names them, rather than being an empty sentence.
+        let notice = uninstrumented_notice();
+        for (phase, _, _) in UNINSTRUMENTED_PHASES {
+            assert!(notice.contains(phase), "the notice must name {phase}: {notice}");
+        }
+    }
+
     /// Simulation also emits log entries with timing.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
@@ -6650,6 +6778,71 @@ thread_local! {
 /// it empty) and iterates over them. The `&dyn Fn(...)` parameter is a
 /// trait object — dynamic dispatch (vs `&impl Fn` which is static dispatch).
 /// Used here because `drain_traces` is called from multiple contexts.
+/// **Phases that cannot produce tracing output, and why.**
+///
+/// Turning tracing on and watching a phase stay silent is ambiguous: it means
+/// either *nothing notable happened* or *nobody instrumented this*, and those call
+/// for opposite responses. The log could not tell them apart, so a reader learning
+/// the compiler would take an unwired phase for a quiet one — **the wrong-negative
+/// shape this project treats as the error nobody catches**, because acting on it
+/// means not looking.
+///
+/// Doug, 2026-08-04, on relying on the log as a student of Rumoca: *"logging must
+/// always be accurate."* Stating the absence is what makes silence readable.
+///
+/// **Kept true by `the_uninstrumented_phase_list_matches_the_crates`**, which counts
+/// tracing call sites in each crate. Instrument one of these upstream and the test
+/// fails until the entry is removed — so this cannot rot into a stale claim, which
+/// is the standing rule for any assertion that something does not exist.
+/// **Two different reasons for silence**, and they are not the same finding.
+///
+/// The first draft of this list got it wrong in a way worth recording: it claimed
+/// `rumoca-phase-initialization` and `rumoca-phase-events` had no tracing calls.
+/// **Those crates do not exist.** The zero came from grepping a directory that was
+/// not there — an absence of evidence read as evidence of absence, in the very list
+/// written to stop that mistake. The test below caught it before it shipped.
+const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
+    (
+        "Parse",
+        Some("rumoca-phase-parse"),
+        "its generated parser traces through the `log` crate \
+         (`parol_runtime::log::trace`), which HRW's `tracing` subscriber does not capture",
+    ),
+    // Typecheck was here until 2026-08-04, when `rumoca-phase-typecheck` gained
+    // tracing — including its three previously silent early returns. **The test
+    // below is what removed it**: it failed with "now has 8 tracing call site(s)"
+    // the moment the crate changed, which is the whole point of pinning a claim of
+    // absence to something that can notice.
+    // **Not Rumoca phases at all.** `initialization_stage` and `events_stage` are
+    // HRW code reading `cr.dae` — the data is produced during DAE construction and
+    // these tabs are HRW's *reading* of it. No Rumoca call runs, so no Rumoca event
+    // can be emitted. Their silence is structural rather than a gap to be filled,
+    // which is why instrumenting Rumoca will never make them speak.
+    (
+        "Initialization",
+        None,
+        "HRW derives this tab from the DAE; no Rumoca phase runs here",
+    ),
+    (
+        "Events",
+        None,
+        "HRW derives this tab from the DAE; no Rumoca phase runs here",
+    ),
+];
+
+/// The one-line notice a traced compile opens with.
+///
+/// Separated from the emitting so it can be asserted without running a compile.
+fn uninstrumented_notice() -> String {
+    let names: Vec<&str> = UNINSTRUMENTED_PHASES.iter().map(|(p, _, _)| *p).collect();
+    format!(
+        "tracing on \u{2014} these phases have no Rumoca instrumentation and will be \
+         silent regardless of what they do: {}. Silence from any other phase means it \
+         had nothing to say.",
+        names.join(", "),
+    )
+}
+
 /// Discard buffered tracing events without reporting them.
 ///
 /// Called at the start of every compile and when tracing is switched off. Both
