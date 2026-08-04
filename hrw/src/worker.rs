@@ -1710,8 +1710,41 @@ impl WorkerState {
                 // single largest cost in a compile. `tree()` returns `&ClassTree`
                 // from the same cached `Arc` and was already public; HRW was
                 // simply calling the copying one. Everything below only reads.
-                match self.session.tree() {
+                // **Resolve in the mode the compile will use.**
+                //
+                // `tree()` builds `ResolveBuildMode::Standard`; a strict compile
+                // builds `StrictCompileRecovery`. Deliberately different trees,
+                // cached separately — so HRW resolved the whole library twice per
+                // compile (~374ms; two `resolve timing summary` traces, def_count
+                // 38855 each). `strict_compile_resolved()` builds the one the
+                // compile is about to want, so the compile below finds it cached.
+                //
+                // **Recovery succeeds past errors `Standard` treats as fatal**, so
+                // `Ok` no longer means the model resolved. The diagnostics carry
+                // that now — see `resolve_diagnostics_indicate_failure`, whose
+                // predicate was measured rather than assumed.
+                let strict = self.session.strict_compile_resolved();
+                let strict = match strict {
+                    Ok((rt, diags)) if resolve_diagnostics_indicate_failure(&diags) => {
+                        // Recovered a tree, but this model did not resolve. Take the
+                        // failure path, exactly as `tree()`'s `Err` used to.
+                        let _ = rt;
+                        Err(anyhow::anyhow!(
+                            "Resolve errors: {}",
+                            diags
+                                .iter()
+                                .filter(|d| d.severity == rumoca_core::DiagnosticSeverity::Error)
+                                .map(|d| d.message.clone())
+                                .collect::<Vec<_>>()
+                                .join("; "),
+                        ))
+                    }
+                    Ok((rt, _)) => Ok(rt),
+                    Err(e) => Err(e),
+                };
+                match strict.as_deref() {
                     Ok(rt) => {
+                        let rt = &rt.0;
                         // Extract just this model's class definition from the
                         // full resolved tree (which includes the entire MSL).
                         let stage = extract_class(rt, &qualified);
@@ -1781,8 +1814,26 @@ impl WorkerState {
                         });
                         match self.session.resolved_cached() {
                             Some(rt) => match extract_class(&rt.0, &qualified) {
-                                Stage { value: Some(v), .. } => {
+                                Stage { value: Some(mut v), .. } => {
                                     def_index = build_def_index(&rt.0, &v);
+                                    // **Both the recovered tree and the error.**
+                                    //
+                                    // This branch used to return `Stage::recovered(v,
+                                    // note)`, dropping the structured diagnostics —
+                                    // and it was almost never taken, because a failed
+                                    // `Standard` resolve usually left no cached tree
+                                    // to recover from. Under `StrictCompileRecovery`
+                                    // it is the *normal* branch: recovery succeeds, so
+                                    // the class extracts fine, so the diagnostics
+                                    // vanished and the Resolve tab went quiet on a
+                                    // real failure.
+                                    //
+                                    // Caught by `a_resolve_failure_names_the_reference_and_its_line`
+                                    // — the second of the two tests that defeated the
+                                    // first attempt at this change.
+                                    if let Some(obj) = v.as_object_mut() {
+                                        obj.insert("error".to_owned(), resolve_err(&note));
+                                    }
                                     Stage::recovered(v, note)
                                 }
                                 _ => Stage::err_with_details(resolve_err(&note), note),
@@ -6230,6 +6281,57 @@ mod tests {
         }
     }
 
+    /// **The resolve-failure predicate, tested away from the compile path.**
+    ///
+    /// Unit-tested on synthesized diagnostics deliberately: the end-to-end tests take
+    /// minutes and confound five things, and this is the one decision the A3 change
+    /// turns on. The numbers below are the measured ones —
+    /// `resolve_diagnostics_indicate_failure`'s doc comment carries the table.
+    #[test]
+    fn a_library_warning_is_not_a_resolve_failure() {
+        use rumoca_core::{Diagnostic, Diagnostics};
+
+        // No labels: the predicate reads severity only, and a span would be
+        // scaffolding that implies this test cares where the diagnostic points.
+        let warn = |msg: &str| Diagnostic {
+            severity: rumoca_core::DiagnosticSeverity::Warning,
+            code: None,
+            message: msg.to_owned(),
+            labels: Vec::new(),
+            notes: Vec::new(),
+        };
+
+        // The good specimen's real shape: many diagnostics, none of them errors.
+        let mut clean = Diagnostics::new();
+        for i in 0..33 {
+            clean.emit(warn(&format!("library note {i}")));
+        }
+        assert!(
+            !resolve_diagnostics_indicate_failure(&clean),
+            "33 non-error diagnostics is what a HEALTHY model looks like in this \
+             workspace; treating any diagnostic as failure would fail every model",
+        );
+
+        // And one error is enough, among the same noise.
+        let mut broken = clean.clone();
+        broken.emit(Diagnostic {
+            severity: rumoca_core::DiagnosticSeverity::Error,
+            code: Some("E".into()),
+            message: "undefined reference".into(),
+            labels: Vec::new(),
+            notes: Vec::new(),
+        });
+        assert!(
+            resolve_diagnostics_indicate_failure(&broken),
+            "a single error must surface even buried in library noise \u{2014} a Resolve \
+             tab silent on a real failure is worse than the duplicate resolve this \
+             change removes",
+        );
+
+        // Empty is not failure.
+        assert!(!resolve_diagnostics_indicate_failure(&Diagnostics::new()));
+    }
+
     /// Simulation also emits log entries with timing.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
@@ -7090,6 +7192,42 @@ fn uninstrumented_notice() -> String {
          had nothing to say.",
         names.join(", "),
     )
+}
+
+/// **Did resolution fail for this compile?**
+///
+/// `Session::tree()` answered this with its `Err`. `Session::strict_compile_resolved()`
+/// cannot: it builds under `ResolveBuildMode::StrictCompileRecovery`, which **succeeds
+/// past errors that `Standard` treats as fatal** — that is what recovery means. So the
+/// signal has to come from the diagnostics it returns alongside the tree.
+///
+/// # Why error-severity, and not "any diagnostic"
+///
+/// Measured 2026-08-04 on two specimens, which is the only reason this is not a guess:
+///
+/// | specimen | `tree()` | strict diagnostics | of which errors |
+/// |---|---|---|---|
+/// | `SingleInertia` (good) | `Ok` | **33** | **0** |
+/// | `UndefinedRef` (broken) | `Err` | 34 | **1** |
+///
+/// **A good model carries 33 library-wide diagnostics.** Treating any diagnostic as
+/// failure would fail every model in the workspace; error severity separates them
+/// exactly.
+///
+/// # Why not `compile_model_diagnostics(..).global_resolution_failure`
+///
+/// It matches on this pair, and it is purpose-named — but the same measurement showed
+/// that call returns *the same 34 diagnostics*, not a model-scoped subset, so it is not
+/// the finer instrument it appears to be. It also costs a semantic-diagnostics query
+/// where this costs nothing.
+///
+/// **This preserves `tree()`'s behaviour rather than improving on it.** A library-wide
+/// *error* fails the model here, exactly as it did before — replacing a signal should
+/// change nothing, and any improvement belongs in its own change with its own evidence.
+fn resolve_diagnostics_indicate_failure(diags: &rumoca_core::Diagnostics) -> bool {
+    diags
+        .iter()
+        .any(|d| d.severity == rumoca_core::DiagnosticSeverity::Error)
 }
 
 /// Discard buffered tracing events without reporting them.
