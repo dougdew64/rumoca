@@ -40,6 +40,56 @@ pub struct MatchingTraceResult {
     pub frames: Vec<MatchingFrame>,
 }
 
+thread_local! {
+    /// Ambient capture buffer: `Some` while a capture scope is open.
+    static CAPTURE: std::cell::RefCell<Option<Vec<MatchingFrame>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **Begin capturing matching frames on this thread.**
+///
+/// [`maximum_matching_with_trace`] is the right tool when the caller runs matching
+/// itself. But `build_structural_report` runs it *internally* and returns only the
+/// result, so a tool that wants to animate the search has to **run matching a second
+/// time** on the same incidence matrix.
+///
+/// That re-derivation is deterministic, so it agrees — but it agrees by luck of the
+/// algorithm rather than by construction, and the frames then describe a run that
+/// produced nothing. The matching a reader is shown and the matching the blocks were
+/// built from are two different executions with nothing tying them together.
+///
+/// With a scope open, [`crate::build_structural_report`] traces its own run and
+/// deposits the frames here. Same shape as the captures in `rumoca-phase-flatten`
+/// and `rumoca-phase-dae`.
+///
+/// # Cost
+///
+/// **Nothing when closed** — the untraced path still runs, and no frame is built.
+/// While open, matching takes the traced path and retains one frame per step, which
+/// is why a scope should wrap a model being *looked at* rather than a corpus sweep.
+/// [`take_capture`] drains and closes.
+pub fn start_capture() {
+    CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+}
+
+/// Take the captured frames and close the scope.
+pub fn take_capture() -> Vec<MatchingFrame> {
+    CAPTURE.with(|c| c.borrow_mut().take()).unwrap_or_default()
+}
+
+/// Whether a capture scope is open, so callers can pick the traced path.
+pub(crate) fn capturing() -> bool {
+    CAPTURE.with(|c| c.borrow().is_some())
+}
+
+pub(crate) fn deposit_capture(frames: Vec<MatchingFrame>) {
+    CAPTURE.with(|c| {
+        if let Some(buf) = c.borrow_mut().as_mut() {
+            *buf = frames;
+        }
+    });
+}
+
 /// Like `maximum_matching`, but records every algorithmic step for animation.
 ///
 /// When `observer` is `Some`, each frame is handed to it as it is produced —
@@ -210,6 +260,33 @@ fn augment(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **A capture scope records, and taking it closes.**
+    ///
+    /// The closing half is what stops one model's search appearing under the next
+    /// model's animation — a wrong picture with no symptom, which is the failure
+    /// mode this whole capture exists to remove rather than introduce.
+    #[test]
+    fn a_matching_capture_scope_records_and_closes_on_take() {
+        assert!(!capturing(), "no scope is open to begin with");
+        assert!(take_capture().is_empty(), "and taking yields nothing");
+
+        start_capture();
+        assert!(capturing(), "the scope is open, so callers take the traced path");
+        deposit_capture(vec![MatchingFrame {
+            step: MatchingStep::TryEquation(0),
+            match_eq: vec![None],
+        }]);
+        let got = take_capture();
+        assert_eq!(got.len(), 1, "the deposited frames come back");
+
+        assert!(!capturing(), "taking closed the scope");
+        assert!(
+            take_capture().is_empty(),
+            "capture continued after take \u{2014} one model's search would animate \
+             under the next model's view",
+        );
+    }
 
     #[test]
     fn test_maximum_matching_perfect() {

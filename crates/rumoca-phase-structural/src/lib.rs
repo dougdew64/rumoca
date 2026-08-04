@@ -269,7 +269,22 @@ pub fn build_structural_report(dae: &dae::Dae) -> Result<StructuralReport, Struc
         return Err(StructuralError::EmptySystem);
     }
 
-    let (match_eq, match_var) = matching::maximum_matching(inc.n_eq, inc.n_var, &inc.eq_unknowns);
+    // **Trace only when someone is watching.** Closed, this is the untraced path
+    // and builds no frames at all; open, the frames come from *this* run rather
+    // than from a second matching computed later on the same matrix.
+    //
+    // The difference is provenance, not correctness: re-deriving agrees, because
+    // matching is deterministic — but it agrees by luck of the algorithm, and the
+    // search a reader watches would describe an execution that produced nothing.
+    // See `matching::start_capture`.
+    let (match_eq, match_var) = if matching::capturing() {
+        let traced =
+            matching::maximum_matching_with_trace(inc.n_eq, inc.n_var, &inc.eq_unknowns, None);
+        matching::deposit_capture(traced.frames);
+        (traced.match_eq, traced.match_var)
+    } else {
+        matching::maximum_matching(inc.n_eq, inc.n_var, &inc.eq_unknowns)
+    };
     let matching_size = match_eq.iter().filter(|m| m.is_some()).count();
     if matching_size < inc.n_eq || matching_size < inc.n_var {
         return Err(singular_from_matching(&inc, &match_eq, &match_var));
