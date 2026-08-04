@@ -773,6 +773,8 @@ pub enum FromWorker {
         matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
         /// The SCC search, from the same run.
         tarjan_frames: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
+        /// Tearing decisions, one segment per coupled block.
+        tearing_frames: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
         /// `pre()`-lowering replay frames (idea #40). Recorded by re-running DAE
         /// construction over the flat model with an observer attached — the pass
         /// runs *inside* construction, so the finished DAE cannot be replayed.
@@ -1492,6 +1494,7 @@ impl WorkerState {
                     index_reduction_frames: Vec::new(),
                     matching_frames: Vec::new(),
                     tarjan_frames: Vec::new(),
+                    tearing_frames: Vec::new(),
                     pre_lowering_frames: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
@@ -1898,7 +1901,7 @@ impl WorkerState {
         let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat, structural_frames) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, StructuralFrames { matching: Vec::new(), tarjan: Vec::new() })
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, StructuralFrames { matching: Vec::new(), tarjan: Vec::new(), tearing: Vec::new() })
             }
             Some(simple_name) => {
                 // A library model was named in full by the caller. Qualifying its
@@ -2257,6 +2260,7 @@ impl WorkerState {
             index_reduction_frames: ir_frames,
             matching_frames: structural_frames.matching,
             tarjan_frames: structural_frames.tarjan,
+            tearing_frames: structural_frames.tearing,
             pre_lowering_frames: pre_frames,
             connection_frames,
             library_source,
@@ -2558,6 +2562,9 @@ fn unmatched_unknown_locations(
 pub struct StructuralFrames {
     pub matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
     pub tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
+    /// Tearing decisions, **one segment per coupled block**, in the order the
+    /// blocks were torn — a flat list would splice several loops into one replay.
+    pub tearing: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
 }
 
 fn structural_stage(
@@ -2567,6 +2574,7 @@ fn structural_stage(
     let empty = || StructuralFrames {
         matching: Vec::new(),
         tarjan: Vec::new(),
+        tearing: Vec::new(),
     };
     if let Some(stage) = not_reached_stage(result) {
         return (stage, empty());
@@ -2584,10 +2592,12 @@ fn structural_stage(
     // `build_structural_report` runs matching before it decides to fail.
     rumoca_phase_structural::matching::start_capture();
     rumoca_phase_structural::tarjan::start_capture();
+    rumoca_phase_structural::tearing::start_capture();
     let report = rumoca_phase_structural::build_structural_report(&cr.dae);
     let frames = StructuralFrames {
         matching: rumoca_phase_structural::matching::take_capture(),
         tarjan: rumoca_phase_structural::tarjan::take_capture(),
+        tearing: rumoca_phase_structural::tearing::take_capture(),
     };
     let stage = match report {
         Ok(rep) => {
@@ -6544,6 +6554,64 @@ mod tests {
             "a three-equation SCC cannot be found in {} frames",
             tarjan_frames.len(),
         );
+    }
+
+    /// **Tearing frames come from the compile, segmented per coupled block.**
+    ///
+    /// The last recorded animation to stop re-deriving. `walk_blocks` rebuilt four
+    /// things to get here — incidence, matching, Tarjan, then the tearing itself —
+    /// so the loops a reader watched being torn were torn by a run that produced
+    /// nothing.
+    ///
+    /// **`TwoLoops` is the specimen that makes the segmenting testable rather than
+    /// merely asserted**: two coupled blocks of size 2. A flat capture, or one that
+    /// mis-assigned segments to blocks, would show one loop's reasoning under the
+    /// other with nothing on screen to say so.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn tearing_frames_are_captured_per_coupled_block() {
+        let FromWorker::Compiled { tearing_frames, stages, .. } =
+            compile_specimen_shared("TwoLoops")
+        else {
+            panic!("expected Compiled");
+        };
+
+        let blocks = stages
+            .structural
+            .value
+            .as_ref()
+            .and_then(|v| v.get("blocks"))
+            .and_then(serde_json::Value::as_array)
+            .expect("the structural report lists its blocks");
+        let coupled = blocks
+            .iter()
+            .filter(|b| b.get("kind").and_then(serde_json::Value::as_str) == Some("coupled"))
+            .count();
+
+        assert_eq!(coupled, 2, "precondition: TwoLoops has two coupled blocks");
+        assert_eq!(
+            tearing_frames.len(),
+            coupled,
+            "one segment per coupled block. A different count means the segments \
+             cannot be matched to blocks, and pairing them anyway would animate one \
+             loop's reasoning under another",
+        );
+        assert!(
+            tearing_frames.iter().all(|seg| !seg.is_empty()),
+            "every coupled block was torn, so no segment should be empty: {:?}",
+            tearing_frames.iter().map(Vec::len).collect::<Vec<_>>(),
+        );
+
+        // Each segment must open with its own Start — that is what delimits them,
+        // so a flat capture spliced into one list would fail here.
+        use rumoca_phase_structural::tearing::TearingStep;
+        for (i, seg) in tearing_frames.iter().enumerate() {
+            assert!(
+                matches!(seg[0].step, TearingStep::Start { .. }),
+                "segment {i} does not begin at a Start; the segmenting is not \
+                 tracking loop boundaries",
+            );
+        }
     }
 
     /// Simulation also emits log entries with timing.

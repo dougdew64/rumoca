@@ -668,39 +668,46 @@ silent on real failures, which is worse than the duplicate resolve.
 
 ---
 
-## The animations still re-deriving, and what each needs
+## Replays: eliminated (2026-08-04)
 
-**Matching and Tarjan now replay the compile's own run** (2026-08-04). Three remain,
-recorded with the specific blocker rather than as a vague "finish B".
+**Closed.** Every recorded view is now built from frames captured during the compile
+that produced the IR on screen. `no_animation_re_runs_a_phase_by_default` keeps it
+that way: it fails if `app.rs` ever names a re-deriving constructor again.
 
-**`tearing_anim` — blocked on block names.** The Rumoca-side capture is **already
-landed** (`tearing::{start_capture, take_capture}`, segmented one entry per coupled
-block). What is missing is HRW-side: `TearingAnimation::record` gets its per-block
-*names* from `walk_blocks`, the same walk that does the tearing — so consuming
-captured frames still needs names from somewhere. The structural report carries a
-`blocks` array; the work is mapping that to the animation's block-names type. Not
-started, and deliberately not begun at the end of a long session.
+Two of the three items this section previously listed as outstanding **needed no work
+at all** — verified, not assumed:
 
-**`reduction_anim` — probably already correct, unverified.** It is fed by
-`index_reduction_frames`, which *are* captured from `index_reduction_stage`'s real
-run. It also names `tarjan`, so **check whether it re-derives anything** before
-assuming either way. One grep answers it.
+- `reduction_anim` already took `from_frames(Vec<IndexReductionFrame>)`, fed by
+  `index_reduction_stage`'s real run. The `tarjan` mention was a doc comment.
+- `ic_plan_anim`'s only constructor is `from_report`; its `build_ic_plan` call is
+  inside a test.
 
-**`ic_plan_anim` — needs a capture that does not exist yet.** `ic_plan.rs` traces
-through `tracing` (`ic_plan_trace_enabled`), not frames, so unlike the others there is
-no `*_with_trace` variant to switch to. That is a larger change: give the pass a frame
-type first, then the capture.
+**That is the second time in one day that recorded outstanding work was already
+done** (the first was CapacitorLoop's stale trace). The cost of checking is one grep;
+the cost of not checking is planning an arc around imaginary work.
 
-### The pattern, now applied five times
+### What is deliberately still a re-derivation
+
+- **`start_live` on every animation.** A live debug session *is* the user asking to
+  execute an algorithm again under a debugger. That is the feature, not a replay.
+- **`from_incidence` / `record` as fallbacks**, reached only when a capture is absent.
+  An empty animation would claim the algorithm did nothing, which is worse than a
+  faithful re-derivation. The guard checks the UI never calls them *directly*.
+- **Tearing under Index Reduction.** That tab tears the *reduced* DAE, which HRW
+  builds itself; the captured frames are from the raw one. `from_captured` is gated on
+  the Structural stage for exactly that reason.
+
+### The pattern, applied six times
 
 `rumoca-phase-flatten` (connections), `rumoca-phase-dae` (pre-lowering),
-`rumoca-phase-structural` (matching, Tarjan, tearing). Two shapes, and which one
-applies is decided by whether the untraced entry point already routes through the
-emit site:
+`rumoca-phase-structural` (matching, Tarjan, tearing), `rumoca-compile` (the typed
+overlays and, attempted, the resolved tree). Two shapes, chosen by whether the
+untraced entry point already routes through the emit site:
 
-- **Branch at the call site** when there are two implementations (matching, Tarjan):
-  the caller picks the traced path only while a scope is open.
+- **Branch at the call site** when there are two implementations (matching, Tarjan).
 - **Hook the emit site** when the untraced entry *is* the traced one with `None`
-  (connections, pre-lowering, tearing): no call-site change at all.
+  (connections, pre-lowering, tearing) — no call-site change at all.
 
-Both cost one thread-local read when closed, and neither moves a signature.
+Both cost one thread-local read when closed, and neither moves a signature. **The
+sweep never opens a scope**, so a 2,626-model run pays nothing.
+

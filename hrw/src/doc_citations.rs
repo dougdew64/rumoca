@@ -520,6 +520,82 @@ Some prose.
         );
     }
 
+    /// **No recorded animation re-runs a phase algorithm.**
+    ///
+    /// The acceptance criterion for a whole arc of work (2026-08-04). HRW used to
+    /// populate its views by **re-executing** the compiler: connection expansion,
+    /// `pre()` lowering, matching, Tarjan, tearing, and instantiate+typecheck were
+    /// all run a second time so their intermediate steps could be seen. Doug: *"I
+    /// very much want to measure the compilation as it actually happened rather than
+    /// make use of replays."*
+    ///
+    /// Every one now reads frames captured **during the compile that produced the IR
+    /// on screen**, through the capture scopes added to `rumoca-phase-{flatten,dae,
+    /// structural}` and `rumoca-compile`.
+    ///
+    /// # Why a source-level test
+    ///
+    /// "We eliminated the replays" is a claim about **absence**, and this project's
+    /// standing rule is that a claim of absence rots unnoticed unless something fails
+    /// when it stops being true. Twice in one day I recorded work as outstanding that
+    /// was already done, and once as done what was not — reasoning about which
+    /// animation re-derives is exactly the thing to stop doing by hand.
+    ///
+    /// # What is deliberately allowed
+    ///
+    /// **`start_live` may re-run anything.** A live debug session *is* the user
+    /// asking to execute an algorithm again under a debugger; that is the feature,
+    /// not a replay of a compile. Tests may too. And a *fallback* is allowed where a
+    /// capture can be legitimately absent — `record`/`from_incidence` still exist,
+    /// because an empty animation would claim the algorithm did nothing, which is
+    /// worse than a faithful re-derivation.
+    ///
+    /// What must not happen is a **default path** that re-derives: that is what makes
+    /// the picture describe a run nobody saw.
+    #[test]
+    fn no_animation_re_runs_a_phase_by_default() {
+        let app = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
+        )
+        .expect("app.rs must be readable");
+
+        // **The re-deriving constructor is unreachable from the UI.**
+        //
+        // `from_incidence` runs matching from scratch (and, for Tarjan, matching then
+        // Tarjan). It survives inside the animation modules as the fallback a
+        // captured constructor delegates to when no capture exists — but the UI must
+        // never name it, because reaching it directly is exactly what made an
+        // animation replay a search that produced nothing.
+        //
+        // Checked against `app.rs` rather than the animation sources because the
+        // question is which path the UI *takes*, not which paths exist. A first
+        // version of this test read the animation modules and duly flagged the
+        // fallbacks it was written to permit.
+        assert!(
+            !app.contains("from_incidence"),
+            "app.rs constructs an animation by re-deriving. The captured constructors \
+             already fall back to `from_incidence` themselves when no capture exists; \
+             naming it from the UI skips the capture entirely",
+        );
+
+        // And every animation that can be fed from a capture is.
+        for ctor in ["from_captured_frames", "from_captured", "from_frames", "from_report"] {
+            assert!(
+                app.contains(ctor),
+                "no animation is constructed with `{ctor}` \u{2014} the capture path is \
+                 not reached from the UI at all",
+            );
+        }
+
+        // Non-vacuity: this really is reading the file that builds the animations.
+        let sites = app.matches("Animation::").count();
+        assert!(
+            sites >= 10,
+            "expected the animation construction sites, found {sites} \u{2014} this test \
+             is looking at the wrong file",
+        );
+    }
+
     /// **The model list defines its row menu once**, so every list gets the same one.
     ///
     /// Doug, 2026-08-04: *"unlike the correctly-working items in the HRW specimens

@@ -608,6 +608,9 @@ struct CompileFrames {
     matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
     /// The SCC search over the dependency graph, from the same run.
     tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
+    /// Tearing decisions, **one segment per coupled block** — a flat list would
+    /// splice several loops' reasoning into one animation.
+    tearing: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
     /// `pre()` lowering, on the Events stage (idea #40).
     pre_lowering: Vec<rumoca_phase_dae::PreLoweringFrame>,
     /// Connection expansion (MLS §9).
@@ -1790,7 +1793,7 @@ impl App {
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
                     identifier_index, index_reduction_frames, matching_frames,
-                    tarjan_frames, dae,
+                    tarjan_frames, tearing_frames, dae,
                     pre_lowering_frames, connection_frames, flat,
                     library_source,
                 } => {
@@ -1818,6 +1821,7 @@ impl App {
                         index_reduction: index_reduction_frames,
                         matching: matching_frames,
                         tarjan: tarjan_frames,
+                        tearing: tearing_frames,
                         pre_lowering: pre_lowering_frames,
                         connection: connection_frames,
                     };
@@ -3460,8 +3464,26 @@ impl App {
             self.stage_views.tearing_anim = Some(live);
         }
         if self.stage_views.tearing_anim.is_none() {
-            self.stage_views.tearing_anim =
-                Some(self.tearing_dae().map(|dae| tearing_anim::TearingAnimation::record(&dae)));
+            // **Captured first, re-derived only as a fallback.** `from_captured`
+            // returns `None` when the capture is absent or disagrees with the
+            // report, and `record` then re-runs the walk — a faithful picture beats
+            // an empty one, and refusing to *guess an alignment* is what the
+            // `None` is for.
+            // **Only under Structural.** The tearing view also renders on the
+            // Index Reduction tab, where `tearing_dae` tears the *reduced* DAE that
+            // HRW builds itself — the captured frames came from
+            // `build_structural_report` on the raw one, so using them there would
+            // animate a different system than the tab is showing.
+            let captured = (self.stage == StageKind::Structural)
+                .then_some(self.stages.structural.value.as_ref())
+                .flatten()
+                .and_then(|report| {
+                    tearing_anim::TearingAnimation::from_captured(report, &self.frames.tearing)
+                });
+            self.stage_views.tearing_anim = Some(match captured {
+                Some(anim) => Some(anim),
+                None => self.tearing_dae().map(|dae| tearing_anim::TearingAnimation::record(&dae)),
+            });
         }
         if let Some(Some(anim)) = &mut self.stage_views.tearing_anim {
             debug_clicked = egui::ScrollArea::vertical()
@@ -8603,6 +8625,7 @@ mod tests {
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
+            tearing_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8635,6 +8658,7 @@ mod tests {
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
+            tearing_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8670,6 +8694,7 @@ mod tests {
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
+            tearing_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8706,6 +8731,7 @@ mod tests {
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
+            tearing_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8740,6 +8766,7 @@ mod tests {
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
             tarjan_frames: Vec::new(),
+            tearing_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,

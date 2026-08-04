@@ -130,6 +130,82 @@ pub fn walk_blocks(dae: &rumoca_ir_dae::Dae, emit: &dyn Fn(usize, TearingFrame))
 
 impl TearingAnimation {
     /// Record every coupled block's tearing from a finished DAE.
+    /// Build from **tearing captured during the compile**, with block names read
+    /// from the structural report.
+    ///
+    /// [`Self::record`] re-derives four things to get here — incidence, matching,
+    /// Tarjan and then the tearing itself — so the loops a reader watches being torn
+    /// were torn by a run that produced nothing, while the tear variables on screen
+    /// came from one nobody saw. This is the last of the recorded animations to stop
+    /// doing that (2026-08-04).
+    ///
+    /// # The one real hazard: which blocks the segments belong to
+    ///
+    /// `segments` holds one entry per **coupled** block, in tearing order. The
+    /// report's `blocks` array holds **every** block, scalar ones included — and
+    /// scalar blocks are never torn. Zipping the two directly would attach loop *i*'s
+    /// reasoning to whatever block sat at index *i*, which on a model with a scalar
+    /// block before a coupled one is silently the wrong loop.
+    ///
+    /// So the report is filtered to `kind == "coupled"` first, and the count is
+    /// checked: a mismatch returns `None` rather than guessing an alignment.
+    /// `TwoLoops` (two coupled blocks) is the specimen that makes this testable
+    /// rather than merely asserted.
+    pub fn from_captured(
+        report: &serde_json::Value,
+        segments: &[Vec<TearingFrame>],
+    ) -> Option<Self> {
+        if segments.is_empty() {
+            return None;
+        }
+        let coupled: Vec<&serde_json::Value> = report
+            .get("blocks")?
+            .as_array()?
+            .iter()
+            .filter(|b| b.get("kind").and_then(serde_json::Value::as_str) == Some("coupled"))
+            .collect();
+
+        // **Refuses rather than aligns.** A count mismatch means the capture and the
+        // report describe different runs, and an animation that quietly pairs them
+        // would be a wrong picture with no symptom.
+        if coupled.len() != segments.len() {
+            return None;
+        }
+
+        let names = |b: &serde_json::Value, key: &str| -> Vec<String> {
+            b.get(key)
+                .and_then(serde_json::Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        let blocks: Vec<BlockNames> = coupled
+            .iter()
+            .map(|b| BlockNames {
+                equations: names(b, "equations"),
+                unknowns: names(b, "unknowns"),
+            })
+            .collect();
+
+        // Frames carry the block they belong to, so the flat playback the view
+        // expects is rebuilt by tagging each segment with its index.
+        let frames: Vec<BlockFrame> = segments
+            .iter()
+            .enumerate()
+            .flat_map(|(block, seg)| {
+                seg.iter().map(move |frame| BlockFrame { block, frame: frame.clone() })
+            })
+            .collect();
+
+        Some(Self {
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
+            blocks,
+        })
+    }
+
     pub fn record(dae: &rumoca_ir_dae::Dae) -> Self {
         // `walk_blocks` takes `&dyn Fn`, so the accumulator needs interior
         // mutability — the same shape the phase's observer contract forces.
