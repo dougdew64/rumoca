@@ -127,14 +127,55 @@ pub fn lower_pre_operator_with_trace(
     Ok(())
 }
 
-/// Hand one frame to the observer, if anyone is watching.
+thread_local! {
+    /// Ambient capture buffer: `Some` while a capture scope is open.
+    static CAPTURE: std::cell::RefCell<Option<Vec<PreLoweringFrame>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **Begin capturing pre()-lowering frames on this thread.**
+///
+/// The counterpart to [`PreLoweringObserver`], for callers too far up the stack to
+/// pass one. A tool driving `compile_model_strict_reachable_*` reaches this pass
+/// through a dozen frames of session plumbing, so its only alternative is to re-run
+/// DAE construction with an observer attached — which produces frames describing a
+/// *second* execution rather than the compilation that happened.
+///
+/// Same shape as `connections::trace::start_capture` in `rumoca-phase-flatten`, and
+/// the same reasoning: opt-in, nothing changes for existing callers, no signature
+/// moves. Costs one thread-local read per emit when no scope is open.
+///
+/// Scope one model. [`take_capture`] drains and closes.
+pub fn start_capture() {
+    CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+}
+
+/// Take the captured frames and close the scope.
+pub fn take_capture() -> Vec<PreLoweringFrame> {
+    CAPTURE.with(|c| c.borrow_mut().take()).unwrap_or_default()
+}
+
+/// Hand one frame to the observer and/or the ambient capture, if anyone is
+/// watching.
 ///
 /// Mirrors `emit_matching_frame` in the structural phases, minus the coupling to
-/// a concrete tracer — and minus the replay buffer, which the observer can keep
-/// for itself. Costs nothing when untraced: no frame is built at all.
+/// a concrete tracer. **Still costs nothing when nobody is listening**: the early
+/// return keeps the original promise that no frame is built at all.
 fn emit(observer: Option<PreLoweringObserver<'_>>, slots: &[String], step: PreLoweringStep) {
+    // Cheap exit when nobody is listening: no frame is built at all, which is the
+    // property the original comment promised and the capture must not cost.
+    let capturing = CAPTURE.with(|c| c.borrow().is_some());
+    if observer.is_none() && !capturing {
+        return;
+    }
+    let frame = PreLoweringFrame { step, slots_so_far: slots.to_vec() };
+    CAPTURE.with(|c| {
+        if let Some(buf) = c.borrow_mut().as_mut() {
+            buf.push(frame.clone());
+        }
+    });
     if let Some(observe) = observer {
-        observe(&PreLoweringFrame { step, slots_so_far: slots.to_vec() });
+        observe(&frame);
     }
 }
 

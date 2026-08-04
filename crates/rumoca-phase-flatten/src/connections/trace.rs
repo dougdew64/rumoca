@@ -79,6 +79,52 @@ pub struct ConnectionFrame {
     pub equations_so_far: usize,
 }
 
+thread_local! {
+    /// Ambient capture buffer: `Some` while a capture scope is open.
+    static CAPTURE: std::cell::RefCell<Option<Vec<ConnectionFrame>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **Begin capturing connection frames on this thread**, for callers that cannot
+/// thread an observer down to this point.
+///
+/// # Why this exists alongside `FrameObserver`
+///
+/// [`FrameObserver`] is the right tool when the caller is calling flatten
+/// directly: it is explicit, borrows freely, and costs nothing when absent. But a
+/// tool driving the *session* API — `compile_model_strict_reachable_*` — is a dozen
+/// stack frames above this one, through functions whose signatures have nothing to
+/// do with observability. Threading an `Option<FrameObserver>` through all of them
+/// to reach one emit site is a large, invasive change to make a small, optional
+/// thing possible.
+///
+/// The alternative such tools resort to is **re-running the phase** with an
+/// observer attached, which is worse than invasive — it is *inaccurate*. The
+/// frames then describe a second execution, and the tool must separately prove that
+/// second execution was configured like the first. HRW (the Rumoca observatory)
+/// did exactly this, and the options were kept in step by hand across two crates.
+///
+/// So: an opt-in, thread-local buffer, in the shape `tracing` already established
+/// for the same problem. Nothing changes for existing callers, no signature moves,
+/// and a wrapping tool can observe **the compilation that actually happened**.
+///
+/// # Cost
+///
+/// Nothing at all when no scope is open — one thread-local read per emit. While
+/// open, frames accumulate in memory, so a scope should wrap **one model**, not a
+/// whole library. [`take_capture`] both drains and closes.
+pub fn start_capture() {
+    CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+}
+
+/// Take the captured frames and close the scope.
+///
+/// Returns empty if no scope was open, which is the honest answer: no frames were
+/// requested, so none were recorded.
+pub fn take_capture() -> Vec<ConnectionFrame> {
+    CAPTURE.with(|c| c.borrow_mut().take()).unwrap_or_default()
+}
+
 /// Emit one frame if an observer is attached.
 ///
 /// Free function rather than a method so the call sites read as a single line
@@ -89,15 +135,65 @@ pub(crate) fn emit(
     sets_so_far: usize,
     equations_so_far: usize,
 ) {
+    // Built once and shared by both destinations, so an explicit observer and an
+    // ambient capture in the same run cannot disagree about what a frame said.
+    let frame = ConnectionFrame { step, sets_so_far, equations_so_far };
     if let Some(obs) = observer {
-        obs(&ConnectionFrame { step, sets_so_far, equations_so_far });
+        obs(&frame);
     }
+    CAPTURE.with(|c| {
+        if let Some(buf) = c.borrow_mut().as_mut() {
+            buf.push(frame);
+        }
+    });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::cell::RefCell;
+
+    /// **A capture scope records frames without an observer, and closes on take.**
+    ///
+    /// The property a wrapping tool depends on: frames from the run that actually
+    /// happened, with no signature threaded down and no second execution. Also
+    /// checks the two failure modes that would make it untrustworthy — recording
+    /// while no scope is open (frames from nowhere) and continuing to record after
+    /// a take (one model's frames appearing under the next).
+    #[test]
+    fn a_capture_scope_records_this_run_and_stops_when_taken() {
+        // Closed: nothing is recorded, and taking yields nothing.
+        emit(None, ConnectionStep::Start { connect_statements: 1 }, 0, 0);
+        assert!(take_capture().is_empty(), "no scope was open, so there is nothing to take");
+
+        start_capture();
+        emit(None, ConnectionStep::Start { connect_statements: 4 }, 0, 0);
+        emit(None, ConnectionStep::Start { connect_statements: 5 }, 1, 2);
+        let frames = take_capture();
+        assert_eq!(frames.len(), 2, "both frames were recorded: {frames:?}");
+        assert_eq!(frames[1].sets_so_far, 1, "and carry their running counts");
+
+        // Taking closed the scope: later frames must not leak into the next take.
+        emit(None, ConnectionStep::Start { connect_statements: 9 }, 0, 0);
+        assert!(
+            take_capture().is_empty(),
+            "capture continued after take \u{2014} one model's frames would appear \
+             under the next model's view",
+        );
+    }
+
+    /// An explicit observer and an ambient capture see the same frame.
+    #[test]
+    fn an_observer_and_a_capture_agree() {
+        let seen = RefCell::new(Vec::new());
+        start_capture();
+        {
+            let sink = |f: &ConnectionFrame| seen.borrow_mut().push(f.clone());
+            emit(Some(&sink), ConnectionStep::Start { connect_statements: 7 }, 3, 4);
+        }
+        let captured = take_capture();
+        assert_eq!(seen.into_inner(), captured, "both destinations get the same frame");
+    }
 
     /// With no observer the emit call is a no-op; with one, the frame arrives
     /// carrying the running counts. Those counts are the reason the frame type

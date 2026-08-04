@@ -107,6 +107,10 @@ pub use errors::{ToDaeError, ToDaeResult};
 pub use pre_lowering::{
     PreLoweringFrame, PreLoweringObserver, PreLoweringStep, lower_pre_operator,
     lower_pre_operator_with_trace,
+    // Ambient capture, for callers too far up the stack to pass an observer —
+    // see `pre_lowering::start_capture`.
+    start_capture as start_pre_lowering_capture,
+    take_capture as take_pre_lowering_capture,
 };
 // Re-export moved functions so sibling modules can still use `super::`.
 pub(crate) use variable_analysis::{
