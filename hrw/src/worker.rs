@@ -1010,6 +1010,14 @@ impl WorkerState {
                     // Dropping the guard deactivates the subscriber. Setting
                     // the field to `None` runs `Drop` on the old `Some` value.
                     self.tracing_guard = None;
+                    // **And discard what it already captured.** Turning tracing
+                    // off must take effect on the next compile, not eventually.
+                    // Without this, events buffered while it was on are still
+                    // waiting to be drained, so the first compile after
+                    // unchecking reports traces the user has just asked not to
+                    // see — the more confusing half of Doug's report, because
+                    // the control appears not to work.
+                    clear_traces();
                 }
                 None
             }
@@ -1349,6 +1357,26 @@ impl WorkerState {
         use std::time::Instant;
         let t0 = Instant::now();
         let log = make_log(&t0, emit);
+
+        // **This run shows this run's traces, and no others.**
+        //
+        // Doug, 2026-08-04: with tracing off, *"detailed rumoca logs are still
+        // included in the log view, but for a smaller subset of compiler phases."*
+        // Those were **leftovers**. `TRACE_BUFFER` is drained after each Rumoca
+        // call, but anything emitted after the last drain of a run stays in it —
+        // and the next run's first drain then reports it, whether or not tracing
+        // is still on.
+        //
+        // The same stranding is the other half of Doug's report: traces appearing
+        // *"for only a subset of compiler phases"* while tracing is on, because
+        // the missing phase's events were not stranded forever — they were
+        // arriving one compile late.
+        //
+        // Discarding here is the structural fix: whatever a future change leaves
+        // behind, it can no longer surface under someone else's compile. The
+        // matching drains below are what make the events appear in the run that
+        // produced them.
+        clear_traces();
 
         // Start capturing stdout/stderr from Rumoca library calls.
         // Some Rumoca phases print diagnostics via `println!`/`eprintln!` rather
@@ -1959,6 +1987,14 @@ impl WorkerState {
                     }
                     _ => (Vec::new(), None),
                 };
+                // **The drain this call never had.** `to_dae_with_options_traced`
+                // re-runs the whole of DAE construction, so it is one of the
+                // noisiest tracing sources in the pipeline — and it was the last
+                // Rumoca call in the compile, with nothing after it to drain.
+                // Every event it emitted was therefore stranded and reported
+                // against the *next* compile, which is exactly the "logs for a
+                // subset of phases" and "logs after unchecking" Doug saw.
+                drain_traces(&log);
 
                 (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
             }
@@ -5708,6 +5744,116 @@ mod tests {
         }
     }
 
+    /// **A compile never reports another run's traces.**
+    ///
+    /// Doug, 2026-08-04: with the tracing checkbox *off*, *"detailed rumoca logs are
+    /// still included in the log view, but for a smaller subset of compiler phases"* —
+    /// and with it on, logs appeared *"for only a subset of compiler phases."* One
+    /// cause: `TRACE_BUFFER` is drained after each Rumoca call, but
+    /// `to_dae_with_options_traced` ran last with **no drain after it**, so every
+    /// event it emitted was stranded and reported against the *following* compile.
+    /// The run that produced them was missing them; the run that showed them had not
+    /// asked for them.
+    ///
+    /// **Checks the property, not the one call.** A stranded event is planted
+    /// directly, so any future undrained Rumoca call is caught by the same test
+    /// rather than needing its own.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_compile_never_reports_another_runs_traces() {
+        const STALE: &str = "STRANDED BY A PREVIOUS RUN";
+
+        // Exactly what an undrained Rumoca call leaves behind. Same thread as the
+        // compile below, so this is the buffer that compile will see.
+        TRACE_BUFFER.with(|b| {
+            b.borrow_mut().push((tracing::Level::DEBUG, STALE.to_owned()))
+        });
+
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!(
+                "{}/specimens/SingleInertia.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            w.compile(&path, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            });
+        }
+        let logs = logs.into_inner().unwrap();
+
+        // Non-vacuity: the compile must actually have logged, or "no stale entry"
+        // is true for the uninteresting reason.
+        assert!(
+            logs.iter().any(|e| matches!(e.level, LogLevel::StageEnd)),
+            "the compile produced no stage entries, so this proves nothing",
+        );
+        assert!(
+            !logs.iter().any(|e| e.message.contains(STALE)),
+            "a compile reported a trace event stranded before it began \u{2014} which is \
+             how tracing appeared to stay on after being switched off",
+        );
+        // And it must not still be waiting to ambush the next one.
+        assert!(
+            TRACE_BUFFER.with(|b| b.borrow().is_empty()),
+            "the buffer must be empty when a compile ends, or the next run inherits it",
+        );
+    }
+
+    /// **A compile leaves nothing in the buffer — with tracing actually on.**
+    ///
+    /// The companion to `a_compile_never_reports_another_runs_traces`, and the half
+    /// that needs tracing *enabled* to mean anything: with it off, Rumoca emits no
+    /// events and an empty buffer proves nothing.
+    ///
+    /// This is what catches a Rumoca call added without a `drain_traces` after it.
+    /// `to_dae_with_options_traced` was exactly that — a full re-run of DAE
+    /// construction, the last call in the compile, with nothing to drain it — so its
+    /// output arrived one compile late for as long as the feature existed.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_compile_with_tracing_on_leaves_nothing_behind() {
+        let logs = std::sync::Mutex::new(Vec::new());
+        let left_behind;
+        let sink = |msg: FromWorker| {
+            if let FromWorker::Log(entry) = msg {
+                logs.lock().unwrap().push(entry);
+            }
+        };
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            w.handle(ToWorker::SetTracing(true), &sink);
+            let path = PathBuf::from(format!(
+                "{}/specimens/SingleInertia.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            w.compile(&path, &sink);
+            // **Sampled here, before the toggle.** `SetTracing(false)` clears the
+            // buffer, so asserting after it would assert the cleanup rather than the
+            // compile — the first version of this test did exactly that and passed
+            // with the drain removed.
+            left_behind = TRACE_BUFFER.with(|b| b.borrow().len());
+            // Restore, or every later test on this shared worker runs traced.
+            w.handle(ToWorker::SetTracing(false), &sink);
+        }
+        let logs = logs.into_inner().unwrap();
+
+        // **Non-vacuity, and it is the whole point here**: tracing must have
+        // produced something, or "nothing left behind" is trivially true.
+        assert!(
+            logs.iter().any(|e| matches!(e.level, LogLevel::Trace)),
+            "tracing was on and no trace entries were reported \u{2014} this test cannot \
+             detect a missing drain unless Rumoca is actually emitting",
+        );
+        assert_eq!(
+            left_behind, 0,
+            "a Rumoca call emitted {left_behind} trace event(s) that no drain \
+             collected; they would surface under the NEXT compile instead of this one",
+        );
+    }
+
     /// Simulation also emits log entries with timing.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
@@ -6504,6 +6650,17 @@ thread_local! {
 /// it empty) and iterates over them. The `&dyn Fn(...)` parameter is a
 /// trait object — dynamic dispatch (vs `&impl Fn` which is static dispatch).
 /// Used here because `drain_traces` is called from multiple contexts.
+/// Discard buffered tracing events without reporting them.
+///
+/// Called at the start of every compile and when tracing is switched off. Both
+/// are the same guarantee stated twice: **a log entry must belong to the run it
+/// appears under.** `drain_traces` empties the buffer *into the log*, which is
+/// wrong for events that belong to a previous run or to a setting the user has
+/// since turned off — those must be dropped, not relocated.
+fn clear_traces() {
+    TRACE_BUFFER.with(|buf| buf.borrow_mut().clear());
+}
+
 fn drain_traces(log_fn: &dyn Fn(LogLevel, String)) {
     TRACE_BUFFER.with(|buf| {
         for (level, msg) in buf.borrow_mut().drain(..) {
