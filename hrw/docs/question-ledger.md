@@ -23,6 +23,39 @@ this project cannot absorb.**
 
 ---
 
+## This is how the curriculum tours get graded
+
+**Doug, 2026-08-03, on finishing the first two:** *"The real measure of whether the tours are
+good enough will be the nature of the questions which I ask you while and after I work through
+the tours. If it seems that I have learned what you attempted to explain, then the tours will
+have been at least partly successful."*
+
+That criterion has no other instrument. A tour's link checker proves its links resolve and its
+`**Expected:**` lines prove its claims are violable — **neither can tell whether the lesson
+landed.** This file can, because it already records the one thing that reveals it.
+
+**So a question arriving during or after a curriculum tour gets logged with the stop it traces
+back to.** The mapping is the whole point: without it there is a pile of questions and a pile
+of tours and no way to connect them.
+
+Four shapes to watch for, because they call for opposite responses:
+
+- **A question the tour set up and did not answer** — the tour worked. It built enough
+  scaffolding for the next question to be askable. This is the target.
+- **A question the tour already answered** — the explanation did not land. Note *which stop*,
+  and try a different angle rather than repeating the prose louder.
+- **A question revealing a misconception the tour created** — the most valuable signal here and
+  the most expensive to miss. A wrong idea installed confidently is worse than no idea, and
+  only Doug can surface it. Fix the tour, and record what the wrong wording was.
+- **No questions at all** — ambiguous, and **do not read it as success.** It means either the
+  tour was complete or it provoked nothing, and those are opposite outcomes. Ask.
+
+**The tours are regenerable; this record is not.** Same rule as the rest of the file — which is
+why a tour rewritten in response to a question should say so in its own text, as
+`dae-construction.md` does.
+
+---
+
 ## Why this file exists
 
 Everything else in `docs/` is regenerable. Claude can re-derive what Pantelides
