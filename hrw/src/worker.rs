@@ -1684,9 +1684,20 @@ impl WorkerState {
                             // referenced in this model's IR.
                             def_index = build_def_index(&rt.0, v);
                         }
-                        // Stages 3+4 (Instantiate + Typecheck) piggyback on the
-                        // resolved tree — they need it to resolve component types
-                        // and dimensions.
+                        // **Resolve ends here**, before the phases that merely use
+                        // its output. Its bracket used to close after Instantiate,
+                        // Typecheck and the connection replay had all run inside it,
+                        // so it reported 1428ms on SingleInertia of which 505ms
+                        // belonged to three other things — and their traces drained
+                        // under Resolve's name.
+                        drain_traces(&log);
+                        log(LogLevel::StageEnd, format!(
+                            "Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0
+                        ));
+
+                        // Instantiate and Typecheck piggyback on the resolved tree —
+                        // they need it to resolve component types and dimensions —
+                        // but they are their own phases and bracket themselves.
                         let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source, &log);
                         // Connection expansion (MLS §9) records its own replay.
                         // It re-runs flatten, so it is bracketed rather than
@@ -1695,6 +1706,7 @@ impl WorkerState {
                         let t_conn = Instant::now();
                         log(LogLevel::StageStart, "Connection replay (HRW)".to_owned());
                         connection_frames = record_connection_frames(&rt.0, &qualified);
+                        drain_traces(&log);
                         log(LogLevel::StageEnd, format!(
                             "Connection replay (HRW) ({:.1}ms)",
                             t_conn.elapsed().as_secs_f64() * 1000.0
@@ -1704,6 +1716,13 @@ impl WorkerState {
                         stage
                     }
                     Err(e) => {
+                        // Resolve ends here too — and nothing downstream runs, so
+                        // this is the last bracket of the compile.
+                        drain_traces(&log);
+                        log(LogLevel::StageEnd, format!(
+                            "Resolve ({:.1}ms) \u{2014} failed",
+                            t_stage.elapsed().as_secs_f64() * 1000.0
+                        ));
                         // Resolution failed. Show the error, but try to show a
                         // best-effort tree from the cache if one exists (e.g.
                         // from a previous successful compile). `resolved_cached()`
@@ -1741,9 +1760,12 @@ impl WorkerState {
             }
         };
 
+        // Resolve's own bracket closed inside the match above, at the point
+        // resolution actually finished. What is left here is a sweep for anything
+        // the later phases emitted after their own drains — kept so nothing is
+        // stranded, but no longer attributed to Resolve.
         drain_traces(&log);
         drain_output(&mut output_capture, &log);
-        log(LogLevel::StageEnd, format!("Resolve ({:.1}ms)", t_stage.elapsed().as_secs_f64() * 1000.0));
         emit(FromWorker::CompileProgress {
             path: report_path.clone(),
             stages: StageBundle {
@@ -3103,6 +3125,13 @@ fn instantiate_and_typecheck(
     match rumoca_phase_instantiate::instantiate_model(tree, model_name) {
         Ok(mut overlay) => {
             let instantiate = Stage::from_ser(&overlay);
+            // **Drain inside the bracket.** Doug, 2026-08-04: *"rumoca trace log
+            // lines tend not to appear between our major phase start/end log
+            // lines."* Events are buffered until something drains them, so a drain
+            // placed after the bracket reports this phase's output under whatever
+            // comes next. Draining here is what puts a phase's trace *inside* the
+            // phase.
+            drain_traces(log);
             log(LogLevel::StageEnd, format!(
                 "Instantiate ({:.1}ms)", t_inst.elapsed().as_secs_f64() * 1000.0
             ));
@@ -3129,6 +3158,7 @@ fn instantiate_and_typecheck(
                     Stage::recovered(json, format!("typecheck: {n} diagnostic(s)"))
                 }
             };
+            drain_traces(log);
             log(LogLevel::StageEnd, format!(
                 "Typecheck ({:.1}ms)", t_tc.elapsed().as_secs_f64() * 1000.0
             ));
@@ -3140,6 +3170,7 @@ fn instantiate_and_typecheck(
             // Instantiate failed, so Typecheck never ran. Closing Instantiate's
             // bracket and opening no Typecheck bracket is the accurate report:
             // a phase that did not run should not appear to have taken 0.0ms.
+            drain_traces(log);
             log(LogLevel::StageEnd, format!(
                 "Instantiate ({:.1}ms) \u{2014} failed", t_inst.elapsed().as_secs_f64() * 1000.0
             ));
@@ -5885,6 +5916,50 @@ mod tests {
             "a Rumoca call emitted {left_behind} trace event(s) that no drain \
              collected; they would surface under the NEXT compile instead of this one",
         );
+
+        // **A phase's trace appears inside that phase's bracket.**
+        //
+        // Doug, 2026-08-04: *"rumoca trace log lines tend not to appear between our
+        // major phase start/end log lines."* Events are buffered until drained, so a
+        // drain placed after a bracket reports that phase's output under whatever
+        // comes next — the log read as a wall of trace with the phase structure
+        // beside it rather than around it.
+        //
+        // **Asserted as "at least one, inside"** rather than "all": a phase's crate
+        // can legitimately emit during *another* bracket, because HRW replays some
+        // work — the connection replay re-runs flatten and typecheck. Requiring all
+        // would fail on correct behaviour; requiring none-outside would too. What was
+        // actually broken is that *none* landed inside, and that is what this checks.
+        let bracket = |name: &str| -> Option<(usize, usize)> {
+            let start = logs.iter().position(|e| {
+                matches!(e.level, LogLevel::StageStart) && e.message == name
+            })?;
+            let end = logs[start..]
+                .iter()
+                .position(|e| {
+                    matches!(e.level, LogLevel::StageEnd) && e.message.starts_with(name)
+                })
+                .map(|o| start + o)?;
+            Some((start, end))
+        };
+
+        for (phase, target) in [
+            ("Typecheck", "rumoca_phase_typecheck"),
+            ("Resolve", "rumoca_phase_resolve"),
+        ] {
+            let (start, end) = bracket(phase)
+                .unwrap_or_else(|| panic!("no {phase} bracket in the log"));
+            let inside = logs[start..=end]
+                .iter()
+                .filter(|e| matches!(e.level, LogLevel::Trace) && e.message.contains(target))
+                .count();
+            assert!(
+                inside > 0,
+                "no {target} trace fell inside the {phase} bracket (lines {start}..={end}). \
+                 The phase's own output is being reported somewhere else in the log, \
+                 which is what a drain placed outside the bracket does.",
+            );
+        }
     }
 
     /// **The "no instrumentation" claim is still true.**
