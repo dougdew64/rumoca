@@ -74,8 +74,10 @@ test** (added 2026-08-01). The Context Bar showed three true things and silently
 fourth — the background — for weeks, because **a partial report leaves no gap where the
 missing part was**: everything on screen was correct. Doug caught it; nothing could have.
 Retrofitting the existing panes is logged in [`docs/tech-debt.md`](docs/tech-debt.md) ("UI
-testing debt"), which also records what `egui_kittest` genuinely cannot reach — **only two
-surfaces**, `incidence_view.rs` cells and `spyplot.rs`; the animations *are* testable.
+testing debt"), which also records what `egui_kittest` genuinely cannot reach — **three
+surfaces**: `incidence_view.rs` cells, `spyplot.rs`, and **scroll-area configuration**
+(`both()` vs `vertical()` is config, not behaviour; three tests for it all passed on the
+unfixed code before being deleted, 2026-08-04). The animations *are* testable.
 **Not growing the debt is free.**
 
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment

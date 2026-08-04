@@ -75,11 +75,31 @@ pub fn ui(ui: &mut egui::Ui, entries: &[LogEntry], tracing_enabled: &mut bool) -
     // Scrollable log body. `stick_to_bottom(true)` keeps the newest entries
     // visible as they arrive — important during a live simulation where entries
     // stream in over multiple frames.
-    egui::ScrollArea::vertical()
+    //
+    // **Both axes** (Doug, 2026-08-04, when a new Info line ran off the edge).
+    //
+    // The content was *already* wider than the pane — labels inside these
+    // `ui.horizontal` rows extend rather than wrap — so `ScrollArea::vertical()`
+    // was clipping text with no way to reach it. **Nothing was missing but the
+    // means of scrolling**, which is why this is a one-word change and not a
+    // layout rework.
+    //
+    // A first attempt also set `wrap_mode = Extend` here. Measurement showed it
+    // changed nothing (see `a_long_log_line_extends_past_the_viewport`), so it was
+    // removed rather than kept with a comment claiming it was load-bearing — the
+    // same standard Doug applied to the log's own wording an hour earlier.
+    //
+    // This is not really about one message. **A log carries text nobody chose the
+    // width of** — captured stderr, Rumoca traces, a `miette` diagnostic with a
+    // source excerpt — so the pane cannot assume any line fits, and wrapping
+    // monospace output would destroy the column alignment the elapsed-time and
+    // level prefixes exist to give.
+    egui::ScrollArea::both()
         .id_salt("log_view")
         .auto_shrink(false)
         .stick_to_bottom(true)
         .show(ui, |ui| {
+
             for entry in entries {
                 let (prefix, color) = level_style(entry, ui);
                 // Each row: [elapsed ms] [level prefix] [message]
@@ -95,6 +115,7 @@ pub fn ui(ui: &mut egui::Ui, entries: &[LogEntry], tracing_enabled: &mut bool) -
                 });
             }
         });
+
     toggled
 }
 

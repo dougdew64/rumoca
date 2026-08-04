@@ -488,6 +488,27 @@ state text are ordinary widgets**. Six panes, no tests, and no line in the pause
 **Not scheduled**, deliberately: they are not on the refactor's path, so they are debt rather
 than blocking work.
 
+**A third surface the harness cannot reach: scroll-area configuration** *(added
+2026-08-04)*. `ScrollArea::both()` versus `ScrollArea::vertical()` decides whether a
+horizontal scrollbar is **offered**, and that is configuration rather than behaviour —
+nothing observable differs. Established by measurement, not assumed:
+
+- The rendered row's a11y `rect()` is **logical** and reports full width whether or not
+  the pane can scroll to it.
+- `content_size.x` already exceeds the viewport under *both* settings, so it cannot
+  distinguish them either.
+- Wrapping cannot be guarded from outside either: under `both()` the inner `Ui` gets
+  infinite width, so forcing `TextWrapMode::Wrap` changes nothing measurable.
+
+**Three tests were written for this and all three passed on the unfixed code.** Each was
+caught by reverting the fix and watching the test stay green, and then deleted —
+*"a test that can pass while checking nothing is worse than none."* The honest record is
+this entry, not a green assertion.
+
+**What would make it testable** is a behavioural probe rather than a geometric one:
+drive a horizontal scroll and observe the offset move. `egui_kittest` has no ergonomic
+way to do that today, which is why this is debt and not a task.
+
 **Do not chase a coverage number.** The metric that would matter is *panes whose
 reports are guarded*, and counting tests instead would reward the tour-link tests
 that already dominate the file.
