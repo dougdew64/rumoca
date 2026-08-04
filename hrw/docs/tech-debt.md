@@ -686,69 +686,45 @@ at all** — verified, not assumed:
 done** (the first was CapacitorLoop's stale trace). The cost of checking is one grep;
 the cost of not checking is planning an arc around imaginary work.
 
-### Why the fallbacks existed, and why they no longer fire
+### The fallbacks are gone: absence is stated, never filled in
 
-Doug: *"for from_incidence / record, I'm still not understanding why we have not yet
-solved whatever problems must be solved to eliminate the replay."* The answer turned
-out to be **one gap, not several**.
+Doug, 2026-08-04, on the singular case: *"it would be helpful if the parts of the UI
+which depend upon the BLT blocks made clear that no BLT blocks are available because
+no attempt was made by the compiler to create those BLT blocks."*
 
-The matching, Tarjan and tearing views render under **two** stages — Structural over
-the raw DAE, Index Reduction over the reduced one — and only the raw system had a
-capture. So on the Index Reduction tab there were no frames to offer, and the
-constructors fell back to re-deriving. That single gap was the whole reason a fallback
-path existed, *and* the reason tearing-under-index-reduction was still a replay: the
-same missing capture, seen from two directions.
+**He was right, and it reversed the argument for keeping the fallbacks.** Measured on
+`CapacitorLoop`: the compiler matches 13 of 14 equations, declares the system singular
+and returns **before** `build_blt_blocks` — and the Tarjan tab then built its own
+matching and BLT and drew a **non-empty SCC decomposition of blocks that were never
+created**.
 
-`index_reduction_stage` runs `build_structural_report` on the reduced DAE, so the fix
-was to open the same three scopes around **that** call. One placement detail matters:
-the scopes open *after* the function's `raw_ok` probe, which runs a full structural
-report on the raw DAE — and tearing's capture appends a segment per loop rather than
-overwriting, so an earlier scope would splice the raw system's loops into the reduced
-system's animation.
+That is a fiction in the same sense as the "DAE pipeline" log entry removed the same
+day, and worse: the log was mislabelled, this was fabricated. I had argued the
+fallbacks were *"the only source"* for singular models — being the only source was the
+problem.
 
-`Drivetrain` is the specimen that makes this visible: **97 equations raw, 20 reduced**.
-`the_reduced_system_has_its_own_captured_frames` asserts the two captures genuinely
-differ, because two captures of the same system would be the bug wearing a second
-field.
+**The rule now, across all four conditions:** when a capture is absent, say *why* —
+never re-derive.
 
-**What remains of the fallbacks.** `from_incidence` and `record` still exist and are
-still re-derivations, but nothing in normal operation reaches them: both stages now
-carry frames, and `structural_frames_for_stage` picks. They are a safety net for a
-capture that is absent or does not fit the matrix — and the size check that routes to
-them is itself the guard against the mismatch described below. Deleting them would
-turn a faithful re-derivation into an empty animation, which is a worse answer to
-"what did the algorithm do".
+| condition | what happens |
+|---|---|
+| singular system | *"No BLT block decomposition to show — structural analysis stopped before this step"*, plus the compiler's own message |
+| empty system | *"No … was recorded for this model"* |
+| size mismatch | refused; it is a bug, not a fallback |
+| stage not reached | already correct — the pane says nothing because there is nothing |
 
-### "Eliminated" was an over-claim, corrected the same day
+The absence is the more useful thing to know. It teaches the chain's contract: BLT
+decomposition and tearing are **entitled** to a matched system, and a phase that
+refuses when it has not got one is doing its job.
 
-Doug, reading the closing summary: *"my understanding is that from_incidence /
-record still uses replays, and tearing under index reduction still uses replays. Is
-my understanding correct?"* **It is.** The accurate statement is narrower:
+`a_singular_system_captures_matching_but_no_blocks` pins the compiler's half —
+matching runs, Tarjan and tearing do not — so a future change that continued past a
+singular matching would make the panes' explanation stale and fail here.
+`no_animation_re_runs_a_phase_by_default` forbids `from_incidence` *and*
+`TearingAnimation::record` in `app.rs`.
 
-> **No default path re-derives.** Three paths still do, each for a stated reason.
-
-Checking his question also found a defect the capture had *introduced*. The matching
-and Tarjan views render under Structural **and** Index Reduction, and the incidence
-matrix follows the stage — so on the Index Reduction tab the matrix is the reduced
-system while the captured frames are from the raw one. **Drivetrain measures that gap
-at 97 equations versus 20.** The frames would have addressed rows that do not exist.
-
-**That is worse than the replay it replaced**, because a re-derivation from the
-reduced matrix is at least self-consistent. Now validated inside the constructors —
-`match_eq`'s length *is* the equation count of the system that produced the frame — so
-a mismatch falls back rather than misaddressing. Validated there rather than gated at
-the call site, because a gate can be forgotten.
-
-### What is deliberately still a re-derivation
-
-- **`start_live` on every animation.** A live debug session *is* the user asking to
-  execute an algorithm again under a debugger. That is the feature, not a replay.
-- **`from_incidence` / `record` as fallbacks**, reached only when a capture is absent.
-  An empty animation would claim the algorithm did nothing, which is worse than a
-  faithful re-derivation. The guard checks the UI never calls them *directly*.
-- **Tearing under Index Reduction.** That tab tears the *reduced* DAE, which HRW
-  builds itself; the captured frames are from the raw one. `from_captured` is gated on
-  the Structural stage for exactly that reason.
+**What survives:** `from_incidence` (used by `examples/frame_index`), `record` and
+`start_live`. None is reachable from a recorded view.
 
 ### The pattern, applied six times
 

@@ -127,7 +127,7 @@ impl MatchingAnimation {
     pub fn from_captured_frames(
         mat: &IncidenceMatrix,
         frames: &[rumoca_phase_structural::matching::MatchingFrame],
-    ) -> Self {
+    ) -> Option<Self> {
         // **The frames must describe THIS matrix.**
         //
         // The matching and Tarjan views render under Structural *and* Index
@@ -149,16 +149,19 @@ impl MatchingAnimation {
             .first()
             .is_some_and(|f| f.match_eq.len() == mat.n_eq());
         if frames.is_empty() || !fits {
-            return Self::from_incidence(mat);
+            // **`None`, not a re-derivation.** Re-running the search here would draw
+            // a picture of a run that did not happen; the caller says so instead.
+            // See `App::structural_unavailable`.
+            return None;
         }
-        Self {
+        Some(Self {
             playback: Playback::recorded(frames.to_vec(), FRAME_INTERVAL),
             n_eq: mat.n_eq(),
             n_var: mat.n_var(),
             equation_names: mat.equation_texts().to_vec(),
             unknown_names: mat.unknown_names().to_vec(),
             rows: mat.rows().to_vec(),
-        }
+        })
     }
 
     pub fn from_incidence(mat: &IncidenceMatrix) -> Self {
@@ -699,13 +702,12 @@ mod tests {
             match_eq: vec![None; wrong_size],
         }];
 
-        let anim = MatchingAnimation::from_captured_frames(&mat, &alien);
-        let rederived = MatchingAnimation::from_incidence(&mat);
-        assert_eq!(
-            anim.position().1,
-            rederived.position().1,
+        assert!(
+            MatchingAnimation::from_captured_frames(&mat, &alien).is_none(),
             "frames sized for a {wrong_size}-equation system must be refused for this \
-             {}-equation matrix and the animation re-derived instead",
+             {}-equation matrix \u{2014} and refused means **no animation**, not a \
+             re-derived one. Drawing a search the compiler did not run is the fiction \
+             this capture exists to remove.",
             mat.n_eq(),
         );
 
@@ -715,7 +717,8 @@ mod tests {
             step: MatchingStep::TryEquation(0),
             match_eq: vec![None; mat.n_eq()],
         }];
-        let kept = MatchingAnimation::from_captured_frames(&mat, &fitting);
+        let kept = MatchingAnimation::from_captured_frames(&mat, &fitting)
+            .expect("a capture that fits the matrix is used");
         assert_eq!(kept.position().1, 1, "a one-frame capture that fits is played as-is");
     }
 

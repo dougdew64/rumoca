@@ -571,12 +571,23 @@ Some prose.
         // question is which path the UI *takes*, not which paths exist. A first
         // version of this test read the animation modules and duly flagged the
         // fallbacks it was written to permit.
-        assert!(
-            !app.contains("from_incidence"),
-            "app.rs constructs an animation by re-deriving. The captured constructors \
-             already fall back to `from_incidence` themselves when no capture exists; \
-             naming it from the UI skips the capture entirely",
-        );
+        // **Neither re-deriving constructor may be named.** `record` went the same
+        // way as `from_incidence` on 2026-08-04: both build their own matching and
+        // BLT, so on a singular model they draw a decomposition of blocks the
+        // compiler never created. Measured on `CapacitorLoop` — the Tarjan tab
+        // rendered a *non-empty* SCC animation for a system that produced none.
+        //
+        // The captured constructors now return `None` instead of re-deriving, and
+        // the panes say why (`App::structural_unavailable`). Nothing may reintroduce
+        // the fabrication by calling these from the UI.
+        for ctor in ["from_incidence", "TearingAnimation::record"] {
+            assert!(
+                !app.contains(ctor),
+                "app.rs constructs an animation with `{ctor}`, which re-derives. On a \
+                 model whose compile stopped early that draws an algorithm run that \
+                 never happened \u{2014} say the capture is absent instead",
+            );
+        }
 
         // And every animation that can be fed from a capture is.
         for ctor in ["from_captured_frames", "from_captured", "from_frames", "from_report"] {

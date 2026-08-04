@@ -1982,6 +1982,52 @@ impl App {
         }
     }
 
+    /// **Why an algorithm view has nothing to show** — stated, never filled in.
+    ///
+    /// Doug, 2026-08-04: *"if during matching the compiler discovers that the system
+    /// is singular, it would be helpful to know that the compiler returned before
+    /// building BLT blocks … it would be helpful if the parts of the UI which depend
+    /// upon the BLT blocks made clear that no BLT blocks are available because no
+    /// attempt was made by the compiler to create those BLT blocks."*
+    ///
+    /// He was right, and it reversed an argument I had just made for keeping the
+    /// re-deriving fallbacks. Measured on `CapacitorLoop`: the compiler matches 13 of
+    /// 14 equations, declares the system singular, and **returns before building any
+    /// BLT blocks** — and the Tarjan tab then built its own matching and BLT and drew
+    /// a **non-empty SCC decomposition of blocks that were never created.**
+    ///
+    /// That is a fiction in the same sense as the "DAE pipeline" log entry removed
+    /// earlier the same day, and worse: the log was mislabelled, this was fabricated.
+    /// **A view with nothing to show that shows something anyway teaches a false
+    /// model of the compiler**, and nothing on screen says so.
+    ///
+    /// The absence is also the more useful thing to know. It teaches the chain's
+    /// contract: BLT decomposition and tearing are *entitled* to a matched system, and
+    /// a phase that refuses when it has not got one is doing its job.
+    fn structural_unavailable(&self, what: &str) -> String {
+        let err = self
+            .stages
+            .get(self.stage)
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .and_then(|e| e.get("message"))
+            .and_then(serde_json::Value::as_str);
+        match err {
+            Some(msg) => format!(
+                "No {what} to show \u{2014} structural analysis stopped before this \
+                 step.\n\n{msg}\n\nMatching runs first. When it cannot match every \
+                 equation the system is singular, so BLT decomposition and tearing are \
+                 never attempted. Nothing is missing from HRW: the compiler did not \
+                 get this far.",
+            ),
+            None => format!(
+                "No {what} was recorded for this model. The compiler produced none, so \
+                 there is nothing to replay.",
+            ),
+        }
+    }
+
     fn current_stage(&self) -> &Stage {
         match self.stage {
             StageKind::Simulation => &self.simulation,
@@ -3293,7 +3339,7 @@ impl App {
         self.stage_views.matching_anim = Some(
             // Frames from the compile, and from the SYSTEM this tab is showing:
             // Structural animates the raw DAE, Index Reduction the reduced one.
-            inc.as_ref().map(|m| {
+            inc.as_ref().and_then(|m| {
                 matching_anim::MatchingAnimation::from_captured_frames(
                     m,
                     &self.structural_frames_for_stage().matching,
@@ -3315,7 +3361,9 @@ impl App {
             self.tracked_identifier.as_deref(), arming, debug_enabled,
         );
     } else {
-        ui.weak("(no incidence data for matching animation)");
+        // Was "(no incidence data)" — which is often false and always unhelpful.
+        // The real reason is usually that the compiler stopped earlier.
+        ui.label(self.structural_unavailable("matching search"));
     }
     if debug_clicked {
         self.start_live_debug(PendingLiveDebug::Matching);
@@ -3392,7 +3440,9 @@ impl App {
             self.tracked_identifier.as_deref(), arming, debug_enabled,
         );
     } else {
-        ui.weak("(no dependency graph for BLT animation)");
+        // The dependency graph exists whenever matching succeeded; when this pane
+        // is empty it is nearly always because the compiler never built BLT blocks.
+        ui.label(self.structural_unavailable("BLT block decomposition"));
     }
     if debug_clicked {
         self.start_live_debug(PendingLiveDebug::Tarjan);
@@ -3500,16 +3550,16 @@ impl App {
             // Structural tab tears the raw DAE, Index Reduction the reduced one.
             // Pairing one tab's report with the other's frames is the mismatch this
             // whole set of captures exists to make impossible.
-            let captured = self.stages.get(self.stage).value.as_ref().and_then(|report| {
-                tearing_anim::TearingAnimation::from_captured(
-                    report,
-                    &self.structural_frames_for_stage().tearing,
-                )
-            });
-            self.stage_views.tearing_anim = Some(match captured {
-                Some(anim) => Some(anim),
-                None => self.tearing_dae().map(|dae| tearing_anim::TearingAnimation::record(&dae)),
-            });
+            // **No `record` fallback.** Re-walking the DAE here would tear blocks the
+            // compiler never built — see `structural_unavailable`.
+            self.stage_views.tearing_anim = Some(
+                self.stages.get(self.stage).value.as_ref().and_then(|report| {
+                    tearing_anim::TearingAnimation::from_captured(
+                        report,
+                        &self.structural_frames_for_stage().tearing,
+                    )
+                }),
+            );
         }
         if let Some(Some(anim)) = &mut self.stage_views.tearing_anim {
             debug_clicked = egui::ScrollArea::vertical()
@@ -3517,7 +3567,7 @@ impl App {
                 .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
                 .inner;
         } else {
-            ui.weak("(no DAE available for tearing)");
+            ui.label(self.structural_unavailable("tearing"));
         }
         if debug_clicked {
             self.start_live_debug(PendingLiveDebug::Tearing);
@@ -8520,7 +8570,12 @@ mod tests {
         // report is absent — which is the state under test.
         type Pane = fn(&mut App, &mut egui::Ui);
         let panes: [(&str, Pane, &str); 5] = [
-            ("tearing", |a, ui| a.tearing_anim_ui(ui), "no DAE available for tearing"),
+            // **Was "no DAE available for tearing", which was usually untrue.** The
+            // DAE is normally present; what is absent is the *tearing*, because the
+            // compiler stopped at matching. `structural_unavailable` says which
+            // (2026-08-04) — a pane that names the wrong cause is worse than one that
+            // names none, because it sends the reader looking in the wrong place.
+            ("tearing", |a, ui| a.tearing_anim_ui(ui), "No tearing"),
             ("alias", |a, ui| a.alias_anim_ui(ui), "no alias eliminations in this report"),
             ("ic_plan", |a, ui| a.ic_plan_anim_ui(ui), "no initial-condition plan in this report"),
             ("connection", |a, ui| a.connection_anim_ui(ui), "no connections in this model"),

@@ -6701,6 +6701,65 @@ mod tests {
         );
     }
 
+    /// **A singular system produces no BLT frames, and none are invented.**
+    ///
+    /// Doug, 2026-08-04: *"it would be helpful if the parts of the UI which depend
+    /// upon the BLT blocks made clear that no BLT blocks are available because no
+    /// attempt was made by the compiler to create those BLT blocks."*
+    ///
+    /// Measured before the fix: on `CapacitorLoop` the compiler matches 13 of 14,
+    /// declares the system singular and returns before `build_blt_blocks` — yet the
+    /// Tarjan tab built its own matching and BLT and drew a **non-empty** SCC
+    /// decomposition of blocks that were never created.
+    ///
+    /// This pins the compiler's half of the contract: **matching runs, Tarjan and
+    /// tearing do not.** If a future change made `build_structural_report` continue
+    /// past a singular matching, the tabs' explanation would become wrong and this
+    /// says so.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn a_singular_system_captures_matching_but_no_blocks() {
+        let FromWorker::Compiled { matching_frames, tarjan_frames, tearing_frames, stages, .. } =
+            compile_specimen_shared("CapacitorLoop")
+        else {
+            panic!("expected Compiled");
+        };
+
+        // Precondition: this specimen really is the singular one.
+        let err = stages
+            .structural
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
+            .and_then(|e| e.get("message"))
+            .and_then(serde_json::Value::as_str)
+            .expect("CapacitorLoop's structural stage reports why it stopped");
+        assert!(err.contains("singular"), "expected a singularity, got {err:?}");
+
+        assert!(
+            !matching_frames.is_empty(),
+            "matching runs before the singularity is discovered, so its search IS \
+             capturable \u{2014} this is what the matching tour's third act shows",
+        );
+        assert!(
+            tarjan_frames.is_empty(),
+            "the compiler returned before build_blt_blocks, so there is no SCC search \
+             to capture. {} frames means it now continues past a singular matching, \
+             and the tabs' explanation is stale",
+            tarjan_frames.len(),
+        );
+        assert!(
+            tearing_frames.is_empty(),
+            "nor any tearing: there are no blocks to tear",
+        );
+
+        // And the report carries no `blocks`, which is what `from_captured` keys on.
+        assert!(
+            stages.structural.value.as_ref().and_then(|v| v.get("blocks")).is_none(),
+            "a singular report must not carry blocks",
+        );
+    }
+
     /// Simulation also emits log entries with timing.
     #[test]
     #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]

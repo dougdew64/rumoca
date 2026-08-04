@@ -124,7 +124,8 @@ impl TarjanAnimation {
             return None;
         }
         let (Some(last), false) = (matching_frames.last(), tarjan_frames.is_empty()) else {
-            return Self::from_incidence(mat);
+            // No SCC search was captured — say so rather than running one now.
+            return None;
         };
         // **The frames must describe this matrix.** Same hazard as
         // `MatchingAnimation::from_captured_frames`: this view also renders on the
@@ -132,7 +133,7 @@ impl TarjanAnimation {
         // from the raw one. `match_eq`'s length is the equation count of the system
         // that produced it, so it is the check.
         if last.match_eq.len() != n_eq {
-            return Self::from_incidence(mat);
+            return None;
         }
 
         let match_eq = &last.match_eq;
