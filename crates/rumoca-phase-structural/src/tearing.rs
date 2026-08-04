@@ -245,19 +245,64 @@ pub fn tear_algebraic_loop_with_trace(
     })
 }
 
-/// Hand one frame to the observer, if anyone is watching.
+thread_local! {
+    /// Ambient capture: `Some` while a scope is open. **Segmented per loop** —
+    /// tearing runs once per coupled block, and a flat list would splice several
+    /// blocks' decisions into one animation.
+    static CAPTURE: std::cell::RefCell<Option<Vec<Vec<TearingFrame>>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **Begin capturing tearing frames on this thread**, one segment per coupled block.
+///
+/// Unlike the matching and Tarjan captures this needs no branch at the call site:
+/// [`tear_algebraic_loop`] *is* the traced entry point with `None`, so every run
+/// already passes through [`emit_tearing`]. The capture hooks in there.
+///
+/// **Nothing when closed** — one thread-local read, and no frame is built.
+///
+/// Scope one model. [`take_capture`] drains and closes.
+pub fn start_capture() {
+    CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+}
+
+/// Take the captured segments and close the scope.
+///
+/// One entry per coupled block, in the order the blocks were torn — so a caller
+/// animating block *k* takes segment *k* rather than guessing where one loop's
+/// decisions end and the next begins.
+pub fn take_capture() -> Vec<Vec<TearingFrame>> {
+    CAPTURE.with(|c| c.borrow_mut().take()).unwrap_or_default()
+}
+
+/// Hand one frame to the observer and/or the ambient capture, if anyone is
+/// watching. Still builds no frame when nobody is.
 fn emit_tearing(
     observer: Option<FrameObserver<'_, TearingFrame>>,
     tears: &[usize],
     causal: &[(usize, usize)],
     step: TearingStep,
 ) {
+    let capturing = CAPTURE.with(|c| c.borrow().is_some());
+    if observer.is_none() && !capturing {
+        return;
+    }
+    let frame = TearingFrame {
+        step,
+        tears_so_far: tears.to_vec(),
+        causal_so_far: causal.to_vec(),
+    };
+    CAPTURE.with(|c| {
+        if let Some(segments) = c.borrow_mut().as_mut() {
+            // `Start` opens a new block's segment; everything after joins it.
+            if matches!(frame.step, TearingStep::Start { .. }) || segments.is_empty() {
+                segments.push(Vec::new());
+            }
+            segments.last_mut().expect("just ensured").push(frame.clone());
+        }
+    });
     if let Some(observe) = observer {
-        observe(&TearingFrame {
-            step,
-            tears_so_far: tears.to_vec(),
-            causal_so_far: causal.to_vec(),
-        });
+        observe(&frame);
     }
 }
 

@@ -35,6 +35,46 @@ pub struct TarjanTraceResult {
     pub frames: Vec<TarjanFrame>,
 }
 
+thread_local! {
+    /// Ambient capture buffer: `Some` while a capture scope is open.
+    static CAPTURE: std::cell::RefCell<Option<Vec<TarjanFrame>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **Begin capturing Tarjan frames on this thread.**
+///
+/// The counterpart to [`tarjan_scc_with_trace`], for callers that reach this
+/// algorithm through [`crate::build_structural_report`] rather than by calling it.
+/// The report runs `tarjan_scc` inside `blt::build_blt_blocks` and returns only the
+/// blocks, so a tool that wants to animate the SCC search has to run Tarjan a second
+/// time on the same dependency graph — frames describing a run that produced nothing.
+///
+/// Same shape as `matching::start_capture`, and the same reasoning. **Nothing when
+/// closed**: the untraced path still runs and no frame is built.
+///
+/// Scope one model. [`take_capture`] drains and closes.
+pub fn start_capture() {
+    CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+}
+
+/// Take the captured frames and close the scope.
+pub fn take_capture() -> Vec<TarjanFrame> {
+    CAPTURE.with(|c| c.borrow_mut().take()).unwrap_or_default()
+}
+
+/// Whether a capture scope is open, so callers can pick the traced path.
+pub(crate) fn capturing() -> bool {
+    CAPTURE.with(|c| c.borrow().is_some())
+}
+
+pub(crate) fn deposit_capture(frames: Vec<TarjanFrame>) {
+    CAPTURE.with(|c| {
+        if let Some(buf) = c.borrow_mut().as_mut() {
+            *buf = frames;
+        }
+    });
+}
+
 /// Like `tarjan_scc`, but records every algorithmic step for animation.
 ///
 /// When `observer` is `Some`, each frame is handed to it as it is produced —

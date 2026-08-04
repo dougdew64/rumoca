@@ -14,7 +14,15 @@ pub fn build_blt_blocks(
     match_eq: &[Option<usize>],
     adj: &[Vec<usize>],
 ) -> Vec<BltBlock> {
-    let sccs = tarjan_scc(incidence.n_eq, adj);
+    // Trace only when someone is watching; see `tarjan::start_capture`. Closed,
+    // this is the untraced path and builds no frames at all.
+    let sccs = if crate::tarjan::capturing() {
+        let traced = crate::tarjan::tarjan_scc_with_trace(incidence.n_eq, adj, None);
+        crate::tarjan::deposit_capture(traced.frames);
+        traced.sccs
+    } else {
+        tarjan_scc(incidence.n_eq, adj)
+    };
     sccs.into_iter()
         .map(|scc| scc_to_block(&scc, incidence, match_eq))
         .collect()
