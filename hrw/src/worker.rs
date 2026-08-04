@@ -5932,6 +5932,74 @@ mod tests {
         );
     }
 
+    /// **The connection replay flattens the same way the real compile does.**
+    ///
+    /// `record_connection_frames` re-runs instantiate → typecheck → flatten with a
+    /// frame sink, because the sink is a parameter of
+    /// `flatten_ref_with_options_traced` and the session API calls the *untraced*
+    /// `flatten_ref_with_options` with no way to pass an observer through. So the
+    /// Connections view is populated by a **second flatten**, and it is only
+    /// trustworthy while that flatten is configured like the first.
+    ///
+    /// **Two copies of three booleans in two crates, and nothing joined them.**
+    /// Change `flatten_options_for_tree` upstream and the view would silently show an
+    /// expansion the compile never performed — a wrong picture with no symptom, which
+    /// is the worst thing a view of a compiler can be.
+    ///
+    /// Compared at the source level because `flatten_options_for_tree` is
+    /// `pub(super)`: HRW cannot call it, which is itself part of why the replay
+    /// exists. **The real fix is to thread an observer through the compile path and
+    /// delete the replay** — additive, observation-only, upstreamable. This guard is
+    /// what keeps the view honest until then.
+    #[test]
+    fn the_connection_replay_matches_the_real_flatten_options() {
+        let support = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("hrw/ has a parent")
+            .join("crates/rumoca-compile/src/session/compile_support.rs");
+        let upstream = std::fs::read_to_string(&support)
+            .unwrap_or_else(|e| panic!("{}: {e}", support.display()));
+        let ours = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/worker.rs"),
+        )
+        .expect("worker.rs must be readable");
+
+        // The upstream defaults, as the compile actually sets them.
+        let block_start = upstream
+            .find("fn flatten_options_for_tree()")
+            .expect("rumoca-compile must still define flatten_options_for_tree");
+        let block = &upstream[block_start..block_start + 900.min(upstream.len() - block_start)];
+
+        // And ours, from `record_connection_frames`.
+        let ours_start = ours
+            .find("fn record_connection_frames(")
+            .expect("record_connection_frames must exist");
+        let ours_block = &ours[ours_start..ours_start + 1400.min(ours.len() - ours_start)];
+
+        for field in [
+            "strict_connection_validation",
+            "simplify_variable_names",
+            "materialize_structured_families",
+        ] {
+            let read = |src: &str| -> bool {
+                let at = src
+                    .find(field)
+                    .unwrap_or_else(|| panic!("{field} not found; the options changed shape"));
+                let tail = &src[at..];
+                let colon = tail.find(':').expect("a struct field has a colon");
+                tail[colon..].contains("true")
+                    && tail[colon..].find("true") < tail[colon..].find(',')
+            };
+            assert_eq!(
+                read(ours_block),
+                read(block),
+                "the connection replay sets {field} differently from the compile it is \
+                 supposed to mirror. The Connections view would show an expansion that \
+                 never happened, with nothing on screen to say so.",
+            );
+        }
+    }
+
     /// **HRW's own replays are never logged as phases, and nesting is real.**
     ///
     /// Doug, 2026-08-04: *"that suggests that the connection replay is a fiction,
