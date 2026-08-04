@@ -606,3 +606,62 @@ harder to read**, since the source is a learning artifact here.
 Once green, formatting becomes a pre-commit step rather than a project. Until then, **do not run
 `cargo fmt` as part of unrelated work** — hand-indent the block and note it, as
 `f3c6fb90` did.
+
+---
+
+## A3 — the duplicate resolve: measured, solved, and reverted at the last step
+
+**Status 2026-08-04: not fixed. The fix is known and proven to work; one error path
+defeats it.** Recorded here rather than left in a branch, because the measurement was
+the expensive part and it should not need repeating.
+
+### The problem, measured
+
+Every HRW compile resolves the whole library **twice** — confirmed, not inferred: a
+traced compile emits two `resolve timing summary` lines, `def_count=38855` and
+`class_count=6521` both times.
+
+`Session::tree()` builds under `ResolveBuildMode::Standard`. A strict compile builds
+under `StrictCompileRecovery`. **Both are cached, but separately**, so inspecting the
+tree and then compiling resolves twice. Nothing is wrong with either — HRW simply had
+no way to ask for the tree the compile was about to build.
+
+### The fix, and that it works
+
+Add `Session::strict_compile_resolved()` — additive, public, returns the `Arc` — and
+have HRW call it instead of `tree()`. The compile then finds its tree cached.
+Measured with the change in place:
+
+| | Resolve | Whole compile |
+|---|---|---|
+| before | 883 ms | ~2000 ms |
+| after the clone fix (`tree()`, landed) | 740 ms | 1815 ms |
+| **after this** | **596 ms** | **1102 ms** |
+
+`resolve timing summary` count went **2 → 1**. The compile roughly halves.
+
+### Why it was reverted
+
+**Recovery mode succeeds past errors that `Standard` treats as fatal** — that is what
+recovery is for. So `Ok` no longer implies the model resolved cleanly, and HRW's
+Resolve tab stopped reporting resolve failures. Two tests caught it:
+`a_broken_specimen_does_not_poison_the_next_compile` and
+`a_resolve_failure_names_the_reference_and_its_line` (*"a resolve failure must carry a
+structured payload"*).
+
+That is the tests working. The old code used `tree()`'s `Err` as its failure signal,
+and the replacement has no `Err` to use.
+
+### What finishing it needs
+
+The diagnostics are available — `build_resolved_for_strict_compile_with_diagnostics`
+returns them alongside the tree, and the accessor was already amended to pass them
+through. The remaining work is **deciding which diagnostics mean "this model failed to
+resolve"**: the set includes library-wide diagnostics that must not fail a good model,
+and the existing failure arm gets its structured payload from a *model-scoped* call
+(`compile_model_diagnostics`) rather than from the error value.
+
+So: on `Ok`, filter to the model's own errors and route to the existing failure arm
+when any exist. **Not attempted** — the semantics of model-scoped versus library-wide
+diagnostics were not verified, and guessing them would produce a Resolve tab that is
+silent on real failures, which is worse than the duplicate resolve.
