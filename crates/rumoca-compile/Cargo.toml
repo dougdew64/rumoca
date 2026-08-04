@@ -15,6 +15,7 @@ tracing = [
     "rumoca-phase-instantiate/tracing",
     "rumoca-phase-resolve/tracing",
     "rumoca-phase-structural/tracing",
+    "rumoca-phase-typecheck/tracing",
 ]
 
 [dependencies]

@@ -11,17 +11,34 @@ impl TypeChecker {
         overlay: &mut InstanceOverlay,
         model_name: &str,
     ) {
+        crate::typecheck_trace!("check_instanced start model={model_name}");
+
+        // **The three early returns, which said nothing until 2026-08-04.**
+        // `check_instanced` can abandon type checking at any of them, and a reader
+        // watching the log saw only that Typecheck finished — indistinguishable from
+        // finishing its work. Naming the point of abandonment is the difference
+        // between "it passed" and "it stopped".
         let Some(type_table) = self.initialize_instanced_context(tree) else {
+            crate::typecheck_trace!(
+                "check_instanced abandoned model={model_name} at=initialize_instanced_context"
+            );
             return;
         };
         self.populate_overlay_type_roots(tree, overlay, &type_table);
         self.resolve_overlay_component_types(overlay, &type_table);
         if !self.initialize_instanced_modifier_member_types(tree, overlay, model_name, &type_table)
         {
+            crate::typecheck_trace!(
+                "check_instanced abandoned model={model_name} \
+                 at=initialize_instanced_modifier_member_types"
+            );
             return;
         }
         self.collect_overlay_eval_values(overlay);
         if !self.collect_instanced_eval_constants(tree, overlay, model_name) {
+            crate::typecheck_trace!(
+                "check_instanced abandoned model={model_name} at=collect_instanced_eval_constants"
+            );
             return;
         }
         let record_aliases = Self::collect_record_aliases(overlay);
@@ -34,6 +51,9 @@ impl TypeChecker {
         self.check_instanced_component_modifiers(tree, model_name, &type_table);
         self.check_instanced_equations(tree, overlay, model_name, &type_table);
         self.flush_eval_warnings();
+        // Reached only when none of the three early returns fired, so this line is
+        // itself the signal that type checking ran to completion.
+        crate::typecheck_trace!("check_instanced complete model={model_name}");
     }
 
     fn initialize_instanced_context(&mut self, tree: &ClassTree) -> Option<TypeTable> {

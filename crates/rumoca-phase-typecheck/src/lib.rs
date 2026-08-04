@@ -51,6 +51,35 @@ use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 use typechecker::traversal_adapter::walk_equations;
 
+/// Optional `tracing` output, mirroring `structural_trace!` in
+/// `rumoca-phase-structural`.
+///
+/// Behind a feature so the dependency is opt-in, and a macro rather than direct
+/// `tracing::debug!` calls so the no-op form still type-checks its arguments — a
+/// disabled feature that stopped compiling its own format strings would rot
+/// silently until someone enabled it.
+///
+/// Added 2026-08-04. This phase emitted **nothing**, which made its silence
+/// ambiguous to anyone reading the log: a type checker that says nothing looks
+/// identical to one that was never wired up. Its three early returns were the worst
+/// of it — `check_instanced` can abandon type checking at three points and, until
+/// now, said so nowhere.
+#[cfg(feature = "tracing")]
+macro_rules! typecheck_trace {
+    ($($arg:tt)*) => {
+        tracing::debug!(target: "rumoca_phase_typecheck", $($arg)*)
+    };
+}
+
+#[cfg(not(feature = "tracing"))]
+macro_rules! typecheck_trace {
+    ($($arg:tt)*) => {
+        let _ = format_args!($($arg)*);
+    };
+}
+
+pub(crate) use typecheck_trace;
+
 pub use typechecker::api::{typecheck, typecheck_instanced};
 
 /// Type alias for typecheck results with boxed errors.
@@ -312,6 +341,7 @@ impl TypeChecker {
     }
 
     pub(crate) fn emit_typecheck_error(&mut self, error: TypeCheckError) {
+        crate::typecheck_trace!("typecheck error: {error}");
         self.diagnostics.emit(error.to_diagnostic());
     }
 
