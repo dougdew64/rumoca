@@ -520,6 +520,47 @@ Some prose.
         );
     }
 
+    /// **The model list defines its row menu once**, so every list gets the same one.
+    ///
+    /// Doug, 2026-08-04: *"unlike the correctly-working items in the HRW specimens
+    /// list, the items in the MSL Corpus list do not provide right-click context
+    /// menus."* The corpus rows had **no menu at all** — the one list with 2,626
+    /// entries was the one that could not be recompiled or pointed at.
+    ///
+    /// **Checked at the source level, and honestly about why.** `egui_kittest` clicks
+    /// only the primary button, so a context menu cannot be opened in a headless test
+    /// and the *rendering* is out of reach (`docs/tech-debt.md`). What is checkable is
+    /// the property Doug actually asked for — **one definition** — which makes
+    /// consistency structural rather than remembered. Copy the menu inline onto a
+    /// second list and this fires, which is the drift that produced the bug.
+    ///
+    /// Same shape as the field-count ratchet below: read the source, count, and
+    /// require the reasoning in the commit that changes the number.
+    #[test]
+    fn the_model_list_has_exactly_one_row_context_menu() {
+        let src = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/model_list.rs"),
+        )
+        .expect("model_list.rs must be readable");
+
+        let calls = src.matches(".context_menu(").count();
+        assert_eq!(
+            calls, 1,
+            "model_list.rs should build its row menu in one place (`row_context_menu`) \
+             and share it; found {calls} call sites, which is how the corpus list came \
+             to have no menu while the specimen list had one",
+        );
+
+        // Non-vacuity: the helper must exist and every list must reach it, or "one
+        // call site" is satisfied by a file that lost the feature altogether.
+        assert!(src.contains("fn row_context_menu("), "the shared menu must exist");
+        assert_eq!(
+            src.matches("row_context_menu(").count(),
+            3,
+            "one definition plus one call per list (specimens, corpus)",
+        );
+    }
+
     /// **`App` has at most `MAX_APP_FIELDS` fields — a ratchet, not a limit.**
     ///
     /// The UI pause's success criterion (`docs/ui-pause-plan.md`). *"Extract

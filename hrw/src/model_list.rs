@@ -40,6 +40,75 @@ pub(crate) struct ModelListOutcome {
     pub(crate) point_at_specimen: bool,
 }
 
+/// What a row's context menu was asked for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RowAction {
+    /// Re-run the compiler on this row.
+    Recompile,
+    /// Make this model the subject of the next question.
+    PointAt,
+}
+
+/// **The row context menu, defined once for every list.**
+///
+/// Doug, 2026-08-04: *"unlike the correctly-working items in the HRW specimens
+/// list, the items in the MSL Corpus list do not provide right-click context
+/// menus. The context menus for MSL Corpus items should be consistent with the
+/// context menus for HRW specimen items."*
+///
+/// **Extracted rather than copied.** "Consistent with" is a property that decays
+/// the moment there are two copies — the next person to add a verb, change a
+/// wording or fix an enablement rule updates the list they happened to be looking
+/// at. One definition makes consistency structural instead of remembered, which is
+/// the same reasoning that put the stage vocabulary behind `slug()`/`from_slug`
+/// after it drifted into four hand-written copies.
+///
+/// The verbs are identical; only what a row *does* with them differs, so the
+/// caller supplies the enablement and interprets the result.
+fn row_context_menu(
+    resp: &egui::Response,
+    can_recompile: bool,
+    can_capture: bool,
+    what: &str,
+) -> Option<RowAction> {
+    let mut action = None;
+    resp.context_menu(|ui| {
+        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+
+        let btn = ui.add_enabled(can_recompile, egui::Button::new("\u{1f504} Recompile"));
+        let btn = if can_recompile {
+            btn.on_hover_text(
+                "Re-run the compiler on this model (e.g. to hit an armed breakpoint).",
+            )
+        } else {
+            btn.on_disabled_hover_text(format!("Left-click to load this {what} first."))
+        };
+        if btn.clicked() {
+            action = Some(RowAction::Recompile);
+            ui.close();
+        }
+
+        ui.separator();
+
+        let btn = ui.add_enabled(can_capture, egui::Button::new("\u{1f3af} Point at"));
+        let btn = if can_capture {
+            btn.on_hover_text(
+                "Make the whole model the subject of your next question, then ask in \
+                 the chat.",
+            )
+        } else {
+            btn.on_disabled_hover_text(format!(
+                "Left-click to load & compile this {what} first, then point at it.",
+            ))
+        };
+        if btn.clicked() {
+            action = Some(RowAction::PointAt);
+            ui.close();
+        }
+    });
+    action
+}
+
 pub(crate) enum ModelListNav {
     /// A corpus row: open by qualified name.
     OpenLibrary(String),
@@ -267,38 +336,11 @@ impl ModelListState {
                             } else if let Some(hint) = purpose {
                                 resp = resp.on_hover_text(hint);
                             }
-                            resp.context_menu(|ui| {
-                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                                let btn = ui.add_enabled(can_recompile, egui::Button::new("🔄 Recompile"));
-                                let btn = if can_recompile {
-                                    btn.on_hover_text(
-                                        "Re-run the compiler on this specimen (e.g. to hit an armed breakpoint).",
-                                    )
-                                } else {
-                                    btn.on_disabled_hover_text(
-                                        "Left-click to load this specimen first.",
-                                    )
-                                };
-                                if btn.clicked() {
-                                    recompile = Some(path.clone());
-                                    ui.close();
-                                }
-                                ui.separator();
-                                let btn = ui.add_enabled(can_capture, egui::Button::new("🎯 Point at"));
-                                let btn = if can_capture {
-                                    btn.on_hover_text(
-                                        "Make the whole specimen the subject of your next question, then ask in the chat.",
-                                    )
-                                } else {
-                                    btn.on_disabled_hover_text(
-                                        "Left-click to load & compile this specimen first, then point at it.",
-                                    )
-                                };
-                                if btn.clicked() {
-                                    capture_specimen = true;
-                                    ui.close();
-                                }
-                            });
+                            match row_context_menu(&resp, can_recompile, can_capture, "specimen") {
+                                Some(RowAction::Recompile) => recompile = Some(path.clone()),
+                                Some(RowAction::PointAt) => capture_specimen = true,
+                                None => {}
+                            }
                             if resp.clicked() {
                                 to_open = Some(path.clone());
                             }
@@ -372,6 +414,35 @@ impl ModelListState {
                                     let resp = ui
                                         .selectable_label(is_sel, label)
                                         .on_hover_text(format!("{name}\n\noutcome: {outcome}"));
+
+                                    // **The same menu the specimen rows get.** These
+                                    // rows had none at all until 2026-08-04 — a
+                                    // corpus model could be opened but never
+                                    // recompiled or pointed at, so the one list with
+                                    // 2,626 entries was the one that could not be
+                                    // made the subject of a question.
+                                    //
+                                    // Enablement matches the specimen rows exactly:
+                                    // recompiling needs the row loaded, pointing at
+                                    // it also needs a compiled model. `Recompile` is
+                                    // `OpenLibrary` again, which always reloads —
+                                    // there is no cached path to re-run, the
+                                    // qualified name *is* the identity.
+                                    let can_recompile = is_sel && !compiling;
+                                    let can_capture = is_sel && !compiling && has_model;
+                                    match row_context_menu(
+                                        &resp,
+                                        can_recompile,
+                                        can_capture,
+                                        "model",
+                                    ) {
+                                        Some(RowAction::Recompile) => {
+                                            open_model = Some(name.clone())
+                                        }
+                                        Some(RowAction::PointAt) => capture_specimen = true,
+                                        None => {}
+                                    }
+
                                     if resp.clicked() {
                                         open_model = Some(name.clone());
                                     }
