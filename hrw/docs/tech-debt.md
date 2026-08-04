@@ -686,6 +686,26 @@ at all** — verified, not assumed:
 done** (the first was CapacitorLoop's stale trace). The cost of checking is one grep;
 the cost of not checking is planning an arc around imaginary work.
 
+### "Eliminated" was an over-claim, corrected the same day
+
+Doug, reading the closing summary: *"my understanding is that from_incidence /
+record still uses replays, and tearing under index reduction still uses replays. Is
+my understanding correct?"* **It is.** The accurate statement is narrower:
+
+> **No default path re-derives.** Three paths still do, each for a stated reason.
+
+Checking his question also found a defect the capture had *introduced*. The matching
+and Tarjan views render under Structural **and** Index Reduction, and the incidence
+matrix follows the stage — so on the Index Reduction tab the matrix is the reduced
+system while the captured frames are from the raw one. **Drivetrain measures that gap
+at 97 equations versus 20.** The frames would have addressed rows that do not exist.
+
+**That is worse than the replay it replaced**, because a re-derivation from the
+reduced matrix is at least self-consistent. Now validated inside the constructors —
+`match_eq`'s length *is* the equation count of the system that produced the frame — so
+a mismatch falls back rather than misaddressing. Validated there rather than gated at
+the call site, because a gate can be forgotten.
+
 ### What is deliberately still a re-derivation
 
 - **`start_live` on every animation.** A live debug session *is* the user asking to

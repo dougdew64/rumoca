@@ -128,7 +128,27 @@ impl MatchingAnimation {
         mat: &IncidenceMatrix,
         frames: &[rumoca_phase_structural::matching::MatchingFrame],
     ) -> Self {
-        if frames.is_empty() {
+        // **The frames must describe THIS matrix.**
+        //
+        // The matching and Tarjan views render under Structural *and* Index
+        // Reduction, and the incidence matrix comes from whichever stage is showing —
+        // so on the Index Reduction tab `mat` is the **reduced** system while the
+        // captured frames are from the raw one. Their indices would then address
+        // rows that are not there, or the wrong rows.
+        //
+        // Caught by Doug on 2026-08-04 asking whether the fallbacks were still
+        // replays: they are, and checking that question found this. **The mismatch is
+        // worse than the replay it replaced** — a re-derivation from the reduced
+        // matrix is at least self-consistent, while these frames would animate one
+        // system's search over another's rows with nothing on screen to say so.
+        //
+        // Validated here rather than only gated at the call site, because a call site
+        // can be forgotten and this cannot: every frame carries `match_eq`, whose
+        // length *is* the equation count of the system that produced it.
+        let fits = frames
+            .first()
+            .is_some_and(|f| f.match_eq.len() == mat.n_eq());
+        if frames.is_empty() || !fits {
             return Self::from_incidence(mat);
         }
         Self {
@@ -650,6 +670,53 @@ mod tests {
                 ],
             }
         })
+    }
+
+    /// **Frames from another system are refused, not drawn.**
+    ///
+    /// The matching view renders under Structural *and* Index Reduction, and the
+    /// incidence matrix follows whichever stage is showing — so on the Index
+    /// Reduction tab the matrix is the **reduced** system while the captured frames
+    /// are from the raw one. Drivetrain measures that gap at **97 equations versus
+    /// 20**: the frames' indices would address rows that do not exist.
+    ///
+    /// Doug found this by asking whether the fallbacks were still replays
+    /// (2026-08-04). They are — and checking the question surfaced a capture that was
+    /// **worse than the replay it replaced**, because a re-derivation from the
+    /// reduced matrix is at least self-consistent.
+    ///
+    /// Validated in the constructor rather than gated at the call site: a gate can be
+    /// forgotten, and `match_eq`'s length *is* the equation count of the system that
+    /// produced the frame.
+    #[test]
+    fn frames_from_a_different_system_fall_back_instead_of_misaddressing() {
+        use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep};
+
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        let wrong_size = mat.n_eq() + 5;
+        let alien = vec![MatchingFrame {
+            step: MatchingStep::TryEquation(0),
+            match_eq: vec![None; wrong_size],
+        }];
+
+        let anim = MatchingAnimation::from_captured_frames(&mat, &alien);
+        let rederived = MatchingAnimation::from_incidence(&mat);
+        assert_eq!(
+            anim.position().1,
+            rederived.position().1,
+            "frames sized for a {wrong_size}-equation system must be refused for this \
+             {}-equation matrix and the animation re-derived instead",
+            mat.n_eq(),
+        );
+
+        // Non-vacuity: a correctly sized capture IS used, so the check above is not
+        // passing because the capture path never works.
+        let fitting = vec![MatchingFrame {
+            step: MatchingStep::TryEquation(0),
+            match_eq: vec![None; mat.n_eq()],
+        }];
+        let kept = MatchingAnimation::from_captured_frames(&mat, &fitting);
+        assert_eq!(kept.position().1, 1, "a one-frame capture that fits is played as-is");
     }
 
     #[test]

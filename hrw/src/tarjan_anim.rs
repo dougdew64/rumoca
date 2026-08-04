@@ -126,6 +126,14 @@ impl TarjanAnimation {
         let (Some(last), false) = (matching_frames.last(), tarjan_frames.is_empty()) else {
             return Self::from_incidence(mat);
         };
+        // **The frames must describe this matrix.** Same hazard as
+        // `MatchingAnimation::from_captured_frames`: this view also renders on the
+        // Index Reduction tab, where `mat` is the reduced system while the capture is
+        // from the raw one. `match_eq`'s length is the equation count of the system
+        // that produced it, so it is the check.
+        if last.match_eq.len() != n_eq {
+            return Self::from_incidence(mat);
+        }
 
         let match_eq = &last.match_eq;
         let mut match_var: Vec<Option<usize>> = vec![None; mat.n_var()];
