@@ -152,6 +152,26 @@ pub fn tree_ui(
 ) {
     let mut path: Vec<Seg> = Vec::new();
     let mut expansion = Expansion::default();
+
+    // **The root opens by itself.** Doug, 2026-08-04: *"the trees are displayed
+    // entirely collapsed until I interact with them. Yet, entirely collapsed is not
+    // useful. I almost always expand the root tree node."*
+    //
+    // A fully collapsed tree shows one line — the stage name and a child count — so
+    // every visit began with the same click, and `dae-construction.md` names children
+    // of the root (`x`, `p`, `f_x`, `metadata`) that were not on screen to be named.
+    //
+    // **`default_open`, deliberately not `force_open`.** `default_open` applies only
+    // when egui has no remembered state for the header, so it is a *suggestion for the
+    // first showing* and a reader who collapses the root keeps it collapsed. Forcing
+    // would open it again every frame and take it out of their hands — which is the
+    // rule "Reveal identifiers" was deleted for on 2026-08-04 (`DECISIONS.md`): **a
+    // view option must not mutate state the user owns.**
+    //
+    // One level only. Opening the children too would trade a tree that shows nothing
+    // for one that shows everything, and the second stage of the DAE has 20-odd keys.
+    expansion.default_open.insert(value as *const Value);
+
     if let Some(t) = opts.tracked {
         collect_tracked_ancestors(value, t, &mut expansion.default_open);
     }

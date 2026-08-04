@@ -216,6 +216,57 @@ fn the_tours_header_counts_what_is_actually_on_disk() {
     );
 }
 
+/// **A tree opens its root, so its children are on screen to be named.**
+///
+/// Doug, 2026-08-04: *"the trees are displayed entirely collapsed until I interact
+/// with them. Yet, entirely collapsed is not useful. I almost always expand the root
+/// tree node."* A fully collapsed tree shows one line, and `dae-construction.md`
+/// points at children of the root (`x`, `p`, `f_x`) that were not visible to point at.
+///
+/// **Also asserts one level only.** Opening the children too would trade a tree that
+/// shows nothing for one that shows everything — the DAE's second level has 20-odd
+/// keys — so the grandchild must stay hidden.
+#[test]
+fn a_tree_opens_its_root_but_not_its_children() {
+    use std::collections::{BTreeMap, HashMap};
+
+    let value = serde_json::json!({
+        "states": { "grandchild_key": 1 },
+        "parameters": { "J": 1.0 },
+    });
+    let def_index = BTreeMap::new();
+    let field_help = HashMap::new();
+
+    let mut h = Harness::new_ui(move |ui| {
+        let mut actions = crate::tree::TreeActions::default();
+        crate::tree::tree_ui(
+            ui,
+            "DAE",
+            &value,
+            None,
+            &mut actions,
+            &def_index,
+            &field_help,
+            crate::tree::TreeOptions::default(),
+        );
+    });
+    h.run_steps(2);
+
+    assert!(
+        h.query_by_label_contains("states").is_some(),
+        "the root's children must be visible without a click",
+    );
+    assert!(
+        h.query_by_label_contains("parameters").is_some(),
+        "all of them, not just the first",
+    );
+    assert!(
+        h.query_by_label_contains("grandchild_key").is_none(),
+        "one level only \u{2014} an entirely expanded tree is as unhelpful as an \
+         entirely collapsed one, in the other direction",
+    );
+}
+
 /// **Clicking a tour link dispatches it** — the interaction the whole tour system
 /// rests on, and until 2026-08-03 the one with no test.
 ///
