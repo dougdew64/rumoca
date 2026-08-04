@@ -2114,6 +2114,7 @@ impl App {
             elapsed_secs: 0.0,
             level: crate::worker::LogLevel::Info,
             message,
+            depth: 0,
         });
     }
 
@@ -7373,6 +7374,7 @@ impl App {
                 elapsed_secs: i as f64 * 0.1,
                 level: *level,
                 message: (*message).to_owned(),
+                depth: 0,
             })
             .collect();
         self.viewing_log = true;
@@ -8751,6 +8753,7 @@ mod tests {
             elapsed_secs: 0.0,
             level: crate::worker::LogLevel::Info,
             message: "test log".into(),
+            depth: 0,
         })).unwrap();
         app.drain_worker();
         assert_eq!(app.log_entries.len(), 1);

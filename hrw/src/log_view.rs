@@ -111,7 +111,21 @@ pub fn ui(ui: &mut egui::Ui, entries: &[LogEntry], tracing_enabled: &mut bool) -
                     // Level prefix — color-coded to visually distinguish
                     // phase transitions, warnings, errors, and trace output.
                     ui.colored_label(color, egui::RichText::new(prefix).monospace());
-                    ui.colored_label(color, egui::RichText::new(&entry.message).monospace());
+                    // **Indent by nesting depth**, so containment is visible rather
+                    // than inferred. Doug, 2026-08-04: *"log line indenting can be
+                    // used to emphasize that some major log lines are contained
+                    // within the scope of other major log lines."* A phase's trace
+                    // output and any sub-phase now sit visibly inside it.
+                    //
+                    // Part of the message text rather than `add_space`, so the
+                    // monospace column alignment the timestamp and prefix establish
+                    // carries through — indentation that broke that alignment would
+                    // cost more legibility than it bought.
+                    let indent = "  ".repeat(entry.depth as usize);
+                    ui.colored_label(
+                        color,
+                        egui::RichText::new(format!("{indent}{}", entry.message)).monospace(),
+                    );
                 });
             }
         });

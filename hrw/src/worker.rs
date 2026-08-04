@@ -648,6 +648,21 @@ pub struct LogEntry {
     pub elapsed_secs: f64,
     pub level: LogLevel,
     pub message: String,
+    /// How deeply this entry is nested inside open phase brackets.
+    ///
+    /// Doug, 2026-08-04: *"if some important activities such as connection
+    /// computation are happening within phases, then the log should reflect that
+    /// fact. If necessary, log line indenting can be used to emphasize that some
+    /// major log lines are contained within the scope of other major log lines."*
+    ///
+    /// A flat list of brackets cannot say *contained in*. It could only say
+    /// *adjacent to*, which is how HRW's own replays came to look like phases —
+    /// there was no level at which to put something that happens **inside** the
+    /// compile rather than beside it.
+    ///
+    /// Maintained by [`make_log`] from the `StageStart`/`StageEnd` stream itself, so
+    /// no call site passes it and none can get it wrong.
+    pub depth: u8,
 }
 
 /// Severity / category of a log entry. The UI uses this to pick colours and
@@ -942,12 +957,27 @@ fn make_log<'a>(
     t0: &'a std::time::Instant,
     emit: &'a impl Fn(FromWorker),
 ) -> impl Fn(LogLevel, String) + 'a {
+    // **Nesting is derived, not declared.** Every entry between a `StageStart` and
+    // its `StageEnd` is inside that phase by definition, so the depth follows from
+    // the stream and no caller can mis-state it. A `depth` argument on `log` would
+    // be one more thing to keep true by hand, and the thing this whole discussion is
+    // about is a log that stopped being true by hand.
+    let depth = std::cell::Cell::new(0u8);
     move |level, msg| {
+        // `StageEnd` un-nests *before* it prints, so a phase's closing line sits at
+        // the same indent as its opening line rather than one level in.
+        if level == LogLevel::StageEnd {
+            depth.set(depth.get().saturating_sub(1));
+        }
         emit(FromWorker::Log(LogEntry {
             elapsed_secs: t0.elapsed().as_secs_f64(),
             level,
             message: msg,
+            depth: depth.get(),
         }));
+        if level == LogLevel::StageStart {
+            depth.set(depth.get().saturating_add(1));
+        }
     }
 }
 
@@ -1699,17 +1729,32 @@ impl WorkerState {
                         // they need it to resolve component types and dimensions —
                         // but they are their own phases and bracket themselves.
                         let (i, t) = instantiate_and_typecheck(&rt.0, &qualified, &source, &log);
-                        // Connection expansion (MLS §9) records its own replay.
-                        // It re-runs flatten, so it is bracketed rather than
-                        // pretending to be free — and named for what it is, since
-                        // it is not one of the pipeline's phases.
+                        // **Not a phase, and no longer logged as one.**
+                        //
+                        // Connection expansion (MLS §9) happens inside Rumoca's own
+                        // flatten. This re-runs it purely to capture frames for the
+                        // Connections view — so a `StageStart`/`StageEnd` pair here
+                        // told the reader the compile had a connection-expansion step
+                        // between Typecheck and Flatten. **It does not.** Doug,
+                        // 2026-08-04: *"that suggests that the connection replay is a
+                        // fiction, invented for logging."* It was.
+                        //
+                        // Reported as one `Info` line stating what HRW did and why,
+                        // because the cost is real and hiding it would be its own
+                        // inaccuracy — but it is HRW's cost, not the compiler's, and
+                        // the shape of the entry now says so.
                         let t_conn = Instant::now();
-                        log(LogLevel::StageStart, "Connection replay (HRW)".to_owned());
                         connection_frames = record_connection_frames(&rt.0, &qualified);
-                        drain_traces(&log);
-                        log(LogLevel::StageEnd, format!(
-                            "Connection replay (HRW) ({:.1}ms)",
-                            t_conn.elapsed().as_secs_f64() * 1000.0
+                        // Discarded, not drained: these events are the *replay's*,
+                        // and reporting them would duplicate what Rumoca's own
+                        // flatten emits under the Flatten phase below.
+                        clear_traces();
+                        log(LogLevel::Info, format!(
+                            "HRW re-ran connection expansion to capture {} frame(s) for the \
+                             Connections view ({:.1}ms). Rumoca does this inside flatten; \
+                             this is HRW observing it, not a compiler phase.",
+                            connection_frames.len(),
+                            t_conn.elapsed().as_secs_f64() * 1000.0,
                         ));
                         instantiate = i;
                         typecheck = t;
@@ -1828,9 +1873,19 @@ impl WorkerState {
                 // this block: flatten and DAE construction really do happen
                 // inside this one call, so the per-stage figures below are
                 // *extraction* time for those two and real work for the rest.
+                // **Named for everything it runs, not just what HRW wants from it.**
+                // The traces inside this bracket include resolve, instantiate and
+                // typecheck, because `compile_model_strict_reachable_uncached_with_recovery`
+                // re-runs the whole pipeline — HRW ran those phases itself earlier to
+                // populate their tabs, and this call does them again on its way to the
+                // flat model and the DAE. Calling it "flatten and DAE construction"
+                // described what HRW *takes* from the call rather than what the call
+                // *does*, which is the same species of inaccuracy as the replay
+                // brackets.
                 log(
                     LogLevel::StageStart,
-                    "Rumoca compile \u{2014} flatten and DAE construction".to_owned(),
+                    "Rumoca compile \u{2014} full pipeline; HRW takes the flat model and DAE"
+                        .to_owned(),
                 );
                 let t_compile = Instant::now();
                 // Uncached, for the reason spelled out in `simulate` above: a
@@ -1860,8 +1915,10 @@ impl WorkerState {
                 // reader will misread is not reporting, it is misreporting.
                 log(
                     LogLevel::Info,
-                    "Flatten and DAE construction ran inside that call \u{2014} their \
-                     times below are extraction only; the later stages are real work"
+                    "That call re-ran resolve, instantiate and typecheck on its way to \
+                     flatten and DAE construction, which is why their traces appear \
+                     twice. Flatten and DAE construction below time an *extraction* \
+                     from its result; Structural onward is real work."
                         .to_owned(),
                 );
 
@@ -2006,6 +2063,7 @@ impl WorkerState {
                 //
                 // The rebuilt DAE is discarded: this is purely observation, and
                 // the compile's own result is what every other stage shows.
+                let t_pre = Instant::now();
                 let (pre_frames, flat) = match result {
                     Some(PhaseResult::Success(cr)) => {
                         let frames = std::cell::RefCell::new(Vec::new());
@@ -2020,14 +2078,22 @@ impl WorkerState {
                     }
                     _ => (Vec::new(), None),
                 };
-                // **The drain this call never had.** `to_dae_with_options_traced`
-                // re-runs the whole of DAE construction, so it is one of the
-                // noisiest tracing sources in the pipeline — and it was the last
-                // Rumoca call in the compile, with nothing after it to drain.
-                // Every event it emitted was therefore stranded and reported
-                // against the *next* compile, which is exactly the "logs for a
-                // subset of phases" and "logs after unchecking" Doug saw.
-                drain_traces(&log);
+                // **The other replay, and the same rule.** `to_dae_with_options_traced`
+                // re-runs the whole of DAE construction to capture `pre()`-lowering
+                // frames. Its events are a *second* execution of work already
+                // reported under the Rumoca compile above, so draining them into the
+                // log would duplicate that phase's output under no phase at all.
+                //
+                // Discarded, and the replay stated as one line — the same treatment
+                // as the connection replay, for the same reason: real cost, HRW's
+                // cost, not a step in the chain.
+                clear_traces();
+                log(LogLevel::Info, format!(
+                    "HRW re-ran DAE construction to capture {} pre()-lowering frame(s) \
+                     for the Events view ({:.1}ms). Observation, not a compiler phase.",
+                    pre_frames.len(),
+                    t_pre.elapsed().as_secs_f64() * 1000.0,
+                ));
 
                 (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat)
             }
@@ -5866,6 +5932,78 @@ mod tests {
         );
     }
 
+    /// **HRW's own replays are never logged as phases, and nesting is real.**
+    ///
+    /// Doug, 2026-08-04: *"that suggests that the connection replay is a fiction,
+    /// invented for logging … I want the log to be accurate."* He was right. HRW
+    /// re-runs connection expansion and DAE construction to capture frames for two
+    /// views; both were reported with `StageStart`/`StageEnd`, which told the reader
+    /// the compile had steps it does not have.
+    ///
+    /// **Two properties, because either alone permits the bug.** A bracket named for
+    /// a replay is a fiction even if the depths are right; and correct names with a
+    /// flat log cannot express *contained in*, which is what left replays looking
+    /// like siblings of real phases.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn no_hrw_replay_is_logged_as_a_phase() {
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!(
+                "{}/specimens/SingleInertia.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            w.compile(&path, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            });
+        }
+        let logs = logs.into_inner().unwrap();
+
+        // 1. No bracket names a replay. Checked on the *word*, so a future replay
+        //    called "re-run" or "replay" anything is caught without being listed.
+        for e in logs.iter().filter(|e| {
+            matches!(e.level, LogLevel::StageStart | LogLevel::StageEnd)
+        }) {
+            let m = e.message.to_lowercase();
+            assert!(
+                !m.contains("replay") && !m.contains("re-ran") && !m.contains("re-run"),
+                "a phase bracket names a replay: {:?}. HRW's re-executions are \
+                 observation, not steps in the chain \u{2014} report them as Info.",
+                e.message,
+            );
+        }
+
+        // 2. The replays are still *reported*. Silence would be its own inaccuracy:
+        //    the cost is real and a reader comparing timings must be able to see it.
+        assert!(
+            logs.iter().any(|e| {
+                matches!(e.level, LogLevel::Info) && e.message.contains("HRW re-ran")
+            }),
+            "no replay was reported at all; hiding HRW's cost is not the fix for \
+             mislabelling it",
+        );
+
+        // 3. Brackets balance, so the depth a reader sees means something.
+        //
+        // *That* something is nested is checked in the tracing-on test instead:
+        // with tracing off a phase may legitimately emit nothing between its own
+        // two lines, so "nothing at depth > 0" is not evidence of a broken counter
+        // here. Asserting it in both places would fail on correct behaviour.
+        let mut depth: i32 = 0;
+        for e in &logs {
+            match e.level {
+                LogLevel::StageStart => depth += 1,
+                LogLevel::StageEnd => depth -= 1,
+                _ => {}
+            }
+            assert!(depth >= 0, "a StageEnd without a StageStart at {:?}", e.message);
+        }
+        assert_eq!(depth, 0, "{depth} phase bracket(s) left unclosed");
+    }
+
     /// **A compile leaves nothing in the buffer — with tracing actually on.**
     ///
     /// The companion to `a_compile_never_reports_another_runs_traces`, and the half
@@ -5958,6 +6096,15 @@ mod tests {
                 "no {target} trace fell inside the {phase} bracket (lines {start}..={end}). \
                  The phase's own output is being reported somewhere else in the log, \
                  which is what a drain placed outside the bracket does.",
+            );
+            // And it is *rendered* as contained, not merely ordered between the two
+            // lines — the indentation is what makes containment visible.
+            assert!(
+                logs[start..=end]
+                    .iter()
+                    .any(|e| matches!(e.level, LogLevel::Trace) && e.depth > 0),
+                "{phase}'s trace output is not nested; the log can order entries but \
+                 not show that they belong to the phase",
             );
         }
     }
