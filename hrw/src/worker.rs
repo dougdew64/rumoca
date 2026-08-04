@@ -1974,7 +1974,48 @@ impl WorkerState {
                 let pre_frames = rumoca_phase_dae::take_pre_lowering_capture();
                 let typed = rumoca_compile::observe::take_typed_model_capture();
 
-                drain_traces(&log);
+                // **Route each trace to the phase that emitted it.**
+                //
+                // Doug, 2026-08-04: *"I still do not see rumoca trace log lines for
+                // phases such as Instantiate which are contained within the rumoca
+                // compile phase."* They were being emitted — as one block here,
+                // because `drain_traces` empties the buffer to wherever the log
+                // currently is, and all four phases run inside this one call.
+                //
+                // Explaining that (the notice below, 2026-08-04) did not answer the
+                // ask: he wants the lines under the phase, not a sentence about where
+                // they went. **Splitting them was declined earlier on the grounds that
+                // it would "present an interleaving that did not happen", and that
+                // objection was weaker than it sounded** — the compile runs these
+                // phases *sequentially*, so partitioning by target keeps each phase's
+                // events in their emitted order and merely cuts the block at the
+                // boundaries it already had.
+                //
+                // What survives of the objection, and is honoured: a line is filed
+                // only under the phase **it names itself**. `rumoca_eval_flat` runs
+                // during flatten but says so nowhere, so it stays in this bracket
+                // rather than being attributed by proximity.
+                let traces = take_traces();
+                let (instantiate_traces, traces) =
+                    attribute_traces(traces, "rumoca_phase_instantiate");
+                let (typecheck_traces, traces) =
+                    attribute_traces(traces, "rumoca_phase_typecheck");
+                let (flatten_traces, traces) = attribute_traces(traces, "rumoca_phase_flatten");
+                let (dae_traces, unattributed) = attribute_traces(traces, "rumoca_phase_dae");
+                let n_attributed = instantiate_traces.len()
+                    + typecheck_traces.len()
+                    + flatten_traces.len()
+                    + dae_traces.len();
+                // Emitted here because nothing claimed them. This is the honest
+                // remainder, not a leftover to be tidied away.
+                for (level, msg) in unattributed {
+                    log(level, msg);
+                }
+                let replay = |traces: CapturedTraces| {
+                    for (level, msg) in traces {
+                        log(level, msg);
+                    }
+                };
                 drain_output(&mut output_capture, &log);
                 // **The call's own duration, captured where the call returns.**
                 //
@@ -2014,20 +2055,22 @@ impl WorkerState {
                 // instrumentation. **The reader was left to infer the one thing the
                 // sentence existed to tell them.**
                 //
-                // Stated rather than rearranged: the traces could be sorted into the
-                // brackets below by their `[rumoca_phase_*]` target, and that was
-                // considered and declined. They were emitted in one contiguous call,
-                // and regrouping them would present an interleaving that did not
-                // happen — the log describes what occurred, not what would read most
-                // tidily.
+                // **Superseded 2026-08-04 (same day):** the notice used to say the
+                // traces were "the block above". They now sit under the phase that
+                // named itself, so the sentence describes the routing and what is
+                // left behind by it.
                 log(
                     LogLevel::Info,
-                    "Instantiate, Typecheck, Flatten and DAE construction all ran inside \
-                     that call \u{2014} so with tracing on, their trace output is the \
-                     block above, not under their own entries. Those entries time HRW \
-                     turning each captured artifact into a view, which emits nothing. \
-                     Structural onward is real work and traces under its own name."
-                        .to_owned(),
+                    format!(
+                        "Instantiate, Typecheck, Flatten and DAE construction all ran \
+                         inside that call \u{2014} their entries below time HRW reading \
+                         out what each produced, not the phase itself. With tracing on, \
+                         {n_attributed} trace line(s) from that call are filed under the \
+                         phase each one names; lines above name a helper crate rather \
+                         than a phase, so they stay here rather than be attributed by \
+                         proximity. Structural onward is real work and traces under its \
+                         own name."
+                    ),
                 );
 
                 // **Instantiate and Typecheck, extracted from the compile above.**
@@ -2039,6 +2082,7 @@ impl WorkerState {
                 // *ran* was the last piece of the same inaccuracy.
                 let t_inst = Instant::now();
                 log(LogLevel::StageStart, "Instantiate".to_owned());
+                replay(instantiate_traces);
                 instantiate = match &typed.instantiated {
                     Some(o) => Stage::from_ser(o),
                     None => Stage::info("not reached (the compile stopped before instantiate)"),
@@ -2049,6 +2093,7 @@ impl WorkerState {
 
                 let t_tc = Instant::now();
                 log(LogLevel::StageStart, "Typecheck".to_owned());
+                replay(typecheck_traces);
                 typecheck = match (&typed.typechecked, typed.typecheck_diagnostics.is_empty()) {
                     (Some(o), _) => Stage::from_ser(o),
                     // Typecheck failed: the diagnostics are the artifact, and the
@@ -2114,9 +2159,21 @@ impl WorkerState {
                 // and `path` from the enclosing scope. Each invocation: logs
                 // start/end with timing, runs the extraction function, stores
                 // the result on the bundle, and emits a progress update.
+                //
+                // The four-argument form takes traces **already captured** from the
+                // compile call above and replays them inside the bracket. Flatten and
+                // DAE construction need it because they ran in that call; every stage
+                // after them runs here and drains its own, so they pass nothing.
                 macro_rules! run_stage {
-                    ($name:expr, $extract:expr, $field:ident) => {{
+                    ($name:expr, $extract:expr, $field:ident) => {
+                        run_stage!($name, $extract, $field, Vec::new())
+                    };
+                    ($name:expr, $extract:expr, $field:ident, $captured:expr) => {{
                         log(LogLevel::StageStart, $name.to_owned());
+                        // Before the clock starts: these were emitted during the
+                        // compile call, so charging them to the extraction would be a
+                        // second small fiction of the kind this bracket exists to end.
+                        replay($captured);
                         let t = Instant::now();
                         let stage = $extract;
                         drain_traces(&log);
@@ -2131,7 +2188,8 @@ impl WorkerState {
                     }};
                 }
 
-                let flatten = run_stage!("Flatten", flatten_stage(result, &source), flatten);
+                let flatten =
+                    run_stage!("Flatten", flatten_stage(result, &source), flatten, flatten_traces);
 
                 // **DAE construction, logged in its true position.** Until
                 // 2026-08-04 this stage was built *after* solve lowering and
@@ -2190,7 +2248,8 @@ impl WorkerState {
                         }
                         None => dae_absent_stage(result, &source),
                     },
-                    dae
+                    dae,
+                    dae_traces
                 );
 
                 // **Close the compile bracket here**, after the four extractions it
@@ -6179,8 +6238,14 @@ mod tests {
         // 2026-08-04 and became wrong the moment HRW stopped running typecheck
         // itself. The test failing on that change is the test working: it was
         // pinned to where the work happens, and the work moved.
+        //
+        // **And it moved back the same day**, by a different mechanism: the compile's
+        // traces are now split by target and replayed under the phase each names, so
+        // `rumoca_phase_typecheck` is under `Typecheck` again — not because HRW runs
+        // the phase, but because the line says which phase emitted it.
         for (phase, target) in [
-            ("Rumoca compile", "rumoca_phase_typecheck"),
+            ("Typecheck", "rumoca_phase_typecheck"),
+            ("Instantiate", "rumoca_phase_instantiate"),
             ("Resolve", "rumoca_phase_resolve"),
         ] {
             let (start, end) = bracket(phase)
@@ -6206,35 +6271,66 @@ mod tests {
             );
         }
 
-        // **The notice matches where the traces actually are.**
+        // **Each of the four carries its own traces now** — the thing Doug asked for.
         //
-        // Doug asked why some phases show trace lines and others do not. For four of
-        // them the answer is that they ran inside the Rumoca compile call, so their
-        // events are in *its* bracket and their own entries are empty. That is
-        // correct behaviour and confusing without a sentence saying so — and a
-        // sentence that stops being true is worse than none.
-        //
-        // So this pins both halves together: the four brackets are empty of traces,
-        // AND the notice tells the reader where to look instead.
-        let empty_of_traces = |name: &str| -> bool {
-            let Some((s, e)) = bracket(name) else { return false };
-            !logs[s..=e].iter().any(|x| matches!(x.level, LogLevel::Trace))
-        };
-        for phase in ["Instantiate", "Typecheck", "Flatten", "DAE construction"] {
+        // Not all four are asserted: `rumoca_phase_dae` may legitimately emit nothing
+        // on a two-equation model, and demanding a line it has no reason to write
+        // would make this test fail on correct behaviour. The three that *were*
+        // measured emitting are pinned; DAE construction is covered by the
+        // no-duplicate check above and by the totals below.
+        for phase in ["Instantiate", "Typecheck", "Flatten"] {
+            let (s, e) = bracket(phase).unwrap_or_else(|| panic!("no {phase} bracket"));
             assert!(
-                empty_of_traces(phase),
-                "{phase} now carries trace output of its own. That is a better world, \
-                 but the notice still tells readers to look in the compile bracket \
-                 \u{2014} update it",
+                logs[s..=e].iter().any(|x| matches!(x.level, LogLevel::Trace)),
+                "{phase} carries no trace output. Its events are emitted during the \
+                 Rumoca compile call and routed here by target \u{2014} an empty \
+                 bracket means the routing dropped them, which is the bug this \
+                 replaced ('I still do not see rumoca trace log lines for phases such \
+                 as Instantiate')",
             );
         }
-        assert!(
-            logs.iter().any(|e| {
+
+        // **And the notice's number is the truth**, not a constant that drifted.
+        //
+        // This is also what catches the two ways routing can fail: a dropped vector
+        // makes `filed` fall short of the quoted count, a vector replayed under two
+        // phases makes it exceed. **Identifying duplicates by message text was tried
+        // first and is unsound** — `rumoca_eval_flat` emits *"expression evaluated
+        // successfully result=Some(1)"* six times for six real evaluations, and no
+        // substring distinguishes them (`docs/identity-and-provenance.md`). Counting
+        // against a number the code computed is the sound form.
+        let filed: usize = ["Instantiate", "Typecheck", "Flatten", "DAE construction"]
+            .iter()
+            .map(|p| {
+                let (s, e) = bracket(p).unwrap_or_else(|| panic!("no {p} bracket"));
+                // **Warn and Error count too.** `take_traces` maps Rumoca's event
+                // levels onto three HRW levels, and Flatten's constant-injection
+                // warnings arrive as `Warn` — counting only `Trace` here read 36
+                // against the notice's 38 and looked like two lines had been lost.
+                logs[s..=e]
+                    .iter()
+                    .filter(|x| {
+                        matches!(x.level, LogLevel::Trace | LogLevel::Warn | LogLevel::Error)
+                    })
+                    .count()
+            })
+            .sum();
+        let notice = logs
+            .iter()
+            .find(|e| {
                 matches!(e.level, LogLevel::Info)
-                    && e.message.contains("their trace output is the block above")
-            }),
-            "the four brackets are empty of traces and nothing explains why. That is \
-             exactly the question a reader is left holding \u{2014} it was asked",
+                    && e.message.contains("are filed under the phase each one names")
+            })
+            .expect(
+                "nothing explains why those brackets hold what they hold, or why some \
+                 lines stayed in the compile bracket. That is exactly the question a \
+                 reader is left holding \u{2014} it was asked twice",
+            );
+        assert!(
+            notice.message.contains(&format!("{filed} trace line(s)")),
+            "the notice quotes a different count than the log actually contains \
+             ({filed} filed under the four phases): {}",
+            notice.message,
         );
     }
 
@@ -7720,6 +7816,48 @@ fn resolve_diagnostics_indicate_failure(diags: &rumoca_core::Diagnostics) -> boo
 /// since turned off — those must be dropped, not relocated.
 fn clear_traces() {
     TRACE_BUFFER.with(|buf| buf.borrow_mut().clear());
+}
+
+/// Take the buffered trace events instead of logging them, so the caller can
+/// decide **which phase each one belongs under**.
+///
+/// Doug, 2026-08-04: *"I still do not see rumoca trace log lines for phases such as
+/// Instantiate which are contained within the rumoca compile phase."* They were
+/// there — as one undifferentiated block under `Rumoca compile`, because that is the
+/// single call all four phases run inside and `drain_traces` empties the buffer to
+/// wherever the log happens to be.
+///
+/// Every event carries its emitting target (`[rumoca_phase_instantiate::connections]`),
+/// so the block can be split by **what each line says about itself** rather than by
+/// guesswork. See `attribute_traces`.
+type CapturedTraces = Vec<(LogLevel, String)>;
+
+fn take_traces() -> CapturedTraces {
+    TRACE_BUFFER.with(|buf| {
+        buf.borrow_mut()
+            .drain(..)
+            .map(|(level, msg)| {
+                let ll = match level {
+                    tracing::Level::ERROR => LogLevel::Error,
+                    tracing::Level::WARN => LogLevel::Warn,
+                    _ => LogLevel::Trace,
+                };
+                (ll, msg)
+            })
+            .collect()
+    })
+}
+
+/// Split traces into the ones a phase claims and the ones nobody does.
+///
+/// Returns `(mine, rest)` for the given target prefix. **Only an exact target match
+/// counts.** `rumoca_eval_flat::phase_constant` is emitted *during* flatten but names
+/// a different crate, so it stays in `rest` rather than being filed under Flatten —
+/// attributing it would be inference, and this project has a standing rule against
+/// letting a substring decide identity (`docs/identity-and-provenance.md`).
+fn attribute_traces(traces: CapturedTraces, target: &str) -> (CapturedTraces, CapturedTraces) {
+    let marker = format!("[{target}");
+    traces.into_iter().partition(|(_, msg)| msg.starts_with(&marker))
 }
 
 fn drain_traces(log_fn: &dyn Fn(LogLevel, String)) {
