@@ -1962,16 +1962,22 @@ impl WorkerState {
 
                 drain_traces(&log);
                 drain_output(&mut output_capture, &log);
-                // Closed here, where the call returns. The old bracket closed
-                // after solve lowering, which is what let it claim to span
-                // phases it had nothing to do with.
-                log(
-                    LogLevel::StageEnd,
-                    format!(
-                        "Rumoca compile ({:.1}ms)",
-                        t_compile.elapsed().as_secs_f64() * 1000.0
-                    ),
-                );
+                // **The call's own duration, captured where the call returns.**
+                //
+                // The bracket does *not* close here. It stays open across the four
+                // extractions below, so Instantiate, Typecheck, Flatten and DAE
+                // construction render nested inside it — which is the truth: those
+                // phases ran inside this call, and the entries below are HRW reading
+                // out what they produced. Doug, 2026-08-04, asking for exactly this:
+                // *"let's figure out how to show the log lines for Instantiate,
+                // Typecheck, Flatten and DAE construction nested within the log lines
+                // for Rumoca compile."*
+                //
+                // Keeping the number from *here* is what makes the nesting honest.
+                // A bracket that simply closed later would report the call plus the
+                // extractions as one figure, quietly inflating the compile by the cost
+                // of looking at it. Both numbers are reported instead.
+                let compile_call_ms = t_compile.elapsed().as_secs_f64() * 1000.0;
                 // **Say which of the timings below are real.** Flatten and DAE
                 // construction ran inside the call that just ended, so their
                 // stage entries time an *extraction* — `DAE construction (0.1ms)`
@@ -2151,6 +2157,22 @@ impl WorkerState {
                     dae
                 );
 
+                // **Close the compile bracket here**, after the four extractions it
+                // contains. Two numbers, because they answer different questions:
+                // what the compile cost, and what looking at it cost. Reporting only
+                // their sum would let the price of observation hide inside the price
+                // of compiling.
+                log(
+                    LogLevel::StageEnd,
+                    format!(
+                        "Rumoca compile ({compile_call_ms:.1}ms; +{:.1}ms reading its \
+                         artifacts into views)",
+                        t_compile.elapsed().as_secs_f64() * 1000.0 - compile_call_ms,
+                    ),
+                );
+
+                // Structural onward is HRW's own work on the DAE, not a reading of
+                // the compile's output — so it sits outside the bracket.
                 let structural = run_stage!("Structural analysis", structural_stage(result, &source), structural);
                 let (index_reduction, ir_frames) = {
                     log(LogLevel::StageStart, "Index reduction".to_owned());
@@ -5753,6 +5775,37 @@ mod tests {
         assert!(
             stage_ends.contains(&"DAE construction"),
             "a phase that starts must also be reported as ending: {stage_ends:?}",
+        );
+
+        // **The four phases that ran inside the compile are nested inside it.**
+        //
+        // Doug, 2026-08-04: *"let's figure out how to show the log lines for
+        // Instantiate, Typecheck, Flatten and DAE construction nested within the log
+        // lines for Rumoca compile."* They ran inside that call, and the entries are
+        // HRW reading out what they produced — so containment is the accurate
+        // rendering, and a flat list could only say *adjacent to*.
+        //
+        // Structural onward is HRW's own work on the DAE, so it must stay OUTSIDE:
+        // nesting everything would be as wrong as nesting nothing, in the other
+        // direction.
+        let depth_of = |name: &str| {
+            logs.iter()
+                .find(|e| matches!(e.level, LogLevel::StageStart) && e.message == name)
+                .unwrap_or_else(|| panic!("no {name} bracket"))
+                .depth
+        };
+        for inside in ["Instantiate", "Typecheck", "Flatten", "DAE construction"] {
+            assert!(
+                depth_of(inside) > 0,
+                "{inside} ran inside the Rumoca compile call and must render nested \
+                 within it; at depth 0 the log says it happened beside the compile",
+            );
+        }
+        assert_eq!(
+            depth_of("Structural analysis"),
+            0,
+            "Structural analysis is HRW's own work on the DAE, not a reading of the \
+             compile's output \u{2014} nesting it would claim the compile performed it",
         );
 
         // **The fiction stays gone.** Named as a substring so a revival under any
