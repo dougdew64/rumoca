@@ -185,6 +185,23 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 ## Current work
 
+> ### ⟶ OPEN THE NEXT SESSION WITH THIS
+>
+> **Doug's instruction, 2026-08-03: lead off with `docs/ideas.md` #60** — *seeing how he uses
+> HRW*, the "professor's pause" loop. **Discussion first, not implementation**: he was explicit
+> that the design waits on experience with the two curriculum tours he has started walking.
+>
+> The likely first build is the piece proposed that evening — **record the tour's identity with
+> each `tour-link` action, and the stop index when a walk is playing** — because
+> `question-ledger.md`'s new grading section logs a question against the stop that prompted it,
+> and that mapping currently depends on Doug saying where he was.
+>
+> His governing statement, which is a direction rather than a specification: *"I will probably
+> be best served if you have more information about how I'm using HRW rather than less."*
+>
+> **Also expect questions about the tours themselves.** They are the live work; see the
+> education entry below.
+
 **Pass two: re-implement Arcs 1-7 with internal Rumoca access, delivering richer stage views
 than the public API allowed.** Per arc: scout what state the phase holds (read the crate under
 `../crates/`), expose it additively, render it. Remaining per-arc opportunities are
@@ -255,6 +272,13 @@ oracle test is **no longer a step** (see below).
    instruction, because a plan scrolls out of the conversation and a versioned tour does not.
    Tours here are **live documents, extensions of the conversation**: regenerate one *while*
    Doug is walking it, and use it to motivate the questions he brings back.
+
+   **Doug is walking the tours now (2026-08-03), and that is the live signal.** His grading
+   criterion is recorded in `docs/question-ledger.md`: *"the real measure of whether the tours
+   are good enough will be the nature of the questions which I ask you while and after I work
+   through the tours."* Log each question **against the stop that prompted it**, and read that
+   section before answering — it records the four question shapes and the opposite responses
+   they call for. **No questions at all is ambiguous and must not be read as success.**
 
    **Delivered so far:** `docs/fixture-tours/dae-construction.md`, the first *curriculum*
    tour — `SingleInertia` (2 equations, 2 unknowns) against `UnbalancedShaft` (2 and 3,

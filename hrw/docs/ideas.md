@@ -3348,3 +3348,90 @@ dragging it feels right.
 `App`, so it lands *after* the field-count ratchet exists, and is a fair early test of whether
 the ratchet does its job: the honest resolution is that the fraction belongs to whatever owns
 the layout, not to `App`.
+
+---
+
+## 60. Seeing how Doug uses HRW — the professor's pause, and what it needs to work
+
+**Raised by Doug, 2026-08-03**, at the end of the day the first two curriculum tours landed.
+**Not decided** — he was explicit that we lack the experience with the existing tours to choose
+a design, and that we resume with this first.
+
+### The model he described
+
+> *"If you were a professor delivering a lecture, you might pause to ask me a question. My
+> answer would be a signal to you about whether or not what you had presented right before my
+> question had landed with me or not. And, if what you had presented had not landed, you might
+> adjust your presentation. Or, in our HRW case, you might adjust the tour."*
+
+That is a **feedback loop with three parts**, and only one of them exists today:
+
+| Part | State |
+|---|---|
+| Doug's question is a signal about the material just presented | ✅ happens every session |
+| Claude knows **what was just presented** | ❌ not reliably — see below |
+| Claude **adjusts the tour** in response | ✅ possible, and cheap: tours are regenerable |
+
+**The broken link is the middle one**, and it is what makes the loop lossy. Doug's governing
+statement, and the reason this is not a small feature:
+
+> *"I will probably be best served if you have more information about how I'm using HRW rather
+> than less."*
+
+### What Claude can see today, measured 2026-08-03
+
+Nothing is pushed; everything requires going to look. Two files carry it.
+
+- **`.hrw-bridge/diagnostics/session.json`** — a capped ring of recorded actions, including a
+  **`tour-link` entry for every link clicked**, plus an `app` snapshot (`ui_mode`, `model`,
+  `stage_tab`, `viewing_log`). Live example read that evening: `ui_mode: Tour`,
+  `model: SingleInertia`, `stage_tab: DAE`, last action `tour-link load/SingleInertia/Dae`.
+- **`.hrw-bridge/focus.json`** — the capture, written when Doug points at something and asks.
+  Specimen, stage, view, node path.
+
+### The specific gap, and why it is not a matter of trying harder
+
+**Neither file records which tour is open, or which stop.** The tour is often inferable from
+the specimen and stage — and inferring it is exactly the mistake
+[`identity-and-provenance.md`](identity-and-provenance.md) forbids, because the inference is
+**not sound**: `hrw://load/SingleInertia/Dae` occurs **three times** in `dae-construction.md`,
+at three different stops. A bare link URI cannot name a position.
+
+**Sequence alignment does better and is still not enough.** The ordered run of `tour-link`
+actions can be matched against the tour text to locate a position by *order* rather than by
+name, which is sound — but it degrades silently once the ring drops the earlier entries, and a
+silent degradation to a guess is the failure mode this project treats as worst.
+
+### The minimum that would close it
+
+**Record the tour's identity with the link, and the stop index when a walk is playing.** During
+autoplay the stop is known exactly (`Beat::stop`); a manual click knows the tour but not which
+occurrence of the link it hit — so the honest emission is *tour + link + stop-if-known*, with
+the absence stated rather than filled in. **The emitter must stay exact**
+(`feedback-emitter-correct-reasoner-supplements`): a wrong stop is worse than a missing one,
+because it would send Claude to adjust prose Doug never read.
+
+### Why this became live now
+
+`question-ledger.md` gained a section on 2026-08-03 recording Doug's grading criterion for the
+curriculum tours — *"the real measure … will be the nature of the questions which I ask"* —
+and the procedure it describes logs each question **against the stop that prompted it**. That
+mapping is the whole mechanism, and today it depends on Doug saying where he was. **The ledger
+entry and this idea are two halves of one loop**, written the same evening.
+
+### What is deliberately open
+
+- **How much more.** Doug's *"more rather than less"* is a direction, not a specification.
+  Dwell time per stop, revisits, which stops are skipped, whether a tour was walked or played —
+  each is a candidate and none is chosen.
+- **Whether HRW should prompt.** The professor's pause is a *question asked of the student*,
+  and nothing in HRW asks Doug anything. Whether a tour stop should be able to pose a question
+  — and what would be done with the answer — is a genuinely different feature from observing
+  behaviour, and should not be smuggled in with it.
+- **The privacy-shaped question, stated once so it is not rediscovered:** this is instrumenting
+  a person's study behaviour. Doug asked for it, it stays local to his machine, and the
+  artifacts are already gitignored. Worth re-checking only if any of those three change.
+
+**Do not design this before walking the existing tours.** Doug's reason is the right one: the
+experience of using `dae-construction.md` and `matching.md` is what will say which signals
+actually matter, and building to a guess would produce the wrong instrument confidently.
