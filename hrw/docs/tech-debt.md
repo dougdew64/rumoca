@@ -428,6 +428,31 @@ test either. The point-at and follow rows are *labelled*, so an omission there i
 visible in a way the background's was not — which lowers the priority without
 removing it.
 
+## Simulation never worked on a corpus model, and nothing could have found it
+
+**Found by Doug 2026-08-04**, pressing Run on `Modelica.Blocks.Continuous.SecondOrder`:
+*"read error: The system cannot find the file specified. (os error 2)"*. Fixed the same day.
+
+**The defect.** For a library model the UI's `selected` holds the **qualified name**, not a
+file — `open_library_model` sets `PathBuf::from(qualified)` and a `selected_is_library` flag
+beside it. `ToWorker::Simulate` carried only the path, and `simulate` opened with
+`read_to_string(path)`. The compile path had gained `CompileLibraryModel` when the corpus list
+shipped; **the simulate path never got its counterpart**, so every one of the 2,626 corpus
+models was un-simulable from the day the list arrived.
+
+**Why it survived, which is the part worth keeping.** It was not un-tested — it was
+**un-testable**. Every simulate test went through `simulate_specimen(&Path, …)`, whose
+signature *cannot express a library model*. There was no headless way to reach the branch, so
+no amount of diligence in writing tests would have covered it. `simulate_library_model` was
+added as half of the fix, and `an_msl_library_model_simulates` is the first test that could
+exist.
+
+**The sweep trigger this belongs to is #2 — caught by Doug, not the toolchain** — and its
+lesson generalises past this bug: **when one entry point takes `&Path` and its sibling takes a
+qualified name, the pair is a fork, and a test suite that can only call one of them is
+reporting on half a system.** Worth a pass over the other `&Path`-shaped entry points for the
+same asymmetry; not done.
+
 ## Verb coverage — the fictions are fixed, the gap that allowed them is not
 
 **Logged 2026-08-04, at the end of the day spent removing them.** Priority: **rank 0** by the

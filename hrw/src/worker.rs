@@ -108,7 +108,19 @@ pub enum ToWorker {
     /// Compile the model, lower it to a `SolveModel`, and run a simulation
     /// to `t_end`, returning the state trajectories to plot. Runs on this worker
     /// thread so the UI never blocks.
-    Simulate { path: PathBuf, model: String, t_end: f64 },
+    ///
+    /// `is_library` says which kind of thing `path` names, and it is a **flag rather
+    /// than a sniff** for the same reason `App::selected_is_library` is: for a
+    /// library model `path` holds the *qualified name*
+    /// (`Modelica.Blocks.Continuous.SecondOrder`), which is not a file and which a
+    /// dot-counting heuristic cannot reliably tell from a filename containing a dot.
+    ///
+    /// **Added 2026-08-04.** Until then this message had no such field and `simulate`
+    /// began with `read_to_string(path)`, so pressing Run on any MSL model produced
+    /// *"read error: The system cannot find the file specified. (os error 2)"* — the
+    /// compile path had gained `CompileLibraryModel` and the simulate path never got
+    /// its counterpart. Reported by Doug on `Modelica.Blocks.Continuous.SecondOrder`.
+    Simulate { path: PathBuf, model: String, t_end: f64, is_library: bool },
     /// Enable or disable Rumoca's internal `tracing` subscriber on this thread.
     SetTracing(bool),
 }
@@ -206,7 +218,10 @@ enum CompileTarget<'a> {
     /// A specimen file on disk.
     File(&'a Path),
     /// A model already present in a loaded library, named in full.
-    #[allow(dead_code, reason = "constructed by compile_model_by_name; see there")]
+    ///
+    /// *(The `#[allow(dead_code)]` here was removed 2026-08-04: this variant now has
+    /// a second constructor in `simulate`, which is the fix for simulation never
+    /// having worked on a corpus model.)*
     Library(&'a str),
 }
 
@@ -1181,8 +1196,16 @@ impl WorkerState {
             ToWorker::Compile(path) => Some(self.compile(&path, emit)),
             ToWorker::CompileLibraryModel(name) => Some(self.compile_model_by_name(&name, emit)),
             ToWorker::OpenDef(name) => Some(self.open_def(&name)),
-            ToWorker::Simulate { path, model, t_end } => {
-                let result = self.simulate(&path, &model, t_end, emit);
+            ToWorker::Simulate { path, model, t_end, is_library } => {
+                // `path` carries a qualified name when `is_library`; the lossy
+                // conversion is exact for one, because that is where it came from.
+                let name = path.to_string_lossy().to_string();
+                let target = if is_library {
+                    CompileTarget::Library(&name)
+                } else {
+                    CompileTarget::File(&path)
+                };
+                let result = self.simulate(target, &model, t_end, emit);
                 Some(FromWorker::Simulated { path, result })
             }
             // SetTracing is fire-and-forget: the UI doesn't need a response.
@@ -1240,7 +1263,7 @@ impl WorkerState {
     /// resolution means the MSL isn't re-parsed.
     fn simulate(
         &mut self,
-        path: &Path,
+        target: CompileTarget<'_>,
         model: &str,
         t_end: f64,
         emit: &impl Fn(FromWorker),
@@ -1254,18 +1277,43 @@ impl WorkerState {
         // --- Phase 1: Compile the model to a DAE ---
         log(LogLevel::StageStart, "Compile (for simulation)".to_owned());
         let t_stage = Instant::now();
-        let source = std::fs::read_to_string(path).map_err(|e| format!("read error: {e}"))?;
-        let uri = path.to_string_lossy().to_string();
-        // Remove then re-add the specimen so the session treats it as new —
-        // without this, `update_document` sees identical source text and
-        // short-circuits, returning cached results (armed breakpoints won't
-        // fire and source edits won't take effect on re-simulate).
-        self.session.remove_document(&uri);
-        self.session.update_document(&uri, &source);
+        // **Located exactly as `compile_target` locates it**, through the same
+        // `locate_library_model`, rather than a second resolution path that could
+        // disagree with the one the stage tabs used moments earlier.
+        let Located { uri, source, qualified: given_qualified, .. } = match target {
+            CompileTarget::File(p) => std::fs::read_to_string(p)
+                .map(|source| Located {
+                    uri: p.to_string_lossy().to_string(),
+                    source,
+                    qualified: None,
+                    decl_line: None,
+                })
+                .map_err(|e| format!("read error: {e}"))?,
+            CompileTarget::Library(name) => self.locate_library_model(name)?,
+        };
+
+        // **Only a specimen is registered as a document**, mirroring the guard in
+        // `compile_target`: a library model's file already lives in a durable source
+        // root, so adding it as a workspace document would have the session hold the
+        // same file twice and removing it later would evict part of the library.
+        //
+        // For a specimen the remove/re-add is load-bearing — without it
+        // `update_document` sees identical source text and short-circuits, returning
+        // cached results, so armed breakpoints never fire and a source edit does not
+        // take effect on re-simulate.
+        if given_qualified.is_none() {
+            self.session.remove_document(&uri);
+            self.session.update_document(&uri, &source);
+        }
         // Rumoca API: `qualify_model_name` turns a simple name like "BouncingBall"
-        // into a fully-qualified name like "BouncingBall" (for top-level models,
-        // these are the same, but nested models would differ).
-        let qualified = self.session.qualify_model_name(&uri, model);
+        // into a fully-qualified name (for top-level models these are the same;
+        // nested models differ). A **library** model was already named in full by the
+        // caller, and re-deriving it from the declaring file's URI would be wrong for
+        // a file declaring several classes — `Blocks/Continuous.mo` holds
+        // `SecondOrder` among others, which is the same reason
+        // `compile_model_by_name` exists.
+        let qualified = given_qualified
+            .unwrap_or_else(|| self.session.qualify_model_name(&uri, model));
         // Rumoca API: the main pipeline entry point. It runs parse → resolve →
         // flatten → DAE construction, with error recovery so partial results are
         // available on failure. Returns a `CompileReport` whose `requested_result`
@@ -2544,7 +2592,32 @@ pub fn simulate_specimen(
 ) -> Result<SimData, String> {
     let mut state = WorkerState::new();
     state.load_libraries(libraries)?;
-    state.simulate(specimen, model, t_end, &|_: FromWorker| {})
+    state.simulate(CompileTarget::File(specimen), model, t_end, &|_: FromWorker| {})
+}
+
+/// Simulate a model from a **loaded library** headlessly, by qualified name.
+///
+/// The counterpart of [`compile_specimen`]/[`simulate_specimen`] for the corpus, and
+/// the headless half of the fix for Doug's 2026-08-04 report that pressing Run on
+/// `Modelica.Blocks.Continuous.SecondOrder` produced *"read error: The system cannot
+/// find the file specified"*. It exists so the library path is **testable without a
+/// UI**, which is why that path went unexercised long enough for the gap to survive.
+pub fn simulate_library_model(
+    qualified: &str,
+    t_end: f64,
+    libraries: Vec<PathBuf>,
+) -> Result<SimData, String> {
+    let mut state = WorkerState::new();
+    state.load_libraries(libraries)?;
+    // The simple name is the last segment; `locate_library_model` supplies the
+    // qualified one, so this is only what the log calls the model.
+    let simple = qualified.rsplit('.').next().unwrap_or(qualified).to_owned();
+    state.simulate(
+        CompileTarget::Library(qualified),
+        &simple,
+        t_end,
+        &|_: FromWorker| {},
+    )
 }
 
 /// Structural analysis of the model's DAE: maximum matching, BLT blocks,
@@ -4127,7 +4200,7 @@ mod tests {
         let d = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BenchActuator.mo"));
-            w.simulate(path, "BenchActuator", 0.5, &|_: FromWorker| {})
+            w.simulate(CompileTarget::File(path), "BenchActuator", 0.5, &|_: FromWorker| {})
         }
         .expect("simulate BenchActuator");
         let get = |name: &str| -> f64 {
@@ -4170,7 +4243,7 @@ mod tests {
         let data = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BouncingBall.mo"));
-            w.simulate(path, "BouncingBall", 3.0, &|_: FromWorker| {})
+            w.simulate(CompileTarget::File(path), "BouncingBall", 3.0, &|_: FromWorker| {})
         }
         .expect("simulate BouncingBall");
         assert!(data.has_discontinuities, "BouncingBall reinits v at each bounce");
@@ -4196,7 +4269,7 @@ mod tests {
         let data = {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/BouncingBall.mo"));
-            w.simulate(path, "BouncingBall", 3.0, &|_: FromWorker| {})
+            w.simulate(CompileTarget::File(path), "BouncingBall", 3.0, &|_: FromWorker| {})
         }
         .expect("simulate BouncingBall");
         assert!(!data.times.is_empty(), "should produce a trajectory");
@@ -5880,7 +5953,7 @@ mod tests {
             let data = {
                 let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
                 let path = PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
-                w.simulate(&path, name, 1.0, &|_: FromWorker| {})
+                w.simulate(CompileTarget::File(&path), name, 1.0, &|_: FromWorker| {})
             };
             let data = data.unwrap_or_else(|e| panic!("{name}: simulate failed: {e}"));
             assert!(!data.times.is_empty(), "{name}: no time points");
@@ -5923,6 +5996,46 @@ mod tests {
         .expect("simulate_specimen");
         assert!(!data.times.is_empty());
         assert!(data.names.iter().any(|n| n == "w"), "expected 'w' in output names");
+    }
+
+    /// **An MSL model simulates.** The path that did not exist until 2026-08-04.
+    ///
+    /// Doug pressed Run on `Modelica.Blocks.Continuous.SecondOrder` and got *"read
+    /// error: The system cannot find the file specified. (os error 2)"*. For a
+    /// library model the UI's `selected` holds the **qualified name**, not a file, and
+    /// `simulate` opened with `read_to_string(path)` — so simulation had never worked
+    /// for anything in the corpus. The compile path had gained
+    /// `CompileLibraryModel`; the simulate path never got its counterpart.
+    ///
+    /// **Why it survived: nothing headless could reach it.** Every simulate test went
+    /// through `simulate_specimen`, which takes a `&Path` and therefore cannot express
+    /// a library model. The gap was not un-tested, it was **un-testable** — so
+    /// `simulate_library_model` exists as much for this test as for the UI, and the
+    /// two halves landed together.
+    ///
+    /// `SecondOrder` deliberately: it is the model Doug reported, it is a genuine
+    /// second-order system with states to plot, and `Blocks/Continuous.mo` declares
+    /// several classes — which is exactly the case where re-deriving the qualified
+    /// name from the declaring file would pick the wrong one.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn an_msl_library_model_simulates() {
+        let data = simulate_library_model(
+            "Modelica.Blocks.Continuous.SecondOrder",
+            1.0,
+            msl_roots(),
+        )
+        .expect("SecondOrder must simulate through the library path");
+        assert!(
+            !data.times.is_empty(),
+            "the solver returned no time points for SecondOrder",
+        );
+        // Non-vacuity on the *content*: an empty name list would satisfy the above
+        // while telling a reader nothing was actually integrated.
+        assert!(
+            !data.names.is_empty(),
+            "SecondOrder simulated but produced no named trajectories",
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -7266,7 +7379,7 @@ mod tests {
         {
             let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
             let path = PathBuf::from(format!("{}/specimens/SingleInertia.mo", env!("CARGO_MANIFEST_DIR")));
-            w.simulate(&path, "SingleInertia", 1.0, &|msg: FromWorker| {
+            w.simulate(CompileTarget::File(&path), "SingleInertia", 1.0, &|msg: FromWorker| {
                 if let FromWorker::Log(entry) = msg {
                     logs.lock().unwrap().push(entry);
                 }
@@ -7382,7 +7495,7 @@ mod tests {
     fn simulate_nonexistent_file_reports_error() {
         let mut w = WorkerState::new();
         let path = PathBuf::from("/tmp/hrw_test_sim_nonexistent.mo");
-        let result = w.simulate(&path, "Model", 1.0, &|_: FromWorker| {});
+        let result = w.simulate(CompileTarget::File(&path), "Model", 1.0, &|_: FromWorker| {});
         assert!(result.is_err(), "simulate of a missing file should return Err");
     }
 
@@ -7396,7 +7509,7 @@ mod tests {
         let bad_file = tmp_dir.join("sim_bad_syntax.mo");
         std::fs::write(&bad_file, "not valid modelica {").expect("write temp file");
         let mut w = WorkerState::new();
-        let result = w.simulate(&bad_file, "Model", 1.0, &|_: FromWorker| {});
+        let result = w.simulate(CompileTarget::File(&bad_file), "Model", 1.0, &|_: FromWorker| {});
         assert!(result.is_err(), "simulate of invalid syntax should return Err");
     }
 

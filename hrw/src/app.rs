@@ -2824,7 +2824,15 @@ impl App {
             self.sim_running = true;
             self.sim_data = None;
             self.sim_error = None;
-            self.worker.send(ToWorker::Simulate { path, model, t_end: self.sim_t_end });
+            // **`selected_is_library` decides how `path` is read.** For a library
+            // model it holds the qualified name rather than a file, which is why
+            // pressing Run on an MSL model reported a missing file until 2026-08-04.
+            self.worker.send(ToWorker::Simulate {
+                path,
+                model,
+                t_end: self.sim_t_end,
+                is_library: self.selected_is_library,
+            });
         }
     }
 
