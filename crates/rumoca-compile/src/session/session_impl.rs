@@ -836,6 +836,45 @@ impl Session {
         Ok(&self.ensure_resolved()?.0)
     }
 
+    /// The class tree **a strict compile will use**, built under
+    /// `ResolveBuildMode::StrictCompileRecovery`.
+    ///
+    /// # Why this is not [`Session::tree`]
+    ///
+    /// `tree()` builds under `ResolveBuildMode::Standard`. A strict compile builds
+    /// under `StrictCompileRecovery`, and the two are **deliberately different
+    /// trees** — recovery keeps going past errors Standard treats as fatal. Both are
+    /// cached, but *separately*, so a caller that inspects the tree and then compiles
+    /// resolves the whole library twice. Measured on a Modelica Standard Library
+    /// workspace: ~374ms of redundant resolution per compile, over 38,855 definitions.
+    ///
+    /// # The diagnostics come with it, and must
+    ///
+    /// Recovery **succeeds past errors that would fail `Standard`**. So `Ok` here does
+    /// not mean the model resolved cleanly, and a caller using `tree()`'s `Err` as its
+    /// failure signal will silently stop detecting failures. Returning the
+    /// diagnostics makes ignoring them a visible choice rather than an accident.
+    ///
+    /// Returns the `Arc` rather than a deep clone: the resolved tree is the largest
+    /// artifact the session owns.
+    pub fn strict_compile_resolved(
+        &mut self,
+    ) -> Result<(Arc<ast::ResolvedTree>, CommonDiagnostics)> {
+        self.build_resolved_for_strict_compile_with_diagnostics()
+            .map_err(|diags| {
+                let message = diags
+                    .iter()
+                    .map(|d| d.message.clone())
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                if message.is_empty() {
+                    anyhow::anyhow!("Resolve errors")
+                } else {
+                    anyhow::anyhow!("Resolve errors: {message}")
+                }
+            })
+    }
+
     /// Get the resolved tree.
     pub fn resolved(&mut self) -> Result<ast::ResolvedTree> {
         self.build_resolved()?;
