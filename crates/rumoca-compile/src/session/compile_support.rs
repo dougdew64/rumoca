@@ -301,12 +301,20 @@ pub(super) fn typed_model_outcome_from_instantiated(
         }
     };
 
+    // The overlay as instantiation left it, before typecheck annotates it.
+    crate::observe::record_instantiated(&overlay);
+
     if let Err(diags) = typecheck_instanced(tree, &mut overlay, model_name) {
+        crate::observe::record_typecheck_diagnostics(&diags.iter().cloned().collect::<Vec<_>>());
         return (
             TypedModelOutcome::TypecheckError(diags.iter().cloned().collect()),
             true,
         );
     }
+
+    // And after — typecheck mutates it, adding resolved types and dimensions, so
+    // these are two genuinely different artifacts rather than one seen twice.
+    crate::observe::record_typechecked(&overlay);
 
     (TypedModelOutcome::Success(Box::new(overlay)), true)
 }

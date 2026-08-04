@@ -43,6 +43,7 @@ pub mod cache;
 mod codegen_api;
 mod codegen_target;
 mod experiment;
+pub mod observe;
 mod galec_api;
 mod instrumentation;
 #[cfg(test)]
