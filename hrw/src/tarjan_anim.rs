@@ -99,6 +99,54 @@ impl TarjanAnimation {
     /// First runs matching to build the dependency graph (equation A
     /// depends on equation B if A references a variable matched to B),
     /// then traces Tarjan's SCC algorithm on that graph.
+    /// Build from **frames captured during the compile**.
+    ///
+    /// Both searches come from the run that produced the BLT blocks on screen:
+    /// `tarjan_frames` is the SCC search itself, and the dependency graph it ran over
+    /// is rebuilt from the captured *matching*'s final state rather than by matching
+    /// again. `adj` is a data structure the view needs in order to draw — deriving it
+    /// is not the same as re-running the algorithm being animated.
+    ///
+    /// `match_var` is inverted from `match_eq` rather than captured: the two are
+    /// exact inverses by construction, so storing both would be a second copy of one
+    /// fact and a chance for them to disagree.
+    ///
+    /// **Falls back when either capture is empty** — an animation with no frames
+    /// would say the algorithm did nothing, which is worse than a faithful
+    /// re-derivation.
+    pub fn from_captured_frames(
+        mat: &IncidenceMatrix,
+        matching_frames: &[rumoca_phase_structural::matching::MatchingFrame],
+        tarjan_frames: &[rumoca_phase_structural::tarjan::TarjanFrame],
+    ) -> Option<Self> {
+        let n_eq = mat.n_eq();
+        if n_eq == 0 {
+            return None;
+        }
+        let (Some(last), false) = (matching_frames.last(), tarjan_frames.is_empty()) else {
+            return Self::from_incidence(mat);
+        };
+
+        let match_eq = &last.match_eq;
+        let mut match_var: Vec<Option<usize>> = vec![None; mat.n_var()];
+        for (eq, var) in match_eq.iter().enumerate() {
+            if let Some(v) = var
+                && *v < match_var.len()
+            {
+                match_var[*v] = Some(eq);
+            }
+        }
+        let adj = build_dep_graph(mat, match_eq, &match_var);
+        Some(Self {
+            playback: Playback::recorded(tarjan_frames.to_vec(), FRAME_INTERVAL),
+            n_nodes: n_eq,
+            node_names: mat.equation_texts().to_vec(),
+            rows: mat.rows().to_vec(),
+            unknown_names: mat.unknown_names().to_vec(),
+            adj,
+        })
+    }
+
     pub fn from_incidence(mat: &IncidenceMatrix) -> Option<Self> {
         let n_eq = mat.n_eq();
         let n_var = mat.n_var();

@@ -771,6 +771,8 @@ pub enum FromWorker {
         /// Every step of the matching search, **from the run that produced the
         /// blocks above** — not a re-derivation performed when the tab opens.
         matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
+        /// The SCC search, from the same run.
+        tarjan_frames: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
         /// `pre()`-lowering replay frames (idea #40). Recorded by re-running DAE
         /// construction over the flat model with an observer attached — the pass
         /// runs *inside* construction, so the finished DAE cannot be replayed.
@@ -1489,6 +1491,7 @@ impl WorkerState {
                     identifier_index: None,
                     index_reduction_frames: Vec::new(),
                     matching_frames: Vec::new(),
+                    tarjan_frames: Vec::new(),
                     pre_lowering_frames: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
@@ -1892,10 +1895,10 @@ impl WorkerState {
         // The return type is a 6-tuple — Rust's way of returning multiple
         // values without defining a struct. Destructured immediately via
         // `let (flatten, structural, ...) = match ...`.
-        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat, matching_frames) = match &model {
+        let (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, equation_sheet, identifier_index, ir_frames, compiled_dae, pre_frames, compiled_flat, structural_frames) = match &model {
             None => {
                 let e = "parse produced no model to compile";
-                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, Vec::new())
+                (Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), Stage::err(e), None, None, Vec::new(), None, Vec::new(), None, StructuralFrames { matching: Vec::new(), tarjan: Vec::new() })
             }
             Some(simple_name) => {
                 // A library model was named in full by the caller. Qualifying its
@@ -2177,7 +2180,7 @@ impl WorkerState {
 
                 // Structural onward is HRW's own work on the DAE, not a reading of
                 // the compile's output — so it sits outside the bracket.
-                let (structural, matching_frames) = {
+                let (structural, structural_frames) = {
                     log(LogLevel::StageStart, "Structural analysis".to_owned());
                     let t = Instant::now();
                     let (stage, frames) = structural_stage(result, &source);
@@ -2220,7 +2223,7 @@ impl WorkerState {
                     _ => None,
                 };
 
-                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat, matching_frames)
+                (flatten, dae_stage, structural, index_reduction, initialization, events, solve_lowering, eq_sheet, id_index, ir_frames, dae, pre_frames, flat, structural_frames)
             }
         };
 
@@ -2252,7 +2255,8 @@ impl WorkerState {
             equation_sheet,
             identifier_index,
             index_reduction_frames: ir_frames,
-            matching_frames,
+            matching_frames: structural_frames.matching,
+            tarjan_frames: structural_frames.tarjan,
             pre_lowering_frames: pre_frames,
             connection_frames,
             library_source,
@@ -2550,12 +2554,22 @@ fn unmatched_unknown_locations(
     )
 }
 
+/// Frames captured from one structural run, for the three animations it feeds.
+pub struct StructuralFrames {
+    pub matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
+    pub tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
+}
+
 fn structural_stage(
     result: Option<&PhaseResult>,
     source: &str,
-) -> (Stage, Vec<rumoca_phase_structural::matching::MatchingFrame>) {
+) -> (Stage, StructuralFrames) {
+    let empty = || StructuralFrames {
+        matching: Vec::new(),
+        tarjan: Vec::new(),
+    };
     if let Some(stage) = not_reached_stage(result) {
-        return (stage, Vec::new());
+        return (stage, empty());
     }
     let cr = unwrap_success(result);
 
@@ -2569,8 +2583,12 @@ fn structural_stage(
     // match is the one whose search is most worth watching, and
     // `build_structural_report` runs matching before it decides to fail.
     rumoca_phase_structural::matching::start_capture();
+    rumoca_phase_structural::tarjan::start_capture();
     let report = rumoca_phase_structural::build_structural_report(&cr.dae);
-    let matching_frames = rumoca_phase_structural::matching::take_capture();
+    let frames = StructuralFrames {
+        matching: rumoca_phase_structural::matching::take_capture(),
+        tarjan: rumoca_phase_structural::tarjan::take_capture(),
+    };
     let stage = match report {
         Ok(rep) => {
             let inc = rumoca_phase_structural::build_incidence(&cr.dae);
@@ -2598,7 +2616,7 @@ fn structural_stage(
             Stage::recovered(json, note)
         }
     };
-    (stage, matching_frames)
+    (stage, frames)
 }
 
 /// Structural analysis of the DAE **after** index reduction. Runs the
@@ -6479,6 +6497,52 @@ mod tests {
             "the captured search ends on a different matching than the report \
              published \u{2014} the animation would replay a run that did not produce \
              what the rest of the pipeline used",
+        );
+    }
+
+    /// **The Tarjan animation's frames come from the compile too.**
+    ///
+    /// Same provenance argument as matching: `build_structural_report` runs the SCC
+    /// search inside `blt::build_blt_blocks` and returns only the blocks, so the
+    /// animation re-ran it on tab open — agreeing by determinism, replaying a search
+    /// that produced nothing.
+    ///
+    /// **Checked against the report's block structure**, not a frame count.
+    /// `ProportionalLoop`'s three equations form one coupled block, so the captured
+    /// search must find a component of size 3 — a capture of a different run, or of a
+    /// different model, would not.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn the_tarjan_animation_is_fed_by_the_compile() {
+        let FromWorker::Compiled { tarjan_frames, stages, .. } =
+            compile_specimen_shared("ProportionalLoop")
+        else {
+            panic!("expected Compiled");
+        };
+
+        assert!(
+            !tarjan_frames.is_empty(),
+            "no SCC frames captured \u{2014} the animation would silently fall back to \
+             re-deriving and this change would have done nothing",
+        );
+
+        // The report says how many equations are in coupled blocks; the search that
+        // produced it must have visited at least that many nodes.
+        let coupled = stages
+            .structural
+            .value
+            .as_ref()
+            .and_then(|v| v.get("coupled_block_count"))
+            .and_then(serde_json::Value::as_u64)
+            .expect("the structural report counts its coupled blocks");
+        assert_eq!(
+            coupled, 1,
+            "precondition: ProportionalLoop is the corpus's one-coupled-block model",
+        );
+        assert!(
+            tarjan_frames.len() >= 3,
+            "a three-equation SCC cannot be found in {} frames",
+            tarjan_frames.len(),
         );
     }
 

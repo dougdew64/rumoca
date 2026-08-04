@@ -593,6 +593,27 @@ pub enum UiMode {
     Debug,
 }
 
+/// The algorithm replays one compile produced, grouped because they are one thing.
+///
+/// Each is captured **during the compile that produced the IR on screen** — via the
+/// capture scopes in `rumoca-phase-{flatten,dae,structural}` — rather than by
+/// re-running an algorithm when its tab is opened. See
+/// `matching::start_capture` for why that distinction matters: a re-derivation
+/// agrees, but it replays a search that produced nothing.
+#[derive(Default)]
+struct CompileFrames {
+    /// Index reduction's demotions and differentiations.
+    index_reduction: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
+    /// The matching search that produced the BLT blocks.
+    matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
+    /// The SCC search over the dependency graph, from the same run.
+    tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
+    /// `pre()` lowering, on the Events stage (idea #40).
+    pre_lowering: Vec<rumoca_phase_dae::PreLoweringFrame>,
+    /// Connection expansion (MLS §9).
+    connection: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
+}
+
 /// Views derived from a **stage's report**, all valid for exactly one stage.
 ///
 /// # Why these eleven and not the other nine `cached_*` fields
@@ -963,16 +984,18 @@ pub struct App {
     cached_equation_sheet: Option<equation_sheet::EquationSheet>,
     identifier_index: Option<identifier_index::IdentifierIndex>,
     tracked_identifier: Option<String>,
-    index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
-    /// The matching search, captured from the compile that produced the blocks.
-    matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
-    // Idea #40: replay of `pre()` lowering, on the Events stage. The frames are
-    // recorded by re-running DAE construction over the flat model, since the
-    // pass runs inside construction and the finished DAE has nothing left to
-    // replay. `cached_flat` is kept for the live-debug variant.
-    pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
-    /// Connection-expansion replay frames (MLS §9), recorded at compile time.
-    connection_frames: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
+    /// **Every algorithm replay the last compile captured**, in one place.
+    ///
+    /// Six `Vec`s of frames sat directly on `App` until 2026-08-04, when adding the
+    /// fifth and sixth pushed the field-count ratchet over its bound and it asked
+    /// the question it exists to ask. The answer was not "raise the number": these
+    /// six are one thing — **the observations a single compile produced** — and they
+    /// arrive together on `FromWorker::Compiled`, are replaced together, and are read
+    /// only by the animations.
+    ///
+    /// Grouping them takes `App` from 60 fields to 55, which is the ratchet working
+    /// as designed rather than being appeased.
+    frames: CompileFrames,
     cached_flat: Option<rumoca_ir_flat::Model>,
     cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
     cached_dae: Option<rumoca_ir_dae::Dae>,
@@ -1500,10 +1523,7 @@ impl App {
             cached_equation_sheet: None,
             identifier_index: None,
             tracked_identifier: None,
-            index_reduction_frames: Vec::new(),
-            matching_frames: Vec::new(),
-            pre_lowering_frames: Vec::new(),
-            connection_frames: Vec::new(),
+            frames: CompileFrames::default(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
             cached_dae: None,
@@ -1769,7 +1789,8 @@ impl App {
                 }
                 FromWorker::Compiled {
                     path, model, stages, def_index, equation_sheet,
-                    identifier_index, index_reduction_frames, matching_frames, dae,
+                    identifier_index, index_reduction_frames, matching_frames,
+                    tarjan_frames, dae,
                     pre_lowering_frames, connection_frames, flat,
                     library_source,
                 } => {
@@ -1793,10 +1814,13 @@ impl App {
                     );
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
-                    self.index_reduction_frames = index_reduction_frames;
-                    self.matching_frames = matching_frames;
-                    self.pre_lowering_frames = pre_lowering_frames;
-                    self.connection_frames = connection_frames;
+                    self.frames = CompileFrames {
+                        index_reduction: index_reduction_frames,
+                        matching: matching_frames,
+                        tarjan: tarjan_frames,
+                        pre_lowering: pre_lowering_frames,
+                        connection: connection_frames,
+                    };
                     self.cached_flat = flat;
                     self.cached_pre_lowering_anim = None;
                     self.cached_dae = dae;
@@ -2298,7 +2322,7 @@ impl App {
             // Summary is the singular-system explanation, plus Index Reduction's report.
             StructuralView::Summary => is_index_reduction || is_singular,
             StructuralView::Animate => {
-                is_index_reduction && !self.index_reduction_frames.is_empty()
+                is_index_reduction && !self.frames.index_reduction.is_empty()
             }
             StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations(),
             // These need a complete matching to mean anything.
@@ -3243,7 +3267,7 @@ impl App {
             inc.as_ref().map(|m| {
                 matching_anim::MatchingAnimation::from_captured_frames(
                     m,
-                    &self.matching_frames,
+                    &self.frames.matching,
                 )
             })
         );
@@ -3305,7 +3329,14 @@ impl App {
     if self.stage_views.tarjan_anim.is_none() {
         let inc = self.stage_views.incidence.as_ref().unwrap();
         self.stage_views.tarjan_anim = Some(
-            inc.as_ref().and_then(tarjan_anim::TarjanAnimation::from_incidence)
+            // Both searches from the compile, not re-derived on tab open.
+            inc.as_ref().and_then(|m| {
+                tarjan_anim::TarjanAnimation::from_captured_frames(
+                    m,
+                    &self.frames.matching,
+                    &self.frames.tarjan,
+                )
+            })
         );
     }
     // Consume a pending camera aim from `hrw://…/equation/<n>`. Taken here rather than
@@ -3371,7 +3402,7 @@ impl App {
             self.stage_views.reduction_anim = Some(live);
         }
     if self.stage_views.reduction_anim.is_none() {
-        let frames = &self.index_reduction_frames;
+        let frames = &self.frames.index_reduction;
         self.stage_views.reduction_anim = Some(if frames.is_empty() {
             None
         } else {
@@ -3468,7 +3499,7 @@ impl App {
     /// contains the whole MSL).
     fn connection_anim_ui(&mut self, ui: &mut egui::Ui) {
         if self.stage_views.connection_anim.is_none() {
-            let frames = &self.connection_frames;
+            let frames = &self.frames.connection;
             self.stage_views.connection_anim = Some(if frames.is_empty() {
                 None
             } else {
@@ -3579,7 +3610,7 @@ impl App {
             self.cached_pre_lowering_anim = Some(live);
         }
         if self.cached_pre_lowering_anim.is_none() {
-            let frames = &self.pre_lowering_frames;
+            let frames = &self.frames.pre_lowering;
             self.cached_pre_lowering_anim = Some(if frames.is_empty() {
                 None
             } else {
@@ -3721,7 +3752,7 @@ impl App {
                     }
                     // Connection expansion, only when the model has any --
                     // a hand-written model shows no empty tab.
-                    if !self.connection_frames.is_empty() {
+                    if !self.frames.connection.is_empty() {
                         ui.selectable_value(&mut self.viewport.flatten, FlattenView::Connections, "Connections \u{25b6}")
                             .on_hover_text(
                                 "Watch connect() statements become equations. A potential set \
@@ -3738,7 +3769,7 @@ impl App {
             // tree — only when there is a trace to replay, so smooth models
             // never show an empty tab.
             let events_ready =
-                self.stage == StageKind::Events && !self.pre_lowering_frames.is_empty();
+                self.stage == StageKind::Events && !self.frames.pre_lowering.is_empty();
             if events_ready {
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut self.viewport.events, EventsView::Tree, "Tree");
@@ -7468,10 +7499,7 @@ impl App {
             cached_equation_sheet: None,
             identifier_index: None,
             tracked_identifier: None,
-            index_reduction_frames: Vec::new(),
-            matching_frames: Vec::new(),
-            pre_lowering_frames: Vec::new(),
-            connection_frames: Vec::new(),
+            frames: CompileFrames::default(),
             cached_flat: None,
             cached_pre_lowering_anim: None,
             cached_dae: None,
@@ -8574,6 +8602,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
+            tarjan_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8605,6 +8634,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
+            tarjan_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8639,6 +8669,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
+            tarjan_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8674,6 +8705,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
+            tarjan_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
@@ -8707,6 +8739,7 @@ mod tests {
             identifier_index: None,
             index_reduction_frames: Vec::new(),
             matching_frames: Vec::new(),
+            tarjan_frames: Vec::new(),
             pre_lowering_frames: Vec::new(),
             connection_frames: Vec::new(),
             flat: None,
