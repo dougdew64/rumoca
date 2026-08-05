@@ -372,21 +372,30 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > His goal, 2026-08-05: *"I want to enjoy that learning experience, rather than be distracted by
 > the kinds of bug and usability annoyances which we are still discovering."*
 >
-> **The live item: relate an EQUATION in a stage tree to its Modelica source.** Planned, **not
-> built**. The variable equivalent shipped and Doug called it *"beautiful"* — hover for
-> *"Declared at line N"*, a `📄 Show <var> in the Modelica source` context item, and a wash on
-> the line it lands on.
+> **Relating a tree node to its Modelica source — where it stands.** Three affordances, built
+> 2026-08-05 and all three shared: a hover giving the source line, a
+> `📄 Show … in the Modelica source` context item, and a **wash** on the line it lands on.
 >
-> **The shape, already worked out** (`docs/tech-debt.md`, "Source provenance thins…"):
-> `EquationSheet::equations[i].source_lines` already holds the answer, resolved from the DAE
-> equation's `span`. What is missing is plumbing it to a tree node via a **path-keyed** lookup —
-> `TreeOptions::path_lines` — because the tree is type-agnostic by charter §4.4 and **must not
-> learn where `continuous.equations` lives**. The app knows the DAE layout; the tree looks up its
-> own path without knowing what it means. All three affordances then reuse what exists.
+> | | works in |
+> |---|---|
+> | **Variables** | **every stage tree** — `variable_lines` comes from the identifier index and is wired unconditionally |
+> | **Equations** | **DAE only**, and Flatten as of the same day |
 >
-> **Read the correction beside it.** An earlier entry claimed equations had no recoverable origin
-> and needed a Rumoca change. **False** — the field is `span`, not `location`, and the
-> measurement counted one spelling. Same shape as the `str_vec` blind spot.
+> **Equations are keyed by PATH, not index**, because the tree is type-agnostic by charter §4.4
+> and must not learn that `f_x[3]` is an equation. Both sides build the key with
+> `describe_path`, so the formats agree by construction. **A key that never matches produces no
+> tooltip and no error**, so each map has a test pinning that it resolves.
+>
+> **The stage gate is not just scoping — it prevents a wrong answer.** Measured span counts per
+> stage on `Drivetrain`: Flatten **1,856**, Events 12, and **index reduction, initialization and
+> structural have none**. Passing the DAE's map to index reduction would have looked up `f_x[i]`
+> against lines from the *raw* DAE, which renumbers under reduction — mis-attribution that is
+> well-formed and wrong.
+>
+> **Read the correction that came out of this.** An earlier entry claimed equations had no
+> recoverable origin and needed a Rumoca change. **False** — the field is `span`, not `location`,
+> and the measurement counted one spelling. Same shape as the `str_vec` blind spot. The feature
+> then took about an hour; **the measurement error was the expensive part.**
 >
 > **Done and closed this session:** #46 (three specimens, six failure tours, `failure_map`), #62
 > (dissolved into the catalogue plus specimens-on-the-row), #63 (catalogue + `hrw://tour/<name>/
