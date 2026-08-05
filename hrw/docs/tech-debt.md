@@ -557,6 +557,44 @@ very sweep, which is the sort of thing this file exists to remember.
   ones can be made to look different at the call site, which is what `parse_list` does for one
   file.
 
+## The source pane told a selected model to select a model
+
+**Found by the sweep, 2026-08-04**, following the `&Path`-vs-qualified-name generalisation from
+the `SecondOrder` bug. The pane read `self.selected` from disk with
+`read_to_string(path).unwrap_or_default()` — and for a library model `selected` holds the
+**qualified name**, not a path. When the worker had not yet supplied the declaring file's text,
+the read failed, **the empty string was cached**, and the fallback arm printed *"Select a
+specimen to view its source."* while a model was selected.
+
+**A failure to read, rendered as a different, plausible, false claim** — and this one sends the
+reader to fix something that is not broken. Four distinct causes had shared one sentence:
+nothing selected, library text not yet arrived, read failed, file genuinely empty.
+
+**The library half was already right.** `source.library_error` exists with the comment *"A read
+failure is reported, never rendered as blank"*. The specimen half never got the same treatment,
+which is the asymmetry this sweep was looking for.
+
+`load_error` doubles as the retry guard — without it a missing file was re-read **every frame**,
+a filesystem call in the paint path.
+
+### Two things this broke, and both were the fixture's fault
+
+- `test_set_walked_state` names files that do not exist (`RcCircuit.mo`). Harmless while the
+  failure was silent; once the pane reported it, tests broke. **The fixture was the unrealistic
+  thing** — a test whose app is in a state the real app cannot reach is testing something that
+  does not happen — so it now seeds source text rather than the assertion being loosened.
+- **The seeded text deliberately omits the model name.** Several tests assert on the Context Bar
+  by searching for the specimen name, and *any* source on screen gives them a second match.
+  **That coupling is fragile and unlogged until now**: those tests do not really assert "the
+  Context Bar names the specimen", they assert "exactly one thing on screen mentions it".
+  <!-- unbuilt: ui_tests::context_bar_query_is_specific -->
+
+### Also: `get_all_by_label_contains` cannot express absence
+
+It **panics** when nothing matches, so `.next().is_none()` is not a way to assert something is
+absent — it is a way to fail. Use `query_by_label_contains(..).is_none()`. Cost one debugging
+round in this sweep.
+
 ## Simulation never worked on a corpus model, and nothing could have found it
 
 **Found by Doug 2026-08-04**, pressing Run on `Modelica.Blocks.Continuous.SecondOrder`:

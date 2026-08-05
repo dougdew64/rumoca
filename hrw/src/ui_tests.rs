@@ -1006,6 +1006,51 @@ fn an_unreadable_library_file_reports_why() {
     );
 }
 
+/// **A selected model is never told to select a model.**
+///
+/// The sweep's finding, 2026-08-04. The source pane read `self.selected` off disk
+/// with `.unwrap_or_default()` — and for a library model `selected` holds the
+/// *qualified name* (`Modelica.Blocks.Continuous.SecondOrder`), not a path. When the
+/// worker had not yet supplied the declaring file's text, the read failed, the empty
+/// string was **cached**, and the pane's fallback said *"Select a specimen to view
+/// its source."*
+///
+/// That is the same defect family as the fictions: a failure to read rendered as a
+/// different, plausible, false claim — and this one sends the reader to fix something
+/// that is not broken. The disk read is now skipped entirely for a library selection,
+/// and the pane says what is actually true.
+#[test]
+fn a_library_model_awaiting_its_source_is_not_told_to_select_one() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_select_library_awaiting_source("Modelica.Blocks.Continuous.SecondOrder");
+    let h = harness(app);
+
+    // **The full sentence, not the prefix.** Four panes start with "Select a
+    // specimen" — to compile, to see its purpose, to see its compilation log — and
+    // the first version of this test matched the prefix, so it failed on the stages
+    // pane legitimately saying nothing had been compiled yet. A substring deciding
+    // which message it found, in a test written during the sweep that removed
+    // substring-shaped defects.
+    // `query_by_label_contains` for the absence, not `get_all_by_label_contains` —
+    // the latter *panics* when nothing matches, so it cannot express "must not be
+    // present" at all. The sibling test above uses the same call for the same reason.
+    assert!(
+        h.query_by_label_contains("Select a specimen to view its source").is_none(),
+        "a model IS selected \u{2014} this sentence sends the reader to fix something \
+         that is not broken",
+    );
+    assert!(
+        h.query_by_label_contains("has not arrived from the compiler").is_some(),
+        "the pane must say why there is no text yet",
+    );
+    assert!(
+        h.state().test_source_load_error().is_none(),
+        "a library selection must not be read from disk at all \u{2014} a qualified \
+         name is not a path, and the failure it produces is meaningless",
+    );
+}
+
 /// A readable library file shows its text **and names the file it came from**.
 ///
 /// The header is not decoration. `Resistor` lands a reader inside `Basic.mo`

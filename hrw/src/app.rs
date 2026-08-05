@@ -717,6 +717,18 @@ struct SourceViewState {
     /// The text on screen. For a specimen, re-read from disk; for a library
     /// model, seeded by the worker from the declaring file.
     text: Option<String>,
+    /// Why the disk read failed, when it did.
+    ///
+    /// **Added by the 2026-08-04 sweep.** The read was
+    /// `read_to_string(path).unwrap_or_default()`, so a failure produced an **empty
+    /// string that then got cached** — and the pane's fallback arm said *"Select a
+    /// specimen to view its source"* while a specimen was selected. A read failure
+    /// was rendered as a different, plausible, false claim.
+    ///
+    /// It also doubles as the retry guard: without it, a file that cannot be read
+    /// would be re-read on **every frame**, which is a filesystem call in the paint
+    /// path (see the debugging conventions in `CLAUDE.md`).
+    load_error: Option<String>,
     /// Lexed spans for [`Self::text`], rebuilt whenever the text changes.
     highlight: Option<crate::source_view::SourceHighlight>,
     /// Which library file [`Self::text`] came from, when it is a library model.
@@ -1708,6 +1720,10 @@ impl App {
         self.context.jump_target = None;
         self.source.scrolled_for = None;
         self.source.text = None;
+        // Cleared with the text, or the previous model's read failure would be
+        // reported over the new model's pane — and would also suppress the retry,
+        // since it doubles as the retry guard.
+        self.source.load_error = None;
         // Cleared *with* the text it labels, or the header would name the previous
         // model's library file over an empty pane for the whole compile. The two
         // are set together in the `Compiled` handler for the same reason.
@@ -4420,21 +4436,39 @@ egui::Panel::top("bar").show(ui, |ui| {
             );
             return;
         }
-        // A library model's text is already in the cache, seeded by the worker
-        // from the document it compiled — `get_or_insert_with` therefore does
-        // not run, and `selected` (a qualified name, not a path) is never read as
-        // one. A specimen still reads from its own file so live edits show.
+        // A library model's text is seeded by the worker from the document it
+        // compiled; a specimen reads from its own file so live edits show.
+        //
+        // *(Corrected 2026-08-04: this said `get_or_insert_with` "therefore does not
+        // run, and `selected` is never read as a path". The first half was true and
+        // the second did not follow from it — the closure ran whenever the worker had
+        // not yet supplied the text, and then read the qualified name as a path. The
+        // guard is now explicit rather than a consequence of timing.)*
         //
         // **This pane used to refuse library models outright**, claiming there was
         // "no single source file to show". That was untrue: the worker reads that
         // very file out of the session in order to compile it. Doug, 2026-08-01:
         // *"The modelica source view for an MSL model should be just as functional
         // as for an HRW specimen."*
-        let source = self.selected.as_ref().map(|path| {
-            self.source.text.get_or_insert_with(|| {
-                std::fs::read_to_string(path).unwrap_or_default()
-            }).as_str()
-        });
+        // **A library selection is never read from disk.** `self.selected` holds the
+        // qualified name for one (`Modelica.Blocks.Continuous.SecondOrder`), which is
+        // not a path — the worker sends the declaring file's text instead. Reading it
+        // was harmless only because the worker usually wins the race; when it did
+        // not, the failure became an empty string and then a false message.
+        let is_library = self.selected_is_library;
+        if self.source.text.is_none()
+            && self.source.load_error.is_none()
+            && !is_library
+            && let Some(path) = self.selected.clone()
+        {
+            match std::fs::read_to_string(&path) {
+                Ok(text) => self.source.text = Some(text),
+                // Recorded, not defaulted. This also stops the retry, keeping the
+                // filesystem out of the per-frame paint path.
+                Err(e) => self.source.load_error = Some(format!("{}: {e}", path.display())),
+            }
+        }
+        let source = self.source.text.as_deref();
         let mut clicked_id: Option<String> = None;
         match source {
             Some(text) if !text.is_empty() => {
@@ -4598,8 +4632,26 @@ egui::Panel::top("bar").show(ui, |ui| {
                 // horizontal offset drifting off the left margin.
                 self.source.scroll_offset = scroll_out.state.offset;
             }
+            // **Four different reasons there is no source, and they used to share
+            // one sentence.** Saying "select a specimen" to someone who has selected
+            // one is not a smaller error than showing wrong text — it sends them to
+            // fix something that is not broken.
             _ => {
-                ui.weak("Select a specimen to view its source.");
+                if let Some(err) = &self.source.load_error {
+                    ui.colored_label(
+                        ui.visuals().error_fg_color,
+                        format!("The source file could not be read \u{2014} {err}"),
+                    );
+                } else if self.selected.is_none() {
+                    ui.weak("Select a specimen to view its source.");
+                } else if is_library {
+                    ui.weak(
+                        "The declaring file has not arrived from the compiler yet \u{2014} \
+                         a library model's source comes from the session, not from disk.",
+                    );
+                } else {
+                    ui.weak("This file is empty.");
+                }
             }
         }
         if let Some(name) = clicked_id {
@@ -7507,6 +7559,25 @@ impl App {
         self.source.highlight = None;
     }
 
+    /// Select a **library** model whose text has not arrived from the worker yet.
+    ///
+    /// The state that used to make the source pane read a qualified name off disk,
+    /// get an empty string, and print "Select a specimen to view its source" while a
+    /// model was selected.
+    pub(crate) fn test_select_library_awaiting_source(&mut self, qualified: &str) {
+        self.selected = Some(PathBuf::from(qualified));
+        self.selected_is_library = true;
+        self.specimen_detail = SpecimenDetail::Source;
+        self.source.text = None;
+        self.source.library_error = None;
+        self.source.load_error = None;
+    }
+
+    /// What the source pane would say, given the current state.
+    pub(crate) fn test_source_load_error(&self) -> Option<&str> {
+        self.source.load_error.as_deref()
+    }
+
     /// Put a message in the status bar, as any refusal or result would.
     pub(crate) fn test_set_notice(&mut self, s: &str) {
         self.notice = Some(s.to_owned());
@@ -7555,6 +7626,19 @@ impl App {
         self.selected = Some(PathBuf::from(specimen));
         self.model = Some(model.to_owned());
         self.stage = stage;
+        // **Seeded, because a walked state implies the source was read.** These
+        // fixtures name files that do not exist (`RcCircuit.mo`), which was harmless
+        // only while a failed read silently produced an empty string. Once the sweep
+        // made that failure visible (2026-08-04) the pane began reporting it, which
+        // is correct — and a fixture in a state the real app cannot reach is testing
+        // something that does not happen.
+        //
+        // The text deliberately does **not** contain the model name: several tests
+        // assert on the *Context Bar* by looking for the specimen name, and any
+        // source on screen would give them a second match. That coupling is itself
+        // fragile and is logged in the UI-testing debt.
+        self.source.text = Some("// (fixture source)\n".to_owned());
+        self.source.load_error = None;
     }
 
     /// Drop the model name, leaving the selection: the mid-compile state.
