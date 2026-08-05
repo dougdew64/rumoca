@@ -52,7 +52,24 @@ cargo test -p hrw --lib -- --test-threads=1
   the symptom.
 - **Correct `tech-debt.md`'s "`hrw/`'s fault alone".**
 
-**Risk: none worth naming.** 82 hunks of whitespace in code whose tests pass either way.
+### ~~Risk: none worth naming.~~ — DONE 2026-08-05, and that claim was wrong
+
+**Formatting broke the build.** Rewrapping pushed
+`reduce_constrained_dummy_derivatives_with_trace` from 99 lines to **102**, over
+`[workspace.lints]`'s `too_many_lines` threshold of 100. *"82 hunks of whitespace in code whose
+tests pass either way"* was written without asking whether any lint counts lines — and one does.
+
+**Fixed by extracting `emit_reduction_step`**, which fills in the `demoted_so_far` and `round`
+fields that all five emission sites repeated identically: mechanical, same frames in the same
+order, and worth removing regardless. The function is **ours** (absent from upstream
+`8cdc7419`), so the limit is ours to respect.
+
+**The general lesson, which step 2 inherits:** `fmt` and `clippy` interact, so **run `fmt`
+first and `clippy` on the formatted code.** The reverse certifies the code in a shape it will
+not ship in. `CLAUDE.md`'s rule now says so.
+
+**Outcome:** four crates at 0 clippy warnings and 0 fmt diffs; 596 HRW tests pass, including
+the index-reduction animation tests that consume the frames this touched.
 
 ---
 

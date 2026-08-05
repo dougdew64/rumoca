@@ -111,9 +111,27 @@ are unreachable, so "accessing internals" means **additively widening visibility
 observation hooks in `../crates/rumoca-*`**. Semantics-preserving, so HRW stays faithful to
 real Rumoca and rebases stay clean.
 
-- **After touching a `crates/rumoca-*` file, run `cargo clippy -p <that-crate> --all-targets`.**
-  Those crates are clippy-clean and `[workspace.lints]` denies; a lint the instrumentation
-  introduces fails upstream CI.
+- **After touching a `crates/rumoca-*` file, run BOTH:**
+
+  ```powershell
+  cargo clippy -p <that-crate> --all-targets
+  cargo fmt -p <that-crate> -- --check
+  ```
+
+  Those crates are clippy-clean **and rustfmt-clean**, and `[workspace.lints]` denies. **Upstream
+  CI runs both** (`cargo fmt --all -- --check` is a gating job), so either one failing sinks a PR
+  before a maintainer reads it.
+
+  **`fmt` was missing from this rule until 2026-08-05**, and it cost 82 unformatted hunks across
+  four crates — accumulated over a week in which clippy was run every single time, exactly as
+  written. **A rule that names one of two gates reads as complete.** Found only when the fmt work
+  was planned, not when the instrumentation landed.
+
+  **They interact, which is the reason to run them together rather than in sequence at the end.**
+  Formatting rewraps lines, and rewrapping pushed `reduce_constrained_dummy_derivatives_with_trace`
+  from 99 lines to **102**, over `too_many_lines`'s threshold of 100 — so a formatting pass turned
+  into a build failure. Run `fmt` first, then `clippy` on the formatted code; the reverse tells
+  you the code was clean in a shape it will not ship in.
 - **Commit Rumoca crate changes separately from HRW code**, so an upstream PR is a clean
   cherry-pick.
 - **Ask before adding a dependency.** Record accepted ones in `DECISIONS.md`.

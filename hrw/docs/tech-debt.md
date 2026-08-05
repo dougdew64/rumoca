@@ -993,10 +993,23 @@ is still there and nothing has gone wrong for weeks, that is the answer.
 `record_action("split", ..)` call. Leaving a disabled reporter behind is worse than either
 choice, because the next reader cannot tell whether it is off on purpose.
 
-## `cargo fmt --all -- --check` fails, and it is `hrw/`'s fault alone
+## `cargo fmt --all -- --check` fails — `hrw/` only, as of 2026-08-05
 
 **Logged 2026-08-03 at Doug's request**, after `cargo fmt` was ruled out mid-change as too
 disruptive to run in passing.
+
+> **The title said "`hrw/`'s fault alone" and that was false when written.** Measured
+> 2026-08-05: the instrumented Rumoca crates carried **82 unformatted hunks** —
+> `rumoca-phase-structural` 49, `-flatten` 16, `-dae` 13, `-compile` 4 — and they were **ours**,
+> confirmed by restoring `rumoca-phase-structural/src/lib.rs` from upstream `8cdc7419` and
+> re-checking: upstream clean, our copy 5 diffs.
+>
+> **Fixed the same day**, so the title is true now. It is left in place, corrected rather than
+> rewritten, because the interesting part is *why nobody noticed*: `CLAUDE.md`'s rule for
+> touching a Rumoca crate named **clippy and not rustfmt**, and clippy was run every time. **A
+> rule that names one of two gates reads as complete.** The rule now names both, and says to run
+> `fmt` first — formatting rewrapped one traced function from 99 lines to 102, over
+> `too_many_lines`, so clippy-then-fmt certifies code in a shape it will not ship in.
 
 ### This is a live CI failure, not a tidiness preference
 
