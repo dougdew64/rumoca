@@ -80,6 +80,12 @@ pub struct TreeActions {
     pub debug: Option<Vec<Seg>>,
     /// "Follow this identifier" — reverse tracking (idea #37) from any stage.
     pub track: Option<String>,
+    /// "Show in the Modelica source" — the 1-based line a variable is declared on.
+    ///
+    /// A *line* rather than a name, because the tree already resolved it: passing the
+    /// name would make the app repeat a lookup the tree has just done, and give the
+    /// two a chance to disagree about which declaration was meant.
+    pub show_source_line: Option<u32>,
 }
 
 /// What the tree knows, and how it should present itself.
@@ -334,6 +340,7 @@ fn node_ui(
                 &format!("{key} {hint}"),
                 None,
                 None,
+                None,
             );
             if let Some(doc) = field_help.get(key) {
                 resp.header_response.clone().on_hover_text(doc);
@@ -374,6 +381,7 @@ fn node_ui(
                 &format!("{key} {hint}"),
                 None,
                 None,
+                None,
             );
         }
         scalar => {
@@ -395,6 +403,15 @@ fn node_ui(
             }
             scroll_if_jump_target(is_jump_target, &resp);
             let trackable = trackable_name(key, scalar, &opts);
+            // Resolved once, for both the tooltip and the menu item — one lookup, so
+            // the two cannot name different declarations.
+            let declared_line = trackable.as_deref().and_then(|n| {
+                opts.variable_lines.and_then(|m| {
+                    m.get(n)
+                        .or_else(|| m.get(crate::identifier_index::strip_der(n)))
+                        .map(|v| v.source_line)
+                })
+            });
             row_menu(
                 &resp,
                 path,
@@ -402,6 +419,7 @@ fn node_ui(
                 &copy_text,
                 nav_target(key, scalar, def_index, &opts),
                 trackable.clone(),
+                declared_line,
             );
             // Explain the underline. Appended to the field's own help rather
             // than replacing it, so discoverability does not cost the
@@ -410,15 +428,9 @@ fn node_ui(
                 .on_hover_text(row_hover(
                     field_help.get(key),
                     trackable.as_deref(),
-                    // Bare name first, then the `der(x)` form stripped: a DAE tree
-                    // shows `der(w)` where the declaration is of `w`.
-                    trackable.as_deref().and_then(|n| {
-                        opts.variable_lines.and_then(|m| {
-                            m.get(n)
-                                .or_else(|| m.get(crate::identifier_index::strip_der(n)))
-                                .map(|v| v.source_line)
-                        })
-                    }),
+                    // The same value the menu item uses — resolved once above, so the
+                    // tooltip and the jump can never name different declarations.
+                    declared_line,
                 ));
         }
     });
@@ -558,6 +570,10 @@ fn row_menu(
     copy_text: &str,
     nav: Option<String>,
     track: Option<String>,
+    // The line a trackable name is declared on, resolved by the caller. Pre-resolved
+    // like `nav` and `track`, so the menu never repeats a lookup the row has done and
+    // the two cannot disagree about which declaration was meant.
+    declared_line: Option<u32>,
 ) {
     resp.context_menu(|ui| {
         // Don't wrap menu labels — widen the menu to fit long "Go to <name>"
@@ -601,6 +617,30 @@ fn row_menu(
                 .clicked()
         {
             actions.track = Some(name.clone());
+            ui.close();
+        }
+        // **Straight to the declaration**, for when the question is "what did I
+        // write?" rather than "where does this go?".
+        //
+        // Doug, 2026-08-05, after the declaration line landed in the tooltip: *"could
+        // there be some way for me to click on a context menu item for a variable and
+        // have the Modelica model/specimen be opened in the specimen mode, and then
+        // have the Modelica source view be scrolled to that variable?"*
+        //
+        // Distinct from **Follow**, which is about the *pipeline* — highlight this
+        // name in every stage, count where it is absent. This is one hop to one place
+        // and back. Offering both is not redundancy: they answer different questions,
+        // and Follow buries the source jump as a side effect of a bigger action.
+        if let (Some(line), Some(name)) = (declared_line, track.as_ref())
+            && ui
+                .button(format!("\u{1f4c4} Show {name} in the Modelica source"))
+                .on_hover_text(format!(
+                    "Switch to the specimen's source view, scrolled to line {line} \
+                     where {name} is declared."
+                ))
+                .clicked()
+        {
+            actions.show_source_line = Some(line);
             ui.close();
         }
         if ui

@@ -7260,6 +7260,15 @@ impl App {
                 self.specimen_detail = SpecimenDetail::Source;
             }
         }
+        // **"Show in the Modelica source" — one hop to the declaration.**
+        //
+        // Dispatched through the existing `ShowSource` verb rather than reimplemented:
+        // that link already switches to Specimen mode, opens the Source detail, leaves
+        // the log view and scrolls. A second copy of those four steps would be four
+        // chances for the menu and the tour link to drift apart.
+        if let Some(line) = tree_actions.show_source_line {
+            self.dispatch_hrw_link(HrwLink::ShowSource(Some(line)));
+        }
         // A spy-plot block click is treated identically to a tree-node click
         // for capture purposes.
         if canvas_capture.is_some() {
