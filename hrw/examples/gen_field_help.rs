@@ -27,12 +27,17 @@ fn main() {
         .output()
         .expect("run `cargo metadata`");
     assert!(out.status.success(), "cargo metadata failed");
-    let meta: serde_json::Value = serde_json::from_slice(&out.stdout).expect("parse cargo metadata");
+    let meta: serde_json::Value =
+        serde_json::from_slice(&out.stdout).expect("parse cargo metadata");
 
     let mut docs: BTreeMap<String, String> = BTreeMap::new();
     for crate_name in IR_CRATES {
         let src_dir = src_dir_of(&meta, crate_name);
-        eprintln!("extracting `///` field docs from {} ({})", crate_name, src_dir.display());
+        eprintln!(
+            "extracting `///` field docs from {} ({})",
+            crate_name,
+            src_dir.display()
+        );
         let mut files = Vec::new();
         collect_rs(&src_dir, &mut files);
         for f in &files {
@@ -58,7 +63,10 @@ fn src_dir_of(meta: &serde_json::Value, crate_name: &str) -> PathBuf {
         .as_str()
         .expect("manifest_path")
         .to_owned();
-    PathBuf::from(&manifest).parent().expect("crate dir").join("src")
+    PathBuf::from(&manifest)
+        .parent()
+        .expect("crate dir")
+        .join("src")
 }
 
 /// Recursively gather `*.rs` files under `dir`.
@@ -86,12 +94,18 @@ fn extract(src: &str, docs: &mut BTreeMap<String, String>) {
             // attribute between the doc and the field — keep the buffer
         } else {
             if !buf.is_empty()
-                && let Some(name) = field_name(line) {
-                    let doc = buf.iter().filter(|s| !s.is_empty()).cloned().collect::<Vec<_>>().join(" ");
-                    if !doc.is_empty() && docs.get(&name).is_none_or(|d| doc.len() > d.len()) {
-                        docs.insert(name, doc);
-                    }
+                && let Some(name) = field_name(line)
+            {
+                let doc = buf
+                    .iter()
+                    .filter(|s| !s.is_empty())
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if !doc.is_empty() && docs.get(&name).is_none_or(|d| doc.len() > d.len()) {
+                    docs.insert(name, doc);
                 }
+            }
             buf.clear();
         }
     }

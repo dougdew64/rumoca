@@ -68,7 +68,11 @@ impl IcBlock {
     fn unknowns_solved(&self) -> usize {
         match self {
             IcBlock::Direct { .. } | IcBlock::Newton { .. } => 1,
-            IcBlock::Torn { tear_vars, causal_steps, .. } => tear_vars.len() + causal_steps.len(),
+            IcBlock::Torn {
+                tear_vars,
+                causal_steps,
+                ..
+            } => tear_vars.len() + causal_steps.len(),
         }
     }
 }
@@ -138,7 +142,11 @@ impl IcPlanAnimation {
                 .unwrap_or_default(),
         };
 
-        Some(Self { playback: Playback::recorded(blocks, FRAME_INTERVAL), context, problems })
+        Some(Self {
+            playback: Playback::recorded(blocks, FRAME_INTERVAL),
+            context,
+            problems,
+        })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -202,20 +210,30 @@ impl IcPlanAnimation {
         ui.weak(format!(
             "Relaxed to make the initial system square: dropped equation{} {}{}{}. \
              Not an error \u{2014} the planner is resolving a redundancy.",
-            if self.context.dropped_equations.len() == 1 { "" } else { "s" },
+            if self.context.dropped_equations.len() == 1 {
+                ""
+            } else {
+                "s"
+            },
             self.context
                 .dropped_equations
                 .iter()
                 .map(usize::to_string)
                 .collect::<Vec<_>>()
                 .join(", "),
-            if self.context.pinned_unknowns.is_empty() { "" } else { ", pinned " },
+            if self.context.pinned_unknowns.is_empty() {
+                ""
+            } else {
+                ", pinned "
+            },
             self.context.pinned_unknowns.join(", "),
         ));
     }
 
     fn render_current(&self, ui: &mut egui::Ui) {
-        let Some(block) = self.playback.current() else { return };
+        let Some(block) = self.playback.current() else {
+            return;
+        };
         let (icon, color, summary) = block_style(block);
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new(icon).size(16.0));
@@ -227,13 +245,16 @@ impl IcPlanAnimation {
             && !causal_steps.is_empty()
         {
             ui.add_space(4.0);
-            egui::Grid::new("ic_torn_grid").num_columns(2).spacing([10.0, 2.0]).show(ui, |ui| {
-                for (var, eq) in causal_steps {
-                    ui.label(egui::RichText::new(var).monospace());
-                    ui.weak(format!("from equation {eq}"));
-                    ui.end_row();
-                }
-            });
+            egui::Grid::new("ic_torn_grid")
+                .num_columns(2)
+                .spacing([10.0, 2.0])
+                .show(ui, |ui| {
+                    for (var, eq) in causal_steps {
+                        ui.label(egui::RichText::new(var).monospace());
+                        ui.weak(format!("from equation {eq}"));
+                        ui.end_row();
+                    }
+                });
         }
     }
 
@@ -251,8 +272,13 @@ impl IcPlanAnimation {
 
         let (cursor, total) = self.playback.position();
         let done = cursor + 1;
-        let solved: usize =
-            self.playback.frames().iter().take(done).map(IcBlock::unknowns_solved).sum();
+        let solved: usize = self
+            .playback
+            .frames()
+            .iter()
+            .take(done)
+            .map(IcBlock::unknowns_solved)
+            .sum();
         let iterating = self
             .playback
             .frames()
@@ -274,20 +300,23 @@ impl IcPlanAnimation {
 
         ui.add_space(6.0);
         ui.label(egui::RichText::new("Solve order so far").strong());
-        egui::ScrollArea::vertical().auto_shrink([false, true]).max_height(300.0).show(ui, |ui| {
-            egui::Grid::new("ic_plan_grid")
-                .num_columns(3)
-                .spacing([10.0, 2.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    for (i, b) in self.playback.frames().iter().take(done).enumerate() {
-                        ui.label(format!("{}.", i + 1));
-                        ui.label(egui::RichText::new(block_kind_label(b)).monospace());
-                        ui.label(egui::RichText::new(block_targets(b)).monospace());
-                        ui.end_row();
-                    }
-                });
-        });
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, true])
+            .max_height(300.0)
+            .show(ui, |ui| {
+                egui::Grid::new("ic_plan_grid")
+                    .num_columns(3)
+                    .spacing([10.0, 2.0])
+                    .striped(true)
+                    .show(ui, |ui| {
+                        for (i, b) in self.playback.frames().iter().take(done).enumerate() {
+                            ui.label(format!("{}.", i + 1));
+                            ui.label(egui::RichText::new(block_kind_label(b)).monospace());
+                            ui.label(egui::RichText::new(block_targets(b)).monospace());
+                            ui.end_row();
+                        }
+                    });
+            });
     }
 }
 
@@ -346,7 +375,10 @@ fn parse_block(v: &serde_json::Value) -> Option<IcBlock> {
                 .get("residual_equations")
                 .and_then(serde_json::Value::as_array)
                 .map(|a| {
-                    a.iter().filter_map(serde_json::Value::as_u64).map(|n| n as usize).collect()
+                    a.iter()
+                        .filter_map(serde_json::Value::as_u64)
+                        .map(|n| n as usize)
+                        .collect()
                 })
                 .unwrap_or_default(),
             causal_steps: v
@@ -373,7 +405,12 @@ fn parse_block(v: &serde_json::Value) -> Option<IcBlock> {
 
 fn str_list(v: Option<&serde_json::Value>) -> Vec<String> {
     v.and_then(serde_json::Value::as_array)
-        .map(|a| a.iter().filter_map(serde_json::Value::as_str).map(str::to_owned).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(serde_json::Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -390,7 +427,11 @@ fn block_kind_label(b: &IcBlock) -> &'static str {
 fn block_targets(b: &IcBlock) -> String {
     match b {
         IcBlock::Direct { var, .. } | IcBlock::Newton { var, .. } => var.clone(),
-        IcBlock::Torn { tear_vars, causal_steps, .. } => {
+        IcBlock::Torn {
+            tear_vars,
+            causal_steps,
+            ..
+        } => {
             let mut names = tear_vars.clone();
             names.extend(causal_steps.iter().map(|(v, _)| v.clone()));
             names.join(", ")
@@ -415,7 +456,11 @@ fn block_style(b: &IcBlock) -> (&'static str, egui::Color32, String) {
                  iteration",
             ),
         ),
-        IcBlock::Torn { tear_vars, residual_equations, causal_steps } => (
+        IcBlock::Torn {
+            tear_vars,
+            residual_equations,
+            causal_steps,
+        } => (
             "\u{2702}",
             crate::colors::ANIM_PATH_FOUND,
             format!(
@@ -425,7 +470,11 @@ fn block_style(b: &IcBlock) -> (&'static str, egui::Color32, String) {
                 causal_steps.len(),
                 if causal_steps.len() == 1 { "s" } else { "" },
                 residual_equations.len(),
-                if residual_equations.len() == 1 { "" } else { "s" },
+                if residual_equations.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                },
             ),
         ),
     }
@@ -458,9 +507,15 @@ mod tests {
         let frames = anim.playback.frames();
         assert!(block_style(&frames[0]).2.contains("src.v"));
         let newton = block_style(&frames[1]).2;
-        assert!(newton.contains("R.i") && newton.contains("Newton"), "{newton}");
+        assert!(
+            newton.contains("R.i") && newton.contains("Newton"),
+            "{newton}"
+        );
         let torn = block_style(&frames[2]).2;
-        assert!(torn.contains("C.p.v"), "the tear variable is the guess: {torn}");
+        assert!(
+            torn.contains("C.p.v"),
+            "the tear variable is the guess: {torn}"
+        );
         assert!(torn.contains("residual"), "{torn}");
     }
 
@@ -474,7 +529,14 @@ mod tests {
             causal_steps: vec![("b".into(), 6), ("c".into(), 7)],
         };
         assert_eq!(torn.unknowns_solved(), 3, "one tear plus two causal");
-        assert_eq!(IcBlock::Newton { var: "x".into(), equation: 1 }.unknowns_solved(), 1);
+        assert_eq!(
+            IcBlock::Newton {
+                var: "x".into(),
+                equation: 1
+            }
+            .unknowns_solved(),
+            1
+        );
     }
 
     /// Determinacy and relaxation reach the capture — they are the two facts
@@ -486,7 +548,9 @@ mod tests {
             {"kind": "scalar_newton", "var": "R.i", "equation": 9},
         ])))
         .unwrap();
-        let ctx = anim.current_frame_context().expect("a frame is under the cursor");
+        let ctx = anim
+            .current_frame_context()
+            .expect("a frame is under the cursor");
         assert_eq!(ctx["kind"], "newton");
         assert_eq!(ctx["solves"], "R.i");
         assert_eq!(ctx["block"], 1);
@@ -512,7 +576,11 @@ mod tests {
             {"kind": "scalar_newton", "var": "R.i", "equation": 9},
         ])))
         .unwrap();
-        assert_eq!(anim.position(), (0, 1), "only the recognised block survives");
+        assert_eq!(
+            anim.position(),
+            (0, 1),
+            "only the recognised block survives"
+        );
     }
 
     #[test]

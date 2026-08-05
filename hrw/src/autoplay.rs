@@ -186,7 +186,8 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
         if trimmed.starts_with("```") {
             in_fence = !in_fence;
         }
-        if !in_fence && let Some(rest) = trimmed.strip_prefix("# ")
+        if !in_fence
+            && let Some(rest) = trimmed.strip_prefix("# ")
             && current.is_none()
             && stops.is_empty()
         {
@@ -221,11 +222,11 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
             }
         };
         stop.prose_chars += line.trim().chars().count();
-        stop.links.extend(
-            links_in_order(line)
-                .into_iter()
-                .map(|url| TourLink { url, byte_offset: line_start }),
-        );
+        stop.links
+            .extend(links_in_order(line).into_iter().map(|url| TourLink {
+                url,
+                byte_offset: line_start,
+            }));
     }
     if let Some(done) = current.take() {
         stops.push(done);
@@ -241,7 +242,9 @@ fn links_in_order(line: &str) -> Vec<String> {
     let mut out = Vec::new();
     for (start, _) in line.match_indices("hrw://") {
         let rest = &line[start..];
-        let end = rest.find([')', ' ', '\n', '"', '>', '`']).unwrap_or(rest.len());
+        let end = rest
+            .find([')', ' ', '\n', '"', '>', '`'])
+            .unwrap_or(rest.len());
         out.push(rest[..end].to_owned());
     }
     out
@@ -458,7 +461,11 @@ impl Autoplay {
             return None;
         }
         self.in_beat += dt;
-        let due = self.beats.get(self.index).map(|b| b.dwell).unwrap_or_default();
+        let due = self
+            .beats
+            .get(self.index)
+            .map(|b| b.dwell)
+            .unwrap_or_default();
         if self.in_beat < due {
             return None;
         }
@@ -479,7 +486,10 @@ impl Autoplay {
 
     /// Which beat is showing, out of how many (1-based for display).
     pub fn progress(&self) -> (usize, usize) {
-        (self.index.min(self.beats.len().saturating_sub(1)) + 1, self.beats.len())
+        (
+            self.index.min(self.beats.len().saturating_sub(1)) + 1,
+            self.beats.len(),
+        )
     }
 
     /// Fraction of the run completed, for a progress bar and for scrolling the
@@ -491,7 +501,10 @@ impl Autoplay {
         if self.phase() == Phase::Finished {
             return 1.0;
         }
-        let done: u128 = self.beats[..self.index].iter().map(|b| b.dwell.as_millis()).sum();
+        let done: u128 = self.beats[..self.index]
+            .iter()
+            .map(|b| b.dwell.as_millis())
+            .sum();
         let total: u128 = self.beats.iter().map(|b| b.dwell.as_millis()).sum();
         if total == 0 {
             return 0.0;
@@ -544,7 +557,9 @@ impl Autoplay {
 
     /// The stop index currently showing, for the caption.
     pub fn current_stop(&self) -> Option<usize> {
-        self.beats.get(self.index.min(self.beats.len().saturating_sub(1))).map(|b| b.stop)
+        self.beats
+            .get(self.index.min(self.beats.len().saturating_sub(1)))
+            .map(|b| b.stop)
     }
 
     /// Wall-clock time actually spent, which exceeds the requested total by
@@ -596,7 +611,10 @@ Short.
     fn parsing_finds_the_preamble_and_every_stop_in_order() {
         let stops = parse_stops(SAMPLE);
         assert_eq!(stops.len(), 3, "preamble plus two stops: {stops:#?}");
-        assert_eq!(stops[0].heading, "Fixture tour — demo", "the preamble is titled by `#`");
+        assert_eq!(
+            stops[0].heading, "Fixture tour — demo",
+            "the preamble is titled by `#`"
+        );
         assert!(stops[0].links.is_empty(), "the preamble has no links here");
         assert_eq!(stops[1].heading, "Stop 1 — first");
         let urls: Vec<&str> = stops[1].links.iter().map(|l| l.url.as_str()).collect();
@@ -615,10 +633,12 @@ Short.
     /// the run and drop two of them.
     #[test]
     fn a_repeated_link_is_a_repeated_beat() {
-        let stops = parse_stops(
-            "## S\n[a](hrw://load/M/Dae)\ntext\n[b](hrw://load/M/Dae)\n",
+        let stops = parse_stops("## S\n[a](hrw://load/M/Dae)\ntext\n[b](hrw://load/M/Dae)\n");
+        assert_eq!(
+            stops[0].links.len(),
+            2,
+            "the same target twice is two beats"
         );
-        assert_eq!(stops[0].links.len(), 2, "the same target twice is two beats");
     }
 
     /// A `##` inside a fenced block is code, not a stop.
@@ -660,8 +680,13 @@ Short.
         );
 
         // The external beat outweighs a plain beat drawn from the same stop's prose.
-        let external = beats.iter().find(|b| b.link.as_deref() == Some("hrw://notebook/n.nb"));
-        assert!(external.is_some_and(|b| b.dwell >= MIN_BEAT), "external beats are not clipped");
+        let external = beats
+            .iter()
+            .find(|b| b.link.as_deref() == Some("hrw://notebook/n.nb"));
+        assert!(
+            external.is_some_and(|b| b.dwell >= MIN_BEAT),
+            "external beats are not clipped"
+        );
     }
 
     /// Every stop appears, including one with no links at all.
@@ -671,9 +696,15 @@ Short.
         let beats = schedule(&stops, Duration::from_secs(30), |_| false);
         let covered: Vec<usize> = beats.iter().map(|b| b.stop).collect();
         for i in 0..stops.len() {
-            assert!(covered.contains(&i), "stop {i} was scheduled out of the run");
+            assert!(
+                covered.contains(&i),
+                "stop {i} was scheduled out of the run"
+            );
         }
-        assert!(beats.iter().any(|b| b.link.is_none()), "a prose stop dwells without dispatching");
+        assert!(
+            beats.iter().any(|b| b.link.is_none()),
+            "a prose stop dwells without dispatching"
+        );
     }
 
     /// **The clock does not run while the app is busy.**
@@ -683,23 +714,30 @@ Short.
     /// cut away as the interesting frame arrived.
     #[test]
     fn a_busy_app_does_not_burn_the_dwell() {
-        let beats = vec![
-            beat(0, Some("a"), 2),
-            beat(1, Some("b"), 2),
-        ];
+        let beats = vec![beat(0, Some("a"), 2), beat(1, Some("b"), 2)];
         let mut ap = Autoplay::default();
         assert_eq!(ap.start(beats).and_then(|b| b.link), Some("a".to_owned()));
 
         // Ten seconds of compiling: no advance, and no time charged to the beat.
         for _ in 0..10 {
-            assert!(ap.tick(Duration::from_secs(1), true).is_none(), "busy must not advance");
+            assert!(
+                ap.tick(Duration::from_secs(1), true).is_none(),
+                "busy must not advance"
+            );
         }
         // First idle frame arms the beat without consuming it.
         assert!(ap.tick(Duration::from_millis(16), false).is_none());
         // Now the dwell runs.
-        assert!(ap.tick(Duration::from_millis(1_500), false).is_none(), "not due yet");
+        assert!(
+            ap.tick(Duration::from_millis(1_500), false).is_none(),
+            "not due yet"
+        );
         let next = ap.tick(Duration::from_millis(600), false);
-        assert_eq!(next.and_then(|b| b.link), Some("b".to_owned()), "due, so it advances");
+        assert_eq!(
+            next.and_then(|b| b.link),
+            Some("b".to_owned()),
+            "due, so it advances"
+        );
 
         // And the run reports the real cost, which is longer than the schedule.
         assert!(
@@ -711,8 +749,7 @@ Short.
     /// Pause holds the clock; resume continues from where it stopped.
     #[test]
     fn pause_holds_and_resume_continues() {
-        let beats =
-            vec![beat(0, None, 2)];
+        let beats = vec![beat(0, None, 2)];
         let mut ap = Autoplay::default();
         ap.start(beats);
         ap.tick(Duration::from_millis(16), false); // arm
@@ -720,11 +757,21 @@ Short.
         ap.pause();
         assert_eq!(ap.phase(), Phase::Paused);
         for _ in 0..100 {
-            assert!(ap.tick(Duration::from_secs(1), false).is_none(), "paused must not advance");
+            assert!(
+                ap.tick(Duration::from_secs(1), false).is_none(),
+                "paused must not advance"
+            );
         }
         ap.resume();
-        assert!(ap.tick(Duration::from_millis(1_100), false).is_none(), "last beat, so no next");
-        assert_eq!(ap.phase(), Phase::Finished, "the run ends rather than looping");
+        assert!(
+            ap.tick(Duration::from_millis(1_100), false).is_none(),
+            "last beat, so no next"
+        );
+        assert_eq!(
+            ap.phase(),
+            Phase::Finished,
+            "the run ends rather than looping"
+        );
         assert_eq!(ap.fraction(), 1.0);
     }
 
@@ -758,7 +805,11 @@ Short.
         ap.tick(Duration::from_secs(2), false);
         assert_eq!(ap.progress().0, 2, "precondition: the beat advanced");
         assert!(ap.travel_t() < 1.0, "a new beat starts a new travel");
-        assert_eq!(ap.current_byte_offset(), 100, "and aims at the new link's line");
+        assert_eq!(
+            ap.current_byte_offset(),
+            100,
+            "and aims at the new link's line"
+        );
     }
 
     /// **The text reaches the link WHILE the app is still compiling.**
@@ -798,8 +849,16 @@ Short.
         for _ in 0..100 {
             ap.tick(Duration::from_millis(100), true);
         }
-        assert_eq!(ap.progress().0, before, "a busy app must not burn the dwell");
-        assert_eq!(ap.travel_t(), 1.0, "and the text stays on the link throughout");
+        assert_eq!(
+            ap.progress().0,
+            before,
+            "a busy app must not burn the dwell"
+        );
+        assert_eq!(
+            ap.travel_t(),
+            1.0,
+            "and the text stays on the link throughout"
+        );
     }
 
     /// The clock and the text are **different quantities**, and only one of them
@@ -814,7 +873,11 @@ Short.
         let f0 = ap.fraction();
         ap.tick(Duration::from_secs(4), false);
 
-        assert!(ap.fraction() > f0, "the clock must keep running: {f0} -> {}", ap.fraction());
+        assert!(
+            ap.fraction() > f0,
+            "the clock must keep running: {f0} -> {}",
+            ap.fraction()
+        );
         assert_eq!(ap.travel_t(), 1.0, "the text must not");
     }
 
@@ -884,7 +947,11 @@ Short.
         }
 
         // Four adjacent links are close; the one past 40 lines of filler is not.
-        let (a, d, e) = (by_url("hrw://x/1"), by_url("hrw://x/4"), by_url("hrw://x/5"));
+        let (a, d, e) = (
+            by_url("hrw://x/1"),
+            by_url("hrw://x/4"),
+            by_url("hrw://x/5"),
+        );
         let crowded = d.byte_offset - a.byte_offset;
         let gap = e.byte_offset - d.byte_offset;
         assert!(
@@ -916,8 +983,15 @@ Short.
         // Focus loss pauses, focus return resumes.
         ap.start(beats.clone());
         ap.set_focused(false);
-        assert_eq!(ap.phase(), Phase::Paused, "an external window pauses the walk");
-        assert!(ap.tick(Duration::from_secs(10), false).is_none(), "and the clock is held");
+        assert_eq!(
+            ap.phase(),
+            Phase::Paused,
+            "an external window pauses the walk"
+        );
+        assert!(
+            ap.tick(Duration::from_secs(10), false).is_none(),
+            "and the clock is held"
+        );
         ap.set_focused(true);
         assert_eq!(ap.phase(), Phase::Playing, "coming back resumes it");
 
@@ -947,13 +1021,15 @@ Short.
         );
         let text = std::fs::read_to_string(path).expect("the tour is versioned");
         let stops = parse_stops(&text);
-        assert!(stops.len() >= 8, "preamble plus seven stops, got {}", stops.len());
-
-        let beats = schedule(
-            &stops,
-            DEFAULT_TOTAL,
-            |l| l.starts_with("hrw://notebook/") || l.starts_with("hrw://systemmodeler/"),
+        assert!(
+            stops.len() >= 8,
+            "preamble plus seven stops, got {}",
+            stops.len()
         );
+
+        let beats = schedule(&stops, DEFAULT_TOTAL, |l| {
+            l.starts_with("hrw://notebook/") || l.starts_with("hrw://systemmodeler/")
+        });
         assert!(
             beats.len() >= 15,
             "about twenty links; a run of {} beats would be a slideshow",
@@ -965,7 +1041,10 @@ Short.
         );
         // Every stop of the tour is represented; none is scheduled out.
         for i in 0..stops.len() {
-            assert!(beats.iter().any(|b| b.stop == i), "stop {i} missing from the run");
+            assert!(
+                beats.iter().any(|b| b.stop == i),
+                "stop {i} missing from the run"
+            );
         }
     }
 }

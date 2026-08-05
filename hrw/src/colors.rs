@@ -185,7 +185,10 @@ mod tests {
         let dark = ok_color(true);
         let light = ok_color(false);
         assert_ne!(dark, light, "dark and light ok_color should differ");
-        assert_eq!(dark, OK_GREEN, "dark ok_color should match OK_GREEN constant");
+        assert_eq!(
+            dark, OK_GREEN,
+            "dark ok_color should match OK_GREEN constant"
+        );
     }
 
     #[test]
@@ -200,13 +203,19 @@ mod tests {
     #[test]
     fn coupled_fill_is_semi_transparent() {
         let c = coupled_fill();
-        assert!(c.a() > 0 && c.a() < 255, "coupled_fill should be semi-transparent");
+        assert!(
+            c.a() > 0 && c.a() < 255,
+            "coupled_fill should be semi-transparent"
+        );
     }
 
     /// Checked at **compile time** rather than as a `#[test]` — see the note on the
     /// equivalent block in `canvas.rs`. A constant's range cannot be wrong only
     /// when the tests happen to run.
     const _: () = {
-        assert!(GRID_ALPHA > 0.0 && GRID_ALPHA <= 1.0, "GRID_ALPHA is an alpha fraction");
+        assert!(
+            GRID_ALPHA > 0.0 && GRID_ALPHA <= 1.0,
+            "GRID_ALPHA is an alpha fraction"
+        );
     };
 }

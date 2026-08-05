@@ -18,8 +18,12 @@ fn precedence(op: &OpBinary) -> u8 {
     match op {
         OpBinary::Or => 1,
         OpBinary::And => 2,
-        OpBinary::Eq | OpBinary::Neq | OpBinary::Lt | OpBinary::Le |
-        OpBinary::Gt | OpBinary::Ge => 3,
+        OpBinary::Eq
+        | OpBinary::Neq
+        | OpBinary::Lt
+        | OpBinary::Le
+        | OpBinary::Gt
+        | OpBinary::Ge => 3,
         OpBinary::Add | OpBinary::Sub | OpBinary::AddElem | OpBinary::SubElem => 4,
         OpBinary::Mul | OpBinary::Div | OpBinary::MulElem | OpBinary::DivElem => 5,
         OpBinary::Exp | OpBinary::ExpElem => 6,
@@ -80,9 +84,13 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             let left_parens = needs_left_parens(lhs, op);
             let right_parens = needs_right_parens(rhs, op);
 
-            if left_parens { out.push('('); }
+            if left_parens {
+                out.push('(');
+            }
             format_expr_into(lhs, out);
-            if left_parens { out.push(')'); }
+            if left_parens {
+                out.push(')');
+            }
 
             // Write the operator directly into the output buffer to avoid
             // an intermediate String allocation on this hot path.
@@ -93,23 +101,35 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
                 out.push(' ');
             }
 
-            if right_parens { out.push('('); }
+            if right_parens {
+                out.push('(');
+            }
             format_expr_into(rhs, out);
-            if right_parens { out.push(')'); }
+            if right_parens {
+                out.push(')');
+            }
         }
         Expression::Unary { op, rhs, .. } => {
             let need_parens = matches!(rhs.as_ref(), Expression::Binary { .. });
             let _ = write!(out, "{op}");
-            if need_parens { out.push('('); }
+            if need_parens {
+                out.push('(');
+            }
             format_expr_into(rhs, out);
-            if need_parens { out.push(')'); }
+            if need_parens {
+                out.push(')');
+            }
         }
-        Expression::VarRef { name, subscripts, .. } => {
+        Expression::VarRef {
+            name, subscripts, ..
+        } => {
             out.push_str(&name.to_string());
             if !subscripts.is_empty() {
                 out.push('[');
                 for (i, sub) in subscripts.iter().enumerate() {
-                    if i > 0 { out.push_str(", "); }
+                    if i > 0 {
+                        out.push_str(", ");
+                    }
                     format_subscript(sub, out);
                 }
                 out.push(']');
@@ -119,7 +139,9 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             out.push_str(function.name());
             out.push('(');
             for (i, arg) in args.iter().enumerate() {
-                if i > 0 { out.push_str(", "); }
+                if i > 0 {
+                    out.push_str(", ");
+                }
                 format_expr_into(arg, out);
             }
             out.push(')');
@@ -128,7 +150,9 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             out.push_str(&name.to_string());
             out.push('(');
             for (i, arg) in args.iter().enumerate() {
-                if i > 0 { out.push_str(", "); }
+                if i > 0 {
+                    out.push_str(", ");
+                }
                 format_expr_into(arg, out);
             }
             out.push(')');
@@ -136,7 +160,11 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
         Expression::Literal { value, .. } => {
             out.push_str(&value.to_string());
         }
-        Expression::If { branches, else_branch, .. } => {
+        Expression::If {
+            branches,
+            else_branch,
+            ..
+        } => {
             for (i, (cond, then_expr)) in branches.iter().enumerate() {
                 if i == 0 {
                     out.push_str("if ");
@@ -153,7 +181,9 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
         Expression::Array { elements, .. } => {
             out.push('{');
             for (i, e) in elements.iter().enumerate() {
-                if i > 0 { out.push_str(", "); }
+                if i > 0 {
+                    out.push_str(", ");
+                }
                 format_expr_into(e, out);
             }
             out.push('}');
@@ -161,12 +191,16 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
         Expression::Tuple { elements, .. } => {
             out.push('(');
             for (i, e) in elements.iter().enumerate() {
-                if i > 0 { out.push_str(", "); }
+                if i > 0 {
+                    out.push_str(", ");
+                }
                 format_expr_into(e, out);
             }
             out.push(')');
         }
-        Expression::Range { start, step, end, .. } => {
+        Expression::Range {
+            start, step, end, ..
+        } => {
             format_expr_into(start, out);
             out.push(':');
             if let Some(s) = step {
@@ -175,12 +209,19 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             }
             format_expr_into(end, out);
         }
-        Expression::ArrayComprehension { expr, indices, filter, .. } => {
+        Expression::ArrayComprehension {
+            expr,
+            indices,
+            filter,
+            ..
+        } => {
             out.push('{');
             format_expr_into(expr, out);
             out.push_str(" for ");
             for (i, idx) in indices.iter().enumerate() {
-                if i > 0 { out.push_str(", "); }
+                if i > 0 {
+                    out.push_str(", ");
+                }
                 out.push_str(&idx.name);
                 out.push_str(" in ");
                 format_expr_into(&idx.range, out);
@@ -191,11 +232,15 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             }
             out.push('}');
         }
-        Expression::Index { base, subscripts, .. } => {
+        Expression::Index {
+            base, subscripts, ..
+        } => {
             format_expr_into(base, out);
             out.push('[');
             for (i, sub) in subscripts.iter().enumerate() {
-                if i > 0 { out.push_str(", "); }
+                if i > 0 {
+                    out.push_str(", ");
+                }
                 format_subscript(sub, out);
             }
             out.push(']');
@@ -251,7 +296,9 @@ mod tests {
     use super::*;
     use rumoca_core::{BuiltinFunction, Literal, OpBinary, OpUnary, Reference, Span};
 
-    fn span() -> Span { Span::DUMMY }
+    fn span() -> Span {
+        Span::DUMMY
+    }
 
     fn var(name: &str) -> Expression {
         Expression::VarRef {
@@ -329,50 +376,66 @@ mod tests {
     #[test]
     fn precedence_mul_over_add() {
         // x + y * z  →  no parens needed
-        let e = binary(OpBinary::Add, var("x"),
-            binary(OpBinary::Mul, var("y"), var("z")));
+        let e = binary(
+            OpBinary::Add,
+            var("x"),
+            binary(OpBinary::Mul, var("y"), var("z")),
+        );
         assert_eq!(format_expr(&e), "x + y * z");
     }
 
     #[test]
     fn precedence_add_in_mul_needs_parens() {
         // (x + y) * z
-        let e = binary(OpBinary::Mul,
+        let e = binary(
+            OpBinary::Mul,
             binary(OpBinary::Add, var("x"), var("y")),
-            var("z"));
+            var("z"),
+        );
         assert_eq!(format_expr(&e), "(x + y) * z");
     }
 
     #[test]
     fn subtraction_right_associativity_parens() {
         // a - (b - c) needs parens on the right
-        let e = binary(OpBinary::Sub, var("a"),
-            binary(OpBinary::Sub, var("b"), var("c")));
+        let e = binary(
+            OpBinary::Sub,
+            var("a"),
+            binary(OpBinary::Sub, var("b"), var("c")),
+        );
         assert_eq!(format_expr(&e), "a - (b - c)");
     }
 
     #[test]
     fn subtraction_left_no_parens() {
         // (a - b) - c  →  a - b - c  (left-associative, no parens needed)
-        let e = binary(OpBinary::Sub,
+        let e = binary(
+            OpBinary::Sub,
             binary(OpBinary::Sub, var("a"), var("b")),
-            var("c"));
+            var("c"),
+        );
         assert_eq!(format_expr(&e), "a - b - c");
     }
 
     #[test]
     fn division_right_needs_parens() {
         // a / (b / c)
-        let e = binary(OpBinary::Div, var("a"),
-            binary(OpBinary::Div, var("b"), var("c")));
+        let e = binary(
+            OpBinary::Div,
+            var("a"),
+            binary(OpBinary::Div, var("b"), var("c")),
+        );
         assert_eq!(format_expr(&e), "a / (b / c)");
     }
 
     #[test]
     fn exponentiation_right_associative() {
         // a ^ b ^ c  →  a ^ b ^ c (right-associative, no parens)
-        let e = binary(OpBinary::Exp, var("a"),
-            binary(OpBinary::Exp, var("b"), var("c")));
+        let e = binary(
+            OpBinary::Exp,
+            var("a"),
+            binary(OpBinary::Exp, var("b"), var("c")),
+        );
         assert_eq!(format_expr(&e), "a ^ b ^ c");
     }
 
@@ -394,8 +457,10 @@ mod tests {
 
     #[test]
     fn nested_builtin_calls() {
-        let e = builtin(BuiltinFunction::Sin,
-            vec![binary(OpBinary::Mul, var("omega"), var("t"))]);
+        let e = builtin(
+            BuiltinFunction::Sin,
+            vec![binary(OpBinary::Mul, var("omega"), var("t"))],
+        );
         assert_eq!(format_expr(&e), "sin(omega * t)");
     }
 
@@ -417,8 +482,11 @@ mod tests {
     fn residual_equation() {
         let eq = dae::Equation {
             lhs: None,
-            rhs: binary(OpBinary::Sub, der(var("w")),
-                binary(OpBinary::Div, var("tau"), var("J"))),
+            rhs: binary(
+                OpBinary::Sub,
+                der(var("w")),
+                binary(OpBinary::Div, var("tau"), var("J")),
+            ),
             span: span(),
             origin: String::new(),
             scalar_count: 1,
@@ -430,8 +498,11 @@ mod tests {
     fn short_form_residual_omits_zero_prefix() {
         let eq = dae::Equation {
             lhs: None,
-            rhs: binary(OpBinary::Sub, der(var("w")),
-                binary(OpBinary::Div, var("tau"), var("J"))),
+            rhs: binary(
+                OpBinary::Sub,
+                der(var("w")),
+                binary(OpBinary::Div, var("tau"), var("J")),
+            ),
             span: span(),
             origin: String::new(),
             scalar_count: 1,
@@ -466,10 +537,7 @@ mod tests {
     #[test]
     fn if_expression() {
         let e = Expression::If {
-            branches: vec![(
-                binary(OpBinary::Gt, var("x"), lit_int(0)),
-                var("a"),
-            )],
+            branches: vec![(binary(OpBinary::Gt, var("x"), lit_int(0)), var("a"))],
             else_branch: Box::new(var("b")),
             span: span(),
         };
@@ -543,9 +611,11 @@ mod tests {
     #[test]
     fn logical_operators() {
         // x > 0 and y < 10
-        let e = binary(OpBinary::And,
+        let e = binary(
+            OpBinary::And,
             binary(OpBinary::Gt, var("x"), lit_int(0)),
-            binary(OpBinary::Lt, var("y"), lit_int(10)));
+            binary(OpBinary::Lt, var("y"), lit_int(10)),
+        );
         assert_eq!(format_expr(&e), "x > 0 and y < 10");
     }
 }

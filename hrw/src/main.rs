@@ -49,10 +49,7 @@ fn main() -> eframe::Result<()> {
 fn initial_window_geometry() -> (eframe::egui::Vec2, Option<eframe::egui::Pos2>) {
     if let Some((w, h)) = query_screen_dimensions() {
         let size = eframe::egui::Vec2::new(w as f32 / 2.0, h as f32 * 0.85);
-        let pos = eframe::egui::Pos2::new(
-            (w as f32 - size.x) / 2.0,
-            (h as f32 - size.y) / 2.0,
-        );
+        let pos = eframe::egui::Pos2::new((w as f32 - size.x) / 2.0, (h as f32 - size.y) / 2.0);
         (size, Some(pos))
     } else {
         (eframe::egui::Vec2::new(960.0, 700.0), None)
@@ -62,9 +59,7 @@ fn initial_window_geometry() -> (eframe::egui::Vec2, Option<eframe::egui::Pos2>)
 /// Query the X11 display dimensions via `xdpyinfo`. Returns `None` on Wayland-only
 /// systems or if the command isn't available.
 fn query_screen_dimensions() -> Option<(u32, u32)> {
-    let output = std::process::Command::new("xdpyinfo")
-        .output()
-        .ok()?;
+    let output = std::process::Command::new("xdpyinfo").output().ok()?;
     let text = String::from_utf8_lossy(&output.stdout);
     for line in text.lines() {
         let line = line.trim();
@@ -88,8 +83,7 @@ fn query_screen_dimensions() -> Option<(u32, u32)> {
 // frame for the lifetime of the application.
 fn run_app() -> eframe::Result<()> {
     let half_screen = std::env::args().any(|a| a == "--half");
-    let mut viewport = eframe::egui::ViewportBuilder::default()
-        .with_title(APP_NAME);
+    let mut viewport = eframe::egui::ViewportBuilder::default().with_title(APP_NAME);
     if half_screen {
         let (size, position) = initial_window_geometry();
         viewport = viewport.with_inner_size(size);
@@ -125,7 +119,9 @@ fn run_app() -> eframe::Result<()> {
 /// before any other thread exists, so it is safe here.
 #[cfg(unix)]
 fn prefer_x11_if_wayland_dead() {
-    let x11_available = std::env::var("DISPLAY").map(|v| !v.is_empty()).unwrap_or(false);
+    let x11_available = std::env::var("DISPLAY")
+        .map(|v| !v.is_empty())
+        .unwrap_or(false);
     if x11_available && wayland_advertised() && !wayland_socket_reachable() {
         eprintln!("HRW: Wayland socket unreachable; using X11.");
         // SAFETY: called at startup on the main thread, before the worker

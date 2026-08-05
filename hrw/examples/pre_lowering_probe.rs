@@ -8,14 +8,24 @@ use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_sou
 use rumoca_compile::{Session, SessionConfig};
 
 fn main() {
-    let model = std::env::args().nth(1).unwrap_or_else(|| "MotorWithBrake".to_owned());
+    let model = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "MotorWithBrake".to_owned());
     let msl = PathBuf::from(format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR")));
     let mut session = Session::new(SessionConfig::default());
     let parsed = parse_source_root_with_cache(&msl).expect("parse MSL");
     let key = source_root_source_set_key(&msl.to_string_lossy());
-    session.replace_parsed_source_set(&key, SourceRootKind::DurableExternal, parsed.documents, None);
+    session.replace_parsed_source_set(
+        &key,
+        SourceRootKind::DurableExternal,
+        parsed.documents,
+        None,
+    );
 
-    let path = PathBuf::from(format!("{}/specimens/{model}.mo", env!("CARGO_MANIFEST_DIR")));
+    let path = PathBuf::from(format!(
+        "{}/specimens/{model}.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
     let source = std::fs::read_to_string(&path).expect("read specimen");
     let uri = path.to_string_lossy().to_string();
     session.update_document(&uri, &source);

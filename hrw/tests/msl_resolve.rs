@@ -38,7 +38,10 @@ fn session_with_msl() -> Session {
 /// The arc-1 specimen in MSL form (a System-Modeler-export shape) must resolve.
 #[test]
 fn rotational_inertia_specimen_resolves_against_msl() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo");
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/specimens/RotationalInertia.mo"
+    );
     let source = std::fs::read_to_string(path).expect("read specimen");
 
     let mut session = session_with_msl();
@@ -57,15 +60,25 @@ fn rotational_inertia_specimen_resolves_against_msl() {
 
     // Extracted user-class stays small (not the whole 430MB MSL aggregate).
     let json = serde_json::to_string(&serde_json::to_value(class).unwrap()).unwrap();
-    eprintln!("resolved RotationalInertia — user-class JSON bytes = {}", json.len());
-    assert!(json.len() < 200_000, "extracted class unexpectedly large: {}", json.len());
+    eprintln!(
+        "resolved RotationalInertia — user-class JSON bytes = {}",
+        json.len()
+    );
+    assert!(
+        json.len() < 200_000,
+        "extracted class unexpectedly large: {}",
+        json.len()
+    );
 }
 
 /// Negative control: with NO libraries loaded, the same MSL references must
 /// fail to resolve — proving the source roots are what makes resolution work.
 #[test]
 fn same_specimen_fails_without_libraries() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo");
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/specimens/RotationalInertia.mo"
+    );
     let source = std::fs::read_to_string(path).expect("read specimen");
 
     let mut session = Session::new(SessionConfig::default());

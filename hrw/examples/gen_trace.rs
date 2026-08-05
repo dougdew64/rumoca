@@ -23,12 +23,21 @@
 
 use std::path::PathBuf;
 
-use hrw::worker::{compile_specimen, simulate_specimen, FromWorker, Stage};
+use hrw::worker::{FromWorker, Stage, compile_specimen, simulate_specimen};
 
 /// The pipeline stages, in order, as they appear in the app's tabs.
 const STAGES: [&str; 11] = [
-    "parse", "resolve", "instantiate", "typecheck", "flatten", "dae", "structural", "index_reduction",
-    "initialization", "events", "solve_lowering",
+    "parse",
+    "resolve",
+    "instantiate",
+    "typecheck",
+    "flatten",
+    "dae",
+    "structural",
+    "index_reduction",
+    "initialization",
+    "events",
+    "solve_lowering",
 ];
 
 /// Default simulation stop time.
@@ -74,7 +83,11 @@ fn main() {
         if failed.is_empty() {
             eprintln!("\nAll {total} specimens traced successfully.");
         } else {
-            eprintln!("\n{} of {total} failed: {}", failed.len(), failed.join(", "));
+            eprintln!(
+                "\n{} of {total} failed: {}",
+                failed.len(),
+                failed.join(", ")
+            );
             std::process::exit(1);
         }
         return;
@@ -93,9 +106,8 @@ fn generate_trace(name: &str) -> Result<(), String> {
     let source = std::fs::read_to_string(&specimen)
         .map_err(|e| format!("read {}: {e}", specimen.display()))?;
 
-    let FromWorker::Compiled {
-        model, stages, ..
-    } = compile_specimen(&specimen, msl_roots()).map_err(|e| format!("compile: {e}"))?
+    let FromWorker::Compiled { model, stages, .. } =
+        compile_specimen(&specimen, msl_roots()).map_err(|e| format!("compile: {e}"))?
     else {
         return Err("expected a Compiled result".into());
     };
@@ -120,11 +132,18 @@ fn generate_trace(name: &str) -> Result<(), String> {
     // --- Compilation trace ---
     let mut manifest_stages = serde_json::Map::new();
     for stage_name in STAGES {
-        let stage = by_name.iter().find(|(n, _)| *n == stage_name).map(|(_, s)| *s).unwrap();
+        let stage = by_name
+            .iter()
+            .find(|(n, _)| *n == stage_name)
+            .map(|(_, s)| *s)
+            .unwrap();
         if let Some(value) = &stage.value {
             let path = trace_dir.join(format!("{stage_name}.json"));
-            std::fs::write(&path, format!("{}\n", serde_json::to_string_pretty(value).unwrap()))
-                .map_err(|e| format!("write {stage_name}: {e}"))?;
+            std::fs::write(
+                &path,
+                format!("{}\n", serde_json::to_string_pretty(value).unwrap()),
+            )
+            .map_err(|e| format!("write {stage_name}: {e}"))?;
         }
         manifest_stages.insert(
             stage_name.to_owned(),

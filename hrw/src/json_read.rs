@@ -62,7 +62,9 @@ pub fn parse_list<T>(
         return Vec::new();
     };
     let Some(arr) = raw.as_array() else {
-        problems.push(format!("`{key}` is present in the report but is not a list"));
+        problems.push(format!(
+            "`{key}` is present in the report but is not a list"
+        ));
         return Vec::new();
     };
     let mut out = Vec::with_capacity(arr.len());

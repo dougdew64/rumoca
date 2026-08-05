@@ -84,21 +84,76 @@ impl Token {
 /// `der`, `initial`, and `pure` are reserved even though they read like
 /// function names, so they are listed here rather than treated as identifiers.
 const KEYWORDS: &[&str] = &[
-    "algorithm", "and", "annotation", "block", "break", "class", "connect",
-    "connector", "constant", "constrainedby", "der", "discrete", "each",
-    "else", "elseif", "elsewhen", "encapsulated", "end", "enumeration",
-    "equation", "expandable", "extends", "external", "false", "final", "flow",
-    "for", "function", "if", "import", "impure", "in", "initial", "inner",
-    "input", "loop", "model", "not", "operator", "or", "outer", "output",
-    "package", "parameter", "partial", "protected", "public", "pure", "record",
-    "redeclare", "replaceable", "return", "stream", "then", "true", "type",
-    "when", "while", "within",
+    "algorithm",
+    "and",
+    "annotation",
+    "block",
+    "break",
+    "class",
+    "connect",
+    "connector",
+    "constant",
+    "constrainedby",
+    "der",
+    "discrete",
+    "each",
+    "else",
+    "elseif",
+    "elsewhen",
+    "encapsulated",
+    "end",
+    "enumeration",
+    "equation",
+    "expandable",
+    "extends",
+    "external",
+    "false",
+    "final",
+    "flow",
+    "for",
+    "function",
+    "if",
+    "import",
+    "impure",
+    "in",
+    "initial",
+    "inner",
+    "input",
+    "loop",
+    "model",
+    "not",
+    "operator",
+    "or",
+    "outer",
+    "output",
+    "package",
+    "parameter",
+    "partial",
+    "protected",
+    "public",
+    "pure",
+    "record",
+    "redeclare",
+    "replaceable",
+    "return",
+    "stream",
+    "then",
+    "true",
+    "type",
+    "when",
+    "while",
+    "within",
 ];
 
 /// Predefined type names. Not reserved by the grammar, but they read as types
 /// and colouring them as such is what makes a declaration scannable.
 const TYPES: &[&str] = &[
-    "Real", "Integer", "Boolean", "String", "StateSelect", "ExternalObject",
+    "Real",
+    "Integer",
+    "Boolean",
+    "String",
+    "StateSelect",
+    "ExternalObject",
     "Clock",
 ];
 
@@ -196,7 +251,11 @@ pub fn tokenize(source: &str) -> Vec<Token> {
                 TokenKind::Operator
             }
         };
-        tokens.push(Token { kind, start, end: i });
+        tokens.push(Token {
+            kind,
+            start,
+            end: i,
+        });
     }
 
     tokens
@@ -230,16 +289,18 @@ fn scan_number(bytes: &[u8], mut i: usize) -> usize {
         while i < bytes.len() && bytes[i].is_ascii_digit() {
             i += 1;
         }
-    } else if bytes.get(i) == Some(&b'.')
-        && !bytes.get(i + 1).is_some_and(|&b| is_ident_start(b))
-    {
+    } else if bytes.get(i) == Some(&b'.') && !bytes.get(i + 1).is_some_and(|&b| is_ident_start(b)) {
         // Trailing dot with no fraction: `1.` is a valid Modelica literal, but
         // `1.foo` is a component reference, so only consume the dot when what
         // follows cannot start a name.
         i += 1;
     }
     if matches!(bytes.get(i), Some(b'e' | b'E')) {
-        let after_sign = if matches!(bytes.get(i + 1), Some(b'+' | b'-')) { i + 2 } else { i + 1 };
+        let after_sign = if matches!(bytes.get(i + 1), Some(b'+' | b'-')) {
+            i + 2
+        } else {
+            i + 1
+        };
         if bytes.get(after_sign).is_some_and(u8::is_ascii_digit) {
             i = after_sign;
             while i < bytes.len() && bytes[i].is_ascii_digit() {
@@ -309,9 +370,14 @@ mod tests {
         assert_eq!(
             kinds("model M Real x; end M;"),
             vec![
-                (Keyword, "model"), (Identifier, "M"),
-                (Type, "Real"), (Identifier, "x"), (Operator, ";"),
-                (Keyword, "end"), (Identifier, "M"), (Operator, ";"),
+                (Keyword, "model"),
+                (Identifier, "M"),
+                (Type, "Real"),
+                (Identifier, "x"),
+                (Operator, ";"),
+                (Keyword, "end"),
+                (Identifier, "M"),
+                (Operator, ";"),
             ]
         );
     }
@@ -333,7 +399,11 @@ mod tests {
         let src = "a /* one\ntwo\nthree */ b";
         assert_eq!(
             kinds(src),
-            vec![(Identifier, "a"), (Comment, "/* one\ntwo\nthree */"), (Identifier, "b")]
+            vec![
+                (Identifier, "a"),
+                (Comment, "/* one\ntwo\nthree */"),
+                (Identifier, "b")
+            ]
         );
     }
 
@@ -347,7 +417,9 @@ mod tests {
             vec![
                 (Type, "Real"),
                 (Identifier, "'end of travel'"),
-                (Operator, "="), (Number, "1"), (Operator, ";"),
+                (Operator, "="),
+                (Number, "1"),
+                (Operator, ";"),
             ]
         );
     }
@@ -358,8 +430,10 @@ mod tests {
         assert_eq!(
             kinds(r#"x = "a \" b";"#),
             vec![
-                (Identifier, "x"), (Operator, "="),
-                (String, r#""a \" b""#), (Operator, ";"),
+                (Identifier, "x"),
+                (Operator, "="),
+                (String, r#""a \" b""#),
+                (Operator, ";"),
             ]
         );
     }
@@ -370,8 +444,11 @@ mod tests {
         assert_eq!(
             kinds("1 1.5 1.5e-3 2E+10 7."),
             vec![
-                (Number, "1"), (Number, "1.5"), (Number, "1.5e-3"),
-                (Number, "2E+10"), (Number, "7."),
+                (Number, "1"),
+                (Number, "1.5"),
+                (Number, "1.5e-3"),
+                (Number, "2E+10"),
+                (Number, "7."),
             ]
         );
     }
@@ -400,8 +477,12 @@ mod tests {
         assert_eq!(
             kinds("a := b .* c <= d"),
             vec![
-                (Identifier, "a"), (Operator, ":="), (Identifier, "b"),
-                (Operator, ".*"), (Identifier, "c"), (Operator, "<="),
+                (Identifier, "a"),
+                (Operator, ":="),
+                (Identifier, "b"),
+                (Operator, ".*"),
+                (Identifier, "c"),
+                (Operator, "<="),
                 (Identifier, "d"),
             ]
         );
@@ -414,7 +495,11 @@ mod tests {
         for src in [r#"x = "no close"#, "x /* no close", "x = 'no close"] {
             let toks = tokenize(src);
             let last = toks.last().expect("at least one token");
-            assert_eq!(last.end, src.len(), "unterminated tail must reach EOF: {src:?}");
+            assert_eq!(
+                last.end,
+                src.len(),
+                "unterminated tail must reach EOF: {src:?}"
+            );
             assert_tiles(src, &toks);
         }
     }
@@ -461,7 +546,10 @@ mod tests {
     fn assert_tiles(source: &str, tokens: &[Token]) {
         let mut expected_start = 0usize;
         for t in tokens {
-            assert_eq!(t.start, expected_start, "gap or overlap before {t:?} in {source:?}");
+            assert_eq!(
+                t.start, expected_start,
+                "gap or overlap before {t:?} in {source:?}"
+            );
             assert!(t.end > t.start, "empty token {t:?} in {source:?}");
             // Checked explicitly, not left to `t.text()` panicking below: a
             // boundary inside a character is the failure that reached the app,
@@ -472,10 +560,16 @@ mod tests {
             );
             expected_start = t.end;
         }
-        assert_eq!(expected_start, source.len(), "tokens end short of input in {source:?}");
-        let rebuilt: std::string::String =
-            tokens.iter().map(|t| t.text(source)).collect();
-        assert_eq!(rebuilt, source, "concatenated tokens must reproduce the source");
+        assert_eq!(
+            expected_start,
+            source.len(),
+            "tokens end short of input in {source:?}"
+        );
+        let rebuilt: std::string::String = tokens.iter().map(|t| t.text(source)).collect();
+        assert_eq!(
+            rebuilt, source,
+            "concatenated tokens must reproduce the source"
+        );
     }
 
     /// The real corpus: every specimen must tokenize without panicking, and the
@@ -493,6 +587,9 @@ mod tests {
             assert_tiles(&src, &tokenize(&src));
             checked += 1;
         }
-        assert!(checked >= 10, "expected the specimen corpus, found {checked} files");
+        assert!(
+            checked >= 10,
+            "expected the specimen corpus, found {checked} files"
+        );
     }
 }

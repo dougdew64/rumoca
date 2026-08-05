@@ -39,7 +39,7 @@
 //!   never contends with the producer.
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{mpsc, Arc};
+use std::sync::{Arc, mpsc};
 
 use serde_json::Value;
 
@@ -194,7 +194,11 @@ impl<T> Playback<T> {
     /// is starting, and its controls would stay enabled after the click.
     pub fn live_state(&self, arming: bool) -> LiveState {
         if self.is_live() {
-            if self.live_finished() { LiveState::Finished } else { LiveState::Running }
+            if self.live_finished() {
+                LiveState::Finished
+            } else {
+                LiveState::Running
+            }
         } else if arming {
             LiveState::Arming
         } else {
@@ -306,7 +310,6 @@ mod tests {
         assert_eq!(p.position(), (0, 0));
     }
 
-
     fn recorded(n: usize) -> Playback<usize> {
         Playback::recorded((0..n).collect(), 0.5)
     }
@@ -325,7 +328,10 @@ mod tests {
         // replay of an algorithm, and looping would suggest the algorithm did.
         p.tick(0.6, LiveState::Idle);
         assert_eq!(p.position(), (2, 3));
-        assert!(!p.tick(0.6, LiveState::Idle), "stopped playback needs no repaint");
+        assert!(
+            !p.tick(0.6, LiveState::Idle),
+            "stopped playback needs no repaint"
+        );
     }
 
     #[test]
@@ -333,7 +339,10 @@ mod tests {
         let mut p = recorded(5);
         *p.controls().playing = true;
 
-        assert!(p.tick(0.1, LiveState::Running), "a live session still repaints");
+        assert!(
+            p.tick(0.1, LiveState::Running),
+            "a live session still repaints"
+        );
         assert_eq!(p.position(), (0, 5), "the debugger owns the cursor");
 
         // Stopped, not paused: when the session finishes and the controls come
@@ -349,7 +358,10 @@ mod tests {
         let mut p = Playback::live(rx, Arc::clone(&done), 0.5);
 
         assert_eq!(p.live_state(false), LiveState::Running);
-        assert!(!p.is_empty(), "a live session is not empty even before its first frame");
+        assert!(
+            !p.is_empty(),
+            "a live session is not empty even before its first frame"
+        );
 
         tx.send(10).unwrap();
         tx.send(20).unwrap();

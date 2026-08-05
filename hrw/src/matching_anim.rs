@@ -15,20 +15,18 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use eframe::egui;
 
 use rumoca_phase_structural::LiveTrace;
-use rumoca_phase_structural::matching::{
-    MatchingFrame, MatchingStep, maximum_matching_with_trace,
-};
+use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep, maximum_matching_with_trace};
 
 use crate::canvas::Canvas;
-use crate::playback::{Animated, Playback};
 use crate::incidence_view::IncidenceMatrix;
+use crate::playback::{Animated, Playback};
 
 /// Seconds between auto-advance frames.
 const FRAME_INTERVAL: f64 = 0.4;
@@ -86,7 +84,10 @@ impl MatchingAnimation {
     /// Found by the 2026-08-04 sweep.
     pub fn match_progress(&self) -> Option<(usize, usize)> {
         let last = self.playback.frames().last()?;
-        Some((last.match_eq.iter().filter(|m| m.is_some()).count(), self.n_eq))
+        Some((
+            last.match_eq.iter().filter(|m| m.is_some()).count(),
+            self.n_eq,
+        ))
     }
 
     /// **The matching this animation ends on**, per equation row — the answer
@@ -110,7 +111,11 @@ impl MatchingAnimation {
 
     /// Every step in the trace, in order.
     pub fn steps(&self) -> Vec<MatchingStep> {
-        self.playback.frames().iter().map(|f| f.step.clone()).collect()
+        self.playback
+            .frames()
+            .iter()
+            .map(|f| f.step.clone())
+            .collect()
     }
 
     /// Build the animation trace from a parsed incidence matrix (recorded mode).
@@ -170,8 +175,7 @@ impl MatchingAnimation {
         // identity (see `docs/identity-and-provenance.md` on counts deciding identity),
         // and strictly stronger than the length alone. Tightened 2026-08-04.
         let fits = frames.first().is_some_and(|f| {
-            f.match_eq.len() == mat.n_eq()
-                && f.match_eq.iter().flatten().all(|&v| v < mat.n_var())
+            f.match_eq.len() == mat.n_eq() && f.match_eq.iter().flatten().all(|&v| v < mat.n_var())
         });
         if frames.is_empty() || !fits {
             // **`None`, not a re-derivation.** Re-running the search here would draw
@@ -240,7 +244,10 @@ impl MatchingAnimation {
     /// but before the thread exits — the caller uses this to remove the
     /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
     /// the thread terminates.
-    pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Option<Self> {
+    pub fn start_live(
+        mat: &IncidenceMatrix,
+        on_complete: impl FnOnce() + Send + 'static,
+    ) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
         let done = Arc::new(AtomicBool::new(false));
@@ -327,11 +334,8 @@ impl MatchingAnimation {
         // --- Step description ---
         if let Some(frame) = self.playback.current() {
             ui.horizontal(|ui| {
-                let (icon, desc) = step_description(
-                    &frame.step,
-                    &self.equation_names,
-                    &self.unknown_names,
-                );
+                let (icon, desc) =
+                    step_description(&frame.step, &self.equation_names, &self.unknown_names);
                 ui.label(egui::RichText::new(icon).size(16.0));
                 ui.label(desc);
             });
@@ -345,7 +349,6 @@ impl MatchingAnimation {
 
         debug_clicked
     }
-
 }
 
 impl Animated for MatchingAnimation {
@@ -430,11 +433,19 @@ impl MatchingAnimation {
                 .iter()
                 .enumerate()
                 .filter(|(_, m)| m.is_none())
-                .map(|(eq, _)| self.equation_names.get(eq).map(String::as_str).unwrap_or("?"))
+                .map(|(eq, _)| {
+                    self.equation_names
+                        .get(eq)
+                        .map(String::as_str)
+                        .unwrap_or("?")
+                })
                 .take(6)
                 .collect();
             if !unmatched.is_empty() {
-                ui.weak(format!("\u{2014} still unmatched: {}", unmatched.join(", ")));
+                ui.weak(format!(
+                    "\u{2014} still unmatched: {}",
+                    unmatched.join(", ")
+                ));
             }
         });
     }
@@ -583,9 +594,10 @@ impl MatchingAnimation {
         }
 
         if let Some(name) = tracked {
-            let tracked_col = self.unknown_names.iter().position(|u| {
-                crate::identifier_index::same_variable(u, name)
-            });
+            let tracked_col = self
+                .unknown_names
+                .iter()
+                .position(|u| crate::identifier_index::same_variable(u, name));
             if let Some(col) = tracked_col {
                 let band = egui::Rect::from_min_size(
                     egui::pos2(col as f32, 0.0),
@@ -601,8 +613,13 @@ impl MatchingAnimation {
 
         if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
             crate::draw_matrix_axis_labels(
-                ui, &painter, view,
-                &self.unknown_names, &self.equation_names, 20, 20,
+                ui,
+                &painter,
+                view,
+                &self.unknown_names,
+                &self.equation_names,
+                20,
+                20,
             );
         }
 
@@ -613,7 +630,10 @@ impl MatchingAnimation {
                 ui.label(egui::RichText::new("equation (row)").weak());
                 ui.label(
                     egui::RichText::new(
-                        self.equation_names.get(row).map(String::as_str).unwrap_or("?"),
+                        self.equation_names
+                            .get(row)
+                            .map(String::as_str)
+                            .unwrap_or("?"),
                     )
                     .monospace(),
                 );
@@ -621,7 +641,10 @@ impl MatchingAnimation {
                 ui.label(egui::RichText::new("unknown (col)").weak());
                 ui.label(
                     egui::RichText::new(
-                        self.unknown_names.get(col).map(String::as_str).unwrap_or("?"),
+                        self.unknown_names
+                            .get(col)
+                            .map(String::as_str)
+                            .unwrap_or("?"),
                     )
                     .monospace(),
                 );
@@ -640,55 +663,76 @@ fn step_description(
     match step {
         MatchingStep::TryEquation(eq) => (
             "\u{1f50d}",
-            format!("Starting augmenting-path search for equation {}: {}", eq, eq_name(*eq)),
+            format!(
+                "Starting augmenting-path search for equation {}: {}",
+                eq,
+                eq_name(*eq)
+            ),
         ),
         MatchingStep::Explore { eq, var } => (
             "\u{1f449}",
             format!(
                 "Equation {} ({}) exploring variable {} ({})",
-                eq, eq_name(*eq), var, var_name(*var),
+                eq,
+                eq_name(*eq),
+                var,
+                var_name(*var),
             ),
         ),
         MatchingStep::FoundFree { eq, var } => (
             "\u{2705}",
             format!(
                 "Variable {} ({}) is free — augmenting path found for eq {}",
-                var, var_name(*var), eq,
+                var,
+                var_name(*var),
+                eq,
             ),
         ),
         MatchingStep::TryDisplace { eq: _, var, holder } => (
             "\u{1f504}",
             format!(
                 "Variable {} ({}) held by eq {} ({}). Can eq {} find an alternative?",
-                var, var_name(*var), holder, eq_name(*holder), holder,
+                var,
+                var_name(*var),
+                holder,
+                eq_name(*holder),
+                holder,
             ),
         ),
         MatchingStep::DisplaceOk { eq, var } => (
             "\u{2714}",
             format!(
                 "Displacement succeeded — eq {} can take variable {} ({})",
-                eq, var, var_name(*var),
+                eq,
+                var,
+                var_name(*var),
             ),
         ),
         MatchingStep::DisplaceFail { eq, var } => (
             "\u{274c}",
             format!(
                 "Displacement failed — variable {} ({}) cannot be freed for eq {}",
-                var, var_name(*var), eq,
+                var,
+                var_name(*var),
+                eq,
             ),
         ),
         MatchingStep::Assign { eq, var } => (
             "\u{1f517}",
             format!(
                 "Matched: equation {} ({}) \u{2194} variable {} ({})",
-                eq, eq_name(*eq), var, var_name(*var),
+                eq,
+                eq_name(*eq),
+                var,
+                var_name(*var),
             ),
         ),
         MatchingStep::EquationFailed(eq) => (
             "\u{26a0}",
             format!(
                 "Equation {} ({}) has no augmenting path — unmatched (rank deficiency)",
-                eq, eq_name(*eq),
+                eq,
+                eq_name(*eq),
             ),
         ),
     }
@@ -764,7 +808,11 @@ mod tests {
         }];
         let kept = MatchingAnimation::from_captured_frames(&mat, &fitting)
             .expect("a capture that fits the matrix is used");
-        assert_eq!(kept.position().1, 1, "a one-frame capture that fits is played as-is");
+        assert_eq!(
+            kept.position().1,
+            1,
+            "a one-frame capture that fits is played as-is"
+        );
     }
 
     /// **The same equation count is not the same system**, and the length check alone
@@ -834,11 +882,7 @@ mod tests {
     fn step_description_produces_readable_text() {
         let eq_names = vec!["eq_a".to_string()];
         let var_names = vec!["x".to_string()];
-        let (icon, desc) = step_description(
-            &MatchingStep::TryEquation(0),
-            &eq_names,
-            &var_names,
-        );
+        let (icon, desc) = step_description(&MatchingStep::TryEquation(0), &eq_names, &var_names);
         assert!(!icon.is_empty());
         assert!(desc.contains("eq_a"));
     }
@@ -857,7 +901,9 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let mut anim = MatchingAnimation::start_live(&mat, || {}).expect("spawn thread");
         for _ in 0..100 {
-            if anim.live_state(false) == crate::LiveState::Finished { break; }
+            if anim.live_state(false) == crate::LiveState::Finished {
+                break;
+            }
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
         anim.playback.sync_live();
@@ -908,5 +954,4 @@ mod tests {
             steps[7],
         );
     }
-
 }

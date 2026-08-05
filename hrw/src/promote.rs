@@ -55,9 +55,14 @@ pub fn parse_profile(text: &str) -> Vec<ProfileRow> {
 pub enum Verdict {
     Proceed,
     /// Far too few rows to be a corpus run — most likely a specimen or partial run.
-    TooFew { rows: usize },
+    TooFew {
+        rows: usize,
+    },
     /// Smaller than what is already committed.
-    Shrinks { existing: usize, incoming: usize },
+    Shrinks {
+        existing: usize,
+        incoming: usize,
+    },
 }
 
 /// **The two guards, and the reason each exists.**
@@ -78,7 +83,10 @@ pub fn guard(incoming: usize, existing: Option<usize>, force: bool) -> Verdict {
         return Verdict::TooFew { rows: incoming };
     }
     match existing {
-        Some(e) if incoming < e => Verdict::Shrinks { existing: e, incoming },
+        Some(e) if incoming < e => Verdict::Shrinks {
+            existing: e,
+            incoming,
+        },
         _ => Verdict::Proceed,
     }
 }
@@ -102,10 +110,14 @@ pub fn guard(incoming: usize, existing: Option<usize>, force: bool) -> Verdict {
 /// Returns an empty string when nothing was skipped — silence is correct there,
 /// and a "0 models were not checked" sentence would be noise.
 pub fn not_checked_sentence(profile: &[ProfileRow]) -> String {
-    let ceiling: Vec<&ProfileRow> =
-        profile.iter().filter(|r| r.verdict == "aborted:proc-ceiling").collect();
-    let timeout: Vec<&ProfileRow> =
-        profile.iter().filter(|r| r.verdict == "aborted:timeout").collect();
+    let ceiling: Vec<&ProfileRow> = profile
+        .iter()
+        .filter(|r| r.verdict == "aborted:proc-ceiling")
+        .collect();
+    let timeout: Vec<&ProfileRow> = profile
+        .iter()
+        .filter(|r| r.verdict == "aborted:timeout")
+        .collect();
 
     // **`free-ram` was omitted until 2026-08-03, and that made the sidecar lie.**
     //
@@ -118,8 +130,10 @@ pub fn not_checked_sentence(profile: &[ProfileRow]) -> String {
     // means the model wanted more than the run allows, which is a property of the
     // model. A free-RAM abort means the machine had no room *at that moment*,
     // which is a property of the machine — and is why re-running recovers some.
-    let free_ram: Vec<&ProfileRow> =
-        profile.iter().filter(|r| r.verdict == "aborted:free-ram").collect();
+    let free_ram: Vec<&ProfileRow> = profile
+        .iter()
+        .filter(|r| r.verdict == "aborted:free-ram")
+        .collect();
 
     let mut parts: Vec<String> = Vec::new();
     if !free_ram.is_empty() {
@@ -171,8 +185,16 @@ mod tests {
 
     #[test]
     fn the_guards_refuse_what_they_are_for_and_allow_what_they_are_not() {
-        assert_eq!(guard(2614, Some(2610), false), Verdict::Proceed, "a bigger run promotes");
-        assert_eq!(guard(2614, None, false), Verdict::Proceed, "so does a first run");
+        assert_eq!(
+            guard(2614, Some(2610), false),
+            Verdict::Proceed,
+            "a bigger run promotes"
+        );
+        assert_eq!(
+            guard(2614, None, false),
+            Verdict::Proceed,
+            "so does a first run"
+        );
         assert_eq!(
             guard(16, Some(2610), false),
             Verdict::TooFew { rows: 16 },
@@ -180,7 +202,10 @@ mod tests {
         );
         assert_eq!(
             guard(2000, Some(2610), false),
-            Verdict::Shrinks { existing: 2610, incoming: 2000 },
+            Verdict::Shrinks {
+                existing: 2610,
+                incoming: 2000
+            },
             "nor a smaller full-looking run",
         );
         // --force is the operator saying they know better, and must beat both.
@@ -248,20 +273,52 @@ mod tests {
     /// ignore it.
     #[test]
     fn the_not_checked_sentence_reports_both_causes_and_stays_silent_otherwise() {
-        let clean =
-            vec![ProfileRow { name: "a".into(), peak_ws_mb: 100, verdict: "ok".into() }];
-        assert_eq!(not_checked_sentence(&clean), "", "nothing skipped, nothing claimed");
+        let clean = vec![ProfileRow {
+            name: "a".into(),
+            peak_ws_mb: 100,
+            verdict: "ok".into(),
+        }];
+        assert_eq!(
+            not_checked_sentence(&clean),
+            "",
+            "nothing skipped, nothing claimed"
+        );
 
         let mixed = vec![
-            ProfileRow { name: "a".into(), peak_ws_mb: 100, verdict: "ok".into() },
-            ProfileRow { name: "b".into(), peak_ws_mb: 11671, verdict: "aborted:proc-ceiling".into() },
-            ProfileRow { name: "c".into(), peak_ws_mb: 10614, verdict: "aborted:proc-ceiling".into() },
-            ProfileRow { name: "d".into(), peak_ws_mb: 2445, verdict: "aborted:timeout".into() },
+            ProfileRow {
+                name: "a".into(),
+                peak_ws_mb: 100,
+                verdict: "ok".into(),
+            },
+            ProfileRow {
+                name: "b".into(),
+                peak_ws_mb: 11671,
+                verdict: "aborted:proc-ceiling".into(),
+            },
+            ProfileRow {
+                name: "c".into(),
+                peak_ws_mb: 10614,
+                verdict: "aborted:proc-ceiling".into(),
+            },
+            ProfileRow {
+                name: "d".into(),
+                peak_ws_mb: 2445,
+                verdict: "aborted:timeout".into(),
+            },
         ];
         let s = not_checked_sentence(&mixed);
-        assert!(s.contains("2 model(s) exceeded the memory"), "counts the memory aborts: {s}");
-        assert!(s.contains("11.4 GB"), "and reports the WORST observed peak, not the last: {s}");
-        assert!(s.contains("1 model(s) exceeded the time limit"), "counts timeouts separately: {s}");
+        assert!(
+            s.contains("2 model(s) exceeded the memory"),
+            "counts the memory aborts: {s}"
+        );
+        assert!(
+            s.contains("11.4 GB"),
+            "and reports the WORST observed peak, not the last: {s}"
+        );
+        assert!(
+            s.contains("1 model(s) exceeded the time limit"),
+            "counts timeouts separately: {s}"
+        );
         assert!(
             s.contains("not findings about HRW or Rumoca"),
             "and disclaims the reading a maintainer would otherwise make: {s}",

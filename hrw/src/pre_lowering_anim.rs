@@ -57,7 +57,9 @@ pub struct PreLoweringAnimation {
 impl PreLoweringAnimation {
     /// Build from frames recorded during compilation.
     pub fn from_frames(frames: Vec<PreLoweringFrame>) -> Self {
-        Self { playback: Playback::recorded(frames, FRAME_INTERVAL) }
+        Self {
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
+        }
     }
 
     /// Start a live debug session.
@@ -93,7 +95,9 @@ impl PreLoweringAnimation {
             })
             .ok()?;
 
-        Some(Self { playback: Playback::live(rx, done, FRAME_INTERVAL) })
+        Some(Self {
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
+        })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -206,14 +210,20 @@ fn step_style(frame: &PreLoweringFrame) -> (&'static str, egui::Color32, String)
             // point, because it is the answer to "where did this come from?".
             format!("Named the slot: pre({base}) becomes {slot} \u{2014} a name in no source file"),
         ),
-        PreLoweringStep::Materialized { slot, inherited_from } => (
+        PreLoweringStep::Materialized {
+            slot,
+            inherited_from,
+        } => (
             "\u{2b07}",
             crate::colors::MATCHED_MARKER,
             format!(
                 "Built {slot} as a PARAMETER, inheriting {inherited_from}'s shape and start value",
             ),
         ),
-        PreLoweringStep::Substituted { partition, equations } => (
+        PreLoweringStep::Substituted {
+            partition,
+            equations,
+        } => (
             "\u{2702}",
             crate::colors::ANIM_EXPLORE,
             format!(
@@ -297,13 +307,21 @@ mod tests {
         assert!(summary.contains("__pre__.overSpeed"), "{summary}");
 
         for step in [
-            PreLoweringStep::Start { pass: 1, equations: 51 },
-            PreLoweringStep::Discovered { target: "overSpeed".into() },
+            PreLoweringStep::Start {
+                pass: 1,
+                equations: 51,
+            },
+            PreLoweringStep::Discovered {
+                target: "overSpeed".into(),
+            },
             PreLoweringStep::Materialized {
                 slot: "__pre__.overSpeed".into(),
                 inherited_from: "overSpeed".into(),
             },
-            PreLoweringStep::Substituted { partition: "condition equations", equations: 2 },
+            PreLoweringStep::Substituted {
+                partition: "condition equations",
+                equations: 2,
+            },
             PreLoweringStep::Complete { slots_created: 3 },
         ] {
             assert!(!step_summary(&frame(step, &[])).is_empty());
@@ -319,7 +337,10 @@ mod tests {
     fn a_pass_that_creates_nothing_says_so_plainly() {
         let summary = step_summary(&frame(PreLoweringStep::Complete { slots_created: 0 }, &[]));
         assert!(summary.contains("nothing left to lower"), "{summary}");
-        assert!(!summary.contains('0'), "a bare zero reads as failure: {summary}");
+        assert!(
+            !summary.contains('0'),
+            "a bare zero reads as failure: {summary}"
+        );
     }
 
     /// The capture carries the same sentence the view draws, plus the running
@@ -333,8 +354,15 @@ mod tests {
             },
             &["__pre__.load.w", "__pre__.overSpeed"],
         )]);
-        let ctx = anim.current_frame_context().expect("a frame is under the cursor");
-        assert!(ctx["step"].as_str().is_some_and(|s| s.contains("PARAMETER")), "{ctx}");
+        let ctx = anim
+            .current_frame_context()
+            .expect("a frame is under the cursor");
+        assert!(
+            ctx["step"]
+                .as_str()
+                .is_some_and(|s| s.contains("PARAMETER")),
+            "{ctx}"
+        );
         assert_eq!(
             ctx["slots_so_far"],
             serde_json::json!(["__pre__.load.w", "__pre__.overSpeed"]),

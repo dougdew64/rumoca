@@ -14,21 +14,19 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use eframe::egui;
 
 use rumoca_phase_structural::LiveTrace;
 use rumoca_phase_structural::matching::maximum_matching_with_trace;
-use rumoca_phase_structural::tarjan::{
-    TarjanFrame, TarjanStep, tarjan_scc_with_trace,
-};
+use rumoca_phase_structural::tarjan::{TarjanFrame, TarjanStep, tarjan_scc_with_trace};
 
 use crate::canvas::Canvas;
-use crate::playback::{Animated, Playback};
 use crate::incidence_view::IncidenceMatrix;
+use crate::playback::{Animated, Playback};
 use crate::truncate_label;
 
 /// Animation state for Tarjan SCC discovery — supports recorded and live modes.
@@ -82,9 +80,11 @@ fn build_dep_graph(
                 continue;
             }
             if let Some(&Some(owner)) = match_var.get(col)
-                && owner != eq && !adj[eq].contains(&owner) {
-                    adj[eq].push(owner);
-                }
+                && owner != eq
+                && !adj[eq].contains(&owner)
+            {
+                adj[eq].push(owner);
+            }
         }
     }
     for deps in &mut adj {
@@ -136,8 +136,7 @@ impl TarjanAnimation {
         // Length **and** column bounds — a count alone cannot tell two systems of the
         // same size apart, and index reduction can produce exactly that. See the
         // longer note in `MatchingAnimation::from_captured_frames`.
-        if last.match_eq.len() != n_eq
-            || last.match_eq.iter().flatten().any(|&v| v >= mat.n_var())
+        if last.match_eq.len() != n_eq || last.match_eq.iter().flatten().any(|&v| v >= mat.n_var())
         {
             return None;
         }
@@ -202,7 +201,10 @@ impl TarjanAnimation {
     /// but before the thread exits — the caller uses this to remove the
     /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
     /// the thread terminates.
-    pub fn start_live(mat: &IncidenceMatrix, on_complete: impl FnOnce() + Send + 'static) -> Option<Self> {
+    pub fn start_live(
+        mat: &IncidenceMatrix,
+        on_complete: impl FnOnce() + Send + 'static,
+    ) -> Option<Self> {
         let n_eq = mat.n_eq();
         let n_var = mat.n_var();
         if n_eq == 0 {
@@ -295,7 +297,6 @@ impl TarjanAnimation {
     pub fn is_empty(&self) -> bool {
         self.playback.is_empty()
     }
-
 }
 
 impl Animated for TarjanAnimation {
@@ -364,7 +365,11 @@ impl TarjanAnimation {
                 egui::RichText::new(format!(
                     "{} block{} closed of {} equations",
                     frame.sccs_so_far.len(),
-                    if frame.sccs_so_far.len() == 1 { "" } else { "s" },
+                    if frame.sccs_so_far.len() == 1 {
+                        ""
+                    } else {
+                        "s"
+                    },
                     self.n_nodes,
                 ))
                 .strong()
@@ -540,7 +545,12 @@ impl TarjanAnimation {
                 TarjanStep::Visit(v) if *v == i => crate::colors::ANIM_PATH_FOUND,
                 _ => visuals.widgets.inactive.fg_stroke.color,
             };
-            painter.circle(center, node_radius, fill, egui::Stroke::new(1.5, stroke_color));
+            painter.circle(
+                center,
+                node_radius,
+                fill,
+                egui::Stroke::new(1.5, stroke_color),
+            );
             let is_tracked_node = self.equation_mentions(i, tracked);
             if is_tracked_node {
                 painter.circle_stroke(
@@ -580,19 +590,43 @@ fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, Strin
         ),
         TarjanStep::ExploreEdge { from, to } => (
             "\u{1f449}",
-            format!("Exploring edge {} ({}) \u{2192} {} ({})", from, name(*from), to, name(*to)),
+            format!(
+                "Exploring edge {} ({}) \u{2192} {} ({})",
+                from,
+                name(*from),
+                to,
+                name(*to)
+            ),
         ),
         TarjanStep::TreeEdge { from, to } => (
             "\u{1f332}",
-            format!("Tree edge: {} ({}) \u{2192} {} ({}) \u{2014} unvisited, recursing", from, name(*from), to, name(*to)),
+            format!(
+                "Tree edge: {} ({}) \u{2192} {} ({}) \u{2014} unvisited, recursing",
+                from,
+                name(*from),
+                to,
+                name(*to)
+            ),
         ),
         TarjanStep::BackEdge { from, to } => (
             "\u{1f519}",
-            format!("Back edge: {} ({}) \u{2192} {} ({}) \u{2014} on stack, cycle detected!", from, name(*from), to, name(*to)),
+            format!(
+                "Back edge: {} ({}) \u{2192} {} ({}) \u{2014} on stack, cycle detected!",
+                from,
+                name(*from),
+                to,
+                name(*to)
+            ),
         ),
         TarjanStep::Return { from, to } => (
             "\u{21a9}",
-            format!("Returning from {} ({}) to {} ({}): updating lowlink", to, name(*to), from, name(*from)),
+            format!(
+                "Returning from {} ({}) to {} ({}): updating lowlink",
+                to,
+                name(*to),
+                from,
+                name(*from)
+            ),
         ),
         TarjanStep::SccFound { root, members } => {
             let member_names: Vec<&str> = members.iter().map(|&m| name(m)).collect();
@@ -600,7 +634,9 @@ fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, Strin
                 "\u{1f3af}",
                 format!(
                     "SCC found! Root: {} ({}). Members ({}): [{}]",
-                    root, name(*root), members.len(),
+                    root,
+                    name(*root),
+                    members.len(),
                     member_names.join(", "),
                 ),
             )
@@ -652,8 +688,14 @@ mod tests {
             adj: vec![Vec::new(); 4],
         };
         let mut canvas = Canvas::default();
-        assert!(anim.aim_at_equation(&mut canvas, 3), "the last equation is aimable");
-        assert!(!anim.aim_at_equation(&mut canvas, 4), "one past the end is not");
+        assert!(
+            anim.aim_at_equation(&mut canvas, 3),
+            "the last equation is aimable"
+        );
+        assert!(
+            !anim.aim_at_equation(&mut canvas, 4),
+            "one past the end is not"
+        );
         assert!(!anim.aim_at_equation(&mut canvas, 999));
     }
 
@@ -717,7 +759,10 @@ mod tests {
             TarjanStep::TreeEdge { from: 0, to: 1 },
             TarjanStep::BackEdge { from: 1, to: 0 },
             TarjanStep::Return { from: 0, to: 1 },
-            TarjanStep::SccFound { root: 0, members: vec![1, 0] },
+            TarjanStep::SccFound {
+                root: 0,
+                members: vec![1, 0],
+            },
         ];
         for step in &steps {
             let (icon, desc) = step_description(step, &names);
@@ -731,7 +776,9 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let mut anim = TarjanAnimation::start_live(&mat, || {}).unwrap();
         for _ in 0..100 {
-            if anim.live_state(false) == crate::LiveState::Finished { break; }
+            if anim.live_state(false) == crate::LiveState::Finished {
+                break;
+            }
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
         anim.playback.sync_live();
@@ -786,7 +833,10 @@ mod tests {
         let match_var = vec![Some(0)];
 
         let adj = build_dep_graph(&mat, &match_eq, &match_var);
-        assert!(adj[0].is_empty(), "self-reference through match should not create a dependency");
+        assert!(
+            adj[0].is_empty(),
+            "self-reference through match should not create a dependency"
+        );
     }
 
     #[test]
@@ -812,6 +862,9 @@ mod tests {
         let match_var = vec![Some(0), None];
 
         let adj = build_dep_graph(&mat, &match_eq, &match_var);
-        assert!(adj[0].is_empty(), "unmatched variable should not create a dependency");
+        assert!(
+            adj[0].is_empty(),
+            "unmatched variable should not create a dependency"
+        );
     }
 }

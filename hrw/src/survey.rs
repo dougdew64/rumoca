@@ -121,16 +121,29 @@ impl SurveyRow {
         let n = |v: Option<usize>| v.map_or(String::new(), |x| x.to_string());
         format!(
             "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
-            csv_field(&self.name), csv_field(&self.kind), csv_field(&self.outcome),
-            csv_field(&self.message), csv_field(&self.package),
+            csv_field(&self.name),
+            csv_field(&self.kind),
+            csv_field(&self.outcome),
+            csv_field(&self.message),
+            csv_field(&self.package),
             csv_field(&self.compile_cost),
-            n(self.n_equations), n(self.n_states), n(self.n_algebraic),
-            n(self.n_discrete), n(self.n_parameters),
-            csv_field(&self.structural), csv_field(&self.index_reduced),
-            n(self.n_blocks), n(self.n_coupled), n(self.largest_coupled),
-            n(self.n_connect_eq), n(self.n_flow_eq),
-            n(self.n_event_conditions), n(self.n_discrete_updates),
-            self.has_arrays, self.max_depth, n(self.n_functions),
+            n(self.n_equations),
+            n(self.n_states),
+            n(self.n_algebraic),
+            n(self.n_discrete),
+            n(self.n_parameters),
+            csv_field(&self.structural),
+            csv_field(&self.index_reduced),
+            n(self.n_blocks),
+            n(self.n_coupled),
+            n(self.largest_coupled),
+            n(self.n_connect_eq),
+            n(self.n_flow_eq),
+            n(self.n_event_conditions),
+            n(self.n_discrete_updates),
+            self.has_arrays,
+            self.max_depth,
+            n(self.n_functions),
         )
     }
 
@@ -140,8 +153,7 @@ impl SurveyRow {
     /// "success"`: a compile that produces no equations, or a singular system
     /// index reduction cannot fix, has compiled without being simulatable.
     pub fn is_solvable(&self) -> bool {
-        self.outcome == "success"
-            && (self.structural == "ok" || self.index_reduced == "ok")
+        self.outcome == "success" && (self.structural == "ok" || self.index_reduced == "ok")
     }
 }
 
@@ -199,7 +211,15 @@ pub fn package_of(name: &str) -> String {
 /// `docs/upstream-strategy.md` warns turns a capability map into a scorecard.
 /// Recorded as raw data so the analysis has to show its working.
 pub fn classify(name: &str) -> String {
-    for marker in ["Examples", "Interfaces", "BaseClasses", "Internal", "Types", "Icons", "Tests"] {
+    for marker in [
+        "Examples",
+        "Interfaces",
+        "BaseClasses",
+        "Internal",
+        "Types",
+        "Icons",
+        "Tests",
+    ] {
         if name.split('.').any(|seg| seg == marker) {
             return marker.to_owned();
         }
@@ -231,7 +251,10 @@ pub struct Summary {
 
 impl Summary {
     pub fn of(rows: &[SurveyRow]) -> Summary {
-        let mut s = Summary { total: rows.len(), ..Default::default() };
+        let mut s = Summary {
+            total: rows.len(),
+            ..Default::default()
+        };
         let mut outcomes: BTreeMap<&str, usize> = BTreeMap::new();
         let mut causes: BTreeMap<&str, usize> = BTreeMap::new();
         let mut structural: BTreeMap<String, usize> = BTreeMap::new();
@@ -274,12 +297,19 @@ impl Summary {
             v.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
             v
         };
-        s.outcomes = rank(outcomes.into_iter().map(|(k, v)| (k.to_owned(), v)).collect());
+        s.outcomes = rank(
+            outcomes
+                .into_iter()
+                .map(|(k, v)| (k.to_owned(), v))
+                .collect(),
+        );
         s.causes = rank(causes.into_iter().map(|(k, v)| (k.to_owned(), v)).collect());
         s.structural = rank(structural);
         s.by_kind = {
-            let mut v: Vec<(String, usize, usize)> =
-                by_kind.into_iter().map(|(k, (ok, n))| (k.to_owned(), ok, n)).collect();
+            let mut v: Vec<(String, usize, usize)> = by_kind
+                .into_iter()
+                .map(|(k, (ok, n))| (k.to_owned(), ok, n))
+                .collect();
             v.sort_by(|a, b| b.2.cmp(&a.2).then(a.0.cmp(&b.0)));
             v
         };
@@ -333,7 +363,10 @@ pub fn all_zero_columns(rows: &[SurveyRow]) -> Vec<&'static str> {
         .collect();
     // The two event columns, checked the same way.
     for (name, get) in [
-        ("n_event_conditions", (|r: &SurveyRow| r.n_event_conditions) as fn(&SurveyRow) -> Option<usize>),
+        (
+            "n_event_conditions",
+            (|r: &SurveyRow| r.n_event_conditions) as fn(&SurveyRow) -> Option<usize>,
+        ),
         ("n_discrete_updates", |r: &SurveyRow| r.n_discrete_updates),
     ] {
         let vals: Vec<usize> = rows.iter().filter_map(get).collect();
@@ -388,17 +421,25 @@ fn split_csv_line(line: &str) -> Vec<String> {
 /// unknown column is ignored; a missing one leaves its field default.
 pub fn parse_csv(text: &str) -> Vec<SurveyRow> {
     let mut lines = text.lines();
-    let Some(header) = lines.next() else { return Vec::new() };
+    let Some(header) = lines.next() else {
+        return Vec::new();
+    };
     let cols: Vec<String> = split_csv_line(header);
-    let idx: BTreeMap<&str, usize> =
-        cols.iter().enumerate().map(|(i, c)| (c.trim(), i)).collect();
+    let idx: BTreeMap<&str, usize> = cols
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (c.trim(), i))
+        .collect();
 
     lines
         .filter(|l| !l.trim().is_empty())
         .map(|line| {
             let f = split_csv_line(line);
             let get = |k: &str| -> String {
-                idx.get(k).and_then(|i| f.get(*i)).cloned().unwrap_or_default()
+                idx.get(k)
+                    .and_then(|i| f.get(*i))
+                    .cloned()
+                    .unwrap_or_default()
             };
             let num = |k: &str| -> Option<usize> { get(k).parse().ok() };
             SurveyRow {
@@ -474,9 +515,15 @@ mod tests {
                     Modelica.A,ignored,success,17\n";
         let rows = parse_csv(text);
         assert_eq!(rows[0].name, "Modelica.A");
-        assert_eq!(rows[0].outcome, "success", "outcome read from the wrong column");
+        assert_eq!(
+            rows[0].outcome, "success",
+            "outcome read from the wrong column"
+        );
         assert_eq!(rows[0].n_equations, Some(17));
-        assert_eq!(rows[0].kind, "", "a missing column leaves its field default");
+        assert_eq!(
+            rows[0].kind, "",
+            "a missing column leaves its field default"
+        );
     }
 
     /// "Compiled" is not "usable", and `is_solvable` is where that lives.
@@ -508,10 +555,16 @@ mod tests {
         ];
         let s = Summary::of(&rows);
         assert_eq!(s.total, 6);
-        assert_eq!(s.rescued_by_reduction, 2, "two high-index models were rescued");
+        assert_eq!(
+            s.rescued_by_reduction, 2,
+            "two high-index models were rescued"
+        );
         assert_eq!(s.still_singular, 1);
         assert_eq!(s.empty, 1);
-        assert_eq!(s.solvable, 3, "ok + the two rescued — not the five that compiled");
+        assert_eq!(
+            s.solvable, 3,
+            "ok + the two rescued — not the five that compiled"
+        );
         assert_eq!(s.outcomes[0], ("success".to_owned(), 5));
     }
 
@@ -527,7 +580,10 @@ mod tests {
             cause("unresolved function call: Modelica.Media.Interfaces.PartialMedium.foo"),
             "Media partial-package pattern",
         );
-        assert_eq!(cause("unresolved reference: states"), "unresolved reference");
+        assert_eq!(
+            cause("unresolved reference: states"),
+            "unresolved reference"
+        );
         assert_eq!(cause(""), "(no message)");
         assert_eq!(cause("something nobody predicted"), "other");
     }
@@ -546,13 +602,23 @@ mod tests {
             SurveyRow::HEADER,
         );
         let rows = parse_csv(&text);
-        assert_eq!(rows.len(), 2, "both lines parse; the torn one is filtered by its emptiness");
+        assert_eq!(
+            rows.len(),
+            2,
+            "both lines parse; the torn one is filtered by its emptiness"
+        );
         assert_eq!(rows[0].outcome, "success");
         assert_eq!(rows[0].n_equations, Some(3));
 
-        let complete: Vec<&SurveyRow> =
-            rows.iter().filter(|r| !r.name.is_empty() && !r.outcome.is_empty()).collect();
-        assert_eq!(complete.len(), 1, "the torn row must not survive the filter");
+        let complete: Vec<&SurveyRow> = rows
+            .iter()
+            .filter(|r| !r.name.is_empty() && !r.outcome.is_empty())
+            .collect();
+        assert_eq!(
+            complete.len(),
+            1,
+            "the torn row must not survive the filter"
+        );
         assert_eq!(complete[0].name, "Modelica.A");
     }
 
@@ -576,7 +642,10 @@ mod tests {
         let dead = all_zero_columns(&[a.clone(), b.clone()]);
         assert!(dead.contains(&"n_event_conditions"), "{dead:?}");
         assert!(dead.contains(&"n_discrete_updates"), "{dead:?}");
-        assert!(!dead.contains(&"n_equations"), "a measuring column must not be flagged: {dead:?}");
+        assert!(
+            !dead.contains(&"n_equations"),
+            "a measuring column must not be flagged: {dead:?}"
+        );
         assert!(!dead.contains(&"n_coupled"), "{dead:?}");
 
         // One non-zero row is enough to clear it — the check asks whether the
@@ -596,8 +665,14 @@ mod tests {
         assert_eq!(package_of("Modelica.Fluid.Examples.Tank"), "Fluid");
         assert_eq!(package_of("Complex"), "Complex");
         assert_eq!(classify("Modelica.Fluid.Examples.Tank"), "Examples");
-        assert_eq!(classify("Modelica.Fluid.Interfaces.PartialTwoPort"), "Interfaces");
-        assert_eq!(classify("Modelica.Electrical.Analog.Basic.Resistor"), "Component");
+        assert_eq!(
+            classify("Modelica.Fluid.Interfaces.PartialTwoPort"),
+            "Interfaces"
+        );
+        assert_eq!(
+            classify("Modelica.Electrical.Analog.Basic.Resistor"),
+            "Component"
+        );
     }
 }
 
@@ -637,7 +712,11 @@ mod filter_tests {
     use super::*;
 
     fn row(name: &str, outcome: &str) -> SurveyRow {
-        SurveyRow { name: name.into(), outcome: outcome.into(), ..Default::default() }
+        SurveyRow {
+            name: name.into(),
+            outcome: outcome.into(),
+            ..Default::default()
+        }
     }
 
     /// The filter narrows, reports both verdicts, and treats terms as AND.
@@ -652,17 +731,39 @@ mod filter_tests {
             row("Modelica.Fluid.Examples.Tank", "failed:Flatten"),
         ];
 
-        assert_eq!(rows.iter().filter(|r| matches_filter(r, "")).count(), 3,
-                   "an empty filter matches everything");
-        assert_eq!(rows.iter().filter(|r| matches_filter(r, "spice3")).count(), 1,
-                   "a name substring narrows");
-        assert_eq!(rows.iter().filter(|r| matches_filter(r, "SPICE3")).count(), 1,
-                   "and is case-insensitive");
-        assert_eq!(rows.iter().filter(|r| matches_filter(r, "failed")).count(), 1,
-                   "the outcome is searchable, which is how you find what broke");
-        assert_eq!(rows.iter().filter(|r| matches_filter(r, "electrical success")).count(), 2,
-                   "terms are AND, so adding one narrows");
-        assert_eq!(rows.iter().filter(|r| matches_filter(r, "spice3 fluid")).count(), 0,
-                   "and a contradictory pair matches nothing rather than everything");
+        assert_eq!(
+            rows.iter().filter(|r| matches_filter(r, "")).count(),
+            3,
+            "an empty filter matches everything"
+        );
+        assert_eq!(
+            rows.iter().filter(|r| matches_filter(r, "spice3")).count(),
+            1,
+            "a name substring narrows"
+        );
+        assert_eq!(
+            rows.iter().filter(|r| matches_filter(r, "SPICE3")).count(),
+            1,
+            "and is case-insensitive"
+        );
+        assert_eq!(
+            rows.iter().filter(|r| matches_filter(r, "failed")).count(),
+            1,
+            "the outcome is searchable, which is how you find what broke"
+        );
+        assert_eq!(
+            rows.iter()
+                .filter(|r| matches_filter(r, "electrical success"))
+                .count(),
+            2,
+            "terms are AND, so adding one narrows"
+        );
+        assert_eq!(
+            rows.iter()
+                .filter(|r| matches_filter(r, "spice3 fluid"))
+                .count(),
+            0,
+            "and a contradictory pair matches nothing rather than everything"
+        );
     }
 }

@@ -191,7 +191,10 @@ pub fn check_model(
         if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
             coverage.with_blocks += 1;
         }
-        if s.report["matching"].as_array().is_some_and(|m| !m.is_empty()) {
+        if s.report["matching"]
+            .as_array()
+            .is_some_and(|m| !m.is_empty())
+        {
             coverage.with_matching += 1;
         }
         if want("F2") {
@@ -348,7 +351,10 @@ pub struct Coverage {
 /// Violations grouped by check, most numerous first — the triage view.
 ///
 /// Returns `(check, count, up to `examples` details)`.
-pub fn group_by_check(violations: &[Violation], examples: usize) -> Vec<(&'static str, usize, Vec<String>)> {
+pub fn group_by_check(
+    violations: &[Violation],
+    examples: usize,
+) -> Vec<(&'static str, usize, Vec<String>)> {
     let mut by: BTreeMap<&'static str, Vec<&str>> = BTreeMap::new();
     for v in violations {
         by.entry(v.check).or_default().push(&v.detail);
@@ -357,7 +363,11 @@ pub fn group_by_check(violations: &[Violation], examples: usize) -> Vec<(&'stati
         .into_iter()
         .map(|(check, ds)| {
             let n = ds.len();
-            (check, n, ds.into_iter().take(examples).map(str::to_owned).collect())
+            (
+                check,
+                n,
+                ds.into_iter().take(examples).map(str::to_owned).collect(),
+            )
         })
         .collect();
     out.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
@@ -380,14 +390,26 @@ pub fn subjects<'a>(
         if let Some(r) = report
             && r.get("incidence").is_some()
         {
-            out.push(Subject { label: label.to_owned(), report: r, dae: Some(d) });
+            out.push(Subject {
+                label: label.to_owned(),
+                report: r,
+                dae: Some(d),
+            });
         }
     };
     push("Structural", stages.structural.value.as_ref(), dae);
-    push("IndexReduction", stages.index_reduction.value.as_ref(), reduced);
+    push(
+        "IndexReduction",
+        stages.index_reduction.value.as_ref(),
+        reduced,
+    );
     push(
         "IndexReduction.before",
-        stages.index_reduction.value.as_ref().and_then(|v| v.get("before")),
+        stages
+            .index_reduction
+            .value
+            .as_ref()
+            .and_then(|v| v.get("before")),
         dae,
     );
     out
@@ -408,7 +430,11 @@ fn row_labels(report: &Value) -> Vec<String> {
 fn unknown_names(report: &Value) -> Vec<String> {
     report["incidence"]["unknown_names"]
         .as_array()
-        .map(|ns| ns.iter().map(|n| n.as_str().unwrap_or_default().to_owned()).collect())
+        .map(|ns| {
+            ns.iter()
+                .map(|n| n.as_str().unwrap_or_default().to_owned())
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -421,7 +447,12 @@ fn row_sets(report: &Value) -> Vec<BTreeSet<usize>> {
                 .map(|r| {
                     r["unknowns"]
                         .as_array()
-                        .map(|u| u.iter().filter_map(Value::as_u64).map(|v| v as usize).collect())
+                        .map(|u| {
+                            u.iter()
+                                .filter_map(Value::as_u64)
+                                .map(|v| v as usize)
+                                .collect()
+                        })
                         .unwrap_or_default()
                 })
                 .collect()
@@ -464,10 +495,16 @@ pub fn check_f2(s: &Subject) -> Vec<String> {
         s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
     );
     if n_eq != inc.n_eq {
-        v.push(format!("{}: n_eq {n_eq} published, {} from build_incidence", s.label, inc.n_eq));
+        v.push(format!(
+            "{}: n_eq {n_eq} published, {} from build_incidence",
+            s.label, inc.n_eq
+        ));
     }
     if n_var != inc.n_var {
-        v.push(format!("{}: n_var {n_var} published, {} from build_incidence", s.label, inc.n_var));
+        v.push(format!(
+            "{}: n_var {n_var} published, {} from build_incidence",
+            s.label, inc.n_var
+        ));
     }
 
     let published_unknowns = unknown_names(s.report);
@@ -489,7 +526,10 @@ pub fn check_f2(s: &Subject) -> Vec<String> {
         .map(|i| rumoca_phase_structural::equation_label(dae, &inc.equation_refs[i]))
         .collect();
     if published_labels != real_labels {
-        v.push(format!("{}: row equation labels differ from equation_label", s.label));
+        v.push(format!(
+            "{}: row equation labels differ from equation_label",
+            s.label
+        ));
     }
 
     let published_rows = row_sets(s.report);
@@ -501,7 +541,11 @@ pub fn check_f2(s: &Subject) -> Vec<String> {
                 "{}: row {i} publishes {pub_row:?}, build_incidence says {real:?}",
                 s.label,
             )),
-            None => v.push(format!("{}: row {i} missing; only {} published", s.label, published_rows.len())),
+            None => v.push(format!(
+                "{}: row {i} missing; only {} published",
+                s.label,
+                published_rows.len()
+            )),
         }
     }
     v
@@ -525,7 +569,10 @@ pub fn check_f3(s: &Subject) -> Vec<String> {
         if let Some(got) = s.report[key].as_u64()
             && got as usize != expect
         {
-            v.push(format!("{}: {key} = {got}, incidence says {expect}", s.label));
+            v.push(format!(
+                "{}: {key} = {got}, incidence says {expect}",
+                s.label
+            ));
         }
     }
 
@@ -533,7 +580,10 @@ pub fn check_f3(s: &Subject) -> Vec<String> {
     if let (Some(m), Some(published)) = (n_matched, s.report["n_matched"].as_u64())
         && m != published as usize
     {
-        v.push(format!("{}: n_matched = {published}, but matching has {m} pairs", s.label));
+        v.push(format!(
+            "{}: n_matched = {published}, but matching has {m} pairs",
+            s.label
+        ));
     }
     if let Some(m) = n_matched
         && m > n_eq.min(n_var)
@@ -566,7 +616,10 @@ pub fn check_f3(s: &Subject) -> Vec<String> {
             err["n_unknowns"].as_u64(),
         ) && rd != ne.max(nu) - nm
         {
-            v.push(format!("{}: rank_deficiency {rd} != max({ne},{nu}) - {nm}", s.label));
+            v.push(format!(
+                "{}: rank_deficiency {rd} != max({ne},{nu}) - {nm}",
+                s.label
+            ));
         }
     }
     v
@@ -583,7 +636,9 @@ pub fn check_f3(s: &Subject) -> Vec<String> {
 /// Reports with no `blocks` are skipped rather than failed: a singular system
 /// legitimately has none, because the analysis stopped before BLT ran.
 pub fn check_f4(s: &Subject) -> Vec<String> {
-    let Some(blocks) = s.report["blocks"].as_array() else { return Vec::new() };
+    let Some(blocks) = s.report["blocks"].as_array() else {
+        return Vec::new();
+    };
     let mut v = Vec::new();
     let labels = row_labels(s.report);
     let (index, dups) = index_of(&labels);
@@ -612,11 +667,16 @@ pub fn check_f4(s: &Subject) -> Vec<String> {
 
     for (row, count) in &seen {
         if *count > 1 {
-            v.push(format!("{}: equation row {row} appears in {count} blocks", s.label));
+            v.push(format!(
+                "{}: equation row {row} appears in {count} blocks",
+                s.label
+            ));
         }
     }
     if seen.len() != labels.len() {
-        let missing: Vec<usize> = (0..labels.len()).filter(|i| !seen.contains_key(i)).collect();
+        let missing: Vec<usize> = (0..labels.len())
+            .filter(|i| !seen.contains_key(i))
+            .collect();
         v.push(format!(
             "{}: blocks cover {} of {} equations; missing rows {missing:?}",
             s.label,
@@ -637,7 +697,9 @@ pub fn check_f4(s: &Subject) -> Vec<String> {
 /// ones; it is not a matching at all, and every solve order built on it is
 /// meaningless.
 pub fn check_f5(s: &Subject) -> Vec<String> {
-    let Some(pairs) = s.report["matching"].as_array() else { return Vec::new() };
+    let Some(pairs) = s.report["matching"].as_array() else {
+        return Vec::new();
+    };
     let mut v = Vec::new();
     let labels = row_labels(s.report);
     let unknowns = unknown_names(s.report);
@@ -650,7 +712,10 @@ pub fn check_f5(s: &Subject) -> Vec<String> {
 
     for (i, p) in pairs.iter().enumerate() {
         let (Some(e), Some(u)) = (p["equation"].as_str(), p["unknown"].as_str()) else {
-            v.push(format!("{}: matching pair {i} is not a (equation, unknown) pair", s.label));
+            v.push(format!(
+                "{}: matching pair {i} is not a (equation, unknown) pair",
+                s.label
+            ));
             continue;
         };
         let (Some(&er), Some(&uc)) = (eq_index.get(e), var_index.get(u)) else {
@@ -720,7 +785,9 @@ pub fn check_f6(
             v.push(format!("equation sheet lists equation {i} {c} times"));
         }
         for i in seen.keys().filter(|i| **i >= n_eq) {
-            v.push(format!("equation sheet lists equation {i}, beyond the DAE's {n_eq}"));
+            v.push(format!(
+                "equation sheet lists equation {i}, beyond the DAE's {n_eq}"
+            ));
         }
     }
 
@@ -734,14 +801,46 @@ pub fn check_f6(
         let vars = &dae.variables;
         let set = |ks: Vec<String>| -> BTreeSet<String> { ks.into_iter().collect() };
         let partitions: BTreeMap<&str, BTreeSet<String>> = [
-            ("state", set(vars.states.keys().map(ToString::to_string).collect())),
-            ("algebraic", set(vars.algebraics.keys().map(ToString::to_string).collect())),
-            ("input", set(vars.inputs.keys().map(ToString::to_string).collect())),
-            ("output", set(vars.outputs.keys().map(ToString::to_string).collect())),
-            ("parameter", set(vars.parameters.keys().map(ToString::to_string).collect())),
-            ("constant", set(vars.constants.keys().map(ToString::to_string).collect())),
-            ("discrete real", set(vars.discrete_reals.keys().map(ToString::to_string).collect())),
-            ("discrete valued", set(vars.discrete_valued.keys().map(ToString::to_string).collect())),
+            (
+                "state",
+                set(vars.states.keys().map(ToString::to_string).collect()),
+            ),
+            (
+                "algebraic",
+                set(vars.algebraics.keys().map(ToString::to_string).collect()),
+            ),
+            (
+                "input",
+                set(vars.inputs.keys().map(ToString::to_string).collect()),
+            ),
+            (
+                "output",
+                set(vars.outputs.keys().map(ToString::to_string).collect()),
+            ),
+            (
+                "parameter",
+                set(vars.parameters.keys().map(ToString::to_string).collect()),
+            ),
+            (
+                "constant",
+                set(vars.constants.keys().map(ToString::to_string).collect()),
+            ),
+            (
+                "discrete real",
+                set(vars
+                    .discrete_reals
+                    .keys()
+                    .map(ToString::to_string)
+                    .collect()),
+            ),
+            (
+                "discrete valued",
+                set(vars
+                    .discrete_valued
+                    .keys()
+                    .map(ToString::to_string)
+                    .collect()),
+            ),
         ]
         .into_iter()
         .collect();
@@ -791,7 +890,9 @@ pub fn sample_paths(root: &Value, cap: usize) -> Vec<Vec<crate::bridge::Seg>> {
         if out.len() >= cap {
             break;
         }
-        let Some(node) = crate::bridge::navigate(root, &path) else { continue };
+        let Some(node) = crate::bridge::navigate(root, &path) else {
+            continue;
+        };
         match node {
             Value::Object(map) => {
                 for k in map.keys() {
@@ -847,7 +948,6 @@ pub fn check_f7(label: &str, root: &Value) -> Vec<String> {
     v
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -862,8 +962,16 @@ mod tests {
     /// sample `docs/fidelity-plan.md` describes — the harness is written to take
     /// any list of names, so growing the corpus is a one-line change.
     const MODELS: &[&str] = &[
-        "ProportionalLoop", "MixedLoop", "TwoLoops", "NonlinearLoop", "Drivetrain",
-        "RcCircuit", "SingleInertia", "CapacitorLoop", "BouncingBall", "MotorWithBrake",
+        "ProportionalLoop",
+        "MixedLoop",
+        "TwoLoops",
+        "NonlinearLoop",
+        "Drivetrain",
+        "RcCircuit",
+        "SingleInertia",
+        "CapacitorLoop",
+        "BouncingBall",
+        "MotorWithBrake",
     ];
 
     // ---------------------------------------------------------------- report
@@ -877,10 +985,13 @@ mod tests {
     /// (`docs/reports.md`).
     fn report_path() -> std::path::PathBuf {
         // **Named for its scope, deliberately.** This is the 10-specimen pre-commit
-    // gate. The MSL corpus artifact is `docs/reports/msl-fidelity-report.csv`, written
-    // by `scripts/promote-run.ps1` — two reports with the same name but different
-    // scopes would be confused exactly once, expensively.
-    std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/specimen-fidelity-report.csv"))
+        // gate. The MSL corpus artifact is `docs/reports/msl-fidelity-report.csv`, written
+        // by `scripts/promote-run.ps1` — two reports with the same name but different
+        // scopes would be confused exactly once, expensively.
+        std::path::PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/reports/specimen-fidelity-report.csv"
+        ))
     }
 
     /// One model's fidelity result.
@@ -911,7 +1022,11 @@ mod tests {
             checks.sort_unstable();
             checks.dedup();
 
-            let outcome = if self.violations.is_empty() { "ok" } else { "violations" };
+            let outcome = if self.violations.is_empty() {
+                "ok"
+            } else {
+                "violations"
+            };
             let f = crate::survey::csv_field;
             format!(
                 "{},{},{},{},{},{}",
@@ -951,7 +1066,10 @@ mod tests {
     /// each check skips subjects it does not apply to, so without them a corpus
     /// that produced no blocks and no matching would pass in silence.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn hrw_reports_satisfy_the_structural_invariants() {
         let mut violations: Vec<String> = Vec::new();
         let mut subjects_checked = 0usize;
@@ -965,7 +1083,11 @@ mod tests {
         for name in MODELS {
             let before = violations.len();
             let FromWorker::Compiled {
-                stages, dae, equation_sheet, identifier_index, ..
+                stages,
+                dae,
+                equation_sheet,
+                identifier_index,
+                ..
             } = compile_specimen_shared(name)
             else {
                 panic!("{name}: expected Compiled");
@@ -998,7 +1120,10 @@ mod tests {
                 if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
                     with_blocks += 1;
                 }
-                if s.report["matching"].as_array().is_some_and(|m| !m.is_empty()) {
+                if s.report["matching"]
+                    .as_array()
+                    .is_some_and(|m| !m.is_empty())
+                {
                     with_matching += 1;
                 }
                 if s.report["error"]["kind"] == "singular" {
@@ -1036,7 +1161,10 @@ mod tests {
         // report format. `docs/reports.md`: one loader for all three reports,
         // which is a convention only if something checks it.
         let loaded = crate::report::parse(&report_text);
-        assert!(loaded.has_shared_columns(), "the fidelity report lost a shared column");
+        assert!(
+            loaded.has_shared_columns(),
+            "the fidelity report lost a shared column"
+        );
         assert_eq!(
             loaded.rows.len(),
             MODELS.len(),
@@ -1057,10 +1185,22 @@ mod tests {
 
         // Each check silently skips what it does not apply to, so prove each one
         // had something to look at.
-        assert!(subjects_checked >= 20, "only {subjects_checked} incidence-bearing reports (F2, F3)");
-        assert!(stage_values >= 50, "only {stage_values} stage IRs walked (F7)");
-        assert!(with_blocks >= 5, "only {with_blocks} reports had BLT blocks (F4)");
-        assert!(with_matching >= 5, "only {with_matching} reports had a matching (F5)");
+        assert!(
+            subjects_checked >= 20,
+            "only {subjects_checked} incidence-bearing reports (F2, F3)"
+        );
+        assert!(
+            stage_values >= 50,
+            "only {stage_values} stage IRs walked (F7)"
+        );
+        assert!(
+            with_blocks >= 5,
+            "only {with_blocks} reports had BLT blocks (F4)"
+        );
+        assert!(
+            with_matching >= 5,
+            "only {with_matching} reports had a matching (F5)"
+        );
         assert!(
             with_singular_error >= 1,
             "no singular error in the corpus; F3's rank-deficiency arithmetic never ran",
@@ -1073,8 +1213,12 @@ mod tests {
     /// coverage as its own gap (`docs/ideas.md` #46 tracks the phases still
     /// missing a failing specimen).
     const FAILING_MODELS: &[&str] = &[
-        "UndefinedRef", "IncompatibleConnect", "DimensionMismatch",
-        "CapacitorLoop", "OverInitRc", "UnbalancedShaft",
+        "UndefinedRef",
+        "IncompatibleConnect",
+        "DimensionMismatch",
+        "CapacitorLoop",
+        "OverInitRc",
+        "UnbalancedShaft",
     ];
 
     /// **F8 — no stage panics, and the sizes are on the record.**
@@ -1089,7 +1233,10 @@ mod tests {
     /// stage serializing the whole MSL) is a different animal, and the loose
     /// ceiling catches it.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn every_stage_serializes_without_panicking() {
         /// Beyond this, something is structurally wrong rather than merely big.
         /// `Media.Examples.WaterIF97`'s flatten stage measured 3.2 MB.
@@ -1124,7 +1271,11 @@ mod tests {
             println!("  {name:<20} {total:>9} {largest:>9}");
         }
 
-        assert!(oversize.is_empty(), "stage IR beyond the sanity ceiling:\n  {}", oversize.join("\n  "));
+        assert!(
+            oversize.is_empty(),
+            "stage IR beyond the sanity ceiling:\n  {}",
+            oversize.join("\n  ")
+        );
         assert_eq!(
             rows.len(),
             MODELS.len() + FAILING_MODELS.len(),
@@ -1170,7 +1321,10 @@ mod tests {
     /// Both were the check inventing violations — which is the same failure mode
     /// as HRW inventing a decision, on the instrument rather than the subject.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn a_rumoca_failure_is_represented_faithfully() {
         let mut violations = Vec::new();
         let mut abnormal_stages = 0usize;
@@ -1240,7 +1394,8 @@ mod tests {
                     match node {
                         Value::Array(items) => stack.extend(items),
                         Value::Object(map) => {
-                            let is_location = map.contains_key("line") && map.contains_key("line_text");
+                            let is_location =
+                                map.contains_key("line") && map.contains_key("line_text");
                             if is_location {
                                 locations_checked += 1;
                                 let line = map["line"].as_u64().unwrap_or(0) as usize;
@@ -1286,7 +1441,10 @@ mod tests {
         // real drop is loud while ordinary variation is not. Every assertion above
         // skips what it does not apply to, and a corpus that quietly stopped failing
         // would otherwise read as a clean bill of health.
-        assert!(abnormal_stages >= 10, "only {abnormal_stages} abnormal stages; F9 barely ran");
+        assert!(
+            abnormal_stages >= 10,
+            "only {abnormal_stages} abnormal stages; F9 barely ran"
+        );
         assert!(
             with_payload >= 5,
             "only {with_payload} abnormal stages carried structure; the payload checks \
@@ -1325,7 +1483,11 @@ mod tests {
                 { "kind": "scalar", "equation": "f_x[1]", "unknown": "y" },
             ],
         });
-        let clean = Subject { label: "T".into(), report: &base, dae: None };
+        let clean = Subject {
+            label: "T".into(),
+            report: &base,
+            dae: None,
+        };
         assert!(check_f3(&clean).is_empty(), "{:?}", check_f3(&clean));
         assert!(check_f4(&clean).is_empty(), "{:?}", check_f4(&clean));
         assert!(check_f5(&clean).is_empty(), "{:?}", check_f5(&clean));
@@ -1334,7 +1496,12 @@ mod tests {
         let mut bad = base.clone();
         bad["n_equations"] = serde_json::json!(7);
         assert!(
-            !check_f3(&Subject { label: "T".into(), report: &bad, dae: None }).is_empty(),
+            !check_f3(&Subject {
+                label: "T".into(),
+                report: &bad,
+                dae: None
+            })
+            .is_empty(),
             "F3 must notice n_equations disagreeing with the incidence",
         );
 
@@ -1342,7 +1509,12 @@ mod tests {
         let mut bad = base.clone();
         bad["blocks"] = serde_json::json!([{ "kind": "scalar", "equation": "f_x[0]" }]);
         assert!(
-            !check_f4(&Subject { label: "T".into(), report: &bad, dae: None }).is_empty(),
+            !check_f4(&Subject {
+                label: "T".into(),
+                report: &bad,
+                dae: None
+            })
+            .is_empty(),
             "F4 must notice an equation covered by no block",
         );
 
@@ -1351,7 +1523,12 @@ mod tests {
         let mut bad = base.clone();
         bad["matching"] = serde_json::json!([{ "equation": "f_x[1]", "unknown": "x" }]);
         assert!(
-            !check_f5(&Subject { label: "T".into(), report: &bad, dae: None }).is_empty(),
+            !check_f5(&Subject {
+                label: "T".into(),
+                report: &bad,
+                dae: None
+            })
+            .is_empty(),
             "F5 must notice a pair that is not an incidence non-zero",
         );
 
@@ -1362,12 +1539,20 @@ mod tests {
             { "equation": "f_x[1]", "unknown": "y" },
         ]);
         assert!(
-            !check_f5(&Subject { label: "T".into(), report: &bad, dae: None }).is_empty(),
+            !check_f5(&Subject {
+                label: "T".into(),
+                report: &bad,
+                dae: None
+            })
+            .is_empty(),
             "F5 must notice an unknown matched twice",
         );
 
         // F2 without a DAE is a skip, not a pass by accident.
-        assert!(check_f2(&clean).is_empty(), "F2 skips when there is no DAE to compare against");
+        assert!(
+            check_f2(&clean).is_empty(),
+            "F2 skips when there is no DAE to compare against"
+        );
     }
 
     /// **F10 is clean on real specimens, including ones that fail.**
@@ -1383,12 +1568,20 @@ mod tests {
     /// "absence is stated, never silent" is a real constraint rather than a
     /// tautology.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn f10_is_quiet_on_specimens_that_behave() {
         use crate::worker::FromWorker;
 
         let mut checked_empty = 0usize;
-        for name in ["SingleInertia", "UnbalancedShaft", "CapacitorLoop", "Drivetrain"] {
+        for name in [
+            "SingleInertia",
+            "UnbalancedShaft",
+            "CapacitorLoop",
+            "Drivetrain",
+        ] {
             let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
                 panic!("{name}: expected a compiled result");
             };
@@ -1429,7 +1622,10 @@ mod tests {
     /// since nothing about it is an error — the compile does not fail, it simply has
     /// nothing to say past a point, which is exactly the state clause 3 exists for.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn f10s_absence_clause_is_exercised_by_a_partial_class() {
         use crate::worker::FromWorker;
 
@@ -1533,7 +1729,9 @@ mod tests {
         *invented.get_mut(crate::worker::StageKind::Events) =
             Stage::computed(serde_json::json!({}), "probe");
         assert!(
-            check_f10(&invented).iter().any(|v| v.contains("HRW produced")),
+            check_f10(&invented)
+                .iter()
+                .any(|v| v.contains("HRW produced")),
             "{:?}",
             check_f10(&invented),
         );
@@ -1544,7 +1742,9 @@ mod tests {
         *s = Stage::ok(serde_json::json!({ "a": 1 }));
         s.provenance = Provenance::Empty;
         assert!(
-            check_f10(&inconsistent).iter().any(|v| v.contains("must agree")),
+            check_f10(&inconsistent)
+                .iter()
+                .any(|v| v.contains("must agree")),
             "{:?}",
             check_f10(&inconsistent),
         );
@@ -1555,7 +1755,9 @@ mod tests {
         let mut silent = clean.clone();
         *silent.get_mut(crate::worker::StageKind::Dae) = Stage::default();
         assert!(
-            check_f10(&silent).iter().any(|v| v.contains("says nothing")),
+            check_f10(&silent)
+                .iter()
+                .any(|v| v.contains("says nothing")),
             "{:?}",
             check_f10(&silent),
         );

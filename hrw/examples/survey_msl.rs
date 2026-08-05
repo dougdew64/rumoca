@@ -133,13 +133,17 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     if let Some(list) = arg_value(&args, "--merge") {
-        merge(&list, &arg_value(&args, "--out").expect("--merge needs --out"));
+        merge(
+            &list,
+            &arg_value(&args, "--out").expect("--merge needs --out"),
+        );
         return;
     }
 
     let cfg = Config {
-        out: arg_value(&args, "--out")
-            .unwrap_or_else(|| format!("{}/docs/reports/msl-survey.csv", env!("CARGO_MANIFEST_DIR"))),
+        out: arg_value(&args, "--out").unwrap_or_else(|| {
+            format!("{}/docs/reports/msl-survey.csv", env!("CARGO_MANIFEST_DIR"))
+        }),
         limit: arg_value(&args, "--limit").and_then(|v| v.parse().ok()),
         resume: args.iter().any(|a| a == "--resume"),
         only_skipped: args.iter().any(|a| a == "--only-skipped"),
@@ -153,8 +157,12 @@ fn main() {
         rebuild_every: arg_value(&args, "--rebuild-every")
             .and_then(|v| v.parse().ok())
             .unwrap_or(500),
-        slow_secs: arg_value(&args, "--slow-secs").and_then(|v| v.parse().ok()).unwrap_or(10.0),
-        window: arg_value(&args, "--window").and_then(|v| v.parse().ok()).unwrap_or(100),
+        slow_secs: arg_value(&args, "--slow-secs")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10.0),
+        window: arg_value(&args, "--window")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(100),
     };
     run(cfg);
 }
@@ -199,26 +207,49 @@ fn run(cfg: Config) {
             .map(|r| r.name.clone())
             .collect();
         eprintln!("--only-skipped: {} rows to revisit with no cap", redo.len());
-        let keep: Vec<SurveyRow> = prior.into_iter().filter(|r| !redo.contains(&r.name)).collect();
-        let todo: Vec<String> = names.iter().filter(|n| redo.contains(*n)).cloned().collect();
+        let keep: Vec<SurveyRow> = prior
+            .into_iter()
+            .filter(|r| !redo.contains(&r.name))
+            .collect();
+        let todo: Vec<String> = names
+            .iter()
+            .filter(|n| redo.contains(*n))
+            .cloned()
+            .collect();
         // Rewritten without the rows being redone, so resume semantics hold.
         rewrite(&cfg.out, &keep);
         (keep, todo)
     } else {
-        let prior = if cfg.resume { load_partial(&cfg.out) } else { Vec::new() };
+        let prior = if cfg.resume {
+            load_partial(&cfg.out)
+        } else {
+            Vec::new()
+        };
         if !prior.is_empty() {
             eprintln!("--resume: {} rows already surveyed", prior.len());
         }
         let done: BTreeSet<String> = prior.iter().map(|r| r.name.clone()).collect();
-        let todo: Vec<String> = names.iter().filter(|n| !done.contains(*n)).cloned().collect();
+        let todo: Vec<String> = names
+            .iter()
+            .filter(|n| !done.contains(*n))
+            .cloned()
+            .collect();
         (prior, todo)
     };
 
-    let cap = if cfg.only_skipped { usize::MAX } else { cfg.max_reduce_eq };
+    let cap = if cfg.only_skipped {
+        usize::MAX
+    } else {
+        cfg.max_reduce_eq
+    };
     eprintln!(
         "surveying {} models; index reduction {}",
         todo.len(),
-        if cap == usize::MAX { "uncapped".to_owned() } else { format!("capped at {cap} equations") },
+        if cap == usize::MAX {
+            "uncapped".to_owned()
+        } else {
+            format!("capped at {cap} equations")
+        },
     );
 
     // What this process is responsible for, for the progress denominator.
@@ -409,12 +440,20 @@ impl Health {
         ));
         self.say(&format!(
             "  outcomes: {}",
-            summary.outcomes.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join(" "),
+            summary
+                .outcomes
+                .iter()
+                .map(|(k, v)| format!("{k}={v}"))
+                .collect::<Vec<_>>()
+                .join(" "),
         ));
         self.say(&format!(
             "  solvable {} of {}  (rescued by reduction {}, still singular {}, no equations {})",
-            summary.solvable, summary.total,
-            summary.rescued_by_reduction, summary.still_singular, summary.empty,
+            summary.solvable,
+            summary.total,
+            summary.rescued_by_reduction,
+            summary.still_singular,
+            summary.empty,
         ));
         for (c, n) in summary.causes.iter().take(5) {
             self.say(&format!("  cause {n:>5}  {c}"));
@@ -496,12 +535,19 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
         Some(cr.dae.discrete.real_updates.len() + cr.dae.discrete.valued_updates.len());
 
     let all_names = || {
-        v.states.keys().chain(v.algebraics.keys()).chain(v.parameters.keys())
-            .chain(v.discrete_reals.keys()).chain(v.discrete_valued.keys())
+        v.states
+            .keys()
+            .chain(v.algebraics.keys())
+            .chain(v.parameters.keys())
+            .chain(v.discrete_reals.keys())
+            .chain(v.discrete_valued.keys())
             .map(ToString::to_string)
     };
     row.has_arrays = all_names().any(|n| n.contains('['));
-    row.max_depth = all_names().map(|n| n.matches('.').count()).max().unwrap_or(0);
+    row.max_depth = all_names()
+        .map(|n| n.matches('.').count())
+        .max()
+        .unwrap_or(0);
 
     match rumoca_phase_structural::build_structural_report(&cr.dae) {
         Ok(rep) => {
@@ -605,9 +651,14 @@ fn rewrite(out: &str, rows: &[SurveyRow]) {
     }
 }
 
-fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: usize, secs: Option<f64>) {
-    let mut tally: Vec<(&String, &usize)> =
-        summary.outcomes.iter().map(|(k, v)| (k, v)).collect();
+fn write_meta(
+    cfg: &Config,
+    rows: &[SurveyRow],
+    summary: &Summary,
+    available: usize,
+    secs: Option<f64>,
+) {
+    let mut tally: Vec<(&String, &usize)> = summary.outcomes.iter().map(|(k, v)| (k, v)).collect();
     tally.sort_by_key(|(k, _)| k.as_str());
     let meta = format!(
         "{{\n  \"rumoca_version\": \"{}\",\n  \"hrw_version\": \"{}\",\n  \
@@ -619,7 +670,10 @@ fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: us
         env!("CARGO_PKG_VERSION"),
         msl_roots()
             .iter()
-            .map(|r| format!("\"{}\"", r.file_name().unwrap_or_default().to_string_lossy()))
+            .map(|r| format!(
+                "\"{}\"",
+                r.file_name().unwrap_or_default().to_string_lossy()
+            ))
             .collect::<Vec<_>>()
             .join(", "),
         rows.len(),
@@ -628,7 +682,11 @@ fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: us
         // Null when the writer does not know it — a merge cannot. `0` would
         // read as a cap of zero, which is the same class of mistake as the
         // derived value it replaced.
-        if cfg.max_reduce_eq == 0 { "null".to_owned() } else { cfg.max_reduce_eq.to_string() },
+        if cfg.max_reduce_eq == 0 {
+            "null".to_owned()
+        } else {
+            cfg.max_reduce_eq.to_string()
+        },
         // A lower bound on the cap that was actually in force, observable from
         // the data alone: the largest system reduction was ATTEMPTED on.
         // Distinct from `max_reduce_equations`, which is the configured cap —
@@ -643,7 +701,11 @@ fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: us
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_secs()),
-        tally.iter().map(|(k, n)| format!("\"{k}\": {n}")).collect::<Vec<_>>().join(", "),
+        tally
+            .iter()
+            .map(|(k, n)| format!("\"{k}\": {n}"))
+            .collect::<Vec<_>>()
+            .join(", "),
     );
     let path = cfg.out.replace(".csv", ".meta.json");
     if let Err(e) = std::fs::write(&path, meta) {
@@ -653,7 +715,12 @@ fn write_meta(cfg: &Config, rows: &[SurveyRow], summary: &Summary, available: us
 
 fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
     let mut f = BufWriter::new(
-        OpenOptions::new().create(true).write(true).truncate(fresh).append(!fresh).open(out)?,
+        OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(fresh)
+            .append(!fresh)
+            .open(out)?,
     );
     if fresh {
         writeln!(f, "{}", SurveyRow::HEADER)?;
@@ -669,7 +736,9 @@ fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
 /// report. A row missing its name or outcome cannot have been written
 /// completely, so it is discarded and re-surveyed.
 fn load_partial(out: &str) -> Vec<SurveyRow> {
-    let Ok(text) = std::fs::read_to_string(out) else { return Vec::new() };
+    let Ok(text) = std::fs::read_to_string(out) else {
+        return Vec::new();
+    };
     hrw::survey::parse_csv(&text)
         .into_iter()
         .filter(|r| !r.name.is_empty() && !r.outcome.is_empty())
@@ -688,5 +757,9 @@ fn arg_value(args: &[String], flag: &str) -> Option<String> {
 fn summarize(counts: &HashMap<String, usize>) -> String {
     let mut v: Vec<(&String, &usize)> = counts.iter().collect();
     v.sort_by_key(|(_, n)| std::cmp::Reverse(**n));
-    v.iter().take(8).map(|(k, n)| format!("{k}={n}")).collect::<Vec<_>>().join(" ")
+    v.iter()
+        .take(8)
+        .map(|(k, n)| format!("{k}={n}"))
+        .collect::<Vec<_>>()
+        .join(" ")
 }

@@ -58,7 +58,10 @@ mod tests {
     fn field_help_contains_core_ir_fields() {
         let help = load();
         for key in ["def_id", "classes", "components", "equations", "name"] {
-            assert!(help.contains_key(key), "field_help missing expected key: {key}");
+            assert!(
+                help.contains_key(key),
+                "field_help missing expected key: {key}"
+            );
         }
     }
 }

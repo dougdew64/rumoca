@@ -192,10 +192,7 @@ impl ReductionView {
                 // reader who scrolls past it would be reading an incomplete list
                 // believing it complete — which is the failure this records.
                 for problem in &self.unreadable {
-                    ui.colored_label(
-                        ui.visuals().error_fg_color,
-                        format!("\u{26a0} {problem}"),
-                    );
+                    ui.colored_label(ui.visuals().error_fg_color, format!("\u{26a0} {problem}"));
                 }
                 if !self.unreadable.is_empty() {
                     ui.add_space(8.0);
@@ -224,9 +221,8 @@ impl ReductionView {
         ui.add_space(4.0);
 
         let status = if self.funnel_completed {
-            egui::RichText::new("funnel completed").color(
-                crate::colors::ok_color(ui.visuals().dark_mode),
-            )
+            egui::RichText::new("funnel completed")
+                .color(crate::colors::ok_color(ui.visuals().dark_mode))
         } else {
             let step = self.stopped_at.as_deref().unwrap_or("unknown");
             egui::RichText::new(format!("stopped at {step}")).color(ui.visuals().error_fg_color)
@@ -245,14 +241,22 @@ impl ReductionView {
             ui.label(format!(
                 "{} equation{} manufactured by differentiation",
                 self.differentiated_rows.len(),
-                if self.differentiated_rows.len() == 1 { "" } else { "s" },
+                if self.differentiated_rows.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                },
             ));
         }
         if !self.eliminations.is_empty() {
             ui.label(format!(
                 "{} variable{} eliminated by substitution",
                 self.eliminations.len(),
-                if self.eliminations.len() == 1 { "" } else { "s" },
+                if self.eliminations.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                },
             ));
         }
     }
@@ -310,19 +314,15 @@ impl ReductionView {
         );
         ui.add_space(2.0);
         for name in &self.demoted_states {
-            let is_tracked = tracked.is_some_and(|t| {
-                crate::identifier_index::same_variable(name, t)
-            });
+            let is_tracked =
+                tracked.is_some_and(|t| crate::identifier_index::same_variable(name, t));
             ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new("\u{2022}")
-                        .color(ui.visuals().warn_fg_color),
-                );
+                ui.label(egui::RichText::new("\u{2022}").color(ui.visuals().warn_fg_color));
                 let mut rt = egui::RichText::new(name).monospace();
                 if is_tracked {
-                    rt = rt.strong().background_color(
-                        crate::colors::TRACKED_FILL_MEDIUM,
-                    );
+                    rt = rt
+                        .strong()
+                        .background_color(crate::colors::TRACKED_FILL_MEDIUM);
                 }
                 ui.label(rt);
             });
@@ -355,14 +355,13 @@ impl ReductionView {
                 ui.label(egui::RichText::new("equation origin").weak());
                 ui.end_row();
                 for row in &self.differentiated_rows {
-                    let is_tracked = tracked.is_some_and(|t| {
-                        crate::identifier_index::same_variable(&row.for_state, t)
-                    });
+                    let is_tracked = tracked
+                        .is_some_and(|t| crate::identifier_index::same_variable(&row.for_state, t));
                     let mut rt = egui::RichText::new(&row.for_state).monospace();
                     if is_tracked {
-                        rt = rt.strong().background_color(
-                            crate::colors::TRACKED_FILL_MEDIUM,
-                        );
+                        rt = rt
+                            .strong()
+                            .background_color(crate::colors::TRACKED_FILL_MEDIUM);
                     }
                     ui.label(rt);
                     ui.label(egui::RichText::new(&row.equation_origin).monospace().weak());
@@ -395,14 +394,13 @@ impl ReductionView {
                 ui.label(egui::RichText::new("replaced by").weak());
                 ui.end_row();
                 for elim in &self.eliminations {
-                    let is_tracked = tracked.is_some_and(|t| {
-                        crate::identifier_index::same_variable(&elim.variable, t)
-                    });
+                    let is_tracked = tracked
+                        .is_some_and(|t| crate::identifier_index::same_variable(&elim.variable, t));
                     let mut rt = egui::RichText::new(&elim.variable).monospace();
                     if is_tracked {
-                        rt = rt.strong().background_color(
-                            crate::colors::TRACKED_FILL_MEDIUM,
-                        );
+                        rt = rt
+                            .strong()
+                            .background_color(crate::colors::TRACKED_FILL_MEDIUM);
                     }
                     ui.label(rt);
                     ui.label(egui::RichText::new(&elim.display).monospace().weak());
@@ -510,14 +508,20 @@ pub(crate) fn expr_to_short(v: &Value) -> String {
             if let Some(bin) = v.get("Binary") {
                 let op = bin.get("op").and_then(|o| o.as_str()).unwrap_or("?");
                 let sym = binary_op_symbol(op);
-                let lhs = bin.get("lhs").map_or_else(|| MISSING.to_owned(), expr_to_short);
-                let rhs = bin.get("rhs").map_or_else(|| MISSING.to_owned(), expr_to_short);
+                let lhs = bin
+                    .get("lhs")
+                    .map_or_else(|| MISSING.to_owned(), expr_to_short);
+                let rhs = bin
+                    .get("rhs")
+                    .map_or_else(|| MISSING.to_owned(), expr_to_short);
                 return format!("{lhs} {sym} {rhs}");
             }
             if let Some(unary) = v.get("Unary") {
                 let op = unary.get("op").and_then(|o| o.as_str()).unwrap_or("?");
                 let sym = unary_op_symbol(op);
-                let rhs = unary.get("rhs").map_or_else(|| MISSING.to_owned(), expr_to_short);
+                let rhs = unary
+                    .get("rhs")
+                    .map_or_else(|| MISSING.to_owned(), expr_to_short);
                 return format!("{sym}{rhs}");
             }
             if let Some(call) = v.get("BuiltinCall") {
@@ -534,9 +538,7 @@ pub(crate) fn expr_to_short(v: &Value) -> String {
                 // parser could not find them. `unwrap_or_default` rendered both as
                 // a zero-argument call.
                 let args: String = match call.get("args").and_then(Value::as_array) {
-                    Some(a) => {
-                        a.iter().map(expr_to_short).collect::<Vec<_>>().join(", ")
-                    }
+                    Some(a) => a.iter().map(expr_to_short).collect::<Vec<_>>().join(", "),
                     None => MISSING.to_owned(),
                 };
                 return format!("{func}({args})");
@@ -628,7 +630,11 @@ mod tests {
 
     #[test]
     fn abbreviate_renders_binary_operators() {
-        let bin = |op| format!(r#"{{"Binary":{{"op":"{op}","lhs":{{"VarRef":{{"name":"x"}}}},"rhs":{{"VarRef":{{"name":"y"}}}}}}}}"#);
+        let bin = |op| {
+            format!(
+                r#"{{"Binary":{{"op":"{op}","lhs":{{"VarRef":{{"name":"x"}}}},"rhs":{{"VarRef":{{"name":"y"}}}}}}}}"#
+            )
+        };
         assert_eq!(abbreviate_expr(&bin("Sub")), "x - y");
         assert_eq!(abbreviate_expr(&bin("Mul")), "x * y");
         assert_eq!(abbreviate_expr(&bin("Div")), "x / y");
@@ -745,7 +751,8 @@ mod tests {
              gives the reader no reason to doubt it",
         );
         assert!(
-            view.unreadable[0].contains("1 of 2") && view.unreadable[0].contains("differentiated_rows"),
+            view.unreadable[0].contains("1 of 2")
+                && view.unreadable[0].contains("differentiated_rows"),
             "the notice must say how many and which list: {:?}",
             view.unreadable[0],
         );
@@ -799,7 +806,10 @@ mod tests {
             out.contains("(missing)"),
             "a missing operand must be visible: {out:?}",
         );
-        assert!(!out.ends_with("* "), "and must not read as a well-formed expression: {out:?}");
+        assert!(
+            !out.ends_with("* "),
+            "and must not read as a well-formed expression: {out:?}"
+        );
 
         // A unary with no operand used to render as a bare "-".
         let unary = expr_to_short(&json!({ "Unary": { "op": "Neg" } }));
@@ -816,14 +826,24 @@ mod tests {
         let call = expr_to_short(&json!({ "BuiltinCall": {
             "args": [{ "VarRef": { "name": "x" } }],
         }}));
-        assert!(!call.starts_with("f("), "a plausible fake name is worse than none: {call:?}");
+        assert!(
+            !call.starts_with("f("),
+            "a plausible fake name is worse than none: {call:?}"
+        );
         assert!(call.contains("unknown fn"), "{call:?}");
 
         // Absent args and an empty args list are different expressions.
         let no_args = expr_to_short(&json!({ "BuiltinCall": { "function": "sin" } }));
-        assert!(no_args.contains("(missing)"), "absent args must say so: {no_args:?}");
-        let empty_args = expr_to_short(&json!({ "BuiltinCall": { "function": "time", "args": [] }}));
-        assert_eq!(empty_args, "time()", "a genuine zero-argument call is unchanged");
+        assert!(
+            no_args.contains("(missing)"),
+            "absent args must say so: {no_args:?}"
+        );
+        let empty_args =
+            expr_to_short(&json!({ "BuiltinCall": { "function": "time", "args": [] }}));
+        assert_eq!(
+            empty_args, "time()",
+            "a genuine zero-argument call is unchanged"
+        );
     }
 
     /// A well-formed expression is untouched by all of the above.
@@ -846,6 +866,10 @@ mod tests {
         let view = ReductionView::from_report(&report).expect("should parse");
         assert!(view.differentiated_rows.is_empty());
         assert_eq!(view.unreadable.len(), 1, "{:?}", view.unreadable);
-        assert!(view.unreadable[0].contains("is not a list"), "{:?}", view.unreadable[0]);
+        assert!(
+            view.unreadable[0].contains("is not a list"),
+            "{:?}",
+            view.unreadable[0]
+        );
     }
 }

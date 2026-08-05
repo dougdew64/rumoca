@@ -56,7 +56,7 @@ use eframe::egui;
 use serde_json::Value;
 
 use crate::bridge::Seg;
-use crate::worker::{is_def_id_key, DefInfo};
+use crate::worker::{DefInfo, is_def_id_key};
 
 // Green highlight for values that changed from the previous stage.
 // Using a fixed color rather than a theme color because the "changed" semantic
@@ -188,7 +188,9 @@ pub fn tree_ui(
             node = next;
         }
     }
-    node_ui(ui, 0, root_label, value, prev, &mut path, actions, def_index, field_help, opts, &expansion);
+    node_ui(
+        ui, 0, root_label, value, prev, &mut path, actions, def_index, field_help, opts, &expansion,
+    );
 }
 
 /// Which nodes to open, and how firmly.
@@ -271,7 +273,9 @@ fn node_ui(
     // `bridge::mention_paths`, which addresses nodes rather than holding
     // references to them. `path` here is already this node's own path.
     let is_jump_target = opts.jump_to.is_some_and(|target| target == path.as_slice());
-    let is_highlighted = opts.highlight.is_some_and(|target| target == path.as_slice());
+    let is_highlighted = opts
+        .highlight
+        .is_some_and(|target| target == path.as_slice());
     // A washed row has to be drawn *behind* the widget, and egui has no row
     // background — so the highlight is a painted rect sized to the row after the fact.
     // Cheaper and more reliable than restyling every widget kind the tree can emit.
@@ -280,24 +284,45 @@ fn node_ui(
         Value::Object(map) => {
             let hint = format!("{{{}}}", map.len());
             let is_tracked = opts.tracked.is_some_and(|t| key == t);
-            let resp = egui::CollapsingHeader::new(
-                if is_tracked { header_tracked(key, &hint) } else { header(key, &hint) }
-            )
-                .default_open(should_expand)
-                // `open` overrides remembered state; `default_open` cannot.
-                .open(force_open.then_some(true))
-                .show(ui, |ui| {
-                    for (i, (k, v)) in map.iter().enumerate() {
-                        path.push(Seg::Key(k.clone()));
-                        node_ui(ui, i, k, v, prev.and_then(|p| p.get(k)), path, actions, def_index, field_help, opts, expansion);
-                        path.pop();
-                    }
-                });
+            let resp = egui::CollapsingHeader::new(if is_tracked {
+                header_tracked(key, &hint)
+            } else {
+                header(key, &hint)
+            })
+            .default_open(should_expand)
+            // `open` overrides remembered state; `default_open` cannot.
+            .open(force_open.then_some(true))
+            .show(ui, |ui| {
+                for (i, (k, v)) in map.iter().enumerate() {
+                    path.push(Seg::Key(k.clone()));
+                    node_ui(
+                        ui,
+                        i,
+                        k,
+                        v,
+                        prev.and_then(|p| p.get(k)),
+                        path,
+                        actions,
+                        def_index,
+                        field_help,
+                        opts,
+                        expansion,
+                    );
+                    path.pop();
+                }
+            });
             if resp.header_response.clicked() {
                 actions.capture = Some(path.to_vec());
             }
             scroll_if_jump_target(is_jump_target, &resp.header_response);
-            row_menu(&resp.header_response, path, actions, &format!("{key} {hint}"), None, None);
+            row_menu(
+                &resp.header_response,
+                path,
+                actions,
+                &format!("{key} {hint}"),
+                None,
+                None,
+            );
             if let Some(doc) = field_help.get(key) {
                 resp.header_response.clone().on_hover_text(doc);
             }
@@ -310,7 +335,19 @@ fn node_ui(
                 .show(ui, |ui| {
                     for (i, v) in arr.iter().enumerate() {
                         path.push(Seg::Index(i));
-                        node_ui(ui, i, &i.to_string(), v, prev.and_then(|p| p.get(i)), path, actions, def_index, field_help, opts, expansion);
+                        node_ui(
+                            ui,
+                            i,
+                            &i.to_string(),
+                            v,
+                            prev.and_then(|p| p.get(i)),
+                            path,
+                            actions,
+                            def_index,
+                            field_help,
+                            opts,
+                            expansion,
+                        );
                         path.pop();
                     }
                 });
@@ -318,7 +355,14 @@ fn node_ui(
                 actions.capture = Some(path.to_vec());
             }
             scroll_if_jump_target(is_jump_target, &resp.header_response);
-            row_menu(&resp.header_response, path, actions, &format!("{key} {hint}"), None, None);
+            row_menu(
+                &resp.header_response,
+                path,
+                actions,
+                &format!("{key} {hint}"),
+                None,
+                None,
+            );
         }
         scalar => {
             let changed = prev.is_some_and(|p| p != scalar);
@@ -339,11 +383,19 @@ fn node_ui(
             }
             scroll_if_jump_target(is_jump_target, &resp);
             let trackable = trackable_name(key, scalar, &opts);
-            row_menu(&resp, path, actions, &copy_text, nav_target(key, scalar, def_index, &opts), trackable.clone());
+            row_menu(
+                &resp,
+                path,
+                actions,
+                &copy_text,
+                nav_target(key, scalar, def_index, &opts),
+                trackable.clone(),
+            );
             // Explain the underline. Appended to the field's own help rather
             // than replacing it, so discoverability does not cost the
             // documentation that is already there.
-            resp.clone().on_hover_text(row_hover(field_help.get(key), trackable.as_deref()));
+            resp.clone()
+                .on_hover_text(row_hover(field_help.get(key), trackable.as_deref()));
         }
     });
 
@@ -354,7 +406,10 @@ fn node_ui(
     if is_highlighted {
         let row = egui::Rect::from_min_max(
             egui::pos2(ui.min_rect().left(), row_top),
-            egui::pos2(ui.min_rect().right(), row_top + ui.spacing().interact_size.y),
+            egui::pos2(
+                ui.min_rect().right(),
+                row_top + ui.spacing().interact_size.y,
+            ),
         );
         ui.painter().rect_filled(row, 2.0, crate::colors::JUMP_FILL);
     }
@@ -392,15 +447,19 @@ fn row_hover(doc: Option<&String>, trackable: Option<&str>) -> String {
     let mut out = String::new();
     if let Some(doc) = doc {
         out.push_str(doc);
-        out.push_str("
+        out.push_str(
+            "
 
-");
+",
+        );
     }
     out.push_str(crate::POINT_AT_HOVER);
     if let Some(name) = trackable {
-        out.push_str(&format!("
+        out.push_str(&format!(
+            "
 
-Right-click to follow {name} through every stage."));
+Right-click to follow {name} through every stage."
+        ));
     }
     out
 }
@@ -423,8 +482,7 @@ fn nav_target(
         if let Some(info) = def_index.get(&scalar.as_u64()?) {
             // Only class definitions are navigable — you can "go to" a class,
             // but not to a variable or built-in.
-            return (info.kind == crate::worker::DefKind::Class)
-                .then(|| info.name.clone());
+            return (info.kind == crate::worker::DefKind::Class).then(|| info.name.clone());
         }
         return None;
     }
@@ -433,7 +491,9 @@ fn nav_target(
     // navigation stack — the vocabulary stays consistent whether you found the
     // class through a DefId field or through the variable itself.
     let name = trackable_name(key, scalar, opts)?;
-    opts.declaring_classes?.get(crate::identifier_index::strip_der(&name)).cloned()
+    opts.declaring_classes?
+        .get(crate::identifier_index::strip_der(&name))
+        .cloned()
 }
 
 // Right-click context menu for any tree row.
@@ -602,7 +662,11 @@ fn leaf_ui(
     // was not registering pointer events). A LayoutJob keeps the per-part
     // colors: key, value (typed), and the resolved-DefId annotation.
     let mono = egui::TextStyle::Monospace.resolve(ui.style());
-    let fmt = |c| egui::text::TextFormat { font_id: mono.clone(), color: c, ..Default::default() };
+    let fmt = |c| egui::text::TextFormat {
+        font_id: mono.clone(),
+        color: c,
+        ..Default::default()
+    };
     let mut job = egui::text::LayoutJob::default();
     job.append(&format!("{key}: "), 0.0, fmt(key_color));
 
@@ -626,11 +690,13 @@ fn leaf_ui(
     if is_tracked {
         let fill = crate::colors::TRACKED_FILL;
         let rect = resp.rect.expand2(egui::vec2(3.0, 1.0));
-        ui.painter().set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
+        ui.painter()
+            .set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
     } else if resp.hovered() {
         let fill = ui.visuals().widgets.hovered.weak_bg_fill;
         let rect = resp.rect.expand2(egui::vec2(3.0, 1.0));
-        ui.painter().set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
+        ui.painter()
+            .set(bg, egui::Shape::rect_filled(rect, 2.0, fill));
     }
     (resp, copy_text)
 }
@@ -684,8 +750,10 @@ fn collect_tracked_ancestors(
             let here = collect_tracked_ancestors(v, tracked, ancestors);
             found || here
         }),
-        Value::String(s) => crate::identifier_index::same_variable(s, tracked)
-            || crate::source_view::mentions_identifier(s, tracked),
+        Value::String(s) => {
+            crate::identifier_index::same_variable(s, tracked)
+                || crate::source_view::mentions_identifier(s, tracked)
+        }
         _ => false,
     };
     if dominated {
@@ -693,7 +761,6 @@ fn collect_tracked_ancestors(
     }
     dominated
 }
-
 
 /// A tree header for a node on the followed identifier's path — the key plus a
 /// short hint, in the follow colour. Distinct from a *pointed-at* row, which is
@@ -717,13 +784,22 @@ mod tests {
         let doc = "The variable's causality: input, output, or none.".to_owned();
 
         let with_doc = row_hover(Some(&doc), None);
-        assert!(with_doc.starts_with(&doc), "documentation comes first: {with_doc}");
-        assert!(with_doc.contains("Point at"), "and the gesture is still named: {with_doc}");
+        assert!(
+            with_doc.starts_with(&doc),
+            "documentation comes first: {with_doc}"
+        );
+        assert!(
+            with_doc.contains("Point at"),
+            "and the gesture is still named: {with_doc}"
+        );
 
         // Every row is left-clickable, so the point-at line is unconditional.
         let bare = row_hover(None, None);
         assert!(bare.contains("Point at"), "{bare}");
-        assert!(!bare.contains("Right-click"), "nothing to follow here: {bare}");
+        assert!(
+            !bare.contains("Right-click"),
+            "nothing to follow here: {bare}"
+        );
 
         // Only rows naming a known variable offer the second verb.
         let followable = row_hover(Some(&doc), Some("emf.phi"));
@@ -747,7 +823,9 @@ mod tests {
         let declaring: HashMap<String, String> = [(
             "src.V".to_owned(),
             "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
-        )].into_iter().collect();
+        )]
+        .into_iter()
+        .collect();
         let opts = TreeOptions {
             known_variables: Some(&known),
             declaring_classes: Some(&declaring),
@@ -783,26 +861,32 @@ mod tests {
     #[test]
     fn nav_target_returns_none_for_non_class() {
         let mut index = BTreeMap::new();
-        index.insert(42, DefInfo {
-            name: "someVar".into(),
-            kind: crate::worker::DefKind::Definition,
-            class_type: None,
-            file_name: None,
-            line: None,
-        });
+        index.insert(
+            42,
+            DefInfo {
+                name: "someVar".into(),
+                kind: crate::worker::DefKind::Definition,
+                class_type: None,
+                file_name: None,
+                line: None,
+            },
+        );
         assert!(nav_target("def_id", &json!(42), &index, &TreeOptions::default()).is_none());
     }
 
     #[test]
     fn nav_target_returns_class_name() {
         let mut index = BTreeMap::new();
-        index.insert(100, DefInfo {
-            name: "Modelica.Mechanics.Rotational.Inertia".into(),
-            kind: crate::worker::DefKind::Class,
-            class_type: Some("model".into()),
-            file_name: None,
-            line: None,
-        });
+        index.insert(
+            100,
+            DefInfo {
+                name: "Modelica.Mechanics.Rotational.Inertia".into(),
+                kind: crate::worker::DefKind::Class,
+                class_type: Some("model".into()),
+                file_name: None,
+                line: None,
+            },
+        );
         assert_eq!(
             nav_target("type_def_id", &json!(100), &index, &TreeOptions::default()).as_deref(),
             Some("Modelica.Mechanics.Rotational.Inertia"),
@@ -812,27 +896,44 @@ mod tests {
     #[test]
     fn nav_target_works_for_base_def_id() {
         let mut index = BTreeMap::new();
-        index.insert(7, DefInfo {
-            name: "Base.Model".into(),
-            kind: crate::worker::DefKind::Class,
-            class_type: Some("model".into()),
-            file_name: None,
-            line: None,
-        });
-        assert_eq!(nav_target("base_def_id", &json!(7), &index, &TreeOptions::default()).as_deref(), Some("Base.Model"));
+        index.insert(
+            7,
+            DefInfo {
+                name: "Base.Model".into(),
+                kind: crate::worker::DefKind::Class,
+                class_type: Some("model".into()),
+                file_name: None,
+                line: None,
+            },
+        );
+        assert_eq!(
+            nav_target("base_def_id", &json!(7), &index, &TreeOptions::default()).as_deref(),
+            Some("Base.Model")
+        );
     }
 
     #[test]
     fn nav_target_returns_none_for_non_numeric_value() {
         let mut index = BTreeMap::new();
-        index.insert(1, DefInfo {
-            name: "X".into(),
-            kind: crate::worker::DefKind::Class,
-            class_type: Some("model".into()),
-            file_name: None,
-            line: None,
-        });
-        assert!(nav_target("def_id", &json!("not a number"), &index, &TreeOptions::default()).is_none());
+        index.insert(
+            1,
+            DefInfo {
+                name: "X".into(),
+                kind: crate::worker::DefKind::Class,
+                class_type: Some("model".into()),
+                file_name: None,
+                line: None,
+            },
+        );
+        assert!(
+            nav_target(
+                "def_id",
+                &json!("not a number"),
+                &index,
+                &TreeOptions::default()
+            )
+            .is_none()
+        );
     }
 
     // --- def_annotation ---
@@ -846,13 +947,16 @@ mod tests {
     #[test]
     fn def_annotation_returns_label_for_class() {
         let mut index = BTreeMap::new();
-        index.insert(55, DefInfo {
-            name: "Modelica.SIunits.Angle".into(),
-            kind: crate::worker::DefKind::Class,
-            class_type: Some("type".into()),
-            file_name: None,
-            line: None,
-        });
+        index.insert(
+            55,
+            DefInfo {
+                name: "Modelica.SIunits.Angle".into(),
+                kind: crate::worker::DefKind::Class,
+                class_type: Some("type".into()),
+                file_name: None,
+                line: None,
+            },
+        );
         assert_eq!(
             def_annotation("type_def_id", &json!(55), &index).as_deref(),
             Some("type Modelica.SIunits.Angle"),
@@ -862,13 +966,16 @@ mod tests {
     #[test]
     fn def_annotation_returns_label_for_definition() {
         let mut index = BTreeMap::new();
-        index.insert(10, DefInfo {
-            name: "someComponent".into(),
-            kind: crate::worker::DefKind::Definition,
-            class_type: None,
-            file_name: None,
-            line: None,
-        });
+        index.insert(
+            10,
+            DefInfo {
+                name: "someComponent".into(),
+                kind: crate::worker::DefKind::Definition,
+                class_type: None,
+                file_name: None,
+                line: None,
+            },
+        );
         assert_eq!(
             def_annotation("def_id", &json!(10), &index).as_deref(),
             Some("someComponent"),
@@ -893,7 +1000,10 @@ mod tests {
         let mut set = HashSet::new();
         let found = collect_tracked_ancestors(&tree, "h", &mut set);
         assert!(found);
-        assert!(set.len() >= 2, "root and at least one intermediate should be in the set");
+        assert!(
+            set.len() >= 2,
+            "root and at least one intermediate should be in the set"
+        );
     }
 
     #[test]
@@ -939,7 +1049,10 @@ mod tests {
             let tree = json!({ *field: "height of h" });
             let mut set = HashSet::new();
             let found = collect_tracked_ancestors(&tree, "h", &mut set);
-            assert!(!found, "{field} is prose; a name inside it is not a mention");
+            assert!(
+                !found,
+                "{field} is prose; a name inside it is not a mention"
+            );
             assert!(set.is_empty(), "{field} must not drag its ancestors open");
         }
     }
@@ -956,8 +1069,13 @@ mod tests {
     #[test]
     fn trackable_name_requires_a_real_variable() {
         let known: HashSet<String> = ["h", "gear.flange_a.tau"]
-            .iter().map(|s| (*s).to_owned()).collect();
-        let opts = TreeOptions { known_variables: Some(&known), ..Default::default() };
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect();
+        let opts = TreeOptions {
+            known_variables: Some(&known),
+            ..Default::default()
+        };
         let s = |v: &str| json!(v);
 
         assert_eq!(trackable_name("name", &s("h"), &opts).as_deref(), Some("h"));
@@ -966,7 +1084,10 @@ mod tests {
             Some("gear.flange_a.tau")
         );
         // A derivative of a known variable is trackable; `strip_der` reduces it.
-        assert_eq!(trackable_name("name", &s("der(h)"), &opts).as_deref(), Some("der(h)"));
+        assert_eq!(
+            trackable_name("name", &s("der(h)"), &opts).as_deref(),
+            Some("der(h)")
+        );
 
         // Identifier-shaped, but not variables of this model — these are the
         // ones the syntactic version wrongly offered.

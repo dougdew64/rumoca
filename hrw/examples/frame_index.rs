@@ -61,8 +61,14 @@ fn main() {
     // correct by construction — but it holds no frames, because frames are a record
     // of an *execution* and a trace file is a record of a *result*. That distinction
     // is the whole reason the capture scopes exist.
-    let specimen = PathBuf::from(format!("{}/specimens/{model}.mo", env!("CARGO_MANIFEST_DIR")));
-    let libs = vec![PathBuf::from(format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR")))];
+    let specimen = PathBuf::from(format!(
+        "{}/specimens/{model}.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let libs = vec![PathBuf::from(format!(
+        "{}/vendor/msl",
+        env!("CARGO_MANIFEST_DIR")
+    ))];
     let compiled = match hrw::worker::compile_specimen(&specimen, libs) {
         Ok(c) => c,
         Err(e) => {
@@ -71,7 +77,12 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let hrw::worker::FromWorker::Compiled { stages, matching_frames, .. } = compiled else {
+    let hrw::worker::FromWorker::Compiled {
+        stages,
+        matching_frames,
+        ..
+    } = compiled
+    else {
         eprintln!("{model}: the worker returned something other than a compiled result");
         std::process::exit(1);
     };
@@ -110,7 +121,10 @@ fn main() {
     let vars = mat.unknown_names();
     let name = |v: &[String], i: usize| v.get(i).cloned().unwrap_or_else(|| format!("#{i}"));
 
-    println!("{model}: {} frames (captured during this compile)", anim.steps().len());
+    println!(
+        "{model}: {} frames (captured during this compile)",
+        anim.steps().len()
+    );
     println!("  link form:  hrw://stage/Structural/MatchingAnim/frame/<n>");
     println!();
 
@@ -148,9 +162,7 @@ fn main() {
                 Some(*var),
                 format!("ASSIGN {} := {}", name(vars, *var), name(eqs, *eq)),
             ),
-            MatchingStep::EquationFailed(e) => {
-                (None, format!("equation FAILED {}", name(eqs, *e)))
-            }
+            MatchingStep::EquationFailed(e) => (None, format!("equation FAILED {}", name(eqs, *e))),
         };
 
         if let Some(f) = &filter {
@@ -187,5 +199,7 @@ fn main() {
     }
     println!();
     println!("Frame numbers above are 0-based, as the algorithm's step list numbers them.");
-    println!("The links are 1-based, matching the counter on screen. Copy the link, not the number.");
+    println!(
+        "The links are 1-based, matching the counter on screen. Copy the link, not the number."
+    );
 }

@@ -53,7 +53,8 @@ pub fn ui(ui: &mut egui::Ui, entries: &[LogEntry], tracing_enabled: &mut bool) -
     // when the log is long. The checkbox mutates `tracing_enabled`; the caller
     // uses the `toggled` return value to know when to reconfigure the worker.
     ui.horizontal(|ui| {
-        if ui.checkbox(tracing_enabled, "Rumoca tracing")
+        if ui
+            .checkbox(tracing_enabled, "Rumoca tracing")
             .on_hover_text(
                 "Enable Rumoca\u{2019}s internal tracing (debug-level events from \
                  structural analysis, flatten, DAE construction, solvers). \
@@ -99,7 +100,6 @@ pub fn ui(ui: &mut egui::Ui, entries: &[LogEntry], tracing_enabled: &mut bool) -
         .auto_shrink(false)
         .stick_to_bottom(true)
         .show(ui, |ui| {
-
             for entry in entries {
                 let (prefix, color) = level_style(entry, ui);
                 // Each row: [elapsed ms] [level prefix] [message]
@@ -193,7 +193,10 @@ mod tests {
         for &level in ALL_LEVELS {
             let prefix = level_prefix(level);
             let trimmed = prefix.trim_start();
-            assert!(!trimmed.is_empty(), "prefix for {level:?} should not be blank");
+            assert!(
+                !trimmed.is_empty(),
+                "prefix for {level:?} should not be blank"
+            );
             let leading_spaces = prefix.len() - prefix.trim_start().len();
             // Every prefix should have at least some content
             assert!(
@@ -207,7 +210,10 @@ mod tests {
     fn level_prefix_all_variants_covered() {
         for &level in ALL_LEVELS {
             let prefix = level_prefix(level);
-            assert!(!prefix.is_empty(), "prefix for {level:?} should not be empty");
+            assert!(
+                !prefix.is_empty(),
+                "prefix for {level:?} should not be empty"
+            );
         }
     }
 

@@ -199,7 +199,10 @@ fn the_tours_header_counts_what_is_actually_on_disk() {
     let h = harness(App::test_default());
 
     let on_disk = crate::bridge::fixture_tours().len();
-    assert!(on_disk >= 7, "expected the committed fixtures, found {on_disk}");
+    assert!(
+        on_disk >= 7,
+        "expected the committed fixtures, found {on_disk}"
+    );
 
     // The ad hoc tour is offered too when `.hrw-bridge/tour.md` exists, so the
     // header is either the fixture count or one more.
@@ -296,7 +299,8 @@ fn clicking_a_tour_link_dispatches_it() {
     // accessibility tree but clipped by the scroll area, so the click lands on
     // nothing and the test reads as "the feature is broken" — the harness trap this
     // file's own header warns about.
-    h.get_by_label_contains("RcCircuit \u{2192} Structural").click();
+    h.get_by_label_contains("RcCircuit \u{2192} Structural")
+        .click();
     h.run_steps(2);
 
     assert_eq!(
@@ -326,7 +330,8 @@ fn a_link_far_down_a_long_tour_still_dispatches() {
     );
     h.run_steps(2);
 
-    h.get_by_label_contains("BouncingBall \u{2192} Structural").click();
+    h.get_by_label_contains("BouncingBall \u{2192} Structural")
+        .click();
     h.run_steps(2);
 
     assert_eq!(
@@ -361,7 +366,8 @@ fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
     h.run_steps(2);
     h.state_mut().test_clear_model();
 
-    h.get_by_label_contains("RcCircuit \u{2192} Structural").click();
+    h.get_by_label_contains("RcCircuit \u{2192} Structural")
+        .click();
     h.run_steps(2);
 
     assert_eq!(
@@ -410,7 +416,10 @@ fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
 
     // Non-vacuity: a real tour schedules many beats, not one.
     let (_, total) = h.state().test_autoplay_progress();
-    assert!(total >= 15, "the DAE tour should schedule ~20 beats, got {total}");
+    assert!(
+        total >= 15,
+        "the DAE tour should schedule ~20 beats, got {total}"
+    );
 
     // The readout is on screen. Its exact wording is the UI's business; that it
     // says *something* about which beat is showing is this test's business.
@@ -442,7 +451,10 @@ fn switching_tours_clears_the_stage_side_on_screen() {
         crate::worker::StageKind::Structural,
     );
     h.run_steps(2);
-    assert!(h.state().test_model().is_some(), "precondition: the RHS has something on it");
+    assert!(
+        h.state().test_model().is_some(),
+        "precondition: the RHS has something on it"
+    );
 
     // Now pick a *different* tour.
     h.get_by_label("the-oracle").click();
@@ -459,7 +471,6 @@ fn switching_tours_clears_the_stage_side_on_screen() {
         "and the stage returns to the start of the pipeline",
     );
 }
-
 
 /// A stop that needs a specimen is **refused, and says so where you can see it**.
 ///
@@ -548,7 +559,8 @@ fn a_tour_link_acts_when_clicked_in_isolation() {
 #[test]
 fn a_tour_link_can_address_a_corpus_model() {
     let mut h = harness(App::test_default());
-    h.state_mut().follow_link_for_test("hrw://load/Modelica.Electrical.Analog.Basic.Resistor");
+    h.state_mut()
+        .follow_link_for_test("hrw://load/Modelica.Electrical.Analog.Basic.Resistor");
     h.run_steps(2);
 
     assert_eq!(
@@ -582,7 +594,8 @@ fn the_load_verb_prefers_files_and_still_rejects_a_typo() {
     h.state_mut().follow_link_for_test("hrw://load/NoSuchThing");
     h.run_steps(2);
     assert!(
-        h.query_by_label_contains("not found: NoSuchThing").is_some(),
+        h.query_by_label_contains("not found: NoSuchThing")
+            .is_some(),
         "a bare unknown name is a typo and must be reported, not guessed at",
     );
 }
@@ -615,12 +628,12 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
         "the corpus must announce itself with NO filter typed — its absence is          indistinguishable from it not being implemented, which is how it was reported",
     );
     assert!(
-        h.query_by_label_contains("2626").is_some()
-            || h.query_by_label_contains("2,626").is_some(),
+        h.query_by_label_contains("2626").is_some() || h.query_by_label_contains("2,626").is_some(),
         "and it must say how many models it holds, so the header is evidence rather          than decoration",
     );
 
-    h.state_mut().test_set_filter("Spice3BenchmarkDifferentialPair");
+    h.state_mut()
+        .test_set_filter("Spice3BenchmarkDifferentialPair");
     h.run_steps(2);
 
     // The row renders its LEAF name; the qualified name is 60 characters and
@@ -655,12 +668,17 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
 fn the_background_names_both_the_specimen_and_the_stage() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("MotorWithBrake.mo", "MotorWithBrake", crate::worker::StageKind::Flatten);
+    app.test_set_walked_state(
+        "MotorWithBrake.mo",
+        "MotorWithBrake",
+        crate::worker::StageKind::Flatten,
+    );
     let mut h = harness(app);
     h.run_steps(2);
 
     assert!(
-        h.query_by_label_contains("MotorWithBrake \u{00b7} Flatten").is_some(),
+        h.query_by_label_contains("MotorWithBrake \u{00b7} Flatten")
+            .is_some(),
         "the specimen half of the background must be rendered",
     );
     assert!(
@@ -681,7 +699,11 @@ fn the_background_names_both_the_specimen_and_the_stage() {
 fn the_background_names_the_stage_before_a_model_exists() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("MotorWithBrake.mo", "MotorWithBrake", crate::worker::StageKind::Flatten);
+    app.test_set_walked_state(
+        "MotorWithBrake.mo",
+        "MotorWithBrake",
+        crate::worker::StageKind::Flatten,
+    );
     app.test_clear_model();
     let mut h = harness(app);
     h.run_steps(2);
@@ -739,7 +761,8 @@ fn opening_the_hrw_section_reveals_its_specimens() {
     h.run_steps(2);
 
     assert!(
-        h.query_by_label_contains("HRW specimens \u{2014} 2").is_some(),
+        h.query_by_label_contains("HRW specimens \u{2014} 2")
+            .is_some(),
         "the header must carry the count while collapsed, or opening it is a guess",
     );
     h.get_by_label_contains("HRW specimens").click();
@@ -769,7 +792,8 @@ fn a_filter_opens_both_sections() {
         "a filter must open the HRW section, not merely narrow a shut one",
     );
     assert!(
-        h.query_by_label_contains("HRW specimens \u{2014} 1 of 2").is_some(),
+        h.query_by_label_contains("HRW specimens \u{2014} 1 of 2")
+            .is_some(),
         "and the header must report the match count against the total",
     );
 }
@@ -864,7 +888,8 @@ fn the_status_bar_offers_the_idle_hint_when_there_is_no_notice() {
     let h = harness(App::test_default());
 
     assert!(
-        h.query_by_label_contains("Left-click a tree node").is_some(),
+        h.query_by_label_contains("Left-click a tree node")
+            .is_some(),
         "with nothing to report the status bar must still carry the opening hint",
     );
 }
@@ -973,7 +998,8 @@ fn the_source_view_says_when_nothing_is_selected() {
     let h = harness(app);
 
     assert!(
-        h.query_by_label_contains("Select a specimen to view its source").is_some(),
+        h.query_by_label_contains("Select a specimen to view its source")
+            .is_some(),
         "an unselected source view must invite a selection, not render blank",
     );
 }
@@ -996,7 +1022,9 @@ fn an_unreadable_library_file_reports_why() {
     let h = harness(app);
 
     assert!(
-        h.get_all_by_label_contains("cannot show this file").next().is_some(),
+        h.get_all_by_label_contains("cannot show this file")
+            .next()
+            .is_some(),
         "the pane must announce that it cannot show the file",
     );
     assert!(
@@ -1036,12 +1064,14 @@ fn a_library_model_awaiting_its_source_is_not_told_to_select_one() {
     // the latter *panics* when nothing matches, so it cannot express "must not be
     // present" at all. The sibling test above uses the same call for the same reason.
     assert!(
-        h.query_by_label_contains("Select a specimen to view its source").is_none(),
+        h.query_by_label_contains("Select a specimen to view its source")
+            .is_none(),
         "a model IS selected \u{2014} this sentence sends the reader to fix something \
          that is not broken",
     );
     assert!(
-        h.query_by_label_contains("has not arrived from the compiler").is_some(),
+        h.query_by_label_contains("has not arrived from the compiler")
+            .is_some(),
         "the pane must say why there is no text yet",
     );
     assert!(
@@ -1100,7 +1130,9 @@ fn the_purpose_tab_says_where_a_missing_note_would_live() {
     let h = harness(app);
 
     assert!(
-        h.get_all_by_label_contains("No purpose note for NoSuchSpecimen").next().is_some(),
+        h.get_all_by_label_contains("No purpose note for NoSuchSpecimen")
+            .next()
+            .is_some(),
         "the tab must name the model it found no note for",
     );
     assert!(
@@ -1124,7 +1156,9 @@ fn the_purpose_tab_distinguishes_waiting_from_missing() {
     let h = harness(app);
 
     assert!(
-        h.get_all_by_label_contains("Compiling RcCircuit").next().is_some(),
+        h.get_all_by_label_contains("Compiling RcCircuit")
+            .next()
+            .is_some(),
         "with a selection but no model yet, the tab must read as waiting",
     );
     assert!(
@@ -1142,7 +1176,9 @@ fn the_purpose_tab_says_when_nothing_is_selected() {
     let h = harness(app);
 
     assert!(
-        h.get_all_by_label_contains("Select a specimen to see its purpose").next().is_some(),
+        h.get_all_by_label_contains("Select a specimen to see its purpose")
+            .next()
+            .is_some(),
         "the third empty state needs its own words, or it collapses into one of the others",
     );
 }
@@ -1216,7 +1252,8 @@ fn the_stage_tabs_are_visible_before_a_specimen_is_chosen() {
     // The guidance still has to be there; showing tabs is not a reason to stop
     // saying what to do next.
     assert!(
-        h.query_by_label_contains("Select a specimen to compile").is_some(),
+        h.query_by_label_contains("Select a specimen to compile")
+            .is_some(),
         "and the row must not replace the instruction that tells the reader what to do",
     );
 }
@@ -1233,7 +1270,10 @@ fn the_split_opens_at_the_default_fraction() {
     app.test_set_ui_mode_specimen();
     let h = harness(app);
 
-    let f = h.state().test_split_fraction().expect("the panel must have been drawn");
+    let f = h
+        .state()
+        .test_split_fraction()
+        .expect("the panel must have been drawn");
     assert!(
         (f - 0.4).abs() < 0.05,
         "the left panel should open at 40% of the window; drew {f}",
@@ -1273,14 +1313,23 @@ fn the_split_rescales_when_the_window_resizes() {
         .with_size(eframe::egui::Vec2::new(5000.0, 1200.0))
         .build_ui_state(|ui, app: &mut App| app.frame_ui(ui), App::test_default());
     h.run_steps(2);
-    let wide = h.state().test_split_fraction().expect("drew at the bogus size");
-    assert!((wide - 0.4).abs() < 0.05, "precondition: 40% of the first size, got {wide}");
+    let wide = h
+        .state()
+        .test_split_fraction()
+        .expect("drew at the bogus size");
+    assert!(
+        (wide - 0.4).abs() < 0.05,
+        "precondition: 40% of the first size, got {wide}"
+    );
 
     // The window turns out to be far smaller — as it is on the first real frame.
     h.set_size(eframe::egui::Vec2::new(1720.0, 1200.0));
     h.run_steps(3);
 
-    let after = h.state().test_split_fraction().expect("drew at the real size");
+    let after = h
+        .state()
+        .test_split_fraction()
+        .expect("drew at the real size");
     assert!(
         (after - 0.4).abs() < 0.05,
         "the split must stay 40% of whatever the window is; it drew {after}. A stored \
@@ -1343,7 +1392,10 @@ fn the_stored_panel_width_matches_what_was_drawn() {
     )
     .expect("the panel stores its width once drawn");
 
-    let drawn = h.state().test_split_fraction().expect("and the app records it");
+    let drawn = h
+        .state()
+        .test_split_fraction()
+        .expect("and the app records it");
     let stored_fraction = stored.size().x / 1600.0;
     assert!(
         (stored_fraction - drawn).abs() < 0.01,
@@ -1372,7 +1424,10 @@ fn both_modes_open_at_the_same_split() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     let specimen = harness(app);
-    let specimen_f = specimen.state().test_split_fraction().expect("specimen panel drew");
+    let specimen_f = specimen
+        .state()
+        .test_split_fraction()
+        .expect("specimen panel drew");
 
     assert!(
         (tour_f - specimen_f).abs() < 0.001,
@@ -1432,10 +1487,19 @@ fn switching_modes_queues_a_split_reset() {
 fn the_chrome_stays_on_screen_at_every_width() {
     // 800x600 is egui's own default and the smallest anyone would plausibly use;
     // 1600x1200 is what the rest of this file runs at.
-    for (w, h) in [(1600.0_f32, 1200.0_f32), (1280.0, 900.0), (1024.0, 768.0), (800.0, 600.0)] {
+    for (w, h) in [
+        (1600.0_f32, 1200.0_f32),
+        (1280.0, 900.0),
+        (1024.0, 768.0),
+        (800.0, 600.0),
+    ] {
         let mut app = App::test_default();
         app.test_set_ui_mode_specimen();
-        app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Flatten);
+        app.test_set_walked_state(
+            "RcCircuit.mo",
+            "RcCircuit",
+            crate::worker::StageKind::Flatten,
+        );
         let mut h_ = Harness::builder()
             .with_size(eframe::egui::Vec2::new(w, h))
             .build_ui_state(|ui, app: &mut App| app.frame_ui(ui), app);
@@ -1501,9 +1565,15 @@ fn clicking_a_stage_tab_leaves_the_log_view() {
     app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_view_log();
     let mut h = harness(app);
-    assert!(h.state().test_viewing_log(), "precondition: the log is showing");
+    assert!(
+        h.state().test_viewing_log(),
+        "precondition: the log is showing"
+    );
 
-    h.get_all_by_label_contains("Flatten").next().expect("a Flatten tab").click();
+    h.get_all_by_label_contains("Flatten")
+        .next()
+        .expect("a Flatten tab")
+        .click();
     h.run_steps(2);
 
     assert_eq!(
@@ -1549,7 +1619,8 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
         // "exactly one thing on screen mentions it", and it broke on 2026-08-04 when
         // the source pane legitimately started rendering. See the sweep note in
         // `docs/tech-debt.md`.
-        h.query_by_label_contains("\u{00b7} RcCircuit \u{00b7}").is_some(),
+        h.query_by_label_contains("\u{00b7} RcCircuit \u{00b7}")
+            .is_some(),
         "precondition: the Context Bar names the specimen even with nothing pointed at",
     );
     assert!(
@@ -1557,7 +1628,10 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
         "precondition: nothing is pointed at yet",
     );
 
-    h.get_all_by_label_contains("Flatten").next().expect("a Flatten tab").click();
+    h.get_all_by_label_contains("Flatten")
+        .next()
+        .expect("a Flatten tab")
+        .click();
     h.run_steps(2);
 
     assert!(
@@ -1577,9 +1651,16 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
 fn the_log_button_returns_without_changing_the_stage() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Flatten);
+    app.test_set_walked_state(
+        "RcCircuit.mo",
+        "RcCircuit",
+        crate::worker::StageKind::Flatten,
+    );
     let mut h = harness(app);
-    assert!(!h.state().test_viewing_log(), "precondition: a stage is showing, not the log");
+    assert!(
+        !h.state().test_viewing_log(),
+        "precondition: a stage is showing, not the log"
+    );
 
     // **Exact label, not .** Several nodes carry "Log" as a substring,
     // and the first one  returns is not the button -- the click landed
@@ -1587,7 +1668,10 @@ fn the_log_button_returns_without_changing_the_stage() {
     h.get_by_label("Log").click();
     h.run_steps(2);
 
-    assert!(h.state().test_viewing_log(), "the Log button must show the log");
+    assert!(
+        h.state().test_viewing_log(),
+        "the Log button must show the log"
+    );
     assert_eq!(
         h.state().test_stage(),
         crate::worker::StageKind::Flatten,

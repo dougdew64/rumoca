@@ -55,7 +55,9 @@ impl EquationCategory {
     pub fn description(self) -> &'static str {
         match self {
             Self::Component => "Equations from component instances (their equation sections)",
-            Self::Connection => "Equality constraints from connect() statements (potential variables)",
+            Self::Connection => {
+                "Equality constraints from connect() statements (potential variables)"
+            }
             Self::FlowSum => "Flow conservation: sum of signed flows = 0 at each connection node",
             Self::Binding => "Variable bindings from declarations (parameter values, fixed starts)",
             Self::Event => "Discrete assignments from when/elsewhen clauses and reinit",
@@ -141,9 +143,10 @@ fn scan_connect_statements(source: &str) -> Vec<(u32, String, String)> {
         let trimmed = line.trim();
         if let Some(rest) = trimmed.strip_prefix("connect(")
             && let Some(args) = rest.strip_suffix(");")
-                && let Some((a, b)) = args.split_once(',') {
-                    result.push((i as u32 + 1, a.trim().to_owned(), b.trim().to_owned()));
-                }
+            && let Some((a, b)) = args.split_once(',')
+        {
+            result.push((i as u32 + 1, a.trim().to_owned(), b.trim().to_owned()));
+        }
     }
     result
 }
@@ -160,10 +163,7 @@ fn scan_connect_statements(source: &str) -> Vec<(u32, String, String)> {
 /// **Flow sums** (`A.tau + B.tau + C.tau = 0`): always return every connect()
 /// that mentions any of the summed variables, because the conservation
 /// equation is a property of the whole equivalence-class node.
-fn match_connection_to_source(
-    origin: &str,
-    connects: &[(u32, String, String)],
-) -> Vec<u32> {
+fn match_connection_to_source(origin: &str, connects: &[(u32, String, String)]) -> Vec<u32> {
     let is_flow;
     let vars: Vec<&str> = if let Some(rest) = origin.strip_prefix("connection equation: ") {
         is_flow = false;
@@ -192,9 +192,11 @@ fn match_connection_to_source(
 
     // Flow sums always, connection equations when no strict match (transitive):
     // collect every connect() that mentions any variable.
-    let mut lines: Vec<u32> = connects.iter()
+    let mut lines: Vec<u32> = connects
+        .iter()
         .filter(|(_, a, b)| {
-            vars.iter().any(|v| v.starts_with(a.as_str()) || v.starts_with(b.as_str()))
+            vars.iter()
+                .any(|v| v.starts_with(a.as_str()) || v.starts_with(b.as_str()))
         })
         .map(|(line, _, _)| *line)
         .collect();
@@ -238,36 +240,38 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
                 }
                 EquationCategory::Component => {
                     if let Some(comp) = origin.strip_prefix("equation from ") {
-                        source_text.and_then(|src| {
-                            src.lines().enumerate().find_map(|(li, line)| {
-                                let trimmed = line.trim().trim_end_matches(';');
-                                if trimmed.contains(comp) && !trimmed.starts_with("//") {
-                                    Some(li as u32 + 1)
-                                } else {
-                                    None
-                                }
+                        source_text
+                            .and_then(|src| {
+                                src.lines().enumerate().find_map(|(li, line)| {
+                                    let trimmed = line.trim().trim_end_matches(';');
+                                    if trimmed.contains(comp) && !trimmed.starts_with("//") {
+                                        Some(li as u32 + 1)
+                                    } else {
+                                        None
+                                    }
+                                })
                             })
-                        })
-                        .into_iter()
-                        .collect()
+                            .into_iter()
+                            .collect()
                     } else {
                         Vec::new()
                     }
                 }
                 EquationCategory::Binding => {
                     if let Some(var) = origin.strip_prefix("binding equation for ") {
-                        source_text.and_then(|src| {
-                            src.lines().enumerate().find_map(|(li, line)| {
-                                let trimmed = line.trim();
-                                if trimmed.contains(var) && !trimmed.starts_with("//") {
-                                    Some(li as u32 + 1)
-                                } else {
-                                    None
-                                }
+                        source_text
+                            .and_then(|src| {
+                                src.lines().enumerate().find_map(|(li, line)| {
+                                    let trimmed = line.trim();
+                                    if trimmed.contains(var) && !trimmed.starts_with("//") {
+                                        Some(li as u32 + 1)
+                                    } else {
+                                        None
+                                    }
+                                })
                             })
-                        })
-                        .into_iter()
-                        .collect()
+                            .into_iter()
+                            .collect()
                     } else {
                         Vec::new()
                     }
@@ -278,13 +282,16 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
 
         all_equations.push((i, category, source_lines.clone()));
 
-        by_category.entry(category).or_default().push(FormattedEquation {
-            index: i,
-            text,
-            origin,
-            category,
-            source_lines,
-        });
+        by_category
+            .entry(category)
+            .or_default()
+            .push(FormattedEquation {
+                index: i,
+                text,
+                origin,
+                category,
+                source_lines,
+            });
     }
 
     // BTreeMap iterates in key order, which uses the Ord impl (cmp_key),
@@ -402,14 +409,35 @@ mod tests {
 
     #[test]
     fn categorize_origin_covers_all_variants() {
-        assert_eq!(categorize_origin("equation from motor"), EquationCategory::Component);
-        assert_eq!(categorize_origin("top-level model equation"), EquationCategory::Component);
-        assert_eq!(categorize_origin("connection equation: a = b"), EquationCategory::Connection);
-        assert_eq!(categorize_origin("flow sum: ..."), EquationCategory::FlowSum);
-        assert_eq!(categorize_origin("unconnected flow x"), EquationCategory::FlowSum);
-        assert_eq!(categorize_origin("binding for p"), EquationCategory::Binding);
+        assert_eq!(
+            categorize_origin("equation from motor"),
+            EquationCategory::Component
+        );
+        assert_eq!(
+            categorize_origin("top-level model equation"),
+            EquationCategory::Component
+        );
+        assert_eq!(
+            categorize_origin("connection equation: a = b"),
+            EquationCategory::Connection
+        );
+        assert_eq!(
+            categorize_origin("flow sum: ..."),
+            EquationCategory::FlowSum
+        );
+        assert_eq!(
+            categorize_origin("unconnected flow x"),
+            EquationCategory::FlowSum
+        );
+        assert_eq!(
+            categorize_origin("binding for p"),
+            EquationCategory::Binding
+        );
         assert_eq!(categorize_origin("reinit of v"), EquationCategory::Event);
-        assert_eq!(categorize_origin("when assignment x"), EquationCategory::Event);
+        assert_eq!(
+            categorize_origin("when assignment x"),
+            EquationCategory::Event
+        );
     }
 
     #[test]
@@ -443,12 +471,18 @@ mod tests {
         ];
         // Direct connection: both vars from one connect → single line.
         assert_eq!(
-            match_connection_to_source("connection equation: motor.flange.phi = rotor.flange_a.phi", &conns),
+            match_connection_to_source(
+                "connection equation: motor.flange.phi = rotor.flange_a.phi",
+                &conns
+            ),
             vec![10],
         );
         // Flow sum with two vars from one connect → that line.
         assert_eq!(
-            match_connection_to_source("flow sum equation: motor.flange.tau + rotor.flange_a.tau = 0", &conns),
+            match_connection_to_source(
+                "flow sum equation: motor.flange.tau + rotor.flange_a.tau = 0",
+                &conns
+            ),
             vec![10],
         );
         // Non-connection origin → empty.
@@ -465,13 +499,19 @@ mod tests {
         //   line 54: connect(brakeTorque.flange, load.flange_b)
         let conns = vec![
             (50, "load.flange_b".to_owned(), "spring.flange_a".to_owned()),
-            (54, "brakeTorque.flange".to_owned(), "load.flange_b".to_owned()),
+            (
+                54,
+                "brakeTorque.flange".to_owned(),
+                "load.flange_b".to_owned(),
+            ),
         ];
 
         // Direct connection: both vars from line 50 → single line.
         assert_eq!(
             match_connection_to_source(
-                "connection equation: load.flange_b.phi = spring.flange_a.phi", &conns),
+                "connection equation: load.flange_b.phi = spring.flange_a.phi",
+                &conns
+            ),
             vec![50],
         );
 
@@ -479,7 +519,9 @@ mod tests {
         // (line 54). No single connect has both → returns both lines.
         assert_eq!(
             match_connection_to_source(
-                "connection equation: spring.flange_a.phi = brakeTorque.flange.phi", &conns),
+                "connection equation: spring.flange_a.phi = brakeTorque.flange.phi",
+                &conns
+            ),
             vec![50, 54],
         );
 
@@ -505,7 +547,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn build_on_real_specimen() {
         let specimen = std::path::PathBuf::from(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -517,8 +562,8 @@ mod tests {
             std::path::PathBuf::from(format!("{msl_base}/ModelicaServices 4.1.0")),
             std::path::PathBuf::from(format!("{msl_base}/Complex.mo")),
         ];
-        let result = crate::worker::compile_specimen(&specimen, libraries)
-            .expect("compile_specimen");
+        let result =
+            crate::worker::compile_specimen(&specimen, libraries).expect("compile_specimen");
         let crate::worker::FromWorker::Compiled { equation_sheet, .. } = result else {
             panic!("expected Compiled");
         };
@@ -537,12 +582,21 @@ mod tests {
         }
 
         assert!(!sheet.source_lines.is_empty(), "should have source lines");
-        let has_linked = sheet.source_lines.iter().any(|sl| !sl.equation_indices.is_empty());
-        assert!(has_linked, "at least one source line should link to an equation");
+        let has_linked = sheet
+            .source_lines
+            .iter()
+            .any(|sl| !sl.equation_indices.is_empty());
+        assert!(
+            has_linked,
+            "at least one source line should link to an equation"
+        );
     }
 
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn gear_with_brake_all_equations_linked_to_source() {
         let specimen = std::path::PathBuf::from(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -554,32 +608,40 @@ mod tests {
             std::path::PathBuf::from(format!("{msl_base}/ModelicaServices 4.1.0")),
             std::path::PathBuf::from(format!("{msl_base}/Complex.mo")),
         ];
-        let result = crate::worker::compile_specimen(&specimen, libraries)
-            .expect("compile_specimen");
+        let result =
+            crate::worker::compile_specimen(&specimen, libraries).expect("compile_specimen");
         let crate::worker::FromWorker::Compiled { equation_sheet, .. } = result else {
             panic!("expected Compiled");
         };
         let sheet = equation_sheet.expect("equation_sheet");
 
-        let linked: Vec<_> = sheet.groups.iter()
+        let linked: Vec<_> = sheet
+            .groups
+            .iter()
             .flat_map(|(_, eqs)| eqs)
             .filter(|eq| !eq.source_lines.is_empty())
             .collect();
         let total = sheet.n_equations;
 
         assert_eq!(
-            linked.len(), total,
+            linked.len(),
+            total,
             "expected all {total} equations linked, got {}",
             linked.len(),
         );
 
         // Connection equations should point to connect() lines (45-54).
-        let conn_lines: Vec<u32> = sheet.groups.iter()
+        let conn_lines: Vec<u32> = sheet
+            .groups
+            .iter()
             .filter(|(cat, _)| *cat == EquationCategory::Connection)
             .flat_map(|(_, eqs)| eqs)
             .flat_map(|eq| eq.source_lines.iter().copied())
             .collect();
-        assert!(!conn_lines.is_empty(), "connection equations should have source lines");
+        assert!(
+            !conn_lines.is_empty(),
+            "connection equations should have source lines"
+        );
         assert!(
             conn_lines.iter().all(|&ln| (45..=54).contains(&ln)),
             "connection equations should point to connect() lines (45-54), got {:?}",

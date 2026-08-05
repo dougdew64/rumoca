@@ -173,7 +173,11 @@ impl TourState {
 
         // A selection that no longer exists (the ad hoc tour was deleted, a fixture
         // renamed) must not leave stale text on screen attributed to a live file.
-        if self.selected.as_ref().is_some_and(|t| !self.available.contains(t)) {
+        if self
+            .selected
+            .as_ref()
+            .is_some_and(|t| !self.available.contains(t))
+        {
             self.selected = None;
             self.cached = None;
         }
@@ -188,14 +192,16 @@ impl TourState {
             return newly_selected;
         };
         let path = selected.path();
-        let mtime = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok());
+        let mtime = std::fs::metadata(&path)
+            .ok()
+            .and_then(|m| m.modified().ok());
         match mtime {
             Some(mtime) => {
-                let unchanged =
-                    self.cached.as_ref().is_some_and(|(_, seen)| *seen == mtime);
+                let unchanged = self.cached.as_ref().is_some_and(|(_, seen)| *seen == mtime);
                 if !unchanged || list_changed {
-                    self.cached =
-                        std::fs::read_to_string(&path).ok().map(|text| (text, mtime));
+                    self.cached = std::fs::read_to_string(&path)
+                        .ok()
+                        .map(|text| (text, mtime));
                 }
             }
             // The file vanished between listing and reading. Drop the text rather

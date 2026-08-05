@@ -91,7 +91,10 @@ pub struct TearingAnimation {
 /// Scalar BLT blocks are skipped — a 1x1 block is already causal and there is
 /// nothing to tear. A model with no algebraic loop therefore produces no
 /// frames at all, which the view reports as "no algebraic loops".
-pub fn walk_blocks(dae: &rumoca_ir_dae::Dae, emit: &dyn Fn(usize, TearingFrame)) -> Vec<BlockNames> {
+pub fn walk_blocks(
+    dae: &rumoca_ir_dae::Dae,
+    emit: &dyn Fn(usize, TearingFrame),
+) -> Vec<BlockNames> {
     use rumoca_phase_structural::BltBlock;
 
     let inc = rumoca_phase_structural::build_incidence(dae);
@@ -109,7 +112,11 @@ pub fn walk_blocks(dae: &rumoca_ir_dae::Dae, emit: &dyn Fn(usize, TearingFrame))
 
     let mut names = Vec::new();
     for block in &blt {
-        let BltBlock::AlgebraicLoop { equations, unknowns } = block else {
+        let BltBlock::AlgebraicLoop {
+            equations,
+            unknowns,
+        } = block
+        else {
             continue;
         };
         let index = names.len();
@@ -214,7 +221,10 @@ impl TearingAnimation {
             .iter()
             .enumerate()
             .flat_map(|(block, seg)| {
-                seg.iter().map(move |frame| BlockFrame { block, frame: frame.clone() })
+                seg.iter().map(move |frame| BlockFrame {
+                    block,
+                    frame: frame.clone(),
+                })
             })
             .collect();
 
@@ -266,7 +276,10 @@ impl TearingAnimation {
             })
             .ok()?;
 
-        Some(Self { playback: Playback::live(rx, done, FRAME_INTERVAL), blocks })
+        Some(Self {
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
+            blocks,
+        })
     }
 
     /// The tear variables this replay decided on, by name, across every block.
@@ -395,11 +408,13 @@ fn step_style(bf: &BlockFrame, names: &BlockNames) -> (&'static str, egui::Color
         TearingStep::Start { n } => (
             "\u{1f3ac}",
             crate::colors::ANIM_EXPLORE,
-            format!(
-                "An algebraic loop: {n} equations in {n} unknowns, none solvable on its own",
-            ),
+            format!("An algebraic loop: {n} equations in {n} unknowns, none solvable on its own",),
         ),
-        TearingStep::Torn { variable, appearances, remaining_equations } => (
+        TearingStep::Torn {
+            variable,
+            appearances,
+            remaining_equations,
+        } => (
             "\u{2702}",
             crate::colors::ANIM_PATH_FOUND,
             // The greedy choice. `appearances` is the reason it won, and saying
@@ -410,7 +425,11 @@ fn step_style(bf: &BlockFrame, names: &BlockNames) -> (&'static str, egui::Color
                 name_of(&names.unknowns, *variable),
             ),
         ),
-        TearingStep::Causal { equation, variable, competitors } => (
+        TearingStep::Causal {
+            equation,
+            variable,
+            competitors,
+        } => (
             "\u{2b07}",
             crate::colors::MATCHED_MARKER,
             // The cascade. `competitors` says how crowded the equation was
@@ -465,19 +484,19 @@ fn render_running_state(ui: &mut egui::Ui, bf: &BlockFrame, names: &BlockNames) 
         .color(crate::colors::ANIM_EXPLORE),
     );
 
-    let torn: Vec<String> =
-        bf.frame.tears_so_far.iter().map(|&v| name_of(&names.unknowns, v)).collect();
+    let torn: Vec<String> = bf
+        .frame
+        .tears_so_far
+        .iter()
+        .map(|&v| name_of(&names.unknowns, v))
+        .collect();
     let causal = bf.frame.causal_so_far.len();
 
     ui.add_space(4.0);
     ui.label(if torn.is_empty() {
         "Nothing torn yet.".to_owned()
     } else {
-        format!(
-            "Torn so far ({}): {}",
-            torn.len(),
-            torn.join(", "),
-        )
+        format!("Torn so far ({}): {}", torn.len(), torn.join(", "),)
     });
     ui.label(format!(
         "{causal} of {n} equations made causal \u{2014} {} still tangled",
@@ -533,7 +552,11 @@ mod tests {
     #[test]
     fn the_reasons_reach_the_summary() {
         let torn = bf(
-            TearingStep::Torn { variable: 0, appearances: 3, remaining_equations: 3 },
+            TearingStep::Torn {
+                variable: 0,
+                appearances: 3,
+                remaining_equations: 3,
+            },
             &[0],
             &[],
         );
@@ -541,8 +564,15 @@ mod tests {
         assert!(s.contains("command"), "{s}");
         assert!(s.contains('3'), "the appearance count is the reason: {s}");
 
-        let causal =
-            bf(TearingStep::Causal { equation: 1, variable: 1, competitors: 1 }, &[0], &[(1, 1)]);
+        let causal = bf(
+            TearingStep::Causal {
+                equation: 1,
+                variable: 1,
+                competitors: 1,
+            },
+            &[0],
+            &[(1, 1)],
+        );
         let s = step_summary(&causal, &names());
         assert!(s.contains("f_x[1]") && s.contains("error"), "{s}");
         // competitors + 1 = the crowd before the tears knocked them out.
@@ -554,9 +584,20 @@ mod tests {
     fn every_step_renders() {
         for step in [
             TearingStep::Start { n: 3 },
-            TearingStep::Torn { variable: 0, appearances: 3, remaining_equations: 3 },
-            TearingStep::Causal { equation: 0, variable: 1, competitors: 0 },
-            TearingStep::Complete { tears: 1, residuals: 1 },
+            TearingStep::Torn {
+                variable: 0,
+                appearances: 3,
+                remaining_equations: 3,
+            },
+            TearingStep::Causal {
+                equation: 0,
+                variable: 1,
+                competitors: 0,
+            },
+            TearingStep::Complete {
+                tears: 1,
+                residuals: 1,
+            },
             TearingStep::NoProgress,
         ] {
             assert!(!step_summary(&bf(step, &[], &[]), &names()).is_empty());
@@ -570,7 +611,15 @@ mod tests {
     #[test]
     fn an_unknown_index_degrades_rather_than_panics() {
         let s = step_summary(
-            &bf(TearingStep::Torn { variable: 99, appearances: 1, remaining_equations: 1 }, &[], &[]),
+            &bf(
+                TearingStep::Torn {
+                    variable: 99,
+                    appearances: 1,
+                    remaining_equations: 1,
+                },
+                &[],
+                &[],
+            ),
             &BlockNames::default(),
         );
         assert!(s.contains("#99"), "{s}");
@@ -583,7 +632,11 @@ mod tests {
         let anim = TearingAnimation {
             playback: Playback::recorded(
                 vec![bf(
-                    TearingStep::Causal { equation: 1, variable: 1, competitors: 1 },
+                    TearingStep::Causal {
+                        equation: 1,
+                        variable: 1,
+                        competitors: 1,
+                    },
                     &[0],
                     &[(1, 1)],
                 )],
@@ -591,9 +644,14 @@ mod tests {
             ),
             blocks: vec![names()],
         };
-        let ctx = anim.current_frame_context().expect("a frame is under the cursor");
+        let ctx = anim
+            .current_frame_context()
+            .expect("a frame is under the cursor");
         assert_eq!(ctx["torn_so_far"], serde_json::json!(["command"]));
-        assert_eq!(ctx["causal_so_far"], serde_json::json!(["f_x[1] solves error"]));
+        assert_eq!(
+            ctx["causal_so_far"],
+            serde_json::json!(["f_x[1] solves error"])
+        );
         assert_eq!(ctx["block_size"], serde_json::json!(3));
         assert_eq!(anim.which(), "tearing");
     }
@@ -623,13 +681,23 @@ mod tests {
         assert_eq!(anim.blocks.len(), 1, "exactly one algebraic loop");
         assert_eq!(anim.blocks[0].unknowns.len(), 3, "a 3x3 loop");
 
-        let steps: Vec<&TearingStep> =
-            anim.playback.frames().iter().map(|bf| &bf.frame.step).collect();
-        assert!(matches!(steps.first(), Some(TearingStep::Start { n: 3 })), "{steps:?}");
+        let steps: Vec<&TearingStep> = anim
+            .playback
+            .frames()
+            .iter()
+            .map(|bf| &bf.frame.step)
+            .collect();
+        assert!(
+            matches!(steps.first(), Some(TearingStep::Start { n: 3 })),
+            "{steps:?}"
+        );
         assert!(
             steps.iter().any(|s| matches!(s, TearingStep::Torn { .. })),
             "something must get torn: {steps:?}",
         );
-        assert!(matches!(steps.last(), Some(TearingStep::Complete { .. })), "{steps:?}");
+        assert!(
+            matches!(steps.last(), Some(TearingStep::Complete { .. })),
+            "{steps:?}"
+        );
     }
 }

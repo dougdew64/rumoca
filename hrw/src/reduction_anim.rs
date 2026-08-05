@@ -6,16 +6,14 @@
 //! - **Live**: reads frames from an `mpsc` channel receiver as a debugger
 //!   steps through the algorithm on a worker thread
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use eframe::egui;
 
 use rumoca_phase_structural::LiveTrace;
-use rumoca_phase_structural::dae_prepare::{
-    IndexReductionFrame, IndexReductionStep,
-};
+use rumoca_phase_structural::dae_prepare::{IndexReductionFrame, IndexReductionStep};
 
 use crate::expr_format;
 use crate::playback::{Animated, Playback};
@@ -37,7 +35,9 @@ pub struct ReductionAnimation {
 impl ReductionAnimation {
     /// Build the animation from pre-recorded frames (recorded mode).
     pub fn from_frames(frames: Vec<IndexReductionFrame>) -> Self {
-        Self { playback: Playback::recorded(frames, FRAME_INTERVAL) }
+        Self {
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
+        }
     }
 
     /// Start a live debug session: spawn a thread that runs the index
@@ -66,13 +66,17 @@ impl ReductionAnimation {
                 // `rumoca_core::FrameObserver`.
                 let observe = |f: &IndexReductionFrame| lt.push(f.clone());
                 rumoca_phase_structural::dae_prepare::emit_index_reduction_start(
-                    &mut frames, Some(&observe), &dae, &demoted_so_far,
+                    &mut frames,
+                    Some(&observe),
+                    &dae,
+                    &demoted_so_far,
                 );
                 let _ = rumoca_phase_structural::dae_prepare
                     ::reduce_constrained_dummy_derivatives_with_trace(
                         &mut dae, Some(&observe), &mut frames, &mut demoted_so_far,
                     );
-                let round_offset = frames.iter()
+                let round_offset = frames
+                    .iter()
                     .filter_map(|f| match &f.step {
                         IndexReductionStep::RoundComplete { round, .. } => Some(*round + 1),
                         _ => None,
@@ -89,7 +93,9 @@ impl ReductionAnimation {
             })
             .ok()?;
 
-        Some(Self { playback: Playback::live(rx, done, FRAME_INTERVAL) })
+        Some(Self {
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
+        })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -101,12 +107,7 @@ impl ReductionAnimation {
     /// Returns `true` on the frame the Debug button is clicked — the caller
     /// owns the bridge state needed to actually arm a session.
     #[must_use]
-    pub fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        arming: bool,
-        debug_enabled: bool,
-    ) -> bool {
+    pub fn ui(&mut self, ui: &mut egui::Ui, arming: bool, debug_enabled: bool) -> bool {
         self.playback.sync_live();
         let live = self.playback.live_state(arming);
 
@@ -254,7 +255,10 @@ fn step_style(frame: &IndexReductionFrame) -> (&'static str, egui::Color32, Stri
             crate::colors::MATCHED_MARKER,
             format!("State {state} demoted to algebraic"),
         ),
-        IndexReductionStep::RoundComplete { round, demotions_this_round } => (
+        IndexReductionStep::RoundComplete {
+            round,
+            demotions_this_round,
+        } => (
             "\u{2705}",
             crate::colors::ANIM_PATH_FOUND,
             format!("Round {round} complete: {demotions_this_round} demotion(s)"),
@@ -267,23 +271,29 @@ fn render_start_states(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
     // List the starting states, laid out like the "Demoted states" table below
     // so the before/after comparison reads as a pair.
     if let IndexReductionStep::Start { states, .. } = &frame.step
-        && !states.is_empty() {
-            ui.add_space(4.0);
-            ui.label(egui::RichText::new("States entering reduction").strong());
-            egui::Grid::new("start_states_grid")
-                .num_columns(2)
-                .spacing([12.0, 2.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    for (i, name) in states.iter().enumerate() {
-                        ui.label(format!("{}.", i + 1));
-                        ui.label(egui::RichText::new(name).monospace());
-                        ui.end_row();
-                    }
-                });
-        }
+        && !states.is_empty()
+    {
+        ui.add_space(4.0);
+        ui.label(egui::RichText::new("States entering reduction").strong());
+        egui::Grid::new("start_states_grid")
+            .num_columns(2)
+            .spacing([12.0, 2.0])
+            .striped(true)
+            .show(ui, |ui| {
+                for (i, name) in states.iter().enumerate() {
+                    ui.label(format!("{}.", i + 1));
+                    ui.label(egui::RichText::new(name).monospace());
+                    ui.end_row();
+                }
+            });
+    }
 
-    if let IndexReductionStep::Differentiated { before_rhs, after_rhs, .. } = &frame.step {
+    if let IndexReductionStep::Differentiated {
+        before_rhs,
+        after_rhs,
+        ..
+    } = &frame.step
+    {
         let before = expr_format::format_expr(before_rhs);
         let after = expr_format::format_expr(after_rhs);
         ui.add_space(4.0);
@@ -315,9 +325,11 @@ fn render_state_table(ui: &mut egui::Ui, frame: &IndexReductionFrame) {
         .show(ui, |ui| {
             for (i, name) in frame.demoted_so_far.iter().enumerate() {
                 ui.label(format!("{}.", i + 1));
-                ui.label(egui::RichText::new(name).monospace().color(
-                    crate::colors::MATCHED_MARKER,
-                ));
+                ui.label(
+                    egui::RichText::new(name)
+                        .monospace()
+                        .color(crate::colors::MATCHED_MARKER),
+                );
                 ui.end_row();
             }
         });
@@ -339,12 +351,16 @@ mod tests {
     fn the_capture_gets_the_same_step_description_the_view_draws() {
         let frames = vec![
             IndexReductionFrame {
-                step: IndexReductionStep::BeginState { state: "emf.phi".into() },
+                step: IndexReductionStep::BeginState {
+                    state: "emf.phi".into(),
+                },
                 demoted_so_far: vec![],
                 round: 0,
             },
             IndexReductionFrame {
-                step: IndexReductionStep::Demoted { state: "emf.phi".into() },
+                step: IndexReductionStep::Demoted {
+                    state: "emf.phi".into(),
+                },
                 demoted_so_far: vec!["emf.phi".into()],
                 round: 1,
             },
@@ -352,7 +368,9 @@ mod tests {
         let expected_first = step_summary(&frames[0]);
         let mut anim = ReductionAnimation::from_frames(frames);
 
-        let ctx = anim.current_frame_context().expect("a frame is under the cursor");
+        let ctx = anim
+            .current_frame_context()
+            .expect("a frame is under the cursor");
         assert_eq!(ctx["step"], serde_json::json!(expected_first));
         assert_eq!(ctx["round"], serde_json::json!(0));
         assert_eq!(ctx["demoted_so_far"], serde_json::json!([]));
@@ -362,7 +380,10 @@ mod tests {
         // frame number does.
         *anim.playback.controls().cursor = 1;
         let ctx = anim.current_frame_context().expect("frame 1");
-        assert!(ctx["step"].as_str().is_some_and(|s| s.contains("demoted")), "{ctx}");
+        assert!(
+            ctx["step"].as_str().is_some_and(|s| s.contains("demoted")),
+            "{ctx}"
+        );
         assert_eq!(ctx["round"], serde_json::json!(1));
         assert_eq!(ctx["demoted_so_far"], serde_json::json!(["emf.phi"]));
     }
@@ -403,16 +424,23 @@ mod tests {
 
     #[test]
     fn current_frame_returns_correct_frame() {
-        let frames = vec![
-            IndexReductionFrame {
-                step: IndexReductionStep::RoundComplete { round: 0, demotions_this_round: 3 },
-                demoted_so_far: vec!["a".into(), "b".into(), "c".into()],
+        let frames = vec![IndexReductionFrame {
+            step: IndexReductionStep::RoundComplete {
                 round: 0,
+                demotions_this_round: 3,
             },
-        ];
+            demoted_so_far: vec!["a".into(), "b".into(), "c".into()],
+            round: 0,
+        }];
         let anim = ReductionAnimation::from_frames(frames);
         let f = anim.playback.current().unwrap();
         assert_eq!(f.demoted_so_far.len(), 3);
-        assert!(matches!(&f.step, IndexReductionStep::RoundComplete { demotions_this_round: 3, .. }));
+        assert!(matches!(
+            &f.step,
+            IndexReductionStep::RoundComplete {
+                demotions_this_round: 3,
+                ..
+            }
+        ));
     }
 }

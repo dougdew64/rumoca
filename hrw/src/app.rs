@@ -29,42 +29,42 @@ use std::path::{Path, PathBuf};
 
 use eframe::egui;
 
+use serde_json::{Value, json};
 use std::collections::{BTreeMap, HashMap, HashSet};
-use serde_json::{json, Value};
 
 // The bridge module handles communication with Claude Code (the AI assistant
 // running in a terminal alongside this app): we write JSON "focus" files that
 // Claude reads to understand what the user is looking at.
 use crate::bridge::{self, Ask, Focus, Seg};
-use crate::equation_sheet;
 use crate::diagnostics;
+use crate::equation_sheet;
 use crate::identifier_index;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
-use crate::canvas::Canvas;
-use crate::playback::Animated;
 use crate::LiveState;
-use crate::field_help;
-use crate::incidence_view;
-use crate::matching_anim;
 use crate::alias_anim;
+use crate::canvas::Canvas;
 use crate::connection_anim;
+use crate::field_help;
 use crate::ic_plan_anim;
-use crate::tarjan_anim;
-use crate::tearing_anim;
+use crate::incidence_view;
 use crate::log_view;
+use crate::matching_anim;
+use crate::playback::Animated;
 use crate::pre_lowering_anim;
 use crate::reduction_anim;
 use crate::reduction_view;
 use crate::spyplot;
+use crate::tarjan_anim;
+use crate::tearing_anim;
 use crate::tree;
 // The worker module runs compilation and simulation on a background thread so
 // the UI never blocks. Communication is via channels: we send `ToWorker`
 // commands and receive `FromWorker` results. `Stage` holds one pipeline stage's
 // output (its serde_json::Value IR + optional error note).
 use crate::worker::{
-    discontinuity_segments, DefInfo, DefKind, FromWorker, LogEntry, SimData, Stage, StageBundle, StageKind,
-    ToWorker, Worker,
+    DefInfo, DefKind, FromWorker, LogEntry, SimData, Stage, StageBundle, StageKind, ToWorker,
+    Worker, discontinuity_segments,
 };
 
 /// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
@@ -84,7 +84,8 @@ pub(crate) const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::
 /// margin costs nothing and covers a view that defers construction one frame further.
 const SEEK_ATTEMPTS: u8 = 5;
 
-pub(crate) const SCRATCH_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1000);
+pub(crate) const SCRATCH_POLL_INTERVAL: std::time::Duration =
+    std::time::Duration::from_millis(1000);
 
 /// Default specimen directory: `specimens/` next to this crate's manifest.
 pub(crate) const DEFAULT_SPECIMEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
@@ -221,10 +222,14 @@ struct SplitState {
 
 impl Default for SplitState {
     fn default() -> Self {
-        Self { fraction: None, last_avail: None, reports_left: 6, reset_until: None }
+        Self {
+            fraction: None,
+            last_avail: None,
+            reports_left: 6,
+            reset_until: None,
+        }
     }
 }
-
 
 impl SplitState {
     /// Configure a left panel: draggable, clamped, and reset when asked.
@@ -256,18 +261,19 @@ impl SplitState {
         //
         // A drag at a stable width is untouched — `avail` has not changed, so
         // nothing is rewritten, and `observe` reads the new fraction back.
-        let resized = self.last_avail.is_none_or(|last| (last - avail).abs() > 1.0);
+        let resized = self
+            .last_avail
+            .is_none_or(|last| (last - avail).abs() > 1.0);
         if resized || self.resetting() {
             let id = egui::Id::new(LEFT_PANEL_ID);
             let width = (want * avail).clamp(avail * MIN_LEFT_FRACTION, avail * MAX_LEFT_FRACTION);
-            let rect = egui::containers::panel::PanelState::load(ctx, id)
-                .map_or_else(
-                    || egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, avail)),
-                    |s| {
-                        let r = s.outer_rect;
-                        egui::Rect::from_min_size(r.min, egui::vec2(width, r.height()))
-                    },
-                );
+            let rect = egui::containers::panel::PanelState::load(ctx, id).map_or_else(
+                || egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, avail)),
+                |s| {
+                    let r = s.outer_rect;
+                    egui::Rect::from_min_size(r.min, egui::vec2(width, r.height()))
+                },
+            );
             ctx.data_mut(|d| {
                 d.insert_persisted(id, egui::containers::panel::PanelState { outer_rect: rect });
             });
@@ -330,7 +336,8 @@ impl SplitState {
 
     /// Whether the default is currently being held.
     fn resetting(&self) -> bool {
-        self.reset_until.is_some_and(|t| std::time::Instant::now() < t)
+        self.reset_until
+            .is_some_and(|t| std::time::Instant::now() < t)
     }
 
     /// Hold the default for `window` from now.
@@ -404,7 +411,7 @@ enum StructuralView {
 
 impl StructuralView {
     /// Every variant, so the noun/verb parity test can iterate without naming them.
-/// **Add new variants here** — that is what makes the omission loud instead of silent.
+    /// **Add new variants here** — that is what makes the omission loud instead of silent.
     #[cfg(test)]
     const ALL: &'static [StructuralView] = &[
         StructuralView::Summary,
@@ -431,10 +438,7 @@ enum InitView {
 impl InitView {
     /// Every variant — see `StructuralView::ALL`.
     #[cfg(test)]
-    const ALL: &'static [InitView] = &[
-        InitView::Tree,
-        InitView::IcPlan,
-    ];
+    const ALL: &'static [InitView] = &[InitView::Tree, InitView::IcPlan];
 }
 
 fn init_view_name(v: InitView) -> &'static str {
@@ -499,10 +503,7 @@ enum EventsView {
 impl EventsView {
     /// Every variant — see `StructuralView::ALL`.
     #[cfg(test)]
-    const ALL: &'static [EventsView] = &[
-        EventsView::Tree,
-        EventsView::PreLowering,
-    ];
+    const ALL: &'static [EventsView] = &[EventsView::Tree, EventsView::PreLowering];
 }
 
 fn events_view_name(v: EventsView) -> &'static str {
@@ -683,7 +684,10 @@ impl StageViewCaches {
         }
         // **Whole-struct assignment, deliberately.** Clearing field by field is
         // what produced two lists to keep in step; this cannot go out of date.
-        *self = Self { built_for: Some(stage), ..Self::default() };
+        *self = Self {
+            built_for: Some(stage),
+            ..Self::default()
+        };
         true
     }
 
@@ -695,7 +699,6 @@ impl StageViewCaches {
         *self = Self::default();
     }
 }
-
 
 /// Everything the **source view** owns.
 ///
@@ -1079,7 +1082,6 @@ pub struct App {
     // specimen. See `build_declaring_classes`.
     declaring_classes: HashMap<String, String>,
 
-
     // ---- 14. Pending stage from hrw:// link ----
     // When an hrw://load/Specimen/Stage link fires, the stage can't be applied
     // immediately — compilation is async and drain_worker will auto-select the
@@ -1429,18 +1431,19 @@ impl App {
         }
 
         if let Some((armed_at, v)) = self.pending_live_debug
-            && v == variant {
-                let acked = bridge::check_breakpoint_ack();
-                let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
-                if acked || timed_out {
-                    self.pending_live_debug = None;
-                    self.live_breakpoint_armed = true;
-                    return LiveDebugAction::SpawnLive;
-                }
-                // No status text here — the control row already shows the
-                // "Arming…" badge via `LiveState::badge`.
-                ctx.request_repaint();
+            && v == variant
+        {
+            let acked = bridge::check_breakpoint_ack();
+            let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
+            if acked || timed_out {
+                self.pending_live_debug = None;
+                self.live_breakpoint_armed = true;
+                return LiveDebugAction::SpawnLive;
             }
+            // No status text here — the control row already shows the
+            // "Arming…" badge via `LiveState::badge`.
+            ctx.request_repaint();
+        }
         LiveDebugAction::None
     }
 
@@ -1599,9 +1602,11 @@ impl App {
     /// Find a specimen by model name (e.g. "BouncingBall" → `specimens/BouncingBall.mo`).
     fn find_specimen(&self, name: &str) -> Option<PathBuf> {
         let with_ext = format!("{name}.mo");
-        self.model_list.files.iter().find(|p| {
-            p.file_name().and_then(|f| f.to_str()) == Some(with_ext.as_str())
-        }).cloned()
+        self.model_list
+            .files
+            .iter()
+            .find(|p| p.file_name().and_then(|f| f.to_str()) == Some(with_ext.as_str()))
+            .cloned()
     }
 
     /// Open (compile) a specimen. Called when the user clicks a file in the
@@ -1681,7 +1686,8 @@ impl App {
         self.viewing_log = true;
         self.context.jump_highlight = None;
         diagnostics::record_action("corpus-model", qualified.to_owned());
-        self.worker.send(ToWorker::CompileLibraryModel(qualified.to_owned()));
+        self.worker
+            .send(ToWorker::CompileLibraryModel(qualified.to_owned()));
         self.selected = Some(id);
         self.selected_is_library = true;
     }
@@ -1816,10 +1822,21 @@ impl App {
                     self.stages = stages;
                 }
                 FromWorker::Compiled {
-                    path, model, stages, def_index, equation_sheet,
-                    identifier_index, index_reduction_frames, matching_frames,
-                    tarjan_frames, tearing_frames, reduced_frames, dae,
-                    pre_lowering_frames, connection_frames, flat,
+                    path,
+                    model,
+                    stages,
+                    def_index,
+                    equation_sheet,
+                    identifier_index,
+                    index_reduction_frames,
+                    matching_frames,
+                    tarjan_frames,
+                    tearing_frames,
+                    reduced_frames,
+                    dae,
+                    pre_lowering_frames,
+                    connection_frames,
+                    flat,
                     library_source,
                 } => {
                     if self.selected.as_deref() != Some(path.as_path()) {
@@ -1834,11 +1851,13 @@ impl App {
                     // every variable in the compiled model — including
                     // library-origin ones, which the identifier index omits
                     // because they have no specimen source line.
-                    self.known_variables = equation_sheet.as_ref().map(|s| {
-                        s.variables.iter().map(|v| v.name.clone()).collect()
-                    });
+                    self.known_variables = equation_sheet
+                        .as_ref()
+                        .map(|s| s.variables.iter().map(|v| v.name.clone()).collect());
                     self.declaring_classes = Self::build_declaring_classes(
-                        &self.stages, &self.def_index, equation_sheet.as_ref(),
+                        &self.stages,
+                        &self.def_index,
+                        equation_sheet.as_ref(),
                     );
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
@@ -1972,7 +1991,11 @@ impl App {
                     self.nav_loading = None;
                     match result {
                         Ok((value, def_index)) => {
-                            self.nav.push(NavEntry { name, value, def_index });
+                            self.nav.push(NavEntry {
+                                name,
+                                value,
+                                def_index,
+                            });
                             self.nav_error = None;
                         }
                         Err(e) => self.nav_error = Some(format!("open “{name}” failed: {e}")),
@@ -2184,8 +2207,10 @@ impl App {
     fn failure_context(&self) -> Option<bridge::PipelineFailure<'_>> {
         // `COMPILATION`, not `ALL`: `ALL` ends with `Simulation`, which is a tab rather
         // than a compilation stage, and `StageBundle::get()` panics on it.
-        let first =
-            StageKind::COMPILATION.iter().copied().find(|&k| self.stages.get(k).note_is_error())?;
+        let first = StageKind::COMPILATION
+            .iter()
+            .copied()
+            .find(|&k| self.stages.get(k).note_is_error())?;
         let stage = self.stages.get(first);
         let after = StageKind::COMPILATION
             .iter()
@@ -2358,8 +2383,12 @@ impl App {
                 StructuralView::MatchingAnim => {
                     Some(self.stage_views.matching_anim.as_ref()?.as_ref()?)
                 }
-                StructuralView::TarjanAnim => Some(self.stage_views.tarjan_anim.as_ref()?.as_ref()?),
-                StructuralView::TearingAnim => Some(self.stage_views.tearing_anim.as_ref()?.as_ref()?),
+                StructuralView::TarjanAnim => {
+                    Some(self.stage_views.tarjan_anim.as_ref()?.as_ref()?)
+                }
+                StructuralView::TearingAnim => {
+                    Some(self.stage_views.tearing_anim.as_ref()?.as_ref()?)
+                }
                 StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_ref()?.as_ref()?),
                 _ => None,
             },
@@ -2376,7 +2405,6 @@ impl App {
             _ => None,
         }
     }
-
 
     /// One line saying how far the pipeline got, for the action trail.
     ///
@@ -2604,8 +2632,12 @@ impl App {
                 StructuralView::MatchingAnim => {
                     Some(self.stage_views.matching_anim.as_mut()?.as_mut()?)
                 }
-                StructuralView::TarjanAnim => Some(self.stage_views.tarjan_anim.as_mut()?.as_mut()?),
-                StructuralView::TearingAnim => Some(self.stage_views.tearing_anim.as_mut()?.as_mut()?),
+                StructuralView::TarjanAnim => {
+                    Some(self.stage_views.tarjan_anim.as_mut()?.as_mut()?)
+                }
+                StructuralView::TearingAnim => {
+                    Some(self.stage_views.tearing_anim.as_mut()?.as_mut()?)
+                }
                 StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_mut()?.as_mut()?),
                 _ => None,
             },
@@ -2646,9 +2678,13 @@ impl App {
             return;
         }
         self.seek_frame = None;
-        let ok = self.on_screen_animation_mut().is_some_and(|a| a.seek(target));
+        let ok = self
+            .on_screen_animation_mut()
+            .is_some_and(|a| a.seek(target));
         if !ok {
-            let (_, total) = self.on_screen_animation().map_or((0, 0), Animated::position);
+            let (_, total) = self
+                .on_screen_animation()
+                .map_or((0, 0), Animated::position);
             // Report the number Doug typed, not the internal cursor: the link is
             // 1-based to match the on-screen counter, so quoting `target` raw would be
             // off by one — the very bug this change fixes.
@@ -2749,7 +2785,9 @@ impl App {
     /// the caches can hold several at once, and listing a stale one would
     /// suggest the user was looking at something they were not.
     fn animation_diagnostic(&self) -> Value {
-        let Some(anim) = self.on_screen_animation() else { return Value::Null };
+        let Some(anim) = self.on_screen_animation() else {
+            return Value::Null;
+        };
         let (frame, frame_count) = anim.position();
         json!({
             "which": anim.which(),
@@ -2807,7 +2845,10 @@ impl App {
                 def_index: &entry.def_index,
                 parse_value: None,
                 resolve_value: None,
-                focus: Focus::Node { key_path, stage_value: &entry.value },
+                focus: Focus::Node {
+                    key_path,
+                    stage_value: &entry.value,
+                },
                 // A navigated library class is outside the specimen pipeline,
                 // so there are no stages to sweep for the followed identifier.
                 tracking: None,
@@ -2819,7 +2860,10 @@ impl App {
             let stage_value = self.current_stage().value.clone();
             match &stage_value {
                 Some(value) => {
-                    let focus = Focus::Node { key_path: key_path.clone(), stage_value: value };
+                    let focus = Focus::Node {
+                        key_path: key_path.clone(),
+                        stage_value: value,
+                    };
                     let stage_values = self.stages.as_stage_pairs();
                     let ask = self.base_ask(seq, request, focus, &stage_values);
                     let result = bridge::write(&ask);
@@ -2832,7 +2876,8 @@ impl App {
                         stage: self.stage,
                         request,
                     });
-                    self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
+                    self.context.point_error =
+                        result.as_ref().err().map(std::string::ToString::to_string);
                     status_line(seq, &target, request_str, result)
                 }
                 None => Some("(no IR for this stage to point at)".to_owned()),
@@ -2868,19 +2913,31 @@ impl App {
         let mut run = false;
         ui.horizontal(|ui| {
             run = ui
-                .add_enabled(self.selected.is_some() && !self.sim_running, egui::Button::new("▶ Run"))
+                .add_enabled(
+                    self.selected.is_some() && !self.sim_running,
+                    egui::Button::new("▶ Run"),
+                )
                 .on_hover_text("Compile → lower → integrate, then plot the trajectories.")
                 .clicked();
-            ui.add(egui::Slider::new(&mut self.sim_t_end, 0.1..=20.0).step_by(0.1).text("stop time"));
+            ui.add(
+                egui::Slider::new(&mut self.sim_t_end, 0.1..=20.0)
+                    .step_by(0.1)
+                    .text("stop time"),
+            );
             if self.sim_running {
                 ui.spinner();
                 ui.weak("simulating…");
             }
         });
         if let Some(e) = &self.sim_error {
-            egui::ScrollArea::horizontal().id_salt("sim_err").show(ui, |ui| {
-                ui.colored_label(ui.visuals().error_fg_color, egui::RichText::new(e).monospace());
-            });
+            egui::ScrollArea::horizontal()
+                .id_salt("sim_err")
+                .show(ui, |ui| {
+                    ui.colored_label(
+                        ui.visuals().error_fg_color,
+                        egui::RichText::new(e).monospace(),
+                    );
+                });
         }
         if run {
             self.start_simulation();
@@ -2937,15 +2994,16 @@ impl App {
                         .x_axis_label("time")
                         .y_axis_label("step size h  /  BDF order k")
                         .show(ui, |plot_ui| {
-                            let h_pts: PlotPoints = data.solver_steps.iter()
-                                .map(|s| [s.t, s.h])
-                                .collect();
+                            let h_pts: PlotPoints =
+                                data.solver_steps.iter().map(|s| [s.t, s.h]).collect();
                             plot_ui.line(
                                 Line::new("step size h", h_pts)
                                     .color(crate::colors::SOLVER_STEP_SIZE),
                             );
 
-                            let order_pts: PlotPoints = data.solver_steps.iter()
+                            let order_pts: PlotPoints = data
+                                .solver_steps
+                                .iter()
                                 .map(|s| [s.t, s.order as f64])
                                 .collect();
                             plot_ui.line(
@@ -2961,7 +3019,6 @@ impl App {
             None => {}
         }
     }
-
 }
 
 /// A notice for the status bar after a bridge write — **only when something
@@ -3094,7 +3151,11 @@ impl App {
                 ui.strong("Display");
                 let mut zoom = ui.ctx().zoom_factor();
                 if ui
-                    .add(egui::Slider::new(&mut zoom, 0.75..=3.0).step_by(0.05).text("Font / UI scale"))
+                    .add(
+                        egui::Slider::new(&mut zoom, 0.75..=3.0)
+                            .step_by(0.05)
+                            .text("Font / UI scale"),
+                    )
                     .changed()
                 {
                     ui.ctx().set_zoom_factor(zoom);
@@ -3102,11 +3163,13 @@ impl App {
                 ui.separator();
                 ui.strong("Specimen directory");
                 ui.horizontal(|ui| {
-                    let changed = ui.add(
-                        egui::TextEdit::singleline(&mut self.model_list.dir)
-                            .desired_width(f32::INFINITY)
-                            .font(egui::TextStyle::Monospace),
-                    ).changed();
+                    let changed = ui
+                        .add(
+                            egui::TextEdit::singleline(&mut self.model_list.dir)
+                                .desired_width(f32::INFINITY)
+                                .font(egui::TextStyle::Monospace),
+                        )
+                        .changed();
                     if ui.button("⟳").on_hover_text("Rescan directory").clicked() || changed {
                         rescan_specimens = true;
                     }
@@ -3121,7 +3184,10 @@ impl App {
                         .font(egui::TextStyle::Monospace),
                 );
                 ui.horizontal(|ui| {
-                    if ui.add_enabled(!self.libraries_busy, egui::Button::new("Load libraries")).clicked() {
+                    if ui
+                        .add_enabled(!self.libraries_busy, egui::Button::new("Load libraries"))
+                        .clicked()
+                    {
                         load_libraries = true;
                     }
                     if self.libraries_busy {
@@ -3144,7 +3210,11 @@ impl App {
             return;
         };
 
-        let has_incidence = self.stage_views.incidence.as_ref().is_some_and(|c| c.is_some())
+        let has_incidence = self
+            .stage_views
+            .incidence
+            .as_ref()
+            .is_some_and(|c| c.is_some())
             || self.stages.get(StageKind::Structural).value.is_some();
 
         let mut clicked_row = None;
@@ -3162,12 +3232,24 @@ impl App {
                     ))
                     .strong(),
                 );
-                if sheet.n_constants > 0 || sheet.n_discrete > 0 || sheet.n_inputs > 0 || sheet.n_outputs > 0 {
+                if sheet.n_constants > 0
+                    || sheet.n_discrete > 0
+                    || sheet.n_inputs > 0
+                    || sheet.n_outputs > 0
+                {
                     let mut extras = Vec::new();
-                    if sheet.n_constants > 0 { extras.push(format!("{} constants", sheet.n_constants)); }
-                    if sheet.n_discrete > 0 { extras.push(format!("{} discrete", sheet.n_discrete)); }
-                    if sheet.n_inputs > 0 { extras.push(format!("{} inputs", sheet.n_inputs)); }
-                    if sheet.n_outputs > 0 { extras.push(format!("{} outputs", sheet.n_outputs)); }
+                    if sheet.n_constants > 0 {
+                        extras.push(format!("{} constants", sheet.n_constants));
+                    }
+                    if sheet.n_discrete > 0 {
+                        extras.push(format!("{} discrete", sheet.n_discrete));
+                    }
+                    if sheet.n_inputs > 0 {
+                        extras.push(format!("{} inputs", sheet.n_inputs));
+                    }
+                    if sheet.n_outputs > 0 {
+                        extras.push(format!("{} outputs", sheet.n_outputs));
+                    }
                     ui.weak(extras.join(", "));
                 }
 
@@ -3180,7 +3262,9 @@ impl App {
                 let tracked = self.tracked_identifier.as_deref();
                 for (cat, eqs) in &sheet.groups {
                     ui.add_space(6.0);
-                    ui.label(egui::RichText::new(format!("{} ({})", cat.label(), eqs.len())).strong());
+                    ui.label(
+                        egui::RichText::new(format!("{} ({})", cat.label(), eqs.len())).strong(),
+                    );
                     ui.weak(cat.description());
                     ui.add_space(2.0);
                     // Equations are Modelica-shaped text, so they get the same
@@ -3201,7 +3285,9 @@ impl App {
                             }
                             resp.on_hover_text(format!("f_x[{}] — {}", eq.index, &eq.origin));
                         } else {
-                            ui.horizontal(|ui| { ui.label(text); });
+                            ui.horizontal(|ui| {
+                                ui.label(text);
+                            });
                         }
                     }
                 }
@@ -3235,9 +3321,8 @@ impl App {
                             // tracks it, and the source view scrolls to its
                             // declaration. Clicking the tracked one again clears
                             // it, matching the source view's toggle behaviour.
-                            let resp = ui.add(
-                                egui::Label::new(name_rt).sense(egui::Sense::click()),
-                            );
+                            let resp =
+                                ui.add(egui::Label::new(name_rt).sense(egui::Sense::click()));
                             if resp.clicked() {
                                 clicked_variable = Some(v.name.clone());
                             }
@@ -3308,7 +3393,9 @@ impl App {
             return out;
         };
         for var in &sheet.variables {
-            let Some((head, _)) = var.name.split_once('.') else { continue };
+            let Some((head, _)) = var.name.split_once('.') else {
+                continue;
+            };
             let class = components
                 .get(head)
                 .and_then(|c| c.get("type_def_id"))
@@ -3333,27 +3420,35 @@ impl App {
     /// is logged in `docs/tech-debt.md`, deliberately not attempted here since
     /// Phase 7 will rework these views anyway.
     fn matching_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
-    if self.stage_views.incidence.is_none() {
-        self.stage_views.incidence = Some(
-            self.stages.get(self.stage).value.as_ref()
-                .and_then(incidence_view::IncidenceMatrix::from_report)
-        );
-    }
-    let arming = self.is_arming(PendingLiveDebug::Matching);
-    let live = self.stage_views.matching_anim.as_ref()
-        .and_then(|o| o.as_ref())
-        .map_or(
-            if arming { LiveState::Arming } else { LiveState::Idle },
-            |a| a.live_state(arming),
-        );
-    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Matching)
-        && !live.is_busy();
-    let mut debug_clicked = false;
-    let action = self.live_debug_poll(
-        ui.ctx(), live, PendingLiveDebug::Matching,
-    );
-    if matches!(action, LiveDebugAction::SpawnLive)
-        && let Some(Some(mat)) = &self.stage_views.incidence {
+        if self.stage_views.incidence.is_none() {
+            self.stage_views.incidence = Some(
+                self.stages
+                    .get(self.stage)
+                    .value
+                    .as_ref()
+                    .and_then(incidence_view::IncidenceMatrix::from_report),
+            );
+        }
+        let arming = self.is_arming(PendingLiveDebug::Matching);
+        let live = self
+            .stage_views
+            .matching_anim
+            .as_ref()
+            .and_then(|o| o.as_ref())
+            .map_or(
+                if arming {
+                    LiveState::Arming
+                } else {
+                    LiveState::Idle
+                },
+                |a| a.live_state(arming),
+            );
+        let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Matching) && !live.is_busy();
+        let mut debug_clicked = false;
+        let action = self.live_debug_poll(ui.ctx(), live, PendingLiveDebug::Matching);
+        if matches!(action, LiveDebugAction::SpawnLive)
+            && let Some(Some(mat)) = &self.stage_views.incidence
+        {
             let live = matching_anim::MatchingAnimation::start_live(mat, || {
                 let _ = bridge::remove_live_trace_breakpoint();
             });
@@ -3364,65 +3459,82 @@ impl App {
             self.stage_views.matching_anim = Some(live);
             self.viewport.matching_anim.request_fit();
         }
-    if self.stage_views.matching_anim.is_none() {
-        let inc = self.stage_views.incidence.as_ref().unwrap();
-        self.stage_views.matching_anim = Some(
-            // Frames from the compile, and from the SYSTEM this tab is showing:
-            // Structural animates the raw DAE, Index Reduction the reduced one.
-            inc.as_ref().and_then(|m| {
-                matching_anim::MatchingAnimation::from_captured_frames(
-                    m,
-                    &self.structural_frames_for_stage().matching,
-                )
-            })
-        );
-    }
-    if let Some(Some(anim)) = &mut self.stage_views.matching_anim {
-        if ir_split {
-            ui.label(egui::RichText::new("Before (raw DAE)")
-                .strong().color(crate::colors::ANIM_FAIL));
-            ui.weak("Matching animation unavailable (structurally singular \u{2014} only a partial matching exists)");
-            ui.add_space(12.0);
-            ui.label(egui::RichText::new("After (reduced)")
-                .strong().color(crate::colors::ANIM_PATH_FOUND));
+        if self.stage_views.matching_anim.is_none() {
+            let inc = self.stage_views.incidence.as_ref().unwrap();
+            self.stage_views.matching_anim = Some(
+                // Frames from the compile, and from the SYSTEM this tab is showing:
+                // Structural animates the raw DAE, Index Reduction the reduced one.
+                inc.as_ref().and_then(|m| {
+                    matching_anim::MatchingAnimation::from_captured_frames(
+                        m,
+                        &self.structural_frames_for_stage().matching,
+                    )
+                }),
+            );
         }
-        debug_clicked = anim.ui(
-            ui, &mut self.viewport.matching_anim,
-            self.tracked_identifier.as_deref(), arming, debug_enabled,
-        );
-    } else {
-        // Was "(no incidence data)" — which is often false and always unhelpful.
-        // The real reason is usually that the compiler stopped earlier.
-        ui.label(self.structural_unavailable("matching search"));
-    }
-    if debug_clicked {
-        self.start_live_debug(PendingLiveDebug::Matching);
-    }
+        if let Some(Some(anim)) = &mut self.stage_views.matching_anim {
+            if ir_split {
+                ui.label(
+                    egui::RichText::new("Before (raw DAE)")
+                        .strong()
+                        .color(crate::colors::ANIM_FAIL),
+                );
+                ui.weak("Matching animation unavailable (structurally singular \u{2014} only a partial matching exists)");
+                ui.add_space(12.0);
+                ui.label(
+                    egui::RichText::new("After (reduced)")
+                        .strong()
+                        .color(crate::colors::ANIM_PATH_FOUND),
+                );
+            }
+            debug_clicked = anim.ui(
+                ui,
+                &mut self.viewport.matching_anim,
+                self.tracked_identifier.as_deref(),
+                arming,
+                debug_enabled,
+            );
+        } else {
+            // Was "(no incidence data)" — which is often false and always unhelpful.
+            // The real reason is usually that the compiler stopped earlier.
+            ui.label(self.structural_unavailable("matching search"));
+        }
+        if debug_clicked {
+            self.start_live_debug(PendingLiveDebug::Matching);
+        }
     }
 
     /// The BLT / Tarjan animation view. See [`Self::matching_anim_ui`].
     fn tarjan_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
-    if self.stage_views.incidence.is_none() {
-        self.stage_views.incidence = Some(
-            self.stages.get(self.stage).value.as_ref()
-                .and_then(incidence_view::IncidenceMatrix::from_report)
-        );
-    }
-    let arming = self.is_arming(PendingLiveDebug::Tarjan);
-    let live = self.stage_views.tarjan_anim.as_ref()
-        .and_then(|o| o.as_ref())
-        .map_or(
-            if arming { LiveState::Arming } else { LiveState::Idle },
-            |a| a.live_state(arming),
-        );
-    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tarjan)
-        && !live.is_busy();
-    let mut debug_clicked = false;
-    let action = self.live_debug_poll(
-        ui.ctx(), live, PendingLiveDebug::Tarjan,
-    );
-    if matches!(action, LiveDebugAction::SpawnLive)
-        && let Some(Some(mat)) = &self.stage_views.incidence {
+        if self.stage_views.incidence.is_none() {
+            self.stage_views.incidence = Some(
+                self.stages
+                    .get(self.stage)
+                    .value
+                    .as_ref()
+                    .and_then(incidence_view::IncidenceMatrix::from_report),
+            );
+        }
+        let arming = self.is_arming(PendingLiveDebug::Tarjan);
+        let live = self
+            .stage_views
+            .tarjan_anim
+            .as_ref()
+            .and_then(|o| o.as_ref())
+            .map_or(
+                if arming {
+                    LiveState::Arming
+                } else {
+                    LiveState::Idle
+                },
+                |a| a.live_state(arming),
+            );
+        let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tarjan) && !live.is_busy();
+        let mut debug_clicked = false;
+        let action = self.live_debug_poll(ui.ctx(), live, PendingLiveDebug::Tarjan);
+        if matches!(action, LiveDebugAction::SpawnLive)
+            && let Some(Some(mat)) = &self.stage_views.incidence
+        {
             let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
                 let _ = bridge::remove_live_trace_breakpoint();
             });
@@ -3433,99 +3545,114 @@ impl App {
             self.stage_views.tarjan_anim = Some(live);
             self.viewport.tarjan_anim.request_fit();
         }
-    if self.stage_views.tarjan_anim.is_none() {
-        let inc = self.stage_views.incidence.as_ref().unwrap();
-        self.stage_views.tarjan_anim = Some(
-            // Both searches from the compile, and from the system this tab shows.
-            inc.as_ref().and_then(|m| {
-                let f = self.structural_frames_for_stage();
-                tarjan_anim::TarjanAnimation::from_captured_frames(m, &f.matching, &f.tarjan)
-            })
-        );
-    }
-    // Consume a pending camera aim from `hrw://…/equation/<n>`. Taken here rather than
-    // at link-dispatch time because turning an equation index into a world position
-    // needs this view's own layout, which exists only at paint time.
-    if let Some(target) = self.aim_at_equation
-        && let Some(Some(anim)) = &self.stage_views.tarjan_anim
-    {
-        self.aim_at_equation = None;
-        if !anim.aim_at_equation(&mut self.viewport.tarjan_anim, target) {
-            self.notify(format!(
+        if self.stage_views.tarjan_anim.is_none() {
+            let inc = self.stage_views.incidence.as_ref().unwrap();
+            self.stage_views.tarjan_anim = Some(
+                // Both searches from the compile, and from the system this tab shows.
+                inc.as_ref().and_then(|m| {
+                    let f = self.structural_frames_for_stage();
+                    tarjan_anim::TarjanAnimation::from_captured_frames(m, &f.matching, &f.tarjan)
+                }),
+            );
+        }
+        // Consume a pending camera aim from `hrw://…/equation/<n>`. Taken here rather than
+        // at link-dispatch time because turning an equation index into a world position
+        // needs this view's own layout, which exists only at paint time.
+        if let Some(target) = self.aim_at_equation
+            && let Some(Some(anim)) = &self.stage_views.tarjan_anim
+        {
+            self.aim_at_equation = None;
+            if !anim.aim_at_equation(&mut self.viewport.tarjan_anim, target) {
+                self.notify(format!(
                 "no equation {target} in this model \u{2014} the link names one that is not here",
             ));
+            }
         }
-    }
-    if let Some(Some(anim)) = &mut self.stage_views.tarjan_anim {
-        if ir_split {
-            ui.label(egui::RichText::new("Before (raw DAE)")
-                .strong().color(crate::colors::ANIM_FAIL));
-            ui.weak("BLT animation unavailable (structurally singular \u{2014} no full matching for block decomposition)");
-            ui.add_space(12.0);
-            ui.label(egui::RichText::new("After (reduced)")
-                .strong().color(crate::colors::ANIM_PATH_FOUND));
+        if let Some(Some(anim)) = &mut self.stage_views.tarjan_anim {
+            if ir_split {
+                ui.label(
+                    egui::RichText::new("Before (raw DAE)")
+                        .strong()
+                        .color(crate::colors::ANIM_FAIL),
+                );
+                ui.weak("BLT animation unavailable (structurally singular \u{2014} no full matching for block decomposition)");
+                ui.add_space(12.0);
+                ui.label(
+                    egui::RichText::new("After (reduced)")
+                        .strong()
+                        .color(crate::colors::ANIM_PATH_FOUND),
+                );
+            }
+            debug_clicked = anim.ui(
+                ui,
+                &mut self.viewport.tarjan_anim,
+                self.tracked_identifier.as_deref(),
+                arming,
+                debug_enabled,
+            );
+        } else {
+            // The dependency graph exists whenever matching succeeded; when this pane
+            // is empty it is nearly always because the compiler never built BLT blocks.
+            ui.label(self.structural_unavailable("BLT block decomposition"));
         }
-        debug_clicked = anim.ui(
-            ui, &mut self.viewport.tarjan_anim,
-            self.tracked_identifier.as_deref(), arming, debug_enabled,
-        );
-    } else {
-        // The dependency graph exists whenever matching succeeded; when this pane
-        // is empty it is nearly always because the compiler never built BLT blocks.
-        ui.label(self.structural_unavailable("BLT block decomposition"));
-    }
-    if debug_clicked {
-        self.start_live_debug(PendingLiveDebug::Tarjan);
-    }
+        if debug_clicked {
+            self.start_live_debug(PendingLiveDebug::Tarjan);
+        }
     }
 
     /// The index-reduction animation view. See [`Self::matching_anim_ui`].
     fn reduction_anim_ui(&mut self, ui: &mut egui::Ui) {
-    let arming = self.is_arming(PendingLiveDebug::Reduction);
-    let live = self.stage_views.reduction_anim.as_ref()
-        .and_then(|o| o.as_ref())
-        .map_or(
-            if arming { LiveState::Arming } else { LiveState::Idle },
-            |a| a.live_state(arming),
-        );
-    let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Reduction)
-        && !live.is_busy();
-    let mut debug_clicked = false;
-    let action = self.live_debug_poll(
-        ui.ctx(), live, PendingLiveDebug::Reduction,
-    );
-    if matches!(action, LiveDebugAction::SpawnLive)
-        && let Some(dae) = &self.cached_dae {
-            let live = reduction_anim::ReductionAnimation::start_live(
-                dae.clone(), || {
-                    let _ = bridge::remove_live_trace_breakpoint();
+        let arming = self.is_arming(PendingLiveDebug::Reduction);
+        let live = self
+            .stage_views
+            .reduction_anim
+            .as_ref()
+            .and_then(|o| o.as_ref())
+            .map_or(
+                if arming {
+                    LiveState::Arming
+                } else {
+                    LiveState::Idle
                 },
+                |a| a.live_state(arming),
             );
+        let debug_enabled =
+            self.has_live_debug_data(PendingLiveDebug::Reduction) && !live.is_busy();
+        let mut debug_clicked = false;
+        let action = self.live_debug_poll(ui.ctx(), live, PendingLiveDebug::Reduction);
+        if matches!(action, LiveDebugAction::SpawnLive)
+            && let Some(dae) = &self.cached_dae
+        {
+            let live = reduction_anim::ReductionAnimation::start_live(dae.clone(), || {
+                let _ = bridge::remove_live_trace_breakpoint();
+            });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
             self.stage_views.reduction_anim = Some(live);
         }
-    if self.stage_views.reduction_anim.is_none() {
-        let frames = &self.frames.index_reduction;
-        self.stage_views.reduction_anim = Some(if frames.is_empty() {
-            None
+        if self.stage_views.reduction_anim.is_none() {
+            let frames = &self.frames.index_reduction;
+            self.stage_views.reduction_anim = Some(if frames.is_empty() {
+                None
+            } else {
+                Some(reduction_anim::ReductionAnimation::from_frames(
+                    frames.clone(),
+                ))
+            });
+        }
+        if let Some(Some(anim)) = &mut self.stage_views.reduction_anim {
+            debug_clicked = egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .inner;
         } else {
-            Some(reduction_anim::ReductionAnimation::from_frames(frames.clone()))
-        });
-    }
-    if let Some(Some(anim)) = &mut self.stage_views.reduction_anim {
-        debug_clicked = egui::ScrollArea::vertical()
-            .auto_shrink(false)
-            .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
-            .inner;
-    } else {
-        ui.weak("(no index-reduction trace for this model)");
-    }
-    if debug_clicked {
-        self.start_live_debug(PendingLiveDebug::Reduction);
-    }
+            ui.weak("(no index-reduction trace for this model)");
+        }
+        if debug_clicked {
+            self.start_live_debug(PendingLiveDebug::Reduction);
+        }
     }
 
     /// The tearing replay, on the Structural and Index Reduction stages.
@@ -3543,11 +3670,16 @@ impl App {
     fn tearing_anim_ui(&mut self, ui: &mut egui::Ui) {
         let arming = self.is_arming(PendingLiveDebug::Tearing);
         let live = self
-            .stage_views.tearing_anim
+            .stage_views
+            .tearing_anim
             .as_ref()
             .and_then(|o| o.as_ref())
             .map_or(
-                if arming { LiveState::Arming } else { LiveState::Idle },
+                if arming {
+                    LiveState::Arming
+                } else {
+                    LiveState::Idle
+                },
                 |a| a.live_state(arming),
             );
         let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tearing) && !live.is_busy();
@@ -3583,12 +3715,16 @@ impl App {
             // **No `record` fallback.** Re-walking the DAE here would tear blocks the
             // compiler never built — see `structural_unavailable`.
             self.stage_views.tearing_anim = Some(
-                self.stages.get(self.stage).value.as_ref().and_then(|report| {
-                    tearing_anim::TearingAnimation::from_captured(
-                        report,
-                        &self.structural_frames_for_stage().tearing,
-                    )
-                }),
+                self.stages
+                    .get(self.stage)
+                    .value
+                    .as_ref()
+                    .and_then(|report| {
+                        tearing_anim::TearingAnimation::from_captured(
+                            report,
+                            &self.structural_frames_for_stage().tearing,
+                        )
+                    }),
             );
         }
         if let Some(Some(anim)) = &mut self.stage_views.tearing_anim {
@@ -3631,11 +3767,15 @@ impl App {
             self.stage_views.connection_anim = Some(if frames.is_empty() {
                 None
             } else {
-                Some(connection_anim::ConnectionAnimation::from_frames(frames.clone()))
+                Some(connection_anim::ConnectionAnimation::from_frames(
+                    frames.clone(),
+                ))
             });
         }
         if let Some(Some(anim)) = &mut self.stage_views.connection_anim {
-            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no connections in this model)");
         }
@@ -3656,7 +3796,9 @@ impl App {
             );
         }
         if let Some(Some(anim)) = &mut self.stage_views.alias_anim {
-            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no alias eliminations in this report)");
         }
@@ -3687,7 +3829,9 @@ impl App {
             );
         }
         if let Some(Some(anim)) = &mut self.stage_views.ic_plan_anim {
-            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| anim.ui(ui));
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no initial-condition plan in this report)");
         }
@@ -3718,7 +3862,11 @@ impl App {
             .as_ref()
             .and_then(|o| o.as_ref())
             .map_or(
-                if arming { LiveState::Arming } else { LiveState::Idle },
+                if arming {
+                    LiveState::Arming
+                } else {
+                    LiveState::Idle
+                },
                 |a| a.live_state(arming),
             );
         let debug_enabled =
@@ -3742,7 +3890,9 @@ impl App {
             self.cached_pre_lowering_anim = Some(if frames.is_empty() {
                 None
             } else {
-                Some(pre_lowering_anim::PreLoweringAnimation::from_frames(frames.clone()))
+                Some(pre_lowering_anim::PreLoweringAnimation::from_frames(
+                    frames.clone(),
+                ))
             });
         }
         if let Some(Some(anim)) = &mut self.cached_pre_lowering_anim {
@@ -3840,298 +3990,405 @@ impl App {
             } else if self.stage == StageKind::Simulation {
                 self.simulation_pane(ui);
             } else {
-            // Stage note (in its own scope so its borrow of `self` ends
-            // before the value section, which may borrow `self` mutably for
-            // the spy-plot canvas).
-            {
-                let stage = self.current_stage();
-                // Stages with structured error data show their own summary
-                // below; Structural/IndexReduction with singular/index-1
-                // notes show a status banner. Skip the generic note for both.
-                let has_error_summary = stage.note_is_error()
-                    && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
-                let has_custom_banner = matches!(
-                    self.stage, StageKind::Structural | StageKind::IndexReduction
-                ) && stage.note.as_deref().is_some_and(|n| n.contains("singular") || n.contains("index-1"));
-                if let Some(note) = &stage.note
-                    && !has_custom_banner && !has_error_summary {
+                // Stage note (in its own scope so its borrow of `self` ends
+                // before the value section, which may borrow `self` mutably for
+                // the spy-plot canvas).
+                {
+                    let stage = self.current_stage();
+                    // Stages with structured error data show their own summary
+                    // below; Structural/IndexReduction with singular/index-1
+                    // notes show a status banner. Skip the generic note for both.
+                    let has_error_summary = stage.note_is_error()
+                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
+                    let has_custom_banner = matches!(
+                        self.stage,
+                        StageKind::Structural | StageKind::IndexReduction
+                    ) && stage
+                        .note
+                        .as_deref()
+                        .is_some_and(|n| n.contains("singular") || n.contains("index-1"));
+                    if let Some(note) = &stage.note
+                        && !has_custom_banner
+                        && !has_error_summary
+                    {
                         let color = if stage.note_is_error() {
                             ui.visuals().error_fg_color
                         } else {
                             ui.visuals().weak_text_color()
                         };
-                        egui::ScrollArea::horizontal().id_salt("note").show(ui, |ui| {
-                            ui.colored_label(color, egui::RichText::new(note).monospace());
-                        });
+                        egui::ScrollArea::horizontal()
+                            .id_salt("note")
+                            .show(ui, |ui| {
+                                ui.colored_label(color, egui::RichText::new(note).monospace());
+                            });
                         ui.separator();
                     }
-            }
+                }
 
-            // The Flatten stage offers an equation sheet alongside the tree.
-            let flatten_ready =
-                self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
-            let has_source_map = flatten_ready
-                && self.cached_equation_sheet.as_ref().is_some_and(|s| !s.source_lines.is_empty());
-            if flatten_ready {
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.viewport.flatten, FlattenView::Equations, "Equations");
-                    if has_source_map {
-                        ui.selectable_value(&mut self.viewport.flatten, FlattenView::SourceMap, "Source Map");
-                    }
-                    // Connection expansion, only when the model has any --
-                    // a hand-written model shows no empty tab.
-                    if !self.frames.connection.is_empty() {
-                        ui.selectable_value(&mut self.viewport.flatten, FlattenView::Connections, "Connections \u{25b6}")
+                // The Flatten stage offers an equation sheet alongside the tree.
+                let flatten_ready =
+                    self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
+                let has_source_map = flatten_ready
+                    && self
+                        .cached_equation_sheet
+                        .as_ref()
+                        .is_some_and(|s| !s.source_lines.is_empty());
+                if flatten_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(
+                            &mut self.viewport.flatten,
+                            FlattenView::Equations,
+                            "Equations",
+                        );
+                        if has_source_map {
+                            ui.selectable_value(
+                                &mut self.viewport.flatten,
+                                FlattenView::SourceMap,
+                                "Source Map",
+                            );
+                        }
+                        // Connection expansion, only when the model has any --
+                        // a hand-written model shows no empty tab.
+                        if !self.frames.connection.is_empty() {
+                            ui.selectable_value(
+                                &mut self.viewport.flatten,
+                                FlattenView::Connections,
+                                "Connections \u{25b6}",
+                            )
                             .on_hover_text(
                                 "Watch connect() statements become equations. A potential set \
                                  of n variables yields n-1 equalities; a flow set of the same \
                                  n yields one sum-to-zero equation (Kirchhoff).",
                             );
-                    }
-                    ui.selectable_value(&mut self.viewport.flatten, FlattenView::Tree, "Tree");
-                });
-                ui.separator();
-            }
+                        }
+                        ui.selectable_value(&mut self.viewport.flatten, FlattenView::Tree, "Tree");
+                    });
+                    ui.separator();
+                }
 
-            // The Events stage offers a replay of `pre()` lowering beside the
-            // tree — only when there is a trace to replay, so smooth models
-            // never show an empty tab.
-            let events_ready =
-                self.stage == StageKind::Events && !self.frames.pre_lowering.is_empty();
-            if events_ready {
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.viewport.events, EventsView::Tree, "Tree");
-                    ui.selectable_value(
-                        &mut self.viewport.events,
-                        EventsView::PreLowering,
-                        "pre() lowering \u{25b6}",
-                    )
-                    .on_hover_text(
-                        "Replay where the __pre__ parameter slots are manufactured. They \
+                // The Events stage offers a replay of `pre()` lowering beside the
+                // tree — only when there is a trace to replay, so smooth models
+                // never show an empty tab.
+                let events_ready =
+                    self.stage == StageKind::Events && !self.frames.pre_lowering.is_empty();
+                if events_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut self.viewport.events, EventsView::Tree, "Tree");
+                        ui.selectable_value(
+                            &mut self.viewport.events,
+                            EventsView::PreLowering,
+                            "pre() lowering \u{25b6}",
+                        )
+                        .on_hover_text(
+                            "Replay where the __pre__ parameter slots are manufactured. They \
                          appear in no source file: a `when` equation needs a value to hold \
                          when no branch fires, and a DAE cannot say \u{201c}unchanged\u{201d}.",
-                    );
-                });
-                ui.separator();
-            }
+                        );
+                    });
+                    ui.separator();
+                }
 
-            // The Initialization stage offers a walk of the initial-condition
-            // solve plan beside the tree -- only when there is a plan, so a
-            // model whose initialization failed never shows an empty tab.
-            let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
-            if init_ready {
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.viewport.init, InitView::Tree, "Tree");
-                    ui.selectable_value(&mut self.viewport.init, InitView::IcPlan, "IC plan \u{25b6}")
+                // The Initialization stage offers a walk of the initial-condition
+                // solve plan beside the tree -- only when there is a plan, so a
+                // model whose initialization failed never shows an empty tab.
+                let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
+                if init_ready {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut self.viewport.init, InitView::Tree, "Tree");
+                        ui.selectable_value(
+                            &mut self.viewport.init,
+                            InitView::IcPlan,
+                            "IC plan \u{25b6}",
+                        )
                         .on_hover_text(
                             "Walk the plan for computing a consistent state at t=0. Mostly \
                              plain assignment; the few blocks that iterate are where \
                              initialization fails when it fails.",
                         );
-                });
-                ui.separator();
-            }
-
-            // The report stages (Structural + Index reduction) offer a custom
-            // BLT spy-plot alongside the generic tree; every other stage is
-            // tree-only.
-            let report_stage =
-                matches!(self.stage, StageKind::Structural | StageKind::IndexReduction);
-            let report_ready = report_stage && self.current_stage().value.is_some();
-            if report_ready {
-                self.report_sub_view_row_ui(ui);
-            }
-
-            // Whether the Index Reduction tab shows a Before/After split for
-            // comparative views. True when index reduction was actually needed
-            // (the note mentions "singular").
-            let ir_split = report_ready
-                && self.stage == StageKind::IndexReduction
-                && self.stages.get(self.stage).note.as_deref()
-                    .is_some_and(|n| n.contains("singular"));
-
-            if report_ready && self.viewport.structural == StructuralView::SpyPlot {
-                if ir_split {
-                    // No spy-plot for the Before pane (needs full matching),
-                    // show only the After pane.
-                    ui.label(egui::RichText::new("Before (raw DAE)")
-                        .strong().color(crate::colors::ANIM_FAIL));
-                    ui.weak("Spy-plot unavailable (structurally singular \u{2014} no BLT decomposition)");
-                    ui.add_space(12.0);
-                    ui.label(egui::RichText::new("After (reduced)")
-                        .strong().color(crate::colors::ANIM_PATH_FOUND));
-                }
-                let cached = self.stage_views.spy_plot.get_or_insert_with(|| {
-                    self.stages.get(self.stage).value.as_ref().and_then(spyplot::Plot::from_report)
-                });
-                if let Some(plot) = cached {
-                    ui.weak(plot.caption());
-                    plot.ui(ui, &mut self.viewport.spy, &mut intent.canvas_capture, self.tracked_identifier.as_deref());
-                } else {
-                    ui.weak("(the structural report has no BLT blocks to plot)");
-                }
-            } else if report_ready && self.viewport.structural == StructuralView::Incidence {
-                if ir_split {
-                    // Before/After split for incidence matrices.
-                    let before_cached = self.stage_views.before_incidence.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref()
-                            .and_then(|v| v.get("before"))
-                            .and_then(incidence_view::IncidenceMatrix::from_report)
                     });
-                    let after_cached = self.stage_views.incidence.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref()
-                            .and_then(incidence_view::IncidenceMatrix::from_report)
+                    ui.separator();
+                }
+
+                // The report stages (Structural + Index reduction) offer a custom
+                // BLT spy-plot alongside the generic tree; every other stage is
+                // tree-only.
+                let report_stage = matches!(
+                    self.stage,
+                    StageKind::Structural | StageKind::IndexReduction
+                );
+                let report_ready = report_stage && self.current_stage().value.is_some();
+                if report_ready {
+                    self.report_sub_view_row_ui(ui);
+                }
+
+                // Whether the Index Reduction tab shows a Before/After split for
+                // comparative views. True when index reduction was actually needed
+                // (the note mentions "singular").
+                let ir_split = report_ready
+                    && self.stage == StageKind::IndexReduction
+                    && self
+                        .stages
+                        .get(self.stage)
+                        .note
+                        .as_deref()
+                        .is_some_and(|n| n.contains("singular"));
+
+                if report_ready && self.viewport.structural == StructuralView::SpyPlot {
+                    if ir_split {
+                        // No spy-plot for the Before pane (needs full matching),
+                        // show only the After pane.
+                        ui.label(
+                            egui::RichText::new("Before (raw DAE)")
+                                .strong()
+                                .color(crate::colors::ANIM_FAIL),
+                        );
+                        ui.weak("Spy-plot unavailable (structurally singular \u{2014} no BLT decomposition)");
+                        ui.add_space(12.0);
+                        ui.label(
+                            egui::RichText::new("After (reduced)")
+                                .strong()
+                                .color(crate::colors::ANIM_PATH_FOUND),
+                        );
+                    }
+                    let cached = self.stage_views.spy_plot.get_or_insert_with(|| {
+                        self.stages
+                            .get(self.stage)
+                            .value
+                            .as_ref()
+                            .and_then(spyplot::Plot::from_report)
                     });
-                    ui.columns(2, |cols| {
-                        // Before pane
-                        cols[0].label(egui::RichText::new("Before (raw DAE)")
-                            .strong().color(crate::colors::ANIM_FAIL));
-                        if let Some(mat) = before_cached {
-                            mat.caption_ui(&mut cols[0]);
-                            mat.ui(
-                                &mut cols[0], &mut self.viewport.before_incidence,
-                                &mut intent.canvas_capture, self.viewport.highlighted_eq_row, None,
+                    if let Some(plot) = cached {
+                        ui.weak(plot.caption());
+                        plot.ui(
+                            ui,
+                            &mut self.viewport.spy,
+                            &mut intent.canvas_capture,
+                            self.tracked_identifier.as_deref(),
+                        );
+                    } else {
+                        ui.weak("(the structural report has no BLT blocks to plot)");
+                    }
+                } else if report_ready && self.viewport.structural == StructuralView::Incidence {
+                    if ir_split {
+                        // Before/After split for incidence matrices.
+                        let before_cached =
+                            self.stage_views.before_incidence.get_or_insert_with(|| {
+                                self.stages
+                                    .get(self.stage)
+                                    .value
+                                    .as_ref()
+                                    .and_then(|v| v.get("before"))
+                                    .and_then(incidence_view::IncidenceMatrix::from_report)
+                            });
+                        let after_cached = self.stage_views.incidence.get_or_insert_with(|| {
+                            self.stages
+                                .get(self.stage)
+                                .value
+                                .as_ref()
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        });
+                        ui.columns(2, |cols| {
+                            // Before pane
+                            cols[0].label(
+                                egui::RichText::new("Before (raw DAE)")
+                                    .strong()
+                                    .color(crate::colors::ANIM_FAIL),
                             );
-                        } else {
-                            cols[0].weak("(no before incidence data)");
-                        }
-                        // After pane
-                        cols[1].label(egui::RichText::new("After (reduced)")
-                            .strong().color(crate::colors::ANIM_PATH_FOUND));
-                        if let Some(mat) = after_cached {
-                            mat.caption_ui(&mut cols[1]);
-                            let tracked_col = self.tracked_identifier.as_deref()
+                            if let Some(mat) = before_cached {
+                                mat.caption_ui(&mut cols[0]);
+                                mat.ui(
+                                    &mut cols[0],
+                                    &mut self.viewport.before_incidence,
+                                    &mut intent.canvas_capture,
+                                    self.viewport.highlighted_eq_row,
+                                    None,
+                                );
+                            } else {
+                                cols[0].weak("(no before incidence data)");
+                            }
+                            // After pane
+                            cols[1].label(
+                                egui::RichText::new("After (reduced)")
+                                    .strong()
+                                    .color(crate::colors::ANIM_PATH_FOUND),
+                            );
+                            if let Some(mat) = after_cached {
+                                mat.caption_ui(&mut cols[1]);
+                                let tracked_col = self
+                                    .tracked_identifier
+                                    .as_deref()
+                                    .and_then(|name| mat.column_index(name));
+                                mat.ui(
+                                    &mut cols[1],
+                                    &mut self.viewport.incidence,
+                                    &mut intent.canvas_capture,
+                                    self.viewport.highlighted_eq_row,
+                                    tracked_col,
+                                );
+                            } else {
+                                cols[1].weak("(no after incidence data)");
+                            }
+                        });
+                    } else {
+                        let cached = self.stage_views.incidence.get_or_insert_with(|| {
+                            self.stages
+                                .get(self.stage)
+                                .value
+                                .as_ref()
+                                .and_then(incidence_view::IncidenceMatrix::from_report)
+                        });
+                        if let Some(mat) = cached {
+                            mat.caption_ui(ui);
+                            let tracked_col = self
+                                .tracked_identifier
+                                .as_deref()
                                 .and_then(|name| mat.column_index(name));
                             mat.ui(
-                                &mut cols[1], &mut self.viewport.incidence,
-                                &mut intent.canvas_capture, self.viewport.highlighted_eq_row, tracked_col,
+                                ui,
+                                &mut self.viewport.incidence,
+                                &mut intent.canvas_capture,
+                                self.viewport.highlighted_eq_row,
+                                tracked_col,
                             );
                         } else {
-                            cols[1].weak("(no after incidence data)");
+                            ui.weak("(no incidence data in this report)");
                         }
-                    });
-                } else {
-                    let cached = self.stage_views.incidence.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref()
-                            .and_then(incidence_view::IncidenceMatrix::from_report)
-                    });
-                    if let Some(mat) = cached {
-                        mat.caption_ui(ui);
-                        let tracked_col = self.tracked_identifier.as_deref()
-                            .and_then(|name| mat.column_index(name));
-                        mat.ui(ui, &mut self.viewport.incidence, &mut intent.canvas_capture, self.viewport.highlighted_eq_row, tracked_col);
-                    } else {
-                        ui.weak("(no incidence data in this report)");
                     }
-                }
-            } else if report_ready && self.viewport.structural == StructuralView::MatchingAnim {
-                self.matching_anim_ui(ui, ir_split);
-            } else if report_ready && self.viewport.structural == StructuralView::TarjanAnim {
-                self.tarjan_anim_ui(ui, ir_split);
-            } else if report_ready && self.viewport.structural == StructuralView::TearingAnim {
-                self.tearing_anim_ui(ui);
-            } else if report_ready && self.viewport.structural == StructuralView::AliasAnim {
-                self.alias_anim_ui(ui);
-            } else if report_ready && self.viewport.structural == StructuralView::Summary {
-                if self.stage == StageKind::Structural {
-                    Self::structural_singular_summary(ui, &self.stages.structural);
-                } else {
-                    let cached = self.stage_views.reduction.get_or_insert_with(|| {
-                        self.stages.get(self.stage).value.as_ref().and_then(reduction_view::ReductionView::from_report)
-                    });
-                    if let Some(view) = cached {
-                        view.ui(ui, self.tracked_identifier.as_deref());
+                } else if report_ready && self.viewport.structural == StructuralView::MatchingAnim {
+                    self.matching_anim_ui(ui, ir_split);
+                } else if report_ready && self.viewport.structural == StructuralView::TarjanAnim {
+                    self.tarjan_anim_ui(ui, ir_split);
+                } else if report_ready && self.viewport.structural == StructuralView::TearingAnim {
+                    self.tearing_anim_ui(ui);
+                } else if report_ready && self.viewport.structural == StructuralView::AliasAnim {
+                    self.alias_anim_ui(ui);
+                } else if report_ready && self.viewport.structural == StructuralView::Summary {
+                    if self.stage == StageKind::Structural {
+                        Self::structural_singular_summary(ui, &self.stages.structural);
                     } else {
-                        ui.weak("(no reduction data in this report)");
+                        let cached = self.stage_views.reduction.get_or_insert_with(|| {
+                            self.stages
+                                .get(self.stage)
+                                .value
+                                .as_ref()
+                                .and_then(reduction_view::ReductionView::from_report)
+                        });
+                        if let Some(view) = cached {
+                            view.ui(ui, self.tracked_identifier.as_deref());
+                        } else {
+                            ui.weak("(no reduction data in this report)");
+                        }
                     }
-                }
-            } else if self.viewport.structural == StructuralView::Animate {
-                self.reduction_anim_ui(ui);
-            } else if events_ready && self.viewport.events == EventsView::PreLowering {
-                self.pre_lowering_anim_ui(ui);
-            } else if init_ready && self.viewport.init == InitView::IcPlan {
-                self.ic_plan_anim_ui(ui);
-            } else if flatten_ready && self.viewport.flatten == FlattenView::Equations {
-                self.equation_sheet_ui(ui);
-            } else if flatten_ready && self.viewport.flatten == FlattenView::SourceMap {
-                self.source_map_ui(ui);
-            } else if flatten_ready && self.viewport.flatten == FlattenView::Connections {
-                self.connection_anim_ui(ui);
-            } else {
-                // Set when a `hrw://…/node/<path>` link names a path this stage does not
-                // have. Collected while `stage` is borrowed and acted on after, the same
-                // pattern as `FrameIntent`.
-                let mut bad_jump: Option<String> = None;
-                let stage = self.current_stage();
-                let has_error_data = stage.note_is_error()
-                    && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
-                if has_error_data {
-                    let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
-                    egui::ScrollArea::vertical().id_salt("error_summary").auto_shrink(false).show(ui, |ui| {
-                        Self::generic_error_summary(ui, &error, self.stage);
-                    });
+                } else if self.viewport.structural == StructuralView::Animate {
+                    self.reduction_anim_ui(ui);
+                } else if events_ready && self.viewport.events == EventsView::PreLowering {
+                    self.pre_lowering_anim_ui(ui);
+                } else if init_ready && self.viewport.init == InitView::IcPlan {
+                    self.ic_plan_anim_ui(ui);
+                } else if flatten_ready && self.viewport.flatten == FlattenView::Equations {
+                    self.equation_sheet_ui(ui);
+                } else if flatten_ready && self.viewport.flatten == FlattenView::SourceMap {
+                    self.source_map_ui(ui);
+                } else if flatten_ready && self.viewport.flatten == FlattenView::Connections {
+                    self.connection_anim_ui(ui);
                 } else {
-                    match &stage.value {
-                        Some(value) => {
-                            let label = self.model.as_deref().unwrap_or("model");
-                            let prev = self.previous_stage_value();
-                            // **The count, without the checkbox that used to sit
-                            // beside it.** "Reveal identifiers" was removed
-                            // 2026-08-04 (`DECISIONS.md`). The count is a plain
-                            // fact about the model and costs one line, so it
-                            // stays; finding a *particular* identifier is what
-                            // Follow does, and it scrolls to the match instead
-                            // of opening every path that might contain one.
-                            if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
-                                ui.weak(format!(
-                                    "{n} identifier(s) in this model \u{2014} right-click an \
-                                     underlined value to follow one",
-                                ));
-                            }
-                            // A node link that does not resolve must SAY so. The tree
-                            // otherwise expands as far as it can and stops, which looks
-                            // like "it opened something" rather than "that path is
-                            // wrong" — the silent partial failure the aim and seek verbs
-                            // deliberately avoid.
-                            let jump_to = match &self.context.jump_target {
-                                Some(t) => match resolve_jump_target(value, t) {
-                                    Ok(()) => Some(t.clone()),
-                                    Err(msg) => {
-                                        bad_jump = Some(msg);
-                                        None
-                                    }
-                                },
-                                None => None,
-                            };
-                            let opts = tree::TreeOptions {
-                                tracked: self.tracked_identifier.as_deref(),
-                                known_variables: self.known_variables.as_ref(),
-                                declaring_classes: Some(&self.declaring_classes),
-
-                                jump_to: jump_to.as_deref(),
-                                highlight: self.context.jump_highlight.as_deref(),
-                            };
-                            egui::ScrollArea::both().id_salt("tree").auto_shrink(false).show(ui, |ui| {
-                                tree::tree_ui(ui, label, value, prev, &mut intent.tree, &self.def_index, &self.field_help, opts);
+                    // Set when a `hrw://…/node/<path>` link names a path this stage does not
+                    // have. Collected while `stage` is borrowed and acted on after, the same
+                    // pattern as `FrameIntent`.
+                    let mut bad_jump: Option<String> = None;
+                    let stage = self.current_stage();
+                    let has_error_data = stage.note_is_error()
+                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
+                    if has_error_data {
+                        let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
+                        egui::ScrollArea::vertical()
+                            .id_salt("error_summary")
+                            .auto_shrink(false)
+                            .show(ui, |ui| {
+                                Self::generic_error_summary(ui, &error, self.stage);
                             });
+                    } else {
+                        match &stage.value {
+                            Some(value) => {
+                                let label = self.model.as_deref().unwrap_or("model");
+                                let prev = self.previous_stage_value();
+                                // **The count, without the checkbox that used to sit
+                                // beside it.** "Reveal identifiers" was removed
+                                // 2026-08-04 (`DECISIONS.md`). The count is a plain
+                                // fact about the model and costs one line, so it
+                                // stays; finding a *particular* identifier is what
+                                // Follow does, and it scrolls to the match instead
+                                // of opening every path that might contain one.
+                                if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
+                                    ui.weak(format!(
+                                        "{n} identifier(s) in this model \u{2014} right-click an \
+                                     underlined value to follow one",
+                                    ));
+                                }
+                                // A node link that does not resolve must SAY so. The tree
+                                // otherwise expands as far as it can and stops, which looks
+                                // like "it opened something" rather than "that path is
+                                // wrong" — the silent partial failure the aim and seek verbs
+                                // deliberately avoid.
+                                let jump_to = match &self.context.jump_target {
+                                    Some(t) => match resolve_jump_target(value, t) {
+                                        Ok(()) => Some(t.clone()),
+                                        Err(msg) => {
+                                            bad_jump = Some(msg);
+                                            None
+                                        }
+                                    },
+                                    None => None,
+                                };
+                                let opts = tree::TreeOptions {
+                                    tracked: self.tracked_identifier.as_deref(),
+                                    known_variables: self.known_variables.as_ref(),
+                                    declaring_classes: Some(&self.declaring_classes),
+
+                                    jump_to: jump_to.as_deref(),
+                                    highlight: self.context.jump_highlight.as_deref(),
+                                };
+                                egui::ScrollArea::both()
+                                    .id_salt("tree")
+                                    .auto_shrink(false)
+                                    .show(ui, |ui| {
+                                        tree::tree_ui(
+                                            ui,
+                                            label,
+                                            value,
+                                            prev,
+                                            &mut intent.tree,
+                                            &self.def_index,
+                                            &self.field_help,
+                                            opts,
+                                        );
+                                    });
+                            }
+                            None if stage.note.is_none() => {
+                                ui.weak(if self.compiling {
+                                    "compiling…"
+                                } else {
+                                    "(no output for this stage)"
+                                });
+                            }
+                            None => {}
                         }
-                        None if stage.note.is_none() => {
-                            ui.weak(if self.compiling { "compiling…" } else { "(no output for this stage)" });
-                        }
-                        None => {}
+                    }
+                    // The stage borrow ends here, so the notices can finally be posted.
+                    if let Some(msg) = bad_jump {
+                        self.context.jump_target = None;
+                        self.notify(msg);
                     }
                 }
-                // The stage borrow ends here, so the notices can finally be posted.
-                if let Some(msg) = bad_jump {
-                    self.context.jump_target = None;
-                    self.notify(msg);
-                }
-            }
             } // end: non-Simulation stage rendering
         } else {
             // ---- Navigation view (a class reached via "Go to definition") ----
             ui.horizontal(|ui| {
-                if ui.button("Specimen").on_hover_text("Return to the specimen stages (top of navigation)").clicked() {
+                if ui
+                    .button("Specimen")
+                    .on_hover_text("Return to the specimen stages (top of navigation)")
+                    .clicked()
+                {
                     intent.go_home = true;
                 }
                 if ui.button("← Back").clicked() {
@@ -4155,21 +4412,32 @@ impl App {
             ui.separator();
 
             let entry = self.nav.last().unwrap();
-            egui::ScrollArea::both().id_salt("nav_tree").auto_shrink(false).show(ui, |ui| {
-                tree::tree_ui(ui, &entry.name, &entry.value, None, &mut intent.tree, &entry.def_index, &self.field_help,
-                    tree::TreeOptions {
-                        tracked: self.tracked_identifier.as_deref(),
-                        known_variables: self.known_variables.as_ref(),
-                        declaring_classes: Some(&self.declaring_classes),
+            egui::ScrollArea::both()
+                .id_salt("nav_tree")
+                .auto_shrink(false)
+                .show(ui, |ui| {
+                    tree::tree_ui(
+                        ui,
+                        &entry.name,
+                        &entry.value,
+                        None,
+                        &mut intent.tree,
+                        &entry.def_index,
+                        &self.field_help,
+                        tree::TreeOptions {
+                            tracked: self.tracked_identifier.as_deref(),
+                            known_variables: self.known_variables.as_ref(),
+                            declaring_classes: Some(&self.declaring_classes),
 
-                        // A navigated library class is a different IR, so a
-                        // jump target addressed into the stage tree would
-                        // land on an unrelated node or nothing at all. The
-                        // highlight is suppressed for the same reason.
-                        jump_to: None,
-                        highlight: None,
-                    });
-            });
+                            // A navigated library class is a different IR, so a
+                            // jump target addressed into the stage tree would
+                            // land on an unrelated node or nothing at all. The
+                            // highlight is suppressed for the same reason.
+                            jump_to: None,
+                            highlight: None,
+                        },
+                    );
+                });
         }
     }
 
@@ -4190,18 +4458,28 @@ impl App {
     /// here, but the reduced system is the one actually stuck.
     fn compute_problem_lines(&mut self) {
         self.problem_lines.clear();
-        let structural_failed =
-            self.stages.structural.value.as_ref().is_some_and(|v| v.get("error").is_some());
+        let structural_failed = self
+            .stages
+            .structural
+            .value
+            .as_ref()
+            .is_some_and(|v| v.get("error").is_some());
         if !structural_failed {
             return;
         }
         // Index reduction succeeding means high-index at worst, never ill-posed.
-        let Some(err) =
-            self.stages.index_reduction.value.as_ref().and_then(|v| v.get("error"))
+        let Some(err) = self
+            .stages
+            .index_reduction
+            .value
+            .as_ref()
+            .and_then(|v| v.get("error"))
         else {
             return;
         };
-        let Some(locs) = err.get("unmatched_unknown_locations").and_then(|v| v.as_array())
+        let Some(locs) = err
+            .get("unmatched_unknown_locations")
+            .and_then(|v| v.as_array())
         else {
             return;
         };
@@ -4215,8 +4493,10 @@ impl App {
             else {
                 continue;
             };
-            let unknown =
-                entry.get("unknown").and_then(serde_json::Value::as_str).unwrap_or("?");
+            let unknown = entry
+                .get("unknown")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("?");
             self.problem_lines.push((
                 line as u32,
                 format!(
@@ -4323,9 +4603,14 @@ impl App {
              where a sequence of places beats a paragraph.",
         );
         ui.add_space(10.0);
-        ui.weak("Fixture tours \u{2014} tests with expected outcomes \u{2014} can be picked above \
-                 when any exist.");
-        ui.weak(format!("Claude writes an ad hoc tour to {}", bridge::TOUR_FILE));
+        ui.weak(
+            "Fixture tours \u{2014} tests with expected outcomes \u{2014} can be picked above \
+                 when any exist.",
+        );
+        ui.weak(format!(
+            "Claude writes an ad hoc tour to {}",
+            bridge::TOUR_FILE
+        ));
         ui.weak("It appears here within a moment, and a rewrite is picked up live.");
     }
 
@@ -4334,75 +4619,84 @@ impl App {
     /// Extracted from `ui` during the 2026-07-28 sweep — self-contained, and
     /// `ui` had grown past the point where a reader could see its shape.
     fn menu_bar_ui(&mut self, ui: &mut egui::Ui) {
-egui::Panel::top("bar").show(ui, |ui| {
-    // `MenuBar` creates a horizontal bar with dropdown menus.
-    egui::MenuBar::new().ui(ui, |ui| {
-        ui.menu_button("File", |ui| {
-            if ui.button("Rescan specimens").clicked() {
-                self.model_list.rescan();
-                ui.close();
-            }
-            ui.separator();
-            if ui.button("Settings…").clicked() {
-                self.show_settings = true;
-                ui.close();
-            }
-            ui.separator();
-            if ui.button("Quit").clicked() {
-                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
-            }
-        });
-        ui.menu_button("View", |ui| {
-            if ui.selectable_label(self.ui_mode == UiMode::Tour, "Tour").clicked() {
-                self.ui_mode = UiMode::Tour;
-                self.split.request_reset(MODE_SWITCH_RESET);
-                ui.close();
-            }
-            if ui.selectable_label(self.ui_mode == UiMode::Specimen, "Specimen").clicked() {
-                self.ui_mode = UiMode::Specimen;
-                self.split.request_reset(MODE_SWITCH_RESET);
-                ui.close();
-            }
-            if ui.selectable_label(self.ui_mode == UiMode::Debug, "Debug").clicked() {
-                self.ui_mode = UiMode::Debug;
-                self.split.request_reset(MODE_SWITCH_RESET);
-                ui.close();
-            }
-        });
-        ui.menu_button("Help", |ui| {
-            if ui.button("Using HRW…").clicked() {
-                self.show_help = true;
-                ui.close();
-            }
-            if ui.button("About HRW…").clicked() {
-                self.show_about = true;
-                ui.close();
-            }
-            ui.separator();
-            // For problems that do NOT kill the app. A crash writes its own
-            // file; a wrong-looking view or a hang writes nothing, and the
-            // evidence needed to diagnose it is identical. The path goes into
-            // the status bar because a file nobody can find is a file nobody
-            // sends.
-            if ui
-                .button("Write diagnostic snapshot")
-                .on_hover_text(
-                    "Write the current app state, recent actions, and log tail to \
+        egui::Panel::top("bar").show(ui, |ui| {
+            // `MenuBar` creates a horizontal bar with dropdown menus.
+            egui::MenuBar::new().ui(ui, |ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Rescan specimens").clicked() {
+                        self.model_list.rescan();
+                        ui.close();
+                    }
+                    ui.separator();
+                    if ui.button("Settings…").clicked() {
+                        self.show_settings = true;
+                        ui.close();
+                    }
+                    ui.separator();
+                    if ui.button("Quit").clicked() {
+                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                });
+                ui.menu_button("View", |ui| {
+                    if ui
+                        .selectable_label(self.ui_mode == UiMode::Tour, "Tour")
+                        .clicked()
+                    {
+                        self.ui_mode = UiMode::Tour;
+                        self.split.request_reset(MODE_SWITCH_RESET);
+                        ui.close();
+                    }
+                    if ui
+                        .selectable_label(self.ui_mode == UiMode::Specimen, "Specimen")
+                        .clicked()
+                    {
+                        self.ui_mode = UiMode::Specimen;
+                        self.split.request_reset(MODE_SWITCH_RESET);
+                        ui.close();
+                    }
+                    if ui
+                        .selectable_label(self.ui_mode == UiMode::Debug, "Debug")
+                        .clicked()
+                    {
+                        self.ui_mode = UiMode::Debug;
+                        self.split.request_reset(MODE_SWITCH_RESET);
+                        ui.close();
+                    }
+                });
+                ui.menu_button("Help", |ui| {
+                    if ui.button("Using HRW…").clicked() {
+                        self.show_help = true;
+                        ui.close();
+                    }
+                    if ui.button("About HRW…").clicked() {
+                        self.show_about = true;
+                        ui.close();
+                    }
+                    ui.separator();
+                    // For problems that do NOT kill the app. A crash writes its own
+                    // file; a wrong-looking view or a hang writes nothing, and the
+                    // evidence needed to diagnose it is identical. The path goes into
+                    // the status bar because a file nobody can find is a file nobody
+                    // sends.
+                    if ui
+                        .button("Write diagnostic snapshot")
+                        .on_hover_text(
+                            "Write the current app state, recent actions, and log tail to \
                      .hrw-bridge/diagnostics/ for Claude to read. Use when something \
                      looks wrong but HRW has not crashed — crashes write their own file.",
-                )
-                .clicked()
-            {
-                let msg = match diagnostics::write_on_demand() {
-                    Ok(path) => format!("diagnostic written: {}", path.display()),
-                    Err(e) => format!("diagnostic FAILED: {e}"),
-                };
-                self.notify(msg);
-                ui.close();
-            }
+                        )
+                        .clicked()
+                    {
+                        let msg = match diagnostics::write_on_demand() {
+                            Ok(path) => format!("diagnostic written: {}", path.display()),
+                            Err(e) => format!("diagnostic FAILED: {e}"),
+                        };
+                        self.notify(msg);
+                        ui.close();
+                    }
+                });
+            });
         });
-    });
-});
     }
 
     /// The specimen's Modelica source: syntax-highlighted, with clickable
@@ -4482,154 +4776,155 @@ egui::Panel::top("bar").show(ui, |ui| {
                     .id_salt("specimen_source")
                     .auto_shrink(false)
                     .show(ui, |ui| {
-                    let tracked = self.tracked_identifier.as_deref();
-                    let dark = ui.visuals().dark_mode;
-                    // Reverse tracking: when the tracked
-                    // identifier changes — typically from a click
-                    // in a downstream view — bring its
-                    // declaration into view. Gated on *change*,
-                    // not on the value: scrolling every frame
-                    // while an identifier stays tracked would peg
-                    // the view and fight the scrollbar.
-                    let scroll_to = (self.tracked_identifier
-                        != self.source.scrolled_for)
-                        .then(|| {
-                            self.tracked_identifier.as_deref().and_then(|name| {
-                                self.identifier_index.as_ref()
-                                    .and_then(|idx| idx.variables.get(name))
-                                    .map(|v| v.source_line)
+                        let tracked = self.tracked_identifier.as_deref();
+                        let dark = ui.visuals().dark_mode;
+                        // Reverse tracking: when the tracked
+                        // identifier changes — typically from a click
+                        // in a downstream view — bring its
+                        // declaration into view. Gated on *change*,
+                        // not on the value: scrolling every frame
+                        // while an identifier stays tracked would peg
+                        // the view and fight the scrollbar.
+                        let scroll_to = (self.tracked_identifier != self.source.scrolled_for)
+                            .then(|| {
+                                self.tracked_identifier.as_deref().and_then(|name| {
+                                    self.identifier_index
+                                        .as_ref()
+                                        .and_then(|idx| idx.variables.get(name))
+                                        .map(|v| v.source_line)
+                                })
                             })
-                        })
-                        .flatten();
-                    if scroll_to.is_some() || self.tracked_identifier.is_none() {
-                        self.source.scrolled_for = self.tracked_identifier.clone();
-                    }
-                    // A link-driven scroll, taken once so it cannot re-scroll every
-                    // frame and pin the view — the same discipline as `jump_target`.
-                    let source_scroll_to = self.source.scroll_target.take();
-                    // Tokenized once per specimen, not per frame.
-                    let highlight = self.source.highlight.get_or_insert_with(
-                        || crate::source_view::SourceHighlight::new(text)
-                    );
-                    for (i, line) in text.lines().enumerate() {
-                        let line_1 = (i + 1) as u32;
-                        // Why this line was blamed, if it was. `problem_lines` is only
-                        // non-empty for a model index reduction could not rescue, so a
-                        // high-index model like MotorWithBrake is never marked.
-                        let blamed = self
-                            .problem_lines
-                            .iter()
-                            .find(|(l, _)| *l == line_1)
-                            .map(|(_, why)| why.as_str());
-                        let line_tokens = highlight.line(i);
-                        let spans = self.identifier_index.as_ref()
-                            .map(|idx| idx.clickable_spans(line_1, line, line_tokens))
-                            .unwrap_or_default();
-                        // One pass produces both colour and click
-                        // targets, so the two cannot disagree about
-                        // where a run of text begins and ends.
-                        let segments = crate::source_view::segments(
-                            line, line_tokens, &spans,
-                        );
-                        let row = ui.horizontal(|ui| {
-                            ui.spacing_mut().item_spacing.x = 0.0;
-                            // A blamed line's number is coloured rather than
-                            // gutter-marked: a marker glyph would widen this column and
-                            // shift every line, and a layout regression is precisely the
-                            // class of defect Claude cannot see.
-                            let mut num = egui::RichText::new(format!("{:>4} ", line_1))
-                                .monospace();
-                            num = if blamed.is_some() {
-                                num.color(crate::colors::ANIM_FAIL).strong()
-                            } else {
-                                num.weak()
-                            };
-                            ui.label(num);
-                            for seg in &segments {
-                                match seg.link {
-                                    Some(name) => {
-                                        // Clickable identifiers keep their own
-                                        // colours, which outrank syntax colour —
-                                        // interactivity has to win visually.
-                                        let color = if tracked == Some(name) {
-                                            crate::colors::TRACKED_GOLD
-                                        } else {
-                                            crate::colors::CLICKABLE_IDENT
-                                        };
-                                        let label = egui::Label::new(
-                                            egui::RichText::new(seg.text)
-                                                .monospace()
-                                                .color(color)
-                                                .underline()
-                                        ).sense(egui::Sense::click());
-                                        // Say which verb the click carries,
-                                        // before it fires. This used to hover
-                                        // with the bare name, confirming what
-                                        // was under the cursor and nothing
-                                        // about what clicking would do.
-                                        let hover =
-                                            crate::follow_hover(name, tracked == Some(name));
-                                        if ui.add(label).on_hover_text(hover).clicked() {
-                                            clicked_id = Some(name.to_owned());
+                            .flatten();
+                        if scroll_to.is_some() || self.tracked_identifier.is_none() {
+                            self.source.scrolled_for = self.tracked_identifier.clone();
+                        }
+                        // A link-driven scroll, taken once so it cannot re-scroll every
+                        // frame and pin the view — the same discipline as `jump_target`.
+                        let source_scroll_to = self.source.scroll_target.take();
+                        // Tokenized once per specimen, not per frame.
+                        let highlight = self
+                            .source
+                            .highlight
+                            .get_or_insert_with(|| crate::source_view::SourceHighlight::new(text));
+                        for (i, line) in text.lines().enumerate() {
+                            let line_1 = (i + 1) as u32;
+                            // Why this line was blamed, if it was. `problem_lines` is only
+                            // non-empty for a model index reduction could not rescue, so a
+                            // high-index model like MotorWithBrake is never marked.
+                            let blamed = self
+                                .problem_lines
+                                .iter()
+                                .find(|(l, _)| *l == line_1)
+                                .map(|(_, why)| why.as_str());
+                            let line_tokens = highlight.line(i);
+                            let spans = self
+                                .identifier_index
+                                .as_ref()
+                                .map(|idx| idx.clickable_spans(line_1, line, line_tokens))
+                                .unwrap_or_default();
+                            // One pass produces both colour and click
+                            // targets, so the two cannot disagree about
+                            // where a run of text begins and ends.
+                            let segments = crate::source_view::segments(line, line_tokens, &spans);
+                            let row = ui.horizontal(|ui| {
+                                ui.spacing_mut().item_spacing.x = 0.0;
+                                // A blamed line's number is coloured rather than
+                                // gutter-marked: a marker glyph would widen this column and
+                                // shift every line, and a layout regression is precisely the
+                                // class of defect Claude cannot see.
+                                let mut num =
+                                    egui::RichText::new(format!("{:>4} ", line_1)).monospace();
+                                num = if blamed.is_some() {
+                                    num.color(crate::colors::ANIM_FAIL).strong()
+                                } else {
+                                    num.weak()
+                                };
+                                ui.label(num);
+                                for seg in &segments {
+                                    match seg.link {
+                                        Some(name) => {
+                                            // Clickable identifiers keep their own
+                                            // colours, which outrank syntax colour —
+                                            // interactivity has to win visually.
+                                            let color = if tracked == Some(name) {
+                                                crate::colors::TRACKED_GOLD
+                                            } else {
+                                                crate::colors::CLICKABLE_IDENT
+                                            };
+                                            let label = egui::Label::new(
+                                                egui::RichText::new(seg.text)
+                                                    .monospace()
+                                                    .color(color)
+                                                    .underline(),
+                                            )
+                                            .sense(egui::Sense::click());
+                                            // Say which verb the click carries,
+                                            // before it fires. This used to hover
+                                            // with the bare name, confirming what
+                                            // was under the cursor and nothing
+                                            // about what clicking would do.
+                                            let hover =
+                                                crate::follow_hover(name, tracked == Some(name));
+                                            if ui.add(label).on_hover_text(hover).clicked() {
+                                                clicked_id = Some(name.to_owned());
+                                            }
                                         }
-                                    }
-                                    None => {
-                                        let mut rt = egui::RichText::new(seg.text)
-                                            .monospace();
-                                        if let Some(c) = crate::colors::syntax_color(
-                                            seg.kind, dark,
-                                        ) {
-                                            rt = rt.color(c);
+                                        None => {
+                                            let mut rt = egui::RichText::new(seg.text).monospace();
+                                            if let Some(c) =
+                                                crate::colors::syntax_color(seg.kind, dark)
+                                            {
+                                                rt = rt.color(c);
+                                            }
+                                            ui.label(rt);
                                         }
-                                        ui.label(rt);
                                     }
                                 }
+                            });
+                            if let Some(why) = blamed {
+                                // Painted *over* the row at low alpha rather than behind it.
+                                // A `Frame` fill would be cleaner-looking but adds margins,
+                                // and any layout shift here is a rendered defect Claude has
+                                // no way to notice. An overpaint cannot move anything.
+                                ui.painter().rect_filled(
+                                    row.response.rect,
+                                    egui::CornerRadius::ZERO,
+                                    crate::colors::ANIM_FAIL.gamma_multiply(0.18),
+                                );
+                                row.response.clone().on_hover_text(why);
                             }
-                        });
-                        if let Some(why) = blamed {
-                            // Painted *over* the row at low alpha rather than behind it.
-                            // A `Frame` fill would be cleaner-looking but adds margins,
-                            // and any layout shift here is a rendered defect Claude has
-                            // no way to notice. An overpaint cannot move anything.
-                            ui.painter().rect_filled(
-                                row.response.rect,
-                                egui::CornerRadius::ZERO,
-                                crate::colors::ANIM_FAIL.gamma_multiply(0.18),
-                            );
-                            row.response.clone().on_hover_text(why);
+                            if scroll_to == Some(line_1) || source_scroll_to == Some(line_1) {
+                                // **Scroll to the line's START, not to the line.**
+                                //
+                                // This is a `ScrollArea::both`, and `scroll_to_me`
+                                // aligns on *both* axes. Centring a row horizontally
+                                // centres a line that may be 200 characters wide, so
+                                // its opening characters — the indentation, the
+                                // keyword, the declared name — end up off the left
+                                // edge. Doug, 2026-08-01: *"The text in the modelica
+                                // source view is positioned too far to the left. The
+                                // left-most characters in many source lines are being
+                                // cut off."*
+                                //
+                                // Latent before MSL models: a specimen's lines are
+                                // short and shallowly indented, so centring one moved
+                                // the view barely at all. A library file is nested
+                                // several packages deep with long signatures, and the
+                                // scroll now fires on every library load to reach the
+                                // declaration line.
+                                //
+                                // Collapsing the target to a sliver at the row's left
+                                // edge fixes both axes at once: vertically it still
+                                // centres the line, and horizontally the offset that
+                                // would centre a sliver at the content's left margin
+                                // is negative, so egui clamps it to 0 — the start of
+                                // the line, which is where reading begins.
+                                let mut target = row.response.rect;
+                                target.max.x = target.min.x + 1.0;
+                                ui.scroll_to_rect(target, Some(egui::Align::Center));
+                            }
                         }
-                        if scroll_to == Some(line_1) || source_scroll_to == Some(line_1) {
-                            // **Scroll to the line's START, not to the line.**
-                            //
-                            // This is a `ScrollArea::both`, and `scroll_to_me`
-                            // aligns on *both* axes. Centring a row horizontally
-                            // centres a line that may be 200 characters wide, so
-                            // its opening characters — the indentation, the
-                            // keyword, the declared name — end up off the left
-                            // edge. Doug, 2026-08-01: *"The text in the modelica
-                            // source view is positioned too far to the left. The
-                            // left-most characters in many source lines are being
-                            // cut off."*
-                            //
-                            // Latent before MSL models: a specimen's lines are
-                            // short and shallowly indented, so centring one moved
-                            // the view barely at all. A library file is nested
-                            // several packages deep with long signatures, and the
-                            // scroll now fires on every library load to reach the
-                            // declaration line.
-                            //
-                            // Collapsing the target to a sliver at the row's left
-                            // edge fixes both axes at once: vertically it still
-                            // centres the line, and horizontally the offset that
-                            // would centre a sliver at the content's left margin
-                            // is negative, so egui clamps it to 0 — the start of
-                            // the line, which is where reading begins.
-                            let mut target = row.response.rect;
-                            target.max.x = target.min.x + 1.0;
-                            ui.scroll_to_rect(target, Some(egui::Align::Center));
-                        }
-                    }
-                });
+                    });
                 // **Observation hook, not decoration.** `ScrollArea` keeps its
                 // offset in `Memory` under an id derived from the parent `Ui`,
                 // which a test cannot reconstruct; the returned state is the only
@@ -4719,9 +5014,10 @@ egui::Panel::top("bar").show(ui, |ui| {
         // reintroducing the disagreement between bar and file.
         let stage_value = self.stages.get(point.stage).value.clone();
         let focus = match (&point.kind, &stage_value) {
-            (PointKind::Node(key_path), Some(value)) => {
-                Focus::Node { key_path: key_path.clone(), stage_value: value }
-            }
+            (PointKind::Node(key_path), Some(value)) => Focus::Node {
+                key_path: key_path.clone(),
+                stage_value: value,
+            },
             // The stage's IR is not available, so the node cannot be described.
             // Skip re-emission rather than dropping the point: the file still
             // holds what Claude has, and the bar still describes that file, so
@@ -4800,7 +5096,12 @@ egui::Panel::top("bar").show(ui, |ui| {
             None => false,
         };
         if dangling {
-            let target = self.context.pointed_at.take().map(|p| p.target).unwrap_or_default();
+            let target = self
+                .context
+                .pointed_at
+                .take()
+                .map(|p| p.target)
+                .unwrap_or_default();
             // Said out loud. Silently dropping it would leave the user believing
             // Claude still has a node that has vanished from the bar.
             self.notify(format!(
@@ -4953,135 +5254,151 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// Guarded by three headless tests from the baseline suite's chunk 3: a tab
     /// click selects the stage, leaves the log view, and reaches the Context Bar.
     fn stage_tab_bar_ui(&mut self, ui: &mut egui::Ui, intent: &mut FrameIntent) {
-            // ---- Stage tab bar ----
-            //
-            // WHY `selectable_label` INSTEAD OF `selectable_value`:
-            //
-            // egui has two selection widgets:
-            // - `selectable_value(&mut val, variant, text)` — ALWAYS highlights
-            //   when `val == variant`. Good for radio-button groups.
-            // - `selectable_label(is_selected, text)` — highlights when the
-            //   bool is true. You control the condition explicitly.
-            //
-            // We use `selectable_label` here because we need to SUPPRESS
-            // highlighting while compiling: when a fresh specimen is loading,
-            // no tab should appear selected (the previous specimen's stage
-            // would be misleading). The `stage_selected` bool below gates
-            // this: it's false while compiling or while viewing the log, so
-            // no tab highlights. `selectable_value` can't express this
-            // conditional because it always highlights the current value.
-            //
-            // THE `stage_tab_clicked` PATTERN:
-            //
-            // Each stage tab checks `.clicked()` and sets the same
-            // `stage_tab_clicked` flag. After the tab row, a single block
-            // acts on that flag to turn off `viewing_log` and emit a stage
-            // capture for the bridge. This avoids duplicating that logic
-            // in every tab's click handler.
-            //
-            // TAB COLORING:
-            //
-            // Each tab label is colored via `tab_label()`:
-            // - Red if the stage errored (so you see pipeline failures at a glance)
-            // - Green if the stage produced IR (success)
-            // - Default color if not yet reached or still compiling
-            // Specimen switcher — a compact dropdown showing the
-            // Specimen switcher dropdown — only in Debug mode, where
-            // the specimen list is hidden.
-            if self.ui_mode == UiMode::Debug {
-                let current_name = self.selected.as_ref()
-                    .and_then(|p| p.file_stem())
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("(none)");
-                let combo = egui::ComboBox::from_id_salt("specimen_switcher")
-                    .selected_text(current_name)
-                    .width(120.0);
-                let mut switch_to = None;
-                combo.show_ui(ui, |ui| {
-                    for path in &self.model_list.files {
-                        let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
-                        let is_selected = self.selected.as_deref() == Some(path.as_path());
-                        if ui.selectable_label(is_selected, name).clicked() {
-                            switch_to = Some(path.clone());
-                        }
+        // ---- Stage tab bar ----
+        //
+        // WHY `selectable_label` INSTEAD OF `selectable_value`:
+        //
+        // egui has two selection widgets:
+        // - `selectable_value(&mut val, variant, text)` — ALWAYS highlights
+        //   when `val == variant`. Good for radio-button groups.
+        // - `selectable_label(is_selected, text)` — highlights when the
+        //   bool is true. You control the condition explicitly.
+        //
+        // We use `selectable_label` here because we need to SUPPRESS
+        // highlighting while compiling: when a fresh specimen is loading,
+        // no tab should appear selected (the previous specimen's stage
+        // would be misleading). The `stage_selected` bool below gates
+        // this: it's false while compiling or while viewing the log, so
+        // no tab highlights. `selectable_value` can't express this
+        // conditional because it always highlights the current value.
+        //
+        // THE `stage_tab_clicked` PATTERN:
+        //
+        // Each stage tab checks `.clicked()` and sets the same
+        // `stage_tab_clicked` flag. After the tab row, a single block
+        // acts on that flag to turn off `viewing_log` and emit a stage
+        // capture for the bridge. This avoids duplicating that logic
+        // in every tab's click handler.
+        //
+        // TAB COLORING:
+        //
+        // Each tab label is colored via `tab_label()`:
+        // - Red if the stage errored (so you see pipeline failures at a glance)
+        // - Green if the stage produced IR (success)
+        // - Default color if not yet reached or still compiling
+        // Specimen switcher — a compact dropdown showing the
+        // Specimen switcher dropdown — only in Debug mode, where
+        // the specimen list is hidden.
+        if self.ui_mode == UiMode::Debug {
+            let current_name = self
+                .selected
+                .as_ref()
+                .and_then(|p| p.file_stem())
+                .and_then(|n| n.to_str())
+                .unwrap_or("(none)");
+            let combo = egui::ComboBox::from_id_salt("specimen_switcher")
+                .selected_text(current_name)
+                .width(120.0);
+            let mut switch_to = None;
+            combo.show_ui(ui, |ui| {
+                for path in &self.model_list.files {
+                    let name = path.file_stem().and_then(|n| n.to_str()).unwrap_or("?");
+                    let is_selected = self.selected.as_deref() == Some(path.as_path());
+                    if ui.selectable_label(is_selected, name).clicked() {
+                        switch_to = Some(path.clone());
                     }
-                });
-                if let Some(path) = switch_to {
-                    self.open(path);
                 }
-                ui.separator();
+            });
+            if let Some(path) = switch_to {
+                self.open(path);
             }
-            // **The tabs go inert without a specimen; the switcher above does
-            // not.** Drawn either way so the pipeline's phases are visible before
-            // anything is loaded, but a click must not set a stage that would
-            // linger and fire when a specimen arrived later. Disabling here
-            // rather than at the call site is what keeps the switcher usable —
-            // `Ui::disable` applies to everything drawn after it.
-            if self.selected.is_none() {
-                ui.disable();
-            }
+            ui.separator();
+        }
+        // **The tabs go inert without a specimen; the switcher above does
+        // not.** Drawn either way so the pipeline's phases are visible before
+        // anything is loaded, but a click must not set a stage that would
+        // linger and fire when a specimen arrived later. Disabling here
+        // rather than at the call site is what keeps the switcher usable —
+        // `Ui::disable` applies to everything drawn after it.
+        if self.selected.is_none() {
+            ui.disable();
+        }
 
-            if ui.selectable_label(self.viewing_log, "Log").clicked() {
-                self.viewing_log = true;
-            }
-            ui.separator();
-            // ---- Play button (inline simulation trigger) ----
-            //
-            // This button starts a simulation WITHOUT switching to the
-            // Simulation tab. The user can be viewing the Structural
-            // spy-plot or the Log and press play — the sim runs in the
-            // background and the UI stays on the current view. This is
-            // useful for watching log messages during simulation or
-            // studying the IR while a run completes.
-            //
-            // `add_enabled` is like `add` (places a widget) but
-            // greys it out when the bool is false. The button is only
-            // active when: not compiling, not already simulating, a
-            // model was parsed, and solve_lowering succeeded (the
-            // simulator needs the SolveModel IR).
-            let can_sim = !self.compiling
-                && !self.sim_running
-                && self.model.is_some()
-                && self.stages.solve_lowering.value.is_some();
-            if ui
-                .add_enabled(can_sim, egui::Button::new("▶"))
-                .on_hover_text("Run simulation (stays on the current view)")
-                .on_disabled_hover_text("Compile a specimen first")
-                .clicked()
-            {
-                self.start_simulation();
-            }
-            if self.sim_running {
-                ui.spinner();
-            }
-            ui.separator();
-            let err = ui.visuals().error_fg_color;
-            let ok = crate::colors::ok_color(ui.visuals().dark_mode);
-            // While a freshly-selected specimen is still compiling, NO tab is
-            // highlighted — the previous specimen's stage must not appear selected
-            // over an empty/loading one. The highlight returns once results land
-            // (`self.stage` = the furthest clean stage). Hence `selectable_label`
-            // with an explicit `stage_selected && …` bool, not `selectable_value`
-            // (which would always highlight the current stage).
-            //
-            // Selecting an IR stage tab ALSO captures that stage for the chat (no
-            // separate 🔎 button) — so its context is ready the instant you view
-            // it; the capture fires once below. Simulation is excluded: it's a
-            // run/plot action, not an IR capture.
-            let stage_selected = !self.compiling && !self.viewing_log;
-            let mut stage_tab_clicked = false;
-            let tabs: &[(StageKind, &str, &Stage, Option<&str>)] = &[
-                (StageKind::Parse, "Parse", &self.stages.parse, None),
-                (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
-                (StageKind::Instantiate, "Instantiate", &self.stages.instantiate, None),
-                (StageKind::Typecheck, "Typecheck", &self.stages.typecheck, Some(
+        if ui.selectable_label(self.viewing_log, "Log").clicked() {
+            self.viewing_log = true;
+        }
+        ui.separator();
+        // ---- Play button (inline simulation trigger) ----
+        //
+        // This button starts a simulation WITHOUT switching to the
+        // Simulation tab. The user can be viewing the Structural
+        // spy-plot or the Log and press play — the sim runs in the
+        // background and the UI stays on the current view. This is
+        // useful for watching log messages during simulation or
+        // studying the IR while a run completes.
+        //
+        // `add_enabled` is like `add` (places a widget) but
+        // greys it out when the bool is false. The button is only
+        // active when: not compiling, not already simulating, a
+        // model was parsed, and solve_lowering succeeded (the
+        // simulator needs the SolveModel IR).
+        let can_sim = !self.compiling
+            && !self.sim_running
+            && self.model.is_some()
+            && self.stages.solve_lowering.value.is_some();
+        if ui
+            .add_enabled(can_sim, egui::Button::new("▶"))
+            .on_hover_text("Run simulation (stays on the current view)")
+            .on_disabled_hover_text("Compile a specimen first")
+            .clicked()
+        {
+            self.start_simulation();
+        }
+        if self.sim_running {
+            ui.spinner();
+        }
+        ui.separator();
+        let err = ui.visuals().error_fg_color;
+        let ok = crate::colors::ok_color(ui.visuals().dark_mode);
+        // While a freshly-selected specimen is still compiling, NO tab is
+        // highlighted — the previous specimen's stage must not appear selected
+        // over an empty/loading one. The highlight returns once results land
+        // (`self.stage` = the furthest clean stage). Hence `selectable_label`
+        // with an explicit `stage_selected && …` bool, not `selectable_value`
+        // (which would always highlight the current stage).
+        //
+        // Selecting an IR stage tab ALSO captures that stage for the chat (no
+        // separate 🔎 button) — so its context is ready the instant you view
+        // it; the capture fires once below. Simulation is excluded: it's a
+        // run/plot action, not an IR capture.
+        let stage_selected = !self.compiling && !self.viewing_log;
+        let mut stage_tab_clicked = false;
+        let tabs: &[(StageKind, &str, &Stage, Option<&str>)] = &[
+            (StageKind::Parse, "Parse", &self.stages.parse, None),
+            (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
+            (
+                StageKind::Instantiate,
+                "Instantiate",
+                &self.stages.instantiate,
+                None,
+            ),
+            (
+                StageKind::Typecheck,
+                "Typecheck",
+                &self.stages.typecheck,
+                Some(
                     "The model-scoped instanced typecheck: it types the instantiated \
                      overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
                      Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
                      pre-instantiation whole-tree typecheck; it fails on the full MSL.",
-                )),
-                (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
-                (StageKind::Dae, "DAE", &self.stages.dae, Some(
+                ),
+            ),
+            (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
+            (
+                StageKind::Dae,
+                "DAE",
+                &self.stages.dae,
+                Some(
                     "DAE construction (Rumoca phase 6): the flat equation list becomes a \
                      mathematical system. Variables are partitioned into states (x), \
                      algebraics (y), inputs (u), parameters (p) and discretes (z, m); \
@@ -5089,103 +5406,133 @@ egui::Panel::top("bar").show(ui, |ui| {
                      f_z / f_m (discrete updates), f_c (conditions). The note reports the \
                      counts, and it is the count that decides everything downstream: \
                      matching cannot assign one equation per unknown unless they agree.",
-                )),
-                (StageKind::Structural, "Structural", &self.stages.structural, Some(
+                ),
+            ),
+            (
+                StageKind::Structural,
+                "Structural",
+                &self.stages.structural,
+                Some(
                     "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
                      (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
                      A high-index system (rigid constraints) reports SINGULAR here — see the \
                      Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
                      to pan, scroll to zoom, click a block to capture) or the raw report tree.",
-                )),
-                (StageKind::IndexReduction, "Index reduction", &self.stages.index_reduction, Some(
+                ),
+            ),
+            (
+                StageKind::IndexReduction,
+                "Index reduction",
+                &self.stages.index_reduction,
+                Some(
                     "Structural analysis of the DAE AFTER index reduction (Pantelides / \
                      dummy derivatives): the funnel differentiates constraints and demotes states \
                      so a high-index singular system becomes matchable. For an already-index-1 \
                      model this equals Structural. Same BLT spy-plot / tree.",
-                )),
-                (StageKind::Initialization, "Initialization", &self.stages.initialization, Some(
+                ),
+            ),
+            (
+                StageKind::Initialization,
+                "Initialization",
+                &self.stages.initialization,
+                Some(
                     "The consistent-initial-condition solve plan (build_ic_plan): the \
                      ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
                      scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
                      dropped / unknowns pinned) when the initial subsystem is singular, and a \
                      determinacy check that flags an OVER-determined init (more explicit initial \
                      conditions than states — conflicting/redundant ICs).",
-                )),
-                (StageKind::Events, "Events", &self.stages.events, Some(
+                ),
+            ),
+            (
+                StageKind::Events,
+                "Events",
+                &self.stages.events,
+                Some(
                     "The DAE's hybrid / event structure: the conditions (relations that \
                      trigger events), the discrete updates lowered from `when` clauses (f_z real, \
                      f_m valued), and the event partition (zero-crossing root conditions + scheduled \
                      time events). A smooth (continuous) model shows none.",
-                )),
-                (StageKind::SolveLowering, "Solve lowering", &self.stages.solve_lowering, Some(
+                ),
+            ),
+            (
+                StageKind::SolveLowering,
+                "Solve lowering",
+                &self.stages.solve_lowering,
+                Some(
                     "The DAE lowered to a SolveModel (phase 8): the solvable form the \
                      simulator runs — residual programs, variable layout, mass matrix, Jacobian \
                      sparsity. This is the compile step just before simulation.",
-                )),
-            ];
-            for &(kind, label, stage, hover) in tabs {
-                let mut resp = ui.selectable_label(
-                    stage_selected && self.stage == kind,
-                    tab_label(label, stage, ok, err),
-                );
-                // A tab click is a point-at too — at the stage as a
-                // whole. Appended to the tab's own explanation rather
-                // than replacing it: what the stage *is* matters more
-                // than what clicking does, and this is the row where a
-                // reader is most likely to be learning the pipeline.
-                let tip = match hover {
-                    Some(t) => format!("{t}\n\n{}", crate::POINT_AT_HOVER),
-                    None => crate::POINT_AT_HOVER.to_owned(),
-                };
-                resp = resp.on_hover_text(tip);
-                if resp.clicked() {
-                    diagnostics::record_action("stage-tab", kind.name());
-                    self.stage = kind;
-                    stage_tab_clicked = true;
-                }
-            }
-            // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
-            ui.separator();
-            let sim_label = {
-                let text = egui::RichText::new("Simulation");
-                if self.sim_error.is_some() {
-                    text.color(err)
-                } else if self.sim_data.is_some() {
-                    text.color(ok)
-                } else {
-                    text
-                }
+                ),
+            ),
+        ];
+        for &(kind, label, stage, hover) in tabs {
+            let mut resp = ui.selectable_label(
+                stage_selected && self.stage == kind,
+                tab_label(label, stage, ok, err),
+            );
+            // A tab click is a point-at too — at the stage as a
+            // whole. Appended to the tab's own explanation rather
+            // than replacing it: what the stage *is* matters more
+            // than what clicking does, and this is the row where a
+            // reader is most likely to be learning the pipeline.
+            let tip = match hover {
+                Some(t) => format!("{t}\n\n{}", crate::POINT_AT_HOVER),
+                None => crate::POINT_AT_HOVER.to_owned(),
             };
-            if ui.selectable_label(stage_selected && self.stage == StageKind::Simulation, sim_label)
-                .on_hover_text(
-                    "Run the model (phase 9): compile → lower to a SolveModel → integrate \
+            resp = resp.on_hover_text(tip);
+            if resp.clicked() {
+                diagnostics::record_action("stage-tab", kind.name());
+                self.stage = kind;
+                stage_tab_clicked = true;
+            }
+        }
+        // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
+        ui.separator();
+        let sim_label = {
+            let text = egui::RichText::new("Simulation");
+            if self.sim_error.is_some() {
+                text.color(err)
+            } else if self.sim_data.is_some() {
+                text.color(ok)
+            } else {
+                text
+            }
+        };
+        if ui
+            .selectable_label(
+                stage_selected && self.stage == StageKind::Simulation,
+                sim_label,
+            )
+            .on_hover_text(
+                "Run the model (phase 9): compile → lower to a SolveModel → integrate \
                      (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
                      on the worker thread, so the UI stays live.",
-                )
-                .clicked()
-            {
-                self.stage = StageKind::Simulation;
-                self.viewing_log = false;
+            )
+            .clicked()
+        {
+            self.stage = StageKind::Simulation;
+            self.viewing_log = false;
+        }
+        if stage_tab_clicked {
+            self.viewing_log = false;
+            if self.selected.is_some() {
+                intent.want_stage_ask = true;
             }
-            if stage_tab_clicked {
-                self.viewing_log = false;
-                if self.selected.is_some() {
-                    intent.want_stage_ask = true;
-                }
-            }
-            // The compiled-model name is deliberately NOT shown here — the
-            // stage tab row is short on horizontal space, and the same
-            // identity is already visible in the specimen list and the
-            // tree breadcrumb. `self.model` itself is still maintained;
-            // it feeds the Claude bridge focus file, live-debug arming,
-            // capture gating, and the purpose-note lookup.
-            if self.compiling {
-                ui.spinner();
-            }
-            if let Some(n) = &self.nav_loading {
-                ui.weak(format!("opening {n}…"));
-                ui.spinner();
-            }
+        }
+        // The compiled-model name is deliberately NOT shown here — the
+        // stage tab row is short on horizontal space, and the same
+        // identity is already visible in the specimen list and the
+        // tree breadcrumb. `self.model` itself is still maintained;
+        // it feeds the Claude bridge focus file, live-debug arming,
+        // capture gating, and the purpose-note lookup.
+        if self.compiling {
+            ui.spinner();
+        }
+        if let Some(n) = &self.nav_loading {
+            ui.weak(format!("opening {n}…"));
+            ui.spinner();
+        }
     }
 
     /// The **sub-view selector** for the report stages (Structural, Index
@@ -5206,145 +5553,192 @@ egui::Panel::top("bar").show(ui, |ui| {
     /// `stage`, `stages` and the viewport, and writes the viewport — application
     /// state, not pane-local state.
     fn report_sub_view_row_ui(&mut self, ui: &mut egui::Ui) {
-            // Set when a link names a sub-view this model has no tab for. Collected
-            // here and posted after the borrows end, as `FrameIntent` does.
-            let mut bad_sub_view: Option<String> = None;
-            // Invalidate caches when switching between Structural
-            // and IndexReduction — each has different report data.
-            if self.stage_views.reset_for(self.stage) {
-                // Default sub-view: Summary for IndexReduction and
-                // singular Structural; SpyPlot otherwise.
-                let is_singular = self.stages.get(self.stage).note.as_deref()
-                    .is_some_and(|n| n.contains("singular"));
-                if self.stage == StageKind::IndexReduction || is_singular {
-                    self.viewport.structural = StructuralView::Summary;
-                } else if matches!(self.viewport.structural,
-                    StructuralView::Summary | StructuralView::Animate)
-                {
-                    self.viewport.structural = StructuralView::SpyPlot;
-                }
-                // `reset_for` already recorded the new key.
+        // Set when a link names a sub-view this model has no tab for. Collected
+        // here and posted after the borrows end, as `FrameIntent` does.
+        let mut bad_sub_view: Option<String> = None;
+        // Invalidate caches when switching between Structural
+        // and IndexReduction — each has different report data.
+        if self.stage_views.reset_for(self.stage) {
+            // Default sub-view: Summary for IndexReduction and
+            // singular Structural; SpyPlot otherwise.
+            let is_singular = self
+                .stages
+                .get(self.stage)
+                .note
+                .as_deref()
+                .is_some_and(|n| n.contains("singular"));
+            if self.stage == StageKind::IndexReduction || is_singular {
+                self.viewport.structural = StructuralView::Summary;
+            } else if matches!(
+                self.viewport.structural,
+                StructuralView::Summary | StructuralView::Animate
+            ) {
+                self.viewport.structural = StructuralView::SpyPlot;
             }
-            // A sub-view requested by an hrw:// link is applied *here*, after
-            // the default-sub-view logic above, precisely because that logic
-            // would otherwise overwrite it: it forces Summary whenever a
-            // report stage is entered singular. A link saying "show me the
-            // matching animation" has to win over the default saying "show
-            // the summary first".
-            if let Some(sub) = self.pending_sub_view.take() {
-                // Refuse a sub-view this model does not have a tab for, rather than
-                // selecting it and rendering something misleading — the same rule as
-                // aiming at an equation that is not there. The link named a real
-                // slug; whether it is *available* depends on what the compile
-                // produced, which only this point knows.
-                let available = match sub {
-                    SubView::Structural(v) => self.structural_view_available(v),
-                    _ => true,
-                };
-                if available {
-                    self.apply_sub_view(Some(sub));
-                } else {
-                    let msg = format!(
-                        "{} has no {} view for this model \u{2014} the link names one \
+            // `reset_for` already recorded the new key.
+        }
+        // A sub-view requested by an hrw:// link is applied *here*, after
+        // the default-sub-view logic above, precisely because that logic
+        // would otherwise overwrite it: it forces Summary whenever a
+        // report stage is entered singular. A link saying "show me the
+        // matching animation" has to win over the default saying "show
+        // the summary first".
+        if let Some(sub) = self.pending_sub_view.take() {
+            // Refuse a sub-view this model does not have a tab for, rather than
+            // selecting it and rendering something misleading — the same rule as
+            // aiming at an equation that is not there. The link named a real
+            // slug; whether it is *available* depends on what the compile
+            // produced, which only this point knows.
+            let available = match sub {
+                SubView::Structural(v) => self.structural_view_available(v),
+                _ => true,
+            };
+            if available {
+                self.apply_sub_view(Some(sub));
+            } else {
+                let msg = format!(
+                    "{} has no {} view for this model \u{2014} the link names one \
                          that is not here",
-                        self.stage.name(),
-                        sub.slug(),
-                    );
-                    bad_sub_view = Some(msg);
-                }
+                    self.stage.name(),
+                    sub.slug(),
+                );
+                bad_sub_view = Some(msg);
             }
-            // Only now is the sub-view settled, so only now does looking up "the
-            // on-screen animation" mean the one the link named. Applying this
-            // before the block above would seek whichever animation happened to be
-            // showing beforehand.
-            self.apply_pending_seek();
-            if let Some(msg) = bad_sub_view.take() {
-                self.notify(msg);
-            }
-            let is_index_reduction = self.stage == StageKind::IndexReduction;
-            let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
-            let is_singular = note.contains("singular");
+        }
+        // Only now is the sub-view settled, so only now does looking up "the
+        // on-screen animation" mean the one the link named. Applying this
+        // before the block above would seek whichever animation happened to be
+        // showing beforehand.
+        self.apply_pending_seek();
+        if let Some(msg) = bad_sub_view.take() {
+            self.notify(msg);
+        }
+        let is_index_reduction = self.stage == StageKind::IndexReduction;
+        let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
+        let is_singular = note.contains("singular");
 
-            // Status banner
-            if is_index_reduction {
-                if is_singular {
-                    ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
-                        ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
-                    });
-                } else {
-                    ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("Index-1").color(crate::colors::ANIM_PATH_FOUND).strong());
-                        ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
-                    });
-                }
-                ui.add_space(2.0);
-            } else if is_singular {
+        // Status banner
+        if is_index_reduction {
+            if is_singular {
                 ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new("Singular")
+                            .color(crate::colors::ANIM_FAIL)
+                            .strong(),
+                    );
+                    ui.weak(
+                        "\u{2014} raw DAE was structurally singular; index reduction performed",
+                    );
+                });
+            } else {
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new("Index-1")
+                            .color(crate::colors::ANIM_PATH_FOUND)
+                            .strong(),
+                    );
+                    ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
+                });
+            }
+            ui.add_space(2.0);
+        } else if is_singular {
+            ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Singular").color(crate::colors::ANIM_FAIL).strong());
                     ui.weak("\u{2014} structurally singular; no perfect matching exists (see Index Reduction)");
                 });
-                ui.add_space(2.0);
-            }
+            ui.add_space(2.0);
+        }
 
-            // Sub-tab bar
-            ui.horizontal(|ui| {
-                // Availability comes from `structural_view_available`, the same
-                // predicate the link guard uses — a tab that exists and a link that
-                // is honoured must not be able to disagree.
-                if self.structural_view_available(StructuralView::Summary) {
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Summary, "Summary");
-                    ui.separator();
-                }
-                if self.structural_view_available(StructuralView::Animate) {
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::Animate, "Reduction \u{25b6}");
-                }
-                // Alias elimination is reported by this stage only, and
-                // only when something was actually eliminated -- a model
-                // with no aliases must not show an empty tab.
-                if self.structural_view_available(StructuralView::AliasAnim) {
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::AliasAnim, "Aliases \u{25b6}")
-                        .on_hover_text(
-                            "Watch variables be substituted away. Every connection \
+        // Sub-tab bar
+        ui.horizontal(|ui| {
+            // Availability comes from `structural_view_available`, the same
+            // predicate the link guard uses — a tab that exists and a link that
+            // is honoured must not be able to disagree.
+            if self.structural_view_available(StructuralView::Summary) {
+                ui.selectable_value(
+                    &mut self.viewport.structural,
+                    StructuralView::Summary,
+                    "Summary",
+                );
+                ui.separator();
+            }
+            if self.structural_view_available(StructuralView::Animate) {
+                ui.selectable_value(
+                    &mut self.viewport.structural,
+                    StructuralView::Animate,
+                    "Reduction \u{25b6}",
+                );
+            }
+            // Alias elimination is reported by this stage only, and
+            // only when something was actually eliminated -- a model
+            // with no aliases must not show an empty tab.
+            if self.structural_view_available(StructuralView::AliasAnim) {
+                ui.selectable_value(
+                    &mut self.viewport.structural,
+                    StructuralView::AliasAnim,
+                    "Aliases \u{25b6}",
+                )
+                .on_hover_text(
+                    "Watch variables be substituted away. Every connection \
                              equation `a = b` lets one of the two be deleted, which is \
                              why the solved system is far smaller than the equation \
                              count suggests.",
-                        );
-                }
-                // Spy-plot, Matching, BLT require a full matching —
-                // hide them when the Structural stage is singular.
-                if self.structural_view_available(StructuralView::SpyPlot) {
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::SpyPlot, "Spy-plot");
-                }
-                ui.selectable_value(&mut self.viewport.structural, StructuralView::Incidence, "Incidence");
-                // Matching is shown *even when singular* — that is the whole
-                // point of it. The other three below need a complete matching
-                // before they mean anything; this one is a replay of the
-                // *search*, and the search failing is the most instructive
-                // thing on a singular stage. It was hidden here until
-                // 2026-07-29, when writing a tour to answer "what does a rank
-                // deficiency of 1 mean?" ran straight into its absence
-                // (ideas #44). Nothing else was needed: the trace already
-                // emits `MatchingStep::EquationFailed` and the view already
-                // paints the failed row red. The feature was built, then
-                // gated out of reach.
-                ui.selectable_value(&mut self.viewport.structural, StructuralView::MatchingAnim, "Matching \u{25b6}")
-                    .on_hover_text(if is_singular && !is_index_reduction {
-                        "Watch the augmenting-path search run out. The equation it \
+                );
+            }
+            // Spy-plot, Matching, BLT require a full matching —
+            // hide them when the Structural stage is singular.
+            if self.structural_view_available(StructuralView::SpyPlot) {
+                ui.selectable_value(
+                    &mut self.viewport.structural,
+                    StructuralView::SpyPlot,
+                    "Spy-plot",
+                );
+            }
+            ui.selectable_value(
+                &mut self.viewport.structural,
+                StructuralView::Incidence,
+                "Incidence",
+            );
+            // Matching is shown *even when singular* — that is the whole
+            // point of it. The other three below need a complete matching
+            // before they mean anything; this one is a replay of the
+            // *search*, and the search failing is the most instructive
+            // thing on a singular stage. It was hidden here until
+            // 2026-07-29, when writing a tour to answer "what does a rank
+            // deficiency of 1 mean?" ran straight into its absence
+            // (ideas #44). Nothing else was needed: the trace already
+            // emits `MatchingStep::EquationFailed` and the view already
+            // paints the failed row red. The feature was built, then
+            // gated out of reach.
+            ui.selectable_value(
+                &mut self.viewport.structural,
+                StructuralView::MatchingAnim,
+                "Matching \u{25b6}",
+            )
+            .on_hover_text(if is_singular && !is_index_reduction {
+                "Watch the augmenting-path search run out. The equation it \
                          gives up on is the rank deficiency."
-                    } else {
-                        "Replay the augmenting-path search that pairs each equation \
+            } else {
+                "Replay the augmenting-path search that pairs each equation \
                          with one unknown."
-                    });
-                if !is_singular || is_index_reduction {
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::TarjanAnim, "BLT \u{25b6}");
-                    // Tearing operates on the coupled blocks BLT finds,
-                    // so it needs the same full matching those two do.
-                    ui.selectable_value(&mut self.viewport.structural, StructuralView::TearingAnim, "Tearing \u{25b6}");
-                }
-                ui.selectable_value(&mut self.viewport.structural, StructuralView::Tree, "Tree");
             });
-            ui.separator();
+            if !is_singular || is_index_reduction {
+                ui.selectable_value(
+                    &mut self.viewport.structural,
+                    StructuralView::TarjanAnim,
+                    "BLT \u{25b6}",
+                );
+                // Tearing operates on the coupled blocks BLT finds,
+                // so it needs the same full matching those two do.
+                ui.selectable_value(
+                    &mut self.viewport.structural,
+                    StructuralView::TearingAnim,
+                    "Tearing \u{25b6}",
+                );
+            }
+            ui.selectable_value(&mut self.viewport.structural, StructuralView::Tree, "Tree");
+        });
+        ui.separator();
     }
 
     /// The **tour panel**: the picker at the top, the tour's markdown below.
@@ -5363,7 +5757,10 @@ egui::Panel::top("bar").show(ui, |ui| {
     fn tour_panel_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
         self.poll_tour_file();
         let tour_text = self.tour.text().map(str::to_owned);
-        let tour_links = tour_text.as_deref().map(extract_hrw_links).unwrap_or_default();
+        let tour_links = tour_text
+            .as_deref()
+            .map(extract_hrw_links)
+            .unwrap_or_default();
         register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
         let avail = ui.available_width();
         let mut switch_to: Option<TourSource> = None;
@@ -5407,26 +5804,28 @@ egui::Panel::top("bar").show(ui, |ui| {
                             ui.weak(bridge::FIXTURE_TOURS_DIR);
                             return;
                         }
-                        egui::ScrollArea::vertical().id_salt("tour_list").show(ui, |ui| {
-                            for source in &self.tour.available {
-                                let selected = self.tour.selected.as_ref() == Some(source);
-                                let resp = ui.selectable_label(selected, source.label());
-                                let resp = match source {
-                                    TourSource::AdHoc => resp.on_hover_text(
-                                        "Written by Claude to answer your last question. \
+                        egui::ScrollArea::vertical()
+                            .id_salt("tour_list")
+                            .show(ui, |ui| {
+                                for source in &self.tour.available {
+                                    let selected = self.tour.selected.as_ref() == Some(source);
+                                    let resp = ui.selectable_label(selected, source.label());
+                                    let resp = match source {
+                                        TourSource::AdHoc => resp.on_hover_text(
+                                            "Written by Claude to answer your last question. \
                                          Ephemeral: regenerated, never stored.",
-                                    ),
-                                    TourSource::Fixture(p) => resp.on_hover_text(format!(
-                                        "Fixture tour \u{2014} a test with expected \
+                                        ),
+                                        TourSource::Fixture(p) => resp.on_hover_text(format!(
+                                            "Fixture tour \u{2014} a test with expected \
                                          outcomes, kept and versioned.\n{}",
-                                        p.display(),
-                                    )),
-                                };
-                                if resp.clicked() {
-                                    switch_to = Some(source.clone());
+                                            p.display(),
+                                        )),
+                                    };
+                                    if resp.clicked() {
+                                        switch_to = Some(source.clone());
+                                    }
                                 }
-                            }
-                        });
+                            });
                     },
                 );
                 ui.separator();
@@ -5679,7 +6078,10 @@ egui::Panel::top("bar").show(ui, |ui| {
                 .and_then(|i| self.autoplay_stop_heading(tour_text.as_deref(), i))
             {
                 ui.label(
-                    egui::RichText::new(caption).strong().size(13.0).color(style.active_color),
+                    egui::RichText::new(caption)
+                        .strong()
+                        .size(13.0)
+                        .color(style.active_color),
                 );
             }
             ui.label(
@@ -5827,27 +6229,27 @@ egui::Panel::top("bar").show(ui, |ui| {
                         Some(line) => {
                             ui.weak(format!("\u{2014} declared at line {line}"));
                         }
-                    None => match self.declaring_classes.get(&name) {
-                        Some(class) => {
-                            ui.weak("\u{2014} in");
-                            if ui
-                                .link(class)
-                                .on_hover_text(format!(
-                                    "Open {class} \u{2014} the type of the component this \
+                        None => match self.declaring_classes.get(&name) {
+                            Some(class) => {
+                                ui.weak("\u{2014} in");
+                                if ui
+                                    .link(class)
+                                    .on_hover_text(format!(
+                                        "Open {class} \u{2014} the type of the component this \
                                      variable belongs to. Use Back to return here.",
-                                ))
-                                .clicked()
-                            {
-                                go_to_class = Some(class.clone());
+                                    ))
+                                    .clicked()
+                                {
+                                    go_to_class = Some(class.clone());
+                                }
                             }
-                        }
-                        None => {
-                            ui.weak("\u{2014} not declared in this specimen")
-                                .on_hover_text(
-                                    "Neither the specimen nor a component type declares \
+                            None => {
+                                ui.weak("\u{2014} not declared in this specimen")
+                                    .on_hover_text(
+                                        "Neither the specimen nor a component type declares \
                                      this name, so a compiler phase created it. Ask \
                                      Claude to trace where it came from.",
-                                );
+                                    );
                             }
                         },
                     },
@@ -5905,7 +6307,11 @@ egui::Panel::top("bar").show(ui, |ui| {
                         jump_forward = true;
                     }
                 }
-                if ui.small_button("\u{00d7}").on_hover_text("Stop following").clicked() {
+                if ui
+                    .small_button("\u{00d7}")
+                    .on_hover_text("Stop following")
+                    .clicked()
+                {
                     clear_thread = true;
                 }
             });
@@ -5916,8 +6322,12 @@ egui::Panel::top("bar").show(ui, |ui| {
         // already see without doing anything.
         ui.horizontal(|ui| {
             ui.weak("   Always       ");
-            let stage_count = self.stages.as_stage_pairs()
-                .iter().filter(|(_, v)| v.is_some()).count();
+            let stage_count = self
+                .stages
+                .as_stage_pairs()
+                .iter()
+                .filter(|(_, v)| v.is_some())
+                .count();
             ui.weak(format!(
                 "{stage_count} stage IRs \u{00b7} {} DefIds",
                 self.def_index.len(),
@@ -6004,10 +6414,12 @@ egui::Panel::top("bar").show(ui, |ui| {
         let highlighted_line = self.viewport.highlighted_source_line;
         let highlighted_eq = self.viewport.highlighted_eq_row;
         let tracked = self.tracked_identifier.as_deref();
-        let tracked_line = self.tracked_identifier.as_deref()
-            .and_then(|name| self.identifier_index.as_ref()
+        let tracked_line = self.tracked_identifier.as_deref().and_then(|name| {
+            self.identifier_index
+                .as_ref()
                 .and_then(|idx| idx.variables.get(name))
-                .map(|v| v.source_line));
+                .map(|v| v.source_line)
+        });
 
         // Collect equation indices associated with the highlighted source line.
         let line_eq_indices: Vec<usize> = highlighted_line
@@ -6017,7 +6429,9 @@ egui::Panel::top("bar").show(ui, |ui| {
 
         // Collect source lines associated with the highlighted equation.
         let eq_source_lines: Vec<u32> = if let Some(eq_idx) = highlighted_eq {
-            sheet.groups.iter()
+            sheet
+                .groups
+                .iter()
                 .flat_map(|(_, eqs)| eqs)
                 .find(|eq| eq.index == eq_idx)
                 .map(|eq| eq.source_lines.clone())
@@ -6036,15 +6450,11 @@ egui::Panel::top("bar").show(ui, |ui| {
         // separator, then the remaining space for equations. Both children
         // get the full available height.
         let full_rect = ui.available_rect_before_wrap();
-        let left_rect = egui::Rect::from_min_size(
-            full_rect.min,
-            egui::vec2(left_width, full_rect.height()),
-        );
+        let left_rect =
+            egui::Rect::from_min_size(full_rect.min, egui::vec2(left_width, full_rect.height()));
         let sep_x = left_rect.max.x;
-        let right_rect = egui::Rect::from_min_max(
-            egui::pos2(sep_x + 6.0, full_rect.min.y),
-            full_rect.max,
-        );
+        let right_rect =
+            egui::Rect::from_min_max(egui::pos2(sep_x + 6.0, full_rect.min.y), full_rect.max);
 
         // ---- Left pane: source code ----
         let mut left_ui = ui.new_child(egui::UiBuilder::new().max_rect(left_rect));
@@ -6072,8 +6482,7 @@ egui::Panel::top("bar").show(ui, |ui| {
                     } else {
                         None
                     };
-                    let modelica = crate::source_view::ModelicaText::new(ui)
-                        .background(background);
+                    let modelica = crate::source_view::ModelicaText::new(ui).background(background);
                     let mut job = egui::text::LayoutJob::default();
                     modelica.append_plain(
                         &mut job,
@@ -6086,17 +6495,19 @@ egui::Panel::top("bar").show(ui, |ui| {
                     if has_equations {
                         if let Some(cat) = sl.category {
                             let color = cat.color().gamma_multiply(0.7);
-                            let bar_rect = ui.horizontal(|ui| {
-                                let resp = ui.selectable_label(is_selected, text);
-                                if resp.clicked() {
-                                    clicked_line = Some(if is_selected {
-                                        None
-                                    } else {
-                                        Some(sl.line_number)
-                                    });
-                                }
-                                resp.rect
-                            }).inner;
+                            let bar_rect = ui
+                                .horizontal(|ui| {
+                                    let resp = ui.selectable_label(is_selected, text);
+                                    if resp.clicked() {
+                                        clicked_line = Some(if is_selected {
+                                            None
+                                        } else {
+                                            Some(sl.line_number)
+                                        });
+                                    }
+                                    resp.rect
+                                })
+                                .inner;
                             let painter = ui.painter();
                             let bar = egui::Rect::from_min_size(
                                 bar_rect.left_top(),
@@ -6188,11 +6599,7 @@ egui::Panel::top("bar").show(ui, |ui| {
 
                         let resp = ui.selectable_label(is_selected, text);
                         if resp.clicked() {
-                            clicked_eq = Some(if is_selected {
-                                None
-                            } else {
-                                Some(eq.index)
-                            });
+                            clicked_eq = Some(if is_selected { None } else { Some(eq.index) });
                         }
                         if eq.source_lines.is_empty() {
                             resp.on_hover_text(format!(
@@ -6205,12 +6612,13 @@ egui::Panel::top("bar").show(ui, |ui| {
                                 eq.index, &eq.origin, eq.source_lines[0],
                             ));
                         } else {
-                            let lines_str: Vec<String> = eq.source_lines.iter()
-                                .map(|ln| ln.to_string())
-                                .collect();
+                            let lines_str: Vec<String> =
+                                eq.source_lines.iter().map(|ln| ln.to_string()).collect();
                             resp.on_hover_text(format!(
                                 "f_x[{}] — {} (lines {})",
-                                eq.index, &eq.origin, lines_str.join(", "),
+                                eq.index,
+                                &eq.origin,
+                                lines_str.join(", "),
                             ));
                         }
                     }
@@ -6228,7 +6636,9 @@ egui::Panel::top("bar").show(ui, |ui| {
             self.viewport.highlighted_eq_row = new_val;
             if let Some(eq_idx) = new_val {
                 let sheet = self.cached_equation_sheet.as_ref().unwrap();
-                let line = sheet.groups.iter()
+                let line = sheet
+                    .groups
+                    .iter()
                     .flat_map(|(_, eqs)| eqs)
                     .find(|eq| eq.index == eq_idx)
                     .and_then(|eq| eq.source_lines.first().copied());
@@ -6248,18 +6658,22 @@ egui::Panel::top("bar").show(ui, |ui| {
     }
 
     /// Render a structured error summary for any stage with error data.
-    fn generic_error_summary(
-        ui: &mut egui::Ui,
-        error: &serde_json::Value,
-        stage: StageKind,
-    ) {
-        let kind = error.get("kind").and_then(|k| k.as_str()).unwrap_or("error");
-        let message = error.get("message").and_then(|m| m.as_str()).unwrap_or("(unknown error)");
+    fn generic_error_summary(ui: &mut egui::Ui, error: &serde_json::Value, stage: StageKind) {
+        let kind = error
+            .get("kind")
+            .and_then(|k| k.as_str())
+            .unwrap_or("error");
+        let message = error
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("(unknown error)");
 
         let heading = match (kind, stage) {
             ("singular", StageKind::Structural) => "Structural singularity".to_owned(),
             ("singular", StageKind::Initialization) => "Initialization singularity".to_owned(),
-            ("singular", StageKind::IndexReduction) => "Still singular after index reduction".to_owned(),
+            ("singular", StageKind::IndexReduction) => {
+                "Still singular after index reduction".to_owned()
+            }
             ("singular", _) => "Structural singularity".to_owned(),
             _ => format!("{} error", stage.name()),
         };
@@ -6294,68 +6708,76 @@ egui::Panel::top("bar").show(ui, |ui| {
         // Mass matrix details (solve lowering)
         if kind == "mass_matrix" {
             ui.add_space(8.0);
-            egui::Grid::new("mass_matrix_grid").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
-                if let Some(name) = error.get("state_name").and_then(|n| n.as_str()) {
-                    ui.strong("State variable");
-                    ui.monospace(name);
-                    ui.end_row();
-                }
-                if let Some(row) = error.get("row").and_then(|r| r.as_u64()) {
-                    ui.strong("Matrix row");
-                    ui.label(format!("{row}"));
-                    ui.end_row();
-                }
-                if let Some(reason) = error.get("reason").and_then(|r| r.as_str()) {
-                    ui.strong("Reason");
-                    ui.label(reason);
-                    ui.end_row();
-                }
-            });
+            egui::Grid::new("mass_matrix_grid")
+                .num_columns(2)
+                .spacing([12.0, 4.0])
+                .show(ui, |ui| {
+                    if let Some(name) = error.get("state_name").and_then(|n| n.as_str()) {
+                        ui.strong("State variable");
+                        ui.monospace(name);
+                        ui.end_row();
+                    }
+                    if let Some(row) = error.get("row").and_then(|r| r.as_u64()) {
+                        ui.strong("Matrix row");
+                        ui.label(format!("{row}"));
+                        ui.end_row();
+                    }
+                    if let Some(reason) = error.get("reason").and_then(|r| r.as_str()) {
+                        ui.strong("Reason");
+                        ui.label(reason);
+                        ui.end_row();
+                    }
+                });
         }
 
         // Evaluation context (solve lowering)
         if kind == "evaluation"
-            && let Some(ctx) = error.get("context").and_then(|c| c.as_str()) {
-                ui.add_space(4.0);
-                ui.horizontal(|ui| {
-                    ui.strong("Context");
-                    ui.label(ctx);
-                });
-            }
+            && let Some(ctx) = error.get("context").and_then(|c| c.as_str())
+        {
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                ui.strong("Context");
+                ui.label(ctx);
+            });
+        }
 
         // Diagnostics list (flatten / typecheck)
         if let Some(diags) = error.get("diagnostics").and_then(|d| d.as_array())
-            && !diags.is_empty() {
-                ui.add_space(8.0);
-                ui.strong(format!("Diagnostics ({})", diags.len()));
-                for d in diags {
-                    let severity = d.get("severity").and_then(|s| s.as_str()).unwrap_or("Error");
-                    let code = d.get("code").and_then(|c| c.as_str());
-                    let msg = d.get("message").and_then(|m| m.as_str()).unwrap_or("");
-                    ui.horizontal(|ui| {
-                        let sev_color = if severity.contains("Error") {
-                            ui.visuals().error_fg_color
-                        } else {
-                            ui.visuals().warn_fg_color
-                        };
-                        ui.label(egui::RichText::new(severity).color(sev_color).strong());
-                        if let Some(c) = code {
-                            ui.monospace(format!("[{c}]"));
-                        }
-                        ui.label(msg);
-                    });
-                    if let Some(notes) = d.get("notes").and_then(|n| n.as_array()) {
-                        for note in notes {
-                            if let Some(text) = note.as_str() {
-                                ui.horizontal(|ui| {
-                                    ui.add_space(16.0);
-                                    ui.weak(format!("note: {text}"));
-                                });
-                            }
+            && !diags.is_empty()
+        {
+            ui.add_space(8.0);
+            ui.strong(format!("Diagnostics ({})", diags.len()));
+            for d in diags {
+                let severity = d
+                    .get("severity")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("Error");
+                let code = d.get("code").and_then(|c| c.as_str());
+                let msg = d.get("message").and_then(|m| m.as_str()).unwrap_or("");
+                ui.horizontal(|ui| {
+                    let sev_color = if severity.contains("Error") {
+                        ui.visuals().error_fg_color
+                    } else {
+                        ui.visuals().warn_fg_color
+                    };
+                    ui.label(egui::RichText::new(severity).color(sev_color).strong());
+                    if let Some(c) = code {
+                        ui.monospace(format!("[{c}]"));
+                    }
+                    ui.label(msg);
+                });
+                if let Some(notes) = d.get("notes").and_then(|n| n.as_array()) {
+                    for note in notes {
+                        if let Some(text) = note.as_str() {
+                            ui.horizontal(|ui| {
+                                ui.add_space(16.0);
+                                ui.weak(format!("note: {text}"));
+                            });
                         }
                     }
                 }
             }
+        }
 
         // Singularity details (structural/initialization errors)
         if kind == "singular"
@@ -6364,9 +6786,13 @@ egui::Panel::top("bar").show(ui, |ui| {
                 error["n_unknowns"].as_u64(),
                 error["n_matched"].as_u64(),
                 error["rank_deficiency"].as_u64(),
-            ) {
-                ui.add_space(8.0);
-                egui::Grid::new("singular_grid").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
+            )
+        {
+            ui.add_space(8.0);
+            egui::Grid::new("singular_grid")
+                .num_columns(2)
+                .spacing([12.0, 4.0])
+                .show(ui, |ui| {
                     ui.strong("Equations");
                     ui.label(format!("{n_eq}"));
                     ui.end_row();
@@ -6377,65 +6803,73 @@ egui::Panel::top("bar").show(ui, |ui| {
                     ui.label(format!("{n_matched}"));
                     ui.end_row();
                     ui.strong("Rank deficiency");
-                    ui.label(egui::RichText::new(format!("{deficiency}"))
-                        .color(crate::colors::ANIM_FAIL).strong());
+                    ui.label(
+                        egui::RichText::new(format!("{deficiency}"))
+                            .color(crate::colors::ANIM_FAIL)
+                            .strong(),
+                    );
                     ui.end_row();
                 });
 
-                if let Some(eqs) = error["unmatched_equations"].as_array()
-                    && !eqs.is_empty() {
-                        ui.add_space(4.0);
-                        ui.strong("Unmatched equations");
-                        for eq in eqs {
-                            if let Some(name) = eq.as_str() {
-                                ui.label(format!("  {name}"));
-                            }
-                        }
+            if let Some(eqs) = error["unmatched_equations"].as_array()
+                && !eqs.is_empty()
+            {
+                ui.add_space(4.0);
+                ui.strong("Unmatched equations");
+                for eq in eqs {
+                    if let Some(name) = eq.as_str() {
+                        ui.label(format!("  {name}"));
                     }
-                if let Some(unks) = error["unmatched_unknowns"].as_array()
-                    && !unks.is_empty() {
-                        ui.add_space(4.0);
-                        ui.strong("Unmatched unknowns");
-                        for unk in unks {
-                            if let Some(name) = unk.as_str() {
-                                ui.label(format!("  {name}"));
-                            }
-                        }
-                    }
+                }
             }
+            if let Some(unks) = error["unmatched_unknowns"].as_array()
+                && !unks.is_empty()
+            {
+                ui.add_space(4.0);
+                ui.strong("Unmatched unknowns");
+                for unk in unks {
+                    if let Some(name) = unk.as_str() {
+                        ui.label(format!("  {name}"));
+                    }
+                }
+            }
+        }
 
         // Determinacy summary (initialization stage)
         if let Some(det) = error.get("determinacy") {
             ui.add_space(8.0);
             ui.strong("Initial condition determinacy");
             ui.add_space(2.0);
-            egui::Grid::new("determinacy_grid").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
-                if let Some(n) = det["states"].as_u64() {
-                    ui.label("States");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(n) = det["initial_equations"].as_u64() {
-                    ui.label("Initial equations");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(n) = det["fixed_start_states"].as_u64() {
-                    ui.label("Fixed start states");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(n) = det["explicit_initial_conditions"].as_u64() {
-                    ui.label("Explicit initial conditions");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(v) = det.get("verdict").and_then(|v| v.as_str()) {
-                    ui.label("Verdict");
-                    ui.label(v);
-                    ui.end_row();
-                }
-            });
+            egui::Grid::new("determinacy_grid")
+                .num_columns(2)
+                .spacing([12.0, 4.0])
+                .show(ui, |ui| {
+                    if let Some(n) = det["states"].as_u64() {
+                        ui.label("States");
+                        ui.label(format!("{n}"));
+                        ui.end_row();
+                    }
+                    if let Some(n) = det["initial_equations"].as_u64() {
+                        ui.label("Initial equations");
+                        ui.label(format!("{n}"));
+                        ui.end_row();
+                    }
+                    if let Some(n) = det["fixed_start_states"].as_u64() {
+                        ui.label("Fixed start states");
+                        ui.label(format!("{n}"));
+                        ui.end_row();
+                    }
+                    if let Some(n) = det["explicit_initial_conditions"].as_u64() {
+                        ui.label("Explicit initial conditions");
+                        ui.label(format!("{n}"));
+                        ui.end_row();
+                    }
+                    if let Some(v) = det.get("verdict").and_then(|v| v.as_str()) {
+                        ui.label("Verdict");
+                        ui.label(v);
+                        ui.end_row();
+                    }
+                });
         }
 
         // Guidance
@@ -6533,109 +6967,116 @@ impl App {
             hrw_link_action = self.tour_panel_ui(ui);
         }
         if self.ui_mode == UiMode::Specimen {
-        let avail = ui.available_width();
-        let ctx = ui.ctx().clone();
-        let shown = self
-            .split
-            .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
-            .show(ui, |ui| {
-                let panel_height = ui.available_height();
-                let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
+            let avail = ui.available_width();
+            let ctx = ui.ctx().clone();
+            let shown = self
+                .split
+                .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
+                .show(ui, |ui| {
+                    let panel_height = ui.available_height();
+                    let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
 
-                // -- Top third: specimen list --
-                ui.allocate_ui_with_layout(
-                    egui::vec2(ui.available_width(), list_height),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        let sel = self.selected.clone();
-                        let out = self.model_list.ui(
-                            ui,
-                            sel.as_deref(),
-                            self.compiling,
-                            self.model.is_some(),
-                        );
-                        match out.nav {
-                            Some(ModelListNav::OpenLibrary(name)) => {
-                                self.open_library_model(&name);
-                            }
-                            Some(ModelListNav::Reload(path)) => self.open(path),
-                            // **A click on the specimen already loaded reveals it
-                            // rather than recompiling.** The list cannot know
-                            // that; only the caller knows what is selected.
-                            Some(ModelListNav::Select(path)) => {
-                                if self.selected.as_ref() == Some(&path) {
-                                    self.viewing_log = false;
-                                } else {
-                                    self.open(path);
+                    // -- Top third: specimen list --
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(ui.available_width(), list_height),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            let sel = self.selected.clone();
+                            let out = self.model_list.ui(
+                                ui,
+                                sel.as_deref(),
+                                self.compiling,
+                                self.model.is_some(),
+                            );
+                            match out.nav {
+                                Some(ModelListNav::OpenLibrary(name)) => {
+                                    self.open_library_model(&name);
                                 }
+                                Some(ModelListNav::Reload(path)) => self.open(path),
+                                // **A click on the specimen already loaded reveals it
+                                // rather than recompiling.** The list cannot know
+                                // that; only the caller knows what is selected.
+                                Some(ModelListNav::Select(path)) => {
+                                    if self.selected.as_ref() == Some(&path) {
+                                        self.viewing_log = false;
+                                    } else {
+                                        self.open(path);
+                                    }
+                                }
+                                None => {}
                             }
-                            None => {}
-                        }
-                        if out.point_at_specimen {
-                            self.emit_focus(Focus::Specimen);
-                        }
-                    },
-                );
+                            if out.point_at_specimen {
+                                self.emit_focus(Focus::Specimen);
+                            }
+                        },
+                    );
 
-                ui.add_space(10.0);
-                section_header_toggle(
-                    ui,
-                    &mut self.specimen_detail,
-                    &[
-                        (SpecimenDetail::Source, "Source"),
-                        (SpecimenDetail::Purpose, "Purpose"),
-                    ],
-                );
-                ui.add_space(4.0);
+                    ui.add_space(10.0);
+                    section_header_toggle(
+                        ui,
+                        &mut self.specimen_detail,
+                        &[
+                            (SpecimenDetail::Source, "Source"),
+                            (SpecimenDetail::Purpose, "Purpose"),
+                        ],
+                    );
+                    ui.add_space(4.0);
 
-                // -- Bottom two-thirds: source or purpose --
-                match self.specimen_detail {
-                    SpecimenDetail::Source => self.specimen_source_ui(ui),
-                    SpecimenDetail::Purpose => {
-                        let model_name = self.model.as_deref();
-                        let purpose = model_name.and_then(|name| {
-                            let key = PathBuf::from(name);
-                            let cached = self.cached_purpose_notes.entry(key).or_insert_with(|| {
-                                let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                                let path = manifest
-                                    .join("docs/specimen-notebook")
-                                    .join(name)
-                                    .join("purpose.md");
-                                std::fs::read_to_string(path).ok()
+                    // -- Bottom two-thirds: source or purpose --
+                    match self.specimen_detail {
+                        SpecimenDetail::Source => self.specimen_source_ui(ui),
+                        SpecimenDetail::Purpose => {
+                            let model_name = self.model.as_deref();
+                            let purpose = model_name.and_then(|name| {
+                                let key = PathBuf::from(name);
+                                let cached =
+                                    self.cached_purpose_notes.entry(key).or_insert_with(|| {
+                                        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                                        let path = manifest
+                                            .join("docs/specimen-notebook")
+                                            .join(name)
+                                            .join("purpose.md");
+                                        std::fs::read_to_string(path).ok()
+                                    });
+                                cached.as_deref()
                             });
-                            cached.as_deref()
-                        });
 
-                        match purpose {
-                            Some(text) => {
-                                let purpose_links = extract_hrw_links(text);
-                                register_hrw_hooks(&mut self.commonmark_cache, &purpose_links);
-                                egui::ScrollArea::vertical()
-                                    .id_salt("purpose")
-                                    .show(ui, |ui| {
-                                    set_markdown_text_sizes(ui);
-                                    egui_commonmark::CommonMarkViewer::new()
-                                        .show(ui, &mut self.commonmark_cache, text);
-                                });
-                                if hrw_link_action.is_none() {
-                                    hrw_link_action =
-                                        drain_hrw_hooks(&mut self.commonmark_cache, &purpose_links);
+                            match purpose {
+                                Some(text) => {
+                                    let purpose_links = extract_hrw_links(text);
+                                    register_hrw_hooks(&mut self.commonmark_cache, &purpose_links);
+                                    egui::ScrollArea::vertical().id_salt("purpose").show(
+                                        ui,
+                                        |ui| {
+                                            set_markdown_text_sizes(ui);
+                                            egui_commonmark::CommonMarkViewer::new().show(
+                                                ui,
+                                                &mut self.commonmark_cache,
+                                                text,
+                                            );
+                                        },
+                                    );
+                                    if hrw_link_action.is_none() {
+                                        hrw_link_action = drain_hrw_hooks(
+                                            &mut self.commonmark_cache,
+                                            &purpose_links,
+                                        );
+                                    }
                                 }
-                            }
-                            None => {
-                                for line in
-                                    purpose_placeholder(model_name, self.selected.as_deref())
-                                {
-                                    ui.weak(line);
+                                None => {
+                                    for line in
+                                        purpose_placeholder(model_name, self.selected.as_deref())
+                                    {
+                                        ui.weak(line);
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
-        if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
-            self.log_split(msg);
-        }
+                });
+            if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
+                self.log_split(msg);
+            }
         }
 
         // **The reset is consumed here, after both panels have had their chance
@@ -6806,15 +7247,29 @@ fn section_style(ui: &egui::Ui) -> SectionStyle {
     let frame = egui::Frame::new()
         .fill(bg)
         .inner_margin(egui::Margin::symmetric(6, 4))
-        .outer_margin(egui::Margin { left: -h_margin as i8, right: -h_margin as i8, top: 2, bottom: 0 });
-    SectionStyle { active_color, inactive_color, frame }
+        .outer_margin(egui::Margin {
+            left: -h_margin as i8,
+            right: -h_margin as i8,
+            top: 2,
+            bottom: 0,
+        });
+    SectionStyle {
+        active_color,
+        inactive_color,
+        frame,
+    }
 }
 
 pub(crate) fn section_header(ui: &mut egui::Ui, title: &str) {
     let style = section_style(ui);
     style.frame.show(ui, |ui| {
         ui.set_min_width(ui.available_width());
-        ui.label(egui::RichText::new(title).strong().size(13.0).color(style.active_color));
+        ui.label(
+            egui::RichText::new(title)
+                .strong()
+                .size(13.0)
+                .color(style.active_color),
+        );
     });
 }
 
@@ -6831,16 +7286,27 @@ fn section_header_toggle<T: PartialEq + Copy>(
         ui.horizontal(|ui| {
             for (i, (value, label)) in options.iter().enumerate() {
                 if i > 0 {
-                    ui.label(egui::RichText::new("|").size(13.0).color(style.inactive_color));
+                    ui.label(
+                        egui::RichText::new("|")
+                            .size(13.0)
+                            .color(style.inactive_color),
+                    );
                 }
                 let is_active = *current == *value;
-                let color = if is_active { style.active_color } else { style.inactive_color };
+                let color = if is_active {
+                    style.active_color
+                } else {
+                    style.inactive_color
+                };
                 let text = if is_active {
                     egui::RichText::new(*label).strong().size(13.0).color(color)
                 } else {
                     egui::RichText::new(*label).size(13.0).color(color)
                 };
-                if ui.add(egui::Label::new(text).sense(egui::Sense::click())).clicked() {
+                if ui
+                    .add(egui::Label::new(text).sense(egui::Sense::click()))
+                    .clicked()
+                {
                     *current = *value;
                 }
             }
@@ -6923,20 +7389,18 @@ impl SubView {
     /// navigate somewhere surprising.
     fn from_slug(stage: StageKind, slug: &str) -> Option<Self> {
         Some(match stage {
-            StageKind::Structural | StageKind::IndexReduction => {
-                Self::Structural(match slug {
-                    "Summary" => StructuralView::Summary,
-                    "SpyPlot" => StructuralView::SpyPlot,
-                    "Incidence" => StructuralView::Incidence,
-                    "MatchingAnim" => StructuralView::MatchingAnim,
-                    "TarjanAnim" => StructuralView::TarjanAnim,
-                    "TearingAnim" => StructuralView::TearingAnim,
-                    "AliasAnim" => StructuralView::AliasAnim,
-                    "Animate" => StructuralView::Animate,
-                    "Tree" => StructuralView::Tree,
-                    _ => return None,
-                })
-            }
+            StageKind::Structural | StageKind::IndexReduction => Self::Structural(match slug {
+                "Summary" => StructuralView::Summary,
+                "SpyPlot" => StructuralView::SpyPlot,
+                "Incidence" => StructuralView::Incidence,
+                "MatchingAnim" => StructuralView::MatchingAnim,
+                "TarjanAnim" => StructuralView::TarjanAnim,
+                "TearingAnim" => StructuralView::TearingAnim,
+                "AliasAnim" => StructuralView::AliasAnim,
+                "Animate" => StructuralView::Animate,
+                "Tree" => StructuralView::Tree,
+                _ => return None,
+            }),
             StageKind::Flatten => Self::Flatten(match slug {
                 "EquationSheet" => FlattenView::Equations,
                 "SourceMap" => FlattenView::SourceMap,
@@ -7141,7 +7605,11 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["load", specimen, stage, view] => {
             let kind = StageKind::from_slug(stage)?;
             let sub = SubView::from_slug(kind, view)?;
-            Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind, Some(sub)))
+            Some(HrwLink::LoadAndSwitch(
+                (*specimen).to_owned(),
+                kind,
+                Some(sub),
+            ))
         }
         ["load", specimen, stage] => {
             let kind = StageKind::from_slug(stage)?;
@@ -7165,9 +7633,7 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["systemmodeler", name] if !name.is_empty() => {
             Some(HrwLink::OpenInSystemModeler((*name).to_owned()))
         }
-        ["notebook", name] if !name.is_empty() => {
-            Some(HrwLink::OpenNotebook((*name).to_owned()))
-        }
+        ["notebook", name] if !name.is_empty() => Some(HrwLink::OpenNotebook((*name).to_owned())),
         ["stage", stage, view, "node", path] => {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::PointAtNode(
@@ -7269,7 +7735,10 @@ fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[Str
 }
 
 /// Check registered hooks for a click and return the first triggered action.
-fn drain_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[String]) -> Option<HrwLink> {
+fn drain_hrw_hooks(
+    cache: &mut egui_commonmark::CommonMarkCache,
+    links: &[String],
+) -> Option<HrwLink> {
     for link in links {
         if cache.get_link_hook(link) == Some(true) {
             return parse_hrw_link(link);
@@ -7303,7 +7772,10 @@ fn purpose_placeholder(model: Option<&str>, selected: Option<&Path>) -> Vec<Stri
         ],
         // Selected, still compiling. Name the file so the wait is legible.
         (None, Some(path)) => {
-            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("specimen");
+            let stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("specimen");
             vec![
                 format!("Compiling {stem}\u{2026}"),
                 "Its purpose note appears once the model name is known.".to_owned(),
@@ -7334,7 +7806,10 @@ fn open_with_os(path: &Path) -> std::io::Result<()> {
 /// that says so.
 #[cfg(not(target_os = "windows"))]
 fn open_with_os(path: &Path) -> std::io::Result<()> {
-    std::process::Command::new("xdg-open").arg(path).spawn().map(|_| ())
+    std::process::Command::new("xdg-open")
+        .arg(path)
+        .spawn()
+        .map(|_| ())
 }
 
 /// Resolve a pending tree jump target against the stage's IR.
@@ -7619,7 +8094,6 @@ impl App {
         self.ui_mode = UiMode::Specimen;
     }
 
-
     /// Drive a link the way a tour click would, without a rendered hyperlink.
     pub(crate) fn follow_link_for_test(&mut self, url: &str) {
         if let Some(link) = parse_hrw_link(url) {
@@ -7656,14 +8130,21 @@ impl App {
         let (tx, _) = std::sync::mpsc::channel();
         let (from_tx, rx) = std::sync::mpsc::channel();
         let app = App {
-            worker: Worker { tx, rx, send_failed: false },
+            worker: Worker {
+                tx,
+                rx,
+                send_failed: false,
+            },
             libraries_text: String::new(),
             library_status: String::new(),
             libraries_busy: false,
             // **An empty `dir`, unlike the real default.** A test must not scan
             // the developer's `specimens/`, or its results depend on what is
             // checked out.
-            model_list: ModelListState { dir: String::new(), ..ModelListState::default() },
+            model_list: ModelListState {
+                dir: String::new(),
+                ..ModelListState::default()
+            },
             selected_is_library: false,
             selected: None,
             compiling: false,
@@ -7743,7 +8224,11 @@ mod tests {
         app.tracked_identifier = Some("emf.w".to_owned());
 
         app.refresh_jump_matches();
-        assert_eq!(app.context.jump_matches.len(), 3, "one key plus two equations");
+        assert_eq!(
+            app.context.jump_matches.len(),
+            3,
+            "one key plus two equations"
+        );
         assert_eq!(app.context.jump_index, 0);
 
         // Forward through the list and around the end. Wrapping beats a dead
@@ -7753,7 +8238,10 @@ mod tests {
         app.jump_to_next_match(true);
         assert_eq!(app.context.jump_index, 2);
         app.jump_to_next_match(true);
-        assert_eq!(app.context.jump_index, 0, "forward from the last match wraps");
+        assert_eq!(
+            app.context.jump_index, 0,
+            "forward from the last match wraps"
+        );
         app.jump_to_next_match(false);
         assert_eq!(app.context.jump_index, 2, "and back again from the first");
 
@@ -7766,8 +8254,14 @@ mod tests {
         // Switching stage rebuilds the list and restarts the cycle.
         app.stage = StageKind::Parse;
         app.refresh_jump_matches();
-        assert!(app.context.jump_matches.is_empty(), "emf.w does not exist before flattening");
-        assert_eq!(app.context.jump_index, 0, "a stale index would describe another stage's list");
+        assert!(
+            app.context.jump_matches.is_empty(),
+            "emf.w does not exist before flattening"
+        );
+        assert_eq!(
+            app.context.jump_index, 0,
+            "a stale index would describe another stage's list"
+        );
 
         // Nothing to jump to is not an error; the control simply does nothing.
         app.context.jump_target = None;
@@ -7817,13 +8311,19 @@ mod tests {
             !hint.contains("a node to point at"),
             "no tree is showing, so there is no node to left-click: {hint}",
         );
-        assert!(hint.contains("stage tab"), "the way to an IR view is a tab: {hint}");
+        assert!(
+            hint.contains("stage tab"),
+            "the way to an IR view is a tab: {hint}"
+        );
 
         // Before the compile lands there is no index, so nothing is underlined
         // and that gesture must not be offered.
         app.identifier_index = None;
         let hint = app.empty_context_hint();
-        assert!(!hint.contains("underlined"), "nothing is clickable yet: {hint}");
+        assert!(
+            !hint.contains("underlined"),
+            "nothing is clickable yet: {hint}"
+        );
 
         // With a stage view open instead of the log, pointing is available.
         app.viewing_log = false;
@@ -7857,16 +8357,29 @@ mod tests {
         app.tracked_identifier = Some("emf.w".to_owned());
 
         app.open(motor.clone());
-        assert!(app.context.pointed_at.is_some(), "a reselect must keep the point");
-        assert_eq!(app.tracked_identifier.as_deref(), Some("emf.w"), "and the follow");
+        assert!(
+            app.context.pointed_at.is_some(),
+            "a reselect must keep the point"
+        );
+        assert_eq!(
+            app.tracked_identifier.as_deref(),
+            Some("emf.w"),
+            "and the follow"
+        );
 
         // The jump list belonged to the old IR and must not be reused, even
         // though the stage and followed name are unchanged — which is exactly
         // the key `refresh_jump_matches` caches on.
-        assert!(app.context.jump_key.is_none(), "stale match list must be invalidated");
+        assert!(
+            app.context.jump_key.is_none(),
+            "stale match list must be invalidated"
+        );
 
         app.open(PathBuf::from("specimens/BouncingBall.mo"));
-        assert!(app.context.pointed_at.is_none(), "a different specimen clears the point");
+        assert!(
+            app.context.pointed_at.is_none(),
+            "a different specimen clears the point"
+        );
         assert!(app.tracked_identifier.is_none(), "and the follow");
     }
 
@@ -7889,10 +8402,19 @@ mod tests {
             request: bridge::AskRequest::Explain,
         });
         app.revalidate_point_against_new_ir();
-        assert!(app.context.pointed_at.is_none(), "a dangling point must not be kept");
+        assert!(
+            app.context.pointed_at.is_none(),
+            "a dangling point must not be kept"
+        );
         let notice = app.notice.as_deref().unwrap_or_default();
-        assert!(notice.contains("point dropped"), "the drop must be stated: {notice}");
-        assert!(notice.contains("variables.gone"), "and must name what was lost: {notice}");
+        assert!(
+            notice.contains("point dropped"),
+            "the drop must be stated: {notice}"
+        );
+        assert!(
+            notice.contains("variables.gone"),
+            "and must name what was lost: {notice}"
+        );
 
         // One that still resolves survives untouched.
         app.notice = None;
@@ -7904,7 +8426,10 @@ mod tests {
             request: bridge::AskRequest::Explain,
         });
         app.revalidate_point_against_new_ir();
-        assert!(app.context.pointed_at.is_some(), "a resolvable point survives a recompile");
+        assert!(
+            app.context.pointed_at.is_some(),
+            "a resolvable point survives a recompile"
+        );
         assert!(app.notice.is_none(), "and says nothing");
 
         // A stage point cannot dangle — there is always a stage.
@@ -7916,7 +8441,10 @@ mod tests {
             request: bridge::AskRequest::Explain,
         });
         app.revalidate_point_against_new_ir();
-        assert!(app.context.pointed_at.is_some(), "a stage point always resolves");
+        assert!(
+            app.context.pointed_at.is_some(),
+            "a stage point always resolves"
+        );
     }
 
     /// Every live-debug variant must be recognised by the arming machinery.
@@ -7935,10 +8463,16 @@ mod tests {
     fn every_live_debug_variant_is_recognised_while_arming() {
         for &variant in PendingLiveDebug::ALL {
             let mut app = App::test_default();
-            assert!(!app.is_arming(variant), "{variant:?} must not arm on its own");
+            assert!(
+                !app.is_arming(variant),
+                "{variant:?} must not arm on its own"
+            );
 
             app.pending_live_debug = Some((std::time::Instant::now(), variant));
-            assert!(app.is_arming(variant), "{variant:?} armed but not recognised");
+            assert!(
+                app.is_arming(variant),
+                "{variant:?} armed but not recognised"
+            );
 
             // ...and must not be mistaken for any other view's session.
             for &other in PendingLiveDebug::ALL {
@@ -7987,19 +8521,30 @@ mod tests {
         // 1. Neither. Nothing is claimed at all.
         app.emit_context();
         let doc = emitted();
-        assert_eq!(doc["kind"], serde_json::json!("none"), "no point must not become a stage");
+        assert_eq!(
+            doc["kind"],
+            serde_json::json!("none"),
+            "no point must not become a stage"
+        );
         assert!(doc.get("tracking").is_none(), "nothing is being followed");
         // `request` belongs to the point. With no point, defaulting it to
         // "explain" would claim an intent the user never expressed — the same
         // species of phantom as the `kind: "stage"` this test was written for.
-        assert!(doc["request"].is_null(), "no point means no request: {}", doc["request"]);
+        assert!(
+            doc["request"].is_null(),
+            "no point means no request: {}",
+            doc["request"]
+        );
 
         // 2. Follow only — the state Doug wanted and could not reach.
         app.set_tracked_identifier("h".to_owned());
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("none"));
         assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
-        assert!(doc["request"].is_null(), "following carries no point-request either");
+        assert!(
+            doc["request"].is_null(),
+            "following carries no point-request either"
+        );
 
         // 3. Both, independent of each other.
         app.context.pointed_at = Some(a_point());
@@ -8007,16 +8552,26 @@ mod tests {
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("stage"));
         assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
-        assert_eq!(doc["request"], serde_json::json!("explain"), "a point does carry one");
+        assert_eq!(
+            doc["request"],
+            serde_json::json!("explain"),
+            "a point does carry one"
+        );
 
         // 4. Point only — reached by dropping the follow, which must not
         //    disturb the point.
         app.set_tracked_identifier("h".to_owned()); // toggles it off
-        assert!(app.tracked_identifier.is_none(), "clicking the followed name again clears it");
+        assert!(
+            app.tracked_identifier.is_none(),
+            "clicking the followed name again clears it"
+        );
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("stage"));
         assert!(doc.get("tracking").is_none());
-        assert!(app.context.pointed_at.is_some(), "dropping the follow must not drop the point");
+        assert!(
+            app.context.pointed_at.is_some(),
+            "dropping the follow must not drop the point"
+        );
 
         // ...and back to neither, by clearing the point.
         app.context.pointed_at = None;
@@ -8048,7 +8603,10 @@ mod tests {
             app.context.pointed_at.is_some(),
             "ambient following must not clear a deliberate capture"
         );
-        assert_eq!(app.context.track_seq, 1, "the thread's own recency counter advanced");
+        assert_eq!(
+            app.context.track_seq, 1,
+            "the thread's own recency counter advanced"
+        );
 
         // Un-following also re-emits, and still leaves the point alone.
         app.set_tracked_identifier("h".to_owned());
@@ -8095,7 +8653,11 @@ mod tests {
         let (mut app, _tx) = App::test_with_sender();
 
         app.emit_focus(Focus::Stage);
-        let point = app.context.pointed_at.as_ref().expect("a stage capture is still a point");
+        let point = app
+            .context
+            .pointed_at
+            .as_ref()
+            .expect("a stage capture is still a point");
         assert!(matches!(point.kind, PointKind::Stage));
         assert!(point.target.contains("stage"));
 
@@ -8148,17 +8710,25 @@ mod tests {
         app.tick_prewarm(&ctx);
         assert!(
             matches!(app.prewarm, Prewarm::Awaiting(_)),
-            "first tick should arm and wait, got {:?}", app.prewarm
+            "first tick should arm and wait, got {:?}",
+            app.prewarm
         );
 
         // Without an ack it keeps waiting (the 3s timeout has not elapsed).
         app.tick_prewarm(&ctx);
-        assert!(matches!(app.prewarm, Prewarm::Awaiting(_)), "should still be waiting");
+        assert!(
+            matches!(app.prewarm, Prewarm::Awaiting(_)),
+            "should still be waiting"
+        );
 
         // The extension acks; the next tick removes the breakpoint and finishes.
         std::fs::write(ack, r#"{"acked":true}"#).unwrap();
         app.tick_prewarm(&ctx);
-        assert_eq!(app.prewarm, Prewarm::Done, "ack should complete the pre-warm");
+        assert_eq!(
+            app.prewarm,
+            Prewarm::Done,
+            "ack should complete the pre-warm"
+        );
         assert!(!ack.exists(), "pre-warm consumes its own ack");
 
         // --- Abandon path: a Debug click owns the handshake mid-pre-warm. ---
@@ -8167,13 +8737,14 @@ mod tests {
         assert!(matches!(app.prewarm, Prewarm::Awaiting(_)));
 
         std::fs::write(ack, r#"{"acked":true}"#).unwrap();
-        app.pending_live_debug = Some((
-            std::time::Instant::now(),
-            PendingLiveDebug::Reduction,
-        ));
+        app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
         app.tick_prewarm(&ctx);
 
-        assert_eq!(app.prewarm, Prewarm::Done, "should abandon, not keep polling");
+        assert_eq!(
+            app.prewarm,
+            Prewarm::Done,
+            "should abandon, not keep polling"
+        );
         assert!(
             ack.exists(),
             "abandoning must NOT consume the ack — the Debug click is waiting for it"
@@ -8199,25 +8770,34 @@ mod tests {
             ..Default::default()
         };
         let mut def_index = BTreeMap::new();
-        def_index.insert(6005u64, DefInfo {
-            name: "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
-            kind: DefKind::Class,
-            class_type: Some("model".to_owned()),
-            file_name: None,
-            line: None,
-        });
+        def_index.insert(
+            6005u64,
+            DefInfo {
+                name: "Modelica.Electrical.Analog.Sources.ConstantVoltage".to_owned(),
+                kind: DefKind::Class,
+                class_type: Some("model".to_owned()),
+                file_name: None,
+                line: None,
+            },
+        );
         // A non-class definition must not be offered as a declaring class.
-        def_index.insert(4047u64, DefInfo {
-            name: "Modelica.Units.SI.Voltage".to_owned(),
-            kind: DefKind::Definition,
-            class_type: None,
-            file_name: None,
-            line: None,
-        });
+        def_index.insert(
+            4047u64,
+            DefInfo {
+                name: "Modelica.Units.SI.Voltage".to_owned(),
+                kind: DefKind::Definition,
+                class_type: None,
+                file_name: None,
+                line: None,
+            },
+        );
 
         let var = |name: &str| ClassifiedVariable {
-            name: name.to_owned(), kind: "parameter",
-            unit: None, description: None, start: None,
+            name: name.to_owned(),
+            kind: "parameter",
+            unit: None,
+            description: None,
+            start: None,
         };
         let sheet = EquationSheet {
             variables: vec![var("src.V"), var("plain.x"), var("h"), var("nosuch.y")],
@@ -8229,9 +8809,18 @@ mod tests {
             map.get("src.V").map(String::as_str),
             Some("Modelica.Electrical.Analog.Sources.ConstantVoltage")
         );
-        assert!(!map.contains_key("plain.x"), "a non-class DefId is not a declaring class");
-        assert!(!map.contains_key("h"), "an unqualified name has no component to resolve");
-        assert!(!map.contains_key("nosuch.y"), "unknown components resolve to nothing");
+        assert!(
+            !map.contains_key("plain.x"),
+            "a non-class DefId is not a declaring class"
+        );
+        assert!(
+            !map.contains_key("h"),
+            "an unqualified name has no component to resolve"
+        );
+        assert!(
+            !map.contains_key("nosuch.y"),
+            "unknown components resolve to nothing"
+        );
     }
 
     /// Tracking is a toggle from every view, and derivative mentions resolve to
@@ -8283,12 +8872,18 @@ mod tests {
         };
         let doc = bridge::build_for_test(&ask);
 
-        assert_eq!(doc["kind"], serde_json::json!("none"), "absence must be stated, not implied");
+        assert_eq!(
+            doc["kind"],
+            serde_json::json!("none"),
+            "absence must be stated, not implied"
+        );
         assert!(doc.get("node").is_none(), "there is no node to describe");
         assert!(doc.get("cross_stage").is_none());
         assert_eq!(doc["tracking"]["identifier"], serde_json::json!("emf.w"));
         assert!(
-            doc["instructions"].as_str().is_some_and(|i| i.contains("kind: \"none\"")),
+            doc["instructions"]
+                .as_str()
+                .is_some_and(|i| i.contains("kind: \"none\"")),
             "the file must explain what `none` means to whoever reads it",
         );
     }
@@ -8339,10 +8934,16 @@ mod tests {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let path = dir.join("specimens/BouncingBall.mo");
         let purpose = read_purpose(&path);
-        assert!(purpose.is_some(), "BouncingBall should have a // purpose: comment");
+        assert!(
+            purpose.is_some(),
+            "BouncingBall should have a // purpose: comment"
+        );
         let text = purpose.unwrap();
         assert!(!text.is_empty());
-        assert!(text.to_lowercase().contains("event"), "purpose should mention events: {text}");
+        assert!(
+            text.to_lowercase().contains("event"),
+            "purpose should mention events: {text}"
+        );
     }
 
     #[test]
@@ -8374,15 +8975,28 @@ mod tests {
         let ok_stage = Stage::ok(serde_json::json!({}));
         let empty = Stage::default();
         let stages_in_order = [
-            StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
-            StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
-            StageKind::IndexReduction, StageKind::Initialization,
-            StageKind::Events, StageKind::SolveLowering,
+            StageKind::Parse,
+            StageKind::Resolve,
+            StageKind::Instantiate,
+            StageKind::Typecheck,
+            StageKind::Flatten,
+            StageKind::Structural,
+            StageKind::IndexReduction,
+            StageKind::Initialization,
+            StageKind::Events,
+            StageKind::SolveLowering,
         ];
-        let cutoff = stages_in_order.iter().position(|&s| s == ok_through).unwrap_or(0);
+        let cutoff = stages_in_order
+            .iter()
+            .position(|&s| s == ok_through)
+            .unwrap_or(0);
         let mut bundle = StageBundle::default();
         for (i, &kind) in stages_in_order.iter().enumerate() {
-            let stage = if i <= cutoff { ok_stage.clone() } else { empty.clone() };
+            let stage = if i <= cutoff {
+                ok_stage.clone()
+            } else {
+                empty.clone()
+            };
             match kind {
                 StageKind::Parse => bundle.parse = stage,
                 StageKind::Resolve => bundle.resolve = stage,
@@ -8398,7 +9012,10 @@ mod tests {
                 StageKind::Simulation => {}
             }
         }
-        App { stages: bundle, ..App::test_default() }
+        App {
+            stages: bundle,
+            ..App::test_default()
+        }
     }
 
     #[test]
@@ -8409,7 +9026,10 @@ mod tests {
 
     #[test]
     fn last_successful_stage_falls_back_to_parse() {
-        let app = App { stages: StageBundle::default(), ..App::test_default() };
+        let app = App {
+            stages: StageBundle::default(),
+            ..App::test_default()
+        };
         assert_eq!(app.last_successful_stage(), StageKind::Parse);
     }
 
@@ -8437,10 +9057,17 @@ mod tests {
     #[test]
     fn stage_name_exhaustive() {
         let all = [
-            StageKind::Parse, StageKind::Resolve, StageKind::Instantiate,
-            StageKind::Typecheck, StageKind::Flatten, StageKind::Structural,
-            StageKind::IndexReduction, StageKind::Initialization,
-            StageKind::Events, StageKind::SolveLowering, StageKind::Simulation,
+            StageKind::Parse,
+            StageKind::Resolve,
+            StageKind::Instantiate,
+            StageKind::Typecheck,
+            StageKind::Flatten,
+            StageKind::Structural,
+            StageKind::IndexReduction,
+            StageKind::Initialization,
+            StageKind::Events,
+            StageKind::SolveLowering,
+            StageKind::Simulation,
         ];
         for kind in all {
             let name = kind.name();
@@ -8453,7 +9080,10 @@ mod tests {
         let mut app = App::test_default();
         app.libraries_text = "/path/one\n/path/two\n".to_owned();
         let paths = app.parse_library_paths();
-        assert_eq!(paths, vec![PathBuf::from("/path/one"), PathBuf::from("/path/two")]);
+        assert_eq!(
+            paths,
+            vec![PathBuf::from("/path/one"), PathBuf::from("/path/two")]
+        );
     }
 
     #[test]
@@ -8486,18 +9116,37 @@ mod tests {
     /// design keeps running into, and the weaker one is the one to drop.
     #[test]
     fn a_successful_point_is_silent() {
-        let msg = status_line(1, "equations.3.lhs", "explain", Ok(PathBuf::from("/tmp/focus.json")));
-        assert_eq!(msg, None, "the Context Bar states this; the status bar must not repeat it");
+        let msg = status_line(
+            1,
+            "equations.3.lhs",
+            "explain",
+            Ok(PathBuf::from("/tmp/focus.json")),
+        );
+        assert_eq!(
+            msg, None,
+            "the Context Bar states this; the status bar must not repeat it"
+        );
     }
 
     /// The debugger request still speaks, because it asks for something next.
     /// An instruction is not a confirmation.
     #[test]
     fn a_debug_point_still_tells_the_user_what_to_do() {
-        let msg = status_line(2, "def_id", "debug-where-set", Ok(PathBuf::from("/tmp/f.json")))
-            .expect("debug requests carry an instruction");
-        assert!(msg.contains("debugger"), "debug request should mention debugger: {msg}");
-        assert!(msg.contains("context #2"), "should carry the shared counter: {msg}");
+        let msg = status_line(
+            2,
+            "def_id",
+            "debug-where-set",
+            Ok(PathBuf::from("/tmp/f.json")),
+        )
+        .expect("debug requests carry an instruction");
+        assert!(
+            msg.contains("debugger"),
+            "debug request should mention debugger: {msg}"
+        );
+        assert!(
+            msg.contains("context #2"),
+            "should carry the shared counter: {msg}"
+        );
     }
 
     /// A failure must still be stated. This is the one case the Context Bar
@@ -8507,7 +9156,10 @@ mod tests {
     fn a_failed_emission_is_never_silent() {
         let err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
         let msg = status_line(1, "x", "explain", Err(err)).expect("failures are always reported");
-        assert!(msg.contains("not emitted"), "should say it was not emitted: {msg}");
+        assert!(
+            msg.contains("not emitted"),
+            "should say it was not emitted: {msg}"
+        );
         assert!(msg.contains("denied"), "should carry the cause: {msg}");
     }
 
@@ -8594,7 +9246,10 @@ mod tests {
 
         let state = ModelListState {
             dir: String::new(),
-            files: vec![PathBuf::from("RcCircuit.mo"), PathBuf::from("MotorWithBrake.mo")],
+            files: vec![
+                PathBuf::from("RcCircuit.mo"),
+                PathBuf::from("MotorWithBrake.mo"),
+            ],
             // Park the scratch poll, or frame one rescans an empty `dir` and
             // wipes the list — finding C9, the trap that made two UI tests pass
             // while checking nothing.
@@ -8630,7 +9285,10 @@ mod tests {
              everything regardless would pass the assertion above too",
         );
 
-        h.get_all_by_label_contains("RcCircuit").next().expect("the row").click();
+        h.get_all_by_label_contains("RcCircuit")
+            .next()
+            .expect("the row")
+            .click();
         h.run_steps(2);
 
         assert_eq!(
@@ -8640,9 +9298,6 @@ mod tests {
              own the stages, the log or the context bar that opening a specimen resets",
         );
     }
-
-
-
 
     /// Every animation pane **says when it has nothing to show**.
     ///
@@ -8674,16 +9329,35 @@ mod tests {
             // (2026-08-04) — a pane that names the wrong cause is worse than one that
             // names none, because it sends the reader looking in the wrong place.
             ("tearing", |a, ui| a.tearing_anim_ui(ui), "No tearing"),
-            ("alias", |a, ui| a.alias_anim_ui(ui), "no alias eliminations in this report"),
-            ("ic_plan", |a, ui| a.ic_plan_anim_ui(ui), "no initial-condition plan in this report"),
-            ("connection", |a, ui| a.connection_anim_ui(ui), "no connections in this model"),
-            ("pre_lowering", |a, ui| a.pre_lowering_anim_ui(ui), "no pre() lowering in this model"),
+            (
+                "alias",
+                |a, ui| a.alias_anim_ui(ui),
+                "no alias eliminations in this report",
+            ),
+            (
+                "ic_plan",
+                |a, ui| a.ic_plan_anim_ui(ui),
+                "no initial-condition plan in this report",
+            ),
+            (
+                "connection",
+                |a, ui| a.connection_anim_ui(ui),
+                "no connections in this model",
+            ),
+            (
+                "pre_lowering",
+                |a, ui| a.pre_lowering_anim_ui(ui),
+                "no pre() lowering in this model",
+            ),
         ];
 
         for (name, render, expected) in panes {
             let mut h = Harness::builder()
                 .with_size(egui::Vec2::new(900.0, 700.0))
-                .build_ui_state(move |ui, app: &mut App| render(app, ui), App::test_default());
+                .build_ui_state(
+                    move |ui, app: &mut App| render(app, ui),
+                    App::test_default(),
+                );
             h.run_steps(2);
 
             assert!(
@@ -8725,12 +9399,11 @@ mod tests {
         h.run_steps(2);
 
         assert!(
-            h.query_by_label_contains("no source mapping available").is_some(),
+            h.query_by_label_contains("no source mapping available")
+                .is_some(),
             "a sheet with no source lines must say so. Rendering blank here is worse than              elsewhere: the reader arrived on this sub-view by inertia, not by choosing              it, so a blank pane looks like the tab they picked is broken",
         );
     }
-
-
 
     #[test]
     fn drain_worker_libraries_ok_updates_status() {
@@ -8761,7 +9434,8 @@ mod tests {
             parse: Stage::ok(serde_json::json!({"parsed": true})),
             ..Default::default()
         };
-        tx.send(FromWorker::CompileProgress { path, stages }).unwrap();
+        tx.send(FromWorker::CompileProgress { path, stages })
+            .unwrap();
         app.drain_worker();
         assert!(app.stages.parse.value.is_some());
     }
@@ -8774,7 +9448,11 @@ mod tests {
             parse: Stage::ok(serde_json::json!({"parsed": true})),
             ..Default::default()
         };
-        tx.send(FromWorker::CompileProgress { path: PathBuf::from("/test/stale.mo"), stages }).unwrap();
+        tx.send(FromWorker::CompileProgress {
+            path: PathBuf::from("/test/stale.mo"),
+            stages,
+        })
+        .unwrap();
         app.drain_worker();
         assert!(app.stages.parse.value.is_none());
     }
@@ -8811,7 +9489,8 @@ mod tests {
             flat: None,
             dae: None,
             library_source: None,
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
         assert!(!app.compiling);
@@ -8845,7 +9524,8 @@ mod tests {
             flat: None,
             dae: None,
             library_source: None,
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
         assert!(app.compiling);
@@ -8882,12 +9562,23 @@ mod tests {
             flat: None,
             dae: None,
             library_source: None,
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
-        assert_eq!(app.stage, StageKind::Flatten, "pending_stage should override last_successful_stage");
-        assert!(app.pending_stage.is_none(), "pending_stage should be consumed");
-        assert!(!app.viewing_log, "viewing_log should be cleared after compilation");
+        assert_eq!(
+            app.stage,
+            StageKind::Flatten,
+            "pending_stage should override last_successful_stage"
+        );
+        assert!(
+            app.pending_stage.is_none(),
+            "pending_stage should be consumed"
+        );
+        assert!(
+            !app.viewing_log,
+            "viewing_log should be cleared after compilation"
+        );
     }
 
     #[test]
@@ -8920,10 +9611,15 @@ mod tests {
             flat: None,
             dae: None,
             library_source: None,
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
-        assert_eq!(app.stage, StageKind::Resolve, "should fall back to last_successful_stage");
+        assert_eq!(
+            app.stage,
+            StageKind::Resolve,
+            "should fall back to last_successful_stage"
+        );
     }
 
     #[test]
@@ -8956,11 +9652,16 @@ mod tests {
             flat: None,
             dae: None,
             library_source: None,
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
         assert!(app.viewing_log, "should not yank user off the Log tab");
-        assert_eq!(app.stage, StageKind::Resolve, "stage should still be updated for when user clicks away");
+        assert_eq!(
+            app.stage,
+            StageKind::Resolve,
+            "stage should still be updated for when user clicks away"
+        );
     }
 
     #[test]
@@ -8980,7 +9681,8 @@ mod tests {
                 has_discontinuities: false,
                 solver_steps: vec![],
             }),
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
         assert!(!app.sim_running);
@@ -8998,7 +9700,8 @@ mod tests {
         tx.send(FromWorker::Simulated {
             path,
             result: Err("solver diverged".into()),
-        }).unwrap();
+        })
+        .unwrap();
         app.drain_worker();
 
         assert!(!app.sim_running);
@@ -9014,7 +9717,8 @@ mod tests {
             level: crate::worker::LogLevel::Info,
             message: "test log".into(),
             depth: 0,
-        })).unwrap();
+        }))
+        .unwrap();
         app.drain_worker();
         assert_eq!(app.log_entries.len(), 1);
         assert!(app.log_entries[0].message.contains("test log"));
@@ -9029,13 +9733,18 @@ mod tests {
     #[test]
     fn parse_hrw_link_switch_stage() {
         let link = parse_hrw_link("hrw://stage/Structural");
-        assert!(matches!(link, Some(HrwLink::SwitchStage(StageKind::Structural, None))));
+        assert!(matches!(
+            link,
+            Some(HrwLink::SwitchStage(StageKind::Structural, None))
+        ));
     }
 
     #[test]
     fn parse_hrw_link_load_and_switch() {
         let link = parse_hrw_link("hrw://load/GearWithBrake/Parse");
-        assert!(matches!(link, Some(HrwLink::LoadAndSwitch(ref s, StageKind::Parse, None)) if s == "GearWithBrake"));
+        assert!(
+            matches!(link, Some(HrwLink::LoadAndSwitch(ref s, StageKind::Parse, None)) if s == "GearWithBrake")
+        );
     }
 
     #[test]
@@ -9082,12 +9791,15 @@ mod tests {
         app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
         app.model_list.rescan();
 
-        let probe = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR)
-            .join("ScratchProbe.mo");
+        let probe =
+            std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR).join("ScratchProbe.mo");
         if !probe.exists() {
             return; // no probe written in this checkout
         }
-        assert!(app.model_list.files.contains(&probe), "scratch specimens join the list");
+        assert!(
+            app.model_list.files.contains(&probe),
+            "scratch specimens join the list"
+        );
         // Scratch sorts FIRST, matching the tour list: the just-written thing is the
         // one most likely wanted next, and burying it under 18 curated specimens made
         // the common case the awkward one.
@@ -9097,7 +9809,10 @@ mod tests {
             "scratch specimens lead the list: {:?}",
             app.model_list.files.iter().take(3).collect::<Vec<_>>(),
         );
-        assert!(app.model_list.scratch.contains(&probe), "and are marked as scratch");
+        assert!(
+            app.model_list.scratch.contains(&probe),
+            "and are marked as scratch"
+        );
         assert_eq!(
             app.find_specimen("ScratchProbe"),
             Some(probe),
@@ -9127,8 +9842,13 @@ mod tests {
             return;
         }
         let clash = dir.join("BouncingBall.mo");
-        if std::fs::write(&clash, "model BouncingBall end BouncingBall;
-").is_err() {
+        if std::fs::write(
+            &clash,
+            "model BouncingBall end BouncingBall;
+",
+        )
+        .is_err()
+        {
             return;
         }
 
@@ -9137,14 +9857,23 @@ mod tests {
         app.model_list.rescan();
 
         assert!(
-            app.model_list.shadowed.iter().any(|n| n == "BouncingBall.mo"),
+            app.model_list
+                .shadowed
+                .iter()
+                .any(|n| n == "BouncingBall.mo"),
             "the collision is reported: {:?}",
             app.model_list.shadowed,
         );
-        assert!(!app.model_list.scratch.contains(&clash), "and the scratch file is skipped");
+        assert!(
+            !app.model_list.scratch.contains(&clash),
+            "and the scratch file is skipped"
+        );
         // The curated one still wins, and is what the name resolves to.
         let found = app.find_specimen("BouncingBall").expect("still findable");
-        assert!(found.starts_with(DEFAULT_SPECIMEN_DIR), "curated wins: {found:?}");
+        assert!(
+            found.starts_with(DEFAULT_SPECIMEN_DIR),
+            "curated wins: {found:?}"
+        );
 
         let _ = std::fs::remove_file(&clash);
     }
@@ -9163,15 +9892,23 @@ mod tests {
 
         // Compiled, no note: says so, and says where one would go.
         let compiled = purpose_placeholder(Some("CapacitorLoop"), Some(path));
-        assert!(compiled[0].contains("No purpose note for CapacitorLoop"), "{compiled:?}");
         assert!(
-            compiled.iter().any(|l| l.contains("docs/specimen-notebook/CapacitorLoop/purpose.md")),
+            compiled[0].contains("No purpose note for CapacitorLoop"),
+            "{compiled:?}"
+        );
+        assert!(
+            compiled
+                .iter()
+                .any(|l| l.contains("docs/specimen-notebook/CapacitorLoop/purpose.md")),
             "the absence must be actionable: {compiled:?}",
         );
 
         // Selected but still compiling: names the file, does NOT ask for a selection.
         let compiling = purpose_placeholder(None, Some(path));
-        assert!(compiling[0].contains("Compiling CapacitorLoop"), "{compiling:?}");
+        assert!(
+            compiling[0].contains("Compiling CapacitorLoop"),
+            "{compiling:?}"
+        );
         assert!(
             !compiling.iter().any(|l| l.contains("Select a specimen")),
             "must not advise selecting a specimen that IS selected: {compiling:?}",
@@ -9225,8 +9962,14 @@ mod tests {
     /// nothing could point at one.
     #[test]
     fn a_link_can_point_at_a_source_line() {
-        assert_eq!(parse_hrw_link("hrw://source/9"), Some(HrwLink::ShowSource(Some(9))));
-        assert_eq!(parse_hrw_link("hrw://source"), Some(HrwLink::ShowSource(None)));
+        assert_eq!(
+            parse_hrw_link("hrw://source/9"),
+            Some(HrwLink::ShowSource(Some(9)))
+        );
+        assert_eq!(
+            parse_hrw_link("hrw://source"),
+            Some(HrwLink::ShowSource(None))
+        );
         // A non-numeric line is malformed, not line 0 and not "the whole file".
         assert!(parse_hrw_link("hrw://source/nine").is_none());
     }
@@ -9285,7 +10028,10 @@ mod tests {
             }
         }));
         app.compute_problem_lines();
-        assert!(app.problem_lines.is_empty(), "no span means no line to blame");
+        assert!(
+            app.problem_lines.is_empty(),
+            "no span means no line to blame"
+        );
     }
 
     /// A link can address a sub-view, on both the load and the switch forms.
@@ -9377,7 +10123,10 @@ mod tests {
             checked += 1;
         }
 
-        assert!(checked >= 26, "expected every view variant covered, checked {checked}");
+        assert!(
+            checked >= 26,
+            "expected every view variant covered, checked {checked}"
+        );
     }
 
     /// **Every noun the capture can describe is reachable by a link.**
@@ -9399,11 +10148,20 @@ mod tests {
                 parse_hrw_link("hrw://stage/Structural/Tree/node/error.unmatched_unknowns[0]")
                     .is_some(),
             ),
-            ("Focus::Stage", parse_hrw_link("hrw://stage/Structural").is_some()),
-            ("Focus::Specimen", parse_hrw_link("hrw://load/CapacitorLoop").is_some()),
+            (
+                "Focus::Stage",
+                parse_hrw_link("hrw://stage/Structural").is_some(),
+            ),
+            (
+                "Focus::Specimen",
+                parse_hrw_link("hrw://load/CapacitorLoop").is_some(),
+            ),
             // `Focus::Nothing` is the absence of a point; there is nothing to navigate
             // to, and a verb for it would mean "un-point", which no tour has wanted.
-            ("Tracking::name", parse_hrw_link("hrw://follow/emf.phi").is_some()),
+            (
+                "Tracking::name",
+                parse_hrw_link("hrw://follow/emf.phi").is_some(),
+            ),
             // The rest of `Tracking` is derived from the name (declaring class, source
             // line, per-stage mentions), so setting the name sets all of it.
             (
@@ -9473,8 +10231,14 @@ mod tests {
         );
         let fixture = TourSource::Fixture(PathBuf::from("/x/docs/fixture-tours/camera-aiming.md"));
         assert_eq!(fixture.label(), "camera-aiming");
-        assert_eq!(fixture.path(), PathBuf::from("/x/docs/fixture-tours/camera-aiming.md"));
-        assert_eq!(TourSource::AdHoc.path(), PathBuf::from(crate::bridge::TOUR_FILE));
+        assert_eq!(
+            fixture.path(),
+            PathBuf::from("/x/docs/fixture-tours/camera-aiming.md")
+        );
+        assert_eq!(
+            TourSource::AdHoc.path(),
+            PathBuf::from(crate::bridge::TOUR_FILE)
+        );
     }
 
     /// The list offers the fixtures, ad hoc first when one exists.
@@ -9506,14 +10270,22 @@ mod tests {
 
         // Re-selecting the SAME tour must not throw away work in progress.
         app.select_tour(a.clone());
-        assert_eq!(app.selected, Some(PathBuf::from("/x/RcCircuit.mo")), "reselect keeps state");
+        assert_eq!(
+            app.selected,
+            Some(PathBuf::from("/x/RcCircuit.mo")),
+            "reselect keeps state"
+        );
         assert_eq!(app.model.as_deref(), Some("RcCircuit"));
 
         // A different tour starts clean.
         app.select_tour(b.clone());
         assert_eq!(app.selected, None, "the specimen is cleared");
         assert_eq!(app.model, None, "and so is the model");
-        assert_eq!(app.stage, StageKind::Parse, "and the stage returns to the start");
+        assert_eq!(
+            app.stage,
+            StageKind::Parse,
+            "and the stage returns to the start"
+        );
         assert_eq!(app.tour.selected, Some(b));
     }
 
@@ -9523,9 +10295,16 @@ mod tests {
         app.poll_tour_file();
 
         assert!(
-            app.tour.available.iter().any(|t| matches!(t, TourSource::Fixture(_))),
+            app.tour
+                .available
+                .iter()
+                .any(|t| matches!(t, TourSource::Fixture(_))),
             "the checked-in fixture tours should be listed: {:?}",
-            app.tour.available.iter().map(TourSource::label).collect::<Vec<_>>(),
+            app.tour
+                .available
+                .iter()
+                .map(TourSource::label)
+                .collect::<Vec<_>>(),
         );
 
         // **A README is not a tour.** `docs/fixture-tours/` gained one on
@@ -9540,8 +10319,16 @@ mod tests {
             "README.md must not be offered as a tour: {labels:?}",
         );
         if app.tour.available.contains(&TourSource::AdHoc) {
-            assert_eq!(app.tour.available[0], TourSource::AdHoc, "ad hoc sorts first");
-            assert_eq!(app.tour.selected, Some(TourSource::AdHoc), "and is selected by default");
+            assert_eq!(
+                app.tour.available[0],
+                TourSource::AdHoc,
+                "ad hoc sorts first"
+            );
+            assert_eq!(
+                app.tour.selected,
+                Some(TourSource::AdHoc),
+                "and is selected by default"
+            );
         }
 
         // Selecting a fixture drops the previous text immediately rather than leaving
@@ -9579,8 +10366,8 @@ mod tests {
         };
         let ir: Value = serde_json::from_str(&text).unwrap();
 
-        let tour = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("docs/fixture-tours/node-pointing.md");
+        let tour =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/node-pointing.md");
         let Ok(md) = std::fs::read_to_string(&tour) else {
             return;
         };
@@ -9607,7 +10394,10 @@ mod tests {
             );
             checked += 1;
         }
-        assert!(checked >= 4, "expected the fixture's real paths to be checked, saw {checked}");
+        assert!(
+            checked >= 4,
+            "expected the fixture's real paths to be checked, saw {checked}"
+        );
     }
 
     /// A fixture tour's referenced files exist.
@@ -9662,7 +10452,10 @@ mod tests {
         // Non-vacuity. The first version of this test asserted only on relative links,
         // and converting the notebook link to `hrw://notebook/` left it with nothing to
         // check — it failed rather than passing empty, which is the behaviour to keep.
-        assert!(checked > 0, "expected at least one file reference across the fixtures");
+        assert!(
+            checked > 0,
+            "expected at least one file reference across the fixtures"
+        );
     }
 
     /// Every `hrw://` link in every fixture tour parses.
@@ -9696,7 +10489,10 @@ mod tests {
                 links += 1;
             }
         }
-        assert!(tours > 0 && links > 0, "expected at least one fixture tour with links");
+        assert!(
+            tours > 0 && links > 0,
+            "expected at least one fixture tour with links"
+        );
     }
 
     /// The frame-seek verb parses everywhere an animation lives.
@@ -9719,7 +10515,10 @@ mod tests {
         let animate = SubView::Structural(StructuralView::Animate);
 
         for (label, link) in [
-            ("switch", HrwLink::SwitchStage(StageKind::IndexReduction, Some(animate))),
+            (
+                "switch",
+                HrwLink::SwitchStage(StageKind::IndexReduction, Some(animate)),
+            ),
             (
                 "seek",
                 HrwLink::SeekFrame(StageKind::IndexReduction, animate, 2),
@@ -9735,7 +10534,11 @@ mod tests {
             app.viewport.structural = StructuralView::SpyPlot;
             app.dispatch_hrw_link(link);
 
-            assert_eq!(app.stage, StageKind::IndexReduction, "{label}: stage switched");
+            assert_eq!(
+                app.stage,
+                StageKind::IndexReduction,
+                "{label}: stage switched"
+            );
             assert_eq!(
                 app.pending_sub_view,
                 Some(animate),
@@ -9807,7 +10610,11 @@ mod tests {
         // Paths that exist resolve silently.
         for good in ["", "error", "error.unmatched_unknowns[0]", "blocks[0].kind"] {
             let path = bridge::parse_path(good).expect("well-formed");
-            assert_eq!(resolve_jump_target(&stage, &path), Ok(()), "{good:?} should resolve");
+            assert_eq!(
+                resolve_jump_target(&stage, &path),
+                Ok(()),
+                "{good:?} should resolve"
+            );
         }
 
         // Well-formed but absent: parses fine, navigates to nothing, must be reported.
@@ -9815,7 +10622,10 @@ mod tests {
         let Err(msg) = resolve_jump_target(&stage, &path) else {
             panic!("a path that is not in the stage must be reported");
         };
-        assert!(msg.contains("error.matched_unknowns[0]"), "the message names the path: {msg}");
+        assert!(
+            msg.contains("error.matched_unknowns[0]"),
+            "the message names the path: {msg}"
+        );
 
         // Past the end of a real array counts as absent too.
         let path = bridge::parse_path("blocks[9]").expect("well-formed");
@@ -9852,10 +10662,16 @@ mod tests {
         let mut app = App::test_default();
         app.model = Some("RcCircuit".to_owned());
         app.stages = StageBundle {
-            parse: ok.clone(), resolve: ok.clone(), instantiate: ok.clone(),
-            typecheck: ok.clone(), flatten: ok.clone(), dae: ok.clone(),
+            parse: ok.clone(),
+            resolve: ok.clone(),
+            instantiate: ok.clone(),
+            typecheck: ok.clone(),
+            flatten: ok.clone(),
+            dae: ok.clone(),
             structural: ok.clone(),
-            index_reduction: ok.clone(), initialization: ok.clone(), events: ok.clone(),
+            index_reduction: ok.clone(),
+            initialization: ok.clone(),
+            events: ok.clone(),
             solve_lowering: ok.clone(),
         };
         let outcome = app.compile_outcome();
@@ -9865,7 +10681,9 @@ mod tests {
         let mut app = App::test_default();
         app.model = Some("UnbalancedShaft".to_owned());
         app.stages = StageBundle {
-            parse: ok.clone(), resolve: ok.clone(), instantiate: ok.clone(),
+            parse: ok.clone(),
+            resolve: ok.clone(),
+            instantiate: ok.clone(),
             typecheck: ok.clone(),
             flatten: failed.clone(),
             // A later stage also "fails" (not reached); it must not be the one named.
@@ -9912,8 +10730,16 @@ mod tests {
         let cases: Vec<(StageKind, SubView)> = StructuralView::ALL
             .iter()
             .map(|v| (StageKind::Structural, SubView::Structural(*v)))
-            .chain(FlattenView::ALL.iter().map(|v| (StageKind::Flatten, SubView::Flatten(*v))))
-            .chain(EventsView::ALL.iter().map(|v| (StageKind::Events, SubView::Events(*v))))
+            .chain(
+                FlattenView::ALL
+                    .iter()
+                    .map(|v| (StageKind::Flatten, SubView::Flatten(*v))),
+            )
+            .chain(
+                EventsView::ALL
+                    .iter()
+                    .map(|v| (StageKind::Events, SubView::Events(*v))),
+            )
             .chain(
                 InitView::ALL
                     .iter()
@@ -9954,8 +10780,16 @@ mod tests {
             Some(SubView::Structural(StructuralView::Tree)),
             path.clone(),
         ));
-        assert_eq!(app.context.jump_target.as_ref(), Some(&path), "scrolls to it");
-        assert_eq!(app.context.jump_highlight.as_ref(), Some(&path), "and marks it");
+        assert_eq!(
+            app.context.jump_target.as_ref(),
+            Some(&path),
+            "scrolls to it"
+        );
+        assert_eq!(
+            app.context.jump_highlight.as_ref(),
+            Some(&path),
+            "and marks it"
+        );
 
         // The scroll is consumed after one frame; the mark is not.
         app.context.jump_target = None;
@@ -10018,7 +10852,10 @@ mod tests {
         }
         // Frame 0 is reachable — as `frame/1`. The `checked_sub` rejects `frame/0`,
         // which under 1-based numbering names no frame at all.
-        assert_eq!(frame_link("Structural", "MatchingAnim", 0), "hrw://stage/Structural/MatchingAnim/frame/1");
+        assert_eq!(
+            frame_link("Structural", "MatchingAnim", 0),
+            "hrw://stage/Structural/MatchingAnim/frame/1"
+        );
         assert!(parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/0").is_none());
     }
 
@@ -10051,7 +10888,10 @@ mod tests {
 
         app.restore_mode_after_autoplay();
         assert_eq!(app.ui_mode, UiMode::Tour, "the walk must put the mode back");
-        assert!(app.tour.mode_before_autoplay.is_none(), "and consume the record");
+        assert!(
+            app.tour.mode_before_autoplay.is_none(),
+            "and consume the record"
+        );
 
         // Idempotent: a second call (Stop after Finished) must not fight the user.
         app.ui_mode = UiMode::Specimen;
@@ -10092,7 +10932,10 @@ mod tests {
         // Boundary 1: choosing a tour. Positions from another document are not
         // merely stale, they are measured against a different length of text.
         app.reset_for_new_tour();
-        assert_eq!(app.tour.tour_link_y, None, "a new tour forgets the old positions");
+        assert_eq!(
+            app.tour.tour_link_y, None,
+            "a new tour forgets the old positions"
+        );
         assert_eq!(app.tour.tour_prev_link_y, None);
         assert_eq!(app.tour.tour_measured_beat, None);
 
@@ -10173,8 +11016,7 @@ mod tests {
                 // naming a sub-view the stage does not have is malformed, not
                 // silently downgraded to "somewhere in the stage".
                 assert!(
-                    parse_hrw_link(&format!("hrw://stage/{}/Tree/node/x", kind.slug()))
-                        .is_none(),
+                    parse_hrw_link(&format!("hrw://stage/{}/Tree/node/x", kind.slug())).is_none(),
                     "{} has no Tree sub-view; naming one must fail",
                     kind.name(),
                 );
@@ -10246,7 +11088,10 @@ mod tests {
             let mut app = App::test_default();
             app.dispatch_hrw_link(link);
             assert!(app.notice.is_some(), "it must say so");
-            assert!(app.pending_stage.is_none(), "and leave nothing armed to fire later");
+            assert!(
+                app.pending_stage.is_none(),
+                "and leave nothing armed to fire later"
+            );
             assert!(app.pending_sub_view.is_none());
             assert!(app.seek_frame.is_none());
             assert!(app.aim_at_equation.is_none());
@@ -10275,7 +11120,10 @@ mod tests {
         let mut app = App::test_default();
         app.stage = StageKind::Structural;
         app.stages.structural = clean.clone();
-        assert!(!app.structural_view_available(StructuralView::Summary), "no Summary here");
+        assert!(
+            !app.structural_view_available(StructuralView::Summary),
+            "no Summary here"
+        );
         assert!(app.structural_view_available(StructuralView::SpyPlot));
         assert!(app.structural_view_available(StructuralView::TearingAnim));
         assert!(app.structural_view_available(StructuralView::Incidence));
@@ -10293,7 +11141,10 @@ mod tests {
         app.stage = StageKind::IndexReduction;
         app.stages.index_reduction = clean;
         assert!(app.structural_view_available(StructuralView::Summary));
-        assert!(!app.structural_view_available(StructuralView::Animate), "no frames yet");
+        assert!(
+            !app.structural_view_available(StructuralView::Animate),
+            "no frames yet"
+        );
     }
 
     /// The System Modeler verb parses, needs a name, and stands alone.
@@ -10305,25 +11156,38 @@ mod tests {
     fn the_system_modeler_verb_stands_alone() {
         assert_eq!(
             parse_hrw_link("hrw://systemmodeler/IncompatibleConnect"),
-            Some(HrwLink::OpenInSystemModeler("IncompatibleConnect".to_owned())),
+            Some(HrwLink::OpenInSystemModeler(
+                "IncompatibleConnect".to_owned()
+            )),
         );
-        assert!(parse_hrw_link("hrw://systemmodeler/").is_none(), "a bare verb names nothing");
+        assert!(
+            parse_hrw_link("hrw://systemmodeler/").is_none(),
+            "a bare verb names nothing"
+        );
         assert!(
             !HrwLink::OpenInSystemModeler("X".to_owned()).requires_specimen(),
             "opening a specimen in another tool does not need one loaded here",
         );
         // Round-trips into the action trail like every other verb.
         let link = parse_hrw_link("hrw://systemmodeler/CapacitorLoop").unwrap();
-        assert_eq!(format!("hrw://{}", link.describe()), "hrw://systemmodeler/CapacitorLoop");
+        assert_eq!(
+            format!("hrw://{}", link.describe()),
+            "hrw://systemmodeler/CapacitorLoop"
+        );
     }
 
     #[test]
     fn the_notebook_verb_needs_a_name() {
         assert_eq!(
             parse_hrw_link("hrw://notebook/structural-vs-numerical-rank.nb"),
-            Some(HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned())),
+            Some(HrwLink::OpenNotebook(
+                "structural-vs-numerical-rank.nb".to_owned()
+            )),
         );
-        assert!(parse_hrw_link("hrw://notebook/").is_none(), "a bare verb names nothing");
+        assert!(
+            parse_hrw_link("hrw://notebook/").is_none(),
+            "a bare verb names nothing"
+        );
         assert!(parse_hrw_link("hrw://notebook").is_none());
     }
 
@@ -10498,11 +11362,17 @@ mod tests {
             ),
             (
                 StageKind::Events,
-                &[events_view_name(EventsView::Tree), events_view_name(EventsView::PreLowering)],
+                &[
+                    events_view_name(EventsView::Tree),
+                    events_view_name(EventsView::PreLowering),
+                ],
             ),
             (
                 StageKind::Initialization,
-                &[init_view_name(InitView::Tree), init_view_name(InitView::IcPlan)],
+                &[
+                    init_view_name(InitView::Tree),
+                    init_view_name(InitView::IcPlan),
+                ],
             ),
         ];
         for (stage, names) in cases {
@@ -10566,8 +11436,7 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
     /// is now part of the assertion.
     #[test]
     fn purpose_note_hrw_links_are_valid() {
-        let notebook_dir =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+        let notebook_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
         let mut checked = 0usize;
         let mut notes = std::collections::BTreeSet::new();
         for entry in std::fs::read_dir(&notebook_dir).unwrap() {
@@ -10576,9 +11445,16 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
                 continue;
             }
             let purpose = path.join("purpose.md");
-            assert!(purpose.exists(), "every specimen dir needs a purpose.md: {}", path.display());
+            assert!(
+                purpose.exists(),
+                "every specimen dir needs a purpose.md: {}",
+                path.display()
+            );
             notes.insert(
-                path.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_owned(),
+                path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or_default()
+                    .to_owned(),
             );
             checked += 1;
             let text = std::fs::read_to_string(&purpose).unwrap();
@@ -10606,7 +11482,8 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
             .collect();
 
         assert_eq!(
-            notes, specimens,
+            notes,
+            specimens,
             "every specimen needs a purpose note and every note needs a specimen; \
              missing notes: {:?}; orphaned notes: {:?}",
             specimens.difference(&notes).collect::<Vec<_>>(),
@@ -10630,13 +11507,16 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         });
         app.sim_error = Some("stale error".into());
         app.sim_running = true;
-        app.def_index.insert(1, crate::worker::DefInfo {
-            name: "x".into(),
-            kind: crate::worker::DefKind::Definition,
-            class_type: None,
-            file_name: None,
-            line: None,
-        });
+        app.def_index.insert(
+            1,
+            crate::worker::DefInfo {
+                name: "x".into(),
+                kind: crate::worker::DefKind::Definition,
+                class_type: None,
+                file_name: None,
+                line: None,
+            },
+        );
         app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet {
             groups: vec![],
             n_equations: 0,
@@ -10673,16 +11553,34 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         assert!(app.sim_error.is_none(), "sim_error should be cleared");
         assert!(!app.sim_running, "sim_running should be false");
         assert!(app.def_index.is_empty(), "def_index should be cleared");
-        assert!(app.cached_equation_sheet.is_none(), "cached_equation_sheet should be cleared");
-        assert!(app.identifier_index.is_none(), "identifier_index should be cleared");
-        assert!(app.tracked_identifier.is_none(), "tracked_identifier should be cleared");
+        assert!(
+            app.cached_equation_sheet.is_none(),
+            "cached_equation_sheet should be cleared"
+        );
+        assert!(
+            app.identifier_index.is_none(),
+            "identifier_index should be cleared"
+        );
+        assert!(
+            app.tracked_identifier.is_none(),
+            "tracked_identifier should be cleared"
+        );
         assert!(app.source.text.is_none(), "cached_source should be cleared");
-        assert!(app.viewport.highlighted_eq_row.is_none(), "highlighted_eq_row should be cleared");
-        assert!(app.viewport.highlighted_source_line.is_none(), "highlighted_source_line should be cleared");
+        assert!(
+            app.viewport.highlighted_eq_row.is_none(),
+            "highlighted_eq_row should be cleared"
+        );
+        assert!(
+            app.viewport.highlighted_source_line.is_none(),
+            "highlighted_source_line should be cleared"
+        );
         assert!(app.nav.is_empty(), "nav should be cleared");
         assert!(app.nav_loading.is_none(), "nav_loading should be cleared");
         assert!(app.nav_error.is_none(), "nav_error should be cleared");
-        assert!(app.pending_stage.is_none(), "pending_stage should be cleared");
+        assert!(
+            app.pending_stage.is_none(),
+            "pending_stage should be cleared"
+        );
         assert!(app.viewing_log, "viewing_log should be true");
     }
 }

@@ -109,24 +109,30 @@ fn main() {
         );
         std::process::exit(2);
     };
-    let max_reduce_eq: usize =
-        arg(&args, "--max-reduce-eq").and_then(|v| v.parse().ok()).unwrap_or(800);
+    let max_reduce_eq: usize = arg(&args, "--max-reduce-eq")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(800);
     let resume = args.iter().any(|a| a == "--resume");
     // `--only-checks F2` runs one check, so the same model profiled once per
     // check yields per-check time AND peak memory from the existing watchdog.
     let only: Option<std::collections::BTreeSet<String>> = arg(&args, "--only-checks")
         .map(|v| v.split(',').map(|c| c.trim().to_uppercase()).collect());
     if let Some(set) = &only {
-        eprintln!("--only-checks: {}", set.iter().cloned().collect::<Vec<_>>().join(","));
+        eprintln!(
+            "--only-checks: {}",
+            set.iter().cloned().collect::<Vec<_>>().join(",")
+        );
     }
     // **Process lifetime is the only hard memory bound.** A session rebuild
     // releases what the session holds; it cannot release what the allocator has
     // fragmented or what any other cache retains. Exiting does, because the OS
     // reclaims everything. See the note on `--max-models` in the module docs.
-    let max_models: usize =
-        arg(&args, "--max-models").and_then(|v| v.parse().ok()).unwrap_or(25);
-    let rebuild_every: usize =
-        arg(&args, "--rebuild-every").and_then(|v| v.parse().ok()).unwrap_or(10);
+    let max_models: usize = arg(&args, "--max-models")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(25);
+    let rebuild_every: usize = arg(&args, "--rebuild-every")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
 
     let mut rows = corpus();
     eprintln!("survey corpus: {} models", rows.len());
@@ -170,7 +176,11 @@ fn main() {
     };
     if !done.is_empty() {
         rows.retain(|r| !done.contains(&r.name));
-        eprintln!("--resume: {} already done, {} remaining", done.len(), rows.len());
+        eprintln!(
+            "--resume: {} already done, {} remaining",
+            done.len(),
+            rows.len()
+        );
     }
     let total_remaining = rows.len();
     if rows.len() > max_models {
@@ -268,8 +278,13 @@ fn main() {
             }
         };
 
-        let FromWorker::Compiled { stages, dae, equation_sheet, identifier_index, .. } =
-            w.compile_model_by_name(&row.name, &on_event)
+        let FromWorker::Compiled {
+            stages,
+            dae,
+            equation_sheet,
+            identifier_index,
+            ..
+        } = w.compile_model_by_name(&row.name, &on_event)
         else {
             continue;
         };
@@ -329,7 +344,11 @@ fn main() {
                     .take(4)
                     .map(|(n, ms)| format!("{n} {:.1}s", ms / 1000.0))
                     .collect();
-                eprintln!("  [phases] {:.1}s total: {}", total / 1000.0, parts.join(", "));
+                eprintln!(
+                    "  [phases] {:.1}s total: {}",
+                    total / 1000.0,
+                    parts.join(", ")
+                );
             }
         }
 
@@ -337,7 +356,8 @@ fn main() {
         if secs >= 10.0 {
             eprintln!("  [slow] {secs:.1}s  {}", row.name);
         }
-        let _ = writeln!(sink, "{}", report_row(&row.name, &violations)).and_then(|()| sink.flush());
+        let _ =
+            writeln!(sink, "{}", report_row(&row.name, &violations)).and_then(|()| sink.flush());
         all.extend(violations);
 
         if (i + 1) % 25 == 0 || i + 1 == rows.len() {
@@ -357,8 +377,11 @@ fn main() {
     // as inference in the first place.
     let total_ms = timing.total_ms();
     if total_ms > 0.0 {
-        eprintln!("
-[check cost] {:.1}s inside the checks:", total_ms / 1000.0);
+        eprintln!(
+            "
+[check cost] {:.1}s inside the checks:",
+            total_ms / 1000.0
+        );
         for (check, ms) in timing.ranked() {
             eprintln!(
                 "  {check}  {:>8.1}s  {:>5.1}%",
@@ -377,8 +400,13 @@ fn main() {
     );
     eprintln!(
         "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs walked,          {} equation sheets, {} identifier indexes, {} empty stages",
-        cov.subjects, cov.with_blocks, cov.with_matching, cov.stage_irs,
-        cov.with_sheet, cov.with_index, cov.empty_stages,
+        cov.subjects,
+        cov.with_blocks,
+        cov.with_matching,
+        cov.stage_irs,
+        cov.with_sheet,
+        cov.with_index,
+        cov.empty_stages,
     );
     // **`empty stages` is F10's coverage, and on this corpus it is expected to be 0.**
     //
@@ -419,7 +447,10 @@ fn check_failures(stages: &hrw::worker::StageBundle) -> Vec<Violation> {
             continue;
         }
         let Some(note) = stage.note.as_deref() else {
-            v.push(Violation { check: "F9", detail: format!("{kind:?}: abnormal with no note") });
+            v.push(Violation {
+                check: "F9",
+                detail: format!("{kind:?}: abnormal with no note"),
+            });
             continue;
         };
         match stage.value.as_ref() {
@@ -455,7 +486,11 @@ fn report_row(name: &str, violations: &[Violation]) -> String {
         "{},{},{},{},{},{}",
         f(name),
         f(&classify(name)),
-        if violations.is_empty() { "ok" } else { "violations" },
+        if violations.is_empty() {
+            "ok"
+        } else {
+            "violations"
+        },
         f(violations.first().map_or("", |v| v.detail.as_str())),
         f(&checks.join(" ")),
         violations.len(),
@@ -483,7 +518,12 @@ fn json_bytes(v: &serde_json::Value) -> usize {
 
 fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
     let mut f = BufWriter::new(
-        OpenOptions::new().create(true).write(true).truncate(fresh).append(!fresh).open(out)?,
+        OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(fresh)
+            .append(!fresh)
+            .open(out)?,
     );
     if fresh {
         writeln!(f, "name,kind,outcome,message,checks_failed,n_violations")?;
@@ -499,5 +539,8 @@ fn arg(args: &[String], flag: &str) -> Option<String> {
 
 /// Unused today; keeps the map type available for per-kind grouping if a
 /// stage-B run shows one check producing two genuinely different failures.
-#[allow(dead_code, reason = "reserved for per-kind grouping; see fidelity::Violation")]
+#[allow(
+    dead_code,
+    reason = "reserved for per-kind grouping; see fidelity::Violation"
+)]
 type ByKind = BTreeMap<String, usize>;

@@ -46,7 +46,10 @@ pub struct ReportRow {
 impl ReportRow {
     /// A named extra column, if the report has one.
     pub fn get(&self, column: &str) -> Option<&str> {
-        self.extra.iter().find(|(k, _)| k == column).map(|(_, v)| v.as_str())
+        self.extra
+            .iter()
+            .find(|(k, _)| k == column)
+            .map(|(_, v)| v.as_str())
     }
 
     /// Is this row one the reader should be looking at?
@@ -127,7 +130,9 @@ fn split_csv_line(line: &str) -> Vec<String> {
 /// catch.
 pub fn parse(text: &str) -> Report {
     let mut lines = text.lines();
-    let Some(header) = lines.next() else { return Report::default() };
+    let Some(header) = lines.next() else {
+        return Report::default();
+    };
     let columns = split_csv_line(header);
     let at = |name: &str| columns.iter().position(|c| c.trim() == name);
     let (i_name, i_kind, i_outcome, i_message) =
@@ -137,9 +142,7 @@ pub fn parse(text: &str) -> Report {
         .filter(|l| !l.trim().is_empty())
         .map(|line| {
             let f = split_csv_line(line);
-            let take = |i: Option<usize>| {
-                i.and_then(|i| f.get(i)).cloned().unwrap_or_default()
-            };
+            let take = |i: Option<usize>| i.and_then(|i| f.get(i)).cloned().unwrap_or_default();
             let shared = [i_name, i_kind, i_outcome, i_message];
             let extra = columns
                 .iter()
@@ -191,18 +194,34 @@ mod tests {
         let r = parse(SURVEY);
         assert_eq!(r.rows[1].message, r#"unsupported form: f(a, "b")"#);
         assert_eq!(r.rows[1].get("package"), Some("Fluid"));
-        assert_eq!(r.rows[1].get("n_equations"), Some(""), "an empty measurement stays empty");
+        assert_eq!(
+            r.rows[1].get("n_equations"),
+            Some(""),
+            "an empty measurement stays empty"
+        );
     }
 
     /// Each report spells success its own way, and the exception filter knows
     /// all of them — which is what lets one widget default correctly per report.
     #[test]
     fn exceptions_are_recognised_across_reports() {
-        assert_eq!(parse(SURVEY).exceptions().len(), 1, "survey: only the failure");
-        assert_eq!(parse(FIDELITY).exceptions().len(), 1, "fidelity: only the violation");
+        assert_eq!(
+            parse(SURVEY).exceptions().len(),
+            1,
+            "survey: only the failure"
+        );
+        assert_eq!(
+            parse(FIDELITY).exceptions().len(),
+            1,
+            "fidelity: only the violation"
+        );
 
         let oracle = "name,kind,outcome,message\nM.A,Examples,match,\nM.B,Examples,mismatch,x\n";
-        assert_eq!(parse(oracle).exceptions().len(), 1, "oracle: only the mismatch");
+        assert_eq!(
+            parse(oracle).exceptions().len(),
+            1,
+            "oracle: only the mismatch"
+        );
     }
 
     /// A report missing a shared column says so rather than rendering blanks.
@@ -210,7 +229,10 @@ mod tests {
     fn a_report_without_the_shared_columns_is_reported_as_such() {
         let bad = parse("model,result\nA,ok\n");
         assert!(!bad.has_shared_columns());
-        assert_eq!(bad.rows[0].name, "", "nothing is invented for a missing column");
+        assert_eq!(
+            bad.rows[0].name, "",
+            "nothing is invented for a missing column"
+        );
     }
 
     /// Extra columns are read by name, so inserting one shifts nothing.
@@ -218,7 +240,10 @@ mod tests {
     fn an_inserted_column_shifts_nothing() {
         let text = "name,NEW,kind,outcome,message,tail\nM.A,x,Examples,ok,,z\n";
         let r = parse(text);
-        assert_eq!(r.rows[0].outcome, "ok", "outcome read from the wrong column");
+        assert_eq!(
+            r.rows[0].outcome, "ok",
+            "outcome read from the wrong column"
+        );
         assert_eq!(r.rows[0].get("NEW"), Some("x"));
         assert_eq!(r.rows[0].get("tail"), Some("z"));
     }
@@ -229,7 +254,11 @@ mod tests {
             A,K,b,\nB,K,a,\nC,K,a,\nD,K,c,\n";
         assert_eq!(
             parse(text).outcome_tally(),
-            vec![("a".to_owned(), 2), ("b".to_owned(), 1), ("c".to_owned(), 1)],
+            vec![
+                ("a".to_owned(), 2),
+                ("b".to_owned(), 1),
+                ("c".to_owned(), 1)
+            ],
             "descending by count, then alphabetical",
         );
     }

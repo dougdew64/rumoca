@@ -22,7 +22,10 @@ use std::path::{Path, PathBuf};
 use hrw::promote::{Verdict, guard, not_checked_sentence, parse_profile, verdict_tally};
 
 fn arg(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
 
 fn main() {
@@ -83,7 +86,10 @@ fn main() {
     let profile_note = if profile_rows.is_empty() {
         "null".to_owned()
     } else {
-        copy(profile.as_ref().unwrap(), &docs.join("msl-fidelity-profile.csv"));
+        copy(
+            profile.as_ref().unwrap(),
+            &docs.join("msl-fidelity-profile.csv"),
+        );
         "\"msl-fidelity-profile.csv\"".to_owned()
     };
 
@@ -105,8 +111,7 @@ fn main() {
         report.display().to_string().replace('\\', "/"),
         not_checked_sentence(&profile_rows).replace('"', "'"),
     );
-    std::fs::write(&dest_meta, meta)
-        .unwrap_or_else(|e| die(&format!("cannot write sidecar: {e}")));
+    std::fs::write(&dest_meta, meta).unwrap_or_else(|e| die(&format!("cannot write sidecar: {e}")));
 
     println!("promoted {incoming} rows");
     println!("  -> docs/reports/msl-fidelity-report.csv");
@@ -118,8 +123,13 @@ fn main() {
 }
 
 fn copy(from: &Path, to: &Path) {
-    std::fs::copy(from, to)
-        .unwrap_or_else(|e| die(&format!("cannot copy {} -> {}: {e}", from.display(), to.display())));
+    std::fs::copy(from, to).unwrap_or_else(|e| {
+        die(&format!(
+            "cannot copy {} -> {}: {e}",
+            from.display(),
+            to.display()
+        ))
+    });
 }
 
 fn json_map(pairs: impl Iterator<Item = (String, usize)>) -> String {

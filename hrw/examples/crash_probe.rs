@@ -8,7 +8,10 @@ fn main() {
     hrw::diagnostics::init();
     hrw::diagnostics::record_action("specimen", "MotorWithBrake.mo");
     hrw::diagnostics::record_action("follow", "follow overSpeed (in Resolve)");
-    hrw::diagnostics::record_log("Error", "note containing an em dash \u{2014} like the real one");
+    hrw::diagnostics::record_log(
+        "Error",
+        "note containing an em dash \u{2014} like the real one",
+    );
     hrw::diagnostics::set_snapshot(serde_json::json!({
         "model": "MotorWithBrake",
         "stage_tab": "Resolve",

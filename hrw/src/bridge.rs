@@ -69,7 +69,7 @@ use std::fmt::{self, Write as _};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::worker::{DefInfo, StageKind};
 
@@ -97,11 +97,17 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge")
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
 
 /// HRW writes breakpoint requests here; the VS Code extension watches it.
-const BREAKPOINT_REQUEST_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-request.json");
+const BREAKPOINT_REQUEST_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/breakpoint-request.json"
+);
 /// The extension writes this ack file after processing a request, confirming
 /// the breakpoint is registered with LLDB. HRW polls for it before spawning
 /// the algorithm thread (see `check_breakpoint_ack`).
-pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/breakpoint-ack.json");
+pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/breakpoint-ack.json"
+);
 
 /// Scratch specimens written by Claude to answer a question (ideas #42).
 ///
@@ -521,7 +527,10 @@ pub enum Focus<'a> {
     /// A specific IR node in the current stage, at `key_path` from the stage root.
     /// `stage_value` is a reference to the stage's full IR (used to navigate to
     /// the node and build provenance).
-    Node { key_path: Vec<Seg>, stage_value: &'a Value },
+    Node {
+        key_path: Vec<Seg>,
+        stage_value: &'a Value,
+    },
     /// The current stage's IR as a whole.
     Stage,
     /// The whole specimen (the `.mo` file) — captured from the specimen list.
@@ -718,7 +727,14 @@ fn find_mentions(
 pub fn mention_paths(stage_value: &Value, name: &str) -> Vec<Vec<Seg>> {
     let mut paths = Vec::new();
     let mut total = 0usize;
-    find_mentions(stage_value, name, &mut Vec::new(), &mut paths, &mut total, usize::MAX);
+    find_mentions(
+        stage_value,
+        name,
+        &mut Vec::new(),
+        &mut paths,
+        &mut total,
+        usize::MAX,
+    );
     paths
 }
 
@@ -742,7 +758,14 @@ pub fn build_tracking(t: &Tracking) -> Value {
             Some(v) => {
                 let mut paths = Vec::new();
                 let mut total = 0usize;
-                find_mentions(v, t.name, &mut Vec::new(), &mut paths, &mut total, MAX_MENTION_PATHS);
+                find_mentions(
+                    v,
+                    t.name,
+                    &mut Vec::new(),
+                    &mut paths,
+                    &mut total,
+                    MAX_MENTION_PATHS,
+                );
                 json!({
                     "stage": stage_name,
                     "mentions": total,
@@ -931,9 +954,10 @@ fn phase_source(stage: StageKind) -> Value {
         // Flatten has no standalone entry point: it is extracted from the
         // reachable-closure pipeline result. Saying so is more useful than
         // naming a function that does not exist.
-        StageKind::Flatten => {
-            ("crates/rumoca-compile", "Session::compile_model_strict_reachable_with_recovery")
-        }
+        StageKind::Flatten => (
+            "crates/rumoca-compile",
+            "Session::compile_model_strict_reachable_with_recovery",
+        ),
         // DAE construction runs inside the same reachable-closure pipeline as
         // Flatten; `to_dae_with_options_traced` is the traced entry HRW calls
         // separately to record pre()-lowering frames.
@@ -948,7 +972,10 @@ fn phase_source(stage: StageKind) -> Value {
         // Events are not produced by a phase call — the hybrid structure is
         // already in the DAE and HRW reads it out. Naming the IR is the honest
         // answer to "where is this computed?".
-        StageKind::Events => ("crates/rumoca-ir-dae", "Dae::discrete (populated during flatten)"),
+        StageKind::Events => (
+            "crates/rumoca-ir-dae",
+            "Dae::discrete (populated during flatten)",
+        ),
         StageKind::SolveLowering => ("crates/rumoca-phase-solve", "lower_dae_to_solve_model"),
         StageKind::Simulation => ("crates/rumoca-sim", "simulate_solve_model"),
     };
@@ -1038,7 +1065,10 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     let path = Path::new(BRIDGE_DIR).join("focus.json");
     let doc = build(ask);
     // Pretty-print for readability — Doug reads these during dogfooding.
-    fs::write(&path, serde_json::to_string_pretty(&doc).unwrap_or_default())?;
+    fs::write(
+        &path,
+        serde_json::to_string_pretty(&doc).unwrap_or_default(),
+    )?;
     Ok(path)
 }
 
@@ -1262,7 +1292,11 @@ fn build(ask: &Ask) -> Value {
             "downstream_not_reached": f.not_reached,
         });
     }
-    if let Focus::Node { key_path, stage_value } = &ask.focus {
+    if let Focus::Node {
+        key_path,
+        stage_value,
+    } = &ask.focus
+    {
         doc["node"] = build_node(key_path, stage_value, ask.specimen);
         doc["cross_stage"] = build_cross_stage(ask, key_path);
     }
@@ -1458,8 +1492,12 @@ fn neighbourhood(root: &Value, path: &[Seg]) -> Value {
 fn enclosing_context(root: &Value, path: &[Seg]) -> (usize, Value) {
     let mut best = (path.len(), Value::Null);
     for depth in (0..=path.len()).rev() {
-        let Some(node) = navigate(root, &path[..depth]) else { continue };
-        let bytes = serde_json::to_string(node).map(|s| s.len()).unwrap_or(usize::MAX);
+        let Some(node) = navigate(root, &path[..depth]) else {
+            continue;
+        };
+        let bytes = serde_json::to_string(node)
+            .map(|s| s.len())
+            .unwrap_or(usize::MAX);
         if bytes > MAX_CONTEXT_BYTES {
             break;
         }
@@ -1475,19 +1513,31 @@ fn enclosing_context(root: &Value, path: &[Seg]) -> (usize, Value) {
 /// is the neighbouring keys in IR order. Returns `Null` at the root, which has
 /// no parent and therefore no siblings — a fact, not a missing value.
 fn siblings(root: &Value, path: &[Seg]) -> Value {
-    let Some((last, parent_path)) = path.split_last() else { return Value::Null };
-    let Some(parent) = navigate(root, parent_path) else { return Value::Null };
+    let Some((last, parent_path)) = path.split_last() else {
+        return Value::Null;
+    };
+    let Some(parent) = navigate(root, parent_path) else {
+        return Value::Null;
+    };
 
     let (count, position, names): (usize, Option<usize>, Vec<String>) = match parent {
         Value::Object(map) => {
             let keys: Vec<&String> = map.keys().collect();
-            let Seg::Key(k) = last else { return Value::Null };
+            let Seg::Key(k) = last else {
+                return Value::Null;
+            };
             let at = keys.iter().position(|key| *key == k);
             (keys.len(), at, keys.iter().map(|k| (*k).clone()).collect())
         }
         Value::Array(arr) => {
-            let Seg::Index(i) = last else { return Value::Null };
-            (arr.len(), Some(*i), (0..arr.len()).map(|n| format!("[{n}]")).collect())
+            let Seg::Index(i) = last else {
+                return Value::Null;
+            };
+            (
+                arr.len(),
+                Some(*i),
+                (0..arr.len()).map(|n| format!("[{n}]")).collect(),
+            )
         }
         // A scalar has no siblings. Reaching here means the path addressed
         // something inside a scalar, which cannot happen via `navigate`.
@@ -1528,7 +1578,9 @@ fn diff(a: &Value, b: &Value, path: &mut Vec<String>, out: &mut Vec<Value>) {
                 path.push(k.clone());
                 match mb.get(k) {
                     Some(vb) => diff(va, vb, path, out),
-                    None => out.push(json!({ "path": path.join("."), "parse": va, "resolve": null })),
+                    None => {
+                        out.push(json!({ "path": path.join("."), "parse": va, "resolve": null }))
+                    }
                 }
                 path.pop();
             }
@@ -1642,7 +1694,9 @@ pub fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
 // `span` is a fallback (it has an opaque `source` id instead of a filename).
 fn ascend_provenance(root: &Value, path: &[Seg], specimen: Option<&Path>) -> Value {
     for depth in (0..=path.len()).rev() {
-        let Some(Value::Object(map)) = navigate(root, &path[..depth]) else { continue };
+        let Some(Value::Object(map)) = navigate(root, &path[..depth]) else {
+            continue;
+        };
         if let Some(loc) = map.get("location").filter(|v| is_location(v)) {
             return provenance(loc, "location", depth, specimen);
         }
@@ -1757,8 +1811,14 @@ fn slice_source(
     }
     let excerpt = String::from_utf8_lossy(&bytes[start..end]).into_owned();
     // Expand to whole containing lines (byte-wise, so we never split a char).
-    let line_start = bytes[..start].iter().rposition(|&b| b == b'\n').map_or(0, |i| i + 1);
-    let line_end = bytes[end..].iter().position(|&b| b == b'\n').map_or(bytes.len(), |i| end + i);
+    let line_start = bytes[..start]
+        .iter()
+        .rposition(|&b| b == b'\n')
+        .map_or(0, |i| i + 1);
+    let line_end = bytes[end..]
+        .iter()
+        .position(|&b| b == b'\n')
+        .map_or(bytes.len(), |i| end + i);
     let line_context = String::from_utf8_lossy(&bytes[line_start..line_end]).into_owned();
     Some((path.to_string_lossy().into_owned(), excerpt, line_context))
 }
@@ -1796,8 +1856,8 @@ mod tests {
             "sub/dir.nb",
             r"sub\dir.nb",
             r"C:\Windows\notepad.exe",
-            "notes.txt",                 // must be a notebook
-            "structural-vs-numerical-rank",  // ...with the extension
+            "notes.txt",                    // must be a notebook
+            "structural-vs-numerical-rank", // ...with the extension
         ] {
             assert!(resolve_notebook(bad).is_none(), "{bad:?} must be refused");
         }
@@ -1807,7 +1867,10 @@ mod tests {
         if Path::new(FIXTURE_NOTEBOOKS_DIR).join(real).is_file() {
             let found = resolve_notebook(real).expect("the fixture notebook should resolve");
             assert!(found.ends_with(real));
-            assert!(found.starts_with(FIXTURE_NOTEBOOKS_DIR), "resolved inside the fixture dir");
+            assert!(
+                found.starts_with(FIXTURE_NOTEBOOKS_DIR),
+                "resolved inside the fixture dir"
+            );
         }
 
         // A name that is well-formed but absent still resolves to nothing.
@@ -1825,8 +1888,17 @@ mod tests {
         let cases: Vec<Vec<Seg>> = vec![
             vec![],
             vec![Seg::Key("error".into())],
-            vec![Seg::Key("error".into()), Seg::Key("unmatched_unknowns".into()), Seg::Index(0)],
-            vec![Seg::Key("blocks".into()), Seg::Index(2), Seg::Key("equations".into()), Seg::Index(0)],
+            vec![
+                Seg::Key("error".into()),
+                Seg::Key("unmatched_unknowns".into()),
+                Seg::Index(0),
+            ],
+            vec![
+                Seg::Key("blocks".into()),
+                Seg::Index(2),
+                Seg::Key("equations".into()),
+                Seg::Index(0),
+            ],
             // Consecutive indices, which `describe_path` writes without a separator.
             vec![Seg::Key("rows".into()), Seg::Index(3), Seg::Index(1)],
             // A leading index is unusual but expressible.
@@ -1838,9 +1910,15 @@ mod tests {
             // bare, split into two segments on the way back, and landed on a node
             // that does not exist. `docs/fidelity-plan.md` F7 found it on every model
             // in the corpus at once — 6,169 broken paths.
-            vec![Seg::Key("enum_literal_ordinals".into()), Seg::Key("StateSelect.never".into())],
+            vec![
+                Seg::Key("enum_literal_ordinals".into()),
+                Seg::Key("StateSelect.never".into()),
+            ],
             // Modelica's single-quoted identifiers, which appear beside the plain ones.
-            vec![Seg::Key("enum_literal_ordinals".into()), Seg::Key("StateSelect.'never'".into())],
+            vec![
+                Seg::Key("enum_literal_ordinals".into()),
+                Seg::Key("StateSelect.'never'".into()),
+            ],
             // A dotted key followed by more path, so the closing `"]` must hand back
             // the remainder correctly rather than swallowing it.
             vec![
@@ -1854,7 +1932,11 @@ mod tests {
             vec![Seg::Key(r"a\b".into())],
             vec![Seg::Key("has[bracket]".into())],
             // An empty key: legal JSON, and bare it would produce `a..b`.
-            vec![Seg::Key("a".into()), Seg::Key(String::new()), Seg::Key("b".into())],
+            vec![
+                Seg::Key("a".into()),
+                Seg::Key(String::new()),
+                Seg::Key("b".into()),
+            ],
         ];
         for path in cases {
             let written = describe_path(&path);
@@ -1873,10 +1955,20 @@ mod tests {
     #[test]
     fn a_malformed_node_path_is_refused() {
         for bad in [
-            "a..b", ".a", "a.", "a[", "a[]", "a[x]", "a]0[", "a[0]b",
+            "a..b",
+            ".a",
+            "a.",
+            "a[",
+            "a[]",
+            "a[x]",
+            "a]0[",
+            "a[0]b",
             // Quoted-key forms that are not closed properly. `a["b"` and
             // `a["b"x` must fail rather than silently yielding key `b`.
-            r#"a["b"#, r#"a["b""#, r#"a["b"x"#, r#"a["b\"#,
+            r#"a["b"#,
+            r#"a["b""#,
+            r#"a["b"x"#,
+            r#"a["b\"#,
         ] {
             assert!(parse_path(bad).is_none(), "{bad:?} should not parse");
         }
@@ -1890,10 +1982,22 @@ mod tests {
     #[test]
     fn quoting_did_not_change_how_ordinary_paths_are_written() {
         let cases: Vec<(Vec<Seg>, &str)> = vec![
-            (vec![Seg::Key("error".into()), Seg::Key("unmatched_unknowns".into()), Seg::Index(0)],
-             "error.unmatched_unknowns[0]"),
-            (vec![Seg::Key("blocks".into()), Seg::Index(2), Seg::Key("equations".into())],
-             "blocks[2].equations"),
+            (
+                vec![
+                    Seg::Key("error".into()),
+                    Seg::Key("unmatched_unknowns".into()),
+                    Seg::Index(0),
+                ],
+                "error.unmatched_unknowns[0]",
+            ),
+            (
+                vec![
+                    Seg::Key("blocks".into()),
+                    Seg::Index(2),
+                    Seg::Key("equations".into()),
+                ],
+                "blocks[2].equations",
+            ),
             (vec![], "(tree root)"),
         ];
         for (path, want) in cases {
@@ -1915,7 +2019,6 @@ mod tests {
             animation: None,
         }
     }
-
 
     /// A capture names the **first** failing stage, not the current one.
     ///
@@ -1955,9 +2058,16 @@ mod tests {
         let doc = build(&ask);
 
         let f = &doc["pipeline_failure"];
-        assert!(!f.is_null(), "a failure must be stated prominently, not left to be found");
+        assert!(
+            !f.is_null(),
+            "a failure must be stated prominently, not left to be found"
+        );
         assert_eq!(f["stage"], json!(StageKind::Flatten.name()));
-        assert_eq!(f["error"]["balance"], json!(-1), "the diagnosis travels with it");
+        assert_eq!(
+            f["error"]["balance"],
+            json!(-1),
+            "the diagnosis travels with it"
+        );
         assert!(
             f["downstream_not_reached"]
                 .as_array()
@@ -2018,7 +2128,11 @@ mod tests {
                 }
             ]
         });
-        let path = vec![Seg::Key("components".into()), Seg::Index(0), Seg::Key("name".into())];
+        let path = vec![
+            Seg::Key("components".into()),
+            Seg::Index(0),
+            Seg::Key("name".into()),
+        ];
 
         let prov = ascend_provenance(&root, &path, Some(&file));
         assert_eq!(prov["found"], json!(true));
@@ -2034,7 +2148,10 @@ mod tests {
     /// byte range must slice cleanly out of the specimen source.
     #[test]
     fn provenance_holds_over_real_parsed_specimen() {
-        let specimen = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/RotationalInertia.mo"));
+        let specimen = Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/RotationalInertia.mo"
+        ));
         let source = fs::read_to_string(specimen).expect("read specimen");
         let ast = rumoca_phase_parse::parse_to_ast(&source, "RotationalInertia.mo").expect("parse");
         let root = serde_json::to_value(&ast).expect("to_value");
@@ -2042,12 +2159,18 @@ mod tests {
         // Find a path to some object carrying a real (non-dummy) location.
         let mut path = Vec::new();
         let found = first_location_path(&root, &mut path);
-        assert!(found, "expected at least one located node in the parsed AST");
+        assert!(
+            found,
+            "expected at least one located node in the parsed AST"
+        );
 
         let prov = ascend_provenance(&root, &path, Some(specimen));
         assert_eq!(prov["found"], json!(true), "provenance: {prov}");
         let excerpt = prov["excerpt"].as_str().expect("excerpt string");
-        assert!(source.contains(excerpt), "excerpt {excerpt:?} not found in source");
+        assert!(
+            source.contains(excerpt),
+            "excerpt {excerpt:?} not found in source"
+        );
     }
 
     /// A node captured in the Resolve tab carries the same node from Parse and
@@ -2079,7 +2202,10 @@ mod tests {
             def_index: &empty,
             parse_value: Some(&parse),
             resolve_value: Some(&resolve),
-            focus: Focus::Node { key_path: key_path.clone(), stage_value: &resolve },
+            focus: Focus::Node {
+                key_path: key_path.clone(),
+                stage_value: &resolve,
+            },
             tracking: None,
             view: test_view(),
             failure: None,
@@ -2093,7 +2219,9 @@ mod tests {
         // The two field changes are reported.
         let changes = cs["changes"].as_array().unwrap();
         let has = |p: &str, r: i64| {
-            changes.iter().any(|c| c["path"] == json!(p) && c["parse"] == json!(null) && c["resolve"] == json!(r))
+            changes.iter().any(|c| {
+                c["path"] == json!(p) && c["parse"] == json!(null) && c["resolve"] == json!(r)
+            })
         };
         assert!(has("def_id", 9), "changes: {changes:?}");
         assert!(has("type_def_id", 100), "changes: {changes:?}");
@@ -2149,7 +2277,11 @@ mod tests {
 
         let by_stage = t["stages"].as_array().expect("stages array");
         assert_eq!(by_stage[0]["stage"], json!("flatten"));
-        assert_eq!(by_stage[0]["mentions"], json!(1), "the key `h` is a mention");
+        assert_eq!(
+            by_stage[0]["mentions"],
+            json!(1),
+            "the key `h` is a mention"
+        );
         // Absence is emitted, not omitted.
         assert_eq!(by_stage[1]["mentions"], json!(0), "genuinely absent here");
         // And "produced no IR" is distinct from "IR without the name in it".
@@ -2175,8 +2307,12 @@ mod tests {
 
         // equation, unknown, nested name — but not `other`, not `description`.
         assert_eq!(entry["mentions"], json!(3), "got: {:?}", entry["paths"]);
-        let paths: Vec<&str> = entry["paths"].as_array().unwrap()
-            .iter().map(|p| p.as_str().unwrap()).collect();
+        let paths: Vec<&str> = entry["paths"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_str().unwrap())
+            .collect();
         assert!(paths.contains(&"equation"));
         assert!(paths.contains(&"unknown"));
         assert!(paths.iter().any(|p| p.contains("nested")));
@@ -2221,10 +2357,17 @@ mod tests {
         let doc = build(&tracking_ask("h", &stages, &empty));
         let entry = &doc["tracking"]["stages"][0];
 
-        assert_eq!(entry["mentions"], json!(n), "count is exact regardless of the caps");
+        assert_eq!(
+            entry["mentions"],
+            json!(n),
+            "count is exact regardless of the caps"
+        );
         assert_eq!(entry["paths"].as_array().unwrap().len(), MAX_MENTION_PATHS);
         assert_eq!(entry["paths_truncated"], json!(true));
-        assert_eq!(entry["contexts"].as_array().unwrap().len(), MAX_MENTION_CONTEXTS);
+        assert_eq!(
+            entry["contexts"].as_array().unwrap().len(),
+            MAX_MENTION_CONTEXTS
+        );
         assert_eq!(entry["contexts_truncated"], json!(true));
     }
 
@@ -2261,7 +2404,9 @@ mod tests {
             "the decisive sibling field must arrive with the mention: {ctx}",
         );
         // And the leaf's own siblings are named.
-        let window = ctx["siblings"]["window"].as_array().expect("sibling window");
+        let window = ctx["siblings"]["window"]
+            .as_array()
+            .expect("sibling window");
         assert!(
             window.iter().any(|v| v == "generated"),
             "siblings must list what sits beside the hit: {window:?}",
@@ -2288,9 +2433,16 @@ mod tests {
 
         assert_eq!(sib["count"], json!(402));
         assert_eq!(sib["window_is_complete"], json!(false));
-        let window: Vec<&str> =
-            sib["window"].as_array().unwrap().iter().filter_map(Value::as_str).collect();
-        assert!(window.contains(&"zzz_target"), "the window must contain the hit: {window:?}");
+        let window: Vec<&str> = sib["window"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert!(
+            window.contains(&"zzz_target"),
+            "the window must contain the hit: {window:?}"
+        );
         assert!(
             window.contains(&"zzz_neighbour"),
             "the window must reach the hit's neighbours, not the map's first keys: {window:?}",
@@ -2308,14 +2460,20 @@ mod tests {
         let small = json!({ "eq": { "lhs": "a", "rhs": "b" } });
         let path = vec![Seg::Key("eq".into()), Seg::Key("lhs".into())];
         let (depth, ctx) = enclosing_context(&small, &path);
-        assert_eq!(depth, 0, "a small tree fits entirely, so the root is returned");
+        assert_eq!(
+            depth, 0,
+            "a small tree fits entirely, so the root is returned"
+        );
         assert_eq!(ctx, small);
 
         // Now make the root overflow the budget: the leaf's parent still fits.
         let filler: String = "x".repeat(MAX_CONTEXT_BYTES);
         let big = json!({ "eq": { "lhs": "a", "rhs": "b" }, "bulk": filler });
         let (depth, ctx) = enclosing_context(&big, &path);
-        assert_eq!(depth, 1, "the root no longer fits, so its child is returned");
+        assert_eq!(
+            depth, 1,
+            "the root no longer fits, so its child is returned"
+        );
         assert_eq!(ctx, json!({ "lhs": "a", "rhs": "b" }));
     }
 
@@ -2403,11 +2561,20 @@ mod tests {
             .iter()
             .filter_map(|v| v.as_str().map(str::to_owned))
             .collect();
-        let jump: Vec<String> =
-            mention_paths(&stage, "emf.w").iter().map(|p| describe_path(p)).collect();
+        let jump: Vec<String> = mention_paths(&stage, "emf.w")
+            .iter()
+            .map(|p| describe_path(p))
+            .collect();
 
-        assert_eq!(jump, emitted, "the tree and the capture must agree node for node");
-        assert_eq!(jump.len(), 3, "key, and two of the three equations: {jump:?}");
+        assert_eq!(
+            jump, emitted,
+            "the tree and the capture must agree node for node"
+        );
+        assert_eq!(
+            jump.len(),
+            3,
+            "key, and two of the three equations: {jump:?}"
+        );
         assert!(
             !jump.iter().any(|p| p.contains("[1]")),
             "the equation mentioning only load.w must not match: {jump:?}",
@@ -2419,16 +2586,31 @@ mod tests {
     #[test]
     fn the_jump_list_is_uncapped_where_the_emitted_one_is_sampled() {
         let n = MAX_MENTION_PATHS + 7;
-        let rows: Vec<Value> = (0..n).map(|_| serde_json::json!({ "unknown": "h" })).collect();
+        let rows: Vec<Value> = (0..n)
+            .map(|_| serde_json::json!({ "unknown": "h" }))
+            .collect();
         let stage = serde_json::json!({ "rows": rows });
         let stages: Vec<(&str, Option<&Value>)> = vec![("structural", Some(&stage))];
         let empty = BTreeMap::new();
         let doc = build(&tracking_ask("h", &stages, &empty));
 
-        assert_eq!(doc["tracking"]["stages"][0]["paths"].as_array().unwrap().len(), MAX_MENTION_PATHS);
-        assert_eq!(mention_paths(&stage, "h").len(), n, "cycling must reach the last one");
+        assert_eq!(
+            doc["tracking"]["stages"][0]["paths"]
+                .as_array()
+                .unwrap()
+                .len(),
+            MAX_MENTION_PATHS
+        );
+        assert_eq!(
+            mention_paths(&stage, "h").len(),
+            n,
+            "cycling must reach the last one"
+        );
         // The count was always exact; that is what makes the cap safe.
-        assert_eq!(doc["tracking"]["stages"][0]["mentions"], serde_json::json!(n));
+        assert_eq!(
+            doc["tracking"]["stages"][0]["mentions"],
+            serde_json::json!(n)
+        );
     }
 
     /// The capture says what was on screen, and points at the phase code.
@@ -2478,13 +2660,19 @@ mod tests {
         // Position alone said where the user was; `showing` says what they were
         // looking at, which is what makes a mid-animation question answerable.
         assert!(
-            doc["view"]["animation"]["showing"]["step"].as_str().is_some_and(|s| s.contains("emf.phi")),
+            doc["view"]["animation"]["showing"]["step"]
+                .as_str()
+                .is_some_and(|s| s.contains("emf.phi")),
             "the frame's own description must reach the capture: {}",
             doc["view"]["animation"],
         );
 
         assert_eq!(doc["phase_source"]["crate"], json!("crates/rumoca-ir-dae"));
-        assert!(doc["phase_source"]["entry"].as_str().is_some_and(|e| e.contains("discrete")));
+        assert!(
+            doc["phase_source"]["entry"]
+                .as_str()
+                .is_some_and(|e| e.contains("discrete"))
+        );
     }
 
     /// Every stage names a crate that exists. A `phase_source` pointing at a
@@ -2514,14 +2702,20 @@ mod tests {
         let node = build_node(&[Seg::Key("def_id".into())], &root, None);
 
         assert_eq!(node["neighbourhood"]["value"], json!(85));
-        assert_eq!(node["neighbourhood"]["context"]["name"], json!("MotorWithBrake"));
+        assert_eq!(
+            node["neighbourhood"]["context"]["name"],
+            json!("MotorWithBrake")
+        );
         let window: Vec<&str> = node["neighbourhood"]["siblings"]["window"]
             .as_array()
             .unwrap()
             .iter()
             .filter_map(Value::as_str)
             .collect();
-        assert!(window.contains(&"name") && window.contains(&"class_type"), "{window:?}");
+        assert!(
+            window.contains(&"name") && window.contains(&"class_type"),
+            "{window:?}"
+        );
     }
 
     /// A node outside the model class (e.g. the parse `within`) is not diffable.
@@ -2539,7 +2733,10 @@ mod tests {
             def_index: &empty,
             parse_value: Some(&parse),
             resolve_value: None,
-            focus: Focus::Node { key_path: vec![Seg::Key("within".into())], stage_value: &parse },
+            focus: Focus::Node {
+                key_path: vec![Seg::Key("within".into())],
+                stage_value: &parse,
+            },
             tracking: None,
             view: test_view(),
             failure: None,
@@ -2598,10 +2795,17 @@ mod tests {
         );
         // Every name must end with .json and be unique.
         for name in STAGE_FILE_NAMES {
-            assert!(name.ends_with(".json"), "stage file name should end with .json: {name}");
+            assert!(
+                name.ends_with(".json"),
+                "stage file name should end with .json: {name}"
+            );
         }
         let unique: std::collections::HashSet<&&str> = STAGE_FILE_NAMES.iter().collect();
-        assert_eq!(unique.len(), STAGE_FILE_NAMES.len(), "duplicate stage file names");
+        assert_eq!(
+            unique.len(),
+            STAGE_FILE_NAMES.len(),
+            "duplicate stage file names"
+        );
     }
 
     /// Depth-first search for the first object with a usable `location`,
@@ -2738,7 +2942,10 @@ mod tests {
         );
         let trimmed = found.trim();
         assert!(!trimmed.is_empty(), "target should not be a blank line");
-        assert!(!trimmed.starts_with("//"), "target should not be a comment: {found}");
+        assert!(
+            !trimmed.starts_with("//"),
+            "target should not be a comment: {found}"
+        );
         assert!(
             !trimmed.contains("pub fn"),
             "target should not be the signature line: {found}"
@@ -2773,13 +2980,27 @@ mod tests {
         let req: serde_json::Value = serde_json::from_str(&content).expect("parse JSON");
         assert_eq!(req["version"], json!(1));
         assert_eq!(req["action"], json!("remove"));
-        assert!(req["breakpoints"][0]["path"].as_str().unwrap().contains("live_trace.rs"));
+        assert!(
+            req["breakpoints"][0]["path"]
+                .as_str()
+                .unwrap()
+                .contains("live_trace.rs")
+        );
 
         // ack
         fs::write(BREAKPOINT_ACK_FILE, r#"{"acked":true}"#).unwrap();
-        assert!(check_breakpoint_ack(), "should return true when ack file exists");
-        assert!(!Path::new(BREAKPOINT_ACK_FILE).exists(), "ack file should be deleted");
-        assert!(!check_breakpoint_ack(), "should return false when ack file is gone");
+        assert!(
+            check_breakpoint_ack(),
+            "should return true when ack file exists"
+        );
+        assert!(
+            !Path::new(BREAKPOINT_ACK_FILE).exists(),
+            "ack file should be deleted"
+        );
+        assert!(
+            !check_breakpoint_ack(),
+            "should return false when ack file is gone"
+        );
 
         let _ = fs::remove_file(BREAKPOINT_REQUEST_FILE);
     }
@@ -2787,27 +3008,25 @@ mod tests {
     #[test]
     fn write_stages_creates_and_removes_files() {
         let val = json!({"equations": [1, 2, 3]});
-        let stages: Vec<(&str, Option<&Value>)> = vec![
-            ("test_alpha", Some(&val)),
-            ("test_beta", None),
-        ];
+        let stages: Vec<(&str, Option<&Value>)> =
+            vec![("test_alpha", Some(&val)), ("test_beta", None)];
         write_stages(&stages).expect("write_stages");
         let alpha_path = Path::new(STAGES_DIR).join("test_alpha.json");
         assert!(alpha_path.exists(), "stage file should be created");
-        let content: Value = serde_json::from_str(
-            &fs::read_to_string(&alpha_path).unwrap()
-        ).unwrap();
+        let content: Value =
+            serde_json::from_str(&fs::read_to_string(&alpha_path).unwrap()).unwrap();
         assert_eq!(content["equations"], json!([1, 2, 3]));
 
         let beta_path = Path::new(STAGES_DIR).join("test_beta.json");
         assert!(!beta_path.exists(), "None stage should not create a file");
 
         // A second call with None removes a previously written file.
-        let stages_remove: Vec<(&str, Option<&Value>)> = vec![
-            ("test_alpha", None),
-        ];
+        let stages_remove: Vec<(&str, Option<&Value>)> = vec![("test_alpha", None)];
         write_stages(&stages_remove).expect("cleanup write");
-        assert!(!alpha_path.exists(), "stage file should be removed when None");
+        assert!(
+            !alpha_path.exists(),
+            "stage file should be removed when None"
+        );
     }
 
     #[test]
@@ -2833,9 +3052,7 @@ mod tests {
         };
         let path = write(&ask).expect("write focus");
         assert!(path.exists(), "focus.json should exist");
-        let content: Value = serde_json::from_str(
-            &fs::read_to_string(&path).unwrap()
-        ).unwrap();
+        let content: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(content["seq"], json!(99));
         assert_eq!(content["model"], json!("TestWriteModel"));
     }
@@ -2898,7 +3115,10 @@ mod tests {
         let path = test_file_path();
         let src = fs::read_to_string(&path).unwrap();
         let len = src.len();
-        assert!(slice_source(&path, None, len - 2, len).is_some(), "file end should succeed");
+        assert!(
+            slice_source(&path, None, len - 2, len).is_some(),
+            "file end should succeed"
+        );
     }
 
     #[test]

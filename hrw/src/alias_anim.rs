@@ -81,24 +81,23 @@ impl AliasAnimation {
         // nothing to animate at all.
         red.get("eliminations")?.as_array()?;
         let mut problems = Vec::new();
-        let frames: Vec<AliasFrame> = crate::json_read::parse_list(
-            red,
-            "eliminations",
-            &mut problems,
-            |e| {
+        let frames: Vec<AliasFrame> =
+            crate::json_read::parse_list(red, "eliminations", &mut problems, |e| {
                 Some(AliasFrame {
                     variable: e.get("variable")?.as_str()?.to_owned(),
                     replacement: crate::reduction_view::abbreviate_expr(
                         e.get("replacement")?.as_str()?,
                     ),
                 })
-            },
-        );
-        let unknowns_before = report.get("n_unknowns").and_then(serde_json::Value::as_u64).map(
-            // The report's count is the system *after* elimination, so the
-            // starting size is that plus the variables this pass removed.
-            |n| n as usize + frames.len(),
-        );
+            });
+        let unknowns_before = report
+            .get("n_unknowns")
+            .and_then(serde_json::Value::as_u64)
+            .map(
+                // The report's count is the system *after* elimination, so the
+                // starting size is that plus the variables this pass removed.
+                |n| n as usize + frames.len(),
+            );
         Some(Self {
             playback: Playback::recorded(frames, FRAME_INTERVAL),
             unknowns_before,
@@ -142,7 +141,9 @@ impl AliasAnimation {
     }
 
     fn render_current(&self, ui: &mut egui::Ui) {
-        let Some(frame) = self.playback.current() else { return };
+        let Some(frame) = self.playback.current() else {
+            return;
+        };
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new("\u{2702}").size(16.0));
             ui.label(
@@ -178,22 +179,26 @@ impl AliasAnimation {
 
         ui.add_space(6.0);
         ui.label(egui::RichText::new("Substitutions so far").strong());
-        egui::ScrollArea::vertical().auto_shrink([false, true]).max_height(320.0).show(ui, |ui| {
-            egui::Grid::new("alias_elim_grid")
-                .num_columns(3)
-                .spacing([10.0, 2.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    for (i, f) in self.playback.frames().iter().take(done).enumerate() {
-                        ui.label(format!("{}.", i + 1));
-                        ui.label(egui::RichText::new(&f.variable).monospace());
-                        ui.label(
-                            egui::RichText::new(format!("\u{2192} {}", f.replacement)).monospace(),
-                        );
-                        ui.end_row();
-                    }
-                });
-        });
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, true])
+            .max_height(320.0)
+            .show(ui, |ui| {
+                egui::Grid::new("alias_elim_grid")
+                    .num_columns(3)
+                    .spacing([10.0, 2.0])
+                    .striped(true)
+                    .show(ui, |ui| {
+                        for (i, f) in self.playback.frames().iter().take(done).enumerate() {
+                            ui.label(format!("{}.", i + 1));
+                            ui.label(egui::RichText::new(&f.variable).monospace());
+                            ui.label(
+                                egui::RichText::new(format!("\u{2192} {}", f.replacement))
+                                    .monospace(),
+                            );
+                            ui.end_row();
+                        }
+                    });
+            });
     }
 }
 
@@ -268,11 +273,8 @@ mod tests {
     /// the system growing.
     #[test]
     fn the_running_count_reconstructs_the_starting_size() {
-        let anim = AliasAnimation::from_report(&report(
-            &[("a", "b"), ("c", "d"), ("e", "f")],
-            20,
-        ))
-        .expect("a report with eliminations parses");
+        let anim = AliasAnimation::from_report(&report(&[("a", "b"), ("c", "d"), ("e", "f")], 20))
+            .expect("a report with eliminations parses");
         assert_eq!(anim.unknowns_before, Some(23), "20 left + 3 removed");
         assert_eq!(anim.position(), (0, 3));
     }
@@ -281,7 +283,9 @@ mod tests {
     fn the_capture_carries_the_substitution_and_the_progress() {
         let anim = AliasAnimation::from_report(&report(&[("r1.p.v", "src.n.v")], 5))
             .expect("a report with eliminations parses");
-        let ctx = anim.current_frame_context().expect("a frame is under the cursor");
+        let ctx = anim
+            .current_frame_context()
+            .expect("a frame is under the cursor");
         assert_eq!(ctx["variable"], "r1.p.v");
         assert_eq!(ctx["replacement"], "src.n.v");
         assert_eq!(ctx["eliminated_so_far"], 1);

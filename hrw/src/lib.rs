@@ -38,42 +38,42 @@
 //! - **`colors`** — shared color constants used across canvas and view modules.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
 
+pub mod alias_anim;
 pub mod app;
 pub mod autoplay;
 pub mod bridge;
 pub mod canvas;
 pub mod colors;
+pub mod connection_anim;
+pub mod diagnostics;
+pub mod doc_citations;
 pub mod equation_sheet;
 pub mod expr_format;
+pub mod fidelity;
 pub mod field_help;
+pub mod ic_plan_anim;
 pub mod identifier_index;
 pub mod incidence_view;
 pub mod json_read;
-pub mod matching_anim;
-pub mod diagnostics;
 pub mod log_view;
+pub mod matching_anim;
 pub mod model_list;
-pub mod tour;
 pub mod modelica_lex;
-pub mod alias_anim;
-pub mod connection_anim;
-pub mod ic_plan_anim;
-pub mod doc_citations;
-pub mod fidelity;
 pub mod playback;
 pub mod pre_lowering_anim;
+pub mod promote;
 pub mod reduction_anim;
+pub mod reduction_view;
 pub mod report;
+pub mod source_view;
+pub mod spyplot;
+pub mod survey;
+pub mod tarjan_anim;
 pub mod tearing_anim;
 #[cfg(test)]
 pub mod test_support;
-pub mod reduction_view;
-pub mod source_view;
-pub mod survey;
-pub mod spyplot;
-pub mod tarjan_anim;
+pub mod tour;
 pub mod tree;
-pub mod promote;
 pub mod worker;
 
 /// Headless UI tests (`docs/verification-plan.md` item 2). Test-only: the
@@ -266,13 +266,17 @@ pub fn animation_controls(
     // and `interval` as four separate `&mut` arguments — two of them adjacent
     // bools — so transposing a pair compiled silently and misbehaved at runtime.
     // Same reasoning as `TreeActions` and `TreeOptions`.
-    let crate::playback::PlaybackControls { cursor, playing, elapsed, interval, n_frames } =
-        playback;
+    let crate::playback::PlaybackControls {
+        cursor,
+        playing,
+        elapsed,
+        interval,
+        n_frames,
+    } = playback;
     let busy = live.is_busy();
     let mut debug_clicked = false;
     // Explains every disabled control in the row.
-    const BUSY_HINT: &str =
-        "Unavailable during a live debug session \u{2014} the debugger drives the \
+    const BUSY_HINT: &str = "Unavailable during a live debug session \u{2014} the debugger drives the \
          animation. Continue (F5) in VS Code to advance a step.";
 
     ui.horizontal(|ui| {
@@ -310,8 +314,15 @@ pub fn animation_controls(
         // disabled during timed playback so the two cannot fight over the cursor.
         let stepping_enabled = !busy && !*playing;
         if ui
-            .add_enabled(stepping_enabled && *cursor > 0, egui::Button::new("\u{25c0} Back"))
-            .on_disabled_hover_text(if busy { BUSY_HINT } else { "Already at the first frame" })
+            .add_enabled(
+                stepping_enabled && *cursor > 0,
+                egui::Button::new("\u{25c0} Back"),
+            )
+            .on_disabled_hover_text(if busy {
+                BUSY_HINT
+            } else {
+                "Already at the first frame"
+            })
             .clicked()
         {
             *cursor = cursor.saturating_sub(1);
@@ -321,7 +332,11 @@ pub fn animation_controls(
                 stepping_enabled && *cursor + 1 < n_frames,
                 egui::Button::new("Step \u{25b6}"),
             )
-            .on_disabled_hover_text(if busy { BUSY_HINT } else { "Already at the last frame" })
+            .on_disabled_hover_text(if busy {
+                BUSY_HINT
+            } else {
+                "Already at the last frame"
+            })
             .clicked()
         {
             *cursor += 1;
@@ -430,9 +445,14 @@ pub fn draw_matrix_axis_labels(
 /// list, or when an entry was not a string — never when the key is simply absent,
 /// which is the ordinary case of a block that lists only one side.
 pub fn str_vec_checked(v: Option<&serde_json::Value>, what: &str) -> (Vec<String>, Option<String>) {
-    let Some(raw) = v else { return (Vec::new(), None) };
+    let Some(raw) = v else {
+        return (Vec::new(), None);
+    };
     let Some(arr) = raw.as_array() else {
-        return (Vec::new(), Some(format!("`{what}` is present but is not a list")));
+        return (
+            Vec::new(),
+            Some(format!("`{what}` is present but is not a list")),
+        );
     };
     let mut out = Vec::with_capacity(arr.len());
     let mut bad = 0usize;
@@ -443,14 +463,21 @@ pub fn str_vec_checked(v: Option<&serde_json::Value>, what: &str) -> (Vec<String
         }
     }
     let problem = (bad > 0).then(|| {
-        format!("{bad} of {} `{what}` entries were not names and are missing", arr.len())
+        format!(
+            "{bad} of {} `{what}` entries were not names and are missing",
+            arr.len()
+        )
     });
     (out, problem)
 }
 
 pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
     v.and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(str::to_owned))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -479,8 +506,14 @@ mod tests_playback {
     #[test]
     fn a_running_live_session_shows_no_total() {
         use super::LiveState;
-        assert_eq!(super::frame_label(0, 1, LiveState::Running), "Frame 1 \u{00b7} live");
-        assert_eq!(super::frame_label(10, 11, LiveState::Running), "Frame 11 \u{00b7} live");
+        assert_eq!(
+            super::frame_label(0, 1, LiveState::Running),
+            "Frame 1 \u{00b7} live"
+        );
+        assert_eq!(
+            super::frame_label(10, 11, LiveState::Running),
+            "Frame 11 \u{00b7} live"
+        );
         // Arming has no frames yet, so the empty case still wins.
         assert_eq!(super::frame_label(0, 0, LiveState::Arming), "No frames yet");
         // Once finished, the frames are an ordinary recorded trace and the total
@@ -499,8 +532,14 @@ mod tests_playback {
     /// `is_live` left the controls live right after the click.
     #[test]
     fn controls_disabled_only_while_a_live_session_is_in_flight() {
-        assert!(!LiveState::Idle.is_busy(), "recorded playback is always available");
-        assert!(LiveState::Arming.is_busy(), "the Debug click must disable immediately");
+        assert!(
+            !LiveState::Idle.is_busy(),
+            "recorded playback is always available"
+        );
+        assert!(
+            LiveState::Arming.is_busy(),
+            "the Debug click must disable immediately"
+        );
         assert!(LiveState::Running.is_busy(), "the debugger owns the cursor");
         assert!(
             !LiveState::Finished.is_busy(),
@@ -530,15 +569,30 @@ mod tests {
     #[test]
     fn gesture_hovers_name_the_verb_and_admit_the_send() {
         let start = follow_hover("emf.phi", false);
-        assert!(start.starts_with("Follow emf.phi"), "must lead with the verb: {start}");
-        assert!(start.contains("sends it to Claude"), "must admit the side effect: {start}");
+        assert!(
+            start.starts_with("Follow emf.phi"),
+            "must lead with the verb: {start}"
+        );
+        assert!(
+            start.contains("sends it to Claude"),
+            "must admit the side effect: {start}"
+        );
 
         let stop = follow_hover("emf.phi", true);
-        assert!(stop.starts_with("Stop following"), "the toggle must be legible: {stop}");
-        assert!(stop.contains("removes it"), "must say what it takes away: {stop}");
+        assert!(
+            stop.starts_with("Stop following"),
+            "the toggle must be legible: {stop}"
+        );
+        assert!(
+            stop.contains("removes it"),
+            "must say what it takes away: {stop}"
+        );
 
         assert!(POINT_AT_HOVER.starts_with("Point at"), "{POINT_AT_HOVER}");
-        assert!(POINT_AT_HOVER.contains("sends it to Claude"), "{POINT_AT_HOVER}");
+        assert!(
+            POINT_AT_HOVER.contains("sends it to Claude"),
+            "{POINT_AT_HOVER}"
+        );
 
         // The two verbs must stay distinguishable — the whole point is that a
         // reader can tell which gesture they are about to make.

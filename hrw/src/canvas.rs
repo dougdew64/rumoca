@@ -66,8 +66,7 @@ fn should_refit(fitted: egui::Vec2, current: egui::Vec2) -> bool {
     if fitted == egui::Vec2::ZERO {
         return false;
     }
-    current.x != fitted.x
-        || (current.y - fitted.y).abs() > fitted.y * HEIGHT_REFIT_FRACTION
+    current.x != fitted.x || (current.y - fitted.y).abs() > fitted.y * HEIGHT_REFIT_FRACTION
 }
 /// The `pan` that puts world point `target` at the centre of a `size`-pixel viewport.
 ///
@@ -209,7 +208,12 @@ impl View {
 
     /// Identify the grid cell under the hover pointer, if any.
     /// Returns `None` if the pointer is outside the `n_cols × n_rows` bounds.
-    pub fn hovered_cell(self, response: &egui::Response, n_cols: usize, n_rows: usize) -> Option<(usize, usize)> {
+    pub fn hovered_cell(
+        self,
+        response: &egui::Response,
+        n_cols: usize,
+        n_rows: usize,
+    ) -> Option<(usize, usize)> {
         response.hover_pos().and_then(|p| {
             let w = self.to_world(p);
             if w.x < 0.0 || w.y < 0.0 {
@@ -217,13 +221,23 @@ impl View {
             }
             let col = w.x as usize;
             let row = w.y as usize;
-            if col < n_cols && row < n_rows { Some((col, row)) } else { None }
+            if col < n_cols && row < n_rows {
+                Some((col, row))
+            } else {
+                None
+            }
         })
     }
 
     /// Draw grid lines for an `n_cols × n_rows` matrix.
     /// Only draws when zoom is high enough that individual cells are visible.
-    pub fn draw_grid(self, painter: &egui::Painter, n_cols: usize, n_rows: usize, color: egui::Color32) {
+    pub fn draw_grid(
+        self,
+        painter: &egui::Painter,
+        n_cols: usize,
+        n_rows: usize,
+        color: egui::Color32,
+    ) {
         if self.zoom < 6.0 {
             return;
         }
@@ -325,7 +339,10 @@ impl Canvas {
         // margin (e.g. 0.1 = 10% reserved at top for labels). The zoom is
         // computed from the remaining vertical space so the content always
         // fits below that margin.
-        if self.fit && world_bounds.width() > 0.0 && world_bounds.height() > 0.0 && rect.area() > 0.0
+        if self.fit
+            && world_bounds.width() > 0.0
+            && world_bounds.height() > 0.0
+            && rect.area() > 0.0
         {
             let top_reserve = rect.height() * self.fit_vertical_bias;
             let avail_height = rect.height() - top_reserve;
@@ -372,14 +389,19 @@ impl Canvas {
                 let world_before = self.pan + (p - rect.min) / self.zoom;
                 // Exponential zoom for perceptually uniform speed — each scroll
                 // tick multiplies zoom by a constant factor rather than adding.
-                self.zoom = (self.zoom * (scroll * SCROLL_ZOOM_SENSITIVITY).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
+                self.zoom = (self.zoom * (scroll * SCROLL_ZOOM_SENSITIVITY).exp())
+                    .clamp(MIN_ZOOM, MAX_ZOOM);
                 // Re-anchor: solve for pan such that world_before maps to p.
                 self.pan = world_before - (p - rect.min) / self.zoom;
             }
         }
 
         // Snapshot the transform for this frame and create a clipped painter.
-        let view = View { rect, pan: self.pan, zoom: self.zoom };
+        let view = View {
+            rect,
+            pan: self.pan,
+            zoom: self.zoom,
+        };
         // `painter_at` returns a Painter whose draw commands are clipped to
         // `rect` — nothing drawn by the custom view leaks outside the canvas.
         let painter = ui.painter_at(rect);
@@ -405,8 +427,14 @@ mod tests {
         let world = egui::pos2(7.0, 12.5);
         let screen = view.to_screen(world);
         let back = view.to_world(screen);
-        assert!((back.x - world.x).abs() < 1e-4, "x round-trip failed: {back:?} vs {world:?}");
-        assert!((back.y - world.y).abs() < 1e-4, "y round-trip failed: {back:?} vs {world:?}");
+        assert!(
+            (back.x - world.x).abs() < 1e-4,
+            "x round-trip failed: {back:?} vs {world:?}"
+        );
+        assert!(
+            (back.y - world.y).abs() < 1e-4,
+            "y round-trip failed: {back:?} vs {world:?}"
+        );
     }
 
     #[test]
@@ -513,7 +541,10 @@ mod tests {
         // `show` consumes it via `.take()`; emulate that without a Ui.
         let taken = canvas.center_on.take();
         assert!(taken.is_some());
-        assert!(canvas.center_on.is_none(), "consumed, so it cannot re-pin next frame");
+        assert!(
+            canvas.center_on.is_none(),
+            "consumed, so it cannot re-pin next frame"
+        );
     }
 
     #[test]
@@ -534,10 +565,19 @@ mod tests {
     fn a_wrapped_line_of_text_does_not_trigger_a_refit() {
         let fitted = egui::vec2(900.0, 600.0);
         // One wrapped status line is about 20px.
-        assert!(!should_refit(fitted, egui::vec2(900.0, 580.0)), "line appears");
-        assert!(!should_refit(fitted, egui::vec2(900.0, 600.0)), "line goes away");
+        assert!(
+            !should_refit(fitted, egui::vec2(900.0, 580.0)),
+            "line appears"
+        );
+        assert!(
+            !should_refit(fitted, egui::vec2(900.0, 600.0)),
+            "line goes away"
+        );
         // Even a few lines of reflow stays under the bar.
-        assert!(!should_refit(fitted, egui::vec2(900.0, 545.0)), "three lines");
+        assert!(
+            !should_refit(fitted, egui::vec2(900.0, 545.0)),
+            "three lines"
+        );
     }
 
     /// A real resize still re-frames. Width always counts, because the fit is
@@ -546,9 +586,18 @@ mod tests {
     #[test]
     fn a_real_resize_still_triggers_a_refit() {
         let fitted = egui::vec2(900.0, 600.0);
-        assert!(should_refit(fitted, egui::vec2(880.0, 600.0)), "narrower window");
-        assert!(should_refit(fitted, egui::vec2(900.0, 400.0)), "much shorter window");
-        assert!(should_refit(fitted, egui::vec2(900.0, 900.0)), "much taller window");
+        assert!(
+            should_refit(fitted, egui::vec2(880.0, 600.0)),
+            "narrower window"
+        );
+        assert!(
+            should_refit(fitted, egui::vec2(900.0, 400.0)),
+            "much shorter window"
+        );
+        assert!(
+            should_refit(fitted, egui::vec2(900.0, 900.0)),
+            "much taller window"
+        );
     }
 
     /// Comparing against the size at the last *fit* rather than the last
@@ -566,7 +615,10 @@ mod tests {
                 break;
             }
         }
-        assert!(refit, "a drag that shrinks the canvas by 150px must eventually refit");
+        assert!(
+            refit,
+            "a drag that shrinks the canvas by 150px must eventually refit"
+        );
     }
 
     /// A canvas that has never been fitted reports no size change, so the
@@ -579,7 +631,10 @@ mod tests {
 
     #[test]
     fn request_fit_sets_flag() {
-        let mut canvas = Canvas { fit: false, ..Canvas::default() };
+        let mut canvas = Canvas {
+            fit: false,
+            ..Canvas::default()
+        };
         canvas.request_fit();
         assert!(canvas.fit);
     }
@@ -588,8 +643,14 @@ mod tests {
     fn cell_rect_is_one_by_one_world_unit() {
         let view = make_view(800.0, 600.0, egui::Vec2::ZERO, 10.0);
         let rect = view.cell_rect(3, 5);
-        assert!((rect.width() - 10.0).abs() < 1e-4, "width should be 1 world unit * zoom");
-        assert!((rect.height() - 10.0).abs() < 1e-4, "height should be 1 world unit * zoom");
+        assert!(
+            (rect.width() - 10.0).abs() < 1e-4,
+            "width should be 1 world unit * zoom"
+        );
+        assert!(
+            (rect.height() - 10.0).abs() < 1e-4,
+            "height should be 1 world unit * zoom"
+        );
         let expected_min = view.to_screen(egui::pos2(3.0, 5.0));
         assert!((rect.min.x - expected_min.x).abs() < 1e-4);
         assert!((rect.min.y - expected_min.y).abs() < 1e-4);
@@ -610,7 +671,10 @@ mod tests {
     /// waiting for `cargo test`. Clippy's `assertions_on_constants` names exactly
     /// this.
     const _: () = {
-        assert!(FIT_MARGIN > 0.0 && FIT_MARGIN < 1.0, "FIT_MARGIN should leave breathing room");
+        assert!(
+            FIT_MARGIN > 0.0 && FIT_MARGIN < 1.0,
+            "FIT_MARGIN should leave breathing room"
+        );
         assert!(MIN_ZOOM > 0.0, "MIN_ZOOM must be positive");
         assert!(MAX_ZOOM > MIN_ZOOM, "MAX_ZOOM must exceed MIN_ZOOM");
     };

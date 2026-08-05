@@ -86,7 +86,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Where crash and session files are written.
 ///
@@ -165,7 +165,9 @@ fn with_diag<R>(f: impl FnOnce(&mut Diag) -> R) -> Option<R> {
 /// extra hooks, which matters because tests call this.
 pub fn init() {
     let already_initialised = {
-        let mut guard = DIAG.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut guard = DIAG
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let was = guard.is_some();
         *guard = Some(Diag {
             build: build_info(),
@@ -200,7 +202,11 @@ pub fn init() {
 /// affordable precisely because clicks are rare; this must never be called from
 /// the paint path.
 pub fn record_action(kind: &str, detail: impl Into<String>) {
-    let event = Event { at_ms: now_millis(), kind: kind.to_owned(), detail: detail.into() };
+    let event = Event {
+        at_ms: now_millis(),
+        kind: kind.to_owned(),
+        detail: detail.into(),
+    };
     // Append now (so the ring reads in the order the user acted) but **do not write
     // yet** — see `flush_session`.
     with_diag(|d| {
@@ -245,8 +251,11 @@ pub fn flush_session() {
 /// cannot be cloned into a snapshot 60 times a second, and it does not have to
 /// be — entries only ever arrive one at a time.
 pub fn record_log(level: &str, message: &str) {
-    let event =
-        Event { at_ms: now_millis(), kind: format!("log:{level}"), detail: message.to_owned() };
+    let event = Event {
+        at_ms: now_millis(),
+        kind: format!("log:{level}"),
+        detail: message.to_owned(),
+    };
     with_diag(|d| push_capped(&mut d.log, event, MAX_LOG));
 }
 
@@ -401,9 +410,16 @@ fn write_crash_artifacts(dir: &Path, report: &Value, write_full_file: bool) {
 fn digest_line(report: &Value) -> String {
     let at = report["captured_at"].as_str().unwrap_or("<unknown time>");
     let rev = report["build"]["git_rev"].as_str().unwrap_or("?");
-    let dirty = if report["build"]["git_dirty"].as_bool().unwrap_or(false) { "+" } else { "" };
+    let dirty = if report["build"]["git_dirty"].as_bool().unwrap_or(false) {
+        "+"
+    } else {
+        ""
+    };
     let panic = &report["panic"];
-    let where_ = match (panic["location"]["file"].as_str(), panic["location"]["line"].as_u64()) {
+    let where_ = match (
+        panic["location"]["file"].as_str(),
+        panic["location"]["line"].as_u64(),
+    ) {
         (Some(f), Some(l)) => format!("{f}:{l}"),
         _ => "<unknown location>".to_owned(),
     };
@@ -417,7 +433,10 @@ fn append_line(path: &Path, line: &str) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let mut f = std::fs::OpenOptions::new().create(true).append(true).open(path)?;
+    let mut f = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)?;
     writeln!(f, "{line}")
 }
 
@@ -427,14 +446,16 @@ fn append_line(path: &Path, line: &str) -> std::io::Result<()> {
 /// which sorts chronologically as text, and a file's mtime can be changed by a
 /// copy, a restore or a sync client while its name cannot.
 fn prune_crash_files(dir: &Path, keep: usize) {
-    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut crashes: Vec<PathBuf> = entries
         .flatten()
         .map(|e| e.path())
         .filter(|p| {
-            p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
-                n.starts_with("crash-") && n.ends_with(".json")
-            })
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("crash-") && n.ends_with(".json"))
         })
         .collect();
     if crashes.len() <= keep {
@@ -515,7 +536,9 @@ fn build_info() -> Value {
 }
 
 fn now_millis() -> u128 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis())
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis())
 }
 
 /// `YYYYmmdd-HHMMSS-mmm`, for file names — sorts chronologically as text.
@@ -556,7 +579,15 @@ fn civil_from_millis(ms: u128) -> (i64, u32, u32, u32, u32, u32, u32) {
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     let y = if m <= 2 { y + 1 } else { y };
 
-    (y, m, d, (sod / 3600) as u32, ((sod / 60) % 60) as u32, (sod % 60) as u32, milli)
+    (
+        y,
+        m,
+        d,
+        (sod / 3600) as u32,
+        ((sod / 60) % 60) as u32,
+        (sod % 60) as u32,
+        milli,
+    )
 }
 
 #[cfg(test)]
@@ -579,7 +610,9 @@ mod tests {
         // hook, neither of which this test wants, and `with_diag` is a no-op while the
         // global is `None` — which is what made the first version of this test pass
         // vacuously until it asserted on the flag.
-        *DIAG.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Diag {
+        *DIAG
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Diag {
             build: build_info(),
             snapshot: None,
             actions: VecDeque::new(),
@@ -588,7 +621,10 @@ mod tests {
             crash_written: true, // never write a crash file from a test
         });
 
-        assert!(!with_diag(|d| d.session_dirty).unwrap_or(false), "clean to begin with");
+        assert!(
+            !with_diag(|d| d.session_dirty).unwrap_or(false),
+            "clean to begin with"
+        );
 
         record_action("tour-link", "stage/Structural/Tree");
         assert!(
@@ -618,18 +654,31 @@ mod tests {
         assert_eq!(civil_from_millis(0), (1970, 1, 1, 0, 0, 0, 0));
         // 2000-02-29: a leap day in a century year that *is* a leap year — the
         // case the 400-year rule exists for.
-        assert_eq!(civil_from_millis(951_782_400_000), (2000, 2, 29, 0, 0, 0, 0));
+        assert_eq!(
+            civil_from_millis(951_782_400_000),
+            (2000, 2, 29, 0, 0, 0, 0)
+        );
         // 2100-03-01: the day after February in a century year that is *not* a
         // leap year, so the 100-year rule must have skipped a 29th.
-        assert_eq!(civil_from_millis(4_107_542_400_000), (2100, 3, 1, 0, 0, 0, 0));
+        assert_eq!(
+            civil_from_millis(4_107_542_400_000),
+            (2100, 3, 1, 0, 0, 0, 0)
+        );
         // A time of day with milliseconds.
-        assert_eq!(civil_from_millis(1_753_660_496_789), (2025, 7, 27, 23, 54, 56, 789));
+        assert_eq!(
+            civil_from_millis(1_753_660_496_789),
+            (2025, 7, 27, 23, 54, 56, 789)
+        );
     }
 
     #[test]
     fn stamps_are_sortable_and_readable() {
         let stamp = file_stamp();
-        assert_eq!(stamp.len(), "YYYYmmdd-HHMMSS-mmm".len(), "unexpected stamp shape: {stamp}");
+        assert_eq!(
+            stamp.len(),
+            "YYYYmmdd-HHMMSS-mmm".len(),
+            "unexpected stamp shape: {stamp}"
+        );
         assert!(format_utc_millis(0).starts_with("1970-01-01 00:00:00.000"));
     }
 
@@ -637,11 +686,23 @@ mod tests {
     fn ring_buffer_keeps_the_most_recent() {
         let mut q = VecDeque::new();
         for i in 0..5 {
-            push_capped(&mut q, Event { at_ms: i, kind: "k".into(), detail: i.to_string() }, 3);
+            push_capped(
+                &mut q,
+                Event {
+                    at_ms: i,
+                    kind: "k".into(),
+                    detail: i.to_string(),
+                },
+                3,
+            );
         }
         assert_eq!(q.len(), 3);
         let details: Vec<&str> = q.iter().map(|e| e.detail.as_str()).collect();
-        assert_eq!(details, ["2", "3", "4"], "oldest events must be the ones dropped");
+        assert_eq!(
+            details,
+            ["2", "3", "4"],
+            "oldest events must be the ones dropped"
+        );
     }
 
     /// The report must be well-formed before the first frame. A crash during
@@ -657,7 +718,15 @@ mod tests {
             crash_written: false,
         };
         let r = d.report(None);
-        for key in ["note", "captured_at", "panic", "app", "actions", "log", "build"] {
+        for key in [
+            "note",
+            "captured_at",
+            "panic",
+            "app",
+            "actions",
+            "log",
+            "build",
+        ] {
             assert!(r.get(key).is_some(), "report is missing `{key}`");
         }
         assert!(r["app"].is_null());
@@ -682,9 +751,15 @@ mod tests {
 
         rotate_previous_session();
 
-        assert!(!current.exists(), "the dead run's file must be moved out of the way");
+        assert!(
+            !current.exists(),
+            "the dead run's file must be moved out of the way"
+        );
         let carried = std::fs::read_to_string(&previous).expect("previous-session.json");
-        assert!(carried.contains("the run that died"), "content must survive intact: {carried}");
+        assert!(
+            carried.contains("the run that died"),
+            "content must survive intact: {carried}"
+        );
 
         // And rotating with nothing to rotate must be harmless — the ordinary
         // first-ever launch.
@@ -718,7 +793,10 @@ mod tests {
         record_action("specimen", "MotorWithBrake.mo");
         record_action("stage-tab", "Resolve");
         record_action("follow", "follow overSpeed (in Resolve)");
-        record_log("Error", "structurally singular \u{2014} see the Index Reduction tab");
+        record_log(
+            "Error",
+            "structurally singular \u{2014} see the Index Reduction tab",
+        );
         set_snapshot(json!({ "model": "MotorWithBrake", "stage_tab": "Resolve" }));
 
         let path = write_on_demand().expect("diagnostic should be written");
@@ -727,7 +805,10 @@ mod tests {
 
         let report: Value = serde_json::from_str(&text).expect("valid JSON");
         assert_eq!(report["app"]["model"], "MotorWithBrake");
-        assert!(report["panic"].is_null(), "on-demand snapshots carry no panic");
+        assert!(
+            report["panic"].is_null(),
+            "on-demand snapshots carry no panic"
+        );
         assert!(report["build"]["git_rev"].is_string());
 
         // The em dash is the character that crashed the lexer. A log line
@@ -735,7 +816,8 @@ mod tests {
         // not itself choke on the text describing a crash.
         let log = report["log"].as_array().expect("log array");
         assert!(
-            log.iter().any(|e| e["detail"].as_str().is_some_and(|d| d.contains('\u{2014}'))),
+            log.iter()
+                .any(|e| e["detail"].as_str().is_some_and(|d| d.contains('\u{2014}'))),
             "log entries must round-trip non-ASCII",
         );
 
@@ -743,15 +825,17 @@ mod tests {
         // exactly, not by substring — "follow overSpeed (in Resolve)" contains
         // "Resolve" too, and a substring search silently compared an entry with
         // itself.
-        let details: Vec<&str> =
-            report["actions"].as_array().expect("actions array")
-                .iter()
-                .filter_map(|e| e["detail"].as_str())
-                .collect();
+        let details: Vec<&str> = report["actions"]
+            .as_array()
+            .expect("actions array")
+            .iter()
+            .filter_map(|e| e["detail"].as_str())
+            .collect();
         let pos = |needle: &str| {
-            details.iter().rposition(|d| *d == needle).unwrap_or_else(|| {
-                panic!("action {needle:?} missing from {details:?}")
-            })
+            details
+                .iter()
+                .rposition(|d| *d == needle)
+                .unwrap_or_else(|| panic!("action {needle:?} missing from {details:?}"))
         };
         assert!(
             pos("MotorWithBrake.mo") < pos("Resolve")
@@ -832,16 +916,28 @@ mod tests {
             },
         });
         let line = digest_line(&report);
-        assert!(!line.contains('\n'), "one line, whatever the panic did: {line:?}");
-        assert!(line.contains("abc1234+"), "the rev, and dirty is flagged: {line:?}");
+        assert!(
+            !line.contains('\n'),
+            "one line, whatever the panic did: {line:?}"
+        );
+        assert!(
+            line.contains("abc1234+"),
+            "the rev, and dirty is flagged: {line:?}"
+        );
         assert!(line.contains("worker.rs:3530"), "where it died: {line:?}");
-        assert!(line.contains("left: 53 right: 131072"), "the whole message survives: {line:?}");
+        assert!(
+            line.contains("left: 53 right: 131072"),
+            "the whole message survives: {line:?}"
+        );
 
         // A crash with nothing known must still produce a usable line rather
         // than panicking inside the panic hook.
         let bare = digest_line(&json!({}));
         assert!(!bare.contains('\n'));
-        assert!(bare.contains("<unknown location>"), "degrades, never panics: {bare:?}");
+        assert!(
+            bare.contains("<unknown location>"),
+            "degrades, never panics: {bare:?}"
+        );
     }
 
     /// Under test the digest is written and the full file is not — the
@@ -864,7 +960,10 @@ mod tests {
             .map(|e| e.file_name().to_string_lossy().into_owned())
             .filter(|n| n.starts_with("crash-"))
             .collect();
-        assert!(crashes.is_empty(), "no full file when suppressed, got {crashes:?}");
+        assert!(
+            crashes.is_empty(),
+            "no full file when suppressed, got {crashes:?}"
+        );
         let log = std::fs::read_to_string(dir.join(CRASH_LOG)).expect("digest is still written");
         assert!(log.contains("boom"), "the digest records it: {log:?}");
         assert_eq!(log.lines().count(), 1);
@@ -885,4 +984,3 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
-

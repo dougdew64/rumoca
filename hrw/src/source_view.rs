@@ -97,14 +97,23 @@ fn line_ranges(source: &str) -> Vec<(usize, usize)> {
 }
 
 /// Clip tokens overlapping `[line_start, line_end)` to line-relative offsets.
-fn clip_tokens(tokens: &[Token], from: usize, line_start: usize, line_end: usize) -> Vec<LineToken> {
+fn clip_tokens(
+    tokens: &[Token],
+    from: usize,
+    line_start: usize,
+    line_end: usize,
+) -> Vec<LineToken> {
     let mut out = Vec::new();
     let mut j = from;
     while j < tokens.len() && tokens[j].start < line_end {
         let start = tokens[j].start.max(line_start) - line_start;
         let end = tokens[j].end.min(line_end) - line_start;
         if end > start {
-            out.push(LineToken { kind: tokens[j].kind, start, end });
+            out.push(LineToken {
+                kind: tokens[j].kind,
+                start,
+                end,
+            });
         }
         j += 1;
     }
@@ -172,7 +181,11 @@ pub fn segments<'a>(
             .iter()
             .find(|(start, end, _)| *start <= a && *end >= b && usable(*start) && usable(*end))
             .map(|(_, _, name)| name.as_str());
-        out.push(Segment { text: &line[a..b], kind, link });
+        out.push(Segment {
+            text: &line[a..b],
+            kind,
+            link,
+        });
     }
     out
 }
@@ -255,9 +268,11 @@ impl<'a> ModelicaText<'a> {
             // The tracked highlight outranks a whole-run tint: it is the more
             // specific statement about this particular token.
             if let Some((needle, background)) = self.tracked
-                && token.kind == TokenKind::Identifier && identifier_is(slice, needle) {
-                    format.background = background;
-                }
+                && token.kind == TokenKind::Identifier
+                && identifier_is(slice, needle)
+            {
+                format.background = background;
+            }
             job.append(slice, 0.0, format);
         }
     }
@@ -301,7 +316,11 @@ impl<'a> ModelicaText<'a> {
 pub fn mentions_identifier(text: &str, tracked: &str) -> bool {
     let tokens: Vec<LineToken> = tokenize(text)
         .into_iter()
-        .map(|t| LineToken { kind: t.kind, start: t.start, end: t.end })
+        .map(|t| LineToken {
+            kind: t.kind,
+            start: t.start,
+            end: t.end,
+        })
         .collect();
     (0..tokens.len()).any(|i| {
         tokens[i].kind == TokenKind::Identifier
@@ -335,11 +354,14 @@ pub(crate) fn dotted_path_ending_at(text: &str, tokens: &[LineToken], i: usize) 
     // in case the text is written `b . phi`. Running out of tokens ends the walk,
     // which is why that case is the loop condition rather than another `break`.
     while let Some(dot) = prev_significant(tokens, j) {
-        if tokens[dot].kind != TokenKind::Operator || &text[tokens[dot].start..tokens[dot].end] != "."
+        if tokens[dot].kind != TokenKind::Operator
+            || &text[tokens[dot].start..tokens[dot].end] != "."
         {
             break;
         }
-        let Some(ident) = prev_significant(tokens, dot) else { break };
+        let Some(ident) = prev_significant(tokens, dot) else {
+            break;
+        };
         if tokens[ident].kind != TokenKind::Identifier {
             break;
         }
@@ -352,7 +374,9 @@ pub(crate) fn dotted_path_ending_at(text: &str, tokens: &[LineToken], i: usize) 
 
 /// Index of the nearest non-whitespace token before `i`.
 pub(crate) fn prev_significant(tokens: &[LineToken], i: usize) -> Option<usize> {
-    tokens[..i].iter().rposition(|t| t.kind != TokenKind::Whitespace)
+    tokens[..i]
+        .iter()
+        .rposition(|t| t.kind != TokenKind::Whitespace)
 }
 
 /// Whether an identifier token names the tracked variable.
@@ -397,12 +421,20 @@ mod tests {
         let hl = SourceHighlight::new(src);
         assert_eq!(
             line_of(&hl, src, 0),
-            vec![(Identifier, "a".into()), (Whitespace, " ".into()), (Comment, "/* one".into())]
+            vec![
+                (Identifier, "a".into()),
+                (Whitespace, " ".into()),
+                (Comment, "/* one".into())
+            ]
         );
         assert_eq!(line_of(&hl, src, 1), vec![(Comment, "two".into())]);
         assert_eq!(
             line_of(&hl, src, 2),
-            vec![(Comment, "three */".into()), (Whitespace, " ".into()), (Identifier, "b".into())]
+            vec![
+                (Comment, "three */".into()),
+                (Whitespace, " ".into()),
+                (Identifier, "b".into())
+            ]
         );
     }
 
@@ -428,19 +460,22 @@ mod tests {
         let hl = SourceHighlight::new(line);
         let x = line.find('x').unwrap();
         let y = line.find('y').unwrap();
-        let clickable = vec![
-            (x, x + 1, "m.x".to_owned()),
-            (y, y + 1, "m.y".to_owned()),
-        ];
+        let clickable = vec![(x, x + 1, "m.x".to_owned()), (y, y + 1, "m.y".to_owned())];
         let segs = segments(line, hl.line(0), &clickable);
 
         let rebuilt: String = segs.iter().map(|s| s.text).collect();
         assert_eq!(rebuilt, line, "segments must reproduce the line");
 
-        let linked: Vec<_> = segs.iter().filter_map(|s| s.link.map(|l| (s.text, l))).collect();
+        let linked: Vec<_> = segs
+            .iter()
+            .filter_map(|s| s.link.map(|l| (s.text, l)))
+            .collect();
         assert_eq!(linked, vec![("x", "m.x"), ("y", "m.y")]);
         // The type name is still coloured as a type, not swallowed by a link.
-        assert!(segs.iter().any(|s| s.text == "Real" && s.kind == TokenKind::Type));
+        assert!(
+            segs.iter()
+                .any(|s| s.text == "Real" && s.kind == TokenKind::Type)
+        );
     }
 
     /// A quoted identifier contains spaces and a keyword; it must stay one
@@ -505,9 +540,15 @@ mod tests {
 
         // The bug: a bare `overSpeed` is not `__pre__.overSpeed`.
         assert!(!mentions_identifier("overSpeed", "__pre__.overSpeed"));
-        assert!(!mentions_identifier("when load.w > maxSpeed", "__pre__.overSpeed"));
+        assert!(!mentions_identifier(
+            "when load.w > maxSpeed",
+            "__pre__.overSpeed"
+        ));
         // ...and the real thing still matches.
-        assert!(mentions_identifier("__pre__.overSpeed", "__pre__.overSpeed"));
+        assert!(mentions_identifier(
+            "__pre__.overSpeed",
+            "__pre__.overSpeed"
+        ));
 
         // A different component's same-leaf variable is not a mention either.
         assert!(!mentions_identifier("a.phi + 1", "b.phi"));

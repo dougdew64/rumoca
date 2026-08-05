@@ -19,13 +19,20 @@ mod tests {
 
     /// Workspace root — one level above this crate.
     fn workspace_root() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_path_buf()
     }
 
     /// Every documentation file worth scanning.
     fn doc_files() -> Vec<PathBuf> {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let mut out = vec![hrw.join("CLAUDE.md"), hrw.join("README.md"), hrw.join("DECISIONS.md")];
+        let mut out = vec![
+            hrw.join("CLAUDE.md"),
+            hrw.join("README.md"),
+            hrw.join("DECISIONS.md"),
+        ];
         collect_markdown(&hrw.join("docs"), &mut out);
         out.retain(|p| p.is_file());
         out
@@ -102,7 +109,12 @@ mod tests {
             return root.join(cite).exists();
         }
         let mut bases: Vec<PathBuf> = std::fs::read_dir(root.join("crates"))
-            .map(|d| d.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect())
+            .map(|d| {
+                d.flatten()
+                    .map(|e| e.path())
+                    .filter(|p| p.is_dir())
+                    .collect()
+            })
             .unwrap_or_default();
         bases.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         bases.iter().any(|b| b.join(cite).exists())
@@ -156,7 +168,10 @@ mod tests {
         let real = "see `crates/rumoca-phase-structural/src/tearing.rs` and src/lib.rs \
                     and [x](hrw/src/app.rs)";
         let found = citations(real);
-        assert!(found.contains("crates/rumoca-phase-structural/src/tearing.rs"), "{found:?}");
+        assert!(
+            found.contains("crates/rumoca-phase-structural/src/tearing.rs"),
+            "{found:?}"
+        );
         assert!(found.contains("src/lib.rs"), "{found:?}");
         assert!(found.contains("hrw/src/app.rs"), "{found:?}");
     }
@@ -293,7 +308,11 @@ Some prose.
 *This italic line is ordinary emphasis, not a tag.*
 ";
         let tags = provenance_tags(md);
-        assert_eq!(tags.len(), 3, "three tags, and the plain italics is not one: {tags:?}");
+        assert_eq!(
+            tags.len(),
+            3,
+            "three tags, and the plain italics is not one: {tags:?}"
+        );
         assert_eq!(tags[0].0, "verified");
         assert_eq!(
             tags[0].1.as_deref(),
@@ -311,10 +330,15 @@ Some prose.
     /// one.
     #[test]
     fn a_missing_file_is_reported() {
-        assert!(!resolves("crates/rumoca-phase-structural/src/no_such_file.rs"));
+        assert!(!resolves(
+            "crates/rumoca-phase-structural/src/no_such_file.rs"
+        ));
         assert!(!resolves("src/definitely_not_here.rs"));
         assert!(resolves("crates/rumoca-phase-structural/src/tearing.rs"));
-        assert!(resolves("src/tearing.rs"), "bare paths resolve against any crate");
+        assert!(
+            resolves("src/tearing.rs"),
+            "bare paths resolve against any crate"
+        );
     }
 
     /// Control characters injected by an interpreted backslash escape.
@@ -349,14 +373,19 @@ Some prose.
         let mut offences = Vec::new();
         let mut scanned = 0usize;
         for path in doc_files() {
-            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
             scanned += 1;
             for (line, name) in control_chars_in(&text) {
                 offences.push(format!("{}:{line} contains {name}", path.display()));
             }
         }
         // Non-vacuity: a clean scan of nothing is not a clean scan.
-        assert!(scanned > 20, "only scanned {scanned} documents — the walk is broken");
+        assert!(
+            scanned > 20,
+            "only scanned {scanned} documents — the walk is broken"
+        );
         assert!(
             offences.is_empty(),
             "control characters in documentation (a backslash escape was interpreted \
@@ -383,7 +412,11 @@ Some prose.
     fn a_stray_control_character_is_reported() {
         let bel = format!("fine line\nbroken {} line\n", '\u{7}');
         let hits = control_chars_in(&bel);
-        assert_eq!(hits, vec![(2, "BEL")], "the BEL on line 2, and nothing else");
+        assert_eq!(
+            hits,
+            vec![(2, "BEL")],
+            "the BEL on line 2, and nothing else"
+        );
 
         let ff = format!("C:{}tmp{}id-full.csv\n", '\t', '\u{c}');
         assert_eq!(
@@ -420,11 +453,17 @@ Some prose.
         let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut files = Vec::new();
         collect_rust(&src, &mut files);
-        assert!(files.len() > 10, "only found {} sources — the walk is broken", files.len());
+        assert!(
+            files.len() > 10,
+            "only found {} sources — the walk is broken",
+            files.len()
+        );
 
         let mut offences = Vec::new();
         for path in &files {
-            let Ok(text) = std::fs::read_to_string(path) else { continue };
+            let Ok(text) = std::fs::read_to_string(path) else {
+                continue;
+            };
             let lines: Vec<&str> = text.lines().collect();
             for (i, line) in lines.iter().enumerate() {
                 if line.trim() != "#[test]" {
@@ -477,13 +516,21 @@ Some prose.
     #[test]
     fn no_rust_escape_leaks_into_comment_text() {
         let mut files = Vec::new();
-        collect_rust(Path::new(env!("CARGO_MANIFEST_DIR")).join("src").as_path(), &mut files);
-        assert!(!files.is_empty(), "found no sources to scan — the check would pass vacuously");
+        collect_rust(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src").as_path(),
+            &mut files,
+        );
+        assert!(
+            !files.is_empty(),
+            "found no sources to scan — the check would pass vacuously"
+        );
 
         let mut offences = Vec::new();
         let mut scanned = 0usize;
         for f in &files {
-            let Ok(text) = std::fs::read_to_string(f) else { continue };
+            let Ok(text) = std::fs::read_to_string(f) else {
+                continue;
+            };
             for (i, line) in text.lines().enumerate() {
                 let s = line.trim_start();
                 if !s.starts_with("//") {
@@ -572,10 +619,8 @@ Some prose.
     /// absence.
     #[test]
     fn no_animation_re_runs_a_phase_by_default() {
-        let app = std::fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
-        )
-        .expect("app.rs must be readable");
+        let app = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"))
+            .expect("app.rs must be readable");
 
         // **The re-deriving constructor is unreachable from the UI.**
         //
@@ -608,7 +653,12 @@ Some prose.
         }
 
         // And every animation that can be fed from a capture is.
-        for ctor in ["from_captured_frames", "from_captured", "from_frames", "from_report"] {
+        for ctor in [
+            "from_captured_frames",
+            "from_captured",
+            "from_frames",
+            "from_report",
+        ] {
             assert!(
                 app.contains(ctor),
                 "no animation is constructed with `{ctor}` \u{2014} the capture path is \
@@ -658,7 +708,10 @@ Some prose.
 
         // Non-vacuity: the helper must exist and every list must reach it, or "one
         // call site" is satisfied by a file that lost the feature altogether.
-        assert!(src.contains("fn row_context_menu("), "the shared menu must exist");
+        assert!(
+            src.contains("fn row_context_menu("),
+            "the shared menu must exist"
+        );
         assert_eq!(
             src.matches("row_context_menu(").count(),
             3,
@@ -714,10 +767,8 @@ Some prose.
         /// member the one nobody expects.
         const MAX_APP_FIELDS: usize = 58;
 
-        let src = std::fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
-        )
-        .expect("app.rs must be readable");
+        let src = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"))
+            .expect("app.rs must be readable");
 
         let body = src
             .split_once("\npub struct App {")
@@ -738,7 +789,9 @@ Some prose.
                 }
                 let name = rest.split_once(':')?.0;
                 (!name.is_empty()
-                    && name.chars().all(|c| c.is_ascii_lowercase() || c == '_' || c.is_ascii_digit()))
+                    && name
+                        .chars()
+                        .all(|c| c.is_ascii_lowercase() || c == '_' || c.is_ascii_digit()))
                 .then_some(name)
             })
             .collect();
@@ -761,7 +814,9 @@ Some prose.
     }
 
     fn collect_rust(dir: &Path, out: &mut Vec<PathBuf>) {
-        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
         for e in entries.flatten() {
             let p = e.path();
             if p.is_dir() {
@@ -813,7 +868,9 @@ Some prose.
             let mut rest = line;
             while let Some(at) = rest.find("<!-- unbuilt:") {
                 let after = &rest[at + "<!-- unbuilt:".len()..];
-                let Some(close) = after.find("-->") else { break };
+                let Some(close) = after.find("-->") else {
+                    break;
+                };
                 let target = after[..close].trim();
                 if !target.is_empty() {
                     out.push(Unbuilt {
@@ -831,7 +888,9 @@ Some prose.
     /// Every `.rs` file in the workspace, for symbol resolution.
     fn rust_sources() -> Vec<PathBuf> {
         fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
-            let Ok(entries) = std::fs::read_dir(dir) else { return };
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                return;
+            };
             for e in entries.flatten() {
                 let p = e.path();
                 let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -846,8 +905,14 @@ Some prose.
         }
         let mut out = Vec::new();
         walk(&workspace_root().join("crates"), &mut out);
-        walk(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src"), &mut out);
-        walk(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples"), &mut out);
+        walk(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &mut out,
+        );
+        walk(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples"),
+            &mut out,
+        );
         out
     }
 
@@ -878,7 +943,9 @@ Some prose.
             format!("{leaf}:"), // a struct field
         ];
         rust_sources().iter().any(|p| {
-            let Ok(text) = std::fs::read_to_string(p) else { return false };
+            let Ok(text) = std::fs::read_to_string(p) else {
+                return false;
+            };
             text.lines()
                 .filter(|l| !l.trim_start().starts_with("//"))
                 .any(|l| forms.iter().any(|f| l.contains(f.as_str())))
@@ -901,17 +968,23 @@ Some prose.
     /// not really built.
     fn link_form_is_exercised(pattern: &str) -> bool {
         let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
-        let Ok(entries) = std::fs::read_dir(&dir) else { return false };
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            return false;
+        };
         let wanted: Vec<&str> = pattern.trim_start_matches("hrw://").split('/').collect();
         entries.flatten().any(|e| {
             let p = e.path();
             if p.extension().and_then(|x| x.to_str()) != Some("md") {
                 return false;
             }
-            let Ok(text) = std::fs::read_to_string(&p) else { return false };
+            let Ok(text) = std::fs::read_to_string(&p) else {
+                return false;
+            };
             text.split("hrw://").skip(1).any(|tail| {
-                let link: String =
-                    tail.chars().take_while(|c| !c.is_whitespace() && *c != ')' && *c != '`').collect();
+                let link: String = tail
+                    .chars()
+                    .take_while(|c| !c.is_whitespace() && *c != ')' && *c != '`')
+                    .collect();
                 let got: Vec<&str> = link.split('/').collect();
                 // Subsequence match: walk `got`, consuming each named segment of
                 // `wanted` in order. `*` consumes nothing and simply allows a gap.
@@ -957,7 +1030,9 @@ Some prose.
     fn claims_of_absence_are_still_true() {
         let mut tags = Vec::new();
         for path in doc_files() {
-            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
             let name = path
                 .strip_prefix(workspace_root())
                 .unwrap_or(&path)
@@ -969,10 +1044,18 @@ Some prose.
         let stale: Vec<String> = tags
             .iter()
             .filter(|t| !still_absent(&t.target))
-            .map(|t| format!("{}:{} claims `{}` is unbuilt — it exists", t.file, t.line, t.target))
+            .map(|t| {
+                format!(
+                    "{}:{} claims `{}` is unbuilt — it exists",
+                    t.file, t.line, t.target
+                )
+            })
             .collect();
 
-        println!("stale-negative check: {} `unbuilt:` tag(s) verified", tags.len());
+        println!(
+            "stale-negative check: {} `unbuilt:` tag(s) verified",
+            tags.len()
+        );
         assert!(
             stale.is_empty(),
             "documents claim something is unbuilt, but it exists. **Acting on a wrong \
@@ -994,8 +1077,12 @@ Some prose.
                   Nothing tagged on this line.\n\
                   A made-up thing. <!-- unbuilt: NoSuchSymbolAnywhere -->\n";
         let tags = unbuilt_tags(md, "test.md");
-        assert_eq!(tags.len(), 3, "three tags, and the untagged line is not one: {:?}",
-                   tags.iter().map(|t| &t.target).collect::<Vec<_>>());
+        assert_eq!(
+            tags.len(),
+            3,
+            "three tags, and the untagged line is not one: {:?}",
+            tags.iter().map(|t| &t.target).collect::<Vec<_>>()
+        );
         assert_eq!(tags[0].line, 1);
         assert_eq!(tags[1].target, "App::scratch_specimens");
 
@@ -1037,7 +1124,9 @@ Some prose.
         let mut found = 0usize;
         let mut examples: Vec<String> = Vec::new();
         for path in doc_files() {
-            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
             for (i, line) in text.lines().enumerate() {
                 if line.contains("unbuilt:") {
                     continue; // already tagged

@@ -10,10 +10,18 @@ use std::path::PathBuf;
 fn main() {
     let mut args = std::env::args().skip(1);
     let model = args.next().unwrap_or_else(|| "MotorWithBrake".to_owned());
-    let follow = args.next().unwrap_or_else(|| "__pre__.overSpeed".to_owned());
+    let follow = args
+        .next()
+        .unwrap_or_else(|| "__pre__.overSpeed".to_owned());
 
-    let path = PathBuf::from(format!("{}/specimens/{model}.mo", env!("CARGO_MANIFEST_DIR")));
-    let libs = vec![PathBuf::from(format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR")))];
+    let path = PathBuf::from(format!(
+        "{}/specimens/{model}.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let libs = vec![PathBuf::from(format!(
+        "{}/vendor/msl",
+        env!("CARGO_MANIFEST_DIR")
+    ))];
     let hrw::worker::FromWorker::Compiled { stages, .. } =
         hrw::worker::compile_specimen(&path, libs).expect("compile")
     else {
@@ -28,5 +36,8 @@ fn main() {
         declaring_class: None,
         stage_values: &pairs,
     };
-    println!("{}", serde_json::to_string_pretty(&hrw::bridge::build_tracking(&tracking)).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&hrw::bridge::build_tracking(&tracking)).unwrap()
+    );
 }

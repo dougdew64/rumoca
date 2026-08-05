@@ -136,11 +136,23 @@ impl Plot {
             let (equations, unknowns) = if coupled {
                 let (eqs, p1) = crate::str_vec_checked(b.get("equations"), "equations");
                 let (uns, p2) = crate::str_vec_checked(b.get("unknowns"), "unknowns");
-                problems.extend(p1.into_iter().chain(p2).map(|p| format!("block {report_index}: {p}")));
+                problems.extend(
+                    p1.into_iter()
+                        .chain(p2)
+                        .map(|p| format!("block {report_index}: {p}")),
+                );
                 (eqs, uns)
             } else {
-                let eq = b.get("equation").and_then(Value::as_str).unwrap_or("").to_owned();
-                let un = b.get("unknown").and_then(Value::as_str).unwrap_or("").to_owned();
+                let eq = b
+                    .get("equation")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_owned();
+                let un = b
+                    .get("unknown")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_owned();
                 (vec![eq], vec![un])
             };
             let size = unknowns.len().max(equations.len()).max(1);
@@ -151,8 +163,11 @@ impl Plot {
                     let (tv, p1) = crate::str_vec_checked(t.get("tear_vars"), "tear_vars");
                     let (re, p2) =
                         crate::str_vec_checked(t.get("residual_equations"), "residual_equations");
-                    problems
-                        .extend(p1.into_iter().chain(p2).map(|p| format!("block {report_index}: {p}")));
+                    problems.extend(
+                        p1.into_iter()
+                            .chain(p2)
+                            .map(|p| format!("block {report_index}: {p}")),
+                    );
                     Some((tv, re))
                 }
                 _ => None,
@@ -160,10 +175,23 @@ impl Plot {
             if coupled {
                 coupled_count += 1;
             }
-            blocks.push(Block { report_index, start: pos, size, coupled, equations, unknowns, tearing });
+            blocks.push(Block {
+                report_index,
+                start: pos,
+                size,
+                coupled,
+                equations,
+                unknowns,
+                tearing,
+            });
             pos += size;
         }
-        Some(Plot { n: pos, blocks, coupled_count, problems })
+        Some(Plot {
+            n: pos,
+            blocks,
+            coupled_count,
+            problems,
+        })
     }
 
     /// What the parser could not read — empty when the report read cleanly.
@@ -219,7 +247,13 @@ impl Plot {
     ///
     /// Sets `capture` to a bridge key-path (`blocks[i]`) when the user clicks
     /// a block, enabling the bridge to write a focus file for that block.
-    pub fn ui(&self, ui: &mut egui::Ui, canvas: &mut Canvas, capture: &mut Option<Vec<Seg>>, tracked: Option<&str>) {
+    pub fn ui(
+        &self,
+        ui: &mut egui::Ui,
+        canvas: &mut Canvas,
+        capture: &mut Option<Vec<Seg>>,
+        tracked: Option<&str>,
+    ) {
         // World bounds: an n x n grid starting at origin, with headroom above
         // for angled column labels (visible at zoom >= 16).
         let n = self.n as f32;
@@ -236,7 +270,11 @@ impl Plot {
         let visuals = ui.visuals();
         // Draw a background rectangle for the entire matrix area, so the plot
         // stands out from the panel background (especially in dark mode).
-        painter.rect_filled(view.to_screen_rect(matrix_rect), egui::CornerRadius::ZERO, visuals.extreme_bg_color);
+        painter.rect_filled(
+            view.to_screen_rect(matrix_rect),
+            egui::CornerRadius::ZERO,
+            visuals.extreme_bg_color,
+        );
 
         let hovered: Option<&Block> = view
             .hovered_cell(&response, self.n, self.n)
@@ -249,7 +287,9 @@ impl Plot {
         let matched_color = crate::colors::OK_GREEN;
         let coupled_fill = crate::colors::coupled_fill();
         let coupled_stroke = crate::colors::COUPLED_STROKE;
-        let grid = visuals.weak_text_color().gamma_multiply(crate::colors::GRID_ALPHA);
+        let grid = visuals
+            .weak_text_color()
+            .gamma_multiply(crate::colors::GRID_ALPHA);
 
         view.draw_grid(&painter, self.n, self.n, grid);
 
@@ -275,7 +315,11 @@ impl Plot {
 
             for i in 0..block.size {
                 let cell = view.cell_rect(block.start + i, block.start + i);
-                painter.rect_filled(cell.shrink(view.zoom() * 0.12), egui::CornerRadius::ZERO, matched_color);
+                painter.rect_filled(
+                    cell.shrink(view.zoom() * 0.12),
+                    egui::CornerRadius::ZERO,
+                    matched_color,
+                );
             }
 
             if is_hovered && !block.coupled {
@@ -291,9 +335,11 @@ impl Plot {
         // --- Tracked identifier block highlight ---
         if let Some(name) = tracked {
             for block in &self.blocks {
-                if block.unknowns.iter().any(|u| {
-                    crate::identifier_index::same_variable(u, name)
-                }) {
+                if block
+                    .unknowns
+                    .iter()
+                    .any(|u| crate::identifier_index::same_variable(u, name))
+                {
                     let block_world = egui::Rect::from_min_size(
                         egui::pos2(block.start as f32, block.start as f32),
                         egui::vec2(block.size as f32, block.size as f32),
@@ -318,10 +364,7 @@ impl Plot {
                 col_labels.extend(block.unknowns.iter().cloned());
                 row_labels.extend(block.equations.iter().cloned());
             }
-            crate::draw_matrix_axis_labels(
-                ui, &painter, view,
-                &col_labels, &row_labels, 20, 20,
-            );
+            crate::draw_matrix_axis_labels(ui, &painter, view, &col_labels, &row_labels, 20, 20);
         }
 
         let canvas_rect = response.rect;
@@ -333,7 +376,10 @@ impl Plot {
                 // Build the bridge capture path: blocks[<index>].
                 // This key-path addresses the block in the structural report JSON,
                 // so Claude can look up its equations, unknowns, and tearing info.
-                *capture = Some(vec![Seg::Key("blocks".to_owned()), Seg::Index(block.report_index)]);
+                *capture = Some(vec![
+                    Seg::Key("blocks".to_owned()),
+                    Seg::Index(block.report_index),
+                ]);
             }
             // `on_hover_ui` shows an egui tooltip near the cursor.
             response.on_hover_ui(|ui| block_tooltip(ui, block));
@@ -357,7 +403,10 @@ impl Plot {
 // and tearing information for coupled blocks.
 fn block_tooltip(ui: &mut egui::Ui, block: &Block) {
     if block.coupled {
-        ui.strong(format!("Coupled block · size {} (algebraic loop)", block.size));
+        ui.strong(format!(
+            "Coupled block · size {} (algebraic loop)",
+            block.size
+        ));
     } else {
         ui.strong("Scalar block · size 1");
     }
@@ -484,7 +533,11 @@ mod tests {
         let (tear_vars, residuals) = block.tearing.as_ref().expect("should have tearing");
         assert_eq!(tear_vars, &["u0"]);
         assert_eq!(residuals, &["e0"]);
-        assert!(plot.problems().is_empty(), "a clean report: {:?}", plot.problems());
+        assert!(
+            plot.problems().is_empty(),
+            "a clean report: {:?}",
+            plot.problems()
+        );
     }
 
     /// **An unreadable `kind` is not silently a scalar block.**
@@ -504,7 +557,11 @@ mod tests {
         ]});
         let plot = Plot::from_report(&report).expect("parses");
         assert_eq!(plot.problems().len(), 1, "{:?}", plot.problems());
-        assert!(plot.problems()[0].contains("kind"), "{:?}", plot.problems()[0]);
+        assert!(
+            plot.problems()[0].contains("kind"),
+            "{:?}",
+            plot.problems()[0]
+        );
         assert!(
             plot.caption().contains("INCOMPLETE"),
             "the caption quotes the coupled count, so it must carry the caveat: {}",

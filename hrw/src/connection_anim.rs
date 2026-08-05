@@ -57,7 +57,9 @@ pub struct ConnectionAnimation {
 impl ConnectionAnimation {
     /// Build from frames recorded during compilation.
     pub fn from_frames(frames: Vec<ConnectionFrame>) -> Self {
-        Self { playback: Playback::recorded(frames, FRAME_INTERVAL) }
+        Self {
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -89,7 +91,9 @@ impl ConnectionAnimation {
     }
 
     fn render_current(&self, ui: &mut egui::Ui) {
-        let Some(frame) = self.playback.current() else { return };
+        let Some(frame) = self.playback.current() else {
+            return;
+        };
         let (icon, color, summary) = step_style(frame);
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new(icon).size(16.0));
@@ -102,20 +106,22 @@ impl ConnectionAnimation {
             && !variables.is_empty()
         {
             ui.add_space(4.0);
-            egui::ScrollArea::vertical().auto_shrink([false, true]).max_height(200.0).show(
-                ui,
-                |ui| {
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, true])
+                .max_height(200.0)
+                .show(ui, |ui| {
                     for v in variables {
                         ui.label(egui::RichText::new(v).monospace());
                     }
-                },
-            );
+                });
         }
     }
 
     /// Goal line plus the two running totals: sets closed, equations made.
     fn render_running_state(&self, ui: &mut egui::Ui) {
-        let Some(frame) = self.playback.current() else { return };
+        let Some(frame) = self.playback.current() else {
+            return;
+        };
         ui.label(
             egui::RichText::new(
                 "Goal: turn every connect() into equations \u{2014} equal potentials, and flows \
@@ -158,7 +164,12 @@ impl Animated for ConnectionAnimation {
         });
         // The set's members are what make the next frame's equation count
         // interpretable, so the capture carries them when they exist.
-        if let ConnectionStep::SetFormed { variables, kind, scope } = &frame.step {
+        if let ConnectionStep::SetFormed {
+            variables,
+            kind,
+            scope,
+        } = &frame.step
+        {
             let obj = ctx.as_object_mut().expect("built as an object");
             obj.insert("set_kind".to_owned(), serde_json::json!(kind));
             obj.insert("set_scope".to_owned(), serde_json::json!(scope));
@@ -192,7 +203,11 @@ fn step_style(frame: &ConnectionFrame) -> (&'static str, egui::Color32, String) 
                 if *connect_statements == 1 { "" } else { "s" },
             ),
         ),
-        ConnectionStep::SetFormed { kind, scope, variables } => (
+        ConnectionStep::SetFormed {
+            kind,
+            scope,
+            variables,
+        } => (
             "\u{1f50d}",
             crate::colors::ANIM_EXPLORE,
             format!(
@@ -213,7 +228,11 @@ fn step_style(frame: &ConnectionFrame) -> (&'static str, egui::Color32, String) 
                 },
             ),
         ),
-        ConnectionStep::EquationsGenerated { kind, set_size, equations_added } => {
+        ConnectionStep::EquationsGenerated {
+            kind,
+            set_size,
+            equations_added,
+        } => {
             let why = match *kind {
                 // The two halves of MLS §9.2, each said where it applies.
                 "potential" => " (n-1 equalities chain n variables together)",
@@ -234,8 +253,7 @@ fn step_style(frame: &ConnectionFrame) -> (&'static str, egui::Color32, String) 
             "\u{2b07}",
             crate::colors::MATCHED_MARKER,
             if *equations_added == 0 {
-                "Every flow variable is connected \u{2014} no zero-flow equations needed"
-                    .to_owned()
+                "Every flow variable is connected \u{2014} no zero-flow equations needed".to_owned()
             } else {
                 format!(
                     "{equations_added} unconnected flow variable{} set to zero \u{2014} a port \
@@ -244,7 +262,10 @@ fn step_style(frame: &ConnectionFrame) -> (&'static str, egui::Color32, String) 
                 )
             },
         ),
-        ConnectionStep::Complete { sets, equations_added } => (
+        ConnectionStep::Complete {
+            sets,
+            equations_added,
+        } => (
             "\u{2705}",
             crate::colors::ANIM_PATH_FOUND,
             format!(
@@ -261,7 +282,11 @@ mod tests {
     use super::*;
 
     fn frame(step: ConnectionStep, sets: usize, eqs: usize) -> ConnectionFrame {
-        ConnectionFrame { step, sets_so_far: sets, equations_so_far: eqs }
+        ConnectionFrame {
+            step,
+            sets_so_far: sets,
+            equations_so_far: eqs,
+        }
     }
 
     /// The asymmetry is the reason this view exists, so both halves must reach
@@ -279,11 +304,21 @@ mod tests {
             2,
         );
         let s = step_summary(&potential);
-        assert!(s.contains("3 potential") && s.contains("2 equations"), "{s}");
-        assert!(s.contains("n-1"), "the rule must be stated, not just the count: {s}");
+        assert!(
+            s.contains("3 potential") && s.contains("2 equations"),
+            "{s}"
+        );
+        assert!(
+            s.contains("n-1"),
+            "the rule must be stated, not just the count: {s}"
+        );
 
         let flow = frame(
-            ConnectionStep::EquationsGenerated { kind: "flow", set_size: 3, equations_added: 1 },
+            ConnectionStep::EquationsGenerated {
+                kind: "flow",
+                set_size: 3,
+                equations_added: 1,
+            },
             2,
             3,
         );
@@ -305,7 +340,11 @@ mod tests {
             0,
             0,
         );
-        assert!(step_summary(&three).contains("transitive"), "{}", step_summary(&three));
+        assert!(
+            step_summary(&three).contains("transitive"),
+            "{}",
+            step_summary(&three)
+        );
 
         let two = frame(
             ConnectionStep::SetFormed {
@@ -316,21 +355,31 @@ mod tests {
             0,
             0,
         );
-        assert!(!step_summary(&two).contains("transitive"), "{}", step_summary(&two));
+        assert!(
+            !step_summary(&two).contains("transitive"),
+            "{}",
+            step_summary(&two)
+        );
     }
 
     /// Zero unconnected flows is a result, not an absence — rendering "0 flow
     /// variables set to zero" would read like something failed.
     #[test]
     fn no_unconnected_flows_reads_as_a_result() {
-        let s = step_summary(&frame(ConnectionStep::UnconnectedFlow { equations_added: 0 }, 2, 3));
+        let s = step_summary(&frame(
+            ConnectionStep::UnconnectedFlow { equations_added: 0 },
+            2,
+            3,
+        ));
         assert!(s.contains("Every flow variable is connected"), "{s}");
     }
 
     #[test]
     fn every_step_renders() {
         for step in [
-            ConnectionStep::Start { connect_statements: 4 },
+            ConnectionStep::Start {
+                connect_statements: 4,
+            },
             ConnectionStep::SetFormed {
                 kind: "stream",
                 scope: "sub".into(),
@@ -342,7 +391,10 @@ mod tests {
                 equations_added: 0,
             },
             ConnectionStep::UnconnectedFlow { equations_added: 2 },
-            ConnectionStep::Complete { sets: 3, equations_added: 7 },
+            ConnectionStep::Complete {
+                sets: 3,
+                equations_added: 7,
+            },
         ] {
             assert!(!step_summary(&frame(step, 0, 0)).is_empty());
         }
@@ -362,9 +414,14 @@ mod tests {
             1,
             2,
         )]);
-        let ctx = anim.current_frame_context().expect("a frame is under the cursor");
+        let ctx = anim
+            .current_frame_context()
+            .expect("a frame is under the cursor");
         assert_eq!(ctx["set_kind"], "flow");
-        assert_eq!(ctx["set_variables"], serde_json::json!(["a.i", "b.i", "c.i"]));
+        assert_eq!(
+            ctx["set_variables"],
+            serde_json::json!(["a.i", "b.i", "c.i"])
+        );
         assert_eq!(ctx["sets_so_far"], 1);
         assert_eq!(ctx["equations_so_far"], 2);
         assert_eq!(anim.which(), "connection_expansion");
@@ -375,7 +432,10 @@ mod tests {
     #[test]
     fn a_non_set_frame_carries_no_membership() {
         let anim = ConnectionAnimation::from_frames(vec![frame(
-            ConnectionStep::Complete { sets: 2, equations_added: 5 },
+            ConnectionStep::Complete {
+                sets: 2,
+                equations_added: 5,
+            },
             2,
             5,
         )]);

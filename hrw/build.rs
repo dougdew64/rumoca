@@ -17,7 +17,10 @@ fn main() {
     let rev = git_head_short().unwrap_or_else(|| String::from("unknown"));
     println!("cargo:rustc-env=HRW_RUMOCA_VERSION={version}");
     println!("cargo:rustc-env=HRW_RUMOCA_REV={rev}");
-    println!("cargo:rustc-env=HRW_GIT_DIRTY={}", u8::from(working_tree_is_dirty()));
+    println!(
+        "cargo:rustc-env=HRW_GIT_DIRTY={}",
+        u8::from(working_tree_is_dirty())
+    );
 }
 
 /// Whether the working tree differed from HEAD at build time.
@@ -45,10 +48,15 @@ fn working_tree_is_dirty() -> bool {
 fn read_rumoca_version() -> String {
     let lock = fs::read_to_string("../Cargo.lock").unwrap_or_default();
     for block in lock.split("[[package]]") {
-        if block.lines().any(|l| l.trim() == "name = \"rumoca-compile\"") {
+        if block
+            .lines()
+            .any(|l| l.trim() == "name = \"rumoca-compile\"")
+        {
             for line in block.lines() {
-                if let Some(v) =
-                    line.trim().strip_prefix("version = \"").and_then(|s| s.strip_suffix('"'))
+                if let Some(v) = line
+                    .trim()
+                    .strip_prefix("version = \"")
+                    .and_then(|s| s.strip_suffix('"'))
                 {
                     return v.to_owned();
                 }
@@ -61,7 +69,10 @@ fn read_rumoca_version() -> String {
 /// Short commit of the workspace HEAD — the Rumoca source HRW is built against,
 /// now that HRW is an in-workspace member. `None` outside a git checkout.
 fn git_head_short() -> Option<String> {
-    let out = Command::new("git").args(["rev-parse", "--short", "HEAD"]).output().ok()?;
+    let out = Command::new("git")
+        .args(["rev-parse", "--short", "HEAD"])
+        .output()
+        .ok()?;
     if !out.status.success() {
         return None;
     }

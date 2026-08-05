@@ -210,8 +210,14 @@ impl IncidenceMatrix {
                 // row had last written that key. A name that cannot collide with a
                 // real one resolves to nothing instead, and the `else` below reports
                 // the pair as unapplied rather than applying it to a guess.
-                let eq_name = m.get("equation").and_then(Value::as_str).unwrap_or("(unnamed)");
-                let var_name = m.get("unknown").and_then(Value::as_str).unwrap_or("(unnamed)");
+                let eq_name = m
+                    .get("equation")
+                    .and_then(Value::as_str)
+                    .unwrap_or("(unnamed)");
+                let var_name = m
+                    .get("unknown")
+                    .and_then(Value::as_str)
+                    .unwrap_or("(unnamed)");
                 if let (Some(&r), Some(&c)) = (eq_index.get(eq_name), var_index.get(var_name)) {
                     matched_col[r] = Some(c);
                     col_matched[c] = true;
@@ -226,7 +232,11 @@ impl IncidenceMatrix {
                         "the matching pairs `{eq_name}` with `{var_name}`, and \
                          {} is not in this matrix \u{2014} the pair is missing, so the \
                          structural rank shown below is too low",
-                        if eq_index.contains_key(eq_name) { "the unknown" } else { "the equation" },
+                        if eq_index.contains_key(eq_name) {
+                            "the unknown"
+                        } else {
+                            "the equation"
+                        },
                     ));
                 }
             }
@@ -240,14 +250,24 @@ impl IncidenceMatrix {
                 let (eq_names, var_names) = if coupled {
                     (str_vec(b.get("equations")), str_vec(b.get("unknowns")))
                 } else {
-                    let eq = b.get("equation").and_then(Value::as_str).unwrap_or("").to_owned();
-                    let un = b.get("unknown").and_then(Value::as_str).unwrap_or("").to_owned();
+                    let eq = b
+                        .get("equation")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned();
+                    let un = b
+                        .get("unknown")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned();
                     (vec![eq], vec![un])
                 };
-                let eq_indices: Vec<usize> = eq_names.iter()
+                let eq_indices: Vec<usize> = eq_names
+                    .iter()
                     .filter_map(|n| eq_index.get(n.as_str()).copied())
                     .collect();
-                let var_indices: Vec<usize> = var_names.iter()
+                let var_indices: Vec<usize> = var_names
+                    .iter()
                     .filter_map(|n| var_index.get(n.as_str()).copied())
                     .collect();
                 // **A block that lost members is a wrong block, not a smaller one.**
@@ -275,7 +295,11 @@ impl IncidenceMatrix {
                     ));
                 }
                 if !eq_indices.is_empty() && !var_indices.is_empty() {
-                    blt_blocks.push(BltOverlay { eq_indices, var_indices, coupled });
+                    blt_blocks.push(BltOverlay {
+                        eq_indices,
+                        var_indices,
+                        coupled,
+                    });
                 }
             }
         }
@@ -342,9 +366,18 @@ impl IncidenceMatrix {
         };
         let rank_info = if self.n_matched < self.n_eq.min(self.n_var) {
             let deficiency = self.n_eq.min(self.n_var) - self.n_matched;
-            format!(" · {}/{} matched (rank deficiency {})", self.n_matched, self.n_eq.min(self.n_var), deficiency)
+            format!(
+                " · {}/{} matched (rank deficiency {})",
+                self.n_matched,
+                self.n_eq.min(self.n_var),
+                deficiency
+            )
         } else {
-            format!(" · {}/{} matched (full rank)", self.n_matched, self.n_eq.min(self.n_var))
+            format!(
+                " · {}/{} matched (full rank)",
+                self.n_matched,
+                self.n_eq.min(self.n_var)
+            )
         };
         let caveat = if self.problems.is_empty() {
             String::new()
@@ -363,12 +396,24 @@ impl IncidenceMatrix {
         )
     }
 
-    pub fn n_eq(&self) -> usize { self.n_eq }
-    pub fn n_var(&self) -> usize { self.n_var }
-    pub fn equation_names(&self) -> &[String] { &self.equation_names }
-    pub fn equation_texts(&self) -> &[String] { &self.equation_texts }
-    pub fn unknown_names(&self) -> &[String] { &self.unknown_names }
-    pub fn rows(&self) -> &[Vec<usize>] { &self.rows }
+    pub fn n_eq(&self) -> usize {
+        self.n_eq
+    }
+    pub fn n_var(&self) -> usize {
+        self.n_var
+    }
+    pub fn equation_names(&self) -> &[String] {
+        &self.equation_names
+    }
+    pub fn equation_texts(&self) -> &[String] {
+        &self.equation_texts
+    }
+    pub fn unknown_names(&self) -> &[String] {
+        &self.unknown_names
+    }
+    pub fn rows(&self) -> &[Vec<usize>] {
+        &self.rows
+    }
 
     /// **What Rumoca said the matching is**, per equation row, resolved from the
     /// report's names to column indices. `None` = that equation is unmatched.
@@ -378,7 +423,9 @@ impl IncidenceMatrix {
     /// comparison is only meaningful because both sides index the same
     /// row/column order — if the JSON round trip permuted anything, this is
     /// where it shows up.
-    pub fn reported_matching(&self) -> &[Option<usize>] { &self.matched_col }
+    pub fn reported_matching(&self) -> &[Option<usize>] {
+        &self.matched_col
+    }
 
     /// **What Rumoca said the BLT blocks are**, as equation-index sets in report
     /// order. F1 compares these against Tarjan's re-derived SCCs.
@@ -387,7 +434,10 @@ impl IncidenceMatrix {
     /// because a strongly connected component is a *set* — comparing rendered
     /// geometry would test the drawing code instead of the decision.
     pub fn reported_blocks(&self) -> Vec<Vec<usize>> {
-        self.blt_blocks.iter().map(|b| b.eq_indices.clone()).collect()
+        self.blt_blocks
+            .iter()
+            .map(|b| b.eq_indices.clone())
+            .collect()
     }
 
     // Does equation `row` reference unknown `col`?
@@ -409,9 +459,9 @@ impl IncidenceMatrix {
     /// - zoom >= 6: grid lines between cells
     /// - zoom >= 16: axis labels (equation names on left, unknown names on top)
     pub fn column_index(&self, name: &str) -> Option<usize> {
-        self.unknown_names.iter().position(|n| {
-            crate::identifier_index::same_variable(n, name)
-        })
+        self.unknown_names
+            .iter()
+            .position(|n| crate::identifier_index::same_variable(n, name))
     }
 
     pub fn ui(
@@ -447,7 +497,9 @@ impl IncidenceMatrix {
 
         let cell_color = crate::colors::INCIDENCE_CELL;
         let hover_color = crate::colors::INCIDENCE_HOVER;
-        let grid = visuals.weak_text_color().gamma_multiply(crate::colors::GRID_ALPHA);
+        let grid = visuals
+            .weak_text_color()
+            .gamma_multiply(crate::colors::GRID_ALPHA);
 
         view.draw_grid(&painter, self.n_var, self.n_eq, grid);
 
@@ -465,31 +517,49 @@ impl IncidenceMatrix {
                 egui::vec2(1.0, self.n_eq as f32),
             );
             let band_color = hover_color.gamma_multiply(0.12);
-            painter.rect_filled(view.to_screen_rect(row_band), egui::CornerRadius::ZERO, band_color);
-            painter.rect_filled(view.to_screen_rect(col_band), egui::CornerRadius::ZERO, band_color);
+            painter.rect_filled(
+                view.to_screen_rect(row_band),
+                egui::CornerRadius::ZERO,
+                band_color,
+            );
+            painter.rect_filled(
+                view.to_screen_rect(col_band),
+                egui::CornerRadius::ZERO,
+                band_color,
+            );
         }
 
         // --- Persistent highlight from equation sheet cross-link ---
         if let Some(hr) = highlighted_row
-            && hr < self.n_eq {
-                let band = egui::Rect::from_min_size(
-                    egui::pos2(0.0, hr as f32),
-                    egui::vec2(self.n_var as f32, 1.0),
-                );
-                let highlight_color = crate::colors::INCIDENCE_HOVER.gamma_multiply(0.25);
-                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
-            }
+            && hr < self.n_eq
+        {
+            let band = egui::Rect::from_min_size(
+                egui::pos2(0.0, hr as f32),
+                egui::vec2(self.n_var as f32, 1.0),
+            );
+            let highlight_color = crate::colors::INCIDENCE_HOVER.gamma_multiply(0.25);
+            painter.rect_filled(
+                view.to_screen_rect(band),
+                egui::CornerRadius::ZERO,
+                highlight_color,
+            );
+        }
 
         // --- Persistent column highlight from tracked identifier ---
         if let Some(hc) = highlighted_col
-            && hc < self.n_var {
-                let band = egui::Rect::from_min_size(
-                    egui::pos2(hc as f32, 0.0),
-                    egui::vec2(1.0, self.n_eq as f32),
-                );
-                let highlight_color = crate::colors::TRACKED_FILL;
-                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, highlight_color);
-            }
+            && hc < self.n_var
+        {
+            let band = egui::Rect::from_min_size(
+                egui::pos2(hc as f32, 0.0),
+                egui::vec2(1.0, self.n_eq as f32),
+            );
+            let highlight_color = crate::colors::TRACKED_FILL;
+            painter.rect_filled(
+                view.to_screen_rect(band),
+                egui::CornerRadius::ZERO,
+                highlight_color,
+            );
+        }
 
         // --- Unmatched row/column bands (rank deficiency) ---
         // Draw faint red bands behind unmatched rows and columns so rank
@@ -501,7 +571,11 @@ impl IncidenceMatrix {
                     egui::pos2(0.0, row as f32),
                     egui::vec2(self.n_var as f32, 1.0),
                 );
-                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, unmatched_band);
+                painter.rect_filled(
+                    view.to_screen_rect(band),
+                    egui::CornerRadius::ZERO,
+                    unmatched_band,
+                );
             }
         }
         for (col, &matched) in self.col_matched.iter().enumerate() {
@@ -510,7 +584,11 @@ impl IncidenceMatrix {
                     egui::pos2(col as f32, 0.0),
                     egui::vec2(1.0, self.n_eq as f32),
                 );
-                painter.rect_filled(view.to_screen_rect(band), egui::CornerRadius::ZERO, unmatched_band);
+                painter.rect_filled(
+                    view.to_screen_rect(band),
+                    egui::CornerRadius::ZERO,
+                    unmatched_band,
+                );
             }
         }
 
@@ -567,8 +645,13 @@ impl IncidenceMatrix {
         let labels_visible = view.zoom() >= crate::LABEL_ZOOM_THRESHOLD;
         if labels_visible {
             crate::draw_matrix_axis_labels(
-                ui, &painter, view,
-                &self.unknown_names, &self.equation_texts, 20, 30,
+                ui,
+                &painter,
+                view,
+                &self.unknown_names,
+                &self.equation_texts,
+                20,
+                30,
             );
         }
 
@@ -610,8 +693,16 @@ impl IncidenceMatrix {
         });
         ui.separator();
         ui.label(egui::RichText::new("equation (row)").weak());
-        let eq_text = self.equation_texts.get(row).map(String::as_str).unwrap_or("?");
-        let eq_name = self.equation_names.get(row).map(String::as_str).unwrap_or("?");
+        let eq_text = self
+            .equation_texts
+            .get(row)
+            .map(String::as_str)
+            .unwrap_or("?");
+        let eq_name = self
+            .equation_names
+            .get(row)
+            .map(String::as_str)
+            .unwrap_or("?");
         ui.label(egui::RichText::new(eq_text).monospace());
         if eq_text != eq_name {
             ui.label(egui::RichText::new(eq_name).weak().small());
@@ -620,7 +711,10 @@ impl IncidenceMatrix {
         ui.label(egui::RichText::new("unknown (col)").weak());
         ui.label(
             egui::RichText::new(
-                self.unknown_names.get(col).map(String::as_str).unwrap_or("?"),
+                self.unknown_names
+                    .get(col)
+                    .map(String::as_str)
+                    .unwrap_or("?"),
             )
             .monospace(),
         );
@@ -672,7 +766,12 @@ mod tests {
     #[test]
     fn empty_incidence_returns_none() {
         assert!(IncidenceMatrix::from_report(&json!({})).is_none());
-        assert!(IncidenceMatrix::from_report(&json!({ "incidence": { "n_eq": 0, "n_var": 0, "unknown_names": [], "rows": [] } })).is_none());
+        assert!(
+            IncidenceMatrix::from_report(
+                &json!({ "incidence": { "n_eq": 0, "n_var": 0, "unknown_names": [], "rows": [] } })
+            )
+            .is_none()
+        );
     }
 
     fn report_with_matching() -> Value {
@@ -701,14 +800,14 @@ mod tests {
         assert_eq!(mat.n_matched, 2);
         assert_eq!(mat.matched_col[0], Some(0)); // f_x[0] -> der(x) = col 0
         assert_eq!(mat.matched_col[1], Some(1)); // f_x[1] -> y = col 1
-        assert_eq!(mat.matched_col[2], None);    // f_x[2] unmatched
+        assert_eq!(mat.matched_col[2], None); // f_x[2] unmatched
     }
 
     #[test]
     fn col_matched_tracks_matched_columns() {
         let mat = IncidenceMatrix::from_report(&report_with_matching()).unwrap();
-        assert!(mat.col_matched[0]);  // der(x) matched
-        assert!(mat.col_matched[1]);  // y matched
+        assert!(mat.col_matched[0]); // der(x) matched
+        assert!(mat.col_matched[1]); // y matched
         assert!(!mat.col_matched[2]); // z unmatched
     }
 
@@ -894,9 +993,17 @@ mod tests {
         report["incidence"]["rows"][0]["unknowns"] = serde_json::json!([0, "oops"]);
         let mat = IncidenceMatrix::from_report(&report).expect("parses");
 
-        assert_eq!(mat.rows()[0], vec![0], "the unreadable index has nothing to draw");
+        assert_eq!(
+            mat.rows()[0],
+            vec![0],
+            "the unreadable index has nothing to draw"
+        );
         assert_eq!(mat.problems().len(), 1, "{:?}", mat.problems());
-        assert!(mat.problems()[0].contains("row 0"), "{:?}", mat.problems()[0]);
+        assert!(
+            mat.problems()[0].contains("row 0"),
+            "{:?}",
+            mat.problems()[0]
+        );
         assert!(
             mat.caption().contains("INCOMPLETE"),
             "the caption above the matrix must say the picture is partial: {}",

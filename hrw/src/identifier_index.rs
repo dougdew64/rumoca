@@ -52,8 +52,18 @@ impl IdentifierIndex {
         idx.add_partition("output", v.outputs.iter(), specimen_sid, source_text);
         idx.add_partition("parameter", v.parameters.iter(), specimen_sid, source_text);
         idx.add_partition("constant", v.constants.iter(), specimen_sid, source_text);
-        idx.add_partition("discrete real", v.discrete_reals.iter(), specimen_sid, source_text);
-        idx.add_partition("discrete valued", v.discrete_valued.iter(), specimen_sid, source_text);
+        idx.add_partition(
+            "discrete real",
+            v.discrete_reals.iter(),
+            specimen_sid,
+            source_text,
+        );
+        idx.add_partition(
+            "discrete valued",
+            v.discrete_valued.iter(),
+            specimen_sid,
+            source_text,
+        );
 
         idx
     }
@@ -71,9 +81,10 @@ impl IdentifierIndex {
             }
             let name = var_name.to_string();
             let line = byte_offset_to_line(source_text, var.source_span.start.0);
-            let def_id = var.component_ref.as_ref().and_then(|cr| {
-                cr.def_id.map(|id| id.0)
-            });
+            let def_id = var
+                .component_ref
+                .as_ref()
+                .and_then(|cr| cr.def_id.map(|id| id.0));
 
             let entry = IndexedVariable {
                 name: name.clone(),
@@ -94,10 +105,9 @@ impl IdentifierIndex {
 
     /// Look up all variables declared on a given 1-based source line.
     pub fn variables_on_line(&self, line: u32) -> Vec<&IndexedVariable> {
-        self.line_to_variables.get(&line)
-            .map(|names| {
-                names.iter().filter_map(|n| self.variables.get(n)).collect()
-            })
+        self.line_to_variables
+            .get(&line)
+            .map(|names| names.iter().filter_map(|n| self.variables.get(n)).collect())
             .unwrap_or_default()
     }
 
@@ -179,8 +189,12 @@ fn best_match<'a>(vars: &[&'a IndexedVariable], path: &str) -> Option<&'a Indexe
 /// Input that merely looks the part is returned untouched — `der(a) + der(b)`
 /// begins and ends correctly but its opening paren closes early.
 pub fn strip_der(name: &str) -> &str {
-    let Some(rest) = name.strip_prefix("der(") else { return name };
-    let Some(inner) = rest.strip_suffix(')') else { return name };
+    let Some(rest) = name.strip_prefix("der(") else {
+        return name;
+    };
+    let Some(inner) = rest.strip_suffix(')') else {
+        return name;
+    };
     let mut depth = 0i32;
     for c in inner.chars() {
         match c {
@@ -273,18 +287,28 @@ mod tests {
 
     /// Build an index with the given `(qualified_name, kind)` variables all
     /// declared on `line`, and return the spans found in `text`.
-    fn spans_for(line: u32, text: &str, vars: &[(&str, &'static str)]) -> Vec<(usize, usize, String)> {
+    fn spans_for(
+        line: u32,
+        text: &str,
+        vars: &[(&str, &'static str)],
+    ) -> Vec<(usize, usize, String)> {
         let mut idx = IdentifierIndex::default();
         for (name, kind) in vars {
-            idx.variables.insert((*name).to_string(), IndexedVariable {
-                name: (*name).to_string(),
-                kind,
-                source_byte_range: (0, 10),
-                source_line: line,
-                def_id: None,
-                description: None,
-            });
-            idx.line_to_variables.entry(line).or_default().push((*name).to_string());
+            idx.variables.insert(
+                (*name).to_string(),
+                IndexedVariable {
+                    name: (*name).to_string(),
+                    kind,
+                    source_byte_range: (0, 10),
+                    source_line: line,
+                    def_id: None,
+                    description: None,
+                },
+            );
+            idx.line_to_variables
+                .entry(line)
+                .or_default()
+                .push((*name).to_string());
         }
         let hl = crate::source_view::SourceHighlight::new(text);
         idx.clickable_spans(line, text, hl.line(0))
@@ -293,7 +317,10 @@ mod tests {
     /// The span texts, for assertions that care about what was linked rather
     /// than where.
     fn span_texts<'a>(text: &'a str, spans: &[(usize, usize, String)]) -> Vec<(&'a str, String)> {
-        spans.iter().map(|(s, e, n)| (&text[*s..*e], n.clone())).collect()
+        spans
+            .iter()
+            .map(|(s, e, n)| (&text[*s..*e], n.clone()))
+            .collect()
     }
 
     #[test]
@@ -307,7 +334,10 @@ mod tests {
     fn clickable_spans_finds_leaf_name() {
         let text = "  parameter Real J = 1;";
         let spans = spans_for(3, text, &[("inertia.J", "parameter")]);
-        assert_eq!(span_texts(text, &spans), vec![("J", "inertia.J".to_string())]);
+        assert_eq!(
+            span_texts(text, &spans),
+            vec![("J", "inertia.J".to_string())]
+        );
     }
 
     /// Regression: the search-based implementation returned only the first
@@ -316,7 +346,11 @@ mod tests {
     fn every_occurrence_is_clickable() {
         let text = "  J = J + J;";
         let spans = spans_for(3, text, &[("inertia.J", "parameter")]);
-        assert_eq!(spans.len(), 3, "all three mentions of J should be clickable");
+        assert_eq!(
+            spans.len(),
+            3,
+            "all three mentions of J should be clickable"
+        );
         assert!(spans.iter().all(|s| s.2 == "inertia.J"));
     }
 
@@ -331,7 +365,11 @@ mod tests {
 
         let text = "  Real h = 1 \"h in metres\";";
         let spans = spans_for(2, text, &[("h", "state")]);
-        assert_eq!(spans.len(), 1, "the h inside the description string is not code");
+        assert_eq!(
+            spans.len(),
+            1,
+            "the h inside the description string is not code"
+        );
     }
 
     /// Regression: leaf matching linked both mentions to whichever variable
@@ -352,26 +390,43 @@ mod tests {
     fn duplicate_line_to_variables_entry_produces_single_span() {
         let text = "  Real h(start = 1.0) \"height\";";
         let mut idx = IdentifierIndex::default();
-        idx.variables.insert("h".to_string(), IndexedVariable {
-            name: "h".to_string(),
-            kind: "state",
-            source_byte_range: (0, 10),
-            source_line: 2,
-            def_id: None,
-            description: None,
-        });
-        idx.line_to_variables.entry(2).or_default().push("h".to_string());
-        idx.line_to_variables.entry(2).or_default().push("h".to_string());
+        idx.variables.insert(
+            "h".to_string(),
+            IndexedVariable {
+                name: "h".to_string(),
+                kind: "state",
+                source_byte_range: (0, 10),
+                source_line: 2,
+                def_id: None,
+                description: None,
+            },
+        );
+        idx.line_to_variables
+            .entry(2)
+            .or_default()
+            .push("h".to_string());
+        idx.line_to_variables
+            .entry(2)
+            .or_default()
+            .push("h".to_string());
         let hl = crate::source_view::SourceHighlight::new(text);
         let spans = idx.clickable_spans(2, text, hl.line(0));
-        assert_eq!(spans.len(), 1, "duplicate line_to_variables entry must not duplicate the span");
+        assert_eq!(
+            spans.len(),
+            1,
+            "duplicate line_to_variables entry must not duplicate the span"
+        );
     }
 
     #[test]
     fn pre_variable_same_leaf_produces_single_span() {
         let text = "  Real h(start = 1.0) \"height\";";
         let spans = spans_for(5, text, &[("h", "state"), ("__pre__.h", "parameter")]);
-        assert_eq!(spans.len(), 1, "__pre__ variant must not add a second span at the same position");
+        assert_eq!(
+            spans.len(),
+            1,
+            "__pre__ variant must not add a second span at the same position"
+        );
         assert_eq!(spans[0].2, "h", "should prefer the non-prefixed variable");
     }
 
@@ -478,7 +533,10 @@ mod tests {
         assert_eq!(idx.variables["g"].source_line, 3);
 
         // Check description propagation.
-        assert_eq!(idx.variables["g"].description.as_deref(), Some("gravitational accel"));
+        assert_eq!(
+            idx.variables["g"].description.as_deref(),
+            Some("gravitational accel")
+        );
         assert!(idx.variables["h"].description.is_none());
 
         // Check line_to_variables reverse index.
@@ -523,7 +581,11 @@ mod tests {
 
         let idx = IdentifierIndex::build(&dae, source_uri, source_text);
 
-        assert_eq!(idx.variables.len(), 1, "only specimen-source variables should be indexed");
+        assert_eq!(
+            idx.variables.len(),
+            1,
+            "only specimen-source variables should be indexed"
+        );
         assert!(idx.variables.contains_key("x"));
         assert!(!idx.variables.contains_key("y"));
     }
