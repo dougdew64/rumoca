@@ -372,6 +372,23 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > His goal, 2026-08-05: *"I want to enjoy that learning experience, rather than be distracted by
 > the kinds of bug and usability annoyances which we are still discovering."*
 >
+> **And the tours are the instrument, not the deliverable** — *"the curriculum tours and the
+> failure tours are pretty much the heart of my effort to learn the parts of rumoca which I most
+> care about now: math and algorithms."* **Every defect found in the week of 2026-08-04 came from
+> Doug walking a tour, not from a test.** `docs/ideas.md` **#66** carries the consequence,
+> including a **ranking of the phases** — structural analysis, index reduction, solve lowering and
+> initialization are the mathematics; parse/resolve/instantiate/typecheck are bookkeeping whose
+> *failure* tours already carry what a learner needs.
+>
+> **The single highest-value curriculum gap**, and it is a revision rather than a new tour:
+> `matching.md` teaches augmenting paths and **never shows the permutation it is constructing.**
+> Structural analysis is linear algebra wearing graph clothing — matching is a permutation, BLT is
+> block triangularization, tearing is a Schur complement — and Doug's Purdue applications class
+> starts Fall 2026. See **#67** for the semester's question shape, and its binding rule: **an
+> index may record where to look, never what the mathematics is.**
+>
+> **A rebuild is owed if HRW was left running** — the Flatten equation map is compiled code.
+>
 > **Relating a tree node to its Modelica source — where it stands.** Three affordances, built
 > 2026-08-05 and all three shared: a hover giving the source line, a
 > `📄 Show … in the Modelica source` context item, and a **wash** on the line it lands on.
