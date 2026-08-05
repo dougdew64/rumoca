@@ -2324,3 +2324,60 @@ lints included, because it is offered to human maintainers *now*.
 `docs/upstream-strategy.md` orders deliverables by their cost to accept and puts HRW **last**,
 being the only one asking for maintenance burden. The day HRW is offered upstream, human
 comprehension stops being hypothetical.
+
+---
+
+## 2026-08-05 — the human reader is Doug, and the policy is two-tier
+
+**Amends the same day's decision above**, which said HRW is refactored for Claude's
+comprehension. Doug named the future in which a human reads HRW as **definite, not
+hypothetical** — and it is him, in two scenarios that pull opposite ways.
+
+### Scenario 1 — he reads to understand and asks Claude
+
+> *"I will need to gain a rough understanding of all of this HRW code which you have written.
+> When that happens, I will likely ask you questions about the HRW code here in this
+> conversation. … so long as you can answer my questions about the code which you wrote, then
+> all will be well."*
+
+**The rule this produces binds Claude, not the code.** Its one real consequence: **the rationale
+must live in the repository, not in the conversation.** A comment, a `DECISIONS.md` entry, a
+doc — anywhere durable. Code whose *why* exists only in chat fails this rule the moment the
+session ends, and no amount of local clarity substitutes.
+
+**This is why the heavy commenting stays**, and it now has a stated purpose rather than being a
+style preference: the comments are the answer to a question Doug has not asked yet.
+
+### Scenario 2 — he edits the visualizations himself
+
+> *"Eventually, it will become impractical for me to describe to you the details of
+> visualizations which I want. So, for those bits of HRW code, I will likely make changes to the
+> code by myself and then request that you comprehend, improve and test the code which I've
+> written."*
+
+**Measured surface**: `canvas.rs` (681), `incidence_view.rs` (1,056), `matching_anim.rs` (957),
+`tarjan_anim.rs` (870), `spyplot.rs` (594) — the five files with substantial custom painting.
+The paint code itself is roughly 800 lines across `incidence_view::ui` (221),
+`matching_anim::draw_matrix` (203), `spyplot::ui` (154), `tarjan_anim::draw_graph` (118) and
+`canvas::show` (115).
+
+**The barrier for Doug is Rust/egui idiom, not function length.** A 203-line linear sequence of
+paint calls is the *comfortable* kind of code for someone with decades of C/C++/Java. What is
+hard is closures capturing state, iterator chains where a loop would do, `impl Trait`, and
+borrow dances around `&mut Ui`. **Prefer the plain form in these files even when terser Rust
+exists**, and comment the egui idiom, because this is where he is learning it.
+
+### The finding that came out of measuring it
+
+**The files Doug will edit are the three surfaces the test harness cannot reach** —
+`incidence_view.rs` cells, `spyplot.rs`, and scroll configuration (`tech-debt.md`, "UI testing
+debt"). **The code with the weakest safety net is the code about to acquire a second author.**
+
+**The response is not to try to test drawing.** It is to **push logic out of the paint path into
+checkable data**, the way `Plot::problems()` and `IncidenceMatrix::problems()` were built on
+2026-08-04: a thin renderer over verified data means an edit lands on a surface whose
+correctness is visible on screen, while the parsing that fails invisibly stays behind a test.
+**Rule: when touching these files, move a computation out before adding one in.**
+
+**Applied to new visualization code and to files as they are touched — not as a campaign.** Doug
+said *eventually*.

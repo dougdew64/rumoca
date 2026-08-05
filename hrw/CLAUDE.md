@@ -270,12 +270,54 @@ confusion. The reliable signal is already written down: `tech-debt.md`'s **trigg
 has produced defects only a human caught.** If a function starts producing defects Doug finds
 and Claude does not, the criterion has fired regardless of what Claude reports.
 
-**The condition that would change this policy**, named so the change is deliberate: **a human
-needing to read HRW.** `docs/upstream-strategy.md` orders deliverables by their cost to accept
-and puts HRW **last**, being the only item asking for maintenance burden — so the day HRW is
-offered upstream, human comprehension stops being hypothetical and this rule is revisited. The
-`crates/rumoca-*` instrumentation is **not** covered by this policy and stays under
-`[workspace.lints]`, because it is offered to maintainers now.
+**The human reader is Doug, and he named two scenarios** *(2026-08-05)*. They pull in opposite
+directions, so the policy is **two-tier**, not one rule:
+
+**Scenario 1 — Doug reads to understand, and asks Claude.** *"I will need to gain a rough
+understanding of all of this HRW code which you have written… so long as you can answer my
+questions about the code which you wrote, then all will be well."*
+
+> **The rule this creates is on CLAUDE, not on the code: always be able to answer Doug's
+> questions about code you wrote.** Its practical consequence is that **the *why* must live in
+> the repository, not in a conversation that scrolls away** — a comment, `DECISIONS.md`, or a
+> doc. Code whose rationale exists only in chat violates this rule the moment the session ends.
+> It also rules out writing constructs whose behaviour Claude would have to guess at.
+
+**Scenario 2 — Doug edits the visualizations himself.** *"Eventually it will become impractical
+for me to describe to you the details of visualizations which I want… I will likely make changes
+to the code by myself and then request that you comprehend, improve and test the code which I've
+written."*
+
+> **The visualization files are held to HUMAN comprehension**, and Doug specifically: decades of
+> C/C++/Java, **new to Rust and egui** (`docs/working-with-doug.md`). Measured 2026-08-05, that
+> surface is **`canvas.rs`, `incidence_view.rs`, `matching_anim.rs`, `tarjan_anim.rs`,
+> `spyplot.rs`**, plus any new custom-painted view.
+>
+> **The barrier there is idiom, not length.** A 203-line `draw_matrix` that is a linear sequence
+> of paint calls is the *easy* kind of code for a C++ programmer. What is hard is closures
+> capturing state, iterator chains standing in for loops, `impl Trait`, and borrow-checker
+> dances around `&mut Ui`. **Prefer the plain form in these files even when the idiomatic Rust
+> is terser**, and comment the egui idiom where it appears, because he is learning it here.
+>
+> **Keep geometry named and single-sourced.** `tarjan_anim::equation_world_pos` is the pattern:
+> one function owning where a thing sits, so changing the layout is changing one place, and
+> drawing and camera-aiming cannot disagree.
+>
+> **AND THE SHARP PROBLEM: these are the least-testable files in the project.** The three
+> surfaces `egui_kittest` cannot reach are `incidence_view.rs` cells, `spyplot.rs`, and
+> scroll configuration — **exactly the code Doug will edit.** So the response is to
+> **push logic out of the paint path into checkable data**, as `Plot::problems()` and
+> `IncidenceMatrix::problems()` now do: a thin renderer over verified data means his edits land
+> on a small surface whose correctness he can see, rather than on parsing whose errors are
+> invisible. **When touching these files, move a computation out before adding one in.**
+>
+> **This applies to new visualization code and to files as they are touched — not as a refactor
+> campaign.** Doug said *eventually*; building for it now would be speculation.
+
+**The `crates/rumoca-*` instrumentation is not covered by any of this** and stays under
+`[workspace.lints]`, complexity lints included, because it is offered to human maintainers
+**now**. `docs/upstream-strategy.md` puts HRW itself last among deliverables, being the only one
+asking for maintenance burden.
 
 **DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Measurement showed HRW's *compile path*, not
