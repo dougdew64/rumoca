@@ -8,7 +8,7 @@ re-litigate one of its decisions in-session; amend the charter or accept it.
 
 **How Rumoca Works — a mastery project in the mathematics and computer science of modeling and simulating deterministic systems**
 
-*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
+*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others. Amended to v1.3 on August 5, 2026: Decision 8 — The instrument assumes the reasoner — recording the noun/verb formulation as a guiding principle and adopting its consequence as binding on what UI gets built.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
 
 ---
 
@@ -43,6 +43,28 @@ Rumoca's own architecture cooperates with this purpose. It is a multi-crate Rust
 **Decision 4 — Compilation and simulation toolchain.** Models are compiled and simulated with Rumoca, the glass box. Every specimen therefore runs through two independent compilers, constituting a standing differential-testing rig. Disagreement between the toolchains is the most valuable event the setup can produce: it is either a Modelica semantic subtlety (learning), a Rumoca defect (contribution), or undisclosed System Modeler behavior (exactly what the glass box exists to see around). Once Rumoca's pipeline is transparent, System Modeler ceases to be opaque in any way that matters — it becomes a reference oracle, a well-upholstered instance of the same pipeline.
 
 **Decision 5 — No web deployment.** As stated in Scope. Native builds only; Astro shelved; nothing foreclosed.
+
+**Decision 8 — The instrument assumes the reasoner (adopted v1.3, August 5, 2026).** *Numbered 8 for reading order; adopted after Decision 7.*
+
+**The guiding formulation, which predates this decision and is now recorded where it survives a clone:**
+
+> **The noun is assembled by mouse; the verb is an unbounded utterance.**
+
+Doug points, clicks and selects to assemble the *noun* — a specimen, a stage, a node, a frame, a tour. The *verb* is whatever he then says about it, in natural language, and it has no fixed vocabulary: *"explain this"*, *"why is this singular"*, *"demonstrate how Rumoca responds to a failure in the typecheck phase"*. **No menu can enumerate the verbs**, which is why the noun must be self-sufficient — complete enough that any verb can be applied to it.
+
+**The consequence, stated by Claude on August 5, 2026 and adopted as binding:**
+
+> **The picker does not need to be smart, because Claude is the smart part.** Grouping, filtering, prerequisite chains, faceted search — all of it is UI built to answer questions Claude answers better, from the same data, with the advantage of knowing what was actually asked. **Building it would be building a worse Claude.**
+
+**So the test for any proposed UI feature is:** *would Claude answer this better, given the same data?* If yes, **do not build it** — build instead whatever makes the data reachable and the answer expressible. HRW's job is to assemble nouns exactly and to render what Claude points at; the reasoning is not the app's work.
+
+**This is not an argument for a poor UI.** A noun must be *assemblable* — findable, selectable, unambiguous — and that is real interface work. What the decision forbids is UI that **interprets**: ranking, recommending, summarising, filtering by inferred intent. Those are verbs wearing a widget.
+
+**Worked example, the one that produced the decision.** With fourteen fixture tours, the obvious feature was a smarter picker: group by kind, order by pipeline phase, index by specimen, track prerequisites. All of it was dropped. What was built instead was a **catalogue Claude can read** and a **link form that opens a tour at a stop** — so the answer to *"demonstrate a typecheck failure"* is prose plus a composed tour linking into the fixtures, rather than a filter Doug has to operate. `docs/ideas.md` #62, #63, #64.
+
+**Why this project can make this trade when others cannot.** Claude's presence here is continuous rather than occasional (`hrw-works-with-claude-not-without`). A feature that depends on the reasoner being present is a liability in software shipped to absent users and is simply the design here. **HRW is an education project with one user and one collaborator**, and the charter's Section 2 already says the deliverable is understanding rather than artifacts for an audience.
+
+**The standing consequence: a periodic UI review asking what the interface is doing that Claude would do better.** Logged in [`tech-debt.md`](tech-debt.md); the first has not been run.
 
 **Decision 7 — Accuracy, and its rank (adopted v1.2, August 4, 2026).** *Numbered 7 and placed here for reading order; adopted after Decisions 1-6.* **Everything the instrumentation displays must be traceable to something the compiler actually did on the run being observed.** Absence is stated, never filled with a plausible substitute; a view derived by the observatory rather than recorded from the compiler declares itself as derived; and the ordering, nesting and attribution of a log are claims about what happened, held to the same standard as its contents.
 

@@ -831,6 +831,44 @@ qualified name, the pair is a fork, and a test suite that can only call one of t
 reporting on half a system.** Worth a pass over the other `&Path`-shaped entry points for the
 same asymmetry; not done.
 
+## UI review — what is the interface doing that Claude would do better?
+
+**Requested by Doug 2026-08-05**, on adopting Charter **Decision 8, "the instrument assumes the
+reasoner"**. A standing review, not a one-off; **the first has not been run.**
+
+**The question, applied to each pane and control:**
+
+> Would Claude answer this better, given the same data?
+
+If yes, the feature is **a worse Claude**, and the effort belongs in making the data reachable and
+the answer expressible instead. Decision 8 carries the full reasoning and the worked example — the
+smarter tour picker that was designed and then dropped in favour of a catalogue Claude reads and a
+link form that opens a tour at a stop.
+
+**What the review must NOT conclude.** Decision 8 is not an argument for a poor interface. A
+*noun* has to be assemblable — findable, selectable, unambiguous — and that is real interface work
+which this review should protect rather than trim. **What it hunts is UI that interprets**:
+ranking, recommending, summarising, filtering by inferred intent. Those are verbs wearing a
+widget.
+
+**Candidates to examine when it runs**, listed now while the observation is fresh rather than
+rediscovered later:
+
+- **The tours list.** The live case. Fourteen entries, and the temptation is grouping and
+  faceting. Decision 8 says show the specimen on the row and stop.
+- **`generic_error_summary`.** It formats a diagnostic into a structured summary. Reasonable —
+  but is it *interpreting*, and would the raw diagnostic plus Claude be better?
+- **Stage-diff highlighting.** It decides what changed between stages and draws attention to it.
+  That is a judgement about salience, which is squarely a verb.
+- **The equation sheet's ordering and the identifier index's ranking**, for the same reason.
+- **`field_help`.** Explanatory text baked into the app — precisely what
+  `feedback-emitter-correct-reasoner-supplements` warns about: *"explanatory approximations were
+  a workaround for the absence of a reasoner; HRW assumes one."*
+
+**The expected outcome is deletions**, and the sweep rules already permit that: *closed as
+obsolete* is a legitimate result. A feature removed because Claude answers it better is a feature
+that was costing maintenance to be second-best.
+
 ## Verb coverage — the fictions are fixed, the gap that allowed them is not
 
 **Logged 2026-08-04, at the end of the day spent removing them.** Priority: **rank 0** by the
