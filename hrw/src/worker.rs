@@ -392,9 +392,16 @@ impl Stage {
     /// lint stops firing, the expectation goes unfulfilled, and the compiler says so.
     /// **The scaffolding removes itself when the case it anticipates arrives**, which
     /// is the difference between a kept-for-later API and a quietly dead one.
-    #[expect(dead_code, reason = "\
-        no production pane derives its own content today; kept as the only legal way \
-        to do so, with a test pinning that it stays unused - see the type docs")]
+    ///
+    /// **And it fired within the day.** The expectation was unconditional until
+    /// `fidelity::check_f10`'s must-fire test began constructing an `Hrw` stage to
+    /// prove F10 can fail — so it is now scoped to non-test builds, where the
+    /// function genuinely remains unused. The mechanism reported its own change of
+    /// circumstance rather than going quietly stale, which is the whole point of
+    /// preferring `expect` here.
+    #[cfg_attr(not(test), expect(dead_code, reason = "\
+        no production pane derives its own content; kept as the only legal way to do \
+        so, and exercised by F10's must-fire test - see the type docs"))]
     pub(crate) fn computed(value: serde_json::Value, why: impl Into<String>) -> Self {
         Stage {
             value: Some(value),
@@ -689,6 +696,35 @@ impl StageBundle {
             StageKind::Events => &self.events,
             StageKind::SolveLowering => &self.solve_lowering,
             StageKind::Simulation => panic!("Simulation is not a compilation stage — handle it before calling StageBundle::get()"),
+        }
+    }
+
+    /// Mutable access by kind, **for tests that need to construct a specific
+    /// bundle state**.
+    ///
+    /// Added 2026-08-04 for `f10_catches_each_way_a_pane_can_mislead`, which has to
+    /// build the three states F10 rejects — including a *silent blank* pane, which
+    /// production reaches only mid-compile and which no constructor produces on
+    /// purpose. Without this the check could only be exercised through a real compile,
+    /// and a check about honesty that cannot be made to fail is the exact shape of the
+    /// problem it was written for.
+    #[cfg(test)]
+    pub fn get_mut(&mut self, kind: StageKind) -> &mut Stage {
+        match kind {
+            StageKind::Parse => &mut self.parse,
+            StageKind::Resolve => &mut self.resolve,
+            StageKind::Instantiate => &mut self.instantiate,
+            StageKind::Typecheck => &mut self.typecheck,
+            StageKind::Flatten => &mut self.flatten,
+            StageKind::Dae => &mut self.dae,
+            StageKind::Structural => &mut self.structural,
+            StageKind::IndexReduction => &mut self.index_reduction,
+            StageKind::Initialization => &mut self.initialization,
+            StageKind::Events => &mut self.events,
+            StageKind::SolveLowering => &mut self.solve_lowering,
+            StageKind::Simulation => {
+                panic!("Simulation is not a compilation stage")
+            }
         }
     }
 

@@ -50,9 +50,44 @@ confidence.** A corpus-scale zero makes *"is HRW faithful?"* feel answered when 
 answered is *"is HRW's IR faithful?"* — a strict subset. Cite this suite only with its scope
 attached; see the accuracy rule at the top of [`../CLAUDE.md`](../CLAUDE.md).
 
-**Extending the programme to verbs is not proposed here.** The verbs are checked today by
-roughly a dozen assertions in `worker.rs` (bracket balance, trace containment, no-replay,
-attribution counts), which is thin and is logged as such in
+## F10 — the first verb check *(added 2026-08-04)*
+
+**`check_f10` asks whether a pane's claim about the compiler is honest**, and it is the first
+check in this programme that is not about a structure. It runs on the whole `StageBundle` (like
+F8 and F9, not on a subject) and tests the three things Charter Decision 7 asserts about every
+pane:
+
+1. **Nothing HRW invented is on screen** — no stage is `Provenance::Hrw`. That variant is
+   reachable only through `Stage::computed`, which demands a written reason, and no production
+   pane calls it. A violation is not automatically a defect: it means a pane started deriving
+   its own content, and the same commit must say how the UI declares that.
+2. **Provenance and content agree** — `Empty` exactly when there is no value, so *"this pane is
+   showing nothing"* stops being a judgement made by reading the pane.
+3. **Absence is stated, never silent** — a pane with no content must say why.
+
+**Clause 3 is the one that needed the corpus.** A blank pane and a pane whose phase never ran
+look identical, and the reader cannot tell which they are seeing. Four specimens reach four
+shapes of early stop; **2,626 models reach every way a compile can end**, which is precisely
+when a pane has nothing to show.
+
+**It is not a duplicate of F9.** F9 inspects only stages whose outcome is *abnormal*, and
+requires those to carry a real note. Clause 3 covers what F9 skips: outcome `Ok`, no value, no
+note — a pane that says nothing while claiming nothing went wrong. **The pane that misleads most
+is the one that looks fine.**
+
+**Both halves of the must-fire pair exist**: `f10_catches_each_way_a_pane_can_mislead` builds
+each rejected state, and `f10_is_quiet_on_specimens_that_behave` runs it against four real
+compiles — two of which fail — with a non-vacuity assertion that some stage really was empty.
+
+**What F10 still does not do**, and it is the honest limit: it checks that a pane *claims*
+`Compiler`, not that its values *appear in* the compiler's artifact. A pane calling `Stage::ok`
+with synthesised JSON passes. Closing that needs a value-level comparison against the artifact
+and is not built.
+<!-- unbuilt: fidelity::check_f11 -->
+
+**The rest of the verbs** — which phase ran, in what order, nested inside what — are checked by
+roughly a dozen assertions in `worker.rs` (bracket balance, bracket naming and pairing, trace
+containment, no-replay, attribution counts), which is thin and is logged as such in
 [`tech-debt.md`](tech-debt.md).
 Finding compiler bugs is a different effort with a different instrument (#43's oracle), and
 mixing them would make every failure ambiguous again — which is the cost #51 could not pay.

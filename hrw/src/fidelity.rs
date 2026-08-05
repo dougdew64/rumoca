@@ -236,6 +236,75 @@ pub fn check_model(
             }
         }
     }
+    if want("F10") {
+        let t = std::time::Instant::now();
+        out.extend(tag("F10", check_f10(stages)));
+        timing.add("F10", t);
+    }
+    out
+}
+
+/// **F10 — a pane's claim about the compiler, checked at corpus scale.**
+///
+/// The first check in this file about a **verb** rather than a noun. F1-F9 all ask
+/// *is this structure what Rumoca produced?* — and on 2026-08-04 that programme
+/// reported 2,614 models green while HRW's log and UI carried fictions, because a
+/// fabricated structure is well-formed and a good replay is indistinguishable by
+/// construction ([`fidelity-plan.md`](../docs/fidelity-plan.md)'s scope table).
+///
+/// Charter Decision 7 makes three claims about every pane. This checks all three on
+/// every stage of every model:
+///
+/// 1. **Nothing HRW invented is on screen.** `Provenance::Hrw` is reachable only
+///    through `Stage::computed`, which demands a written reason; no production pane
+///    calls it. A violation here is not necessarily a defect — it means a pane began
+///    deriving its own content, and the same commit has to say how the UI declares
+///    that.
+/// 2. **Provenance and content agree.** `Empty` exactly when there is no value, so
+///    "this pane is showing nothing" stops being a judgement made by reading it.
+/// 3. **Absence is stated, never silent.** A pane with no content must say why. This
+///    is the one that generalises the fix applied tab-by-tab that day: a blank pane
+///    and a pane whose phase never ran look identical, and the reader has no way to
+///    tell which they are looking at.
+///
+/// **Not a duplicate of F9**, which is the nearest neighbour. F9 inspects only
+/// stages whose `outcome` is *abnormal* and requires those to carry a real note.
+/// F10's third clause covers the stages F9 skips: an outcome of `Ok` with no value
+/// and no note — the `Stage::default()` state, which says nothing while claiming
+/// nothing went wrong. **The pane that misleads most is the one that looks fine.**
+///
+/// **Why the corpus and not a unit test.** `no_stage_shows_content_hrw_invented`
+/// already checks 1 and 2 on four specimens. Four specimens reach four shapes of
+/// failure; the corpus reaches 2,626, including every way a compile can stop early —
+/// which is precisely when a pane has nothing to show and must say so.
+pub fn check_f10(stages: &StageBundle) -> Vec<String> {
+    let mut out = Vec::new();
+    for kind in crate::worker::StageKind::COMPILATION {
+        let stage = stages.get(*kind);
+        let name = kind.name();
+        if stage.provenance == crate::worker::Provenance::Hrw {
+            out.push(format!(
+                "{name}: shows content HRW produced rather than the compiler's. That may \
+                 be legitimate, but it must be declared where the user can see it"
+            ));
+        }
+        let empty = stage.provenance == crate::worker::Provenance::Empty;
+        if empty != stage.value.is_none() {
+            out.push(format!(
+                "{name}: provenance says {:?} while value.is_none() is {} \u{2014} these \
+                 must agree",
+                stage.provenance,
+                stage.value.is_none(),
+            ));
+        }
+        if stage.value.is_none() && stage.note.is_none() {
+            out.push(format!(
+                "{name}: shows nothing and says nothing. A pane with no content must \
+                 state why \u{2014} silence is indistinguishable from a phase that ran \
+                 and produced an empty result"
+            ));
+        }
+    }
     out
 }
 
@@ -1279,5 +1348,100 @@ mod tests {
 
         // F2 without a DAE is a skip, not a pass by accident.
         assert!(check_f2(&clean).is_empty(), "F2 skips when there is no DAE to compare against");
+    }
+
+    /// **F10 is clean on real specimens, including ones that fail.**
+    ///
+    /// The other half of the must-fire pair: the test above proves F10 *can* fail,
+    /// this one proves it does not fail on correct behaviour. Without it, wiring F10
+    /// into the corpus run would risk 2,626 rows of noise from a check that is simply
+    /// wrong about what a healthy compile looks like.
+    ///
+    /// **The failing specimens carry this test.** `UnbalancedShaft` stops at DAE
+    /// construction and `CapacitorLoop` is structurally singular, so between them
+    /// most stages take the branch that has nothing to show — which is exactly where
+    /// "absence is stated, never silent" is a real constraint rather than a
+    /// tautology.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn f10_is_quiet_on_specimens_that_behave() {
+        use crate::worker::FromWorker;
+
+        let mut checked_empty = 0usize;
+        for name in ["SingleInertia", "UnbalancedShaft", "CapacitorLoop", "Drivetrain"] {
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected a compiled result");
+            };
+            let violations = check_f10(&stages);
+            assert!(
+                violations.is_empty(),
+                "{name}: F10 fired on a correct compile \u{2014} {violations:?}",
+            );
+            checked_empty += crate::worker::StageKind::COMPILATION
+                .iter()
+                .filter(|k| stages.get(**k).value.is_none())
+                .count();
+        }
+        // Non-vacuity: if every stage on every specimen were populated, the
+        // "absence is stated" clause would never have been exercised.
+        assert!(
+            checked_empty > 0,
+            "no stage across four specimens \u{2014} two of which fail \u{2014} was \
+             empty, so F10's absence clause was never tested",
+        );
+    }
+
+    /// **F10 fires on each of the three things it claims to check.**
+    ///
+    /// The must-fire rule applied to the first *verb* check in this file. F1-F9 all
+    /// ask whether a structure matches the compiler's; F10 asks whether the pane's
+    /// claim about the compiler is honest — and a check about honesty that cannot
+    /// fail is the exact shape of the problem it was written for.
+    #[test]
+    fn f10_catches_each_way_a_pane_can_mislead() {
+        use crate::worker::{Provenance, Stage, StageBundle};
+
+        // A bundle where every stage states its absence: the clean baseline.
+        let mut clean = StageBundle::default();
+        for kind in crate::worker::StageKind::COMPILATION {
+            *clean.get_mut(*kind) = Stage::info("not reached");
+        }
+        assert!(
+            check_f10(&clean).is_empty(),
+            "a bundle whose panes all state their absence must pass: {:?}",
+            check_f10(&clean),
+        );
+
+        // 1. Content HRW produced.
+        let mut invented = clean.clone();
+        *invented.get_mut(crate::worker::StageKind::Events) =
+            Stage::computed(serde_json::json!({}), "probe");
+        assert!(
+            check_f10(&invented).iter().any(|v| v.contains("HRW produced")),
+            "{:?}",
+            check_f10(&invented),
+        );
+
+        // 2. Provenance disagreeing with content.
+        let mut inconsistent = clean.clone();
+        let s = inconsistent.get_mut(crate::worker::StageKind::Flatten);
+        *s = Stage::ok(serde_json::json!({ "a": 1 }));
+        s.provenance = Provenance::Empty;
+        assert!(
+            check_f10(&inconsistent).iter().any(|v| v.contains("must agree")),
+            "{:?}",
+            check_f10(&inconsistent),
+        );
+
+        // 3. **A silent blank pane** — the one the corpus is for. `Stage::default()`
+        // is the mid-compile state: no value, no note, nothing on screen and nothing
+        // said. Indistinguishable from a phase that ran and produced nothing.
+        let mut silent = clean.clone();
+        *silent.get_mut(crate::worker::StageKind::Dae) = Stage::default();
+        assert!(
+            check_f10(&silent).iter().any(|v| v.contains("says nothing")),
+            "{:?}",
+            check_f10(&silent),
+        );
     }
 }
