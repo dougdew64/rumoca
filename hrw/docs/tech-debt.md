@@ -1324,3 +1324,47 @@ untraced entry point already routes through the emit site:
 Both cost one thread-local read when closed, and neither moves a signature. **The
 sweep never opens a scope**, so a 2,626-model run pays nothing.
 
+
+## Source provenance decays through the pipeline — 41 → 15 → 2 → 0
+
+**Found 2026-08-05**, when Doug resumed the DAE tour: *"I'm not able to relate anything in the DAE
+tree to the Modelica source from which the tree was derived."* He reported it as a UI problem
+constrained by screen real estate. **It is not primarily a UI problem.**
+
+Measured on `SingleInertia`'s committed trace, counting `location` entries per stage:
+
+| Stage | locations |
+|---|---|
+| Parse | **41** |
+| Instantiate | 15 |
+| Flatten | **2** |
+| DAE | **0** |
+
+The DAE's equations carry `"origin": "source"` — a *category*, distinguishing a source equation
+from a `connect` expansion or an index-reduction artifact — but **no line, no file**. So no pane
+can show what the data does not carry, and screen real estate was never the binding constraint.
+
+### The half that was fixable in HRW, and is done
+
+**A variable's declaration is recoverable by name.** HRW's identifier index is built from Parse,
+where all 41 locations survive, so `w` in the DAE tree resolves to its declaration line without
+any compiler change. That is a **fixed fact known in advance**, so Charter Decision 8 puts it on
+screen and Decision 9 makes it a tooltip — which costs no real estate at all.
+
+Shipped as `TreeOptions::variable_lines`, rendered by `row_hover`, stated **before** the
+interaction hints because where a thing came from precedes what you can do with it.
+
+### The half that needs Rumoca, and does not
+
+**An equation has no name to look up.** `f_x[0]` cannot be resolved to a line by any means
+available to HRW, because the information was discarded upstream. Closing it means carrying
+`Location` through **flatten and DAE construction** — additive, observation-only, and exactly the
+shape `CLAUDE.md` sanctions.
+
+**This is a strong upstream candidate on its own merits.** A compiler that can point at the source
+line of a residual equation writes better diagnostics, so the change plausibly pays for itself in
+Rumoca before HRW renders any of it. Recorded in `docs/upstream-issues.md` territory rather than
+as an HRW-only want.
+<!-- unbuilt: rumoca dae equation Location -->
+
+**Doug's sequencing:** variables first, test, then equations.

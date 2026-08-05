@@ -107,6 +107,18 @@ pub struct TreeOptions<'a> {
     /// specimen. Lets "Go to definition" work from a variable name, not only
     /// from a DefId field.
     pub declaring_classes: Option<&'a HashMap<String, String>>,
+    /// Variable name -> the source line that declares it.
+    ///
+    /// **The bridge back to the Modelica**, and the only one available for stages
+    /// downstream of Flatten: the DAE IR carries no `Location` at all (measured
+    /// 2026-08-05 — 41 locations in Parse, 15 in Instantiate, 2 in Flatten, 0 in the
+    /// DAE), so a node's origin has to be recovered by *name* from the identifier
+    /// index, which is built from Parse where the locations still exist.
+    ///
+    /// `None` before a successful compile, exactly like `known_variables`: a wrong
+    /// line is worse than no line, since it would send the reader to a declaration
+    /// that is not the one on screen.
+    pub variable_lines: Option<&'a HashMap<String, crate::identifier_index::IndexedVariable>>,
     /// Scroll this node into view and open everything above it, for one frame.
     ///
     /// The "jump to the followed identifier" control. Set for a single frame:
@@ -395,7 +407,19 @@ fn node_ui(
             // than replacing it, so discoverability does not cost the
             // documentation that is already there.
             resp.clone()
-                .on_hover_text(row_hover(field_help.get(key), trackable.as_deref()));
+                .on_hover_text(row_hover(
+                    field_help.get(key),
+                    trackable.as_deref(),
+                    // Bare name first, then the `der(x)` form stripped: a DAE tree
+                    // shows `der(w)` where the declaration is of `w`.
+                    trackable.as_deref().and_then(|n| {
+                        opts.variable_lines.and_then(|m| {
+                            m.get(n)
+                                .or_else(|| m.get(crate::identifier_index::strip_der(n)))
+                                .map(|v| v.source_line)
+                        })
+                    }),
+                ));
         }
     });
 
@@ -443,7 +467,7 @@ fn scroll_if_jump_target(is_target: bool, resp: &egui::Response) {
 /// Every row is left-clickable, so the "point at" line is unconditional. Only
 /// rows naming a variable the model actually knows can be followed, so that
 /// line depends on `trackable`.
-fn row_hover(doc: Option<&String>, trackable: Option<&str>) -> String {
+fn row_hover(doc: Option<&String>, trackable: Option<&str>, declared_at: Option<u32>) -> String {
     let mut out = String::new();
     if let Some(doc) = doc {
         out.push_str(doc);
@@ -452,6 +476,26 @@ fn row_hover(doc: Option<&String>, trackable: Option<&str>) -> String {
 
 ",
         );
+    }
+    // **Where this came from, before what you can do with it.**
+    //
+    // Doug, 2026-08-05, resuming the DAE tour: *"I'm not able to relate anything in
+    // the DAE tree to the Modelica source from which the tree was derived."* He
+    // reported it as a UI problem constrained by screen real estate; measuring found
+    // the real cause is that **source locations decay through the pipeline** — 41 of
+    // them in Parse, 15 in Instantiate, 2 in Flatten, **0 in the DAE**. No pane can
+    // show what the data does not carry.
+    //
+    // But a *variable* is recoverable without any of that: the identifier index is
+    // built from Parse, which still has every location, so the declaration line is a
+    // **fixed fact known in advance** — which Charter Decision 8 says belongs on
+    // screen rather than behind a question, and Decision 9 says is worth a tooltip
+    // because a tooltip costs no attention and no real estate.
+    //
+    // **Equations are the half this cannot reach**, and they need `Location` carried
+    // through flatten and DAE construction — a Rumoca change, logged separately.
+    if let Some(line) = declared_at {
+        out.push_str(&format!("Declared at line {line} of the model source.\n\n"));
     }
     out.push_str(crate::POINT_AT_HOVER);
     if let Some(name) = trackable {
@@ -783,7 +827,7 @@ mod tests {
     fn row_hover_appends_to_field_help_rather_than_replacing_it() {
         let doc = "The variable's causality: input, output, or none.".to_owned();
 
-        let with_doc = row_hover(Some(&doc), None);
+        let with_doc = row_hover(Some(&doc), None, None);
         assert!(
             with_doc.starts_with(&doc),
             "documentation comes first: {with_doc}"
@@ -794,15 +838,35 @@ mod tests {
         );
 
         // Every row is left-clickable, so the point-at line is unconditional.
-        let bare = row_hover(None, None);
+        let bare = row_hover(None, None, None);
         assert!(bare.contains("Point at"), "{bare}");
         assert!(
             !bare.contains("Right-click"),
             "nothing to follow here: {bare}"
         );
+        assert!(
+            !bare.contains("Declared at"),
+            "a row with no known declaration must not claim one: {bare}"
+        );
+
+        // **The declaration line, which is the whole point of the addition.**
+        //
+        // Doug could not relate a DAE tree node to the Modelica it came from, and
+        // the DAE IR carries no locations at all — so this line is recovered by
+        // *name* from the identifier index, which is built from Parse where the
+        // locations survive.
+        let located = row_hover(None, Some("w"), Some(7));
+        assert!(
+            located.contains("Declared at line 7"),
+            "the origin must be stated, and stated first: {located}"
+        );
+        assert!(
+            located.find("Declared at").unwrap() < located.find("Point at").unwrap(),
+            "where it came from precedes what you can do with it: {located}"
+        );
 
         // Only rows naming a known variable offer the second verb.
-        let followable = row_hover(Some(&doc), Some("emf.phi"));
+        let followable = row_hover(Some(&doc), Some("emf.phi"), None);
         assert!(followable.starts_with(&doc));
         assert!(followable.contains("Point at"));
         assert!(followable.contains("follow emf.phi"), "{followable}");

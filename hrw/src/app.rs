@@ -4424,6 +4424,10 @@ impl App {
                                     tracked: self.tracked_identifier.as_deref(),
                                     known_variables: self.known_variables.as_ref(),
                                     declaring_classes: Some(&self.declaring_classes),
+                                    variable_lines: self
+                                        .identifier_index
+                                        .as_ref()
+                                        .map(|i| &i.variables),
 
                                     jump_to: jump_to.as_deref(),
                                     highlight: self.context.jump_highlight.as_deref(),
@@ -4508,6 +4512,10 @@ impl App {
                             tracked: self.tracked_identifier.as_deref(),
                             known_variables: self.known_variables.as_ref(),
                             declaring_classes: Some(&self.declaring_classes),
+                                    variable_lines: self
+                                        .identifier_index
+                                        .as_ref()
+                                        .map(|i| &i.variables),
 
                             // A navigated library class is a different IR, so a
                             // jump target addressed into the stage tree would
