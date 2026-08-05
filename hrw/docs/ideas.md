@@ -3569,3 +3569,102 @@ per Doug 2026-08-05.
 **What to check first**: whether `kind` alone is sufficient. Three groups in a picker may be all
 the structure 15 tours need, and `chain`/`requires` may be solving a problem the grouping already
 solves. Build the smallest of the three that works.
+
+---
+
+## 63. Answer from a tour that already exists
+
+**Raised by Doug 2026-08-05**, immediately after the failure tours landed:
+
+> *"Sometimes you might be able to answer a question by leveraging an already-existing tour, such
+> as a failure tour."*
+
+### The gap
+
+Claude's answering repertoire today is **text**, then **an ad hoc tour** (`✨ Claude's answer`,
+written to `.hrw-bridge/tour.md`). There is no third move for *"the answer is already on disk;
+walk `failure-typecheck` stop 2."*
+
+**So a question whose answer exists gets a freshly-written tour instead**, which costs a
+regeneration, produces a second telling of something already told, and — worst — **loses the
+expectations**. A fixture tour's `**Expected:**` lines are versioned and were checked; an ad hoc
+retelling has whatever Claude remembers of them.
+
+### Why it did not matter until now
+
+**Fourteen tours is the threshold.** With three or four, Claude held them in mind. The failure set
+alone added six, they are named by *phase* while Doug thinks in *specimens* — he went looking for
+a "DimensionMismatch tour" and there is a `failure-typecheck` — and nothing in the repository
+says what each one covers without opening it.
+
+### What it needs
+
+- **A catalogue Claude can read cheaply**: for each tour, the specimen(s), the phase, the kind,
+  and the question it answers. **This is the same front-matter [#62](#62-organizing-the-tours-list)
+  proposes for the picker** — which is the argument for doing #62 first and letting both consumers
+  read one source. `feedback-claude-is-the-context-consumer` applies: design the front-matter for
+  Claude's lookup, and let the picker use what is there.
+- **A way to say "start here"** — a link form that opens a fixture tour at a named stop, so an
+  answer can be *"walk `failure-typecheck` from stop 2"* rather than prose describing it.
+  <!-- unbuilt: hrw tour-stop link form -->
+- **A rule about when to reuse rather than write.** Reuse when the existing tour's expectations
+  answer the question as asked. Write fresh when the question is about a *different* specimen or a
+  narrower slice — a tour that nearly fits, walked as though it fits, is worse than a new one.
+
+### The trap to avoid
+
+**Do not point Doug at a tour without checking it still holds.** Tours go stale silently — nothing
+compiles them, and `failure-typecheck` promised a tree that the pane did not show for the whole
+time it existed. **Citing a tour is making its claims your own**, so the reuse path must include
+re-reading it, not just naming it.
+
+---
+
+## 64. Promote "Claude's answer" to a fixture from the tour list
+
+**Raised by Doug 2026-08-05**, in the same breath as [#63](#63-answer-from-a-tour-that-already-exists):
+
+> *"Add an item to the ideas backlog to provide a convenient context menu item for the 'Claude's
+> Answer' tour to promote that tour and its specimens to fixtures."*
+
+### The problem
+
+An ad hoc tour is **ephemeral by construction** — `.hrw-bridge/tour.md` is gitignored, as are the
+scratch specimens in `.hrw-bridge/specimens/` it usually references. That is right: most answers
+should not become artifacts.
+
+**But some should**, and the ones that should are only identifiable *after* Doug has walked them.
+Today that promotion is Claude editing files by hand at Doug's request, which means it happens
+when Doug thinks to ask and not when he notices the tour was good.
+
+**The moment of recognition is while walking it.** A right-click on `✨ Claude's answer` in the
+tour list is where the decision belongs.
+
+### What promotion actually involves — more than a file move
+
+This is the part worth designing before building. A fixture tour has **obligations an ad hoc tour
+does not**:
+
+| | ad hoc | fixture |
+|---|---|---|
+| Location | `.hrw-bridge/tour.md` | `docs/fixture-tours/<name>.md` |
+| Links | unchecked | **`fixture_tour_links_all_resolve` runs on every test** |
+| Specimens | `.hrw-bridge/specimens/*.mo`, no rules | `specimens/*.mo` with a `// purpose:` comment |
+| Per specimen | nothing | `docs/specimen-notebook/<Model>/purpose.md` **and** a generated trace |
+| Naming | one file, overwritten | a name that will not collide, and does not shadow a curated specimen |
+
+So the action is: **move the tour, move each referenced scratch specimen, generate the traces,
+and stub the `purpose.md` files** — then the suite tells you what is still missing rather than the
+promotion silently producing a fixture that fails the next test run.
+
+### Design questions, unanswered
+
+- **Who names it?** The ad hoc file has no name. A dialog is friction at the moment of
+  recognition; a derived name (`answer-2026-08-05.md`) is checkable but meaningless later.
+- **What if a scratch specimen shadows a curated one?** That collision is already reported and
+  the file skipped (charter §4.3) — promotion must refuse rather than overwrite.
+- **Should it promote, or stage?** Writing the files and leaving them uncommitted lets Doug and
+  Claude finish the `purpose.md` prose together, which is the part a menu item cannot do.
+
+**Depends on nothing; blocked by nothing.** Worth doing after [#62](#62-organizing-the-tours-list),
+since a promoted tour needs the same front-matter a hand-written one does.
