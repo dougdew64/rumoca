@@ -358,26 +358,32 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> **Doug's instruction, 2026-08-03: lead off with `docs/ideas.md` #60** — *seeing how he uses
-> HRW*, the "professor's pause" loop. **Discussion first, not implementation**: he was explicit
-> that the design waits on experience with the two curriculum tours he has started walking.
+> **The stack, as Doug set it 2026-08-05.** Work it in order; each item was chosen because it
+> unblocks the next.
 >
-> The likely first build is the piece proposed that evening — **record the tour's identity with
-> each `tour-link` action, and the stop index when a walk is playing** — because
-> `question-ledger.md`'s new grading section logs a question against the stop that prompted it,
-> and that mapping currently depends on Doug saying where he was.
+> 1. **`docs/ideas.md` #62 — organizing the tours list. DISCUSS FIRST.** Doug: *"Let's discuss
+>    #62 before beginning #63 or other work. If necessary, we will complete #62 before beginning
+>    #63."* It is the prerequisite: #63 needs a catalogue saying what each tour covers, and that
+>    is the same front-matter #62 proposes for the picker. Building both separately builds it
+>    twice.
+> 2. **#63 — answering from a tour that already exists.**
+> 3. **#64 — promoting `✨ Claude's answer` to a fixture.** Its three open questions (who names
+>    it, what happens on a shadow collision, promote-vs-stage) are to be **answered during #63's
+>    usability testing**, not guessed beforehand. Doug's sequencing, and it is right.
+> 4. **Doug resumes walking the failure tours**, then the DAE and matching tours.
 >
-> His governing statement, which is a direction rather than a specification: *"I will probably
-> be best served if you have more information about how I'm using HRW rather than less."*
+> **Why this order, in his words:** *"the best time to fix bugs and solve usability problems is
+> when we discover them and we still have fresh memory."* And the goal behind it: *"I want to
+> enjoy that learning experience, rather than be distracted by the kinds of bug and usability
+> annoyances which we are still discovering."* **The interruptions are load-bearing now and are
+> meant to stop being so.**
 >
-> **Read #61 with it** — *quizzes: the same visualizations run backwards*, raised minutes
-> later and answering the question #60 left open (should HRW ever **prompt**? yes, and this is
-> the form). #60 is the passive half, #61 the active one: observation says what Doug *looked
-> at*, a wrong quiz answer says what he *believes*. Neither is designed before the tours are
-> walked.
+> **#60 and #61 are NOT next** — they were the 2026-08-03 instruction and are superseded by the
+> stack above. Still live, still unbuilt, and #60's premise is now better evidenced: every defect
+> found this week came from Doug walking a tour, not from a test.
 >
-> **Also expect questions about the tours themselves.** They are the live work; see the
-> education entry below.
+> **Standing instruction, 2026-08-05:** Claude never needs permission to do context maintenance,
+> **and accuracy is never traded for it.**
 
 **Pass two: re-implement Arcs 1-7 with internal Rumoca access, delivering richer stage views
 than the public API allowed.** Per arc: scout what state the phase holds (read the crate under
