@@ -56,9 +56,14 @@ Doug points, clicks and selects to assemble the *noun* — a specimen, a stage, 
 
 > **The picker does not need to be smart, because Claude is the smart part.** Grouping, filtering, prerequisite chains, faceted search — all of it is UI built to answer questions Claude answers better, from the same data, with the advantage of knowing what was actually asked. **Building it would be building a worse Claude.**
 
-**So the test for any proposed UI feature is:** *would Claude answer this better, given the same data?* If yes, **do not build it** — build instead whatever makes the data reachable and the answer expressible. HRW's job is to assemble nouns exactly and to render what Claude points at; the reasoning is not the app's work.
+**So the test for any proposed UI feature is: IS THE ANSWER KNOWN IN ADVANCE?**
 
-**This is not an argument for a poor UI.** A noun must be *assemblable* — findable, selectable, unambiguous — and that is real interface work. What the decision forbids is UI that **interprets**: ranking, recommending, summarising, filtering by inferred intent. Those are verbs wearing a widget.
+- **Fixed answer, stable question → build it into the UI.** *"What is this field for?"* has one answer that does not depend on what else is being asked. A tooltip delivers it in **zero seconds without breaking focus**, where asking Claude costs a context switch, a typed question and a wait. **For this class the UI is strictly better, not merely acceptable.**
+- **Answer depends on the question actually being asked → leave it to Claude.** *"Why is this system singular?"* has no answer knowable in advance, because the useful answer depends on what Doug is trying to understand. Building UI for it means guessing the question, and guessing is what a reasoner is for.
+
+*(Refined 2026-08-05, the same day, after Doug corrected a first formulation of this test. It read "would Claude answer this better, given the same data?" — which is a different and worse question, because it ignores **latency and focus**. Under it, `field_help` was listed for deletion. Doug: "Many questions such as 'What is this field for?' have answers which will always be known in advance and can therefore be answered much more quickly with tool tips and such." He is right, and the crude test would have removed something good.)*
+
+**This is not an argument for a poor UI**, and the refinement makes that clearer. A noun must be *assemblable* — findable, selectable, unambiguous — and known facts about it should be **on screen, not on request**. What the decision forbids is UI that **infers**: ranking by importance, recommending what to look at next, summarising in place of the artifact, filtering by guessed intent. Those depend on the unasked question, and they are verbs wearing a widget.
 
 **Worked example, the one that produced the decision.** With fourteen fixture tours, the obvious feature was a smarter picker: group by kind, order by pipeline phase, index by specimen, track prerequisites. All of it was dropped. What was built instead was a **catalogue Claude can read** and a **link form that opens a tour at a stop** — so the answer to *"demonstrate a typecheck failure"* is prose plus a composed tour linking into the fixtures, rather than a filter Doug has to operate. `docs/ideas.md` #62, #63, #64.
 

@@ -838,36 +838,49 @@ reasoner"**. A standing review, not a one-off; **the first has not been run.**
 
 **The question, applied to each pane and control:**
 
-> Would Claude answer this better, given the same data?
+> **Is the answer known in advance?**
 
-If yes, the feature is **a worse Claude**, and the effort belongs in making the data reachable and
-the answer expressible instead. Decision 8 carries the full reasoning and the worked example — the
-smarter tour picker that was designed and then dropped in favour of a catalogue Claude reads and a
-link form that opens a tour at a stop.
+**Fixed answer, stable question → the UI should hold it**, because a tooltip costs zero seconds
+and no focus while asking Claude costs a context switch and a wait. **Answer depends on the
+question actually being asked → leave it to Claude**, because building it means guessing the
+question. Decision 8 carries the reasoning.
 
-**What the review must NOT conclude.** Decision 8 is not an argument for a poor interface. A
-*noun* has to be assemblable — findable, selectable, unambiguous — and that is real interface work
-which this review should protect rather than trim. **What it hunts is UI that interprets**:
-ranking, recommending, summarising, filtering by inferred intent. Those are verbs wearing a
-widget.
+### The first draft of this item asked the wrong question, and it matters
 
-**Candidates to examine when it runs**, listed now while the observation is fresh rather than
-rediscovered later:
+It read *"would Claude answer this better, given the same data?"* — and on that basis listed
+**`field_help` for deletion**. Doug, immediately: *"Field help is still very much a good thing.
+Many questions such as 'What is this field for?' have answers which will always be known in
+advance and can therefore be answered much more quickly with tool tips and such."*
 
-- **The tours list.** The live case. Fourteen entries, and the temptation is grouping and
-  faceting. Decision 8 says show the specimen on the row and stop.
-- **`generic_error_summary`.** It formats a diagnostic into a structured summary. Reasonable —
-  but is it *interpreting*, and would the raw diagnostic plus Claude be better?
-- **Stage-diff highlighting.** It decides what changed between stages and draws attention to it.
-  That is a judgement about salience, which is squarely a verb.
-- **The equation sheet's ordering and the identifier index's ranking**, for the same reason.
-- **`field_help`.** Explanatory text baked into the app — precisely what
-  `feedback-emitter-correct-reasoner-supplements` warns about: *"explanatory approximations were
-  a workaround for the absence of a reasoner; HRW assumes one."*
+**The crude test ignores latency and focus**, which is most of why UI exists. Corrected the same
+day. **Recorded because a review run against the wrong question would have deleted working
+features with a charter decision as justification** — the most expensive kind of mistake this
+document can cause.
 
-**The expected outcome is deletions**, and the sweep rules already permit that: *closed as
-obsolete* is a legitimate result. A feature removed because Claude answers it better is a feature
-that was costing maintenance to be second-best.
+### What the review hunts, after the correction
+
+Not "could Claude do it" but **does it infer**: ranking by importance, recommending what to look
+at next, summarising in place of the artifact, filtering by guessed intent. Those depend on the
+unasked question.
+
+**Most of the first candidate list survives the sharper test**, which is itself the finding:
+
+- **`field_help`** — **KEEP, not a candidate.** Fixed answers to a stable question. The
+  correction above.
+- **`generic_error_summary`** — *probably keep.* It formats compiler output; the content varies
+  but the presentation is fixed. It becomes a candidate only if it starts *choosing* which parts
+  matter.
+- **Stage-diff highlighting** — *probably keep.* A diff is a computed fact, not a judgement.
+  Ranking diffs by importance would be the verb; showing them is not.
+- **The equation sheet's ordering** — *keep if it is the compiler's order*, which is a fact.
+  A relevance ranking would be a verb.
+- **The tours list** — **the one live candidate.** Showing `kind` and specimen on a row is a fixed
+  fact and belongs there. What was dropped is faceted search and prerequisite chains, which infer
+  what Doug is looking for. `docs/ideas.md` #62.
+
+**So the expected outcome is NOT mostly deletions**, which the first draft of this item assumed.
+It is a small number of removals plus a clearer account of why the rest earns its place — and the
+sweep rules permit *closed as obsolete* when a removal is genuinely warranted.
 
 ## Verb coverage — the fictions are fixed, the gap that allowed them is not
 
