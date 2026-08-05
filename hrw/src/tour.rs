@@ -40,6 +40,9 @@ pub(crate) struct TourState {
     pub(crate) selected: Option<TourSource>,
     /// When the tour directory was last polled.
     pub(crate) polled_at: Option<std::time::Instant>,
+    /// Specimens each fixture tour points at, for the list row. Filled at poll time,
+    /// never in the paint path. See the note where it is populated.
+    pub(crate) row_specimens: std::collections::HashMap<PathBuf, String>,
     /// Byte offset in the tour text to scroll to on the next frame, then cleared.
     ///
     /// Set by `hrw://tour/<name>/stop/<slug>` so a citation lands **at the stop**
@@ -100,6 +103,7 @@ impl Default for TourState {
             available: Vec::new(),
             selected: None,
             polled_at: None,
+            row_specimens: std::collections::HashMap::new(),
             scroll_to_offset: None,
             autoplay: crate::autoplay::Autoplay::default(),
             autoplay_total: crate::autoplay::DEFAULT_TOTAL,
@@ -181,6 +185,28 @@ impl TourState {
         let list_changed = tours != self.available;
         self.available = tours;
 
+        // **Which specimens each tour uses, read here rather than per frame.**
+        //
+        // The row shows it so that searching by model finds the tour — Doug went
+        // looking for a "DimensionMismatch tour" and it is `failure-typecheck`. Read
+        // at poll time because the paint path must not touch the filesystem
+        // (`CLAUDE.md`, debugging conventions), and re-read on every poll because a
+        // tour edited between polls would otherwise advertise the wrong model, which
+        // is worse than advertising none.
+        if list_changed || self.row_specimens.is_empty() {
+            self.row_specimens.clear();
+            for source in &self.available {
+                if let TourSource::Fixture(p) = source
+                    && let Ok(md) = std::fs::read_to_string(p)
+                {
+                    let names = TourSource::specimens_in(&md);
+                    if !names.is_empty() {
+                        self.row_specimens.insert(p.clone(), names.join(", "));
+                    }
+                }
+            }
+        }
+
         // A selection that no longer exists (the ad hoc tour was deleted, a fixture
         // renamed) must not leave stale text on screen attributed to a live file.
         if self
@@ -253,6 +279,31 @@ impl TourSource {
 
     /// Label for the picker. The ad hoc tour is named by what it *is* rather than by
     /// its filename, which is an implementation detail nobody should have to know.
+    /// The specimens a tour points at, in first-appearance order.
+    ///
+    /// **Doug went looking for a "DimensionMismatch tour" and it is called
+    /// `failure-typecheck`** (2026-08-05). The tours are named by *phase* — which is
+    /// what he asked for, because a per-phase name sets a per-phase expectation — but
+    /// he was thinking about the *model* in front of him. Neither name is wrong; the
+    /// row was just showing one axis and he was searching on the other.
+    ///
+    /// Derived from the `hrw://load/<Specimen>` links rather than declared, so it
+    /// cannot disagree with where the tour actually sends him. Same extraction the
+    /// catalogue uses; shared rather than written twice.
+    pub(crate) fn specimens_in(md: &str) -> Vec<String> {
+        let mut seen: Vec<String> = Vec::new();
+        for raw in md.split("hrw://load/").skip(1) {
+            let name: String = raw
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect();
+            if !name.is_empty() && !seen.contains(&name) {
+                seen.push(name);
+            }
+        }
+        seen
+    }
+
     pub(crate) fn label(&self) -> String {
         match self {
             Self::AdHoc => "\u{2728} Claude's answer".to_owned(),
@@ -314,18 +365,19 @@ pub fn catalogue(dir: &std::path::Path) -> String {
             .map(|l| l.trim().trim_start_matches("**").replace("**", ""))
             .unwrap_or_default();
 
-        let mut specimens: BTreeSet<&str> = BTreeSet::new();
+        // **The same extraction the tour list uses**, not a second copy of it. The
+        // first version of this duplicated the loop, and the doc comment on
+        // `specimens_in` claimed they were shared when they were not — a false claim
+        // in a comment, caught the same day by `unreachable_pub` forcing a look at
+        // the function's visibility.
+        let specimens = TourSource::specimens_in(&md);
         let mut stages: BTreeSet<&str> = BTreeSet::new();
         for raw in md.split("hrw://load/").skip(1) {
             let cite: &str = raw
                 .split(|c: char| c.is_whitespace() || c == ')' || c == '`')
                 .next()
                 .unwrap_or_default();
-            let mut parts = cite.split('/');
-            if let Some(sp) = parts.next().filter(|s| !s.is_empty()) {
-                specimens.insert(sp);
-            }
-            if let Some(st) = parts.next().filter(|s| !s.is_empty()) {
+            if let Some(st) = cite.split('/').nth(1).filter(|s| !s.is_empty()) {
                 stages.insert(st);
             }
         }

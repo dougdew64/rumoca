@@ -5889,7 +5889,28 @@ impl App {
                             .show(ui, |ui| {
                                 for source in &self.tour.available {
                                     let selected = self.tour.selected.as_ref() == Some(source);
-                                    let resp = ui.selectable_label(selected, source.label());
+                                    // **The row names its specimens.** Tours are named
+                                    // by phase, because that is what sets a per-phase
+                                    // expectation — but Doug searches by the model in
+                                    // front of him, and went looking for a
+                                    // "DimensionMismatch tour" that is called
+                                    // `failure-typecheck` (2026-08-05). Showing both
+                                    // axes costs one line and removes the search.
+                                    //
+                                    // A *fixed fact about the row*, not a ranking or a
+                                    // filter — Charter Decision 8 permits the first and
+                                    // forbids the second.
+                                    let label = match source {
+                                        TourSource::Fixture(p) => self
+                                            .tour
+                                            .row_specimens
+                                            .get(p)
+                                            .map_or_else(|| source.label(), |sp| {
+                                                format!("{}  \u{00b7}  {sp}", source.label())
+                                            }),
+                                        TourSource::AdHoc => source.label(),
+                                    };
+                                    let resp = ui.selectable_label(selected, label);
                                     let resp = match source {
                                         TourSource::AdHoc => resp.on_hover_text(
                                             "Written by Claude to answer your last question. \

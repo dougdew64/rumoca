@@ -168,8 +168,11 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         "dae-construction",
         "matching",
     ] {
+        // `contains`, not exact: since 2026-08-05 a row reads
+        // "failure-typecheck  ·  DimensionMismatch" so the model can be searched for
+        // as well as the phase. The tour name is still the row's identity.
         assert!(
-            h.query_by_label(tour).is_some(),
+            h.query_by_label_contains(tour).is_some(),
             "the tour picker should offer {tour:?}; it is a checked-in fixture",
         );
     }
@@ -456,8 +459,9 @@ fn switching_tours_clears_the_stage_side_on_screen() {
         "precondition: the RHS has something on it"
     );
 
-    // Now pick a *different* tour.
-    h.get_by_label("the-oracle").click();
+    // Now pick a *different* tour. `contains`, because a row now carries its
+    // specimens after the name.
+    h.get_by_label_contains("the-oracle").click();
     h.run_steps(2);
 
     assert!(

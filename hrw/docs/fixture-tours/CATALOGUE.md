@@ -50,7 +50,7 @@ A curriculum tour. Most tours here verify an HRW capability; this one teaches a 
 
 Specimen: `UnbalancedShaft` — `SingleInertia` with one line changed.
 
-- **Specimens:** `SingleInertia`, `UnbalancedShaft`
+- **Specimens:** `UnbalancedShaft`, `SingleInertia`
 - **Stages:** `Dae`, `Flatten`, `Resolve`
 - **Stops:**
   - `failure-tour-flatten-where-the-count-is-checked` — Failure tour — Flatten, where the count is checked
@@ -82,7 +82,7 @@ Specimens: `OverInitRc` and `RotationalInertia`. Two ways the t=0 problem goes w
 
 Specimen: `UnclosedModel` — ten lines of valid Modelica with its `end` clause removed.
 
-- **Specimens:** `Drivetrain`, `UnclosedModel`
+- **Specimens:** `UnclosedModel`, `Drivetrain`
 - **Stages:** `Parse`, `Resolve`, `Structural`
 - **Stops:**
   - `failure-tour-parse-the-only-phase-that-truly-stops` — Failure tour — Parse, the only phase that truly stops
@@ -98,7 +98,7 @@ Specimen: `UnclosedModel` — ten lines of valid Modelica with its `end` clause 
 
 Specimens: `UndefinedRef` and `MissingComponentClass`. Walk them together; neither is worth
 
-- **Specimens:** `MissingComponentClass`, `UndefinedRef`
+- **Specimens:** `UndefinedRef`, `MissingComponentClass`
 - **Stages:** `Flatten`, `Resolve`
 - **Stops:**
   - `failure-tour-resolve-where-a-name-is-looked-up-and-the-answer-is-recorded` — Failure tour — Resolve, where a name is looked up and the answer is recorded
@@ -114,7 +114,7 @@ Specimens: `UndefinedRef` and `MissingComponentClass`. Walk them together; neith
 
 Specimens: `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. They are not
 
-- **Specimens:** `CapacitorLoop`, `TwiceDefined`
+- **Specimens:** `TwiceDefined`, `CapacitorLoop`
 - **Stages:** `Dae`, `Structural`
 - **Stops:**
   - `failure-tour-structural-analysis-where-counting-stops-being-enough` — Failure tour — Structural analysis, where counting stops being enough
@@ -165,7 +165,7 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 A curriculum tour, and the second in the chain. `dae-construction.md` ended with DAE
 
-- **Specimens:** `BouncingBall`, `CapacitorLoop`, `ProportionalLoop`
+- **Specimens:** `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
 - **Stages:** `Structural`
 - **Stops:**
   - `fixture-tour-matching-when-greed-is-not-enough` — Fixture tour — Matching: when greed is not enough
