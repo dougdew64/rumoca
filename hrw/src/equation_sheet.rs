@@ -6,6 +6,8 @@
 //! source is available, each equation is linked back to its source line(s)
 //! via the `span` byte offsets carried through the pipeline.
 
+use std::collections::HashMap;
+
 use eframe::egui;
 use rumoca_core::SourceId;
 use rumoca_ir_dae as dae;
@@ -116,6 +118,25 @@ pub struct EquationSheet {
     /// Specimen source lines with equation associations (empty if source
     /// was not provided).
     pub source_lines: Vec<SourceLine>,
+    /// **Stage-tree node path -> the source line that equation came from.**
+    ///
+    /// The equation half of "relate this tree node to the Modelica it came from",
+    /// which Doug asked for on 2026-08-05 after the variable tooltip shipped.
+    ///
+    /// **Keyed by path rather than by index, because the tree is type-agnostic**
+    /// (charter §4.4): it renders any `serde_json::Value` and must not learn that
+    /// `f_x[3]` is an equation. So this side knows the DAE's shape — the continuous
+    /// equations serialize as `f_x`, per MLS Appendix B — and the tree only looks up
+    /// the path it is already carrying.
+    ///
+    /// Built with [`crate::bridge::describe_path`] rather than by formatting a string
+    /// here, so the key format **agrees with the tree's by construction** instead of
+    /// by two functions being kept in step.
+    ///
+    /// Empty when no source was provided, and missing an entry for any equation whose
+    /// span points into a library file rather than the specimen — absent rather than
+    /// guessed, so a node with no known origin says nothing instead of something wrong.
+    pub node_lines: HashMap<String, u32>,
 }
 
 fn categorize_origin(origin: &str) -> EquationCategory {
@@ -364,7 +385,24 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
     collect_from!(dae.variables.discrete_reals, "discrete");
     collect_from!(dae.variables.discrete_valued, "discrete");
 
+    // **Path -> line, for the stage tree.** Built from the same `source_lines` the
+    // sheet already resolved, so the tree and the sheet cannot disagree about where
+    // an equation came from. `f_x` is how the continuous equations serialize.
+    let mut node_lines: HashMap<String, u32> = HashMap::new();
+    for (_, eqs) in &groups {
+        for eq in eqs {
+            if let Some(line) = eq.source_lines.first() {
+                let path = [
+                    crate::bridge::Seg::Key("f_x".to_owned()),
+                    crate::bridge::Seg::Index(eq.index),
+                ];
+                node_lines.insert(crate::bridge::describe_path(&path), *line);
+            }
+        }
+    }
+
     EquationSheet {
+        node_lines,
         n_equations: dae.continuous.equations.len(),
         groups,
         n_states: dae.variables.states.len(),
@@ -647,5 +685,47 @@ mod tests {
             "connection equations should point to connect() lines (45-54), got {:?}",
             conn_lines,
         );
+    }
+
+    /// **An equation's tree node resolves to the line it was written on.**
+    ///
+    /// Doug, 2026-08-05: the variable tooltip worked and he asked for the same on
+    /// equations. The plumbing is a path-keyed map because the tree is type-agnostic
+    /// by charter §4.4 — so the thing that can go wrong is the **key format**, and
+    /// that is what this pins.
+    ///
+    /// Built with `describe_path` on both sides so the formats agree by construction;
+    /// this asserts the agreement holds rather than trusting it, because a key that
+    /// never matches produces **no tooltip and no error** — the silent-absence failure
+    /// this project keeps finding.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn an_equation_node_path_resolves_to_its_source_line() {
+        use crate::worker::FromWorker;
+
+        let FromWorker::Compiled { dae, .. } =
+            crate::worker::test_msl::compile_specimen_shared("SingleInertia")
+        else {
+            panic!("SingleInertia must compile");
+        };
+        let dae = dae.expect("SingleInertia produces a DAE");
+        let uri = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo");
+        let src = std::fs::read_to_string(uri).expect("read specimen");
+
+        let sheet = build(&dae, Some((uri, &src)));
+        assert!(
+            !sheet.node_lines.is_empty(),
+            "no equation resolved to a source line \u{2014} either the spans stopped \
+             arriving or the key format changed, and both are silent in the UI",
+        );
+
+        // Every key must be a path the tree would actually produce for an equation.
+        for (path, line) in &sheet.node_lines {
+            assert!(
+                path.starts_with("f_x"),
+                "keys must be tree paths under the continuous equations: {path}",
+            );
+            assert!(*line >= 1, "lines are 1-based: {path} -> {line}");
+        }
     }
 }

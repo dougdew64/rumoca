@@ -1374,10 +1374,20 @@ thing only where it is spelled the way you guessed.**
 resolves, and the tooltip built on it is correct. What is wrong is only the claim about
 equations, and the recommendation to change Rumoca that followed from it.
 
-**So the equation feature is HRW-side and cheap.** `EquationSheet::equations[i].source_lines`
-already holds the answer; what is missing is plumbing it to a tree node, which needs a
-path-keyed lookup because the tree is type-agnostic by charter (§4.4) and must not learn where
-`continuous.equations` lives.
-<!-- unbuilt: TreeOptions::path_lines -->
+**So the equation feature was HRW-side and cheap — and is BUILT, 2026-08-05.**
+`EquationSheet::node_lines` maps a tree-node path to the source line, built from the same
+`source_lines` the sheet already resolved; `TreeOptions::path_lines` carries it; the tree looks
+up the path it is already holding.
+
+**Keyed by path, because the tree is type-agnostic by charter §4.4** and must not learn that
+`f_x[3]` is an equation. Both sides build the key with `describe_path`, so the formats agree by
+construction rather than by being kept in step — and `an_equation_node_path_resolves_to_its_source_line`
+pins that, because a key that never matches produces **no tooltip and no error**.
+
+**Only the DAE stage supplies the map**, which is also what keeps the cost down: every other
+tree pays a null check rather than building a path string per row per frame.
+
+The same three affordances as variables, wording adjusted: a variable is *declared*, an equation
+is *written*, so the menu item drops the name it does not have.
 
 **Doug's sequencing:** variables first, test, then equations.

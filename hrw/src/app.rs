@@ -4446,6 +4446,15 @@ impl App {
                                         .identifier_index
                                         .as_ref()
                                         .map(|i| &i.variables),
+                                    // Only the DAE stage has equation origins; every
+                                    // other tree gets `None` and pays a null check.
+                                    path_lines: (self.stage == StageKind::Dae)
+                                        .then(|| {
+                                            self.cached_equation_sheet
+                                                .as_ref()
+                                                .map(|s| &s.node_lines)
+                                        })
+                                        .flatten(),
 
                                     jump_to: jump_to.as_deref(),
                                     highlight: self.context.jump_highlight.as_deref(),
@@ -4534,6 +4543,15 @@ impl App {
                                         .identifier_index
                                         .as_ref()
                                         .map(|i| &i.variables),
+                                    // Only the DAE stage has equation origins; every
+                                    // other tree gets `None` and pays a null check.
+                                    path_lines: (self.stage == StageKind::Dae)
+                                        .then(|| {
+                                            self.cached_equation_sheet
+                                                .as_ref()
+                                                .map(|s| &s.node_lines)
+                                        })
+                                        .flatten(),
 
                             // A navigated library class is a different IR, so a
                             // jump target addressed into the stage tree would
@@ -11971,6 +11989,7 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
             },
         );
         app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet {
+            node_lines: std::collections::HashMap::new(),
             groups: vec![],
             n_equations: 0,
             variables: vec![],

@@ -125,6 +125,22 @@ pub struct TreeOptions<'a> {
     /// line is worse than no line, since it would send the reader to a declaration
     /// that is not the one on screen.
     pub variable_lines: Option<&'a HashMap<String, crate::identifier_index::IndexedVariable>>,
+    /// Node path -> the source line that node came from.
+    ///
+    /// **The equation half of "where did this come from?"**, and deliberately keyed by
+    /// *path* rather than by anything the tree would have to interpret. A variable is
+    /// found by name; an equation has no name, only a position — and teaching this
+    /// widget that `f_x[3]` is an equation would break the one rule it has kept since
+    /// the charter (§4.4): **it renders any `serde_json::Value` and knows nothing
+    /// about Rumoca types.**
+    ///
+    /// So the caller, which does know the DAE's shape, supplies the map;
+    /// `equation_sheet` builds it with the same `describe_path` the tree uses, so the
+    /// two formats agree by construction rather than by being kept in step.
+    ///
+    /// Empty for every stage but the DAE, which is also what keeps the per-row lookup
+    /// cheap: no map, no path string built.
+    pub path_lines: Option<&'a HashMap<String, u32>>,
     /// Scroll this node into view and open everything above it, for one frame.
     ///
     /// The "jump to the followed identifier" control. Set for a single frame:
@@ -333,17 +349,26 @@ fn node_ui(
                 actions.capture = Some(path.to_vec());
             }
             scroll_if_jump_target(is_jump_target, &resp.header_response);
+            // **An equation's origin, found by path.** Nothing here knows this node
+            // is an equation — it looks up the path it is already carrying, and the
+            // caller decided what that path means. Skipped entirely when there is no
+            // map, which is every stage but the DAE, so no path string is built.
+            let node_line = path_line(path, &opts);
             row_menu(
                 &resp.header_response,
                 path,
                 actions,
                 &format!("{key} {hint}"),
                 None,
+                // No name to follow: an equation is a position, not an identifier.
                 None,
-                None,
+                node_line,
             );
-            if let Some(doc) = field_help.get(key) {
-                resp.header_response.clone().on_hover_text(doc);
+            let doc = field_help.get(key);
+            if doc.is_some() || node_line.is_some() {
+                resp.header_response
+                    .clone()
+                    .on_hover_text(row_hover(doc, None, node_line));
             }
         }
         Value::Array(arr) => {
@@ -631,17 +656,31 @@ fn row_menu(
         // name in every stage, count where it is absent. This is one hop to one place
         // and back. Offering both is not redundancy: they answer different questions,
         // and Follow buries the source jump as a side effect of a bigger action.
-        if let (Some(line), Some(name)) = (declared_line, track.as_ref())
-            && ui
-                .button(format!("\u{1f4c4} Show {name} in the Modelica source"))
-                .on_hover_text(format!(
-                    "Switch to the specimen's source view, scrolled to line {line} \
-                     where {name} is declared."
-                ))
-                .clicked()
-        {
-            actions.show_source_line = Some(line);
-            ui.close();
+        // **Offered for anything with a known origin, named or not.** A variable has a
+        // name and is *declared*; an equation has only a position and is *written*. The
+        // wording follows, because "where w is declared" would be wrong for an
+        // equation and "line 9" alone would be wrong for a variable.
+        if let Some(line) = declared_line {
+            let (label, hint) = match track.as_ref() {
+                Some(name) => (
+                    format!("\u{1f4c4} Show {name} in the Modelica source"),
+                    format!(
+                        "Switch to the specimen's source view, scrolled to line {line} \
+                         where {name} is declared."
+                    ),
+                ),
+                None => (
+                    "\u{1f4c4} Show in the Modelica source".to_owned(),
+                    format!(
+                        "Switch to the specimen's source view, scrolled to line {line}, \
+                         where this was written."
+                    ),
+                ),
+            };
+            if ui.button(label).on_hover_text(hint).clicked() {
+                actions.show_source_line = Some(line);
+                ui.close();
+            }
         }
         if ui
             .button("🐞 Show this being set (debugger)")
@@ -677,6 +716,20 @@ fn row_menu(
 /// wrapped in `der(…)` — and nothing else. Prose fields are excluded for the
 /// same reason they are excluded from tracked highlighting (see
 /// [`is_prose_field`]).
+/// The source line for a node, looked up by its path.
+///
+/// **Returns `None` immediately when there is no map**, which is the cheap path and
+/// the common one: only the DAE stage supplies `path_lines`, so every other stage
+/// pays a null check rather than a string build. `describe_path` allocates, and doing
+/// it per row per frame across a large tree would be a real cost in the paint path.
+fn path_line(path: &[Seg], opts: &TreeOptions<'_>) -> Option<u32> {
+    let map = opts.path_lines?;
+    if map.is_empty() {
+        return None;
+    }
+    map.get(&crate::bridge::describe_path(path)).copied()
+}
+
 fn trackable_name(key: &str, value: &Value, opts: &TreeOptions<'_>) -> Option<String> {
     if crate::identifier_index::is_prose_field(key) {
         return None;
