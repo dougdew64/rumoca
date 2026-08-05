@@ -11,6 +11,8 @@
 //! widening fields rather than narrowing a signature. **Narrow first, move
 //! second.**
 
+use std::collections::BTreeSet;
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 use crate::app::TOUR_POLL_INTERVAL;
@@ -261,4 +263,119 @@ impl TourSource {
                 .to_owned(),
         }
     }
+}
+
+/// Build the tour catalogue text — the `CATALOGUE.md` written for Claude.
+///
+/// **In the library rather than in `examples/gen_tour_catalogue.rs`** so that
+/// `tour_catalogue_is_current` calls the same code that writes the file. A checker
+/// that reimplements what it checks is the drift `docs/fidelity-plan.md` warns
+/// about, and a `#[path]` include of an example does not compile inside the lib.
+pub fn catalogue(dir: &std::path::Path) -> String {
+    let mut tours: Vec<PathBuf> = std::fs::read_dir(dir)
+        .expect("read fixture-tours")
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
+        .filter(|p| {
+            !matches!(
+                p.file_stem().and_then(|s| s.to_str()),
+                Some("README") | Some("CATALOGUE")
+            )
+        })
+        .collect();
+    tours.sort();
+
+    let mut s = String::new();
+    s.push_str("# Tour catalogue\n\n");
+    s.push_str(
+        "**Generated — do not edit.** `cargo run -p hrw --example gen_tour_catalogue`.\n\n\
+         **Audience: Claude.** This exists so a question can be answered by citing a tour that \
+         already demonstrates the thing, rather than by writing a new one that retells it \
+         without its checked expectations (`docs/ideas.md` #63). Cite a stop with \
+         `hrw://tour/<name>/stop/<slug>`.\n\n\
+         **Re-read a tour before citing it.** Everything below is derived and current; whether \
+         a tour's *claims* still hold is not something a catalogue can know, and a tour \
+         promised a tree the pane did not show for its whole existence.\n\n",
+    );
+
+    for path in &tours {
+        let md = std::fs::read_to_string(path).unwrap_or_default();
+        let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("?");
+
+        let title = md
+            .lines()
+            .find_map(|l| l.strip_prefix("# "))
+            .unwrap_or("(untitled)");
+        // The first bolded line: tours open with their subject in bold.
+        let lead = md
+            .lines()
+            .find(|l| l.trim_start().starts_with("**") && l.len() > 12)
+            .map(|l| l.trim().trim_start_matches("**").replace("**", ""))
+            .unwrap_or_default();
+
+        let mut specimens: BTreeSet<&str> = BTreeSet::new();
+        let mut stages: BTreeSet<&str> = BTreeSet::new();
+        for raw in md.split("hrw://load/").skip(1) {
+            let cite: &str = raw
+                .split(|c: char| c.is_whitespace() || c == ')' || c == '`')
+                .next()
+                .unwrap_or_default();
+            let mut parts = cite.split('/');
+            if let Some(sp) = parts.next().filter(|s| !s.is_empty()) {
+                specimens.insert(sp);
+            }
+            if let Some(st) = parts.next().filter(|s| !s.is_empty()) {
+                stages.insert(st);
+            }
+        }
+
+        let stops: Vec<String> = crate::autoplay::parse_stops(&md)
+            .iter()
+            .map(|st| {
+                format!(
+                    "  - `{}` — {}",
+                    crate::autoplay::stop_slug(&st.heading),
+                    st.heading.trim_start_matches('#').trim(),
+                )
+            })
+            .collect();
+
+        let _ = writeln!(s, "## `{name}`\n");
+        let _ = writeln!(s, "**{title}**\n");
+        if !lead.is_empty() {
+            let lead = lead.chars().take(220).collect::<String>();
+            let _ = writeln!(s, "{lead}\n");
+        }
+        if !specimens.is_empty() {
+            let _ = writeln!(
+                s,
+                "- **Specimens:** {}",
+                specimens
+                    .iter()
+                    .map(|x| format!("`{x}`"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            );
+        }
+        if !stages.is_empty() {
+            let _ = writeln!(
+                s,
+                "- **Stages:** {}",
+                stages
+                    .iter()
+                    .map(|x| format!("`{x}`"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            );
+        }
+        if !stops.is_empty() {
+            let _ = writeln!(s, "- **Stops:**");
+            for line in &stops {
+                let _ = writeln!(s, "{line}");
+            }
+        }
+        s.push('\n');
+    }
+    s
 }
