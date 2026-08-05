@@ -3823,4 +3823,36 @@ The pattern that has worked twice, and is worth following rather than rediscover
 3. **Expect the composition to expose gaps**, and fix them rather than writing around them. Both
    existing curriculum tours did; that is the point of writing them.
 
+### The phases are NOT equal candidates, because the goal is math and algorithms
+
+**Doug, 2026-08-05:** *"The curriculum tours and the failure tours are pretty much the heart of my
+effort to learn the parts of rumoca which I most care about now: math and algorithms."*
+
+That is a **ranking**, and it had not been written down. Charter §1 says the pipeline is "a
+physical enumeration of the subject", but the enumeration is uneven: some phases *are* the
+mathematics and some are bookkeeping that has to happen first.
+
+**Write these first — each is a named algorithm with a textbook behind it:**
+
+| Phase | The mathematics |
+|---|---|
+| **Structural analysis** | maximum bipartite matching, Tarjan SCC, tearing as a Schur complement — and the incidence matrix is a sparsity pattern |
+| **Index reduction** | Pantelides, dummy derivatives, DAE index theory |
+| **Solve lowering** | residual programs, mass matrix, Jacobian sparsity |
+| **Initialization** | the t=0 system, determinacy, over/under-determination |
+
+**These later — they are real, and they are mostly bookkeeping:** Parse, Resolve, Instantiate,
+Typecheck. Their *failure* tours already exist and carry most of what a learner needs from them,
+which is a further reason not to spend curriculum effort there.
+
+**Flatten, DAE construction and Events sit between.** DAE construction already has its tour;
+Flatten's mathematics is connect expansion, which is graph-shaped and genuinely interesting;
+Events is `when`-clause semantics more than analysis.
+
+**One external constraint sharpens the order:** Doug's Purdue linear-algebra applications class
+begins Fall 2026, and **structural analysis is the phase that is linear algebra wearing graph
+clothing** — matching is a permutation, BLT is block triangularization, tearing is a Schur
+complement. A curriculum tour there pays into the coursework directly
+([[user-linear-algebra-learning]] in memory; `docs/vision.md`).
+
 **Not scheduled.** The next is index reduction on `Drivetrain` when Doug reaches it.
