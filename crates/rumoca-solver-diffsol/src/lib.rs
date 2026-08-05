@@ -39,10 +39,10 @@ use rumoca_eval_solve::{
 use rumoca_ir_solve as solve;
 use rumoca_solver::{
     DiffsolMethod, RuntimeEventBoundary, RuntimeEventBoundaryHandler, RuntimeEventStop, SimOptions,
-    SimResult, SimTermination, SolverStepRecord, SolveStopSchedule,
-    build_sim_result_from_solve_model,
-    commit_pre_params_after_event, process_runtime_event_boundary, push_visible_values,
-    replace_last_visible_values, runtime_event_horizon, runtime_root_event_application_time,
+    SimResult, SimTermination, SolveStopSchedule, SolverStepRecord,
+    build_sim_result_from_solve_model, commit_pre_params_after_event,
+    process_runtime_event_boundary, push_visible_values, replace_last_visible_values,
+    runtime_event_horizon, runtime_root_event_application_time,
     timeline::sample_time_match_with_tol,
 };
 pub(crate) use runtime::{
