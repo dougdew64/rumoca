@@ -3757,3 +3757,19 @@ Nothing prevents starting. But **the evidence for the right shape is Doug using 
 built today** — asking questions and being routed into fixtures — in the same way #64's open
 questions are to be answered by watching #63 in use. **Build the cheap version (the panel
 defaults to the answer), watch, then decide whether the radical one is warranted.**
+
+**Confirmed in use, 2026-08-05.** The first real exercise of the mechanism — *"demonstrate how
+Rumoca responds to a typecheck failure"* — worked as designed on the retrieval side: Claude read
+`CATALOGUE.md` rather than recalling, re-verified the tour's claims with `failure_map` before
+citing, and composed an answer linking into `failure-typecheck` at four stops.
+
+**And it exposed a behavioural defect that is this idea's real subject.** Claude wrote the full
+answer *twice* — once as `✨ Claude's answer` and once as prose in chat. Doug: *"Isn't your answer
+going to be available as 'Claude's answer'? That is the least-friction solution."*
+
+**Two copies of one answer is friction, not thoroughness.** It costs a second read, or the
+attention spent deciding which is authoritative, and the two drift the moment either is edited.
+**The substance belongs on the answer surface; chat gets a pointer plus what is not walkable** — a
+caveat, what was verified and how, a question back. That is Charter Decision 9 applied to Claude's
+output rather than to the UI, and it is a direct argument for **#65**: the answer is already the
+place the content should live, which is exactly why its placement in a list row is wrong.
