@@ -29,16 +29,16 @@ mod types;
 mod variable_scope;
 
 pub use diagnostics::{AlgebraicLoop, StructuralDiagnostics};
-pub use live_trace::{LiveTrace, live_trace_breakpoint};
-/// Observability for greedy tearing — additive, observation-only.
-pub use tearing::{TearingFrame, TearingStep, tear_algebraic_loop_with_trace};
 pub use eliminate::{EliminationResult, Substitution};
 pub use ic_plan::{CausalStep, IcBlock, IcRelaxationHint, build_ic_plan, build_ic_relaxation_hint};
 pub use incidence::{Incidence, build_incidence, build_solver_sparsity_triplets};
+pub use live_trace::{LiveTrace, live_trace_breakpoint};
 pub use report::{BlockReport, StructuralReport, TearingReport};
 pub use runtime_defined::{
     runtime_defined_continuous_unknown_names, runtime_defined_unknown_names,
 };
+/// Observability for greedy tearing — additive, observation-only.
+pub use tearing::{TearingFrame, TearingStep, tear_algebraic_loop_with_trace};
 pub use tearing::{TearingResult, tear_algebraic_loop};
 pub use types::{BltBlock, EquationRef, SortedDae, StructuralError, UnknownId};
 
@@ -546,17 +546,16 @@ mod tests {
             unknown_spans: vec![None; 2],
             equation_refs: (0..2).map(EquationRef).collect(),
         };
-        let local = block_local_incidence(
-            &inc,
-            &[EquationRef(0), EquationRef(1)],
-            &unknown_names,
-        );
+        let local = block_local_incidence(&inc, &[EquationRef(0), EquationRef(1)], &unknown_names);
         // `FrameObserver` is `&dyn Fn`, so the sink cannot capture `&mut`.
         let frames = std::cell::RefCell::new(Vec::new());
         let sink = |f: &TearingFrame| frames.borrow_mut().push(format!("{:?}", f.step));
         let result = tear_algebraic_loop_with_trace(2, &local, Some(&sink));
         assert!(result.is_some(), "a 2x2 dense loop is tearable");
-        assert!(!frames.borrow().is_empty(), "the observer saw the decisions");
+        assert!(
+            !frames.borrow().is_empty(),
+            "the observer saw the decisions"
+        );
     }
 
     #[test]

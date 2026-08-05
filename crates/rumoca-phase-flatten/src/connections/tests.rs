@@ -1995,19 +1995,33 @@ fn the_connection_trace_reports_the_potential_flow_asymmetry() {
     // Union-find is transitive: a-b and b-c make one set of three, per kind.
     let potential: Vec<&super::trace::ConnectionFrame> = frames
         .iter()
-        .filter(|f| matches!(&f.step, ConnectionStep::SetFormed { kind: "potential", .. }))
+        .filter(|f| {
+            matches!(
+                &f.step,
+                ConnectionStep::SetFormed {
+                    kind: "potential",
+                    ..
+                }
+            )
+        })
         .collect();
     assert_eq!(potential.len(), 1, "one potential set, not two");
     if let ConnectionStep::SetFormed { variables, .. } = &potential[0].step {
-        assert_eq!(variables.len(), 3, "a.v, b.v and c.v are one set: {variables:?}");
+        assert_eq!(
+            variables.len(),
+            3,
+            "a.v, b.v and c.v are one set: {variables:?}"
+        );
     }
 
     let generated: Vec<(&str, usize, usize)> = frames
         .iter()
         .filter_map(|f| match &f.step {
-            ConnectionStep::EquationsGenerated { kind, set_size, equations_added } => {
-                Some((*kind, *set_size, *equations_added))
-            }
+            ConnectionStep::EquationsGenerated {
+                kind,
+                set_size,
+                equations_added,
+            } => Some((*kind, *set_size, *equations_added)),
             _ => None,
         })
         .collect();
@@ -2032,18 +2046,25 @@ fn the_connection_trace_brackets_the_pass_with_honest_running_counts() {
     assert!(
         matches!(
             frames.first().map(|f| &f.step),
-            Some(ConnectionStep::Start { connect_statements: 2 }),
+            Some(ConnectionStep::Start {
+                connect_statements: 2
+            }),
         ),
         "first frame should announce 2 connect() statements: {:?}",
         frames.first(),
     );
     assert!(
-        matches!(frames.last().map(|f| &f.step), Some(ConnectionStep::Complete { .. })),
+        matches!(
+            frames.last().map(|f| &f.step),
+            Some(ConnectionStep::Complete { .. })
+        ),
         "last frame should be Complete: {:?}",
         frames.last(),
     );
     assert!(
-        frames.windows(2).all(|w| w[0].equations_so_far <= w[1].equations_so_far),
+        frames
+            .windows(2)
+            .all(|w| w[0].equations_so_far <= w[1].equations_so_far),
         "equations_so_far went backwards",
     );
     assert_eq!(

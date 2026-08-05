@@ -105,7 +105,10 @@ pub use errors::{ToDaeError, ToDaeResult};
 /// watched rather than inferred from its output. `lower_pre_operator` is
 /// unchanged in behaviour and now simply calls it with no observer.
 pub use pre_lowering::{
-    PreLoweringFrame, PreLoweringObserver, PreLoweringStep, lower_pre_operator,
+    PreLoweringFrame,
+    PreLoweringObserver,
+    PreLoweringStep,
+    lower_pre_operator,
     lower_pre_operator_with_trace,
     // Ambient capture, for callers too far up the stack to pass an observer —
     // see `pre_lowering::start_capture`.

@@ -236,7 +236,10 @@ impl<'a> TracedTarjanState<'a> {
         if self.lowlink[v] == self.index[v].expect("tarjan invariant: visited node must have index")
         {
             let scc = self.pop_scc(v);
-            self.record(TarjanStep::SccFound { root: v, members: scc.clone() });
+            self.record(TarjanStep::SccFound {
+                root: v,
+                members: scc.clone(),
+            });
             self.sccs.push(scc);
         }
     }
@@ -248,7 +251,10 @@ impl<'a> TracedTarjanState<'a> {
     fn pop_scc(&mut self, root: usize) -> Vec<usize> {
         let mut scc = Vec::new();
         loop {
-            let w = self.stack.pop().expect("tarjan invariant: stack must contain SCC root");
+            let w = self
+                .stack
+                .pop()
+                .expect("tarjan invariant: stack must contain SCC root");
             self.on_stack[w] = false;
             scc.push(w);
             if w == root {
@@ -301,7 +307,9 @@ mod tests {
     fn trace_contains_visit_for_each_node() {
         let adj = vec![vec![1], vec![], vec![]];
         let traced = tarjan_scc_with_trace(3, &adj, None);
-        let visits: Vec<_> = traced.frames.iter()
+        let visits: Vec<_> = traced
+            .frames
+            .iter()
             .filter(|f| matches!(f.step, TarjanStep::Visit(_)))
             .collect();
         assert_eq!(visits.len(), 3);
@@ -311,7 +319,9 @@ mod tests {
     fn trace_records_scc_found() {
         let adj = vec![vec![1], vec![0]];
         let traced = tarjan_scc_with_trace(2, &adj, None);
-        let scc_events: Vec<_> = traced.frames.iter()
+        let scc_events: Vec<_> = traced
+            .frames
+            .iter()
             .filter(|f| matches!(f.step, TarjanStep::SccFound { .. }))
             .collect();
         assert_eq!(scc_events.len(), 1, "one SCC with both nodes");
@@ -321,7 +331,9 @@ mod tests {
     fn trace_records_back_edge() {
         let adj = vec![vec![1], vec![0]];
         let traced = tarjan_scc_with_trace(2, &adj, None);
-        let back_edges: Vec<_> = traced.frames.iter()
+        let back_edges: Vec<_> = traced
+            .frames
+            .iter()
             .filter(|f| matches!(f.step, TarjanStep::BackEdge { .. }))
             .collect();
         assert!(!back_edges.is_empty(), "cycle should produce a back edge");

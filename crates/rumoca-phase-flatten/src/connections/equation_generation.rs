@@ -1,5 +1,5 @@
-use super::*;
 use super::trace::{self, ConnectionFrame, ConnectionStep};
+use super::*;
 use indexmap::IndexSet;
 use rumoca_ir_ast as ast;
 
@@ -332,7 +332,9 @@ pub(crate) fn process_connections(
 
     let all_connections: Vec<&ast::InstanceConnection> = owned_connections.iter().collect();
     emit(
-        ConnectionStep::Start { connect_statements: all_connections.len() },
+        ConnectionStep::Start {
+            connect_statements: all_connections.len(),
+        },
         0,
         0,
     );
@@ -453,7 +455,11 @@ fn generate_connection_set_equations(
             ConnectionStep::SetFormed {
                 kind,
                 scope: set.scope.clone(),
-                variables: set.variables.iter().map(|v| v.as_str().to_owned()).collect(),
+                variables: set
+                    .variables
+                    .iter()
+                    .map(|v| v.as_str().to_owned())
+                    .collect(),
             },
             sets_so_far,
             flat.equations.len() - equations_at_start,

@@ -27,7 +27,7 @@
 //! separate change with its own risks.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{mpsc, Arc};
+use std::sync::{Arc, mpsc};
 use std::time::Duration;
 
 /// Producer half of the live trace channel.
@@ -199,7 +199,11 @@ mod tests {
     fn breakpoint_anchor_store_is_observable() {
         let _guard = lock_anchor();
         live_trace_breakpoint(42);
-        assert_eq!(last_frame_index(), 42, "the anchor must record its argument");
+        assert_eq!(
+            last_frame_index(),
+            42,
+            "the anchor must record its argument"
+        );
         // The startup-gate sentinel must round-trip like any other value.
         live_trace_breakpoint(usize::MAX);
         assert_eq!(last_frame_index(), usize::MAX, "startup gate value");

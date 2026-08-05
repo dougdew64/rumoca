@@ -60,14 +60,13 @@ use direct_demotion::{
     is_connection_equation_origin,
 };
 pub use state_row_reduction::{
-    IndexReductionFrame, IndexReductionStep, IndexReductionTraceResult,
-    REGULARIZATION_LEVELS, demote_orphan_states_without_equation_refs,
-    demote_states_without_assignable_derivative_rows, demote_states_without_derivative_refs,
-    demote_states_without_retained_derivative_rows, der_sign_in_expr,
-    emit_index_reduction_frame, emit_index_reduction_start,
+    IndexReductionFrame, IndexReductionStep, IndexReductionTraceResult, REGULARIZATION_LEVELS,
+    demote_orphan_states_without_equation_refs, demote_states_without_assignable_derivative_rows,
+    demote_states_without_derivative_refs, demote_states_without_retained_derivative_rows,
+    der_sign_in_expr, emit_index_reduction_frame, emit_index_reduction_start,
     index_reduce_missing_state_derivatives, index_reduce_missing_state_derivatives_once,
-    index_reduce_missing_state_derivatives_with_trace,
-    normalize_ode_equation_signs, substitute_standalone_state_derivatives_in_non_ode_rows,
+    index_reduce_missing_state_derivatives_with_trace, normalize_ode_equation_signs,
+    substitute_standalone_state_derivatives_in_non_ode_rows,
 };
 
 fn sim_trace_enabled() -> bool {
@@ -1878,15 +1877,42 @@ fn constrained_dummy_derivative_plan(
 
 /// Like [`reduce_constrained_dummy_derivatives`], but records every
 /// algorithmic step for animation replay via [`IndexReductionFrame`].
+/// Emit one index-reduction frame, filling in the two fields every call repeats.
+///
+/// Extracted 2026-08-05. Every emission in the traced reduction below carried an
+/// identical `demoted_so_far: demoted_so_far.clone()` and `round`, so each call site
+/// spent ten lines to say one thing. **Purely mechanical and semantics-identical** —
+/// the same frames in the same order.
+///
+/// It was prompted by `cargo fmt`: reformatting pushed the caller from 99 lines to
+/// **102**, over `[workspace.lints]`'s `too_many_lines` threshold of 100, which turned
+/// a formatting pass into a build failure. The repetition was worth removing anyway;
+/// the lint is what made it visible.
+fn emit_reduction_step(
+    frames: &mut Vec<state_row_reduction::IndexReductionFrame>,
+    observer: Option<rumoca_core::FrameObserver<'_, state_row_reduction::IndexReductionFrame>>,
+    step: state_row_reduction::IndexReductionStep,
+    demoted_so_far: &[String],
+    round: usize,
+) {
+    state_row_reduction::emit_index_reduction_frame(
+        frames,
+        observer,
+        state_row_reduction::IndexReductionFrame {
+            step,
+            demoted_so_far: demoted_so_far.to_vec(),
+            round,
+        },
+    );
+}
+
 pub fn reduce_constrained_dummy_derivatives_with_trace(
     dae: &mut Dae,
     observer: Option<rumoca_core::FrameObserver<'_, state_row_reduction::IndexReductionFrame>>,
     frames: &mut Vec<state_row_reduction::IndexReductionFrame>,
     demoted_so_far: &mut Vec<String>,
 ) -> Result<usize, StructuralError> {
-    use state_row_reduction::{
-        IndexReductionFrame, IndexReductionStep, emit_index_reduction_frame,
-    };
+    use state_row_reduction::IndexReductionStep;
     let mut total_demoted = 0usize;
     let mut round = 0usize;
 
@@ -1908,11 +1934,15 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
                 continue;
             }
 
-            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-                step: IndexReductionStep::BeginState { state: state_name.to_string() },
-                demoted_so_far: demoted_so_far.clone(),
+            emit_reduction_step(
+                frames,
+                observer,
+                IndexReductionStep::BeginState {
+                    state: state_name.to_string(),
+                },
+                demoted_so_far,
                 round,
-            });
+            );
 
             let seed_exprs = vec![definition.defining_expr.clone()];
             let der_map = build_relaxed_derivative_map_for_exprs(dae, &seed_exprs)?;
@@ -1923,48 +1953,58 @@ pub fn reduce_constrained_dummy_derivatives_with_trace(
                 &state_name_set,
                 &der_map,
             ) else {
-                emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-                    step: IndexReductionStep::CandidateExhausted {
+                emit_reduction_step(
+                    frames,
+                    observer,
+                    IndexReductionStep::CandidateExhausted {
                         state: state_name.to_string(),
                     },
-                    demoted_so_far: demoted_so_far.clone(),
+                    demoted_so_far,
                     round,
-                });
+                );
                 continue;
             };
 
-            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-                step: IndexReductionStep::Differentiated {
+            emit_reduction_step(
+                frames,
+                observer,
+                IndexReductionStep::Differentiated {
                     state: state_name.to_string(),
                     before_rhs: Box::new(definition.defining_expr.clone()),
                     after_rhs: Box::new(plan.der_expr.clone()),
                 },
-                demoted_so_far: demoted_so_far.clone(),
+                demoted_so_far,
                 round,
-            });
+            );
 
             total_demoted += direct_demotion::apply_direct_demotion_plan(dae, &plan);
             pin_structural_params(dae, &definition.structural_params);
 
             demoted_so_far.push(state_name.to_string());
-            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-                step: IndexReductionStep::Demoted { state: state_name.to_string() },
-                demoted_so_far: demoted_so_far.clone(),
+            emit_reduction_step(
+                frames,
+                observer,
+                IndexReductionStep::Demoted {
+                    state: state_name.to_string(),
+                },
+                demoted_so_far,
                 round,
-            });
+            );
 
             demoted_this_round = true;
             break;
         }
 
-        emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-            step: IndexReductionStep::RoundComplete {
+        emit_reduction_step(
+            frames,
+            observer,
+            IndexReductionStep::RoundComplete {
                 round,
                 demotions_this_round: if demoted_this_round { 1 } else { 0 },
             },
-            demoted_so_far: demoted_so_far.clone(),
+            demoted_so_far,
             round,
-        });
+        );
 
         if !demoted_this_round {
             break;

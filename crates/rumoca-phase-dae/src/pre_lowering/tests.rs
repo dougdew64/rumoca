@@ -1480,9 +1480,10 @@ fn traced_lowering_records_the_manufacture_of_a_slot() -> Result<(), ToDaeError>
     use super::{PreLoweringStep, lower_pre_operator_with_trace};
 
     let mut dae = dae::Dae::new();
-    dae.variables
-        .discrete_valued
-        .insert(rumoca_core::VarName::new("overSpeed"), discrete_valued_var("overSpeed"));
+    dae.variables.discrete_valued.insert(
+        rumoca_core::VarName::new("overSpeed"),
+        discrete_valued_var("overSpeed"),
+    );
     dae.discrete.valued_updates.push(dae::Equation::explicit(
         rumoca_core::VarName::new("overSpeed"),
         pre_call("overSpeed"),
@@ -1496,7 +1497,10 @@ fn traced_lowering_records_the_manufacture_of_a_slot() -> Result<(), ToDaeError>
 
     // Opens and closes with the pass boundary — that is what separates the two
     // runs this pass makes per compile when a replay concatenates them.
-    assert!(matches!(frames.first().map(|f| &f.step), Some(PreLoweringStep::Start { .. })));
+    assert!(matches!(
+        frames.first().map(|f| &f.step),
+        Some(PreLoweringStep::Start { .. })
+    ));
     assert!(matches!(
         frames.last().map(|f| &f.step),
         Some(PreLoweringStep::Complete { slots_created: 1 }),
@@ -1509,20 +1513,30 @@ fn traced_lowering_records_the_manufacture_of_a_slot() -> Result<(), ToDaeError>
             _ => None,
         })
         .expect("the name must be constructed in view");
-    assert_eq!(named, ("overSpeed".to_owned(), "__pre__.overSpeed".to_owned()));
+    assert_eq!(
+        named,
+        ("overSpeed".to_owned(), "__pre__.overSpeed".to_owned())
+    );
 
     // Discovery precedes naming precedes materialization. Out of order, the
     // replay would tell a story the algorithm did not follow.
     let index = |m: fn(&PreLoweringStep) -> bool| frames.iter().position(|f| m(&f.step));
-    let discovered = index(|s| matches!(s, PreLoweringStep::Discovered { .. })).expect("discovered");
+    let discovered =
+        index(|s| matches!(s, PreLoweringStep::Discovered { .. })).expect("discovered");
     let named_at = index(|s| matches!(s, PreLoweringStep::Named { .. })).expect("named");
     let made = index(|s| matches!(s, PreLoweringStep::Materialized { .. })).expect("materialized");
     let subst = index(|s| matches!(s, PreLoweringStep::Substituted { .. })).expect("substituted");
-    assert!(discovered < named_at && named_at < made && made < subst, "beats out of order");
+    assert!(
+        discovered < named_at && named_at < made && made < subst,
+        "beats out of order"
+    );
 
     // The running set grows: nothing before materialization, the slot after.
     assert!(frames[named_at].slots_so_far.is_empty());
-    assert_eq!(frames[made].slots_so_far, vec!["__pre__.overSpeed".to_owned()]);
+    assert_eq!(
+        frames[made].slots_so_far,
+        vec!["__pre__.overSpeed".to_owned()]
+    );
     Ok(())
 }
 
@@ -1552,7 +1566,10 @@ fn an_observer_sees_the_whole_sequence() -> Result<(), ToDaeError> {
         Some(&|f| observed.borrow_mut().push(format!("{:?}", f.step))),
     )?;
     let seen = observed.into_inner();
-    assert!(seen.len() >= 4, "start, discover, name, materialize, substitute, complete: {seen:?}");
+    assert!(
+        seen.len() >= 4,
+        "start, discover, name, materialize, substitute, complete: {seen:?}"
+    );
     assert!(seen.first().is_some_and(|s| s.starts_with("Start")));
     assert!(seen.last().is_some_and(|s| s.starts_with("Complete")));
     Ok(())

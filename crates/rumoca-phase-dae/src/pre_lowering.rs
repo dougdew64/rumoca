@@ -53,10 +53,16 @@ pub enum PreLoweringStep {
     /// The slot was materialized as a **parameter**, inheriting the base
     /// variable's shape and start value. This is why a pre-slot lands among the
     /// parameters rather than the unknowns.
-    Materialized { slot: String, inherited_from: String },
+    Materialized {
+        slot: String,
+        inherited_from: String,
+    },
     /// A partition's equations were rewritten, replacing `pre(x)` calls with
     /// references to the slot.
-    Substituted { partition: &'static str, equations: usize },
+    Substituted {
+        partition: &'static str,
+        equations: usize,
+    },
     /// The pass finished.
     Complete { slots_created: usize },
 }
@@ -123,7 +129,13 @@ pub fn lower_pre_operator_with_trace(
     );
     lower_pre_operator_inner(dae, observer, &mut slots)?;
     let created = slots.len();
-    emit(observer, &slots, PreLoweringStep::Complete { slots_created: created });
+    emit(
+        observer,
+        &slots,
+        PreLoweringStep::Complete {
+            slots_created: created,
+        },
+    );
     Ok(())
 }
 
@@ -168,7 +180,10 @@ fn emit(observer: Option<PreLoweringObserver<'_>>, slots: &[String], step: PreLo
     if observer.is_none() && !capturing {
         return;
     }
-    let frame = PreLoweringFrame { step, slots_so_far: slots.to_vec() };
+    let frame = PreLoweringFrame {
+        step,
+        slots_so_far: slots.to_vec(),
+    };
     CAPTURE.with(|c| {
         if let Some(buf) = c.borrow_mut().as_mut() {
             buf.push(frame.clone());
@@ -213,7 +228,9 @@ fn lower_pre_operator_inner(
         emit(
             observer,
             slots,
-            PreLoweringStep::Discovered { target: target.source_name.as_str().to_owned() },
+            PreLoweringStep::Discovered {
+                target: target.source_name.as_str().to_owned(),
+            },
         );
         let pre_param_name = rumoca_core::pre_slot_name(target.source_name.as_str());
         emit(
@@ -269,7 +286,10 @@ fn lower_pre_operator_inner(
             emit(
                 observer,
                 slots,
-                PreLoweringStep::Substituted { partition: $label, equations: n },
+                PreLoweringStep::Substituted {
+                    partition: $label,
+                    equations: n,
+                },
             );
         }};
     }

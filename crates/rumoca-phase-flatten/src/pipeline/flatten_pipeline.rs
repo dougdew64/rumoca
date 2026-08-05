@@ -939,13 +939,12 @@ pub(crate) fn finalize_flat_model(
     outer_refs::redirect_outer_refs(flat, &overlay.outer_prefix_to_inner);
 
     let connections_start = maybe_start_timer();
-    let connections_result =
-        connections::process_connections(
-            flat,
-            overlay,
-            options.strict_connection_validation,
-            connection_observer,
-        );
+    let connections_result = connections::process_connections(
+        flat,
+        overlay,
+        options.strict_connection_validation,
+        connection_observer,
+    );
     maybe_record_connections_timing(connections_start);
     connections_result?;
 

@@ -43,12 +43,12 @@ pub mod cache;
 mod codegen_api;
 mod codegen_target;
 mod experiment;
-pub mod observe;
 mod galec_api;
 mod instrumentation;
 #[cfg(test)]
 mod instrumentation_tests;
 mod merge;
+pub mod observe;
 mod package_layout;
 pub mod parallelism;
 mod parse;

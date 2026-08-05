@@ -95,7 +95,6 @@ fn count_var_appearances(
     var_count
 }
 
-
 /// One decision made while tearing an algebraic loop, recorded for replay.
 ///
 /// Tearing is a *greedy* algorithm, and greedy algorithms are exactly the kind
@@ -110,11 +109,19 @@ pub enum TearingStep {
     /// no iteration needed. `competitors` is how many equations could have
     /// solved for this variable; when it is more than one, the tie was broken by
     /// preferring the equation with fewer total unknowns.
-    Causal { equation: usize, variable: usize, competitors: usize },
+    Causal {
+        equation: usize,
+        variable: usize,
+        competitors: usize,
+    },
     /// No equation has a single remaining unknown, so the loop must be *cut*.
     /// The chosen variable appears in `appearances` of the remaining equations —
     /// the most of any candidate, which is the greedy criterion.
-    Torn { variable: usize, appearances: usize, remaining_equations: usize },
+    Torn {
+        variable: usize,
+        appearances: usize,
+        remaining_equations: usize,
+    },
     /// Tearing finished. `residuals` equations remain, driven by the solver
     /// against `tears` guessed variables — that pair is the size of the
     /// iteration the solver is left with, and the whole point of the exercise.
@@ -192,7 +199,12 @@ pub fn tear_algebraic_loop_with_trace(
 
         if var_count.is_empty() {
             // No progress possible
-            emit_tearing(observer, &tear_vars, &causal_sequence, TearingStep::NoProgress);
+            emit_tearing(
+                observer,
+                &tear_vars,
+                &causal_sequence,
+                TearingStep::NoProgress,
+            );
             break;
         }
 
@@ -236,7 +248,10 @@ pub fn tear_algebraic_loop_with_trace(
         observer,
         &tear_vars,
         &causal_sequence,
-        TearingStep::Complete { tears: tear_vars.len(), residuals: residual_eqs.len() },
+        TearingStep::Complete {
+            tears: tear_vars.len(),
+            residuals: residual_eqs.len(),
+        },
     );
     Some(TearingResult {
         tear_var_local_indices: tear_vars,
@@ -298,7 +313,10 @@ fn emit_tearing(
             if matches!(frame.step, TearingStep::Start { .. }) || segments.is_empty() {
                 segments.push(Vec::new());
             }
-            segments.last_mut().expect("just ensured").push(frame.clone());
+            segments
+                .last_mut()
+                .expect("just ensured")
+                .push(frame.clone());
         }
     });
     if let Some(observe) = observer {
@@ -382,12 +400,19 @@ mod trace_tests {
         );
         let frames = frames.into_inner();
 
-        assert!(matches!(frames.first().map(|f| &f.step), Some(TearingStep::Start { n: 3 })));
+        assert!(matches!(
+            frames.first().map(|f| &f.step),
+            Some(TearingStep::Start { n: 3 })
+        ));
 
         let torn: Vec<(usize, usize)> = frames
             .iter()
             .filter_map(|f| match &f.step {
-                TearingStep::Torn { variable, appearances, .. } => Some((*variable, *appearances)),
+                TearingStep::Torn {
+                    variable,
+                    appearances,
+                    ..
+                } => Some((*variable, *appearances)),
                 _ => None,
             })
             .collect();
@@ -395,7 +420,10 @@ mod trace_tests {
         // The greedy criterion: the chosen variable appears in at least as many
         // remaining equations as any other would. Here every variable appears
         // twice, so the reason is recorded even when the choice is a tie.
-        assert!(torn.iter().all(|&(_, appearances)| appearances >= 2), "{torn:?}");
+        assert!(
+            torn.iter().all(|&(_, appearances)| appearances >= 2),
+            "{torn:?}"
+        );
 
         // The running set grows with the decisions.
         if let Some(last) = frames.last() {
@@ -446,10 +474,18 @@ mod trace_tests {
             .iter()
             .filter(|f| matches!(f.step, TearingStep::Causal { .. }))
             .collect();
-        assert_eq!(causal.len(), 3, "a chain resolves entirely causally: no tearing needed");
+        assert_eq!(
+            causal.len(),
+            3,
+            "a chain resolves entirely causally: no tearing needed"
+        );
         assert!(matches!(
             causal[0].step,
-            TearingStep::Causal { equation: 0, variable: 0, .. },
+            TearingStep::Causal {
+                equation: 0,
+                variable: 0,
+                ..
+            },
         ));
     }
 }

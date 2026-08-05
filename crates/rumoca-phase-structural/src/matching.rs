@@ -14,7 +14,11 @@ pub enum MatchingStep {
     /// Variable is free: augmenting path found.
     FoundFree { eq: usize, var: usize },
     /// Variable is matched to `holder`; recursing to try to displace it.
-    TryDisplace { eq: usize, var: usize, holder: usize },
+    TryDisplace {
+        eq: usize,
+        var: usize,
+        holder: usize,
+    },
     /// Displacement succeeded: `holder` found an alternative.
     DisplaceOk { eq: usize, var: usize },
     /// Displacement failed: `holder` has no alternative; backtracking.
@@ -107,10 +111,14 @@ pub fn maximum_matching_with_trace(
     let mut frames = Vec::new();
 
     for eq in 0..n_eq {
-        emit_matching_frame(&mut frames, observer, MatchingFrame {
-            step: MatchingStep::TryEquation(eq),
-            match_eq: match_eq.clone(),
-        });
+        emit_matching_frame(
+            &mut frames,
+            observer,
+            MatchingFrame {
+                step: MatchingStep::TryEquation(eq),
+                match_eq: match_eq.clone(),
+            },
+        );
         let mut visited = vec![false; n_var];
         let found = augment_traced(
             eq,
@@ -122,14 +130,22 @@ pub fn maximum_matching_with_trace(
             observer,
         );
         if !found {
-            emit_matching_frame(&mut frames, observer, MatchingFrame {
-                step: MatchingStep::EquationFailed(eq),
-                match_eq: match_eq.clone(),
-            });
+            emit_matching_frame(
+                &mut frames,
+                observer,
+                MatchingFrame {
+                    step: MatchingStep::EquationFailed(eq),
+                    match_eq: match_eq.clone(),
+                },
+            );
         }
     }
 
-    MatchingTraceResult { match_eq, match_var, frames }
+    MatchingTraceResult {
+        match_eq,
+        match_var,
+        frames,
+    }
 }
 
 /// Push a frame to the replay vec and, if anyone is watching, to the observer.
@@ -162,33 +178,50 @@ fn augment_traced(
             continue;
         }
         visited[var] = true;
-        emit_matching_frame(frames, observer, MatchingFrame {
-            step: MatchingStep::Explore { eq, var },
-            match_eq: match_eq.to_vec(),
-        });
+        emit_matching_frame(
+            frames,
+            observer,
+            MatchingFrame {
+                step: MatchingStep::Explore { eq, var },
+                match_eq: match_eq.to_vec(),
+            },
+        );
         let can_augment = match match_var[var] {
             None => {
-                emit_matching_frame(frames, observer, MatchingFrame {
-                    step: MatchingStep::FoundFree { eq, var },
-                    match_eq: match_eq.to_vec(),
-                });
+                emit_matching_frame(
+                    frames,
+                    observer,
+                    MatchingFrame {
+                        step: MatchingStep::FoundFree { eq, var },
+                        match_eq: match_eq.to_vec(),
+                    },
+                );
                 true
             }
             Some(holder) => {
-                emit_matching_frame(frames, observer, MatchingFrame {
-                    step: MatchingStep::TryDisplace { eq, var, holder },
-                    match_eq: match_eq.to_vec(),
-                });
-                let ok =
-                    augment_traced(holder, match_eq, match_var, eq_vars, visited, frames, observer);
-                emit_matching_frame(frames, observer, MatchingFrame {
-                    step: if ok {
-                        MatchingStep::DisplaceOk { eq, var }
-                    } else {
-                        MatchingStep::DisplaceFail { eq, var }
+                emit_matching_frame(
+                    frames,
+                    observer,
+                    MatchingFrame {
+                        step: MatchingStep::TryDisplace { eq, var, holder },
+                        match_eq: match_eq.to_vec(),
                     },
-                    match_eq: match_eq.to_vec(),
-                });
+                );
+                let ok = augment_traced(
+                    holder, match_eq, match_var, eq_vars, visited, frames, observer,
+                );
+                emit_matching_frame(
+                    frames,
+                    observer,
+                    MatchingFrame {
+                        step: if ok {
+                            MatchingStep::DisplaceOk { eq, var }
+                        } else {
+                            MatchingStep::DisplaceFail { eq, var }
+                        },
+                        match_eq: match_eq.to_vec(),
+                    },
+                );
                 ok
             }
         };
@@ -197,10 +230,14 @@ fn augment_traced(
         }
         match_eq[eq] = Some(var);
         match_var[var] = Some(eq);
-        emit_matching_frame(frames, observer, MatchingFrame {
-            step: MatchingStep::Assign { eq, var },
-            match_eq: match_eq.to_vec(),
-        });
+        emit_matching_frame(
+            frames,
+            observer,
+            MatchingFrame {
+                step: MatchingStep::Assign { eq, var },
+                match_eq: match_eq.to_vec(),
+            },
+        );
         return true;
     }
     false
@@ -272,7 +309,10 @@ mod tests {
         assert!(take_capture().is_empty(), "and taking yields nothing");
 
         start_capture();
-        assert!(capturing(), "the scope is open, so callers take the traced path");
+        assert!(
+            capturing(),
+            "the scope is open, so callers take the traced path"
+        );
         deposit_capture(vec![MatchingFrame {
             step: MatchingStep::TryEquation(0),
             match_eq: vec![None],
@@ -336,14 +376,19 @@ mod tests {
     fn trace_starts_with_try_equation() {
         let eq_vars = vec![HashSet::from([0])];
         let traced = maximum_matching_with_trace(1, 1, &eq_vars, None);
-        assert!(matches!(traced.frames[0].step, MatchingStep::TryEquation(0)));
+        assert!(matches!(
+            traced.frames[0].step,
+            MatchingStep::TryEquation(0)
+        ));
     }
 
     #[test]
     fn trace_contains_assign_for_each_matched_pair() {
         let eq_vars = vec![HashSet::from([0, 1]), HashSet::from([0, 1])];
         let traced = maximum_matching_with_trace(2, 2, &eq_vars, None);
-        let assigns: Vec<_> = traced.frames.iter()
+        let assigns: Vec<_> = traced
+            .frames
+            .iter()
             .filter(|f| matches!(f.step, MatchingStep::Assign { .. }))
             .collect();
         assert_eq!(assigns.len(), 2 + 1); // 2 original + 1 re-assignment from displacement
@@ -354,17 +399,24 @@ mod tests {
         // eq0 and eq1 both want var0; eq0 gets it first, then eq1 displaces eq0
         let eq_vars = vec![HashSet::from([0, 1]), HashSet::from([0])];
         let traced = maximum_matching_with_trace(2, 2, &eq_vars, None);
-        let displacements: Vec<_> = traced.frames.iter()
+        let displacements: Vec<_> = traced
+            .frames
+            .iter()
             .filter(|f| matches!(f.step, MatchingStep::TryDisplace { .. }))
             .collect();
-        assert!(!displacements.is_empty(), "should record displacement attempt");
+        assert!(
+            !displacements.is_empty(),
+            "should record displacement attempt"
+        );
     }
 
     #[test]
     fn trace_records_equation_failed_when_unmatched() {
         let eq_vars = vec![HashSet::from([0]), HashSet::from([0])];
         let traced = maximum_matching_with_trace(2, 1, &eq_vars, None);
-        let failures: Vec<_> = traced.frames.iter()
+        let failures: Vec<_> = traced
+            .frames
+            .iter()
             .filter(|f| matches!(f.step, MatchingStep::EquationFailed(_)))
             .collect();
         assert_eq!(failures.len(), 1, "one equation should fail to match");

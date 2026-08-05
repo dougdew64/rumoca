@@ -109,13 +109,19 @@ mod tests {
         // Closed: recording is a no-op and taking yields the empty capture.
         record_instantiated(&ast::InstanceOverlay::default());
         let none = take_typed_model_capture();
-        assert!(none.instantiated.is_none(), "no scope was open, so nothing was recorded");
+        assert!(
+            none.instantiated.is_none(),
+            "no scope was open, so nothing was recorded"
+        );
 
         start_typed_model_capture();
         record_instantiated(&ast::InstanceOverlay::default());
         record_typechecked(&ast::InstanceOverlay::default());
         let got = take_typed_model_capture();
-        assert!(got.instantiated.is_some(), "the instantiated overlay was captured");
+        assert!(
+            got.instantiated.is_some(),
+            "the instantiated overlay was captured"
+        );
         assert!(got.typechecked.is_some(), "and the typechecked one");
 
         // Closed again by the take.

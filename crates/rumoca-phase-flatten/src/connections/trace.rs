@@ -137,7 +137,11 @@ pub(crate) fn emit(
 ) {
     // Built once and shared by both destinations, so an explicit observer and an
     // ambient capture in the same run cannot disagree about what a frame said.
-    let frame = ConnectionFrame { step, sets_so_far, equations_so_far };
+    let frame = ConnectionFrame {
+        step,
+        sets_so_far,
+        equations_so_far,
+    };
     if let Some(obs) = observer {
         obs(&frame);
     }
@@ -163,18 +167,49 @@ mod tests {
     #[test]
     fn a_capture_scope_records_this_run_and_stops_when_taken() {
         // Closed: nothing is recorded, and taking yields nothing.
-        emit(None, ConnectionStep::Start { connect_statements: 1 }, 0, 0);
-        assert!(take_capture().is_empty(), "no scope was open, so there is nothing to take");
+        emit(
+            None,
+            ConnectionStep::Start {
+                connect_statements: 1,
+            },
+            0,
+            0,
+        );
+        assert!(
+            take_capture().is_empty(),
+            "no scope was open, so there is nothing to take"
+        );
 
         start_capture();
-        emit(None, ConnectionStep::Start { connect_statements: 4 }, 0, 0);
-        emit(None, ConnectionStep::Start { connect_statements: 5 }, 1, 2);
+        emit(
+            None,
+            ConnectionStep::Start {
+                connect_statements: 4,
+            },
+            0,
+            0,
+        );
+        emit(
+            None,
+            ConnectionStep::Start {
+                connect_statements: 5,
+            },
+            1,
+            2,
+        );
         let frames = take_capture();
         assert_eq!(frames.len(), 2, "both frames were recorded: {frames:?}");
         assert_eq!(frames[1].sets_so_far, 1, "and carry their running counts");
 
         // Taking closed the scope: later frames must not leak into the next take.
-        emit(None, ConnectionStep::Start { connect_statements: 9 }, 0, 0);
+        emit(
+            None,
+            ConnectionStep::Start {
+                connect_statements: 9,
+            },
+            0,
+            0,
+        );
         assert!(
             take_capture().is_empty(),
             "capture continued after take \u{2014} one model's frames would appear \
@@ -189,10 +224,21 @@ mod tests {
         start_capture();
         {
             let sink = |f: &ConnectionFrame| seen.borrow_mut().push(f.clone());
-            emit(Some(&sink), ConnectionStep::Start { connect_statements: 7 }, 3, 4);
+            emit(
+                Some(&sink),
+                ConnectionStep::Start {
+                    connect_statements: 7,
+                },
+                3,
+                4,
+            );
         }
         let captured = take_capture();
-        assert_eq!(seen.into_inner(), captured, "both destinations get the same frame");
+        assert_eq!(
+            seen.into_inner(),
+            captured,
+            "both destinations get the same frame"
+        );
     }
 
     /// With no observer the emit call is a no-op; with one, the frame arrives
@@ -200,7 +246,14 @@ mod tests {
     /// exists — a step alone cannot say how far the pass has got.
     #[test]
     fn emit_is_a_no_op_without_an_observer_and_delivers_with_one() {
-        emit(None, ConnectionStep::Start { connect_statements: 4 }, 0, 0);
+        emit(
+            None,
+            ConnectionStep::Start {
+                connect_statements: 4,
+            },
+            0,
+            0,
+        );
 
         let seen = RefCell::new(Vec::new());
         let sink = |f: &ConnectionFrame| seen.borrow_mut().push(f.clone());
@@ -221,7 +274,11 @@ mod tests {
         assert_eq!(seen[0].equations_so_far, 2);
         assert!(matches!(
             seen[0].step,
-            ConnectionStep::EquationsGenerated { set_size: 3, equations_added: 2, .. },
+            ConnectionStep::EquationsGenerated {
+                set_size: 3,
+                equations_added: 2,
+                ..
+            },
         ));
     }
 }

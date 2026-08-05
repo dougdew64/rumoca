@@ -662,7 +662,10 @@ pub enum IndexReductionStep {
     /// `demote_direct_assigned_states` both run before the traced passes in the
     /// standard pipeline). This is the baseline for the *animation*, and is
     /// labelled as such rather than as the original system.
-    Start { states: Vec<String>, equations: usize },
+    Start {
+        states: Vec<String>,
+        equations: usize,
+    },
     /// Starting to evaluate a candidate state for reduction.
     BeginState { state: String },
     /// A constraint was differentiated — before and after RHS expressions.
@@ -681,7 +684,10 @@ pub enum IndexReductionStep {
     /// State demoted from differential to algebraic.
     Demoted { state: String },
     /// An outer-loop round completed.
-    RoundComplete { round: usize, demotions_this_round: usize },
+    RoundComplete {
+        round: usize,
+        demotions_this_round: usize,
+    },
 }
 
 /// Snapshot of the index-reduction state at each step, for animation rendering.
@@ -732,19 +738,23 @@ pub fn emit_index_reduction_start(
     dae: &Dae,
     demoted_so_far: &[String],
 ) {
-    emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-        step: IndexReductionStep::Start {
-            states: dae
-                .variables
-                .states
-                .keys()
-                .map(|name| name.as_str().to_string())
-                .collect(),
-            equations: dae.continuous.equations.len(),
+    emit_index_reduction_frame(
+        frames,
+        observer,
+        IndexReductionFrame {
+            step: IndexReductionStep::Start {
+                states: dae
+                    .variables
+                    .states
+                    .keys()
+                    .map(|name| name.as_str().to_string())
+                    .collect(),
+                equations: dae.continuous.equations.len(),
+            },
+            demoted_so_far: demoted_so_far.to_vec(),
+            round: 0,
         },
-        demoted_so_far: demoted_so_far.to_vec(),
-        round: 0,
-    });
+    );
 }
 
 /// Like [`index_reduce_missing_state_derivatives`], but records every
@@ -765,16 +775,25 @@ pub fn index_reduce_missing_state_derivatives_with_trace(
     let max_rounds = dae.variables.states.len().clamp(1, 8);
     let mut total_changed = 0usize;
     for round in 0..max_rounds {
-        let changed = index_reduce_missing_state_derivatives_once_with_trace(dae, observer, frames, demoted_so_far, round_offset + round,
+        let changed = index_reduce_missing_state_derivatives_once_with_trace(
+            dae,
+            observer,
+            frames,
+            demoted_so_far,
+            round_offset + round,
         )?;
-        emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-            step: IndexReductionStep::RoundComplete {
+        emit_index_reduction_frame(
+            frames,
+            observer,
+            IndexReductionFrame {
+                step: IndexReductionStep::RoundComplete {
+                    round: round_offset + round,
+                    demotions_this_round: changed,
+                },
+                demoted_so_far: demoted_so_far.to_vec(),
                 round: round_offset + round,
-                demotions_this_round: changed,
             },
-            demoted_so_far: demoted_so_far.to_vec(),
-            round: round_offset + round,
-        });
+        );
         if changed == 0 {
             break;
         }
@@ -809,11 +828,17 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             continue;
         }
 
-        emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-            step: IndexReductionStep::BeginState { state: state_name.to_string() },
-            demoted_so_far: demoted_so_far.to_vec(),
-            round,
-        });
+        emit_index_reduction_frame(
+            frames,
+            observer,
+            IndexReductionFrame {
+                step: IndexReductionStep::BeginState {
+                    state: state_name.to_string(),
+                },
+                demoted_so_far: demoted_so_far.to_vec(),
+                round,
+            },
+        );
 
         let candidate_indices = differentiable_candidate_equations(
             dae,
@@ -844,15 +869,19 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             }
 
             let before_rhs = dae.continuous.equations[idx].rhs.clone();
-            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-                step: IndexReductionStep::Differentiated {
-                    state: state_name.to_string(),
-                    before_rhs: Box::new(before_rhs),
-                    after_rhs: Box::new(new_rhs.clone()),
+            emit_index_reduction_frame(
+                frames,
+                observer,
+                IndexReductionFrame {
+                    step: IndexReductionStep::Differentiated {
+                        state: state_name.to_string(),
+                        before_rhs: Box::new(before_rhs),
+                        after_rhs: Box::new(new_rhs.clone()),
+                    },
+                    demoted_so_far: demoted_so_far.to_vec(),
+                    round,
                 },
-                demoted_so_far: demoted_so_far.to_vec(),
-                round,
-            });
+            );
 
             let old_origin = dae.continuous.equations[idx].origin.clone();
             dae.continuous.equations[idx].rhs = new_rhs;
@@ -871,11 +900,17 @@ fn index_reduce_missing_state_derivatives_once_with_trace(
             break;
         }
         if !found {
-            emit_index_reduction_frame(frames, observer, IndexReductionFrame {
-                step: IndexReductionStep::CandidateExhausted { state: state_name.to_string() },
-                demoted_so_far: demoted_so_far.to_vec(),
-                round,
-            });
+            emit_index_reduction_frame(
+                frames,
+                observer,
+                IndexReductionFrame {
+                    step: IndexReductionStep::CandidateExhausted {
+                        state: state_name.to_string(),
+                    },
+                    demoted_so_far: demoted_so_far.to_vec(),
+                    round,
+                },
+            );
         }
     }
 
@@ -1148,7 +1183,10 @@ mod tests {
     fn emit_index_reduction_frame_works_without_an_observer() {
         let mut frames = Vec::new();
         let frame = IndexReductionFrame {
-            step: IndexReductionStep::RoundComplete { round: 0, demotions_this_round: 1 },
+            step: IndexReductionStep::RoundComplete {
+                round: 0,
+                demotions_this_round: 1,
+            },
             demoted_so_far: vec!["y".into()],
             round: 0,
         };
@@ -1165,14 +1203,13 @@ mod tests {
         let span = test_span();
         let mut dae = Dae::new();
         for name in ["s", "t"] {
-            dae.variables.states.insert(
-                VarName::new(name),
-                Variable::new(VarName::new(name), span),
-            );
+            dae.variables
+                .states
+                .insert(VarName::new(name), Variable::new(VarName::new(name), span));
         }
-        dae.continuous.equations.push(Equation::residual(
-            var_ref("v", span), span, "test",
-        ));
+        dae.continuous
+            .equations
+            .push(Equation::residual(var_ref("v", span), span, "test"));
 
         let observed = std::cell::RefCell::new(Vec::new());
         let mut frames = Vec::new();
