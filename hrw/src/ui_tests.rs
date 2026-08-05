@@ -491,7 +491,15 @@ fn switching_tours_clears_the_stage_side_on_screen() {
 /// premise turned a wrong test into this one.
 #[test]
 fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
-    let mut h = harness(App::test_default());
+    let mut app = App::test_default();
+    // **Its own tour text, not the live ad hoc file.** This used to click a link out
+    // of `.hrw-bridge/tour.md`, which is gitignored and rewritten every time Claude
+    // answers a question — so it passed on content nobody had chosen, and broke the
+    // day an answer was written that did not happen to contain this link.
+    app.test_set_tour_text(
+        "# Fixture\n\n[Structural → Incidence](hrw://stage/Structural/Incidence)\n",
+    );
+    let mut h = harness(app);
 
     h.get_by_label("Structural → Incidence").click();
     h.run_steps(2);
@@ -523,7 +531,12 @@ fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
 /// against the MSL for no gain here.
 #[test]
 fn a_tour_link_acts_when_clicked_in_isolation() {
-    let mut h = harness(App::test_default());
+    let mut app = App::test_default();
+    // Own tour text — see the note in the test above.
+    app.test_set_tour_text(
+        "# Fixture\n\n[Structural → Incidence](hrw://stage/Structural/Incidence)\n",
+    );
+    let mut h = harness(app);
     h.state_mut().test_set_walked_state(
         "/x/RcCircuit.mo",
         "RcCircuit",

@@ -7647,6 +7647,22 @@ impl HrwLink {
     ///
     /// The three that do **not** need one are the three that make sense on their own: the
     /// two load verbs, and opening a notebook.
+    /// **A deny-list, and that is the hazard**: every *new* verb needs a specimen
+    /// unless it is added here, so a form that does not need one is refused by
+    /// default and shows a notice about loading a specimen that has nothing to do
+    /// with what was clicked.
+    ///
+    /// `OpenTour` was exactly that, 2026-08-05. The link parsed, the handler was
+    /// correct, and clicking it produced *"no specimen loaded — this stop needs
+    /// one"* — because **opening a tour plainly does not need a specimen**, and
+    /// nothing said so. Doug: *"The links in the 'Claude's answer' tour do not
+    /// work."*
+    ///
+    /// Left as a deny-list rather than inverted, deliberately: an allow-list would
+    /// fail the other way, letting a verb that *does* need a specimen through to
+    /// half-apply itself, which is the worse failure. **The fix is that adding a
+    /// variant means visiting this function**, which `link_verbs_declare_whether_they_need_a_specimen`
+    /// now enforces rather than leaving to memory.
     fn requires_specimen(&self) -> bool {
         !matches!(
             self,
@@ -7654,6 +7670,8 @@ impl HrwLink {
                 | Self::LoadAndSwitch(..)
                 | Self::OpenNotebook(_)
                 | Self::OpenInSystemModeler(_)
+                // Opening a tour is navigation between documents; no model involved.
+                | Self::OpenTour { .. }
         )
     }
 
@@ -8109,6 +8127,27 @@ impl App {
             }),
             "unbalanced model",
         );
+    }
+
+    /// Put tour text on screen **without touching the disk**.
+    ///
+    /// **Added 2026-08-05, because two tests were reading the live ad hoc tour.**
+    /// `.hrw-bridge/tour.md` is gitignored and ephemeral by construction — Claude
+    /// overwrites it every time he answers a question — and
+    /// `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` and
+    /// `a_tour_link_acts_when_clicked_in_isolation` both clicked a link that happened
+    /// to be in whatever answer was last written. **They passed for months on content
+    /// no one had chosen**, and broke the moment an answer was written that did not
+    /// contain that link.
+    ///
+    /// A test whose fixture is a scratch file is not testing what it says it tests.
+    pub(crate) fn test_set_tour_text(&mut self, markdown: &str) {
+        self.tour.selected = Some(TourSource::AdHoc);
+        self.tour.cached = Some((markdown.to_owned(), std::time::SystemTime::now()));
+        // Far in the future so `poll` does not immediately re-read the real file and
+        // replace what this just set.
+        self.tour.polled_at = Some(std::time::Instant::now());
+        self.ui_mode = UiMode::Tour;
     }
 
     pub(crate) fn test_stage(&self) -> StageKind {
@@ -9869,6 +9908,73 @@ mod tests {
         app.drain_worker();
         assert_eq!(app.log_entries.len(), 1);
         assert!(app.log_entries[0].message.contains("test log"));
+    }
+
+    /// **Every link verb states whether it needs a specimen, and opening a tour does not.**
+    ///
+    /// `requires_specimen` is a **deny-list**: a verb needs a specimen unless it is
+    /// named as an exception. So a new verb that needs none is refused *by default*,
+    /// with a notice about loading a specimen that has nothing to do with what was
+    /// clicked — which is what happened to `OpenTour` on the day it shipped. The link
+    /// parsed and the handler was correct; the guard in front of both said no.
+    ///
+    /// **This test is the thing that was missing**, not the exemption. Adding a verb
+    /// and forgetting the deny-list is silent, and neither the parser tests nor the
+    /// citation checker can see it — they stop at the grammar and the target.
+    #[test]
+    fn link_verbs_declare_whether_they_need_a_specimen() {
+        // Navigation between documents: no model is involved, so a reader with
+        // nothing loaded must still be able to follow a citation.
+        for link in [
+            HrwLink::OpenTour { tour: "failure-parse".to_owned(), stop: None },
+            HrwLink::OpenTour {
+                tour: "failure-parse".to_owned(),
+                stop: Some("stop-1-the-failure-itself".to_owned()),
+            },
+            HrwLink::LoadSpecimen("RcCircuit".to_owned()),
+        ] {
+            assert!(
+                !link.requires_specimen(),
+                "{} must be followable with nothing loaded",
+                link.describe(),
+            );
+        }
+        // And the contrast, so this is not vacuously true: a verb that acts *on* a
+        // loaded model genuinely does need one.
+        assert!(
+            HrwLink::SwitchStage(StageKind::Structural, None).requires_specimen(),
+            "switching stages without a specimen would half-apply",
+        );
+    }
+
+    /// **The tour-citation forms parse.** Missing when the form shipped, which is
+    /// exactly the gap a must-fire test exists to close: `fixture_tour_links_all_resolve`
+    /// only checks links found in *fixture* tours, and `tour_citations_…` only checks
+    /// that cited names exist — **neither exercises the parser itself**, so a form that
+    /// failed to parse would show up as "the link does nothing" with nothing failing.
+    /// *(Placed with its own `#[test]`, and the one below restored: inserting this
+    /// between `#[test]` and `fn parse_hrw_link_load_specimen` stole the attribute and
+    /// silently un-tested that function — the fourth recorded instance of the trap
+    /// `CLAUDE.md` warns about. **`dead_code = "deny"`, adopted this morning, is what
+    /// caught it**; without that lint the suite would have gone green one test short.)*
+    #[test]
+    fn parse_hrw_link_tour_and_stop() {
+        assert_eq!(
+            parse_hrw_link("hrw://tour/failure-parse"),
+            Some(HrwLink::OpenTour {
+                tour: "failure-parse".to_owned(),
+                stop: None
+            }),
+        );
+        assert_eq!(
+            parse_hrw_link("hrw://tour/failure-parse/stop/stop-4-the-distinction-this-specimen-anchors"),
+            Some(HrwLink::OpenTour {
+                tour: "failure-parse".to_owned(),
+                stop: Some("stop-4-the-distinction-this-specimen-anchors".to_owned()),
+            }),
+        );
+        // An empty name names nothing, as with `notebook/`.
+        assert_eq!(parse_hrw_link("hrw://tour/"), None);
     }
 
     #[test]
