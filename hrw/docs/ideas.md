@@ -3773,3 +3773,54 @@ attention spent deciding which is authoritative, and the two drift the moment ei
 caveat, what was verified and how, a question back. That is Charter Decision 9 applied to Claude's
 output rather than to the UI, and it is a direct argument for **#65**: the answer is already the
 place the content should live, which is exactly why its placement in a list row is wrong.
+
+---
+
+## 66. A curriculum tour for every phase and algorithm
+
+**Stated by Doug 2026-08-05**, resuming the DAE tour:
+
+> *"Eventually, we will implement tours like the DAE and matching tours, but for the other phases
+> and algorithms."*
+
+### What exists, and what this is not
+
+Two **curriculum** tours: `dae-construction.md` and `matching.md`. They teach a concept, on a
+specimen chosen so the concept is unavoidable — `SingleInertia` against `UnbalancedShaft`, one
+line apart.
+
+**Distinct from the six `failure-*` tours** built the same week under [#46](#46-a-failure-specimen--tour-for-every-compiler-phase).
+Those show a phase *reporting trouble* and teach the `Failed`/`Flagged` distinction. A curriculum
+tour shows a phase **working**, and teaches what it is *for*. Both are wanted; neither substitutes.
+
+**The chain is already written**: `docs/compiler-phases/the-chain-of-problems.md` names the order,
+and `CLAUDE.md` records index reduction on `Drivetrain` as the next link — *where a square system
+is no longer enough because ideal gears make a state non-independent*.
+
+### Why this is not simply "write eleven tours"
+
+**The tours are what find the defects.** Doug, the same day: *"The testing of this tour has
+yielded a great many bug fixes and feature enhancements."* That is the measured pattern, not a
+hope — walking two curriculum tours produced, among others: the DAE tab that did not exist, five
+tree-only stages that could not be pointed into, replays presented as the compilation, fabricated
+BLT blocks, a pane that showed its error instead of its artifact, and the whole
+source-provenance feature.
+
+**So the rate limit is Doug's attention, not authoring effort.** A tour written faster than it can
+be walked buys nothing, and the tours rule already says the scarce resource is *attention per
+expectation*. **Write the next one when the previous has been walked**, which is also what keeps
+each one honest — a tour written against an untested pane is a claim nobody has checked.
+
+### What to do before each one
+
+The pattern that has worked twice, and is worth following rather than rediscovering:
+
+1. **Pick the specimen for the concept**, and prefer a *pair* one line apart. The contrast is what
+   makes the concept unavoidable.
+2. **Verify what the compiler actually does** — `failure_map`, the notebook trace — **before**
+   writing a word. A first draft of `MissingComponentClass` asserted the wrong phase and was
+   caught this way.
+3. **Expect the composition to expose gaps**, and fix them rather than writing around them. Both
+   existing curriculum tours did; that is the point of writing them.
+
+**Not scheduled.** The next is index reduction on `Drivetrain` when Doug reaches it.
