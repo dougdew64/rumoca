@@ -557,6 +557,49 @@ very sweep, which is the sort of thing this file exists to remember.
   ones can be made to look different at the call site, which is what `parse_list` does for one
   file.
 
+## Accuracy item 6 — spyplot, and the audit's own blind spot
+
+### `str_vec` hid the pattern the audit was grepping for
+
+**The `filter_map` audit searched each file for the literal token.** `str_vec` is
+`filter_map(as_str)` **and** `unwrap_or_default()` in one shared helper with **9 callers**, under
+a name that hints at neither — so every one of those call sites reached the same silent loss and
+was invisible to the audit. **An audit by grep finds a pattern only where it is spelled out.**
+
+`str_vec_checked` now exists beside it and returns what it could not read. Converted where the
+loss changes a picture (all four `spyplot` calls); the remaining callers are logged below.
+
+### Two defects in `spyplot.rs`
+
+1. **An unreadable `kind` became a scalar block.** `kind == Some("coupled")` sent every
+   unreadable kind down the `else` branch, which builds a **1×1 block from a single
+   equation/unknown pair** — so a coupled block was drawn as one cell on the diagonal, and
+   `coupled_count` (quoted in the caption as *"N coupled (algebraic loops)"*) came out one too
+   low. **The spy plot exists to show where the coupling is**; reclassifying a coupled block as
+   scalar inverts the one thing the picture is for.
+2. **Tear variables were dropped silently** through `str_vec`. They are the *answer* tearing
+   produces, so a lost one shows a block torn on fewer variables than it was.
+
+`caption()` leads with the caveat, and `Plot::problems()` makes both checkable — which matters
+here more than elsewhere, because **this canvas is one of the three surfaces `egui_kittest`
+cannot reach**, so the parsed data is the only thing a test can hold.
+
+### The Context Bar assertions asserted something else
+
+Four tests used `query_by_label_contains("RcCircuit")`. That is satisfied by **any** source
+line, list row or notice mentioning the specimen — so they did not assert *"the Context Bar
+names the specimen"*, they asserted *"exactly one thing on screen mentions it"*. One broke
+earlier today when the source pane legitimately started rendering. The precondition now matches
+the background's own shape (`· name · stage`).
+
+### Still open from this item
+
+- **`str_vec`'s other callers are unconverted**: `reduction_view` (demoted states),
+  `incidence_view` (unknown names, BLT members), `tearing_anim`. `incidence_view`'s
+  `unknown_names` is already protected by a length check against `n_var`, and its BLT members by
+  the size-mismatch report added earlier today — the rest are unexamined.
+  <!-- unbuilt: str_vec_checked_everywhere -->
+
 ## Accuracy items 4 and 5 — stale docs, and the tours
 
 **Item 5, the tours: checked and NOT stale.** Verified rather than assumed, four ways —

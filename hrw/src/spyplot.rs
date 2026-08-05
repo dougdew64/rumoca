@@ -84,9 +84,17 @@ pub struct Plot {
     blocks: Vec<Block>,
     // Count of coupled blocks (algebraic loops) — shown in the caption.
     coupled_count: usize,
+    /// What the report contained that this parser could not read. Surfaced in
+    /// [`caption`](Self::caption), because **this canvas is one of the three surfaces
+    /// `egui_kittest` cannot reach** (`docs/tech-debt.md`) — so its correctness rests
+    /// on the parsed data being checkable, and on a problem being impossible to
+    /// render without.
+    problems: Vec<String>,
 }
 
-use crate::str_vec;
+// `str_vec` is gone from this file deliberately: every list it read here is one
+// whose loss changes the picture (block members, tear variables), so all four calls
+// moved to `str_vec_checked`. See the 2026-08-04 sweep note in `docs/tech-debt.md`.
 
 impl Plot {
     /// Parse the structural report JSON into a drawable `Plot`.
@@ -102,46 +110,93 @@ impl Plot {
         if blocks_json.is_empty() {
             return None;
         }
+        let mut problems: Vec<String> = Vec::new();
         let mut blocks = Vec::with_capacity(blocks_json.len());
         let mut pos = 0usize;
         let mut coupled_count = 0usize;
         for (report_index, b) in blocks_json.iter().enumerate() {
-            let coupled = b.get("kind").and_then(Value::as_str) == Some("coupled");
+            // **An unreadable `kind` is not a scalar block.**
+            //
+            // `== Some("coupled")` made every unreadable kind fall to the `else`
+            // branch, which builds a **1x1 block from a single `equation`/`unknown`
+            // pair** — so a coupled block whose kind could not be read was drawn as
+            // one cell on the diagonal. The spy plot exists to show *where the
+            // coupling is*; silently reclassifying a coupled block as scalar
+            // inverts the one thing the picture is for. Found by the 2026-08-04
+            // sweep.
+            let kind = b.get("kind").and_then(Value::as_str);
+            if kind.is_none() {
+                problems.push(format!(
+                    "block {report_index} has no readable `kind` \u{2014} it is drawn as \
+                     a scalar block, which is what an unreadable kind used to become \
+                     silently"
+                ));
+            }
+            let coupled = kind == Some("coupled");
             let (equations, unknowns) = if coupled {
-                (str_vec(b.get("equations")), str_vec(b.get("unknowns")))
+                let (eqs, p1) = crate::str_vec_checked(b.get("equations"), "equations");
+                let (uns, p2) = crate::str_vec_checked(b.get("unknowns"), "unknowns");
+                problems.extend(p1.into_iter().chain(p2).map(|p| format!("block {report_index}: {p}")));
+                (eqs, uns)
             } else {
                 let eq = b.get("equation").and_then(Value::as_str).unwrap_or("").to_owned();
                 let un = b.get("unknown").and_then(Value::as_str).unwrap_or("").to_owned();
                 (vec![eq], vec![un])
             };
             let size = unknowns.len().max(equations.len()).max(1);
-            let tearing = b.get("tearing").and_then(|t| {
-                if t.is_null() {
-                    None
-                } else {
-                    Some((str_vec(t.get("tear_vars")), str_vec(t.get("residual_equations"))))
+            // Tear variables are the *answer* tearing produces, so a silently
+            // dropped one shows a block torn on fewer variables than it was.
+            let tearing = match b.get("tearing") {
+                Some(t) if !t.is_null() => {
+                    let (tv, p1) = crate::str_vec_checked(t.get("tear_vars"), "tear_vars");
+                    let (re, p2) =
+                        crate::str_vec_checked(t.get("residual_equations"), "residual_equations");
+                    problems
+                        .extend(p1.into_iter().chain(p2).map(|p| format!("block {report_index}: {p}")));
+                    Some((tv, re))
                 }
-            });
+                _ => None,
+            };
             if coupled {
                 coupled_count += 1;
             }
             blocks.push(Block { report_index, start: pos, size, coupled, equations, unknowns, tearing });
             pos += size;
         }
-        Some(Plot { n: pos, blocks, coupled_count })
+        Some(Plot { n: pos, blocks, coupled_count, problems })
+    }
+
+    /// What the parser could not read — empty when the report read cleanly.
+    pub fn problems(&self) -> &[String] {
+        &self.problems
     }
 
     /// One-line caption summarizing the BLT structure, shown above the canvas.
     /// Example: "12 block(s) along the diagonal, 2 coupled (algebraic loops), 14x14 matched"
+    ///
+    /// **Leads with a warning when anything failed to read**, because the count it
+    /// quotes — *"2 coupled (algebraic loops)"* — is exactly the number an unreadable
+    /// `kind` used to understate, by silently reclassifying a coupled block as
+    /// scalar.
     pub fn caption(&self) -> String {
+        let caveat = if self.problems.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " \u{26a0} {} part(s) of the report could not be read, so the block \
+                 structure below is INCOMPLETE and the coupled count may be too low \u{2014}",
+                self.problems.len(),
+            )
+        };
         format!(
-            "{} block(s) along the diagonal · {} coupled (algebraic loop{}) · {}×{} matched — \
-             hover a block to inspect, click to capture",
+            "{} block(s) along the diagonal \u{00b7} {} coupled (algebraic loop{}) \u{00b7} \
+             {}\u{00d7}{} matched{} \u{2014} hover a block to inspect, click to capture",
             self.blocks.len(),
             self.coupled_count,
             if self.coupled_count == 1 { "" } else { "s" },
             self.n,
             self.n,
+            caveat,
         )
     }
 
@@ -429,5 +484,54 @@ mod tests {
         let (tear_vars, residuals) = block.tearing.as_ref().expect("should have tearing");
         assert_eq!(tear_vars, &["u0"]);
         assert_eq!(residuals, &["e0"]);
+        assert!(plot.problems().is_empty(), "a clean report: {:?}", plot.problems());
+    }
+
+    /// **An unreadable `kind` is not silently a scalar block.**
+    ///
+    /// The sweep's finding, 2026-08-04. `kind == Some("coupled")` sent every
+    /// unreadable kind down the `else` branch, which builds a **1x1 block from a
+    /// single equation/unknown pair** — so a coupled block whose kind could not be
+    /// read was drawn as one cell on the diagonal, and `coupled_count` (quoted in the
+    /// caption as "N coupled (algebraic loops)") was one too low.
+    ///
+    /// **The spy plot exists to show where the coupling is.** Reclassifying a coupled
+    /// block as scalar inverts the single thing the picture is for.
+    #[test]
+    fn a_block_with_no_readable_kind_is_reported() {
+        let report = json!({ "blocks": [
+            { "equations": ["e0", "e1"], "unknowns": ["u0", "u1"] },
+        ]});
+        let plot = Plot::from_report(&report).expect("parses");
+        assert_eq!(plot.problems().len(), 1, "{:?}", plot.problems());
+        assert!(plot.problems()[0].contains("kind"), "{:?}", plot.problems()[0]);
+        assert!(
+            plot.caption().contains("INCOMPLETE"),
+            "the caption quotes the coupled count, so it must carry the caveat: {}",
+            plot.caption(),
+        );
+    }
+
+    /// **A tear variable that is not a name is reported, not dropped.**
+    ///
+    /// Tear variables are the *answer* tearing produces, so losing one shows a block
+    /// torn on fewer variables than it was. This loss came through `str_vec`, which
+    /// hides a `filter_map` and an `unwrap_or_default` behind a name that suggests
+    /// neither — and was therefore invisible to the sweep's own `filter_map` audit.
+    #[test]
+    fn a_tear_variable_that_is_not_a_name_is_reported() {
+        let report = json!({ "blocks": [{
+            "kind": "coupled",
+            "equations": ["e0", "e1"],
+            "unknowns": ["u0", "u1"],
+            "tearing": { "tear_vars": ["u0", 7], "residual_equations": ["e0"] },
+        }]});
+        let plot = Plot::from_report(&report).expect("parses");
+        assert_eq!(plot.problems().len(), 1, "{:?}", plot.problems());
+        assert!(
+            plot.problems()[0].contains("1 of 2") && plot.problems()[0].contains("tear_vars"),
+            "{:?}",
+            plot.problems()[0],
+        );
     }
 }

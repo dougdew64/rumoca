@@ -1543,8 +1543,14 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
     // made the bar contradict `focus.json`, which carries the background either
     // way.
     assert!(
-        h.query_by_label_contains("RcCircuit").is_some(),
-        "precondition: the background names the specimen even with nothing pointed at",
+        // **The background's own shape, not the bare name.** `contains("RcCircuit")`
+        // is satisfied by any source line, list row or notice that mentions the
+        // specimen — so this did not assert "the Context Bar names it", it asserted
+        // "exactly one thing on screen mentions it", and it broke on 2026-08-04 when
+        // the source pane legitimately started rendering. See the sweep note in
+        // `docs/tech-debt.md`.
+        h.query_by_label_contains("\u{00b7} RcCircuit \u{00b7}").is_some(),
+        "precondition: the Context Bar names the specimen even with nothing pointed at",
     );
     assert!(
         h.query_by_label_contains("Pointing at").is_none(),

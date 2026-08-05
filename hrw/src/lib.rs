@@ -418,6 +418,36 @@ pub fn draw_matrix_axis_labels(
 ///
 /// Defensive — returns an empty vec if the value is missing or not an array.
 /// Used by multiple views to extract equation names, unknown names, etc.
+/// [`str_vec`], but says what it could not read.
+///
+/// **The shared helper was the `filter_map` audit's blind spot** (2026-08-04). That
+/// audit grepped each file for the literal token, so the nine call sites that reach
+/// the same silent loss *through this function* were invisible to it — a
+/// `filter_map` and an `unwrap_or_default` in one place, wearing a name that gives no
+/// hint of either.
+///
+/// Returns `(names, problem)`. `problem` is `Some` when the key was present but not a
+/// list, or when an entry was not a string — never when the key is simply absent,
+/// which is the ordinary case of a block that lists only one side.
+pub fn str_vec_checked(v: Option<&serde_json::Value>, what: &str) -> (Vec<String>, Option<String>) {
+    let Some(raw) = v else { return (Vec::new(), None) };
+    let Some(arr) = raw.as_array() else {
+        return (Vec::new(), Some(format!("`{what}` is present but is not a list")));
+    };
+    let mut out = Vec::with_capacity(arr.len());
+    let mut bad = 0usize;
+    for x in arr {
+        match x.as_str() {
+            Some(s) => out.push(s.to_owned()),
+            None => bad += 1,
+        }
+    }
+    let problem = (bad > 0).then(|| {
+        format!("{bad} of {} `{what}` entries were not names and are missing", arr.len())
+    });
+    (out, problem)
+}
+
 pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
     v.and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
