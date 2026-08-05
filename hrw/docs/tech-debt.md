@@ -557,6 +557,39 @@ very sweep, which is the sort of thing this file exists to remember.
   ones can be made to look different at the call site, which is what `parse_list` does for one
   file.
 
+## Accuracy item 1 — the `unwrap_or_*` family (a second, separate silent substitution)
+
+**The `filter_map` audit did not cover this.** `unwrap_or_default()` / `unwrap_or(0)` /
+`unwrap_or("")` substitute a *value* where `filter_map` drops an *entry*, and they are far more
+common: measured **75** in `worker.rs` production, 10 in `reduction_view`, 9 in
+`incidence_view`, 7 in `matching_anim`, 6 in `ic_plan_anim`, 3 in `tearing_anim`, 2 each in
+`spyplot`/`equation_sheet`/`tarjan_anim`, 1 in `identifier_index`.
+
+**Most are legitimate** — a genuinely optional field with a truthful default. Four were not:
+
+1. **`expr_to_short` rendered a missing operand as the empty string**, so `a * 2` with an
+   unreadable left side displayed as `" * 2"` and `x + y` as `"x + "` — **a different equation,
+   shown as the model's equation**, with correct spacing and plausible syntax. Equations are
+   what Doug reads; this is as damaging as a wrong incidence matrix. Now `(missing)`, a marker
+   deliberately distinct from the existing `(expr)` (which means *a shape HRW cannot print* — a
+   limit of the tool, not a hole in the data).
+2. **An unreadable function name rendered as `"f"`** — a legal Modelica identifier, so `sin(x)`
+   became `f(x)`, indistinguishable from a real call. **The substitution was not merely lossy,
+   it was convincing.** Absent args and an empty args list were also collapsed, though `time()`
+   really does take none.
+3. **A nameless incidence row was named `""`, and `eq_index` is a name→row map** — so two
+   unnamed rows collided, the second overwriting the first, and a matching entry with its own
+   name missing (also `""`) then resolved to whichever row won. **A matched pair attached to the
+   wrong equation**, in a picture that stays well-formed.
+4. **`match_progress` returned `(0, n_eq)` when no frames had arrived**, and its own doc says
+   `matched < total` means structurally singular. So no data produced **the strongest possible
+   claim about the model**. Unreachable for a recorded animation; a **live debug session** is
+   what reaches it, rendering while frames still arrive. Now `Option`.
+
+**Left alone, and checked:** `unwrap_or("?")` in the incidence hover tooltip (visible, honest),
+and `binary_op_symbol`'s fallthrough to the variant name (an unknown operator renders as itself,
+which is odd-looking and therefore truthful).
+
 ## The source pane told a selected model to select a model
 
 **Found by the sweep, 2026-08-04**, following the `&Path`-vs-qualified-name generalisation from

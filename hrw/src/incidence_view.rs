@@ -136,11 +136,24 @@ impl IncidenceMatrix {
         let mut equation_texts = Vec::with_capacity(n_eq);
         let mut rows = Vec::with_capacity(n_eq);
         for (row_i, r) in rows_json.iter().enumerate() {
-            let eq_name = r
-                .get("equation")
-                .and_then(Value::as_str)
-                .unwrap_or("")
-                .to_owned();
+            // **A nameless row gets a name unique to it, not the empty string.**
+            //
+            // `eq_index` below is a `name -> row` map. Two rows both named `""`
+            // collide, so the second silently overwrites the first — and then a
+            // matching entry whose own equation name is missing (also `""`) resolves
+            // to whichever row won, **attaching a matched pair to the wrong
+            // equation**. The picture stays well-formed and is about a different
+            // system. Found by the 2026-08-04 sweep.
+            let eq_name = match r.get("equation").and_then(Value::as_str) {
+                Some(n) => n.to_owned(),
+                None => {
+                    problems.push(format!(
+                        "row {row_i} has no equation name \u{2014} it cannot be matched \
+                         or placed in a BLT block by name"
+                    ));
+                    format!("(row {row_i}: unnamed)")
+                }
+            };
             let eq_text = r
                 .get("equation_text")
                 .and_then(Value::as_str)
@@ -192,8 +205,13 @@ impl IncidenceMatrix {
         let mut n_matched = 0;
         if let Some(matching) = report.get("matching").and_then(Value::as_array) {
             for m in matching {
-                let eq_name = m.get("equation").and_then(Value::as_str).unwrap_or("");
-                let var_name = m.get("unknown").and_then(Value::as_str).unwrap_or("");
+                // The other half of the `""` collision above: a matching entry with
+                // no equation name used to look up `""` and find whichever unnamed
+                // row had last written that key. A name that cannot collide with a
+                // real one resolves to nothing instead, and the `else` below reports
+                // the pair as unapplied rather than applying it to a guess.
+                let eq_name = m.get("equation").and_then(Value::as_str).unwrap_or("(unnamed)");
+                let var_name = m.get("unknown").and_then(Value::as_str).unwrap_or("(unnamed)");
                 if let (Some(&r), Some(&c)) = (eq_index.get(eq_name), var_index.get(var_name)) {
                     matched_col[r] = Some(c);
                     col_matched[c] = true;

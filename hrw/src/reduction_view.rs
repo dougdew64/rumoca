@@ -469,6 +469,19 @@ fn unary_op_symbol(variant: &str) -> &str {
     }
 }
 
+/// Stands in for a subexpression this renderer could not find.
+///
+/// **It has to be visible, and it has to not look like Modelica.** Until 2026-08-04
+/// a missing operand rendered as the empty string, so `a * 2` with an unreadable
+/// left side became `" * 2"` and `x + y` became `"x + "` — **a different equation,
+/// displayed as the model's equation**, which is the same class of defect as the
+/// incidence matrix showing a dependency that is not there.
+///
+/// Distinct from `"(expr)"`, which this function already used and which means
+/// something else: *an expression shape this renderer does not know how to print*.
+/// That one is a limit of HRW; this one is a hole in the data.
+const MISSING: &str = "(missing)";
+
 // Recursive expression-to-string renderer. Each branch pattern-matches on the
 // Rumoca IR expression enum variant (serialized as a JSON object with one key).
 pub(crate) fn expr_to_short(v: &Value) -> String {
@@ -497,27 +510,36 @@ pub(crate) fn expr_to_short(v: &Value) -> String {
             if let Some(bin) = v.get("Binary") {
                 let op = bin.get("op").and_then(|o| o.as_str()).unwrap_or("?");
                 let sym = binary_op_symbol(op);
-                let lhs = bin.get("lhs").map(expr_to_short).unwrap_or_default();
-                let rhs = bin.get("rhs").map(expr_to_short).unwrap_or_default();
+                let lhs = bin.get("lhs").map_or_else(|| MISSING.to_owned(), expr_to_short);
+                let rhs = bin.get("rhs").map_or_else(|| MISSING.to_owned(), expr_to_short);
                 return format!("{lhs} {sym} {rhs}");
             }
             if let Some(unary) = v.get("Unary") {
                 let op = unary.get("op").and_then(|o| o.as_str()).unwrap_or("?");
                 let sym = unary_op_symbol(op);
-                let rhs = unary.get("rhs").map(expr_to_short).unwrap_or_default();
+                let rhs = unary.get("rhs").map_or_else(|| MISSING.to_owned(), expr_to_short);
                 return format!("{sym}{rhs}");
             }
             if let Some(call) = v.get("BuiltinCall") {
+                // **`"f"` was the worst substitution in this function.** An unreadable
+                // function name rendered as a call to a function literally named `f`,
+                // which is a plausible Modelica identifier — so `sin(x)` with an
+                // unreadable name became `f(x)`, and nothing said otherwise.
                 let func = call
                     .get("function")
                     .and_then(|f| f.as_str())
-                    .unwrap_or("f");
-                let args: Vec<String> = call
-                    .get("args")
-                    .and_then(Value::as_array)
-                    .map(|a| a.iter().map(expr_to_short).collect())
-                    .unwrap_or_default();
-                return format!("{func}({})", args.join(", "));
+                    .unwrap_or("(unknown fn)");
+                // Absent args and an empty args list are different expressions:
+                // `time()` really takes none, while a missing `args` key means this
+                // parser could not find them. `unwrap_or_default` rendered both as
+                // a zero-argument call.
+                let args: String = match call.get("args").and_then(Value::as_array) {
+                    Some(a) => {
+                        a.iter().map(expr_to_short).collect::<Vec<_>>().join(", ")
+                    }
+                    None => MISSING.to_owned(),
+                };
+                return format!("{func}({args})");
             }
             "(expr)".to_owned()
         }
@@ -756,6 +778,63 @@ mod tests {
         let view = ReductionView::from_report(&clean).expect("should parse");
         assert_eq!(view.differentiated_rows.len(), 1);
         assert!(view.unreadable.is_empty(), "{:?}", view.unreadable);
+    }
+
+    /// **A missing operand is visible, not blank.** The sweep's finding, 2026-08-04.
+    ///
+    /// `expr_to_short` rendered an absent `lhs`/`rhs` as the empty string, so the
+    /// pane displayed a *different equation* as the model's equation — with correct
+    /// spacing and plausible syntax, giving a reader no reason to doubt it. Equations
+    /// are what Doug is learning from; a wrong one is as damaging here as a wrong
+    /// incidence matrix.
+    #[test]
+    fn a_missing_operand_renders_visibly_rather_than_as_nothing() {
+        // `a * <missing>` — the shape that used to render as "a *".
+        let half = json!({ "Binary": {
+            "op": "Mul",
+            "lhs": { "VarRef": { "name": "a" } },
+        }});
+        let out = expr_to_short(&half);
+        assert!(
+            out.contains("(missing)"),
+            "a missing operand must be visible: {out:?}",
+        );
+        assert!(!out.ends_with("* "), "and must not read as a well-formed expression: {out:?}");
+
+        // A unary with no operand used to render as a bare "-".
+        let unary = expr_to_short(&json!({ "Unary": { "op": "Neg" } }));
+        assert!(unary.contains("(missing)"), "{unary:?}");
+    }
+
+    /// **An unreadable function name does not become a plausible one.**
+    ///
+    /// It rendered as `"f"` — a legal Modelica identifier — so `sin(x)` with an
+    /// unreadable name became `f(x)`, indistinguishable from a real call to a
+    /// function named `f`. The substitution was not just lossy, it was *convincing*.
+    #[test]
+    fn an_unreadable_function_name_is_not_replaced_by_a_plausible_one() {
+        let call = expr_to_short(&json!({ "BuiltinCall": {
+            "args": [{ "VarRef": { "name": "x" } }],
+        }}));
+        assert!(!call.starts_with("f("), "a plausible fake name is worse than none: {call:?}");
+        assert!(call.contains("unknown fn"), "{call:?}");
+
+        // Absent args and an empty args list are different expressions.
+        let no_args = expr_to_short(&json!({ "BuiltinCall": { "function": "sin" } }));
+        assert!(no_args.contains("(missing)"), "absent args must say so: {no_args:?}");
+        let empty_args = expr_to_short(&json!({ "BuiltinCall": { "function": "time", "args": [] }}));
+        assert_eq!(empty_args, "time()", "a genuine zero-argument call is unchanged");
+    }
+
+    /// A well-formed expression is untouched by all of the above.
+    #[test]
+    fn a_complete_expression_still_renders_normally() {
+        let e = json!({ "Binary": {
+            "op": "Add",
+            "lhs": { "VarRef": { "name": "x" } },
+            "rhs": { "VarRef": { "name": "y" } },
+        }});
+        assert_eq!(expr_to_short(&e), "x + y");
     }
 
     /// A list that is present but is not a list at all is a defect too — the shape

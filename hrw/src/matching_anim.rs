@@ -72,14 +72,21 @@ impl MatchingAnimation {
 
     /// `(matched, total)` at the end of the trace — the final matching, not the
     /// cursor's partial one. `matched < total` is a structurally singular system.
-    pub fn match_progress(&self) -> (usize, usize) {
-        let matched = self
-            .playback
-            .frames()
-            .last()
-            .map(|f| f.match_eq.iter().filter(|m| m.is_some()).count())
-            .unwrap_or(0);
-        (matched, self.n_eq)
+    /// **`None` before any frame has arrived**, rather than `(0, n_eq)`.
+    ///
+    /// The doc line above states the reading: `matched < total` is a structurally
+    /// singular system. So `unwrap_or(0)` on an empty frame list did not report
+    /// "nothing yet" — it reported **"every equation is unmatched"**, the strongest
+    /// possible claim about the model, from having no data at all.
+    ///
+    /// A recorded animation always has frames (`from_captured_frames` returns `None`
+    /// otherwise), so this was unreachable there. **A live debug session is the case
+    /// that reaches it**: the panel renders while frames are still arriving from the
+    /// debugger thread, and until the first one lands the system looked singular.
+    /// Found by the 2026-08-04 sweep.
+    pub fn match_progress(&self) -> Option<(usize, usize)> {
+        let last = self.playback.frames().last()?;
+        Some((last.match_eq.iter().filter(|m| m.is_some()).count(), self.n_eq))
     }
 
     /// **The matching this animation ends on**, per equation row — the answer

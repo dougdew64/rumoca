@@ -5772,8 +5772,10 @@ mod tests {
             "a deficiency of 1 means exactly one equation gives up: {failures:?}",
         );
 
-        let (matched, total) = anim.match_progress();
-        assert_eq!((matched, total), (47, 48), "47 of 48 matched");
+        let progress = anim
+            .match_progress()
+            .expect("a recorded animation has frames, so progress is known");
+        assert_eq!(progress, (47, 48), "47 of 48 matched");
 
         // The give-up must be *recorded*, not merely implied by the count.
         assert!(
