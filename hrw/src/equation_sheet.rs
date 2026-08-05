@@ -137,6 +137,53 @@ pub struct EquationSheet {
     /// span points into a library file rather than the specimen — absent rather than
     /// guessed, so a node with no known origin says nothing instead of something wrong.
     pub node_lines: HashMap<String, u32>,
+    /// The same thing for the **Flatten** tree: node path -> source line.
+    ///
+    /// Separate from [`node_lines`](Self::node_lines) rather than merged, because the
+    /// two index different systems and their paths would collide in spirit even where
+    /// they do not in text: `equations[3]` in the flat model and `f_x[3]` in the DAE
+    /// are not the same equation, since DAE construction reorders, filters and
+    /// synthesises. **One map keyed by two conventions would resolve confidently and
+    /// wrongly**, which is the failure this whole feature exists to avoid.
+    ///
+    /// Flatten is the one other tree worth this: measured 2026-08-05 it carries
+    /// **1,856 spans** on `Drivetrain`, and it is where `connect` expansion happens —
+    /// so *"which connect statement produced this equation?"* is the question that
+    /// tree exists to answer. Index reduction, initialization and structural carry no
+    /// spans at all and get nothing.
+    pub flat_node_lines: HashMap<String, u32>,
+}
+
+/// Build the Flatten tree's path -> source-line map from the flat model.
+///
+/// Mirrors what [`build`] does for the DAE, and deliberately **does not** reuse the
+/// DAE's map: the two number their equations differently.
+///
+/// **Only equations whose span belongs to the specimen get an entry.** A span from a
+/// library file resolved against the specimen's text would name a line that exists and
+/// is not the right one — a confident wrong answer, which is worse than none. The
+/// comparison is on `SourceId`, not on whether the offset happens to fit.
+pub fn flat_node_lines(
+    flat: &rumoca_ir_flat::Model,
+    source_info: Option<(&str, &str)>,
+) -> HashMap<String, u32> {
+    let mut out = HashMap::new();
+    let Some((uri, src)) = source_info else {
+        return out;
+    };
+    let sid = SourceId::from_source_name(uri);
+    for (i, eq) in flat.equations.iter().enumerate() {
+        if eq.span.source != sid {
+            continue;
+        }
+        let line = byte_offset_to_line(src, eq.span.start.0);
+        let path = [
+            crate::bridge::Seg::Key("equations".to_owned()),
+            crate::bridge::Seg::Index(i),
+        ];
+        out.insert(crate::bridge::describe_path(&path), line);
+    }
+    out
 }
 
 fn categorize_origin(origin: &str) -> EquationCategory {
@@ -403,6 +450,8 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
 
     EquationSheet {
         node_lines,
+        // Filled by the caller, which has the flat model; `build` only sees the DAE.
+        flat_node_lines: HashMap::new(),
         n_equations: dae.continuous.equations.len(),
         groups,
         n_states: dae.variables.states.len(),
@@ -726,6 +775,57 @@ mod tests {
                 "keys must be tree paths under the continuous equations: {path}",
             );
             assert!(*line >= 1, "lines are 1-based: {path} -> {line}");
+        }
+    }
+
+    /// **The Flatten tree's equations resolve too, under their own key space.**
+    ///
+    /// Added 2026-08-05 when Doug asked whether the feature covered every relevant
+    /// tree. It did not — variables did, equations were DAE-only.
+    ///
+    /// **The assertion that matters is the last one.** The two maps must not be
+    /// merged: `equations[3]` in the flat model and `f_x[3]` in the DAE are different
+    /// equations, because DAE construction reorders, filters and synthesises. A single
+    /// map keyed by both conventions would resolve **confidently and wrongly**, which
+    /// is the exact failure this feature exists to prevent.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn the_flatten_tree_resolves_equations_under_its_own_paths() {
+        use crate::worker::FromWorker;
+
+        let FromWorker::Compiled { dae, flat, .. } =
+            crate::worker::test_msl::compile_specimen_shared("SingleInertia")
+        else {
+            panic!("SingleInertia must compile");
+        };
+        let dae = dae.expect("a DAE");
+        let flat = flat.expect("a flat model");
+        let uri = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo");
+        let src = std::fs::read_to_string(uri).expect("read specimen");
+
+        let flat_lines = flat_node_lines(&flat, Some((uri, &src)));
+        assert!(
+            !flat_lines.is_empty(),
+            "no flat equation resolved \u{2014} either the spans stopped arriving or \
+             the key format changed, and both are silent in the UI",
+        );
+        for (path, line) in &flat_lines {
+            assert!(
+                path.starts_with("equations"),
+                "flat keys live under `equations`, not the DAE's `f_x`: {path}",
+            );
+            assert!(*line >= 1, "lines are 1-based: {path} -> {line}");
+        }
+
+        // **No key is shared between the two.** Not a style point: a shared key would
+        // silently answer a Flatten question with a DAE line.
+        let dae_lines = build(&dae, Some((uri, &src))).node_lines;
+        for k in flat_lines.keys() {
+            assert!(
+                !dae_lines.contains_key(k),
+                "`{k}` appears in both maps \u{2014} the two number different systems, \
+                 so a shared key resolves to the wrong equation",
+            );
         }
     }
 }

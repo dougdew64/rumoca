@@ -2518,10 +2518,22 @@ impl WorkerState {
                 let result = report.requested_result.as_ref();
 
                 let eq_sheet = match result {
-                    Some(PhaseResult::Success(cr)) => Some(crate::equation_sheet::build(
-                        &cr.dae,
-                        Some((&uri, display_source)),
-                    )),
+                    Some(PhaseResult::Success(cr)) => {
+                        let mut sheet = crate::equation_sheet::build(
+                            &cr.dae,
+                            Some((&uri, display_source)),
+                        );
+                        // **Filled here because this is where both halves exist.**
+                        // `build` sees only the DAE; the flat model is on the compile
+                        // result beside it, and the source is already resolved for
+                        // both. Computing it later in the app would mean re-deriving
+                        // the source text a second time.
+                        sheet.flat_node_lines = crate::equation_sheet::flat_node_lines(
+                            &cr.flat,
+                            Some((&uri, display_source)),
+                        );
+                        Some(sheet)
+                    }
                     _ => None,
                 };
 

@@ -4446,15 +4446,20 @@ impl App {
                                         .identifier_index
                                         .as_ref()
                                         .map(|i| &i.variables),
-                                    // Only the DAE stage has equation origins; every
-                                    // other tree gets `None` and pays a null check.
-                                    path_lines: (self.stage == StageKind::Dae)
-                                        .then(|| {
-                                            self.cached_equation_sheet
-                                                .as_ref()
-                                                .map(|s| &s.node_lines)
-                                        })
-                                        .flatten(),
+                                    // **Each stage gets ITS OWN map, or none.**
+                                    // Flatten numbers equations differently from the
+                                    // DAE, so sharing one map would resolve
+                                    // confidently and wrongly. Index reduction,
+                                    // initialization and structural carry no spans at
+                                    // all and get `None`, which also keeps them from
+                                    // paying for a path string per row.
+                                    path_lines: self.cached_equation_sheet.as_ref().and_then(
+                                        |s| match self.stage {
+                                            StageKind::Dae => Some(&s.node_lines),
+                                            StageKind::Flatten => Some(&s.flat_node_lines),
+                                            _ => None,
+                                        },
+                                    ),
 
                                     jump_to: jump_to.as_deref(),
                                     highlight: self.context.jump_highlight.as_deref(),
@@ -4543,15 +4548,20 @@ impl App {
                                         .identifier_index
                                         .as_ref()
                                         .map(|i| &i.variables),
-                                    // Only the DAE stage has equation origins; every
-                                    // other tree gets `None` and pays a null check.
-                                    path_lines: (self.stage == StageKind::Dae)
-                                        .then(|| {
-                                            self.cached_equation_sheet
-                                                .as_ref()
-                                                .map(|s| &s.node_lines)
-                                        })
-                                        .flatten(),
+                                    // **Each stage gets ITS OWN map, or none.**
+                                    // Flatten numbers equations differently from the
+                                    // DAE, so sharing one map would resolve
+                                    // confidently and wrongly. Index reduction,
+                                    // initialization and structural carry no spans at
+                                    // all and get `None`, which also keeps them from
+                                    // paying for a path string per row.
+                                    path_lines: self.cached_equation_sheet.as_ref().and_then(
+                                        |s| match self.stage {
+                                            StageKind::Dae => Some(&s.node_lines),
+                                            StageKind::Flatten => Some(&s.flat_node_lines),
+                                            _ => None,
+                                        },
+                                    ),
 
                             // A navigated library class is a different IR, so a
                             // jump target addressed into the stage tree would
@@ -11990,6 +12000,7 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         );
         app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet {
             node_lines: std::collections::HashMap::new(),
+            flat_node_lines: std::collections::HashMap::new(),
             groups: vec![],
             n_equations: 0,
             variables: vec![],
