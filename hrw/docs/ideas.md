@@ -3856,3 +3856,66 @@ complement. A curriculum tour there pays into the coursework directly
 ([[user-linear-algebra-learning]] in memory; `docs/vision.md`).
 
 **Not scheduled.** The next is index reduction on `Drivetrain` when Doug reaches it.
+
+---
+
+## 67. Answering "where does this linear-algebra application appear in Rumoca?"
+
+**Doug's stated workflow for the semester, 2026-08-05:**
+
+> *"My linear algebra class is an applications class. Applications of linear algebra… As I'm going
+> through my semester, I will mention to you which application of linear algebra is being
+> discussed in my class. And then I will ask you if there's any relevance to that application
+> within rumoca."*
+
+**This is a question shape, not a feature request**, and it is the first one that runs *from* the
+mathematics *into* the compiler rather than the other way round. Every tour so far starts at a
+phase and explains its maths; this starts at a topic and asks where it lives.
+
+### Why the existing machinery is not enough
+
+[#63](#63-answer-from-a-tour-that-already-exists) makes tours findable, and `CATALOGUE.md` is
+derived from them — so it answers *"which tour covers the DAE?"* and cannot answer *"which tour
+covers **Schur complements**?"*, because no tour says that phrase. The vocabulary of the class and
+the vocabulary of the pipeline do not overlap.
+
+**The honest first answer is therefore a search of the source**, not a lookup. That is fine and
+should be said out loud rather than papered over with a half-right index.
+
+### The hazard, and the design rule it implies
+
+**A concept map would be authored, not derived** — unlike the tour catalogue, nothing generates
+*"tearing is a Schur complement"*. So it can be **wrong**, and a wrong entry does not merely fail
+to help: it teaches Doug false mathematics, which Charter Decision 7 ranks as the worst outcome
+this project can produce.
+
+> **So an index may record WHERE TO LOOK, never WHAT THE MATHEMATICS IS.**
+>
+> A pointer (`matching.rs`, `failure-structural` stop 2, `docs/compiler-phases/phase7…`) is
+> checkable and rots loudly. A claim (*"this is a Schur complement"*) is neither, and would be
+> read as settled because it is written down.
+
+**The mathematical framing gets made fresh each time**, against the code, with the oracle-first
+discipline — and stated as reasoning Doug can check rather than as a fact retrieved from a file.
+
+### Candidate correspondences, offered as leads and not as facts
+
+**Untagged prose is a lead, not a fact** (`docs/provenance.md`), and every line here is a lead:
+
+- **Permutation matrices** ← maximum matching assigns one unknown per equation
+- **Block triangular form** ← Tarjan SCC over the dependency graph; the spy plot draws it
+- **Schur complement** ← tearing, which picks iteration variables to shrink a coupled block
+- **Sparsity patterns** ← the incidence matrix, and `structural rank` versus numerical rank
+- **Rank deficiency** ← structural singularity, which `TwiceDefined` shows with an empty column
+- **Jacobians** ← solve lowering's sparsity structure, and Newton on a torn block
+- **Incidence / network laws** ← `connect` expansion generating Kirchhoff sums
+
+**Each needs verifying against the source before being said to Doug.** `structural-vs-numerical-rank.md`
+already exists as a fixture tour and is the one place some of this has been checked.
+
+### What would actually help, if anything is built
+
+Not a map. **A worked answer, once**, for the first topic Doug raises — text plus a composed tour
+citing the fixtures that demonstrate it. If a second and third look the same shape, *then* the
+repeated part is worth extracting, and it will be extracted from things that were checked rather
+than guessed.
