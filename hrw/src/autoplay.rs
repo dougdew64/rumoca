@@ -169,6 +169,39 @@ pub struct Beat {
 ///
 /// Fenced code blocks are skipped when looking for headings, so a `##` comment
 /// inside a Modelica or shell block cannot invent a stop.
+/// The addressable name of a stop, derived from its heading.
+///
+/// `## Stop 2 — The surprise` becomes `stop-2-the-surprise`. Lowercased, with every
+/// run of non-alphanumerics collapsed to a single `-` and the ends trimmed.
+///
+/// **This is what makes `hrw://tour/<name>/stop/<slug>` stable.** An ordinal would
+/// have been easier and is the wrong choice: inserting a stop shifts every later
+/// citation **silently**, which is exactly how the `worker.rs:3434` citation in
+/// `docs/tech-debt.md` rotted inside a day. A slug is immune to insertion and **fails
+/// loudly** when a heading is renamed — and loud failure is the only kind
+/// `fixture_tour_links_all_resolve` can act on.
+///
+/// Deliberately derived rather than authored. An explicit `<!-- anchor: … -->` per
+/// stop would be more stable still and would put the burden on the tour author for
+/// every stop, including the ones nothing ever links to. Renames are rare; the
+/// checker catches them.
+pub fn stop_slug(heading: &str) -> String {
+    let mut out = String::new();
+    let mut pending_dash = false;
+    for ch in heading.trim_start_matches('#').trim().chars() {
+        if ch.is_ascii_alphanumeric() {
+            if pending_dash && !out.is_empty() {
+                out.push('-');
+            }
+            pending_dash = false;
+            out.push(ch.to_ascii_lowercase());
+        } else {
+            pending_dash = true;
+        }
+    }
+    out
+}
+
 pub fn parse_stops(text: &str) -> Vec<TourStop> {
     let mut stops: Vec<TourStop> = Vec::new();
     let mut title = String::from("Tour");

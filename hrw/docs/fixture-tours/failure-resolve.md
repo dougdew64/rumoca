@@ -3,7 +3,9 @@
 **Specimens:** `UndefinedRef` and `MissingComponentClass`. Walk them together; neither is worth
 much alone.
 
-**Walk `failure-parse.md` first.** It establishes `Failed` versus `Flagged`, and this tour is the
+**Walk the Parse failure tour first** — or jump straight to the stop that draws the distinction:
+[failure-parse, stop 4](hrw://tour/failure-parse/stop/stop-4-the-distinction-this-specimen-anchors).
+It establishes `Failed` versus `Flagged`, and this tour is the
 first case of the second kind.
 
 **The question to hold:** a name that does not exist is the simplest possible error. Why does it

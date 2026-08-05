@@ -2514,6 +2514,43 @@ impl App {
             return;
         }
         match action {
+            HrwLink::OpenTour { tour, stop } => {
+                // **One tour citing another**, so a composed answer can send Doug to
+                // an existing demonstration rather than retelling it. `docs/ideas.md`
+                // #63.
+                let found = bridge::fixture_tours()
+                    .into_iter()
+                    .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(tour.as_str()));
+                let Some(path) = found else {
+                    // **Named, not silent.** A link that does nothing is the worst
+                    // outcome in a tour, because nothing on screen says why — the
+                    // reason the parser caps `splitn` at 5 rather than 4.
+                    self.notice = Some(format!("no fixture tour named `{tour}`"));
+                    return;
+                };
+                self.select_tour(TourSource::Fixture(path));
+                self.tour.polled_at = None;
+                self.poll_tour_file();
+                if let Some(slug) = stop {
+                    match self.tour.text().map(|t| {
+                        crate::autoplay::parse_stops(t)
+                            .into_iter()
+                            .find(|s| crate::autoplay::stop_slug(&s.heading) == slug)
+                    }) {
+                        Some(Some(found_stop)) => {
+                            self.tour.scroll_to_offset = Some(found_stop.heading_offset);
+                        }
+                        // The tour opened but the stop is gone — say which, because
+                        // "it opened at the top" is indistinguishable from a tour
+                        // whose first stop is the one that was asked for.
+                        _ => {
+                            self.notice = Some(format!(
+                                "`{tour}` has no stop `{slug}` \u{2014} opened at the top"
+                            ));
+                        }
+                    }
+                }
+            }
             HrwLink::LoadSpecimen(name) => {
                 // **One verb, three sources** — deliberately not a second verb.
                 //
@@ -7470,6 +7507,26 @@ impl SubView {
 /// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
 #[derive(Debug, PartialEq, Eq)]
 enum HrwLink {
+    /// `hrw://tour/<name>[/stop/<slug>]` — open a **fixture tour**, optionally at a
+    /// named stop.
+    ///
+    /// **The verb that lets one tour cite another.** Added 2026-08-05 for
+    /// `docs/ideas.md` #63: Claude's answering repertoire was text, then a freshly
+    /// written ad hoc tour, with no way to say *"the answer already exists — walk
+    /// `failure-typecheck` from stop 2."* Ten link forms existed and none opened a
+    /// tour, so a composed answer could only *describe* a fixture in prose. The
+    /// expectations are the thing being lost by that: a fixture's `**Expected:**`
+    /// lines are versioned and were checked, while a retelling has whatever Claude
+    /// remembers of them.
+    ///
+    /// **Stops are addressed by SLUG, not by ordinal**, and that is the whole design
+    /// decision. `stop/2` is fragile in the way this project has been bitten by twice
+    /// already: inserting a stop shifts every later citation **silently**, exactly as
+    /// a source line number does (`docs/tech-debt.md`, the `worker.rs:3434` citation
+    /// that rotted inside a day). A slug derived from the heading text fails **loudly**
+    /// when the heading is renamed, and is immune to insertion — which is the
+    /// behaviour the link checker can act on.
+    OpenTour { tour: String, stop: Option<String> },
     /// `hrw://load/<Specimen>` — load and compile a specimen by name.
     LoadSpecimen(String),
     /// `hrw://stage/<Stage>[/<SubView>]` — switch to a stage tab, optionally to a
@@ -7602,6 +7659,8 @@ impl HrwLink {
 
     fn describe(&self) -> String {
         match self {
+            Self::OpenTour { tour, stop: None } => format!("tour/{tour}"),
+            Self::OpenTour { tour, stop: Some(s) } => format!("tour/{tour}/stop/{s}"),
             Self::LoadSpecimen(name) => format!("load/{name}"),
             Self::SwitchStage(kind, None) => format!("stage/{}", kind.slug()),
             Self::SwitchStage(kind, Some(sub)) => {
@@ -7659,6 +7718,16 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
             Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind, None))
         }
         ["load", specimen] => Some(HrwLink::LoadSpecimen((*specimen).to_owned())),
+        ["tour", name, "stop", slug] if !name.is_empty() && !slug.is_empty() => {
+            Some(HrwLink::OpenTour {
+                tour: (*name).to_owned(),
+                stop: Some((*slug).to_owned()),
+            })
+        }
+        ["tour", name] if !name.is_empty() => Some(HrwLink::OpenTour {
+            tour: (*name).to_owned(),
+            stop: None,
+        }),
         ["stage", stage, view] => {
             let kind = StageKind::from_slug(stage)?;
             let sub = SubView::from_slug(kind, view)?;
@@ -10424,6 +10493,71 @@ mod tests {
         app.poll_tour_file();
         assert_eq!(app.tour.selected, Some(fixture));
         assert!(app.tour.cached.is_some(), "the chosen fixture is loaded");
+    }
+
+    /// **Every `hrw://tour/…` citation names a tour that exists, at a stop that exists.**
+    ///
+    /// `fixture_tour_links_all_resolve` checks the *grammar* — `tour/x/stop/y` parses
+    /// whether or not `x` or `y` are real. That is the gap this closes, and it is the
+    /// gap that makes the slug design worth anything: a **renamed heading fails here
+    /// loudly**, which is the whole reason stops are addressed by slug rather than by
+    /// ordinal. An ordinal would still resolve after an insertion and point at the
+    /// wrong stop, exactly as `worker.rs:3434` did in `tech-debt.md` inside a day.
+    ///
+    /// Added 2026-08-05 with the link form (`docs/ideas.md` #63).
+    #[test]
+    fn tour_citations_name_a_real_tour_and_a_real_stop() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            return;
+        };
+        let tours: Vec<PathBuf> = entries
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
+            .collect();
+
+        let mut checked = 0usize;
+        for path in &tours {
+            let text = std::fs::read_to_string(path).unwrap();
+            for raw in text.split("hrw://tour/").skip(1) {
+                let cite: String = raw
+                    .chars()
+                    .take_while(|c| !c.is_whitespace() && *c != ')' && *c != '`')
+                    .collect();
+                let mut parts = cite.split('/');
+                let name = parts.next().unwrap_or_default();
+                let target = dir.join(format!("{name}.md"));
+                assert!(
+                    target.exists(),
+                    "{} cites tour `{name}`, which does not exist",
+                    path.display(),
+                );
+                checked += 1;
+
+                // `stop/<slug>` — the slug must match a heading in the cited tour.
+                if parts.next() == Some("stop")
+                    && let Some(slug) = parts.next()
+                {
+                    let cited = std::fs::read_to_string(&target).unwrap();
+                    let slugs: Vec<String> = crate::autoplay::parse_stops(&cited)
+                        .iter()
+                        .map(|s| crate::autoplay::stop_slug(&s.heading))
+                        .collect();
+                    assert!(
+                        slugs.iter().any(|s| s == slug),
+                        "{} cites `{name}` stop `{slug}`, which is not a heading there. \
+                         Available: {slugs:?}",
+                        path.display(),
+                    );
+                }
+            }
+        }
+        // Non-vacuity is NOT asserted: no tour cites another yet. This test exists so
+        // that the first one to do so is checked, and it would pass silently on a
+        // corpus with no citations at all — which is correct here and would not be if
+        // citations were expected. Stated rather than left as an accident.
+        let _ = checked;
     }
 
     /// Node paths in the **node-pointing** fixture resolve against the real IR.

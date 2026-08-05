@@ -38,6 +38,13 @@ pub(crate) struct TourState {
     pub(crate) selected: Option<TourSource>,
     /// When the tour directory was last polled.
     pub(crate) polled_at: Option<std::time::Instant>,
+    /// Byte offset in the tour text to scroll to on the next frame, then cleared.
+    ///
+    /// Set by `hrw://tour/<name>/stop/<slug>` so a citation lands **at the stop**
+    /// rather than at the top of the tour. One-shot deliberately: a persistent target
+    /// would fight the scrollbar on every frame, which is the defect the autoplay
+    /// scroll work spent four attempts on (`ui-findings.md` C15).
+    pub(crate) scroll_to_offset: Option<usize>,
 
     /// **The self-running walk** of whichever tour is showing.
     ///
@@ -91,6 +98,7 @@ impl Default for TourState {
             available: Vec::new(),
             selected: None,
             polled_at: None,
+            scroll_to_offset: None,
             autoplay: crate::autoplay::Autoplay::default(),
             autoplay_total: crate::autoplay::DEFAULT_TOTAL,
             tour_link_y: None,
