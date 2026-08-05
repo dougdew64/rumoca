@@ -10749,7 +10749,7 @@ mod tests {
         // The same function the example calls, not a reimplementation of it: a
         // checker that duplicates what it checks is the drift `fidelity-plan.md`
         // warns about, and is why `catalogue` lives in the library.
-        let fresh = crate::tour::catalogue(&dir);
+        let fresh = crate::tour::catalogue();
         assert_eq!(
             on_disk, fresh,
             "CATALOGUE.md is out of date \u{2014} run: \

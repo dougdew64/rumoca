@@ -322,20 +322,12 @@ impl TourSource {
 /// `tour_catalogue_is_current` calls the same code that writes the file. A checker
 /// that reimplements what it checks is the drift `docs/fidelity-plan.md` warns
 /// about, and a `#[path]` include of an example does not compile inside the lib.
-pub fn catalogue(dir: &std::path::Path) -> String {
-    let mut tours: Vec<PathBuf> = std::fs::read_dir(dir)
-        .expect("read fixture-tours")
-        .flatten()
-        .map(|e| e.path())
-        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
-        .filter(|p| {
-            !matches!(
-                p.file_stem().and_then(|s| s.to_str()),
-                Some("README") | Some("CATALOGUE")
-            )
-        })
-        .collect();
-    tours.sort();
+pub fn catalogue() -> String {
+    // **The same list the picker shows**, from the one function that decides what a
+    // tour file is. This used to be a second `read_dir` with its own exclusions —
+    // which is how the catalogue came to exclude itself while the picker did not, and
+    // Doug found `CATALOGUE` offered as a tour in his list.
+    let tours: Vec<PathBuf> = bridge::fixture_tours();
 
     let mut s = String::new();
     s.push_str("# Tour catalogue\n\n");

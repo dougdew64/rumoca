@@ -177,6 +177,13 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         );
     }
     assert!(
+        h.query_by_label_contains("CATALOGUE").is_none(),
+        "CATALOGUE.md is generated FOR CLAUDE — the index that lets an answer cite a \
+         tour instead of retelling it. Doug found it in his picker on 2026-08-05, one \
+         row among fifteen offering to be walked. It is not a tour and must not be \
+         offered as one",
+    );
+    assert!(
         h.query_by_label("README").is_none(),
         "README.md is documentation ABOUT the tours, not a tour — offering it would \
          give the picker an entry whose stops do not exist",

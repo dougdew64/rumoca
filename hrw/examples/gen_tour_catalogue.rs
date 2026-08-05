@@ -18,7 +18,7 @@ use std::path::PathBuf;
 fn main() {
     let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-tours"));
     let out = dir.join("CATALOGUE.md");
-    let text = hrw::tour::catalogue(&dir);
+    let text = hrw::tour::catalogue();
     std::fs::write(&out, &text).expect("write catalogue");
     println!("wrote {} ({} bytes)", out.display(), text.len());
 }

@@ -201,7 +201,22 @@ pub fn fixture_tours() -> Vec<PathBuf> {
         .flatten()
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("md"))
-        .filter(|p| p.file_name().and_then(|n| n.to_str()) != Some("README.md"))
+        // **Not every `.md` in this directory is a tour.**
+        //
+        // `README.md` documents the directory. `CATALOGUE.md` is *generated for
+        // Claude* — it exists so a question can be answered by citing a tour rather
+        // than retelling one (`docs/ideas.md` #63) — and Doug found it sitting in his
+        // picker on 2026-08-05, one row among fifteen, offering to be walked.
+        //
+        // **This is the single definition of "is a tour file".** `tour::catalogue`
+        // had its own copy of this filter, which is how the catalogue managed to
+        // exclude itself while the picker did not. It now calls this function.
+        .filter(|p| {
+            !matches!(
+                p.file_stem().and_then(|n| n.to_str()),
+                Some("README") | Some("CATALOGUE")
+            )
+        })
         .collect();
     found.sort();
     found
