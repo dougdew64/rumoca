@@ -1,0 +1,61 @@
+{
+  "model": "TwiceDefined",
+  "specimen": "specimens/TwiceDefined.mo",
+  "specimen_fnv1a": "07b2a5eb824040ee",
+  "rumoca_rev": "af0018f5",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "0 state(s), 2 algebraic(s), 2 continuous equation(s)"
+    },
+    "structural": {
+      "has_ir": true,
+      "note": "singular"
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "still singular after index reduction: structurally singular system: 0 matched out of 0 equations and 1 unknowns; unmatched equations: -; unmatched unknowns: b"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": null
+    },
+    "events": {
+      "has_ir": true,
+      "note": "no events — this model is a smooth (continuous) system"
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  },
+  "simulation": {
+    "simulated": true,
+    "t_end": 2.0,
+    "n_variables": 2,
+    "n_time_points": 501,
+    "n_states": 0,
+    "has_discontinuities": false
+  }
+}

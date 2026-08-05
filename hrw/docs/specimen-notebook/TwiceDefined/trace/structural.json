@@ -1,0 +1,60 @@
+{
+  "incidence": {
+    "n_eq": 2,
+    "n_var": 2,
+    "unknown_names": [
+      "a",
+      "b"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "a - 1"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "a - time"
+      }
+    ]
+  },
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "unknown": "a"
+    }
+  ],
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 1 matched out of 2 equations and 2 unknowns; unmatched equations: f_x[1]; unmatched unknowns: b",
+    "n_equations": 2,
+    "n_unknowns": 2,
+    "n_matched": 1,
+    "rank_deficiency": 1,
+    "unmatched_equations": [
+      "f_x[1]"
+    ],
+    "unmatched_unknowns": [
+      "b"
+    ],
+    "unmatched_unknown_locations": [
+      {
+        "unknown": "b",
+        "location": {
+          "line": 14,
+          "column": 3,
+          "excerpt": "Real b",
+          "line_text": "  Real b;",
+          "byte_start": 784,
+          "byte_end": 790
+        }
+      }
+    ],
+    "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+  }
+}

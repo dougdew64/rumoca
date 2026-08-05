@@ -1,0 +1,57 @@
+{
+  "model": "UnclosedModel",
+  "specimen": "specimens/UnclosedModel.mo",
+  "specimen_fnv1a": "673623c1cb3db0a9",
+  "rumoca_rev": "af0018f5",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": "EP001\n\n  × unexpected end of input\n    ╭─[C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnclosedModel.mo:11:1]\n 10 │   der(x) = -x;\n    ╰────\n  help: expected one of: algorithm, annotation, connect, der, end, equation,\n        external, false, for, if, initial, not, protected, public, pure, true,\n        when, string, unsignedinteger, (, ., {, +, -, dotplus, dotminus, [\n"
+    },
+    "resolve": {
+      "has_ir": false,
+      "note": "parse produced no model to resolve"
+    },
+    "instantiate": {
+      "has_ir": false,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": false,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    },
+    "dae": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    },
+    "structural": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    },
+    "index_reduction": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    },
+    "initialization": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    },
+    "events": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    },
+    "solve_lowering": {
+      "has_ir": false,
+      "note": "parse produced no model to compile"
+    }
+  },
+  "simulation": {
+    "simulated": false,
+    "error": "compilation did not reach solve lowering"
+  }
+}

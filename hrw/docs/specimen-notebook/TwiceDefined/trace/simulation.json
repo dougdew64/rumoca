@@ -1,0 +1,27 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 2,
+  "n_states": 0,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "a",
+      "is_state": false,
+      "initial": 1.0,
+      "final": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    {
+      "name": "b",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    }
+  ]
+}

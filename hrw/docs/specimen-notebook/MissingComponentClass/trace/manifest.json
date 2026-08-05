@@ -1,0 +1,57 @@
+{
+  "model": "MissingComponentClass",
+  "specimen": "specimens/MissingComponentClass.mo",
+  "specimen_fnv1a": "c4b2f95f335e7251",
+  "rumoca_rev": "af0018f5",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": "Resolve errors: unresolved type reference: 'NoSuchBlock'"
+    },
+    "instantiate": {
+      "has_ir": false,
+      "note": "not reached (the compile stopped before instantiate)"
+    },
+    "typecheck": {
+      "has_ir": false,
+      "note": "not reached (the compile stopped before typecheck)"
+    },
+    "flatten": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    },
+    "dae": {
+      "has_ir": false,
+      "note": null
+    },
+    "structural": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    },
+    "index_reduction": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    },
+    "initialization": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    },
+    "events": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    },
+    "solve_lowering": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    }
+  },
+  "simulation": {
+    "simulated": false,
+    "error": "compilation did not reach solve lowering"
+  }
+}

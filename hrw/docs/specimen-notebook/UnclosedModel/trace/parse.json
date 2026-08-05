@@ -1,0 +1,7 @@
+{
+  "error": {
+    "kind": "parse",
+    "message": "EP001\n\n  × unexpected end of input\n    ╭─[C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnclosedModel.mo:11:1]\n 10 │   der(x) = -x;\n    ╰────\n  help: expected one of: algorithm, annotation, connect, der, end, equation,\n        external, false, for, if, initial, not, protected, public, pure, true,\n        when, string, unsignedinteger, (, ., {, +, -, dotplus, dotminus, [\n",
+    "guidance": "Check the Modelica source for syntax errors."
+  }
+}

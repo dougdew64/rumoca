@@ -3527,3 +3527,45 @@ question Claude can grade even though HRW cannot.
 Same constraint as #60, and Doug set it: the experience of using `dae-construction.md` and
 `matching.md` is what will say which steps are worth asking about. **A quiz on a step nobody
 found confusing measures nothing.**
+
+---
+
+## 62. Organizing the tours list
+
+**Raised by Doug 2026-08-03** while the matching tour was being built, and **re-raised
+2026-08-05** — *"I believe that we added an item to the ideas backlog to organize the growing
+list of tours."* **We had not.** The thinking happened in conversation and scrolled away, which
+is exactly the failure the scenario-1 rule in [`../CLAUDE.md`](../CLAUDE.md) exists to prevent:
+*the rationale must live in the repository, not in the chat*. Recorded now, a day late, as its
+own small evidence for that rule.
+
+### Why it becomes live after #46
+
+The list is **8 tours**, which is browsable. **#46 adds one failure tour per compiler phase**,
+taking it to roughly **15** — and they are not peers of the existing ones. A learner opening the
+picker would see `dae-construction` (a curriculum tour meant to teach), `frame-seeking` (a
+capability test), and `parse-failure` (a demonstration that something breaks) with nothing
+distinguishing them.
+
+**Doug's stated value is expectation-setting**: *"per-phase tours enable me to set expectations
+and focus, which makes good use of my scarce attention."* A flat list of 15 works against that
+the moment the names stop being self-explaining.
+
+### The shape sketched, not chosen
+
+Front-matter in each fixture tour, three fields:
+
+- **`kind`** — `curriculum` (teaches a concept), `capability` (exercises an HRW feature),
+  `failure` (shows a phase refusing). This is the distinction the flat list loses.
+- **`chain`** — which compiler phase it sits at, so the list can order by the pipeline rather
+  than alphabetically. `the-chain-of-problems.md` already defines that order.
+- **`requires`** — a tour that assumes another has been walked. Currently implicit and only in
+  Claude's head.
+
+**Deliberately not built** when first discussed, on the grounds that the picker had 8 entries and
+sorting was speculative. **#46 is the evidence that changes it** — revisit immediately after,
+per Doug 2026-08-05.
+
+**What to check first**: whether `kind` alone is sufficient. Three groups in a picker may be all
+the structure 15 tours need, and `chain`/`requires` may be solving a problem the grouping already
+solves. Build the smallest of the three that works.
