@@ -1325,7 +1325,7 @@ Both cost one thread-local read when closed, and neither moves a signature. **Th
 sweep never opens a scope**, so a 2,626-model run pays nothing.
 
 
-## Source provenance decays through the pipeline — 41 → 15 → 2 → 0
+## Source provenance thins through the pipeline (and the first measurement of it was wrong) — 41 → 15 → 2 → 0
 
 **Found 2026-08-05**, when Doug resumed the DAE tour: *"I'm not able to relate anything in the DAE
 tree to the Modelica source from which the tree was derived."* He reported it as a UI problem
@@ -1354,17 +1354,30 @@ screen and Decision 9 makes it a tooltip — which costs no real estate at all.
 Shipped as `TreeOptions::variable_lines`, rendered by `row_hover`, stated **before** the
 interaction hints because where a thing came from precedes what you can do with it.
 
-### The half that needs Rumoca, and does not
+### ~~The half that needs Rumoca~~ — WRONG, corrected 2026-08-05 the same day
 
-**An equation has no name to look up.** `f_x[0]` cannot be resolved to a line by any means
-available to HRW, because the information was discarded upstream. Closing it means carrying
-`Location` through **flatten and DAE construction** — additive, observation-only, and exactly the
-shape `CLAUDE.md` sanctions.
+**This section claimed equations had no recoverable origin and needed a Rumoca change. That was
+false, and it was false when written.**
 
-**This is a strong upstream candidate on its own merits.** A compiler that can point at the source
-line of a residual equation writes better diagnostics, so the change plausibly pays for itself in
-Rumoca before HRW renders any of it. Recorded in `docs/upstream-issues.md` territory rather than
-as an HRW-only want.
-<!-- unbuilt: rumoca dae equation Location -->
+**DAE equations carry a `span`** — `{ source, start, end }`, 38 of them in `SingleInertia`'s
+trace — and `equation_sheet.rs` has been resolving spans to 1-based source lines since it was
+written (`byte_offset_to_line`, plus origin-matching for `connect`-generated equations that have
+no direct span).
+
+**The error was in the measurement, not the reasoning.** The count above searched the serialized
+JSON for `"location"` and found zero, and the conclusion "the DAE carries no source locations"
+was drawn from that. The field is called **`span`**. Counting one spelling and concluding a
+capability is absent is the same shape as the `str_vec` blind spot: **an audit by grep finds a
+thing only where it is spelled the way you guessed.**
+
+**The variable half of that section stands** — the identifier index really is how a *variable*
+resolves, and the tooltip built on it is correct. What is wrong is only the claim about
+equations, and the recommendation to change Rumoca that followed from it.
+
+**So the equation feature is HRW-side and cheap.** `EquationSheet::equations[i].source_lines`
+already holds the answer; what is missing is plumbing it to a tree node, which needs a
+path-keyed lookup because the tree is type-agnostic by charter (§4.4) and must not learn where
+`continuous.equations` lives.
+<!-- unbuilt: TreeOptions::path_lines -->
 
 **Doug's sequencing:** variables first, test, then equations.
