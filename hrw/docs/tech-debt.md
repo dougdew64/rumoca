@@ -685,7 +685,7 @@ module in HRW that can corrupt process state; written as `reason = "needed"` the
 noticed, and today nothing would notice.
 <!-- unbuilt: hrw unsafe_code lint -->
 
-## A flagged stage shows its error INSTEAD OF its artifact, not beside it
+## ~~A flagged stage shows its error INSTEAD OF its artifact~~ — FIXED 2026-08-05
 
 **Found by Doug 2026-08-05**, walking `failure-typecheck.md`: the tour claimed a tree below the
 diagnostic and there was none. **Rank 0** — the pane shows less than the stage holds, and says
@@ -717,11 +717,23 @@ holds:
 So the condition is not the outcome but **whether the value carries anything beyond `error`**.
 That distinction is cheap to compute and is the whole fix.
 
-**Not attempted 2026-08-05**: the branch is inside `central_panel_ui`'s scroll-area setup and the
-edit is more invasive than the remaining session budget allowed. Deferred deliberately rather
-than half-done — see `docs/format-and-app-plan.md` on why this pane is also a step-3 extraction
-candidate, since it would now carry a test that cannot be written today.
-<!-- unbuilt: App::stage_body_shows_artifact_beside_error -->
+### Fixed the same day, after Doug rejected the reason for deferring it
+
+**It was first logged as "not attempted — more invasive than the remaining session budget
+allowed."** Doug: *"I do not understand your reasoning. Why not correctly implement the whole fix
+right now?"* He was right. **The honest reason was low context and a worry about starting
+something unfinishable, described as though it were a property of the code.** The edit is about
+fifteen lines.
+
+**Recorded because the failure mode is a habit, not an incident**: dressing a budget concern as a
+technical one makes a deferral look principled and stops the reader from questioning it. The
+"this is more invasive than it looks" claim should carry a line count.
+
+**What landed:** the error summary now renders in a collapsible `⚠ What went wrong` header
+**above** the tree when the value carries content beyond `error`, and fills the pane alone when it
+does not. Two tests, `a_flagged_stage_shows_its_artifact_beside_its_error` and
+`a_failed_stage_with_only_an_error_shows_no_tree` — the first **verified to fail on the old
+behaviour** before being kept. 598 tests pass.
 
 ## Accuracy item 1 — the `unwrap_or_*` family (a second, separate silent substitution)
 

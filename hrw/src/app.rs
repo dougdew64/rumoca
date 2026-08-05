@@ -4297,10 +4297,39 @@ impl App {
                     // pattern as `FrameIntent`.
                     let mut bad_jump: Option<String> = None;
                     let stage = self.current_stage();
-                    let has_error_data = stage.note_is_error()
-                        && stage.value.as_ref().and_then(|v| v.get("error")).is_some();
-                    if has_error_data {
-                        let error = stage.value.as_ref().unwrap().get("error").unwrap().clone();
+                    // **The error summary sits BESIDE the artifact, not instead of it.**
+                    //
+                    // Doug, 2026-08-05, walking `failure-typecheck.md`: *"there is no tree
+                    // in the failing typecheck stage view."* There was one in the data —
+                    // `DimensionMismatch`'s Typecheck stage carries 7.4 KB of instantiated
+                    // overlay **plus** an `error` key, assembled by the worker on purpose,
+                    // whose comment reads *"the instantiated overlay is the last good state
+                    // to show **beside** them"*. This branch rendered the summary in an
+                    // `if` with the whole tree as the `else`, so **beside became instead
+                    // of** and the overlay was discarded at the last step, with nothing on
+                    // screen saying content was withheld.
+                    //
+                    // **The condition is not the outcome.** `note_is_error()` is true for
+                    // both abnormal outcomes, and they differ in what the value holds:
+                    //
+                    // - `Flagged` (`Stage::recovered`) — a real artifact plus an error.
+                    //   Both belong on screen.
+                    // - `Failed` (`Stage::err_with_details`) — **only** `{"error": …}`. A
+                    //   tree there would render the error payload as a tree, which is
+                    //   noise beside the summary it duplicates.
+                    //
+                    // So the test is whether the value carries anything **beyond** `error`.
+                    let error_data = stage
+                        .note_is_error()
+                        .then(|| stage.value.as_ref().and_then(|v| v.get("error")).cloned())
+                        .flatten();
+                    let has_other_content = stage
+                        .value
+                        .as_ref()
+                        .and_then(serde_json::Value::as_object)
+                        .is_some_and(|o| o.keys().any(|k| k != "error"));
+                    if let Some(error) = error_data.clone().filter(|_| !has_other_content) {
+                        // Nothing but the error: the summary fills the pane, as before.
                         egui::ScrollArea::vertical()
                             .id_salt("error_summary")
                             .auto_shrink(false)
@@ -4308,6 +4337,20 @@ impl App {
                                 Self::generic_error_summary(ui, &error, self.stage);
                             });
                     } else {
+                        // **Collapsible, and open by default.** The summary is the more
+                        // urgent of the two and goes first, but a reader who has read it
+                        // and wants the whole overlay can fold it away rather than scroll
+                        // past it on every visit.
+                        if let Some(error) = error_data {
+                            let stage_kind = self.stage;
+                            egui::CollapsingHeader::new("\u{26a0} What went wrong")
+                                .id_salt("error_summary_beside_tree")
+                                .default_open(true)
+                                .show(ui, |ui| {
+                                    Self::generic_error_summary(ui, &error, stage_kind);
+                                });
+                            ui.separator();
+                        }
                         match &stage.value {
                             Some(value) => {
                                 let label = self.model.as_deref().unwrap_or("model");
@@ -7962,6 +8005,41 @@ impl App {
     /// Whether a reset back to the 40/60 default is queued for the next paint.
     pub(crate) fn test_split_reset_pending(&self) -> bool {
         self.split.resetting()
+    }
+
+    /// Put a **flagged** stage on screen: a real artifact carrying an error beside it.
+    ///
+    /// The state that showed only the error until 2026-08-05 — `Stage::recovered`'s
+    /// value is the last good artifact *plus* an `error` key, and the pane rendered
+    /// the summary in place of the tree. Doug found it walking `failure-typecheck.md`.
+    pub(crate) fn test_set_flagged_stage_with_artifact(&mut self, kind: StageKind) {
+        self.stage = kind;
+        self.model = Some("Fixture".to_owned());
+        self.selected = Some(PathBuf::from("Fixture.mo"));
+        *self.stages.get_mut(kind) = crate::worker::Stage::recovered(
+            serde_json::json!({
+                "components": { "small": { "kind": "Real" } },
+                "error": { "kind": "typecheck", "message": "dimension mismatch 2 vs 3" },
+            }),
+            "typecheck: 1 diagnostic(s)",
+        );
+    }
+
+    /// Put a **failed** stage on screen whose value is nothing but an error.
+    ///
+    /// The contrast case for [`test_set_flagged_stage_with_artifact`]: there is no
+    /// artifact, so the summary is the whole content and no tree should appear.
+    pub(crate) fn test_set_failed_stage_error_only(&mut self, kind: StageKind) {
+        self.stage = kind;
+        self.model = Some("Fixture".to_owned());
+        self.selected = Some(PathBuf::from("Fixture.mo"));
+        *self.stages.get_mut(kind) = crate::worker::Stage::err_with_details(
+            serde_json::json!({
+                "kind": "todae",
+                "message": "unbalanced model: 2 equations, 3 unknowns",
+            }),
+            "unbalanced model",
+        );
     }
 
     pub(crate) fn test_stage(&self) -> StageKind {

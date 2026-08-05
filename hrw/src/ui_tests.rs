@@ -1081,6 +1081,62 @@ fn a_library_model_awaiting_its_source_is_not_told_to_select_one() {
     );
 }
 
+/// **A flagged stage shows its artifact BESIDE its error, not instead of it.**
+///
+/// Doug, 2026-08-05, walking `docs/fixture-tours/failure-typecheck.md`: *"there is no
+/// tree in the failing typecheck stage view."* There was one in the data —
+/// `DimensionMismatch`'s Typecheck stage carries the whole instantiated overlay plus
+/// an `error` key, assembled by the worker precisely so both could be shown.
+///
+/// `central_panel_ui` rendered the summary in an `if` with the entire tree as the
+/// `else`, so the overlay was built on every compile and discarded at the last step —
+/// **with nothing on screen saying content was withheld**, which is the Context Bar
+/// defect's shape.
+///
+/// **This test could not have been written before the fix**, which is the bar
+/// `docs/format-and-app-plan.md` sets for an extraction: it asserts a pane shows two
+/// things at once, and before the change it could only ever show one.
+#[test]
+fn a_flagged_stage_shows_its_artifact_beside_its_error() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_flagged_stage_with_artifact(crate::worker::StageKind::Typecheck);
+    let h = harness(app);
+
+    assert!(
+        h.query_by_label_contains("dimension mismatch 2 vs 3").is_some(),
+        "the diagnostic must still be shown \u{2014} it is the more urgent half",
+    );
+    assert!(
+        h.query_by_label_contains("components").is_some(),
+        "and the artifact beside it must be reachable. Showing only the error \
+         discards a tree the worker built on purpose, and says nothing about it",
+    );
+}
+
+/// **A failed stage shows only its error**, because there is nothing else to show.
+///
+/// The other half of the pair, and the reason the fix is not "always render the tree":
+/// `Stage::err_with_details` carries **only** `{"error": …}`, so a tree there would
+/// render the error payload as a tree beside the summary that already explains it.
+#[test]
+fn a_failed_stage_with_only_an_error_shows_no_tree() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_failed_stage_error_only(crate::worker::StageKind::Flatten);
+    let h = harness(app);
+
+    assert!(
+        h.query_by_label_contains("unbalanced model").is_some(),
+        "the error summary is the whole content here",
+    );
+    assert!(
+        h.query_by_label_contains("What went wrong").is_none(),
+        "and it is NOT wrapped in the collapsing header, which exists only to make \
+         room for an artifact underneath \u{2014} there is none",
+    );
+}
+
 /// A readable library file shows its text **and names the file it came from**.
 ///
 /// The header is not decoration. `Resistor` lands a reader inside `Basic.mo`
