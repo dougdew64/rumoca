@@ -593,13 +593,19 @@ pub enum UiMode {
     Debug,
 }
 
-/// The algorithm replays one compile produced, grouped because they are one thing.
+/// The algorithm **frame sets** one compile produced, grouped because they are one
+/// thing.
 ///
 /// Each is captured **during the compile that produced the IR on screen** — via the
 /// capture scopes in `rumoca-phase-{flatten,dae,structural}` — rather than by
-/// re-running an algorithm when its tab is opened. See
-/// `matching::start_capture` for why that distinction matters: a re-derivation
-/// agrees, but it replays a search that produced nothing.
+/// re-running an algorithm when its tab is opened. See `matching::start_capture` for
+/// why that distinction matters: a re-derivation agrees with the compiler and still
+/// depicts a search that produced nothing.
+///
+/// *(Reworded 2026-08-04: this said "the algorithm **replays** one compile produced",
+/// which was true in the playback sense and reads as the forbidden one. See the
+/// two-senses note in `CLAUDE.md` — the word is load-bearing in both directions now,
+/// so this type, which holds the good kind, avoids it.)*
 #[derive(Default)]
 struct CompileFrames {
     /// Index reduction's demotions and differentiations.

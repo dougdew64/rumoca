@@ -65,6 +65,24 @@ each bought with a fiction removed on 2026-08-04:
   a phase that does not exist, in order to give five phases a tidy parent. Ordering, nesting and
   attribution are claims, and a claim that reads nicely is still a claim.
 
+**"REPLAY" MEANS TWO THINGS, AND ONLY ONE IS FORBIDDEN** *(recorded 2026-08-04, after the
+sweep found the collision)*. Both senses are live in this repository and in the UI:
+
+- **Playback** — stepping through frames that were *recorded during the real compile*. This is
+  the animation feature and it is **correct**. The UI says it (*"no frame 3 in this replay"*),
+  the tours say it (*"the reduction replay opens"*), and `CompileFrames` holds them.
+- **Re-execution presented as the compile** — HRW running an algorithm again when a tab opens,
+  and drawing the result as if it were what the compiler did. This is the **fiction**, and it
+  is gone.
+
+**A third case is neither**: a **live debug session** genuinely re-runs a phase under the
+debugger, because that is what the user asked for. `PendingLiveDebug::PreLowering` re-running
+from the flat model is correct and must not be "fixed".
+
+Without this distinction written down, a later session reads *"the reduction replay"* in a tour
+and either **removes a working feature** or, worse, concludes the fictions were already dealt
+with and stops looking. Judge by **where the frames came from**, never by the word.
+
 **WHY THIS RULE WAS MISSING — and what its absence predicts.** The rules below protect against
 *missing* reports (must-fire), *unchecked* claims of absence, and *misidentified* things (no
 heuristic name-matching). **None of them forbade invented content**, so none of the fictions

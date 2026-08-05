@@ -557,6 +557,38 @@ very sweep, which is the sort of thing this file exists to remember.
   ones can be made to look different at the call site, which is what `parse_list` does for one
   file.
 
+## Accuracy items 4 and 5 — stale docs, and the tours
+
+**Item 5, the tours: checked and NOT stale.** Verified rather than assumed, four ways —
+no fixture tour cites an HRW source line; the `docs/compiler-phases/` citations that matched
+today's changed symbols are all to **Rumoca's** names (`build_blt_from_incidence`, snippets
+quoted from Rumoca sources) and no `crates/rumoca-*` file was touched today; the numeric claims
+(`2 equations, 3 unknowns, balance = -1`) are pinned by passing tests; and
+`fixture_tour_links_all_resolve` runs every build.
+
+**Item 4, stale doc comments: the six known ones were fixed as they were found. A systematic
+scan found no further FALSE comments — it found an ambiguity instead**, and the ambiguity is
+the more dangerous finding.
+
+### "Replay" now means two things, and one of them is forbidden
+
+The word is live in both senses, in the source, the UI and the tours:
+
+- **Playback of frames recorded during the real compile** — the animation feature. Correct.
+  The UI says *"no frame 3 in this replay"*; `frame-seeking.md` says *"the reduction replay
+  opens"*.
+- **Re-execution presented as the compile** — the fiction, eliminated 2026-08-04.
+
+And a third case that is neither: **a live debug session genuinely re-runs a phase**, because
+that is what the user asked for. `PendingLiveDebug::PreLowering`'s comment saying it *"re-runs
+from the flat model"* is **correct and must not be 'fixed'**.
+
+**The failure mode this creates is bidirectional**, which is why it is written into
+[`../CLAUDE.md`](../CLAUDE.md) rather than left as a rename: a later session reads "the
+reduction replay" in a tour and either deletes a working feature, or concludes the fictions
+were already handled and stops looking. **Judge by where the frames came from, never by the
+word.** `CompileFrames` — which holds the good kind — was reworded to avoid it entirely.
+
 ## Accuracy item 1 — the `unwrap_or_*` family (a second, separate silent substitution)
 
 **The `filter_map` audit did not cover this.** `unwrap_or_default()` / `unwrap_or(0)` /
