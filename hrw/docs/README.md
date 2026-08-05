@@ -63,6 +63,7 @@ on a tab showing 48 equations.
 | [`identity-and-provenance.md`](identity-and-provenance.md) | No heuristic name-matching; identity vs membership; what provenance Rumoca preserves. **Cited by six source files.** |
 | [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the tour-holes table, and the outstanding debt. |
 | [`ui-pause-plan.md`](ui-pause-plan.md) | The UI pause (2026-08-02): what gets tested and refactored, in what order, with the evidence for each and a ratcheted field-count target. |
+| [`format-and-app-plan.md`](format-and-app-plan.md) | Proposed (2026-08-05): `cargo fmt` for the Rumoca crates then `hrw/`, then `app.rs` extraction — with the measurement that the Rumoca formatting drift is ours and blocks upstream CI. |
 | [`ui-findings.md`](ui-findings.md) | Running log of what the pause turned up in passing — harness facts that change how a test is written, and code findings with their disposition. |
 | [`provenance.md`](provenance.md) | How Claude marks what it verified from what it inferred. |
 

@@ -511,6 +511,14 @@ path grammar in `bridge.rs`, `IncidenceMatrix::from_report`, or any animation's 
 **Trigger 3 is code-shaped, not judgement-shaped, deliberately** — "when a change gives reason
 to doubt fidelity" is exactly the judgement that already failed twice.
 
+**BEFORE THE NEXT LARGE RUN, BUILD `docs/ideas.md` #46** *(Doug, 2026-08-05)* — a failure
+specimen per compiler phase. **The 2026-08-04 run measured why**: 0 of 2,614 rows carried a
+failure message and no MSL model produces an empty stage, so **F10's absence clause had nothing
+to act on** and its zero covers only the two near-tautological clauses. Absence is a property of
+*failing* compiles and the corpus has none. Another 8.5-hour sweep of the same corpus would
+re-confirm the same narrow zero; #46 is what turns it into coverage. See
+[`docs/fidelity-plan.md`](docs/fidelity-plan.md), "F10's first corpus run".
+
 ---
 
 ## Where things live

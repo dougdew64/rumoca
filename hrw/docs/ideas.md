@@ -1813,6 +1813,24 @@ upstream issues.
 
 ## 46. A failure specimen + tour for every compiler phase
 
+> ### ⟶ DO THIS BEFORE THE NEXT LARGE FIDELITY RUN
+>
+> **Doug, 2026-08-05**, on reading the run that finished that morning. It is a gate, not a
+> preference, and the reason is measured rather than argued:
+>
+> **0 of 2,614 rows carried a failure message, and no MSL model produces an empty stage** — five
+> partial/abstract classes were tested, one per kind, and every one populated all eleven. So
+> **F10's absence clause, the only one of its three that is not near-tautological, had nothing
+> to act on.** Its zero covers the provenance clauses and nothing else.
+>
+> **Absence is a property of failing compiles, and the corpus has none.** Re-running the same
+> 2,626 models costs ~8.5 hours and re-confirms the same narrow zero. **This idea is what turns
+> that zero into coverage**, and it is small-scale work that lands in the ~90-second pre-commit
+> suite rather than needing the watchdog at all.
+>
+> Recorded in [`fidelity-plan.md`](fidelity-plan.md) ("F10's first corpus run") and in the run
+> policy in [`../CLAUDE.md`](../CLAUDE.md).
+
 Requested 2026-07-29 (Doug), after the `CapacitorLoop`/`RcCircuit` contrast tour:
 
 > I could imagine giving you a task of creating a bunch of new specimens and tours to
