@@ -685,6 +685,44 @@ module in HRW that can corrupt process state; written as `reason = "needed"` the
 noticed, and today nothing would notice.
 <!-- unbuilt: hrw unsafe_code lint -->
 
+## A flagged stage shows its error INSTEAD OF its artifact, not beside it
+
+**Found by Doug 2026-08-05**, walking `failure-typecheck.md`: the tour claimed a tree below the
+diagnostic and there was none. **Rank 0** — the pane shows less than the stage holds, and says
+nothing about it.
+
+**The data is there.** `DimensionMismatch`'s Typecheck stage carries **7.4 KB**: the full
+instantiated overlay (`components`, `classes`, `type_roots`, …) **plus** an `error` key. The
+worker assembles it on purpose — `worker.rs`'s comment reads *"the instantiated overlay is the
+last good state to show **beside** them"*.
+
+**`App::central_panel_ui` discards it.** It computes
+`note_is_error() && value["error"].is_some()` and, when true, renders `generic_error_summary` in
+an `if`, with the whole tree branch as the `else`. **Beside became instead of**, and the overlay
+is built on every compile of every flagged model and dropped at the last step.
+
+**Nothing on screen indicates content is being withheld** — the Context Bar defect's exact shape:
+a partial report leaves no gap where the missing part was.
+
+### The fix is not "always show the tree"
+
+`note_is_error()` is true for **both** abnormal outcomes, and the two differ in what the value
+holds:
+
+- **`Flagged`** (`Stage::recovered`) — the value is a **real artifact** plus an error. Both should
+  render.
+- **`Failed`** (`Stage::err_with_details`) — the value is **only** `{"error": …}`. A tree there
+  would render the error payload as a tree, which is noise beside the summary.
+
+So the condition is not the outcome but **whether the value carries anything beyond `error`**.
+That distinction is cheap to compute and is the whole fix.
+
+**Not attempted 2026-08-05**: the branch is inside `central_panel_ui`'s scroll-area setup and the
+edit is more invasive than the remaining session budget allowed. Deferred deliberately rather
+than half-done — see `docs/format-and-app-plan.md` on why this pane is also a step-3 extraction
+candidate, since it would now carry a test that cannot be written today.
+<!-- unbuilt: App::stage_body_shows_artifact_beside_error -->
+
 ## Accuracy item 1 — the `unwrap_or_*` family (a second, separate silent substitution)
 
 **The `filter_map` audit did not cover this.** `unwrap_or_default()` / `unwrap_or(0)` /
