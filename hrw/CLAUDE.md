@@ -8,7 +8,13 @@ Rust/egui observatory for studying the Rumoca Modelica compiler.
 **[`docs/README.md`](docs/README.md) is the document index** — every file, its purpose, and
 whether it is live. Go there rather than guessing.
 
-Purpose, scope and binding decisions are in [`docs/CHARTER.md`](docs/CHARTER.md) (v1.3 —
+**The hierarchy everything else derives from** (charter v1.4, Doug 2026-08-05): **his education is
+the purpose**; **accuracy is the first corollary** (Decision 7) because an inaccurate instrument
+teaches something false; **low friction is the second** (Decision 9) because an accurate
+instrument that costs attention to operate spends the attention meant for learning. **Accuracy
+outranks friction where they conflict**, and they rarely do.
+
+Purpose, scope and binding decisions are in [`docs/CHARTER.md`](docs/CHARTER.md) (v1.4 —
 **Decision 7, Accuracy, ranks above everything else in this repository**; **Decision 8, the
 instrument assumes the reasoner**, governs what UI gets built at all: *the noun is assembled by
 mouse, the verb is an unbounded utterance*. **The test is whether the answer is known in

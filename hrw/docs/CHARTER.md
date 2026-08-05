@@ -8,7 +8,7 @@ re-litigate one of its decisions in-session; amend the charter or accept it.
 
 **How Rumoca Works — a mastery project in the mathematics and computer science of modeling and simulating deterministic systems**
 
-*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others. Amended to v1.3 on August 5, 2026: Decision 8 — The instrument assumes the reasoner — recording the noun/verb formulation as a guiding principle and adopting its consequence as binding on what UI gets built.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
+*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others. Amended to v1.3 on August 5, 2026: Decision 8 — The instrument assumes the reasoner — recording the noun/verb formulation as a guiding principle and adopting its consequence as binding on what UI gets built. Amended to v1.4 the same day: Decision 9 — Minimize learning friction — stating the hierarchy education → accuracy → low friction, and that accuracy outranks friction where they conflict.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
 
 ---
 
@@ -43,6 +43,26 @@ Rumoca's own architecture cooperates with this purpose. It is a multi-crate Rust
 **Decision 4 — Compilation and simulation toolchain.** Models are compiled and simulated with Rumoca, the glass box. Every specimen therefore runs through two independent compilers, constituting a standing differential-testing rig. Disagreement between the toolchains is the most valuable event the setup can produce: it is either a Modelica semantic subtlety (learning), a Rumoca defect (contribution), or undisclosed System Modeler behavior (exactly what the glass box exists to see around). Once Rumoca's pipeline is transparent, System Modeler ceases to be opaque in any way that matters — it becomes a reference oracle, a well-upholstered instance of the same pipeline.
 
 **Decision 5 — No web deployment.** As stated in Scope. Native builds only; Astro shelved; nothing foreclosed.
+
+**Decision 9 — Minimize learning friction (adopted v1.4, August 5, 2026).** *Numbered 9 for reading order; adopted alongside the refinement to Decision 8.*
+
+**The hierarchy, in Doug's words:**
+
+> *"My top priority for this HRW effort is my education. Therefore, a first corollary is that HRW accuracy is required. A second, and new, corollary is a UI design principle: we should strive in the HRW UI to minimize learning friction."*
+
+So the three sit in a fixed relation, and it is worth stating plainly because they are sometimes mistaken for peers:
+
+1. **The purpose** — Doug's education (Section 1, Decision 1). Everything else is derived.
+2. **First corollary — accuracy** (Decision 7). An inaccurate instrument does not teach less; it teaches something false.
+3. **Second corollary — low friction** (this decision). An accurate instrument that costs attention to operate spends the attention that was meant for learning.
+
+**Friction is anything between Doug and the idea**: a click he should not have needed, a search for a tour named after a phase when he was thinking of a specimen, a question he has to type whose answer was already known, a rebuild he did not know he needed, a pane that makes him wonder whether it is telling the truth.
+
+**Attention is the scarce resource, not time.** The tours rule already says so — *the scarce resource is Doug's attention per expectation* — and this generalises it past tours to the whole interface.
+
+**RANK: ACCURACY OUTRANKS FRICTION.** Decision 7 ranks above everything in this repository, this decision included. Where reducing friction would cost accuracy — a summary that saves a click by asserting something unverified, a default that guesses — **accuracy wins and the friction stays.** The two rarely conflict, and naming the winner in advance keeps a plausible trade from being made quietly.
+
+**This decision explains the same day's refinement to Decision 8.** The test *"would Claude answer this better?"* had `field_help` queued for deletion; Doug objected that *"What is this field for?"* has an answer known in advance and *"can therefore be answered much more quickly with tool tips and such."* **That objection was this principle, before it had a name** — a tooltip costs zero attention, and a typed question costs a context switch. Decision 8 asks *whether the answer is fixed*; **Decision 9 says why that matters.**
 
 **Decision 8 — The instrument assumes the reasoner (adopted v1.3, August 5, 2026).** *Numbered 8 for reading order; adopted after Decision 7.*
 
