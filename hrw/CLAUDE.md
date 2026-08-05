@@ -447,9 +447,18 @@ made Doug's machine unusable and forced a hard power-cycle (2026-07-31). Use the
 
 ```powershell
 # stop rust-analyzer FIRST via Ctrl+Shift+P -> "rust-analyzer: Stop server"
-./scripts/measure-fidelity.ps1 -ModelsFile C:/tmp/all-models.txt `
-    -Out C:/tmp/fid-full.csv -Profile C:/tmp/fid-full-memory.csv
+cargo build -p hrw --release --example fidelity_msl
+.\scripts\measure-fidelity.ps1 -ModelsFile "C:\tmp\all-models.txt" -Out "C:\Users\dougd\rumoca-runs\fid-full.csv" -Profile "C:\Users\dougd\rumoca-runs\fid-full-memory.csv"
 ```
+
+**One line per command — no backtick continuations** *(2026-08-04)*. A trailing backtick is
+PowerShell's line continuation and **does not survive a paste** out of a chat window or most
+editors. When it is lost, the first line runs alone and the script starts with **every argument
+at its default**, silently — no error, no warning. Observed: `-Out`/`-Profile` fell back to a
+previous run's files and the script announced **3 models to process** instead of 2,626.
+**`--release` is likewise not optional**: the script runs `target/release/...` and a dev build
+leaves a stale release binary in place. Both are in
+[`docs/long-runs.md`](docs/long-runs.md) with the full account.
 
 **One model per process**, so the worst case is bounded by a single model. **A session rebuild
 is not a memory bound** — it releases what the session holds, not what the allocator

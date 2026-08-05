@@ -79,18 +79,13 @@ Compiles every MSL model and records outcome plus IR shape. Sharded across proce
 cd C:\Users\dougd\source\repos\rumoca
 
 # 6 shards in parallel (~11 min). Adjust 6 to taste; each worker peaks ~1.3 GB.
-0..5 | ForEach-Object {
-    Start-Process -NoNewWindow -FilePath .\target\release\examples\survey_msl.exe `
-        -ArgumentList @("--slice", "$_/6", "--rebuild-every", "200",
-                        "--out", "C:\tmp\part-$_.csv")
-}
+# One line per statement — see the no-backticks note in the fidelity section below.
+0..5 | ForEach-Object { Start-Process -NoNewWindow -FilePath ".\target\release\examples\survey_msl.exe" -ArgumentList @("--slice", "$_/6", "--rebuild-every", "200", "--out", "C:\tmp\part-$_.csv") }
 
 # Wait for all six to finish, then merge.
 while (Get-Process survey_msl -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 15 }
 
-.\target\release\examples\survey_msl.exe --merge `
-    C:\tmp\part-0.csv,C:\tmp\part-1.csv,C:\tmp\part-2.csv,C:\tmp\part-3.csv,C:\tmp\part-4.csv,C:\tmp\part-5.csv `
-    --out hrw\docs\reports\msl-survey.csv
+.\target\release\examples\survey_msl.exe --merge "C:\tmp\part-0.csv,C:\tmp\part-1.csv,C:\tmp\part-2.csv,C:\tmp\part-3.csv,C:\tmp\part-4.csv,C:\tmp\part-5.csv" --out hrw\docs\reports\msl-survey.csv
 ```
 
 **The model set and every structural column are deterministic** — slicing indexes the sorted
@@ -177,13 +172,43 @@ cd C:\Users\dougd\source\repos\rumoca\hrw
 
 Start-Transcript -Path C:\Users\dougd\rumoca-runs\fid-full.log
 
-.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
-    -Out C:\Users\dougd\rumoca-runs\fid-full.csv -Profile C:\Users\dougd\rumoca-runs\fid-full-memory.csv
+.\scripts\measure-fidelity.ps1 -ModelsFile "C:\tmp\all-models.txt" -Out "C:\Users\dougd\rumoca-runs\fid-full.csv" -Profile "C:\Users\dougd\rumoca-runs\fid-full-memory.csv"
 
 Stop-Transcript
 ```
 
-Two things that are easy to get wrong:
+**Build the RELEASE example first**, or the script throws before doing anything:
+
+```powershell
+cargo build -p hrw --release --example fidelity_msl
+```
+
+**`--release` is not optional and not a performance preference.** The script runs
+`target/release/examples/fidelity_msl.exe` and nothing else. On 2026-08-04 a `cargo build -p
+hrw --example fidelity_msl` (dev profile) left a **two-day-old release binary** in place, and
+the run would have swept 2,626 models with code predating that day's accuracy fixes — the
+`throw` is the only thing that caught it. **Check the timestamp** if there is any doubt:
+
+```powershell
+Get-Item .\..\target\release\examples\fidelity_msl.exe | Select-Object LastWriteTime
+```
+
+Three things that are easy to get wrong:
+
+- **One line per command. No backtick continuations.** *(2026-08-04.)* A backtick at end of
+  line is PowerShell's line continuation, and **it does not survive being pasted** out of a
+  chat window, a browser, or most editors that reflow. When it is lost, PowerShell runs the
+  first line alone and the remaining lines as separate commands — so the script starts with
+  **every argument at its default**, silently. That is not a syntax error and produces no
+  warning.
+
+  The observed symptom: `-Out`/`-Profile` fell back to `C:\tmp\fid-c.csv` and
+  `C:\tmp\fid-memory.csv` from an earlier run, and the script announced **3 models to
+  process** instead of 2,626. Doug killed it, correctly. **Every command in this file is now
+  a single line**, however long, for that reason.
+
+- **Quote every path.** Not needed today, but a path that later contains a space fails in a
+  way that reads as a missing file rather than a quoting mistake.
 
 - **`Start-Transcript`, not `>` or `Tee-Object`.** The script uses `Write-Host`, which does
   not go through the pipeline in PowerShell 5.1, so a redirect captures *nothing*.
@@ -206,14 +231,22 @@ rust-analyzer), then:
 
 ```powershell
 # free-RAM aborts only — the default, no flag required
-.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
-    -Out C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv
+.\scripts\measure-fidelity.ps1 -ModelsFile "C:\tmp\all-models.txt" -Out "C:\tmp\fid-full.csv" -Profile "C:\tmp\fid-full-memory.csv"
 
 # ALSO retry the timeouts, which are partly environmental
-.\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt `
-    -Out C:\tmp\fid-full.csv -Profile C:\tmp\fid-full-memory.csv `
-    -RetryVerdicts 'aborted:free-ram','aborted:timeout'
+.\scripts\measure-fidelity.ps1 -ModelsFile "C:\tmp\all-models.txt" -Out "C:\tmp\fid-full.csv" -Profile "C:\tmp\fid-full-memory.csv" -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 ```
+
+**Read the first two lines before walking away.** They are printed within seconds of each
+other and they answer different questions:
+
+```text
+corpus: 2626 model(s); one process each          <- the list parsed
+2626 model(s) to process, 0 already done:        <- the work resume decided on
+```
+
+**A mismatch between them is the signal that an argument did not bind.** The script prints
+them separately for exactly this reason, and the second line is the one that matters.
 
 **Timeouts are worth retrying and are not retried by default**, which looks inconsistent
 until you see both reasons. They *are* partly environmental —
