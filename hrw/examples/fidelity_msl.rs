@@ -376,10 +376,23 @@ fn main() {
         t_run.elapsed().as_secs_f64(),
     );
     eprintln!(
-        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs walked,          {} equation sheets, {} identifier indexes",
+        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs walked,          {} equation sheets, {} identifier indexes, {} empty stages",
         cov.subjects, cov.with_blocks, cov.with_matching, cov.stage_irs,
-        cov.with_sheet, cov.with_index,
+        cov.with_sheet, cov.with_index, cov.empty_stages,
     );
+    // **`empty stages` is F10's coverage, and on this corpus it is expected to be 0.**
+    //
+    // Measured 2026-08-05: no MSL model produces an empty stage, so F10's absence
+    // clause has nothing to act on and its zero violations cover only the other two.
+    // Said out loud here rather than left for a reader to infer from a bare 0, which
+    // is the same mistake as reading "0 violations" as "everything was checked".
+    if cov.empty_stages == 0 {
+        eprintln!(
+            "note: 0 empty stages, so F10's absence clause was never exercised \u{2014} \
+             its zero covers the provenance clauses only. Absence is a property of \
+             failing compiles, and this corpus has none.",
+        );
+    }
     eprintln!("largest stage IR:");
     for (b, n) in sizes.iter().take(3) {
         eprintln!("  {:>9} bytes  {n}", b);

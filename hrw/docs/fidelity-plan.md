@@ -85,6 +85,40 @@ with synthesised JSON passes. Closing that needs a value-level comparison agains
 and is not built.
 <!-- unbuilt: fidelity::check_f11 -->
 
+### F10's first corpus run: green, and its headline clause never fired
+
+**Run 2026-08-04/05: 2,626 attempted, 2,614 ok, 0 violations, 0 checks failed** — F10 included
+(no `--only-checks`, so every check ran).
+
+**The zero is real and its coverage is narrow.** Investigating on 2026-08-05 found that **no MSL
+model produces an empty stage** — five partial/abstract classes were tested, one from each kind
+the corpus contains (`Interfaces`, `Icons`, `Types`, `BaseClasses`, `Internal`), and **every one
+populated all eleven stages.** Even a `partial block` compiles through.
+
+So F10's clauses 1 and 2 were exercised 2,614 times and its **third clause, the only one that is
+not near-tautological, had nothing to act on.**
+
+**This is the exact failure `Coverage`'s doc comment describes** — *"a corpus that produced no
+blocks and no matchings would pass in silence"* — and **F10 shipped without a coverage counter**,
+one level over from where that warning is written. `Coverage::empty_stages` now exists and the
+runner prints it, with an explicit note when it is zero, so the next run states this rather than
+leaving it to be rediscovered.
+
+**Absence is a property of failing compiles, and this corpus has none.** The clause is exercised
+by HRW's own specimens — `no_stage_shows_content_hrw_invented` asserts a non-zero empty count
+across four, including `UnbalancedShaft` (stops at DAE construction) and `CapacitorLoop`
+(structurally singular). **Corpus scale buys F10 almost nothing; the failing specimens are what
+test it.** A future `#46` failure specimen per phase would change that.
+
+**Verdicts also shifted, and the prediction about them was wrong.** 12 models were not checked
+before and 12 after — but the composition changed: **3 free-RAM → 0**, **2 proc-ceiling → 5**,
+timeouts unchanged at 7. The prediction that unconditional frame capture would grow the
+not-checked count was **not borne out in total**; what it appears to have done is move models
+from the free-RAM guard to the per-process ceiling, with the machine quieter this time
+(rust-analyzer stopped) accounting for the free-RAM aborts disappearing. **Two changes moving in
+opposite directions cancelled in the total**, which is why the composition matters more than the
+count.
+
 **The rest of the verbs** — which phase ran, in what order, nested inside what — are checked by
 roughly a dozen assertions in `worker.rs` (bracket balance, bracket naming and pairing, trace
 containment, no-replay, attribution counts), which is thin and is logged as such in

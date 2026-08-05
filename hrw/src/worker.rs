@@ -3953,6 +3953,35 @@ pub(crate) mod test_msl {
         fresh
     }
 
+    /// The library-model sibling of [`compile_specimen_shared`].
+    ///
+    /// **The same asymmetry that hid the simulate bug**, one layer down: the test
+    /// helpers could reach a specimen by path and had no way to reach a corpus model
+    /// by name, so every test that wanted one had to build a `WorkerState` by hand —
+    /// and most simply did not. Added 2026-08-05 when a test of F10's absence clause
+    /// needed a **partial class**, a shape no specimen has and 350 corpus entries do.
+    ///
+    /// Shares the specimen cache, keyed by qualified name; the two namespaces cannot
+    /// collide because a specimen name never contains a dot.
+    pub(crate) fn compile_library_shared(qualified: &str) -> FromWorker {
+        if let Some(hit) = specimen_cache()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(qualified)
+        {
+            return hit.clone();
+        }
+        let fresh = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            w.compile_model_by_name(qualified, &|_: FromWorker| {})
+        };
+        specimen_cache()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(qualified.to_owned(), fresh.clone());
+        fresh
+    }
+
     /// One compile per specimen per test process. See [`compile_specimen_shared`].
     fn specimen_cache() -> &'static Mutex<std::collections::HashMap<String, FromWorker>> {
         static CACHE: OnceLock<Mutex<std::collections::HashMap<String, FromWorker>>> =

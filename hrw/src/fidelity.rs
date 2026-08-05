@@ -238,6 +238,12 @@ pub fn check_model(
     }
     if want("F10") {
         let t = std::time::Instant::now();
+        // Counted whether or not F10 finds anything: the question this answers is
+        // "did the clause have anything to act on", which a violation count cannot.
+        coverage.empty_stages += crate::worker::StageKind::COMPILATION
+            .iter()
+            .filter(|k| stages.get(**k).value.is_none())
+            .count();
         out.extend(tag("F10", check_f10(stages)));
         timing.add("F10", t);
     }
@@ -323,6 +329,20 @@ pub struct Coverage {
     pub with_sheet: usize,
     pub with_index: usize,
     pub stage_irs: usize,
+    /// **Stages with no value — the only thing F10's third clause can act on.**
+    ///
+    /// Added 2026-08-05, after the first corpus run reported 0 F10 violations and it
+    /// turned out **no MSL model produces an empty stage at all**. Two of F10's three
+    /// clauses are near-tautological in production; the third is the one carrying the
+    /// check, and it has nothing to do unless a stage is empty. Without this counter
+    /// the run could not distinguish *"absence is always stated"* from *"absence never
+    /// occurred"*.
+    ///
+    /// **F10 shipped without it, which is the failure this whole type exists to
+    /// prevent** — the doc above says a corpus that produced no blocks and no
+    /// matchings would pass in silence, and that is exactly what happened one level
+    /// over.
+    pub empty_stages: usize,
 }
 
 /// Violations grouped by check, most numerous first — the triage view.
@@ -1388,6 +1408,102 @@ mod tests {
             checked_empty > 0,
             "no stage across four specimens \u{2014} two of which fail \u{2014} was \
              empty, so F10's absence clause was never tested",
+        );
+    }
+
+    /// **F10's absence clause is exercised by a partial class, and stays quiet.**
+    ///
+    /// Written 2026-08-05, reading the corpus run that reported **0 violations across
+    /// 2,614 models**. A zero is worth nothing without knowing what it covered, and
+    /// F10's first two clauses are near-tautological in production — nothing calls
+    /// `Stage::computed`, and the constructors set provenance and value together. **The
+    /// third clause is the one carrying the check**, and it only bites when a stage has
+    /// no value at all.
+    ///
+    /// The corpus does reach that: **350 of its 2,626 entries are `Interfaces`,
+    /// `Icons`, `BaseClasses` or `Types`** — partial and abstract classes that cannot
+    /// produce a DAE, so their later stages are necessarily empty. That was an
+    /// inference from the report's `kind` column; this test measures it.
+    ///
+    /// A partial class is also the shape most likely to expose a *silent* blank pane,
+    /// since nothing about it is an error — the compile does not fail, it simply has
+    /// nothing to say past a point, which is exactly the state clause 3 exists for.
+    #[test]
+    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    fn f10s_absence_clause_is_exercised_by_a_partial_class() {
+        use crate::worker::FromWorker;
+
+        // One of each partial kind the corpus contains, plus a normal component for
+        // contrast. **`BooleanMIMOs` was tried first and produced a value for every
+        // stage** — which is why this scans several rather than asserting on one, and
+        // why the failure message below is worth reading rather than fixing by
+        // swapping the name.
+        const CANDIDATES: &[&str] = &[
+            "Modelica.Blocks.Interfaces.BooleanMIMOs",
+            "Modelica.Blocks.Icons.Block",
+            "Modelica.Blocks.Types.ExternalCombiTable1D",
+            "Modelica.Electrical.Batteries.BaseClasses.BaseCellStack",
+            "Modelica.Blocks.Tables.Internal.CombiTable2DBase",
+        ];
+
+        let mut with_empty = 0usize;
+        for name in CANDIDATES {
+            let FromWorker::Compiled { stages, .. } =
+                crate::worker::test_msl::compile_library_shared(name)
+            else {
+                panic!("{name}: expected a compiled result");
+            };
+
+            // F10 must be quiet on all of them: a partial class is ordinary, not
+            // broken, and a check that fires on 350 corpus entries would be noise.
+            assert!(
+                check_f10(&stages).is_empty(),
+                "{name}: F10 fired on a partial class: {:?}",
+                check_f10(&stages),
+            );
+
+            let empties: Vec<&str> = crate::worker::StageKind::COMPILATION
+                .iter()
+                .filter(|k| stages.get(**k).value.is_none())
+                .map(|k| k.name())
+                .collect();
+            if !empties.is_empty() {
+                with_empty += 1;
+                // The clause restated as the property, so a change that drops a note
+                // fails here as well as inside F10.
+                for kind in crate::worker::StageKind::COMPILATION {
+                    let s = stages.get(*kind);
+                    assert!(
+                        s.value.is_some() || s.note.is_some(),
+                        "{name}/{}: empty and silent",
+                        kind.name(),
+                    );
+                }
+            }
+        }
+
+        // **Measured 2026-08-05: `with_empty` is 0, and that is the finding.**
+        //
+        // None of the five produces an empty stage. Every MSL model compiles all the
+        // way through and populates all eleven, **including the partial and abstract
+        // classes** — so the corpus cannot exercise F10's absence clause, and the
+        // sweep's zero for F10 covers only the two near-tautological clauses.
+        //
+        // Deliberately **not** asserted as `with_empty > 0`: that would be demanding
+        // the corpus have a property it does not have. What is asserted is what is
+        // true and load-bearing — F10 stays quiet on 350 corpus entries that are
+        // ordinary rather than broken — plus the count, so the day an MSL model *does*
+        // stop early, this records that clause 3 finally has corpus coverage.
+        //
+        // **Where the clause IS exercised**: HRW's own specimens, by
+        // `no_stage_shows_content_hrw_invented`, which asserts a non-zero empty count
+        // across four including `UnbalancedShaft` and `CapacitorLoop`. Absence is a
+        // property of *failing* compiles, and the MSL corpus has none.
+        assert_eq!(
+            with_empty, 0,
+            "an MSL model now produces an empty stage, which is NEW \u{2014} F10's \
+             absence clause has corpus coverage for the first time. Update the note \
+             in docs/fidelity-plan.md, which currently records that it does not.",
         );
     }
 
