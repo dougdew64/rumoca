@@ -749,6 +749,19 @@ struct SourceViewState {
     library_error: Option<String>,
     /// A line a link or a declaration jump is heading for, consumed on arrival.
     scroll_target: Option<u32>,
+    /// The line a jump landed on, washed so it can be found after the scroll.
+    ///
+    /// **Distinct from `scroll_target`, which is consumed on arrival.** Doug,
+    /// 2026-08-05, after "Show in the Modelica source" shipped: *"Would it be
+    /// possible to add visual highlighting of the item being shown in the source?"*
+    /// Scrolling puts the line somewhere in the pane; **it does not say which line**,
+    /// and a reader arriving in a 40-line file still has to find it.
+    ///
+    /// Outlives the scroll deliberately — the same reasoning as `TreeOptions::
+    /// highlight`, which exists because highlighting on the one-frame `jump_to`
+    /// would flash and be gone. Cleared when the specimen changes, not on a timer:
+    /// a fade would be one more thing to tune and nothing asked for it.
+    jump_line: Option<u32>,
     /// Where the pane is scrolled, recorded so the horizontal offset is
     /// **checkable** — the one layout property that has actually bitten.
     scroll_offset: egui::Vec2,
@@ -1742,6 +1755,9 @@ impl App {
         self.source.library_uri = None;
         self.source.library_error = None;
         self.source.highlight = None;
+        // The wash names a line in *this* file. Carried into another specimen it
+        // would mark a line nothing pointed at, which is worse than no mark.
+        self.source.jump_line = None;
         self.viewport.highlighted_eq_row = None;
         self.viewport.highlighted_source_line = None;
         self.nav.clear();
@@ -2585,6 +2601,8 @@ impl App {
                 self.specimen_detail = SpecimenDetail::Source;
                 self.viewing_log = false;
                 self.source.scroll_target = line;
+                // Scrolling says "somewhere here"; the wash says "this one".
+                self.source.jump_line = line;
             }
             HrwLink::SwitchStage(kind, sub) => {
                 self.stage = kind;
@@ -4914,6 +4932,13 @@ impl App {
                             // targets, so the two cannot disagree about
                             // where a run of text begins and ends.
                             let segments = crate::source_view::segments(line, line_tokens, &spans);
+                            // **Reserve a paint slot behind the row**, then fill it
+                            // after layout if this is the line a jump landed on. The
+                            // same trick `tree.rs` uses for its jump wash and hover
+                            // highlight: painted behind the text rather than over it,
+                            // because a wash on top would dim the syntax colouring
+                            // that makes the line readable in the first place.
+                            let bg_slot = ui.painter().add(egui::Shape::Noop);
                             let row = ui.horizontal(|ui| {
                                 ui.spacing_mut().item_spacing.x = 0.0;
                                 // A blamed line's number is coloured rather than
@@ -4969,6 +4994,19 @@ impl App {
                                     }
                                 }
                             });
+                            // **The line a jump landed on**, washed so it is findable.
+                            // Filled into the slot reserved before layout, so it sits
+                            // behind the syntax colouring rather than dimming it.
+                            if self.source.jump_line == Some(line_1) {
+                                ui.painter().set(
+                                    bg_slot,
+                                    egui::Shape::rect_filled(
+                                        row.response.rect,
+                                        egui::CornerRadius::ZERO,
+                                        crate::colors::JUMP_FILL,
+                                    ),
+                                );
+                            }
                             if let Some(why) = blamed {
                                 // Painted *over* the row at low alpha rather than behind it.
                                 // A `Frame` fill would be cleaner-looking but adds margins,
@@ -8186,6 +8224,26 @@ impl App {
         // replace what this just set.
         self.tour.polled_at = Some(std::time::Instant::now());
         self.ui_mode = UiMode::Tour;
+    }
+
+    /// Drive the "Show in the Modelica source" verb, as the context menu does.
+    pub(crate) fn test_dispatch_show_source(&mut self, line: u32) {
+        self.dispatch_hrw_link(HrwLink::ShowSource(Some(line)));
+    }
+
+    /// The line a jump landed on, washed in the source view.
+    pub(crate) fn test_source_jump_line(&self) -> Option<u32> {
+        self.source.jump_line
+    }
+
+    /// Whether the source view is the visible specimen detail.
+    pub(crate) fn test_specimen_detail_is_source(&self) -> bool {
+        self.specimen_detail == SpecimenDetail::Source
+    }
+
+    /// Reset per-specimen state, as loading a different model does.
+    pub(crate) fn test_clear_specimen_state(&mut self) {
+        self.clear_specimen_state(false);
     }
 
     pub(crate) fn test_stage(&self) -> StageKind {

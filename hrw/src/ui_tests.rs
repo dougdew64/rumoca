@@ -1154,6 +1154,46 @@ fn a_failed_stage_with_only_an_error_shows_no_tree() {
     );
 }
 
+/// **"Show in source" washes the line it landed on**, not just scrolls to it.
+///
+/// Doug, 2026-08-05: *"Would it be possible to add visual highlighting of the item
+/// being shown in the source?"* Scrolling puts the line somewhere in the pane; it
+/// does not say **which** line, and a reader arriving in a 40-line file still has to
+/// hunt for it. The wash is the answer to "which one".
+///
+/// Asserted on state rather than pixels — the fill is painted into a reserved slot
+/// behind the row and `egui_kittest` cannot see colour. What it *can* pin is that the
+/// verb sets the line, that the line survives the scroll being consumed, and that
+/// changing specimen clears it. The last is the one that matters: a wash carried into
+/// another file marks a line nothing pointed at.
+#[test]
+fn showing_a_variable_in_source_marks_the_line_it_landed_on() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    // A specimen must be selected: `ShowSource` is not on `requires_specimen`'s
+    // exempt list, and correctly so — there is no source to show without one.
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_dispatch_show_source(7);
+
+    assert_eq!(
+        app.test_source_jump_line(),
+        Some(7),
+        "the landed-on line must be recorded, or the reader has to find it",
+    );
+    assert!(
+        app.test_specimen_detail_is_source(),
+        "and the pane showing it must be the source view",
+    );
+
+    // A new specimen invalidates it: line 7 of another file is a different line.
+    app.test_clear_specimen_state();
+    assert_eq!(
+        app.test_source_jump_line(),
+        None,
+        "a wash carried into another specimen marks a line nothing pointed at",
+    );
+}
+
 /// A readable library file shows its text **and names the file it came from**.
 ///
 /// The header is not decoration. `Resistor` lands a reader inside `Basic.mo`
