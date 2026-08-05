@@ -557,6 +557,38 @@ very sweep, which is the sort of thing this file exists to remember.
   ones can be made to look different at the call site, which is what `parse_list` does for one
   file.
 
+## Accuracy item 3 — sub-view provenance, re-scoped by what it found
+
+**The item as written asked for a `Provenance` label on the sub-views** (`IncidenceMatrix`,
+`ReductionView`, `Plot`, the animations). Examining them first showed that would be **ceremony**:
+every production sub-view is fed from a report or a capture, the re-deriving constructors are
+`#[cfg(test)]` so the compiler forbids the fabricating case, and a field whose value is the same
+everywhere catches nothing. Recorded rather than built, because the reasoning is the deliverable.
+
+**The real failure mode for these views is not fabrication — it is MISPAIRING**, and it has
+occurred twice: the `CapacitorLoop` Tarjan animation drawing blocks the compiler never built, and
+raw-run frames rendered against the reduced matrix (Drivetrain, 97 equations vs 20). Both are
+"the right kind of data about the wrong system".
+
+**That defence already exists** and was checked view by view: `matching_anim` and `tarjan_anim`
+validate the capture against the matrix, `tearing_anim` refuses on a block-count mismatch, and
+`connection_anim`/pre-lowering take frames alone with nothing to mispair against.
+
+### What was actually missing: a count was standing in for an identity
+
+`match_eq.len() == n_eq` catches the mismatch that happened and is **blind to two systems of
+equal size** — which index reduction can produce, since demoting a state to algebraic moves a
+variable without necessarily changing the equation count. That is a count deciding identity, the
+same objection [`identity-and-provenance.md`](identity-and-provenance.md) makes to substrings.
+
+Both constructors now also require every matched column to exist in this matrix — free, strictly
+stronger, still a proxy. Tested with frames that pass the length check and address a column
+beyond the matrix.
+
+**A true identity would need the capture to carry something naming its DAE**, which is a
+capture-side (Rumoca) change and is deliberately not attempted here.
+<!-- unbuilt: StructuralFrames::dae_fingerprint -->
+
 ## Accuracy item 6 — spyplot, and the audit's own blind spot
 
 ### `str_vec` hid the pattern the audit was grepping for

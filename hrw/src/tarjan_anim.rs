@@ -133,7 +133,12 @@ impl TarjanAnimation {
         // Index Reduction tab, where `mat` is the reduced system while the capture is
         // from the raw one. `match_eq`'s length is the equation count of the system
         // that produced it, so it is the check.
-        if last.match_eq.len() != n_eq {
+        // Length **and** column bounds — a count alone cannot tell two systems of the
+        // same size apart, and index reduction can produce exactly that. See the
+        // longer note in `MatchingAnimation::from_captured_frames`.
+        if last.match_eq.len() != n_eq
+            || last.match_eq.iter().flatten().any(|&v| v >= mat.n_var())
+        {
             return None;
         }
 

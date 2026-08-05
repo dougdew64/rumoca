@@ -157,9 +157,22 @@ impl MatchingAnimation {
         // Validated here rather than only gated at the call site, because a call site
         // can be forgotten and this cannot: every frame carries `match_eq`, whose
         // length *is* the equation count of the system that produced it.
-        let fits = frames
-            .first()
-            .is_some_and(|f| f.match_eq.len() == mat.n_eq());
+        // **A count is not an identity**, so check the columns too.
+        //
+        // `match_eq.len() == n_eq` catches the case that actually occurred (raw frames
+        // against the reduced matrix, 97 equations vs 20). It does **not** catch two
+        // systems with the *same* equation count — which index reduction can produce,
+        // since demotion moves a variable from state to algebraic without necessarily
+        // changing how many equations there are.
+        //
+        // The variable indices inside the frames give a second, free constraint: every
+        // matched column must exist in this matrix. Still a proxy rather than an
+        // identity (see `docs/identity-and-provenance.md` on counts deciding identity),
+        // and strictly stronger than the length alone. Tightened 2026-08-04.
+        let fits = frames.first().is_some_and(|f| {
+            f.match_eq.len() == mat.n_eq()
+                && f.match_eq.iter().flatten().all(|&v| v < mat.n_var())
+        });
         if frames.is_empty() || !fits {
             // **`None`, not a re-derivation.** Re-running the search here would draw
             // a picture of a run that did not happen; the caller says so instead.
@@ -752,6 +765,40 @@ mod tests {
         let kept = MatchingAnimation::from_captured_frames(&mat, &fitting)
             .expect("a capture that fits the matrix is used");
         assert_eq!(kept.position().1, 1, "a one-frame capture that fits is played as-is");
+    }
+
+    /// **The same equation count is not the same system**, and the length check alone
+    /// cannot tell them apart.
+    ///
+    /// Tightened 2026-08-04, item 3 of the accuracy sweep. `match_eq.len() == n_eq`
+    /// catches the mismatch that actually happened (raw frames against the reduced
+    /// matrix, 97 equations vs 20) and is blind to two systems of *equal* size — which
+    /// index reduction can produce, since demoting a state to algebraic moves a
+    /// variable without necessarily changing the equation count.
+    ///
+    /// The variable indices inside the frames give a second constraint for free: a
+    /// matched column that does not exist in this matrix proves the frames are not
+    /// about it. Still a proxy rather than an identity, and strictly stronger.
+    #[test]
+    fn frames_that_match_in_size_but_address_missing_columns_are_refused() {
+        use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep};
+
+        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
+        // Right number of equations, but matched to a column beyond this matrix —
+        // the shape of a capture from a wider system of the same height.
+        let mut match_eq = vec![None; mat.n_eq()];
+        match_eq[0] = Some(mat.n_var() + 3);
+        let same_size_different_system = vec![MatchingFrame {
+            step: MatchingStep::TryEquation(0),
+            match_eq,
+        }];
+
+        assert!(
+            MatchingAnimation::from_captured_frames(&mat, &same_size_different_system).is_none(),
+            "these frames pass the equation-count check and still describe a system \
+             with more unknowns than this matrix has \u{2014} drawing them would \
+             address columns that do not exist",
+        );
     }
 
     #[test]
