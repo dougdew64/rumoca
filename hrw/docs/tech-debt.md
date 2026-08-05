@@ -664,6 +664,27 @@ reduction replay" in a tour and either deletes a working feature, or concludes t
 were already handled and stops looking. **Judge by where the frames came from, never by the
 word.** `CompileFrames` — which holds the good kind — was reworded to avoid it entirely.
 
+## `unsafe_code` is the one workspace lint HRW could adopt and has not
+
+**Logged 2026-08-05**, during the formatting work that found `hrw` inherits **no** workspace
+lints at all. Five were adopted the same day at zero cost (`hrw/Cargo.toml` records which, and
+which were declined and why). `unsafe_code` is the remaining adoptable one.
+
+**13 violations, all real and all in one place**: `OutputCapture`'s fd-level pipe handling in
+`worker.rs` (~8955 and ~9410), where `libc::pipe` and direct `write` to fds 1/2 are required
+rather than incidental — HRW captures output *below* Rust's `BufWriter` because `tracing` and
+`println!` from the Rumoca crates bypass it.
+
+**What it needs is not a flag but thirteen reasons.** Adopting means
+`#[allow(unsafe_code, reason = "…")]` at each site, and the value is entirely in those strings:
+*why* this must be unsafe and what invariant makes it sound. Written well they document the one
+module in HRW that can corrupt process state; written as `reason = "needed"` they are noise.
+
+**Not urgent, and not free.** No defect traces to this code. The reason to do it is that
+`unsafe` is exactly the category where a **new** occurrence should be argued rather than
+noticed, and today nothing would notice.
+<!-- unbuilt: hrw unsafe_code lint -->
+
 ## Accuracy item 1 — the `unwrap_or_*` family (a second, separate silent substitution)
 
 **The `filter_map` audit did not cover this.** `unwrap_or_default()` / `unwrap_or(0)` /

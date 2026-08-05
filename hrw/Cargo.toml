@@ -106,3 +106,39 @@ tracing-subscriber = { workspace = true }
 # animation) are invisible to an accessibility-tree harness, so they remain the
 # fixture tours' job.
 egui_kittest = { version = "0.35", default-features = false }
+
+# **HRW inherits no workspace lints, and that was invisible until 2026-08-05.**
+#
+# `[workspace.lints]` denies seven things, and the Rumoca crates are held to all of
+# them. `hrw` has never had a `[lints]` section, so it is held to none — discovered
+# while formatting, when a `too_many_lines` failure hit the Rumoca crates and could
+# not hit this one.
+#
+# **Adopted here: the five that cost nothing.** Measured before adding, not after:
+# each produces **zero** errors across `--all-targets`, so HRW already complies and
+# these only guard against regression.
+#
+# **Deliberately NOT adopted, with reasons, so the gap is a decision rather than an
+# oversight:**
+#
+# - `too_many_lines`, `excessive_nesting`, `too_many_arguments` — the three
+#   complexity lints. **56 functions here exceed 100 lines**, so adopting them means
+#   56 errors or 56 `#[allow]`s, and a lint suppressed everywhere it applies reads as
+#   compliance to a later reader. Worse, a deny-level length gate rewards splitting a
+#   function *to satisfy the lint* — extraction with no new seam and no new test,
+#   which is precisely what `docs/format-and-app-plan.md` rules out. And formatting
+#   would be able to break the build: rustfmt pushed a Rumoca function 99 -> 102
+#   lines the same day. The evidence also runs the other way — this week's defects
+#   were silent substitution and identity-by-substring, found in 4-line helpers as
+#   readily as in 1,000-line functions.
+#
+# - `unsafe_code` — **13 genuine violations**, all in `OutputCapture`'s fd-level pipe
+#   handling, where unsafe is required rather than incidental. Adoptable, but only
+#   with scoped `#[allow(unsafe_code, reason = "...")]` at each site, and writing
+#   those reasons is the actual work. Logged in `docs/tech-debt.md`.
+[lints.rust]
+unreachable_pub = "deny"
+unnameable_types = "deny"
+private_interfaces = "deny"
+private_bounds = "deny"
+dead_code = "deny"
