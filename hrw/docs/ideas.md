@@ -3913,7 +3913,7 @@ discipline — and stated as reasoning Doug can check rather than as a fact retr
 **Each needs verifying against the source before being said to Doug.** `structural-vs-numerical-rank.md`
 already exists as a fixture tour and is the one place some of this has been checked.
 
-### What would actually help, if anything is built
+### What would actually help, if anything is built — AGREED by Doug, 2026-08-05
 
 Not a map. **A worked answer, once**, for the first topic Doug raises — text plus a composed tour
 citing the fixtures that demonstrate it. If a second and third look the same shape, *then* the
