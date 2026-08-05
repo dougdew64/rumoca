@@ -114,6 +114,24 @@ says it is.
 
 **Last, and the only one of the three that needs judgement rather than a command.**
 
+> **Superseded in part, 2026-08-05.** Doug set the standing policy that HRW is refactored for
+> **Claude's** comprehension, maintenance and testability — not for a human's — since no human
+> has yet had to read it. See [`../DECISIONS.md`](../DECISIONS.md) and the rule in
+> [`../CLAUDE.md`](../CLAUDE.md).
+>
+> **What survives below:** the testability rule (*no extraction lands without a test that could
+> not have been written before it*), the seam analysis, and the "what NOT to do" list.
+>
+> **What is retired:** any framing that treats line count as the thing to reduce. The measured
+> position is that length is a **weak proxy** — it bit twice this week through *local context at
+> the edit point*, and not at all across eight edits to a 1,085-line function.
+>
+> **Status of the step itself: opened 2026-08-05 and currently empty.** `compile_target` was the
+> nominated extraction and **did not qualify** — the branch that looked untestable (typecheck
+> failure carrying diagnostics) is already covered by the `DimensionMismatch` specimen. Nothing
+> else has been shown to buy a test. **The step stops when extractions stop buying tests, which
+> is where it is now**, so the next useful work is `ideas.md` #46 rather than more extraction.
+
 ### What the UI pause settled, and what it explicitly did not
 
 `docs/ui-pause-plan.md` (2026-08-02) cut `App` from 105 fields to 57, `frame_ui` from 727 lines

@@ -238,6 +238,45 @@ looking**. Four stale ones were found on 2026-08-01, and `ideas.md` #42 was two 
 having its link vocabulary re-implemented on top of itself. Coverage is expected to be low —
 tag when you write the claim, the way provenance tags work.
 
+**REFACTOR FOR CLAUDE'S COMPREHENSION, NOT FOR A HUMAN'S** *(Doug, 2026-08-05 — standing
+policy)*. His words: *"no human being has yet needed to comprehend or maintain any functions
+[in HRW]. Instead, at least so far, you have been doing the comprehending and maintaining. …
+We will refactor HRW functions when doing so improves your ability to comprehend or maintain
+those functions, or will improve your ability to test those functions and keep them correct."*
+
+**So the trigger is one of three, and none of them is a line count:**
+
+1. Claude's **comprehension** of the code degrades.
+2. Claude's **ability to maintain** it degrades.
+3. A refactor would **improve testability** — the same rule
+   [`docs/format-and-app-plan.md`](docs/format-and-app-plan.md) already states: *no extraction
+   lands without a test that could not have been written before it.*
+
+**This is why the three complexity lints are declined** (`hrw/Cargo.toml` carries the full
+reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
+a function *to satisfy the lint* — extraction with no new seam and no new test.
+
+**What the evidence says length does to Claude, measured 2026-08-05.** It bit twice this week,
+and both times the cause was **local context at the edit point**, not total length: the
+`Provenance` enum inserted between `#[derive]` and its struct, and an `events_stage` borrow
+error from restructuring a match whose arms moved a value. It did **not** bite across roughly
+eight edits to `compile_target` (**1,085 lines**), which is linear and heavily commented.
+`compile_target` is hard to *test* because it takes `&mut self` and emits through a closure —
+**not because it is long.**
+
+**Claude is a poor sensor for his own comprehension failures**, and this policy should not rest
+on his self-report. Both failures above were caught by the **compiler**, not by noticing
+confusion. The reliable signal is already written down: `tech-debt.md`'s **trigger 2 — code that
+has produced defects only a human caught.** If a function starts producing defects Doug finds
+and Claude does not, the criterion has fired regardless of what Claude reports.
+
+**The condition that would change this policy**, named so the change is deliberate: **a human
+needing to read HRW.** `docs/upstream-strategy.md` orders deliverables by their cost to accept
+and puts HRW **last**, being the only item asking for maintenance burden — so the day HRW is
+offered upstream, human comprehension stops being hypothetical and this rule is revisited. The
+`crates/rumoca-*` instrumentation is **not** covered by this policy and stays under
+`[workspace.lints]`, because it is offered to maintainers now.
+
 **DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Measurement showed HRW's *compile path*, not
 the checks, costs 30 s and 3.5 GB on a 4,193-equation model. Doug: *"we should not redesign

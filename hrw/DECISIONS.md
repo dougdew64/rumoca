@@ -2268,3 +2268,59 @@ written where a fiction had already been found. Logged in `tech-debt.md` with th
 exploring — **provenance as data on the pane rather than an implicit fact about which branch
 built it**, which would let one test cover the class instead of one test per fiction. **Do not
 read the fictions' removal as the debt being paid.**
+
+---
+
+## 2026-08-05 — HRW is refactored for Claude's comprehension, not a human's
+
+**Doug, after reviewing why the three complexity lints were declined:**
+
+> Undoubtedly, that lint rule is motivated by the need to keep functions small enough that human
+> beings can comprehend and maintain functions. For HRW, no human being has yet needed to
+> comprehend or maintain any functions. Instead, at least so far, you have been doing the
+> comprehending and maintaining. … We will refactor HRW functions when doing so improves your
+> ability to comprehend or maintain those functions, or will improve your ability to test those
+> functions and keep them correct.
+
+**This settles a question the UI pause left open.** `ui-pause-plan.md` recorded that *"the claim
+that `app.rs`'s size causes editing defects is unproven either way"* and named the honest test as
+whether `ui-findings.md`'s R-series stops recurring. The policy above **replaces the metric**:
+the question is no longer *is it big* but *does it degrade the one reader it has*.
+
+### What the evidence actually shows, measured the same day
+
+**Length bit twice this week, and both times the cause was local context at the edit point:**
+
+- The `Provenance` enum landed **between `#[derive(Clone, Default)]` and `struct Stage`**, so the
+  derive applied to the enum. Editing a region not read in full.
+- `events_stage` hit a borrow error after a match was restructured without seeing that `json` was
+  moved in the arms.
+
+**It did not bite where the lint would have fired.** Roughly eight edits to `compile_target`
+(**1,085 lines**, six times the lint's threshold) across trace routing, log nesting, bracket
+naming and provenance — no comprehension failure. It is linear and heavily commented.
+
+**So length is a weak proxy for what actually degrades Claude**, which is (a) whether the whole
+unit around an edit point is visible, and (b) whether there is a callable seam. `compile_target`
+is hard to *test* because it takes `&mut self` and emits through a closure. **Not because it is
+long.**
+
+### The caveat that keeps this honest
+
+**Claude is a poor sensor for his own comprehension failures.** Both defects above were caught by
+the **compiler**, not by Claude noticing confusion — so "Claude reports he can maintain it" is
+weak evidence and must not be the whole basis.
+
+The reliable signal already exists: `tech-debt.md`'s **trigger 2, code that has produced defects
+only a human caught.** If a function begins producing defects Doug finds and Claude does not, the
+criterion has fired whatever Claude reports about comprehending it.
+
+### Scope, and the condition for revisiting
+
+**`hrw/` only.** The `crates/rumoca-*` instrumentation stays under `[workspace.lints]`, complexity
+lints included, because it is offered to human maintainers *now*.
+
+**The condition that changes this: a human needing to read HRW.**
+`docs/upstream-strategy.md` orders deliverables by their cost to accept and puts HRW **last**,
+being the only one asking for maintenance burden. The day HRW is offered upstream, human
+comprehension stops being hypothetical.
