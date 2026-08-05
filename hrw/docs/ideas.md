@@ -3668,3 +3668,92 @@ promotion silently producing a fixture that fails the next test run.
 
 **Depends on nothing; blocked by nothing.** Worth doing after [#62](#62-organizing-the-tours-list),
 since a promoted tour needs the same front-matter a hand-written one does.
+
+---
+
+## 65. "Claude's answer" as the centre of the UI
+
+**Raised by Doug 2026-08-05**, on watching the tour-citation mechanism work:
+
+> *"I have a hunch that 'Claude's Answer' is going to become a focus of the HRW UI, if not THE
+> focus. I have a hunch that we will ultimately find a better, more central location for
+> 'Claude's Answer' than as an item in the tours list."*
+
+And the larger framing, the same message:
+
+> *"Whether we've noticed or not, we have been very quickly evolving HRW away from the pre-AI
+> conventions for applications and UI to a contemporary vision which places Claude at the
+> centre."*
+
+### What is actually wrong with where it lives now
+
+`✨ Claude's answer` is **one row in a list of fifteen**, sorted beside fourteen versioned
+fixtures. That placement makes three claims that are all false:
+
+1. **That it is a peer of the fixtures.** It is not. A fixture is durable, versioned and
+   checked; the answer is *the response to the question just asked*, and it is overwritten by the
+   next one. Those are different kinds of object sharing a widget.
+2. **That it is chosen by browsing.** A list is a **menu of nouns you pick from** — the pre-AI
+   convention. But the answer is not something Doug goes looking for; it is something that
+   *arrives*, in response to a thing he said.
+3. **That finding it is free.** Charter Decision 9 says otherwise: after asking a question, Doug
+   switches to Tour mode, finds the row, clicks it. **Three actions to reach a thing that was
+   produced for him seconds ago**, each of them friction spent on operating the instrument rather
+   than learning.
+
+### Why this follows from the charter rather than being a new direction
+
+**Decision 8 — the noun is assembled by mouse, the verb is an unbounded utterance.** A list of
+pre-written tours is *a menu of verbs*, which is exactly what that decision says cannot work. The
+answer surface is where unbounded utterances and their responses live, so the thesis implies it.
+
+**Decision 9 — minimize learning friction.** The answer is the single highest-traffic artifact in
+the app and currently the most buried.
+
+**So this is not a new idea. It is the first two decisions applied to the layout**, which is
+probably why Doug reports it as a hunch rather than a proposal — the conclusion arrived before the
+argument did.
+
+### The reconciliation, which #63 already built
+
+The obvious objection: **the fixture tours are valuable and Doug walks them independently.**
+Making the answer central must not make them second-class.
+
+**It does not, and the shape is already in place.** `hrw://tour/<name>/stop/<slug>` (built
+2026-08-05) lets an answer *cite* a fixture at the exact stop that demonstrates the thing. So:
+
+> **The answer is the index; the fixtures are the corpus.**
+
+Doug does not browse tours and then read one. He asks, and the answer routes him into the durable
+material — which he can then walk on his own, exactly as now. The tours list stops being the front
+door and becomes what it always was: the shelf.
+
+### Shapes, none chosen
+
+- **A dedicated region** rather than a list row, always present, showing the latest answer.
+- **The tour panel defaults to the answer** whenever it is newer than the last thing viewed —
+  cheapest, and reversible.
+- **The answer as the driving surface**: it composes prose, links and embedded views, and the
+  stage tabs become a rendering target it points into. The most radical, and the closest to
+  Doug's framing.
+
+### Questions that decide it
+
+- **What is the empty state?** Before any question is asked there is no answer, and the most
+  central surface in the app would be blank. That is either the app's front door for asking, or a
+  design failure — and which one is not obvious.
+- **Does history matter?** The answer is overwritten by the next question. If it becomes central,
+  is a walked-and-valued answer worth keeping? [#64](#64-promote-claudes-answer-to-a-fixture-from-the-tour-list)
+  is one response (promote it); a session history is another.
+- **What does it cost when Claude is wrong?** Decision 7 ranks accuracy above everything, and
+  centrality raises the stakes: a wrong claim in a buried tour row misleads once, the same claim on
+  the primary surface misleads by default. **This item should not be built without asking what
+  makes an answer's claims checkable** — the tour-citation checker is a start, since a cited
+  fixture's expectations were verified even when the surrounding prose was not.
+
+### Not blocked, and deliberately not urgent
+
+Nothing prevents starting. But **the evidence for the right shape is Doug using the mechanism
+built today** — asking questions and being routed into fixtures — in the same way #64's open
+questions are to be answered by watching #63 in use. **Build the cheap version (the panel
+defaults to the answer), watch, then decide whether the radical one is warranted.**
