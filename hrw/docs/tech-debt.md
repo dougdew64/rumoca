@@ -525,7 +525,7 @@ frame stream is correct and must **not** be converted.
 | | Count | Where |
 |---|---|---|
 | **Fixed** (silent data loss) | 15 | `ic_plan_anim` 6, `reduction_view` 3, `incidence_view` 3, `alias_anim` 1, `tearing_anim` 1, `worker.rs` 1 |
-| **Genuine filters**, correct as they stand | 3 | `matching_anim`, `tarjan_anim` (one enum variant out of a frame stream), `worker.rs:3434` (`var_idx: Option` — `None` means *this equation is unmatched*, which is the fact being reported) |
+| **Genuine filters**, correct as they stand | 3 | `matching_anim`, `tarjan_anim` (one enum variant out of a frame stream), `worker::partial_matching_to_json` (`var_idx: Option` — `None` means *this equation is unmatched*, which is the fact being reported) |
 | **Test code** | 13 | `worker.rs` 10, `bridge.rs` 3 |
 
 **The correction worth keeping: the per-file counts came from an unfiltered `grep -c`, so they
