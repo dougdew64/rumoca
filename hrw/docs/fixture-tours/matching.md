@@ -284,6 +284,75 @@ and this phase is where an idealisation that cannot be simulated is caught.
 
 ---
 
+## Act 4 — The thing you have been building is a permutation
+
+Everything above described matching as a *search*: try an equation, explore, back up, assign.
+That is how it runs. **It is not what it produces.**
+
+[ProportionalLoop → Structural → Incidence](hrw://load/ProportionalLoop/Structural/Incidence)
+
+**Expected:** the incidence matrix, with the matched cells marked, and the caption reading
+`3/3 matched (full rank)`.
+
+Now read the marks rather than the search. **Exactly one per row. Exactly one per column.**
+
+That is a **permutation matrix** — the 0/1 matrix `P` with a single 1 in each row and column.
+Matching does not merely pair things off; it constructs `P`, and everything downstream is what
+`P` buys.
+
+### Why a compiler wants one
+
+The incidence matrix `A` says which unknowns each equation *mentions*. It is a sparsity pattern:
+1 where equation *i* involves unknown *j*, 0 otherwise. Nothing in `A` says which unknown an
+equation should be **solved for**.
+
+Applying the permutation — reordering the columns so each equation's matched unknown lands on the
+diagonal — gives a matrix whose **diagonal is entirely non-zero**. That is the precondition for
+everything after:
+
+- **Tarjan** (Act 3's sequel) finds strongly connected components in the *permuted* matrix, and
+  the blocks it returns are the **block triangular form**. Without a full diagonal there are no
+  blocks to find.
+- **Solving** a scalar block means "solve equation *i* for unknown *j*" — and `P` is what says
+  which *j*.
+
+**So the search you watched is a constructive proof that `P` exists.** An augmenting path is the
+step that fixes a partial permutation into a larger one.
+
+### And rank deficiency is the permutation failing to exist
+
+Return to `CapacitorLoop` from Act 3.
+
+[CapacitorLoop → Structural → Incidence](hrw://load/CapacitorLoop/Structural/Incidence)
+
+**Expected:** the caption reports **fewer matched than the system's size**, and names a rank
+deficiency.
+
+That is the same statement in two vocabularies. *"No augmenting path exists"* and *"no permutation
+matrix exists"* are the same fact, and **`structural rank` is the size of the largest partial
+permutation `A`'s sparsity pattern admits.**
+
+**Structural rank is an upper bound on numerical rank, never the other way round.** A pattern can
+admit a permutation while the numbers still make the system singular — cancellation the sparsity
+cannot see. `structural-vs-numerical-rank.md` is the tour for that distinction; this stop only
+establishes that the two are different questions.
+
+### If you are reading this alongside a linear algebra course
+
+The correspondences worth carrying, each visible on the pane above rather than asserted here:
+
+| In class | On this screen |
+|---|---|
+| sparsity pattern | the incidence matrix |
+| permutation matrix `P` | the matched cells, one per row and column |
+| `PA` with non-zero diagonal | the reordering matching makes possible |
+| block triangular form | the BLT blocks Tarjan finds in the permuted matrix |
+| rank of a pattern | `structural rank`, and the deficiency `CapacitorLoop` reports |
+
+**Ask about any row of that table.** The mathematics is stated here as reasoning you can check
+against the pane, not as a fact retrieved from a file — see `docs/ideas.md` #67 for why that
+distinction is a rule rather than a preference.
+
 ## What this tour cannot check
 
 Whether the **matrix view** makes the search legible — whether the moving highlight reads as
