@@ -4117,3 +4117,61 @@ fact). The honest form of this feature says *"these are the structures involved"
 becomes mandatory in stage two.
 
 **Not scheduled.** Recorded because it tells stage one which provenance work pays twice.
+
+---
+
+## 70. Can Claude see where the debugger is stopped?
+
+**Doug, 2026-08-05**, describing how he expects to learn Rumoca's code:
+
+> *"When it's time for me to learn rumoca code details, then I will begin debugging rumoca code.
+> Mostly, I will debug the algorithmic code. And most of the time, I will begin debugging that
+> code by using the live trace feature… While live trace debugging, I might ask you about a line
+> of rumoca code that I'm stopped at in the debugger. I don't believe that we've investigated
+> whether or not you can query VS Code to determine which line of code I'm stopped."*
+
+**He is right that it has never been investigated**, and it is worth knowing before the semester
+rather than discovering mid-question.
+
+### What is known, and what is not
+
+**Known:** Claude runs inside the VS Code extension and **receives the editor's selection** —
+the environment provides it explicitly, marked in the conversation context. That is why the
+architecture puts Claude here rather than in a terminal, and why `docs/setup-windows.md` treats
+the debugger as a first-class instrument.
+
+**Not known:** whether **stopping at a breakpoint produces a selection.** A debugger stop
+*reveals and highlights* a line, and a highlight is not necessarily a text selection. **These are
+different mechanisms and the answer could be either way.**
+
+**Do not assume it works.** A confident "I can see you are stopped at `matching.rs:214`" that is
+actually Claude reading a stale selection is a wrong answer delivered with the tone of a right
+one — the failure class this project spends most of its rules on.
+
+### The experiment is thirty seconds, not a project
+
+1. Doug sets a breakpoint in `matching.rs`, starts a live trace, and lets it stop.
+2. **Without selecting anything**, he asks: *"what line am I stopped at?"*
+3. Claude reports what it actually sees, including seeing nothing.
+
+**One trial settles it**, and the result should be written into this entry rather than
+rediscovered. Worth doing at the start of a debugging session rather than in the middle of a
+question.
+
+### If the answer is no
+
+**The gesture already exists and is one click**: select the line, then ask. That works today and
+costs almost nothing, so this is a convenience question rather than a capability gap.
+
+A richer fallback exists if it is ever worth it — HRW already writes `.hrw-bridge/focus.json` as
+a file channel, and a debugger stop could in principle write the same way. **Not proposed**:
+that is a launch-configuration or extension change for a problem that a click may already solve,
+and `#67`'s discipline applies — find out what actually happens before building for it.
+
+### Why it matters more than it looks
+
+The **third leg** of a curriculum tour is the thin one (`#66`): tours show an algorithm *running*
+and never point into the code that runs it. Doug's stated remedy is to read the code in the
+debugger and ask. **The quality of that exchange is what substitutes for tour prose that does not
+exist yet** — so a friction of one click, repeated across a semester, is worth measuring rather
+than assuming.
