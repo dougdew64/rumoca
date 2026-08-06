@@ -3876,6 +3876,30 @@ Ranked by *usefulness when a simulation misbehaves*, it is the same list for dif
 **Two independent criteria agreeing is a stronger endorsement than either alone**, and it means
 the plan does not need re-deriving. Parse, Resolve, Instantiate and Typecheck rank last on both.
 
+### The three legs, and which one is thin
+
+**Doug, 2026-08-05, on what he needs from a tour:** *"Problem statements, math and algorithms are
+the most important for me to learn. And, gaining some understanding of how rumoca implements math
+and algorithms to solve those problems."*
+
+That is a **three-leg template**, and the first two are already the shape both curriculum tours
+take — each opens with *"The problem this phase exists to solve"* before naming an algorithm,
+which is `feedback-problem-before-solution` applied to prose.
+
+**The third leg is the thin one.** `matching.md` shows the algorithm *running* — the animation is
+the search, frame by frame — but never points into `matching.rs`. A reader finishes it knowing
+what an augmenting path is and nothing about how Rumoca spells one.
+
+**The material exists and is not reachable from a tour**: `docs/compiler-phases/*/guided-tour.md`
+quotes line numbers, locals and enum variants, but its **audience is Claude**, and HRW's
+*"Show this being set (debugger)"* verb arms a breakpoint without a tour ever suggesting it.
+
+**So a curriculum tour should have an implementation stop**, and the cheapest honest form is a
+stop that names the function and the debugger gesture — *"this is `augment` in `matching.rs`; arm
+it and watch the recursion"* — rather than transcribing code into prose that will rot. **Nothing
+compiles a tour**, and quoted code is the most rot-prone thing that can go in one
+(`CLAUDE.md`'s standing rule about tours quoting line numbers).
+
 ### The one thing it does change: how a curriculum tour ends
 
 A tour that closes with *"you now understand matching"* has taught the means and stopped. **Each
