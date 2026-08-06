@@ -3855,6 +3855,42 @@ clothing** — matching is a permutation, BLT is block triangularization, tearin
 complement. A curriculum tour there pays into the coursework directly
 ([[user-linear-algebra-learning]] in memory; `docs/vision.md`).
 
+### Compilation is a MEANS, and the end is simulation
+
+**Doug, 2026-08-05:** *"I'm learning the compilation stuff as a means to an end. That end is being
+able to troubleshoot and improve simulations."*
+
+**This does not change the ranking above, and that is the useful part.** Ranked by *mathematical
+content*, the order is structural analysis, index reduction, solve lowering, initialization.
+Ranked by *usefulness when a simulation misbehaves*, it is the same list for different reasons:
+
+| Phase | What it buys at runtime |
+|---|---|
+| Structural analysis / BLT | the blocks are **what the solver actually solves**; their size is the cost |
+| Tearing | sets how many variables Newton iterates on inside a coupled block |
+| Index reduction | index > 1 is the classic source of a simulation that will not run |
+| Initialization | non-convergence at t=0 is the most common practical failure |
+| Solve lowering | Jacobian sparsity and residual programs — the inner loop |
+| Events | discontinuities are what cause rejected steps and chattering |
+
+**Two independent criteria agreeing is a stronger endorsement than either alone**, and it means
+the plan does not need re-deriving. Parse, Resolve, Instantiate and Typecheck rank last on both.
+
+### The one thing it does change: how a curriculum tour ends
+
+A tour that closes with *"you now understand matching"* has taught the means and stopped. **Each
+curriculum tour should end with what it buys when a simulation misbehaves** — one section, named
+plainly, of the form *"when a solve fails/crawls, here is what this phase tells you."*
+
+`matching.md`'s Act 4 is half of this already: it ends on the permutation and what BLT needs it
+for. What it does not yet say is that **the blocks are what Newton faces**, and that a large
+coupled block is a slow simulation waiting to happen. That is the shape the section should take,
+and it is cheap to add to a tour that already exists.
+
+**Deliberately not written as speculation about the solver.** Until stage two instruments the
+solve (`#68`), these sections say what the *structure* implies and stop short of claiming what
+the numbers will do — `#69`'s caution, applied to tour prose rather than to a feature.
+
 **Not scheduled.** The next is index reduction on `Drivetrain` when Doug reaches it.
 
 ---
