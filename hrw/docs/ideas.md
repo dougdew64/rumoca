@@ -3990,3 +3990,70 @@ pattern to follow: measure the thing, not a proxy for it, and say what was not m
 
 **Not scheduled.** Stage one is not finished; this is recorded so the oracle's timing is a
 decision rather than a discovery.
+
+---
+
+## 69. Tracing a simulation symptom back to a compilation cause
+
+**Doug, 2026-08-05**, on what stage two is *for*:
+
+> *"I will be interested in leveraging my knowledge of compilation to solve simulation problems.
+> For example, if a simulation fails to converge, we'll want to trace backwards into compilation
+> to identify causes. For example, if simulation runs too slowly, we'll want to consider how to
+> instrument a model to identify opportunities to simplify the model."*
+
+**This is the argument for the two stages being one project rather than two.** Stage one is not a
+prerequisite to be got through; it is the vocabulary in which stage two's answers are written.
+
+### The backward trace is the forward provenance, read in reverse — and its last link exists
+
+The chain a non-convergence question would walk:
+
+```
+Newton fails on block B                      (solver — no instrumentation yet, #68)
+  <- B is a coupled SCC                      (Tarjan, over the matched incidence)
+    <- its members are f_x[i], f_x[j], ...   (the matching's permutation, matching.md Act 4)
+      <- each has a span                     (BUILT 2026-08-05)
+        <- which is a line in the model      (BUILT 2026-08-05)
+```
+
+**The bottom two links shipped today** — the tooltip, the `📄 Show … in the Modelica source`
+item, and the wash. They were built to answer *"where did this DAE node come from?"*, which turns
+out to be the tail of every backward trace. The links above them are what #68 calls for.
+
+**So the work has a direction it did not obviously have**: each provenance step is worth building
+on its own for the tour it serves, *and* is a segment of this chain.
+
+### The two questions want different things
+
+- **"Why won't it converge?"** wants the chain above: symptom → block → equations → source. Mostly
+  **structural**, and mostly already computable.
+- **"Why is it slow, and what can I simplify?"** wants **cost attributed to structure** — which
+  blocks dominate, how large the torn systems are, how often the Jacobian is refactorised — and
+  then the same walk back to source. That needs per-block measurement the solver does not
+  currently emit.
+
+**Simplification is the more valuable and the harder one.** Knowing *which* equations to remove
+is worth more than knowing why a solve failed, and it is exactly what Doug says practitioners
+care about (`#68`, the Caterpillar observation).
+
+### The caution, and it is the important part
+
+**A structural story for a numerical failure is a fiction with a clean explanation.**
+
+Non-convergence often has causes **no structural view can see**: bad scaling between states,
+a poor initial guess, a genuinely ill-conditioned Jacobian, a discontinuity landing inside a
+step. HRW will always be able to produce a *plausible* chain — this block is coupled, these
+equations, this connect — because the chain exists whether or not it is the cause.
+
+> **Presenting a plausible chain as a diagnosis is the same class of error as the fictions
+> removed on 2026-08-04**, and worse, because it will be right often enough to be trusted.
+
+The rules already written cover it and should be cited when this is built:
+**Charter Decision 7** (accuracy outranks everything), **`#67`'s rule** (record *where to look*,
+never *what the mathematics is*), and **`docs/provenance.md`** (untagged prose is a lead, not a
+fact). The honest form of this feature says *"these are the structures involved"* and leaves
+*"this is why"* to reasoning that can be checked — often against the oracle, which `#68` argues
+becomes mandatory in stage two.
+
+**Not scheduled.** Recorded because it tells stage one which provenance work pays twice.
