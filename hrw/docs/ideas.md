@@ -3919,3 +3919,74 @@ Not a map. **A worked answer, once**, for the first topic Doug raises — text p
 citing the fixtures that demonstrate it. If a second and third look the same shape, *then* the
 repeated part is worth extracting, and it will be extracted from things that were checked rather
 than guessed.
+
+---
+
+## 68. Stage two — simulation, and why it needs a different instrument
+
+**Doug, 2026-08-05**, looking past the compilation curriculum:
+
+> *"After I learn all of the compilation stuff, I will begin looking forward to the second stage
+> of this effort: simulation… I know from previous experience working at Caterpillar that figuring
+> out how to solve simulation problems and how to improve simulation performance is what most
+> people care about."*
+
+**Already in scope, not a new direction.** Charter §1 names it: *"initialization and BDF
+integration exercise numerical analysis, stiffness, and automatic differentiation."* Stage one is
+the structural half of that sentence; this is the numerical half.
+
+### What exists today, and it is thin
+
+A Simulation tab, `simulate_specimen`, `simulate_library_model` (2026-08-05), and the solver
+crates. **What does not exist is any instrumentation of the solve** — no capture scopes inside
+BDF, no view of order selection, step rejection, Newton iterations or Jacobian reuse. The solver
+is where HRW is today what it was for matching *before* the capture scopes: a result with no
+visible process.
+
+### The instrument is genuinely different, not just "more of the same"
+
+| | Stage one — compilation | Stage two — simulation |
+|---|---|---|
+| Artifact | discrete, finite, inspectable | a trajectory over time |
+| Determinism | same input, same IR | same input, same numbers **only to a tolerance** |
+| "Correct" means | matches the compiler's own output | **agrees with another implementation** |
+| The interesting event | a structure (a loop, a rank deficiency) | a *moment* (a rejected step, an event iteration, a stiffness onset) |
+
+**Stage trees will not carry this.** The compilation views work because a phase produces a
+structure worth freezing. A solve produces a *history*, and the analogue of the matching
+animation is a step-by-step replay of the integrator — which is the same capture-scope pattern
+pointed at `rumoca-sim` rather than `rumoca-phase-structural`.
+
+### The consequence worth recording now
+
+**The oracle stops being optional.**
+
+Stage one can check itself: `docs/fidelity-plan.md` compares HRW's representation against
+Rumoca's own IR, and a Rumoca bug faithfully rendered is a PASS. That works because a compiled
+artifact is *checkable against its producer*.
+
+**A trajectory is not.** Nothing inside Rumoca can say whether a state history is right — only
+another implementation can. Charter **Decision 4** already built that rig (every specimen runs
+through System Modeler and Rumoca, and disagreement is the most valuable event the setup can
+produce), and `docs/ideas.md` **#43** has kept the oracle as a *track* rather than a step
+precisely because stage one never needed it.
+
+> **Stage two needs it. Plan the oracle before the simulation curriculum, not after.**
+
+That also raises #43's priority for a reason it did not have before: it was *"an independent
+adjudicator, useful for Doug's education"*; it becomes **the only way to know an answer is
+right.**
+
+### And a caution, from this project's own record
+
+**Performance work is where wrong measurement is most seductive.** This week alone produced two
+measurement errors that survived because they looked like conclusions: source spans declared
+absent because a grep counted `"location"` and not `"span"`, and a `filter_map` audit that missed
+nine sites hidden behind `str_vec`. A profiler produces numbers that feel like facts, and *"where
+is the time going"* has the same shape as both mistakes.
+
+**`docs/architecture.md` §11 and the fidelity sweep's per-check timing already exist** as the
+pattern to follow: measure the thing, not a proxy for it, and say what was not measured.
+
+**Not scheduled.** Stage one is not finished; this is recorded so the oracle's timing is a
+decision rather than a discovery.
