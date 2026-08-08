@@ -380,12 +380,54 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > initialization are the mathematics; parse/resolve/instantiate/typecheck are bookkeeping whose
 > *failure* tours already carry what a learner needs.
 >
-> **The single highest-value curriculum gap**, and it is a revision rather than a new tour:
-> `matching.md` teaches augmenting paths and **never shows the permutation it is constructing.**
-> Structural analysis is linear algebra wearing graph clothing — matching is a permutation, BLT is
-> block triangularization, tearing is a Schur complement — and Doug's Purdue applications class
-> starts Fall 2026. See **#67** for the semester's question shape, and its binding rule: **an
-> index may record where to look, never what the mathematics is.**
+> ### The live item, 2026-08-08 — `#73`, Act 5 of `matching.md` as a LIVE-TRACE session
+>
+> Doug, on reading Act 5: *"It seems that for Act 5, we have an opportunity to accomplish
+> something much more spectacular: live trace debugging."* As shipped, Act 5 names
+> `maximum_matching_with_trace` and `augment_traced`, offers a breakpoint, and stops there —
+> ending on *"go and read this"*, the homework failure the tour's own *What this cannot check*
+> section warns about. **It turns `#66`'s thinnest leg (implementation) into its thickest.**
+>
+> **The synchronization is designed, not lucky.** `LiveTrace::push` sends the frame, sleeps
+> `frame_delay` (`matching_anim.rs`: 20 ms), and *only then* calls `live_trace_breakpoint`. With
+> `Explore { eq, var }` emitted immediately before `match match_var[var]`, **the animation at
+> that stop shows the exact edge the next line decides.** And **the call stack IS the augmenting
+> path** — N nested `augment_traced` frames is an N-edge alternating path.
+>
+> **Two unknowns are `<!-- unverified -->` and only Doug walking it can settle them:** whether the
+> anchor plus a second breakpoint interleave into a tidy rhythm or a confusing double-stop, and
+> whether egui completes a paint while stopped (20 ms guarantees time was *given*, not that the
+> frame was *drawn*). **Every expectation must be specific and violable** — *"the stack shows 3
+> frames of `augment_traced`; the animation shows edge 1 → 0"*, never *"they stay in step"*.
+> A tour that promises synchronization and then drifts teaches something false, which is worse
+> than homework. **It must be walked before it is called done; Claude cannot verify any of it.**
+> This is the template for every algorithm tour's third leg, so get the shape right once here.
+>
+> ### `#72` shipped the debug channel, and IT IS PER-MACHINE
+>
+> The bridge extension now publishes stops to `.hrw-bridge/debug-state.json` — see the
+> **"WHEN DOUG IS AT A BREAKPOINT"** section in the rules above for how to read it. Measured
+> against a real stop in `augment_traced`: **20 frames, 12 locals, and `Vec<Option<usize>>` comes
+> back READABLE** (`match_eq` → `[0]=None, [1]=None`), so `#73` can lean on values as well as the
+> stack. **Skip `[len]`, `[capacity]` and `[Raw View]`** — `cppvsdbg` mixes MSVC visualizer
+> artifacts in with real elements, flagged rather than filtered on purpose.
+>
+> **THE EXTENSION IS NOT INSTALLED BY A PULL.** It was built and measured on Doug's *second*
+> machine; the first machine had `out/extension.js` from 2026-07-27 and no junction at all, so the
+> channel was silently dead there while every document described it as working. Per machine:
+> `npm run build` in `hrw/vscode-extension`, the `New-Item -ItemType Junction` line in
+> `docs/setup-windows.md` §6, then **reload the window**. Verify with `code --list-extensions`.
+> **Before answering from the payload, check `writtenAtMs`/`seq`** — and if there is no file at
+> all, say so rather than reaching for `breakpoint-request.json`, which `#70` records as the trap.
+>
+> ### The curriculum gap `#73` is answering
+>
+> **A revision rather than a new tour:** `matching.md` teaches augmenting paths and **never shows
+> the permutation it is constructing.** Structural analysis is linear algebra wearing graph
+> clothing — matching is a permutation, BLT is block triangularization, tearing is a Schur
+> complement — and Doug's Purdue applications class starts Fall 2026. See **#67** for the
+> semester's question shape, and its binding rule: **an index may record where to look, never
+> what the mathematics is.**
 >
 > **A rebuild is owed if HRW was left running** — the Flatten equation map is compiled code.
 >
@@ -414,7 +456,13 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > and the measurement counted one spelling. Same shape as the `str_vec` blind spot. The feature
 > then took about an hour; **the measurement error was the expensive part.**
 >
-> **Done and closed this session:** #46 (three specimens, six failure tours, `failure_map`), #62
+> **Done and closed, 2026-08-06 → 08:** **#70** (measured: Claude cannot see a debugger stop —
+> no location, no stack, no values; a click still works), **#71** (the Debug button said "armed"
+> when a handshake had merely timed out), **#72** (the debug-state channel, built *and* measured),
+> HRW clearing its live-trace breakpoint on shutdown (`on_exit` → `release_live_breakpoint_at_exit`,
+> both branches tested), and `.gitattributes` pinning LF because a CRLF clone lies about `app.rs`.
+>
+> **Done and closed 2026-08-05:** #46 (three specimens, six failure tours, `failure_map`), #62
 > (dissolved into the catalogue plus specimens-on-the-row), #63 (catalogue + `hrw://tour/<name>/
 > stop/<slug>` + verified end-to-end), Charter **v1.4** (Decisions 7, 8, 9).
 >

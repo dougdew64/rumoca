@@ -4469,6 +4469,16 @@ known by four.
   different path, entered from an animation's Debug button.
 - **`npm run build` updates the installed extension in place** (the install is a junction), but a
   **window reload is still required** before new extension code runs.
+- **A PULL DOES NOT INSTALL THE EXTENSION, and the failure is silent** *(found 2026-08-08 on the
+  first machine, the day after this was built on the second)*. `git pull` brings `src/*.ts`; it
+  does not run `tsc` and it does not create the junction. That machine had `out/extension.js` dated
+  **2026-07-27** against a `src/debug_state.ts` dated **08-08**, and **nothing under
+  `~/.vscode/extensions` matching `*hrw*`** — so the channel was dead while this entry, `#73` and
+  `CLAUDE.md` all described it as working. **Per machine:** `npm install`, `npm run build`
+  (`npm test` → 34 tests), the `New-Item -ItemType Junction` line from `setup-windows.md` §6, then
+  reload the window; confirm with `code --list-extensions`. **The tell is the absence of
+  `debug-state.json` after a stop** — which is indistinguishable from "no stop has happened yet",
+  which is why it needs writing down rather than rediscovering.
 - **Check freshness before trusting the payload** — `isStale`, `seq`, `writtenAtMs`. A payload from
   the previous stop describes the wrong state with equal confidence.
 - Stop at a line where the locals are **live**: a loop head reports less than the body.
