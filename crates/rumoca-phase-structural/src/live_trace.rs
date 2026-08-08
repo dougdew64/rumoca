@@ -151,8 +151,8 @@ pub fn last_frame_index() -> usize {
 /// ## Why the body looks over-engineered for one store
 ///
 /// This function must **never compile to an empty body**, or breakpoints set
-/// on it land somewhere else entirely. The failure chain (diagnosed on Windows
-/// 2026-07-27, see `hrw/docs/windows-migration.md`):
+/// on it land somewhere else entirely. The failure chain, diagnosed on
+/// `x86_64-pc-windows-msvc` on 2026-07-27:
 ///
 /// 1. `LAST_FRAME_INDEX` was written here and read nowhere, so at any
 ///    optimization level above zero LLVM may dead-store-eliminate the write.

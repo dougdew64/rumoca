@@ -87,7 +87,7 @@ pub struct PreLoweringFrame {
 /// debugger anchor it may call lives on the caller's side.
 ///
 /// This is the more upstreamable shape, and the existing three could migrate to
-/// it. See `hrw/DECISIONS.md` (2026-07-29).
+/// it.
 pub type PreLoweringObserver<'a> = &'a dyn Fn(&PreLoweringFrame);
 
 /// Like [`lower_pre_operator`], but records every step for replay.
