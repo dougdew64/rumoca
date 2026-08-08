@@ -400,8 +400,17 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   deeper resolution would need to walk into library class IRs that are loaded on demand.
   *File:* `app.rs`.
 
-- [ ] **The bridge ack says "I read your request", and HRW reads it as "a breakpoint exists."**
-  *(Found 2026-08-08 while diagnosing `ideas.md` #74; **not** what caused that bug.)* The
+- [x] **The bridge ack says "I read your request", and HRW reads it as "a breakpoint exists."**
+  *(Found 2026-08-08 while diagnosing `ideas.md` #74; **not** what caused that bug.
+  **FIXED the same day** — `ideas.md` #75.)* The ack now answers one question, *"does an **enabled**
+  breakpoint now exist at every requested line?"*, and `BreakpointAck` has four variants where a
+  `bool` used to be: `Armed`, `NotArmed(reason)`, `Unreportable`, `Pending`. **`replied()` ends the
+  handshake; only `is_armed()` licenses the claim.** The decision logic lives in
+  `vscode-extension/src/arm_verdict.ts`, which imports no `vscode` so `node --test` reaches it —
+  `extension.ts` cannot be tested at all. **A second bug surfaced while fixing this**: `isDuplicate`
+  never checked `bp.enabled`, so one click of *Disable All Breakpoints* reported a dead line as
+  covered. It is deleted; `findExisting` returns the breakpoint so the caller can read the flag.
+  The original entry follows. The
   extension writes `.hrw-bridge/breakpoint-ack.json` unconditionally at the end of
   `handleRequest` — after an add that armed nothing because every entry was a duplicate, after a
   remove that matched nothing, after any request at all. HRW then does

@@ -28,6 +28,13 @@ import {
     buildDebugState,
     describeStop,
 } from './debug_state';
+import {
+    ArmVerdict,
+    ExistingBreakpoint,
+    describeVerdict,
+    planAdd,
+    summarize,
+} from './arm_verdict';
 
 const BRIDGE_DIR_NAME = '.hrw-bridge';
 /** HRW writes requests here; this extension watches for changes. */
@@ -101,19 +108,25 @@ export function activate(context: vscode.ExtensionContext): void {
 
             const action = request.action ?? 'add';
 
+            // **The ack reports what is in place, not that the file was read.**
+            // It used to be an unconditional `{"acked": true}` written here
+            // regardless of outcome, which HRW consumed as `armed = acked`.
+            // See `arm_verdict.ts` for the failure that made reachable.
+            let verdict: ArmVerdict;
             if (action === 'remove') {
                 handleRemove(request, output);
+                verdict = summarize('remove', []);
             } else {
-                handleAdd(request, output);
+                verdict = handleAdd(request, output);
             }
 
             fs.unlinkSync(requestPath);
 
-            // Write the ack file so HRW knows the breakpoint is registered
-            // and can safely spawn the algorithm thread. HRW polls for this
-            // file via `bridge::check_breakpoint_ack()`.
+            output.appendLine(describeVerdict(verdict));
+
+            // HRW polls for this file via `bridge::check_breakpoint_ack()`.
             const ackPath = path.join(bridgeDir, ACK_FILE);
-            fs.writeFileSync(ackPath, JSON.stringify({ acked: true }) + '\n');
+            fs.writeFileSync(ackPath, JSON.stringify(verdict) + '\n');
         } catch (err) {
             output.appendLine(`Error: ${err}`);
         }
@@ -405,41 +418,82 @@ function writeDebugState(
     }
 }
 
-/** Add breakpoints from the request. Accumulates per specimen; clears on specimen change. */
-function handleAdd(request: BreakpointRequest, output: vscode.OutputChannel): void {
+/**
+ * Snapshot `vscode.debug.breakpoints` as plain data for `arm_verdict`.
+ *
+ * **`enabled` is carried, and that is the point.** A disabled breakpoint stays
+ * in this list, so a lookup that ignored the flag would report a line as covered
+ * when nothing will stop there — one click of *Disable All Breakpoints* away.
+ */
+function existingBreakpoints(): ExistingBreakpoint[] {
+    const out: ExistingBreakpoint[] = [];
+    for (const bp of vscode.debug.breakpoints) {
+        if (!(bp instanceof vscode.SourceBreakpoint)) { continue; }
+        out.push({
+            path: bp.location.uri.fsPath,
+            // Requests are 1-based; VS Code positions are 0-based. Converted
+            // here so `arm_verdict` never has to know which side it is on.
+            line: bp.location.range.start.line + 1,
+            condition: bp.condition ?? undefined,
+            enabled: bp.enabled,
+        });
+    }
+    return out;
+}
+
+/**
+ * Add breakpoints from the request. Accumulates per specimen; clears on specimen change.
+ *
+ * Returns the verdict that becomes the ack — **what is now in place**, not what
+ * this call happened to do. See `arm_verdict.ts` for why those differ.
+ */
+function handleAdd(request: BreakpointRequest, output: vscode.OutputChannel): ArmVerdict {
     if (request.specimen && request.specimen !== currentSpecimen) {
         clearArmed(output);
         currentSpecimen = request.specimen;
         output.appendLine(`Specimen changed to: ${request.specimen}`);
     }
 
+    // Planned against a snapshot taken BEFORE anything is added, so each entry
+    // is judged against the state HRW's request arrived in.
+    const plan = planAdd(
+        request.breakpoints,
+        existingBreakpoints(),
+        p => fs.existsSync(p)
+    );
+
     const added: vscode.Breakpoint[] = [];
-    for (const entry of request.breakpoints) {
-        if (!fs.existsSync(entry.path)) {
-            output.appendLine(`File not found: ${entry.path}`);
-            continue;
-        }
-
-        if (isDuplicate(entry)) {
-            const label = `${path.basename(entry.path)}:${entry.line}`;
-            output.appendLine(`Already armed: ${label} — skipped`);
-            continue;
-        }
-
-        const location = new vscode.Location(
-            vscode.Uri.file(entry.path),
-            new vscode.Position(entry.line - 1, 0)
-        );
-        const bp = new vscode.SourceBreakpoint(
-            location,
-            true,
-            entry.condition ?? undefined
-        );
-        added.push(bp);
-
+    for (let i = 0; i < plan.length; i += 1) {
+        const entry = request.breakpoints[i];
+        const verdict = plan[i];
         const label = `${path.basename(entry.path)}:${entry.line}`;
-        const cond = entry.condition ? ` [${entry.condition}]` : '';
-        output.appendLine(`Armed: ${label}${cond}`);
+
+        switch (verdict.outcome) {
+            case 'fileMissing':
+                output.appendLine(`File not found: ${entry.path}`);
+                break;
+            case 'alreadyEnabled':
+                output.appendLine(`Already armed: ${label} — skipped`);
+                break;
+            case 'disabled':
+                // Loud, because this is the case that used to pass for success.
+                output.appendLine(
+                    `DISABLED breakpoint at ${label} — nothing will stop; not arming a duplicate`
+                );
+                break;
+            case 'armed': {
+                const location = new vscode.Location(
+                    vscode.Uri.file(entry.path),
+                    new vscode.Position(entry.line - 1, 0)
+                );
+                added.push(
+                    new vscode.SourceBreakpoint(location, true, entry.condition ?? undefined)
+                );
+                const cond = entry.condition ? ` [${entry.condition}]` : '';
+                output.appendLine(`Armed: ${label}${cond}`);
+                break;
+            }
+        }
     }
 
     if (added.length > 0) {
@@ -450,6 +504,8 @@ function handleAdd(request: BreakpointRequest, output: vscode.OutputChannel): vo
             `HRW: Armed ${added.length} breakpoint(s) (${armedBreakpoints.length} total)`
         );
     }
+
+    return summarize('add', plan);
 }
 
 /** Remove breakpoints matching the request entries (by file URI + line). */
@@ -484,33 +540,6 @@ function matchesAnyEntry(bp: vscode.Breakpoint, entries: BreakpointEntry[]): boo
     return entries.some(entry => {
         const entryUri = vscode.Uri.file(entry.path).toString();
         return bpUri === entryUri && bpLine === (entry.line - 1);
-    });
-}
-
-/**
- * Prevent duplicate breakpoints: true if *any* breakpoint already covers this entry.
- *
- * This checks all of `vscode.debug.breakpoints`, not just the ones this
- * extension armed. The anchor is a documented breakpoint site, so the user may
- * well have set one there by hand; adding a second at the same location leaves
- * two indistinguishable entries in the Breakpoints list.
- *
- * Skipping is also the safer behavior on the way out. `handleRemove` only ever
- * removes breakpoints this extension added, so a hand-set breakpoint survives
- * the end of the live session — which is what the user meant by setting it.
- *
- * The condition is still part of the comparison: a conditional request at a
- * line that already has an unconditional breakpoint is genuinely different, and
- * must not be silently dropped.
- */
-function isDuplicate(entry: BreakpointEntry): boolean {
-    const entryUri = vscode.Uri.file(entry.path).toString();
-    const entryLine = entry.line - 1;
-    return vscode.debug.breakpoints.some(bp => {
-        if (!(bp instanceof vscode.SourceBreakpoint)) { return false; }
-        return bp.location.uri.toString() === entryUri
-            && bp.location.range.start.line === entryLine
-            && (bp.condition ?? undefined) === (entry.condition ?? undefined);
     });
 }
 

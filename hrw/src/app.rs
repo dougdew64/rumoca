@@ -1324,9 +1324,13 @@ impl App {
                     self.prewarm = Prewarm::Done;
                     return;
                 }
-                let acked = bridge::check_breakpoint_ack();
+                // The pre-warm only needs to know the extension *replied* — it
+                // is warming the debugger's line resolution, not arming
+                // anything, and it removes the breakpoint either way. Which
+                // verdict came back is the Debug click's business.
+                let replied = bridge::check_breakpoint_ack().replied();
                 let timed_out = started.elapsed() >= LIVE_DEBUG_ACK_TIMEOUT;
-                if acked || timed_out {
+                if replied || timed_out {
                     // Remove it again: pre-warming must not leave a breakpoint
                     // armed. Resolution stays cached in the debugger regardless.
                     let _ = bridge::remove_live_trace_breakpoint();
@@ -1499,16 +1503,16 @@ impl App {
         if let Some((armed_at, v)) = self.pending_live_debug
             && v == variant
         {
-            let acked = bridge::check_breakpoint_ack();
+            let ack = bridge::check_breakpoint_ack();
             let timed_out = armed_at.elapsed() >= LIVE_DEBUG_ACK_TIMEOUT;
-            if acked || timed_out {
+            if ack.replied() || timed_out {
                 self.pending_live_debug = None;
 
-                // **Only an ack means a breakpoint exists.** Recording the
-                // timeout as `true` was a claim HRW had no grounds for — and it
-                // did not stay on screen: the context capture emits
-                // `breakpoint_armed`, so the fiction reached Claude's reasoning
-                // too. `docs/ideas.md` #71.
+                // **Only a verdict of `Armed` means a breakpoint exists.**
+                // Recording the timeout as `true` was a claim HRW had no
+                // grounds for — and it did not stay on screen: the context
+                // capture emits `breakpoint_armed`, so the fiction reached
+                // Claude's reasoning too. `docs/ideas.md` #71.
                 //
                 // A late ack (after the timeout) therefore leaves a real
                 // breakpoint that HRW no longer tracks. That is the honest
@@ -1516,19 +1520,34 @@ impl App {
                 // "HRW: Clear Armed Breakpoints" command exists for exactly
                 // this. Pretending otherwise bought tidy bookkeeping with a
                 // false statement.
-                self.live_breakpoint_armed = acked;
+                //
+                // The *reply* itself is no longer evidence — `#75`. The
+                // extension acks every request it reads, including ones that
+                // armed nothing, so `replied()` ends the wait while `is_armed()`
+                // decides the claim.
+                self.live_breakpoint_armed = ack.is_armed();
 
-                if !acked {
-                    // **The silence was the defect.** The animation runs to the
-                    // end either way, and a learner cannot tell "the bridge is
-                    // not installed" from "this phase has nothing to stop at" —
-                    // the second being a perfectly plausible thing to believe
-                    // about a compiler phase.
-                    self.notify(
+                // **The silence was the defect.** The animation runs to the end
+                // either way, and a learner cannot tell "the bridge is not
+                // installed" from "this phase has nothing to stop at" — the
+                // second being a perfectly plausible thing to believe about a
+                // compiler phase. Each case now names itself.
+                match &ack {
+                    bridge::BreakpointAck::Armed => {}
+                    bridge::BreakpointAck::Pending => self.notify(
                         "no reply from the HRW Debugger Bridge \u{2014} running without a \
                          breakpoint. Is the extension built and installed? See \
                          hrw/vscode-extension/README.md",
-                    );
+                    ),
+                    bridge::BreakpointAck::NotArmed(why) => self.notify(format!(
+                        "the breakpoint was NOT armed, so this run will not stop: {why}"
+                    )),
+                    bridge::BreakpointAck::Unreportable => self.notify(
+                        "the HRW Debugger Bridge replied in an old format and cannot say \
+                         whether it armed anything \u{2014} running without a breakpoint. \
+                         Rebuild it: cd hrw/vscode-extension && npm run build, then reload \
+                         the VS Code window.",
+                    ),
                 }
                 return LiveDebugAction::SpawnLive;
             }
@@ -9367,8 +9386,11 @@ mod tests {
         // Keep the pre-warm out of the way; it competes for the same ack file.
         app.prewarm = Prewarm::Done;
 
-        // --- Path 1: the extension acks. ---
-        std::fs::write(ack, r#"{"acked":true}"#).unwrap();
+        // --- Path 1: the extension reports a breakpoint IS in place. ---
+        //
+        // `#75`: the evidence is the *verdict*, not the reply. This payload used
+        // to read `{"acked":true}`, which now means "cannot say" — see Path 3.
+        std::fs::write(ack, r#"{"version":2,"breakpointPresent":true}"#).unwrap();
         app.notice = None;
         app.live_breakpoint_armed = false;
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
@@ -9381,12 +9403,73 @@ mod tests {
         );
         assert!(
             app.live_breakpoint_armed,
-            "an ack is the evidence that a breakpoint exists"
+            "a positive verdict is the evidence that a breakpoint exists"
         );
         assert_eq!(
             app.notice, None,
             "the happy path must stay quiet — a notice on every Debug click would \
              train the eye to ignore the one that matters"
+        );
+
+        // --- Path 1b: the extension replies that NOTHING is armed. ---
+        //
+        // The reachable case is a disabled breakpoint: one click of VS Code's
+        // "Disable All Breakpoints" and the old code armed nothing, acked true,
+        // and ran to completion in silence.
+        std::fs::write(
+            ack,
+            r#"{"version":2,"breakpointPresent":false,"reason":"a breakpoint exists at live_trace.rs:173 but is DISABLED"}"#,
+        )
+        .unwrap();
+        app.notice = None;
+        app.live_breakpoint_armed = false;
+        app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
+
+        let action = app.live_debug_poll(&ctx, LiveState::Arming, PendingLiveDebug::Reduction);
+
+        assert!(
+            matches!(action, LiveDebugAction::SpawnLive),
+            "it must still spawn — refusing to run would be a worse answer than running unstepped"
+        );
+        assert!(
+            !app.live_breakpoint_armed,
+            "the bridge said nothing is armed, so HRW must not claim otherwise"
+        );
+        let notice = app
+            .notice
+            .as_deref()
+            .expect("a run that will not stop must say so before it starts");
+        assert!(
+            notice.contains("DISABLED"),
+            "the bridge's reason must reach the user, not be replaced by a generic \
+             failure — the cause is the whole value here, got: {notice}"
+        );
+
+        // --- Path 1c: a stale extension replies in the pre-#75 format. ---
+        //
+        // Not hypothetical: on 2026-08-08 this machine ran a build twelve days
+        // behind its source, because `git pull` runs no `tsc`. Reading it as
+        // armed would reinstate #71's fiction; reading it as a plain failure
+        // would blame the wrong thing. It gets its own message.
+        std::fs::write(ack, r#"{"acked":true}"#).unwrap();
+        app.notice = None;
+        app.live_breakpoint_armed = false;
+        app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
+
+        let _ = app.live_debug_poll(&ctx, LiveState::Arming, PendingLiveDebug::Reduction);
+
+        assert!(
+            !app.live_breakpoint_armed,
+            "an ack that cannot say what it armed is not evidence of anything"
+        );
+        let notice = app
+            .notice
+            .as_deref()
+            .expect("a stale bridge must announce itself rather than fail silently");
+        assert!(
+            notice.contains("npm run build"),
+            "the notice must name the fix — the whole point is that a stale \
+             extension is otherwise invisible, got: {notice}"
         );
 
         // --- Path 2: nothing acks, and the wait expires. ---

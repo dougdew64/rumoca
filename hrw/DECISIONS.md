@@ -2463,3 +2463,37 @@ was not would pay 150 ms per frame for nothing.
 requires at least four vsync intervals, because pinning `== 150ms` would pass for a value that had
 drifted back under the interval by some other route. Both tests were verified must-fire by setting
 the stepped delay back to 20 ms and watching them fail.
+
+## 2026-08-08 — the breakpoint ack carries a verdict, and "cannot say" is one of them
+
+`BreakpointAck` replaces a `bool` with four variants: `Armed`, `NotArmed(reason)`, `Unreportable`,
+`Pending`. **`replied()` ends the handshake; only `is_armed()` licenses the claim.** The extension
+answers one question -- *does an ENABLED breakpoint now exist at every requested line?* -- rather
+than the old `{"acked": true}`, which meant "I read your request" and which HRW consumed as
+"a breakpoint exists".
+
+**`#74`'s fix is what made this urgent.** Leaving the anchor armed between runs means every Debug
+press after the first correctly arms nothing, so the ack's least informative case became its
+routine one. A second bug surfaced while fixing it: `isDuplicate` never checked `bp.enabled`, and
+disabled breakpoints stay in `vscode.debug.breakpoints` -- so one click of *Disable All
+Breakpoints* reported a dead line as covered, acked true, and ran to completion in silence.
+`isDuplicate` is deleted; `findExisting` returns the breakpoint so the caller can read the flag,
+which a bool could never express.
+
+**`Unreportable` is Doug's call** (*"honesty matters. Loud crashes are better than silent or
+dishonest bugs"*). Reading a legacy ack as armed reinstates `#71`'s fiction; reading it as a plain
+failure blames the wrong thing and silently breaks live trace against a stale build. It gets its
+own message naming the fix. **Not a hypothetical branch** -- it is exactly the state this machine
+was in for twelve days, because `git pull` runs no `tsc`, and under the old ack that build was
+indistinguishable from a working one.
+
+**The decision logic lives in `vscode-extension/src/arm_verdict.ts`, which imports no `vscode`**,
+so `node --test` reaches it. Same move as `debug_state.ts`, same reason: `extension.ts` imports
+`vscode` and cannot be tested at all. `extension.ts` keeps only the mapping from
+`vscode.debug.breakpoints` into plain records, and the VS Code calls.
+
+**Partial success is failure, and an empty request is not vacuously satisfied.** One dead line
+sinks a request that armed another, and "every one of zero lines is armed" is precisely the
+true-but-useless answer this change exists to remove.
+
+Verified must-fire by removing the `enabled` check and watching four TypeScript tests fail.

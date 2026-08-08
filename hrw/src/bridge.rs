@@ -1091,15 +1091,91 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     Ok(path)
 }
 
-/// Check whether the extension has acknowledged the last breakpoint request.
-/// Returns `true` and deletes the ack file if it exists.
-pub fn check_breakpoint_ack() -> bool {
-    if std::path::Path::new(BREAKPOINT_ACK_FILE).exists() {
-        let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
-        true
-    } else {
-        false
+/// What the extension said about the last breakpoint request.
+///
+/// **The ack used to be a `bool`, and that was the bug** (`docs/ideas.md` #75).
+/// The extension wrote `{"acked": true}` unconditionally at the end of every
+/// request — after arming nothing because every entry was a duplicate, after a
+/// removal that matched nothing, after any request at all — and HRW consumed it
+/// as `live_breakpoint_armed = acked`. The file answered *"I read your
+/// request"*; HRW read it as *"a breakpoint exists"*.
+///
+/// Those differ, and `#74` made the gap routine rather than theoretical: after
+/// the first Debug press of a session the anchor is already armed, so every
+/// later press correctly arms nothing. One click of VS Code's *Disable All
+/// Breakpoints* then produced nothing armed, nothing enabled, `acked: true`,
+/// HRW announcing a stepped session, and the algorithm running to completion
+/// with no stop and no notice — `#71`'s fiction, one layer down.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BreakpointAck {
+    /// No ack file yet — the extension has not replied.
+    Pending,
+    /// An **enabled** breakpoint now exists at every requested line.
+    Armed,
+    /// The extension replied and nothing is in place. Carries its reason.
+    NotArmed(String),
+    /// The extension replied in the pre-`#75` format, which cannot say what it
+    /// armed.
+    ///
+    /// **Treated as not-armed, and said out loud.** Guessing either way is
+    /// wrong: assuming armed reinstates the fiction, and assuming not-armed
+    /// silently breaks live trace against a stale build. Saying so converts the
+    /// hazard that started 2026-08-08 — an extension twelve days behind its
+    /// source, because a `git pull` runs no `tsc` — into a loud one at the first
+    /// Debug press.
+    Unreportable,
+}
+
+impl BreakpointAck {
+    /// Whether HRW may claim a breakpoint is armed. **Only [`Self::Armed`].**
+    #[must_use]
+    pub fn is_armed(&self) -> bool {
+        matches!(self, BreakpointAck::Armed)
     }
+
+    /// Whether the extension replied at all — the handshake is over either way,
+    /// so the caller stops waiting and spawns.
+    #[must_use]
+    pub fn replied(&self) -> bool {
+        !matches!(self, BreakpointAck::Pending)
+    }
+}
+
+/// Parse an ack payload. Split from the file read so it is testable without one.
+///
+/// **A payload without `breakpointPresent` is [`BreakpointAck::Unreportable`]**,
+/// not a failure and not a success: that is exactly the old
+/// `{"acked": true}`, and the whole point is that it cannot answer the question.
+#[must_use]
+pub fn parse_breakpoint_ack(text: &str) -> BreakpointAck {
+    let Ok(v) = serde_json::from_str::<Value>(text) else {
+        return BreakpointAck::NotArmed(format!(
+            "the bridge wrote an ack that is not JSON ({} bytes)",
+            text.len()
+        ));
+    };
+    match v.get("breakpointPresent").and_then(Value::as_bool) {
+        Some(true) => BreakpointAck::Armed,
+        Some(false) => BreakpointAck::NotArmed(
+            v.get("reason")
+                .and_then(Value::as_str)
+                .unwrap_or("the bridge did not say why")
+                .to_owned(),
+        ),
+        None => BreakpointAck::Unreportable,
+    }
+}
+
+/// Check whether the extension has acknowledged the last breakpoint request,
+/// consuming the ack file if it exists.
+pub fn check_breakpoint_ack() -> BreakpointAck {
+    let path = std::path::Path::new(BREAKPOINT_ACK_FILE);
+    if !path.exists() {
+        return BreakpointAck::Pending;
+    }
+    let text = fs::read_to_string(path).unwrap_or_default();
+    let _ = fs::remove_file(path);
+    parse_breakpoint_ack(&text)
 }
 
 /// Locate the breakpoint target inside `live_trace_breakpoint` and return the
@@ -3016,22 +3092,94 @@ mod tests {
                 .contains("live_trace.rs")
         );
 
-        // ack
+        // ack — the LEGACY payload, which is what a stale extension writes.
+        // It replies, so the handshake ends; it cannot say what it armed, so it
+        // must not be read as armed. See `docs/ideas.md` #75.
         fs::write(BREAKPOINT_ACK_FILE, r#"{"acked":true}"#).unwrap();
+        let ack = check_breakpoint_ack();
+        assert_eq!(
+            ack,
+            BreakpointAck::Unreportable,
+            "a pre-#75 ack cannot report what it armed"
+        );
+        assert!(ack.replied(), "it did reply, so the wait is over");
         assert!(
-            check_breakpoint_ack(),
-            "should return true when ack file exists"
+            !ack.is_armed(),
+            "but replying is not evidence that a breakpoint exists"
         );
         assert!(
             !Path::new(BREAKPOINT_ACK_FILE).exists(),
             "ack file should be deleted"
         );
-        assert!(
-            !check_breakpoint_ack(),
-            "should return false when ack file is gone"
+        assert_eq!(
+            check_breakpoint_ack(),
+            BreakpointAck::Pending,
+            "should be Pending once the ack file is gone"
         );
 
         let _ = fs::remove_file(BREAKPOINT_REQUEST_FILE);
+    }
+
+    /// **An ack that cannot answer must not be read as either answer**
+    /// (`docs/ideas.md` #75).
+    ///
+    /// The old payload was `{"acked": true}` written after *every* request,
+    /// including ones that armed nothing. Reading it as armed reinstates `#71`'s
+    /// fiction; reading it as not-armed silently breaks live trace against a
+    /// stale extension. Neither is acceptable, so it gets its own verdict and
+    /// HRW says so on screen.
+    ///
+    /// **The stale-extension case is not hypothetical**: on 2026-08-08 this
+    /// machine ran a build twelve days behind its source, because `git pull`
+    /// runs no `tsc`. `Unreportable` is what makes that announce itself.
+    #[test]
+    fn an_ack_without_a_verdict_is_unreportable_not_armed() {
+        assert_eq!(
+            parse_breakpoint_ack(r#"{"acked":true}"#),
+            BreakpointAck::Unreportable
+        );
+        assert!(!parse_breakpoint_ack(r#"{"acked":true}"#).is_armed());
+        assert!(parse_breakpoint_ack(r#"{"acked":true}"#).replied());
+    }
+
+    /// The three verdicts a current bridge can send, and the reason survives.
+    #[test]
+    fn a_verdict_ack_is_read_exactly_as_sent() {
+        assert_eq!(
+            parse_breakpoint_ack(r#"{"version":2,"breakpointPresent":true}"#),
+            BreakpointAck::Armed
+        );
+
+        let disabled = parse_breakpoint_ack(
+            r#"{"version":2,"breakpointPresent":false,"reason":"a breakpoint exists at live_trace.rs:173 but is DISABLED"}"#,
+        );
+        assert!(!disabled.is_armed(), "a disabled breakpoint stops nothing");
+        match disabled {
+            // The reason reaches the user, so it must not be dropped in parsing:
+            // "not armed" without a cause is the silence this feature removes.
+            BreakpointAck::NotArmed(why) => assert!(why.contains("DISABLED"), "{why}"),
+            other => panic!("expected NotArmed, got {other:?}"),
+        }
+
+        // Absent reason is still NotArmed — a bridge that forgets to explain
+        // itself must not be promoted to success.
+        assert_eq!(
+            parse_breakpoint_ack(r#"{"version":2,"breakpointPresent":false}"#),
+            BreakpointAck::NotArmed("the bridge did not say why".to_owned())
+        );
+    }
+
+    /// Garbage on disk is a failure, not a success and not a crash.
+    ///
+    /// A torn or truncated write is the plausible cause; the extension writes
+    /// the ack directly rather than via temp-file+rename, unlike
+    /// `debug-state.json`.
+    #[test]
+    fn an_unparseable_ack_is_not_armed() {
+        let ack = parse_breakpoint_ack("{not json");
+        assert!(!ack.is_armed());
+        assert!(ack.replied(), "something was there, so the wait is over");
+        assert!(matches!(ack, BreakpointAck::NotArmed(_)));
     }
 
     #[test]

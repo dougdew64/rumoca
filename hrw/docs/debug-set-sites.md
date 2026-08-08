@@ -54,7 +54,12 @@ arm a breakpoint that VS Code drew hollow and that never fired (`ideas.md` #74).
 `action: "remove"` when a session fails to spawn, when the specimen changes, and at app exit.
 
 **Ack handshake**: after processing any request (add or remove), the extension writes
-`.hrw-bridge/breakpoint-ack.json`. For live debug sessions, HRW polls for this file before spawning
+`.hrw-bridge/breakpoint-ack.json`. **It reports a verdict, not merely that the request was read**
+(`ideas.md` #75) — `{"version": 2, "breakpointPresent": bool, "reason": …}` plus per-entry
+outcomes. `breakpointPresent` answers one question: *does an **enabled** breakpoint now exist at
+every requested line?* An already-present enabled breakpoint counts; a **disabled** one does not,
+and neither does a removal. A payload lacking `breakpointPresent` is the pre-#75 format — HRW
+treats it as "cannot say", tells the user to rebuild the extension, and runs unstepped. For live debug sessions, HRW polls for this file before spawning
 the algorithm thread — this guarantees the breakpoint is registered with LLDB before the first
 frame is pushed. The ack file is a simple `{"acked": true}` JSON; HRW deletes it after reading.
 `arm_live_trace_breakpoint` clears any stale ack before writing the request so only a fresh ack

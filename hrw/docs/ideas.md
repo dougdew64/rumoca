@@ -4686,6 +4686,33 @@ that failed to spawn, a specimen change, and app exit. Leaving it armed between 
 `wait_for_debugger` and `push`, and `push` reaches it only with a `frame_delay` set — which only
 `start_live` does. **An ordinary compile never touches it.**
 
+### The finding is broader than "removed" — DISABLING does it too
+
+*(Doug, 2026-08-08, testing `#75`.)* He disabled all breakpoints, pressed Debug, got the new
+not-armed notice, then **re-enabled the anchor — and it never came back.** No filled marker, and
+execution ran straight through. Restarting the debug session fixed it.
+
+**So the rule generalises: `cppvsdbg` will not re-bind a location whose breakpoint has left the
+adapter's active set within the same session, and disabling takes it out just as removing does.**
+One-way door, either route.
+
+**Two consequences, both load-bearing:**
+
+- **`#75`'s advice was wrong on its first day.** The disabled-breakpoint reason said *"enable it,
+  or use Enable All Breakpoints"* — a remedy measured not to work, which costs a debugging
+  session before the reader stops believing it. It now says to start a new debug session, guarded
+  by a test that fails if the old wording returns. **Advice that does not work is worse than no
+  advice**, and this one shipped because it was written from the fix rather than from a walk.
+- **No layer can detect it.** VS Code exposes **no `verified` field** on `vscode.Breakpoint`, so
+  the extension cannot tell a bound breakpoint from a hollow one; a disabled-then-enabled anchor
+  looks identical to a working one in `vscode.debug.breakpoints`. **`#75`'s `breakpointPresent`
+  therefore means "an enabled breakpoint exists", never "execution will stop"** — a real
+  improvement over *"I read your file"*, and still not proof. Recorded in `arm_verdict.ts` so a
+  later reader does not quietly upgrade the claim.
+
+**Operating rule for the tours:** do not disable the anchor mid-session. If you do, stop the
+debugger and start a new session — nothing shorter recovers it.
+
 ### How it was found, because three confident wrong answers came first
 
 **Every one of them was eliminated by evidence rather than by reasoning**, and the order matters:
@@ -4714,10 +4741,79 @@ value under test — and then verified must-fire by breaking the gate and watchi
 passing one. Same shape as the deleted scroll-configuration tests and as a provenance tag that
 resolves nothing. **The only thing that caught it was running the break.**
 
-### Still open, and separate
+### Still open, and separate — now `#75`
 
 **The ack means "I read your request", not "a breakpoint exists".** The extension writes
 `breakpoint-ack.json` unconditionally, including when `handleAdd` skipped every entry as a
 duplicate — and HRW does `live_breakpoint_armed = acked`. That is `#71`'s fiction one layer
-down. It is not what caused this bug, and it is logged in `tech-debt.md`.
+down. It is not what caused this bug. **Fixed the same day — see `#75`.**
+
+---
+
+## 75. The ack answered the wrong question, and this fix made it the routine one
+
+**Found 2026-08-08 while diagnosing `#74`, fixed the same day**, on Doug's standing rule: *"we will
+pause feature work to fix bugs, especially bugs which cost accuracy."*
+
+**The extension wrote `{"acked": true}` at the end of every request** — after arming nothing
+because every entry was a duplicate, after a removal that matched nothing, after any request it
+managed to read. HRW consumed it as `live_breakpoint_armed = acked`. **The file answered *"I read
+your request"*; HRW read it as *"a breakpoint exists"*.**
+
+**`#74`'s fix is what made this reachable rather than theoretical.** Leaving the anchor armed
+between runs means every Debug press after the first correctly arms *nothing* and reports
+`Already armed: … — skipped`. So the ack's least informative case became its **normal** case.
+
+### The second bug, found while fixing the first
+
+**`isDuplicate` never checked `bp.enabled`**, and disabled breakpoints stay in
+`vscode.debug.breakpoints`. One click of VS Code's **Disable All Breakpoints** produced: the anchor
+found and reported as covered, nothing armed, nothing enabled, `acked: true`, HRW announcing a
+stepped session, and the algorithm running to completion **with no stop and no notice** — because
+the `!acked` branch that exists to say so was unreachable. That is `#71` exactly, one layer down
+and one toolbar click away.
+
+### The contract
+
+> **Does an ENABLED breakpoint now exist at every requested line?**
+
+Not *"did I add one"* — an already-present enabled breakpoint is a perfectly good yes, and is what
+a hand-set anchor or a repeat Debug press produces. **`isDuplicate` is deleted**; `findExisting`
+returns the breakpoint so the caller can read the flag, which a `bool` could never express.
+
+`BreakpointAck` has four variants where a `bool` used to be: **`replied()` ends the handshake,
+`is_armed()` licenses the claim**, and only `Armed` does the latter. A partial success is a
+failure — one dead line sinks a request that armed another — and an **empty** request reports
+not-present, because "every one of zero lines is armed" is the vacuous truth this whole change
+exists to remove.
+
+### `Unreportable` — Doug's call, and it closes the *other* silent failure
+
+*Doug, 2026-08-08: "honesty matters. Loud crashes are better than silent or dishonest bugs."*
+
+A pre-`#75` `{"acked": true}` gets its own verdict rather than being guessed at. **Reading it as
+armed reinstates the fiction; reading it as a plain failure blames the wrong thing** and silently
+breaks live trace against a stale build. So HRW says: *the bridge replied in an old format and
+cannot say whether it armed anything — rebuild it.*
+
+**This is not a hypothetical branch.** It is exactly the state this machine was in for twelve days:
+`out/extension.js` dated 2026-07-27 against sources from 08-08, because **`git pull` runs no
+`tsc`** — the hazard recorded in `#72`'s operating notes and rediscovered the hard way. Under the
+old ack that build was indistinguishable from a working one. Now it announces itself at the first
+Debug press.
+
+### Where the logic lives, and why
+
+**`vscode-extension/src/arm_verdict.ts` imports no `vscode`**, so `node --test` exercises it
+directly — the same move `debug_state.ts` made, for the same reason: `extension.ts` imports
+`vscode` and cannot be tested at all. `extension.ts` keeps only the mapping from
+`vscode.debug.breakpoints` into plain records and the VS Code calls.
+
+**13 new TypeScript tests (49 total) and 3 new Rust ones, all verified must-fire** by breaking the
+`enabled` check and watching four fail. `parse_breakpoint_ack` is split from the file read so the
+verdicts are testable without touching disk.
+
+**Still true, and worth keeping in view:** an ack cannot promise the breakpoint will *bind* —
+`#74` is the case where VS Code held an unverified breakpoint and nothing stopped. The ack reports
+what VS Code was asked to hold, not what `cppvsdbg` resolved. <!-- unverified -->
 
