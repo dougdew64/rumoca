@@ -4148,25 +4148,66 @@ different mechanisms and the answer could be either way.**
 actually Claude reading a stale selection is a wrong answer delivered with the tone of a right
 one — the failure class this project spends most of its rules on.
 
-### The experiment is thirty seconds, not a project
+### ✅ RUN 2026-08-07 — Claude cannot see the debugger; the click gesture works
 
-1. Doug sets a breakpoint in `matching.rs`, starts a live trace, and lets it stop.
-2. **Without selecting anything**, he asks: *"what line am I stopped at?"*
-3. Claude reports what it actually sees, including seeing nothing.
+Five trials, on Doug's Windows machine with live trace confirmed working:
 
-**One trial settles it**, and the result should be written into this entry rather than
-rediscovered. Worth doing at the start of a debugging session rather than in the middle of a
-question.
+| # | Setup | What Claude saw |
+|---|---|---|
+| 1 | Stopped, **nothing selected** | **nothing** — no location, no frame, no selection |
+| 2 | Stopped, Doug reported selecting the line | **nothing** — see the correction below |
+| 3 | **No debug session**, an ordinary line selected | the line, **verified against the file** |
+| 4 | Stopped, **nothing selected** | **the FILE only** — an `ide_opened_file` event naming `live_trace.rs` |
+| 5 | Stopped, **the stopped line selected** | **the line** — `live_trace.rs:173`, verified against the file |
 
-### If the answer is no
+**The answer to the title question is NO.** No trial ever produced a stopped location, a frame
+or a call stack. Claude also searched the available tool surface: **nothing exposes editor or
+debug-adapter state.** A debugger stop, by itself, tells Claude nothing about *where*.
 
-**The gesture already exists and is one click**: select the line, then ask. That works today and
-costs almost nothing, so this is a convenience question rather than a capability gap.
+**But the one-click gesture does work while stopped** (trial 5), which is what the entry
+originally assumed and what trials 3 and 5 together now establish. `live_trace.rs:173` was read
+back and checked against the file.
 
-A richer fallback exists if it is ever worth it — HRW already writes `.hrw-bridge/focus.json` as
-a file channel, and a debugger stop could in principle write the same way. **Not proposed**:
-that is a launch-configuration or extension change for a problem that a click may already solve,
-and `#67`'s discipline applies — find out what actually happens before building for it.
+**A correction, because the wrong version was committed to this file first.** After trial 2 this
+entry claimed *"the fallback did not work either"* and promoted the whole question from
+convenience to capability gap. **Trial 5 contradicts it.** The trial-2 blank never reproduced
+and is unexplained — most likely the selection did not register at that moment. **It is recorded
+rather than deleted** so that a future session finding one silent blank knows it has been seen
+before and is not the rule. The instinct that saved this was writing *"repeat trial 2 once
+before building anything"* into the entry itself; it overturned the conclusion within the hour.
+
+**Trial 4 found a channel this entry did not anticipate:** `ide_opened_file`. A stop reveals the
+file, and that event does reach Claude — so **the file comes free, the line does not.** Claude
+cannot distinguish "the debugger revealed this file" from "Doug opened it", so it is a hint, not
+evidence.
+
+**What Claude must NOT do, recorded because the temptation is concrete.** Claude can read
+`.hrw-bridge/breakpoint-request.json` and recover the line HRW *asked* the extension to arm. At
+the live-trace anchor that coincides with where Doug is stopped, so answering from it would look
+like working debugger vision — until the day Doug sets his own breakpoint in `augment_traced`
+and gets the anchor line back, stated with the same confidence as the dozen correct answers
+before it. **Right often enough to be trusted is the failure mode**, not an approximation of
+success.
+
+### What to do, and it needs no code
+
+**Select the line, then ask.** Verified in trial 5. One click, and Claude gets the exact text
+plus the file, which is everything it needs.
+
+**Or name the place, which never fails:** *"I'm stopped in `augment_traced` at the
+`match match_var[var]`"*. Claude reads the file from there. Worth preferring when the selection
+seems not to have landed — trial 2 happened once.
+
+**`focus.json` stays UNBUILT, and the argument for it got weaker rather than stronger.** HRW
+already writes `.hrw-bridge/focus.json` and the extension already watches that directory, so a
+debugger stop could publish the same way — but that is a launch-configuration or extension
+change for a problem one click already solves, and `#70`'s whole point was to find out before
+building. It found out. **Do not build this without a new reason**, and a single unreproduced
+blank is not one.
+
+**The reopening condition, so this is a decision rather than a drift:** the click gesture
+failing *repeatedly* in a real session. Then trial 2 was the rule and not the exception, and
+this becomes real work.
 
 ### Why it matters more than it looks
 
@@ -4248,3 +4289,85 @@ exists for exactly this. The previous tidiness was bought with a false statement
 
 **Done before `#70`**, since `#70` is an experiment whose result gets written down as fact, and
 this defect is exactly what would have corrupted it.
+
+---
+
+## 72. Claude should see the debug session — location, stack, and values
+
+**Doug, 2026-08-07**, immediately after `#70` settled what is available today:
+
+> *"We will revisit this subject later as this capability is important for you to explain
+> Rumoca's algorithmic code to me. You need to see what code I'm debug-stepping through, as well
+> as stack traces and values. This is probably a very big bunch of functionality."*
+
+**`#70` answered a smaller question and this is the real one.** That entry asked whether Claude
+could see *where* the debugger stopped, found no, and found that one click closes the gap. Fine
+for a single question. **It does not scale to stepping**, which is the actual use: Doug walks
+through `augment_traced` or Pantelides, and asks what is happening *as it happens*. A click per
+question, carrying one line of text, is a keyhole onto a running process.
+
+**And the gap is not really the line — it is the state.** Claude can already read the source. The
+questions worth asking during a step are *"what is `match_var` right now"*, *"how deep is this
+recursion"*, *"which equation is this invocation working on"* — **none of which are in the
+source.** Claude is currently reasoning about static code while Doug is looking at a running
+program, and neither of them can see what the other sees.
+
+### What is needed, in descending order of teaching value
+
+1. **The call stack.** Sounds like the least interesting item and is almost certainly the most
+   valuable, because **for `augment_traced` the call stack *is* the augmenting path.** Four
+   nested frames means a four-edge alternating path, and each frame's `eq` is a node on it. The
+   thing `matching.md` spends three acts animating is sitting in the debugger's stack pane,
+   exactly and for free. The same holds for Tarjan's recursion.
+2. **Variable values** — `match_eq`, `match_var`, `visited`, `eq`, `var`, `holder`. The partial
+   permutation, mid-construction.
+3. **The stop location** without a click. `#70`: the *file* already arrives via an
+   `ide_opened_file` event; the line does not.
+4. **Step events**, so Claude can follow rather than be told. The largest of the four and the
+   least necessary.
+
+**A slice of 1 + 3 alone would answer *"where am I and how did I get here"***, which is most of
+the value for a fraction of the work. Do not start with values.
+
+### Why this is big, and the standing rule that argues against it
+
+The state lives in **VS Code's Debug Adapter Protocol**, in the extension host — reachable from
+our own bridge extension (`vscode.debug.activeDebugSession` and `customRequest` for
+`stackTrace` / `scopes` / `variables`), and reachable from nowhere else. Getting it to Claude
+then needs a channel, and one already exists: `.hrw-bridge/` is a working file channel the
+extension already watches, so the shape is *extension subscribes to debug events → writes
+`.hrw-bridge/debug-state.json` → Claude reads it.*
+
+**That is TypeScript and VS Code work, which `CLAUDE.md` says to avoid** — *"the deep-link effort
+took five commits and several approaches and failed; new functionality defaults to the app
+side."* **This is the strongest argument against, and it should be weighed rather than waved
+past.** The difference worth noting: the deep-link work failed at *driving* VS Code's UI, while
+this only *reads* documented API and writes a file — the same thing the breakpoint bridge already
+does successfully. That is a reason to re-examine the rule here, not to ignore it.
+
+### The accuracy rule this must carry from day one
+
+**Every value Claude reports must be READ, never inferred, and a stale file must refuse to
+answer.** A `debug-state.json` left over from the previous step would have Claude describe the
+wrong `match_eq` with complete confidence — and Doug would have no way to tell that answer from
+the correct ones. So the state file needs a **sequence number or timestamp that Claude checks**,
+and "I cannot tell where you are" must remain a real answer.
+
+This is the third time the same shape has appeared, which is why it is stated as a rule rather
+than a caution: `#70`'s `breakpoint-request.json` (the armed line, which *coincides* with the
+stopped line often enough to look like vision), `#71`'s `breakpoint_armed` (true because a
+timeout expired), and now this. **Every one of them is a plausible substitute for a fact HRW
+cannot observe.**
+
+### First step is measurement, not code
+
+`#70` earned this discipline the hard way — its own conclusion was overturned within the hour by
+a repeat trial. **Before designing anything, find out what the adapter actually exposes:** the
+launch config uses **`cppvsdbg`**, not CodeLLDB, and adapters differ substantially in what they
+return for `variables` on Rust types. A `Vec<Option<usize>>` may come back as a readable list or
+as an opaque pointer, and **that single fact decides whether item 2 is worth anything at all.**
+
+**Not scheduled.** Recorded because it is the enabler for the third leg of every algorithm tour
+(`#66`, and `matching.md`'s new Act 5), and because Doug named it as important rather than
+merely nice.
+
