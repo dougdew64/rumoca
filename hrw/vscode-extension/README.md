@@ -76,6 +76,42 @@ Armed: live_trace.rs:<line>
 
 and the status bar carries an item you can click to run **HRW: Clear Armed Breakpoints**.
 
+## Publishing the debug session for Claude
+
+**Claude cannot see a debug session.** Measured 2026-08-07 (`../docs/ideas.md` #70): a stop gives
+it no location, no stack and no values, and nothing in its tool surface exposes them. Stopping
+reveals the *file* and selecting a line reaches Claude, but the state of the running program does
+not.
+
+So this extension publishes it. On every stop it writes **`.hrw-bridge/debug-state.json`** —
+which Claude reads — using three Debug Adapter Protocol round-trips: `stackTrace`, then `scopes`
+for the innermost frame, then `variables` for its most local scope. On `continued` and at session
+end it writes a *running* payload instead.
+
+Each write is logged to the "HRW Bridge" channel, so the feature is visibly working:
+
+```
+#7 stopped at matching.rs:189 in augment_traced — 3 frame(s), 12 var(s)
+```
+
+**Why the stack matters most.** For `augment_traced`, recursion depth *is* the augmenting path:
+three nested frames is a two-edge alternating path, and each frame's `eq` is a node on it. The
+structure `matching.md` spends three acts animating is exactly what the stack pane holds.
+
+Four properties are load-bearing, because a wrong answer here is Claude describing a program state
+that never existed:
+
+| Property | Why |
+|---|---|
+| `variables: null` ≠ `variables: []` | `null` + `variablesError` means **not fetched**; `[]` means fetched and empty. Collapsing them reports "no locals" for a frame that was never read |
+| `continued` publishes too | Otherwise the last stop stays on disk looking current, and Claude describes a position the program has left |
+| `frameCount` is the true total | The list is capped at 40 with `framesTruncated` set — a shortened stack otherwise reads as a complete one |
+| `seq` + `writtenAtMs` on every write | **A reader must check staleness before trusting anything else.** A leftover payload from the previous step is worse than none |
+
+Nothing deletes the file at shutdown, deliberately: the staleness check has to work anyway for the
+case where VS Code exits without warning. Writes go through a temp file and `rename`, so a read
+can never tear.
+
 ## When it does not work
 
 | Symptom | Cause |
@@ -92,9 +128,14 @@ npm run watch    # recompile on change
 npm test         # builds, then runs tests/ under node --test
 ```
 
-`src/extension.ts` is the whole implementation. The tests check the surface — that the
-commands and activation events the manifest promises actually exist — rather than driving VS
-Code, which would need a full extension-host harness for very little.
+**`src/debug_state.ts` holds the logic and imports no `vscode`**, which is what makes it
+testable: the `vscode` module exists only inside the extension host, so anything importing it
+cannot be exercised by `node --test`. `src/extension.ts` is the wiring shell around it — the same
+split HRW makes on the Rust side with `Plot::problems()`, for the same reason.
+
+**Put new logic in `debug_state.ts`, not in `extension.ts`.** `debug_state.test.mjs` tests the
+real module; `extension_surface.test.mjs` checks the manifest's promises and, in a few cases,
+asserts on literals it built itself — which is what the untestable layer forces.
 
 ## Further reading
 
