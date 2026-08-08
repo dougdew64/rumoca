@@ -737,6 +737,30 @@ set inside a Rumoca phase while it processes a specimen.
 - `[profile.dev.package]`: keep full debug info on all Rumoca crates.
 - Setup, launch config and failure signatures: [`docs/setup-windows.md`](docs/setup-windows.md).
 
+**WHEN DOUG IS AT A BREAKPOINT, READ `hrw/.hrw-bridge/debug-state.json`** *(built 2026-08-08,
+`docs/ideas.md` #72)*. **Claude cannot see a debug session** — #70 measured it: a stop yields no
+location, no stack and no values, and no tool exposes them. Stopping does surface the *file* via
+an `ide_opened_file` event, and a **selected** line arrives, but the running program's state does
+not. So the bridge extension publishes it: stack frames, the innermost location, and the locals of
+its most local scope.
+
+**Three rules for reading it, and the first is not optional:**
+
+- **CHECK `writtenAtMs` AND `seq` BEFORE BELIEVING ANY OF IT.** A payload from the *previous* step
+  is indistinguishable from a current one by content alone, and describing the wrong state
+  confidently is the exact failure this repository spends most of its rules on. Nothing deletes
+  the file at shutdown, deliberately — so a stale file is the expected case, not an anomaly.
+- **`variables: null` means NOT FETCHED**, with `variablesError` saying why. `[]` means fetched
+  and empty. Never report the first as "no locals".
+- **`frameCount` is the truth; `frames` may be capped** (`framesTruncated`). Depth matters:
+  for `augment_traced` the stack **is** the augmenting path — N nested frames is an N-edge
+  alternating path with each frame's `eq` a node on it.
+
+**And do not substitute `breakpoint-request.json` for it.** That file holds the line HRW *asked*
+to arm, which at the live-trace anchor coincides with where Doug is stopped — so answering from it
+looks like working debugger vision until the day he stops somewhere else. #70 records this trap in
+full; **right often enough to be trusted is the failure mode.**
+
 ## Specimen rules (charter §4.3, §4.1)
 
 - Specimens live in `specimens/`, authored in Wolfram System Modeler, in the **portable Modelica

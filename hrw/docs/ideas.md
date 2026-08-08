@@ -4367,7 +4367,183 @@ launch config uses **`cppvsdbg`**, not CodeLLDB, and adapters differ substantial
 return for `variables` on Rust types. A `Vec<Option<usize>>` may come back as a readable list or
 as an opaque pointer, and **that single fact decides whether item 2 is worth anything at all.**
 
-**Not scheduled.** Recorded because it is the enabler for the third leg of every algorithm tour
-(`#66`, and `matching.md`'s new Act 5), and because Doug named it as important rather than
-merely nice.
+### ✅ BUILT 2026-08-08 — the channel exists; what the adapter yields is now measurable
+
+**Doug's call, overriding the standing preference against VS Code work**, which this entry had
+recorded as the main argument against. The distinction that made it defensible: the deep-link
+attempt failed at *driving* VS Code's UI, while this only **reads documented API and writes a
+file** — exactly what the breakpoint bridge already does successfully.
+
+**Shape, as designed above:** the bridge extension observes stops and writes
+`.hrw-bridge/debug-state.json`; Claude reads it.
+
+- **`src/debug_state.ts`** — payload assembly, **and it imports no `vscode`**, so `node --test`
+  exercises it directly. This is the Rust-side `Plot::problems()` move applied to TypeScript:
+  logic out of the untestable layer, thin wiring left behind. The existing
+  `extension_surface.test.mjs` shows the alternative — several of its cases build a literal and
+  assert its own fields.
+- **`src/extension.ts`** — a `DebugAdapterTrackerFactory`, which is the only documented way to
+  see a stop (**there is no `vscode.debug.onDidStop`**); `onDidSendMessage` carries the DAP
+  `stopped` and `continued` events. On a stop it makes three round-trips — `stackTrace`, then
+  `scopes` for the innermost frame, then `variables` for its most local scope.
+- **11 new tests, and the invariants were verified must-fire** by breaking them: coercing
+  `variables: null` to `[]` fails two tests, including the one that would otherwise let Claude
+  report *"no locals"* about a frame it never managed to read.
+
+**Three accuracy properties are load-bearing, not incidental:**
+
+- **`null` ≠ `[]`.** `variables: null` plus `variablesError` means *not fetched*; `[]` means
+  *fetched, none there*. Collapsing them is the fiction this feature is most likely to produce.
+- **`continued` publishes too.** Without it the last stop stays on disk looking current, and
+  Claude describes a position the program has left. A running payload blanks location, frames and
+  values *even if a caller passes them* — tested.
+- **Caps declare themselves.** `frameCount` is always the true total with `framesTruncated`
+  alongside, because a shortened stack reads as a complete one — and depth is the whole point.
+- **Staleness is the reader's duty.** Every write carries `seq` and `writtenAtMs`; `isStale`
+  exists so a leftover payload cannot be mistaken for a current one. Nothing deletes the file on
+  shutdown *by design*, since that check has to work anyway for a VS Code crash.
+
+Written via temp-file + `rename` so a read can never tear.
+
+### What remains, and it is now free to answer
+
+**Item 4, step events, is deliberately not built.** Each stop already publishes, so Claude sees
+every step it is told to look at; a push channel would only save the telling.
+
+### ✅ MEASURED 2026-08-08 — the adapter gives us everything asked for
+
+**The open question is answered: a `Vec<Option<usize>>` comes back READABLE, not opaque.** Once
+expanded, `match_eq` reads `[0]=None`, `[1]=None`. So item 2 lives, and `#73` can lean on values
+*as well as* the call stack.
+
+Verified against a real breakpoint in `augment_traced` on a 2×2 system:
+
+| Item (as ranked above) | Result |
+|---|---|
+| 1. Call stack | ✅ **20 frames**, innermost first, with paths and lines |
+| 2. Variable values | ✅ **12 locals**, `Locals` scope, aggregates expanded one level |
+| 3. Stop location | ✅ file + line + frame name |
+| 4. Step events | ✅ every stop republishes, carrying `seq` and `writtenAtMs` |
+
+**What one stop looked like** — line 189, `let can_augment = match match_var[var]`: `eq=0`,
+`var=0`, `vars=[0]`, `visited=[true,false]`, `match_eq=[None,None]`, `match_var=[None,None]`,
+`frames=[TryEquation, Explore]`. **That is enough to predict the algorithm's next four steps**,
+and the stack showed **depth 1** — no displacement yet, Act 1 territory rather than Act 2. So
+`#73`'s premise is confirmed rather than hoped for.
+
+### Four findings, each bought with a wrong first attempt
+
+**1. `levels: 0` returns NOTHING from `cppvsdbg`**, though DAP defines it as "all frames". The
+first build sent exactly that, got an empty array, and could only say *"the adapter reported no
+stack frames"* — true, useless, and indistinguishable from a thread that had none. **Fixed by
+asking more than one way and publishing the tally**: `stackAttempts` records every shape tried
+with the count it returned, `stackShape` names the winner (`levels=40`). **An empty result that
+cannot say what was asked is not a measurement.**
+
+**2. Aggregates arrive as summaries.** A slice renders `{ len=2 }`; elements live behind another
+`variables` request keyed by `variablesReference`, which the first build discarded. **One level is
+now expanded**, bounded by `CHILD_LIMIT` (64), truncation declared via `childrenTruncated`. This
+is the field that matters most: **`match_eq`'s contents are Act 4's partial permutation.**
+
+**3. `cppvsdbg` MIXES SYNTHETIC CHILDREN IN WITH REAL ELEMENTS — the live trap.** `match_eq`
+expands to `[len]=2`, `[0]=None`, `[1]=None`, `[Raw View]={data_ptr=0x…}`. **Only `[0]` and `[1]`
+are elements**; the rest are MSVC visualizer artifacts, and a reader counting children would say
+the slice has four. **Flagged rather than filtered on purpose:** a filter guessing which children
+are synthetic would eventually drop a real struct field, and hiding data is the worse failure.
+**Whoever consumes this must skip `[len]`, `[capacity]` and `[Raw View]`.**
+
+**4. "Variable is optimized away and not available." is PROSE IN A VALUE FIELD**, and usually just
+means *not live at this line*. At `for var in vars` (line 176) four of twelve locals read that
+way — `var` unbound, `holder` in an unreached arm, `can_augment` assigned later, `iter` the
+desugared iterator. **Stepping to 189 dropped it to two**, both correct. **The profile is
+innocent**: `rumoca-phase-structural` is already `opt-level = 0`, and an early diagnosis blaming
+it would have produced a pointless `Cargo.toml` change. Every local now carries
+`available: boolean`, availability **recurses into children** (enforced by the type system, not
+just a test), and `variablesUnavailable` is counted — `variableCount: 12` overstated what was
+known by four.
+
+### Operating notes for the next session
+
+- **A breakpoint in `matching.rs` hits the ORDINARY COMPILE, not a live trace.** The stack ran
+  `worker::structural_stage` → `build_structural_report` and `observer` was `None`. Live trace is a
+  different path, entered from an animation's Debug button.
+- **`npm run build` updates the installed extension in place** (the install is a junction), but a
+  **window reload is still required** before new extension code runs.
+- **Check freshness before trusting the payload** — `isStale`, `seq`, `writtenAtMs`. A payload from
+  the previous stop describes the wrong state with equal confidence.
+- Stop at a line where the locals are **live**: a loop head reports less than the body.
+
+### What is left
+
+- **Expansion is one level deep.** Enough for `match_eq`; a nested aggregate like `eq_vars`
+  (`Vec<HashSet<usize>>`) shows its elements as `{ len=1 }`. **Do not deepen speculatively** — wait
+  for a question it fails to answer.
+- **`#73` is now unblocked**, and is the reason this was built.
+
+---
+
+## 73. Act 5 should be a live-trace debugging session, not a map of the code
+
+**Doug, 2026-08-08**, on reading Act 5: *"It seems that for Act 5, we have an opportunity to
+accomplish something much more spectacular: live trace debugging."*
+
+**He is right, and Act 5 as shipped under-uses machinery that was built for exactly this.** It
+names `maximum_matching_with_trace` and `augment_traced`, offers a breakpoint to set, and stops
+there — ending the tour on *"go and read this"*, which is the homework failure the tour's own
+*What this cannot check* section warns about.
+
+### Three reasons this is the right shape
+
+**1. The synchronization is designed, not lucky.** `LiveTrace::push` sends the frame, **sleeps
+`frame_delay` so the UI can render it** — `matching_anim.rs` sets 20 ms — and *only then* calls
+`live_trace_breakpoint`, where the debugger pauses all threads. So when execution stops, the
+screen already shows the frame just produced.
+
+Combine that with the emission order inside `augment_traced`: `Explore { eq, var }` is emitted
+**immediately before `match match_var[var]`**. **At that stop the animation is showing the exact
+edge the next line of code decides.** Screen and source in lockstep, by construction. A static
+stop cannot do this at all.
+
+**2. The call stack IS the augmenting path** — not an analogy. `augment_traced` recurses once per
+displacement attempt, so N nested frames is an N-edge alternating path and each frame's `eq` is
+a node on it. Acts 1-3 spend a dozen expectations animating that structure from outside; the
+debugger holds it exactly, in the stack pane, for free. Plausibly the strongest single teaching
+artifact in the tour.
+
+**3. It turns the thinnest leg into the thickest.** `#66`'s three legs are problem, mathematics,
+implementation. The third has been the weak one everywhere. This is what a strong one looks like.
+
+### What must be settled first
+
+**Two empirical unknowns, and they change how the stop is written** — neither is answerable
+without walking it:
+
+- **Do two breakpoints interleave cleanly?** With the anchor *and* one in `augment_traced`, does
+  each frame give a tidy two-stop rhythm, or a confusing double-stop where the learner loses
+  track of which one they are at? <!-- unverified -->
+- **Does the screen stay legible while stopped?** The 20 ms delay guarantees the frame was sent
+  and time was given — **not** that egui completed the paint. <!-- unverified -->
+
+**And `#72` is load-bearing, not adjacent.** This stop can deliver the *seeing* today; the
+*asking* — *"what is in `match_eq` now?"*, *"how deep are we?"* — is exactly what Claude is blind
+to. **So `#72` comes first**, and its `cppvsdbg` measurement decides the design: if
+`Vec<Option<usize>>` returns as an opaque pointer, item 2 of `#72` dies and this stop should lean
+entirely on the call stack — which, per reason 2, is still most of the value.
+
+### The risk, and the rule it produces
+
+**A tour that promises synchronization and then drifts teaches something false**, which is worse
+than homework — homework is merely unhelpful. **So every expectation here must be specific and
+violable**: *"the stack shows 3 frames of `augment_traced`; the animation shows edge 1 → 0"*, never
+*"the debugger and the animation stay in step"*. And it **must be walked before it is called
+done**; Claude cannot verify any of it.
+
+### Shape
+
+**Keep the naming content — it becomes the setup rather than the payoff.** Function names are
+what let a reader place a breakpoint at all. What changes is where the stop *ends*: at a decision
+being made, with a question to ask, instead of at a reading list.
+
+**This is the template for every algorithm tour's third leg** (Tarjan, index reduction, solve
+lowering), so the shape is worth getting right once here rather than five times later.
 

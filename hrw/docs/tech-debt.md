@@ -400,7 +400,18 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   deeper resolution would need to walk into library class IRs that are loaded on demand.
   *File:* `app.rs`.
 
-- [ ] **HRW never clears its live-trace breakpoint on shutdown.** *(Doug, 2026-08-07.)*
+- [x] **HRW never clears its live-trace breakpoint on shutdown.** *(Doug, 2026-08-07;
+  **FIXED 2026-08-08**.)* `eframe::App::on_exit` now calls
+  `App::release_live_breakpoint_at_exit`, guarded by
+  `app::tests::quitting_releases_an_armed_live_breakpoint` — which checks **both** branches,
+  since writing a removal request on every quit would undo `#71`'s rule that HRW must not assert
+  state it cannot see. The body is a separate method because `eframe` owns the call to `on_exit`
+  and no test can reach it; that is the extraction `format-and-app-plan.md` allows, one that
+  buys a test which could not be written before.
+  **Two limits stay, stated rather than fixed:** a panic, a kill or a debugger stop runs no
+  destructor, and an orphan from a *late* bridge ack was never tracked, so `on_exit` cannot see
+  it. `HRW: Clear Armed Breakpoints` remains the remedy for both. The original entry follows,
+  since its measurement is what justified the shape.
   **Measured, not assumed:** `remove_live_trace_breakpoint` has **13 call sites in `app.rs`**,
   and every one is reactive to an in-app event — a session ending, a stage changing, a new
   Debug click. **HRW implements neither `eframe::App::on_exit` nor `Drop for App`**, so closing
