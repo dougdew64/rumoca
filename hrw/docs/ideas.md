@@ -4861,3 +4861,70 @@ verdicts are testable without touching disk.
 `#74` is the case where VS Code held an unverified breakpoint and nothing stopped. The ack reports
 what VS Code was asked to hold, not what `cppvsdbg` resolved. <!-- unverified -->
 
+
+---
+
+## 76. Debug-only features should say they need a debugger, not pretend they work
+
+**Doug, 2026-08-08**, after the platform discussion: *"some of HRW's features only make sense if
+HRW is launched as a debugged process. For example, the live trace 'Debug' buttons and related UI
+features should not even be visible if HRW is not launched as a debugged process. And, relevant
+to our upcoming Act 5 effort, some tour links should be disabled if HRW is not launched as a
+debugged process."*
+
+**Deferred by Doug the same day**, alongside the platform question: *"neither the tech debt nor
+the feature item are related to me making learning progress."* Recorded now because the design
+was settled in conversation and would otherwise have to be re-derived.
+
+### The problem, and it is not hypothetical
+
+HRW currently offers a Debug button that looks identical whether or not it can possibly work.
+**This machine ran that way for twelve days** (`#74`'s opening): an extension built 2026-07-27
+against sources from 08-08, no junction, nothing listening — and the button was enabled the whole
+time. `#71` and `#75` each removed one way of lying about the outcome *after* the press. This
+entry is about the state *before* it.
+
+### THE DESIGN DECISION: disable and explain, never hide
+
+**Doug proposed hiding and then changed his mind on the argument below.** Recorded with the
+reasoning, because "why is this a disabled button rather than no button" is exactly the question a
+later session would re-open.
+
+- **`lib.rs`'s `LiveState` already carries the rule:** *"Controls are enabled and disabled, never
+  shown and hidden. A button that vanishes gives no clue that the action exists or why it is
+  unavailable, and the row reflows under the pointer."*
+- **Charter Decision 8:** fixed answers belong on screen, because a tooltip beats a question for
+  latency. **Whether live trace is available is a fixed answer.**
+- **And the mission argument, which is the decisive one: a hidden Debug button means a learner
+  never discovers that live trace exists.** A disabled one reading *"launch HRW under the VS Code
+  debugger (F5) to step this algorithm"* teaches the feature and its precondition in one glance.
+  Hiding optimises for tidiness; **HRW optimises for visibility.**
+
+### TWO preconditions, not one — and this is the part that is easy to get wrong
+
+Gating on "am I being debugged?" alone would have shown an enabled button throughout those twelve
+days, because a debugger *was* attached the whole time. What was missing was the other half.
+
+| precondition | how HRW can tell |
+|---|---|
+| **a debugger is attached** | `IsDebuggerPresent()` on Windows — **no new dependency**, one `unsafe extern "system"` declaration. Answers *"attached right now"*, so poll it rather than snapshotting at startup: attaching later is normal. |
+| **the bridge is alive and reports verdicts** | `#75`'s `BreakpointAck`. `Unreportable` means a stale extension, `NotArmed` carries a reason, and the startup pre-warm (`tick_prewarm`) already provides a channel to learn this at launch rather than at first click. |
+
+**Name which one is missing.** A boolean "unavailable" throws away the whole diagnosis; *"the HRW
+Bridge extension is not responding — see `vscode-extension/README.md`"* is the difference between
+a dead end and a fix. This is the context-identification half of the observatory's north star, and
+it moves *"why didn't it stop?"* from a question asked in chat to an answer on screen.
+
+### Tour links declare their requirement rather than going quiet
+
+For Act 5 and every algorithm tour's third leg: a stop that needs a live session should **say so**,
+and say what is missing when it is. **Absence is stated, never filled** — and the tours are
+Markdown read outside HRW too, so a declared requirement is honest in both places. A stop that is
+merely inert teaches the learner that the tour is broken.
+
+### What this does NOT need
+
+**Not a `cfg`-gated build.** The precondition is a runtime fact — a debugger can attach and detach
+while HRW runs — so this is state, not configuration. See `tech-debt.md`'s platform entry for the
+separate question of which platforms HRW supports at all; the two are independent, and conflating
+them would put a runtime condition behind a compile-time flag.

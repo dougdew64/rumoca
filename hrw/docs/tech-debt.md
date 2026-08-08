@@ -313,6 +313,40 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 - [ ] **`lldb.verboseLogging` is off but retained** in `.vscode/settings.json` with a comment
   explaining when to switch it on. **Keep** — it documents a diagnostic that was hard to find.
 
+- [ ] **HRW has never been run on Linux or macOS, and carries untested code for both.**
+  *(Doug, 2026-08-08, deferring a cppvsdbg-only sweep: "in the future, we will work together to
+  test and verify whether or not HRW works on linux or macos.")* **This is a verification task,
+  not a deletion task**, and the distinction is the entry. Nothing here is known broken; it is
+  known **unmeasured** — the same shape as a claim of absence with no failing test behind it.
+
+  **What is unmeasured:** `main.rs`'s ~60 lines of Wayland/X11 probing
+  (`prefer_x11_if_wayland_dead`, `wayland_socket_reachable`, `xdpyinfo`) — Linux, `#[cfg]`'d out
+  here, never exercised; `OutputCapture`'s `#[cfg(unix)]` arms in `worker.rs`, which at least have
+  `#[cfg(windows)]` twins that *are* exercised; and the CodeLLDB launch configuration in both
+  `launch.json` files.
+
+  **⚠ THE TRAP — read before touching anything.** `bridge.rs`'s `\\?\` path strip is commented
+  *"LLDB doesn't recognize that prefix"*, **but `cppvsdbg` needs the strip too**: VS Code's
+  breakpoint URIs will not match an extended-length path. A cppvsdbg-only cleanup that trusts that
+  comment **deletes working code and breaks breakpoint matching.** The comment is wrong, not the
+  code — and most of the apparent LLDB surface is comments like it, not LLDB-specific code.
+
+  **Correct the premise before acting on it.** *"Only cppvsdbg is up to the task"* is **not
+  established**: `launch.json` records the case against CodeLLDB as *"now SUSPECT: it predates the
+  discovery of Rumoca's compile cache… It has not been re-tested."* The defensible argument for
+  narrowing is the one that retired the LLDB teardown — **we run one configuration, and a second
+  untested one rots** — not a capability claim. This repository is public and aimed at maintainers
+  who mostly run Linux; asserting LLDB cannot do this would be a claim we cannot support.
+
+  **Boundary, non-negotiable:** `crates/rumoca-*` stays debugger- and platform-neutral.
+  `live_trace_breakpoint`'s shape is about linkers and optimizers (`/OPT:ICF`), not about one
+  adapter. Narrowing HRW is a local choice; narrowing the instrumentation would poison the PR
+  `docs/upstream-strategy.md` is building toward.
+
+  **Done looks like:** run HRW on Linux and macOS, *then* fix or delete with evidence — not
+  before. *Files:* `main.rs`, `worker.rs`, `bridge.rs`, `.vscode/launch.json`,
+  `hrw/.vscode/launch.json`.
+
 ## UI defects — found by walking
 
 - [ ] **A selected fixture tour does not always open scrolled to the top.**
