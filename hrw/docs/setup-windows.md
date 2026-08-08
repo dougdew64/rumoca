@@ -40,6 +40,23 @@ cd rumoca
 git checkout hrw
 ```
 
+**Line endings are handled for you, but check if tests fail oddly.**
+[`../.gitattributes`](../.gitattributes) pins `eol=lf` for everything under `hrw/`, because
+Git for Windows ships `core.autocrlf=true` in its **system** config
+(`C:/Program Files/Git/etc/gitconfig`) and a CRLF checkout breaks the tests that read
+repository files as exact text. If a clone predates that file, the symptom is two failures —
+`tour_catalogue_is_current` and `app_does_not_regrow_its_field_count`, the second of which
+**reports a false reason** (*"the App struct must be closed by a `}` at column 0"*, when the
+struct is fine and the line is `}\r`). The repair:
+
+```powershell
+git config core.autocrlf false
+git rm --cached -r -q .
+git reset --hard
+```
+
+*Encountered 2026-08-07 on a second Windows machine; the clone was otherwise perfect.*
+
 ## 3. Stage the Modelica Standard Library (required — not in the clone)
 
 `hrw/vendor/` is gitignored, so **a fresh clone has no MSL and specimens will fail to

@@ -1,0 +1,35 @@
+# Line endings are part of HRW's test contract, not a formatting preference.
+#
+# Several tests read repository files as EXACT TEXT — the tour catalogue is
+# compared byte-for-byte against freshly generated Markdown, and `app.rs` is
+# parsed by splitting on "\n}\n". Both assume LF.
+#
+# Git for Windows ships `core.autocrlf=true` in its SYSTEM config
+# (`C:/Program Files/Git/etc/gitconfig`), so a fresh clone on a stock Windows
+# box silently rewrites every checked-out file to CRLF. Two tests then fail,
+# and one of them fails for a reason that is FALSE:
+#
+#   app::tests::tour_catalogue_is_current
+#       diffs CATALOGUE.md on disk against text generated with "\n".
+#       Fails honestly — the message names the catalogue.
+#
+#   doc_citations::tests::app_does_not_regrow_its_field_count
+#       splits app.rs on "\n}\n" and reports
+#       "the App struct must be closed by a `}` at column 0".
+#       The struct IS closed correctly; the line is "}\r". A session reading
+#       that message goes looking for an app.rs defect that does not exist.
+#
+# Found 2026-08-07, on the second Windows machine. `git config core.autocrlf
+# false` fixes one clone; this file fixes every clone — the difference the
+# repository exists to make (`DECISIONS.md`, "the repository is the system of
+# record", and the same lesson as the memory store that did not survive a move).
+#
+# SCOPED TO hrw/ DELIBERATELY. Measured the same day: all 41 files stored with
+# CRLF in the index live under `crates/rumoca-*`. Normalizing upstream files
+# would put line-ending churn in a PR to CogniPilot, so this file governs HRW
+# only and an upstream cherry-pick stays clean.
+#
+# `text=auto` lets git classify text vs binary itself; `eol=lf` pins the
+# working-tree ending for whatever it classifies as text.
+
+* text=auto eol=lf

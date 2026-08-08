@@ -813,6 +813,62 @@ Some prose.
         );
     }
 
+    /// **The working tree is checked out with LF line endings.**
+    ///
+    /// Several tests read repository files as *exact text*:
+    /// `app::tests::tour_catalogue_is_current` diffs `CATALOGUE.md` against
+    /// freshly generated Markdown, and `app_does_not_regrow_its_field_count`
+    /// directly above splits `app.rs` on `"\n}\n"`. Under CRLF both fail — and
+    /// the field-count one fails claiming *"the App struct must be closed by a
+    /// `}` at column 0"*, **which is false**. The struct is closed correctly;
+    /// the line is `"}\r"`. A session that believes that message goes hunting
+    /// for an `app.rs` defect that does not exist.
+    ///
+    /// **So this test exists to fail truthfully, naming the real cause.** It
+    /// cannot guarantee running first, but it turns one confusing failure into
+    /// two of which one is actionable.
+    ///
+    /// `hrw/.gitattributes` is the guard. Git for Windows ships
+    /// `core.autocrlf=true` in its *system* config, so a fresh clone on a stock
+    /// Windows box arrives in CRLF without anyone choosing it — found
+    /// 2026-08-07 on the second Windows machine.
+    #[test]
+    fn the_working_tree_is_checked_out_with_lf_endings() {
+        let hrw = Path::new(env!("CARGO_MANIFEST_DIR"));
+
+        // Check the guard itself, so deleting it is a failure rather than a
+        // silent return to the hazard.
+        let attrs = std::fs::read_to_string(hrw.join(".gitattributes"))
+            .expect("hrw/.gitattributes must exist — it is what pins LF on a Windows clone");
+        assert!(
+            attrs.contains("* text=auto eol=lf"),
+            "hrw/.gitattributes must pin `* text=auto eol=lf`",
+        );
+
+        // Then the condition it is meant to produce, on the two files whose
+        // exact text other tests depend on.
+        for rel in ["src/app.rs", "docs/fixture-tours/CATALOGUE.md"] {
+            let text = std::fs::read_to_string(hrw.join(rel))
+                .unwrap_or_else(|e| panic!("{rel} must be readable: {e}"));
+
+            // **Non-vacuity.** An empty read contains no CRLF and would pass.
+            let len = text.len();
+            assert!(
+                len > 1_000,
+                "{rel} read as only {len} bytes — this check would pass vacuously",
+            );
+
+            assert!(
+                !text.contains("\r\n"),
+                "{rel} is checked out with CRLF line endings, which breaks the tests that \
+                 read it as exact text. This is a CLONE problem, not a defect in that file: \
+                 Git for Windows sets core.autocrlf=true in its system config. Fix with \
+                 `git config core.autocrlf false`, then `git rm --cached -r -q .` and \
+                 `git reset --hard`. See hrw/.gitattributes.",
+            );
+        }
+    }
+
     fn collect_rust(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(entries) = std::fs::read_dir(dir) else {
             return;

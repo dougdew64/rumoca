@@ -2381,3 +2381,22 @@ correctness is visible on screen, while the parsing that fails invisibly stays b
 
 **Applied to new visualization code and to files as they are touched — not as a campaign.** Doug
 said *eventually*.
+
+## Line endings
+
+- **2026-08-07 — `hrw/.gitattributes` pins `* text=auto eol=lf`, scoped to `hrw/`.** Found on a
+  second Windows machine: Git for Windows ships `core.autocrlf=true` in its **system** config, so
+  a fresh clone converted 2,056 files to CRLF and two tests failed. **Scoped to `hrw/` rather
+  than the repo root** because all 41 files stored with CRLF in the index live under
+  `crates/rumoca-*` — a root-level rule would put line-ending churn in a PR to CogniPilot, and
+  the instrumentation discipline requires upstream cherry-picks to stay clean. A local
+  `git config core.autocrlf false` fixes one clone; the attributes file fixes every clone, which
+  is the same lesson as the memory store that did not survive the move.
+
+  **The finding worth keeping is not the CRLF, it is the false reason.**
+  `app_does_not_regrow_its_field_count` splits `app.rs` on `"\n}\n"` and its `.expect()` reads
+  *"the App struct must be closed by a `}` at column 0"* — untrue; the struct is closed and the
+  line is `"}\r"`. **A parse that fails for an environmental reason blames the thing it was
+  parsing**, sending the next session after a defect that does not exist. Guarded by
+  `doc_citations::the_working_tree_is_checked_out_with_lf_endings`, which checks the attributes
+  file still exists and then names the real cause.
