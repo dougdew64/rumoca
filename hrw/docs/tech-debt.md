@@ -400,6 +400,37 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   deeper resolution would need to walk into library class IRs that are loaded on demand.
   *File:* `app.rs`.
 
+- [ ] **HRW never clears its live-trace breakpoint on shutdown.** *(Doug, 2026-08-07.)*
+  **Measured, not assumed:** `remove_live_trace_breakpoint` has **13 call sites in `app.rs`**,
+  and every one is reactive to an in-app event — a session ending, a stage changing, a new
+  Debug click. **HRW implements neither `eframe::App::on_exit` nor `Drop for App`**, so closing
+  the window while a breakpoint is armed leaves it registered in VS Code.
+
+  **Why it matters beyond tidiness.** The orphan is a breakpoint *the user did not set*, sitting
+  in `live_trace.rs`, and it will stop **any** debug session that reaches that code — a plain
+  debug launch, or stepping a Rumoca test. A breakpoint nobody remembers arming is a confusing
+  stop, and this project's whole thesis is that a confusing signal teaches something false.
+
+  **`#71` made an orphan more likely**, which is why this is logged now: a bridge ack arriving
+  after `LIVE_DEBUG_ACK_TIMEOUT` now leaves a real breakpoint HRW deliberately does not track,
+  so no in-app event will ever remove it. That trade was accepted on the grounds that HRW must
+  not claim state it cannot see — this entry is the other half of paying for it.
+
+  **What is NOT yet known** — do not build before checking, the `#67`/`#70` discipline:
+  the next HRW start pre-warms by arming the same anchor and removing it
+  (`tick_prewarm`), so a stale anchor **may already be cleaned up on the next run**.
+  <!-- unverified --> If so the exposure is only the window between runs, which lowers the
+  priority but does not close it — the window is exactly when a learner switches to debugging
+  something else.
+
+  **The remedy already exists manually**: the extension contributes
+  `HRW: Clear Armed Breakpoints`. **First step is to measure the window, not to write the
+  hook** — arm a breakpoint, close HRW, and look at VS Code's Breakpoints pane.
+
+  *Files:* `app.rs` (no exit hook), `bridge.rs` (`remove_live_trace_breakpoint`).
+  **Note a hook cannot be complete**: a debugger stop, a panic or a kill runs no destructor, so
+  the extension side is the only place a guarantee could live.
+
 ## The Context Bar reported less than it emitted, and only Doug noticed
 
 **Who caught it: Doug** — which is the backward sweep trigger. Nothing in the
