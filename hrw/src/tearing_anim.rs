@@ -256,7 +256,6 @@ impl TearingAnimation {
     pub fn start_live(
         dae: rumoca_ir_dae::Dae,
         frame_delay: std::time::Duration,
-        on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         // Names are needed by the *renderer* from the first frame onward, so
         // they are computed here rather than waiting on the thread.
@@ -272,7 +271,6 @@ impl TearingAnimation {
             .spawn(move || {
                 lt.wait_for_debugger();
                 walk_blocks(&dae, &|block, frame| lt.push(BlockFrame { block, frame }));
-                on_complete();
                 done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;

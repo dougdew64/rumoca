@@ -75,7 +75,6 @@ impl PreLoweringAnimation {
     pub fn start_live(
         flat: rumoca_ir_flat::Model,
         frame_delay: std::time::Duration,
-        on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(frame_delay);
@@ -91,7 +90,6 @@ impl PreLoweringAnimation {
                     Default::default(),
                     Some(&|frame: &PreLoweringFrame| lt.push(frame.clone())),
                 );
-                on_complete();
                 done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;

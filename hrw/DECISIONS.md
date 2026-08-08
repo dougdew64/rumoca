@@ -2419,6 +2419,10 @@ with the measurement written above it is cheaper to re-decide than a deletion is
 exit — because each ends the breakpoint's *reason to exist* rather than merely pausing it. Leaving
 it armed between runs costs nothing: `live_trace_breakpoint` is unreachable outside a live session.
 
+> **⚠ SUPERSEDED THE SAME DAY — the gate was deleted, not kept.** See the entry below,
+> *"the LLDB session-end teardown is gone, not gated"*. The paragraph above stands as the
+> reasoning at the time; it is no longer a description of the code.
+
 **The diagnosis is worth more than the fix.** Three confident explanations were eliminated by
 evidence, not reasoning — `isDuplicate` (killed by the output channel), the safety net firing during
 `wait_for_debugger` (killed by reading `live_state`), and the new `#72` tracker poisoning the adapter
@@ -2497,3 +2501,39 @@ sinks a request that armed another, and "every one of zero lines is armed" is pr
 true-but-useless answer this change exists to remove.
 
 Verified must-fire by removing the `enabled` check and watching four TypeScript tests fail.
+
+## 2026-08-08 — the LLDB session-end teardown is gone, not gated
+
+`RELEASE_ANCHOR_AT_SESSION_END` lasted a few hours. Doug, on being told what it was: *"you
+mentioned some macOS cruft being in our code. Do we need that? If not, eliminate it."* It is
+deleted, and with it the `on_complete` parameter on all five `start_live` functions — its only
+purpose was calling the release — and the `LiveState` argument to `live_debug_poll`, which was
+read for nothing else once the safety net went.
+
+**It was never macOS cruft; it was pre-migration cruft.** The SIGSTOP work landed 2026-07-24
+(`0270968a`) under **CodeLLDB**, before the 07-27 move to `cppvsdbg`. **There is not one mention
+of macOS anywhere in this repository's docs.** Naming it correctly matters, because "macOS
+support" sounds like a portability commitment and "a workaround for the debugger we stopped
+using" does not.
+
+**Three reasons deletion beat gating**, reversing the same day's earlier decision:
+
+- **Nothing tests the LLDB path.** A `cfg`-gated branch no CI job and no machine ever compiles is
+  an untested claim, and this repository's rule is that such claims rot silently.
+- **It is the mechanism that destroyed the feature.** A disabled copy of the code that caused the
+  bug is an invitation for its return.
+- **It removed a branch from the regression test.** While the release was gated, the test had to
+  branch too — and its first draft branched on *the constant itself*, so forcing the gate took the
+  other path and passed. The gate's existence is what created that trap; deleting it retires the
+  whole class. The test now asserts unconditionally.
+
+**What survived, deliberately:** `OutputCapture`'s `#[cfg(unix)]` arms in `worker.rs` are paired
+with `#[cfg(windows)]` arms — a portable abstraction, three small functions, not cruft.
+`main.rs`'s Linux Wayland/X11 probing is flagged to Doug rather than removed unasked.
+
+**And the sweep found something worse than the cruft: two `hrw/` citations inside upstream-bound
+crates.** `live_trace.rs` pointed at `hrw/docs/windows-migration.md`, **deleted in `77754d61`** —
+a dangling cross-repo pointer in code destined for CogniPilot, naming a directory upstream does
+not have. `pre_lowering.rs` pointed at `hrw/DECISIONS.md`. Both removed, in a separate commit so
+the cherry-pick stays clean. **`doc_citations` cannot catch these** — it scans HRW's tree, not
+`crates/rumoca-*`, which is a real gap in a rule the project relies on.

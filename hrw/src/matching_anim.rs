@@ -240,17 +240,18 @@ impl MatchingAnimation {
     /// `live_trace_breakpoint` pauses the thread after each frame push;
     /// the user steps with F5.
     ///
-    /// `on_complete` runs inside the algorithm thread after the last frame but
-    /// before the thread exits. It exists so the caller can remove the armed
-    /// breakpoint via the bridge, preventing SIGSTOP from LLDB when the thread
-    /// terminates — **and the caller now gates that removal on
-    /// `RELEASE_ANCHOR_AT_SESSION_END`**, because Windows has no SIGSTOP and
-    /// releasing the anchor there breaks the next Debug press
-    /// (`docs/ideas.md` #74).
+    /// **The session ending does not release the anchor breakpoint**, which is
+    /// why there is no completion callback here. There used to be an
+    /// `on_complete` whose sole job was removing it before the thread exited,
+    /// so LLDB would not deliver SIGSTOP/SIGCHLD on thread termination — a
+    /// workaround for a debugger and platform HRW no longer runs on, and the
+    /// exact mechanism that made every Debug press after the first silently
+    /// fail to stop (`docs/ideas.md` #74). The anchor now clears only on the
+    /// three events that end its reason to exist: a failed spawn, a specimen
+    /// change, and app exit.
     pub fn start_live(
         mat: &IncidenceMatrix,
         frame_delay: std::time::Duration,
-        on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(frame_delay);
@@ -274,7 +275,6 @@ impl MatchingAnimation {
                 // `rumoca_core::FrameObserver`.
                 let observe = |f: &MatchingFrame| lt.push(f.clone());
                 maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&observe));
-                on_complete();
                 done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;
@@ -905,8 +905,8 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         // The unarmed delay deliberately: no breakpoint exists in a test, and
         // the stepped delay would make this sleep for seconds.
-        let mut anim = MatchingAnimation::start_live(&mat, crate::live_frame_delay(false), || {})
-            .expect("spawn thread");
+        let mut anim =
+            MatchingAnimation::start_live(&mat, crate::live_frame_delay(false)).expect("spawn thread");
         for _ in 0..100 {
             if anim.live_state(false) == crate::LiveState::Finished {
                 break;

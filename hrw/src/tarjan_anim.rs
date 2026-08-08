@@ -197,17 +197,14 @@ impl TarjanAnimation {
     /// first (non-live) to build the dependency graph, then spawns a thread
     /// for Tarjan's SCC with a `LiveTrace` producer.
     ///
-    /// `on_complete` runs inside the algorithm thread after the last frame but
-    /// before the thread exits. It exists so the caller can remove the armed
-    /// breakpoint via the bridge, preventing SIGSTOP from LLDB when the thread
-    /// terminates — **and the caller now gates that removal on
-    /// `RELEASE_ANCHOR_AT_SESSION_END`**, because Windows has no SIGSTOP and
-    /// releasing the anchor there breaks the next Debug press
-    /// (`docs/ideas.md` #74).
+    /// **No completion callback**, and deliberately — see
+    /// [`crate::matching_anim::MatchingAnimation::start_live`]. The
+    /// `on_complete` that used to release the anchor breakpoint here was an
+    /// LLDB SIGSTOP workaround, and releasing it is what broke every Debug
+    /// press after the first (`docs/ideas.md` #74).
     pub fn start_live(
         mat: &IncidenceMatrix,
         frame_delay: std::time::Duration,
-        on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let n_eq = mat.n_eq();
         let n_var = mat.n_var();
@@ -238,7 +235,6 @@ impl TarjanAnimation {
                 // `rumoca_core::FrameObserver`.
                 let observe = |f: &TarjanFrame| lt.push(f.clone());
                 tarjan_scc_with_trace(n_eq, &adj_for_thread, Some(&observe));
-                on_complete();
                 done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;
@@ -779,7 +775,7 @@ mod tests {
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let mut anim =
-            TarjanAnimation::start_live(&mat, crate::live_frame_delay(false), || {}).unwrap();
+            TarjanAnimation::start_live(&mat, crate::live_frame_delay(false)).unwrap();
         for _ in 0..100 {
             if anim.live_state(false) == crate::LiveState::Finished {
                 break;

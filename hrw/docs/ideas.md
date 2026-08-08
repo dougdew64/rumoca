@@ -4713,6 +4713,50 @@ One-way door, either route.
 **Operating rule for the tours:** do not disable the anchor mid-session. If you do, stop the
 debugger and start a new session — nothing shorter recovers it.
 
+### The gate is GONE — the LLDB teardown was deleted, not kept behind a `cfg`
+
+*(Doug, 2026-08-08: "you mentioned some macOS cruft being in our code. Do we need that? If not,
+eliminate it.")* `RELEASE_ANCHOR_AT_SESSION_END` lasted a few hours. What replaced it is nothing:
+the session-end release is deleted outright, and with it the `on_complete` parameter on all five
+`start_live` functions, whose **only** purpose was to call it.
+
+**It is not macOS cruft; it is pre-migration cruft, and the distinction matters.** The SIGSTOP
+work landed 2026-07-24 (`0270968a`) under **CodeLLDB**, before the 07-27 move to `cppvsdbg`.
+**There is not one mention of macOS anywhere in this repository's docs.**
+
+**Why deleted rather than gated**, since gating was the earlier decision and this reverses it:
+
+- **Nothing tests the LLDB path**, so it was untested code for a configuration nobody runs —
+  a claim of absence with no failing test behind it, which this repository has a rule about.
+- **It is the mechanism that silently destroyed the feature.** Keeping a disabled copy of the
+  code that caused the bug invites its return.
+- **It removed a branch from the regression test too.** While the release was gated, the test had
+  to branch — and its first draft branched on *the constant itself*, so forcing the gate took the
+  other path and **passed**. Deleting the gate deletes that whole class of mistake; the test now
+  asserts unconditionally. `live_debug_poll` also stopped taking a `LiveState`, which it read for
+  nothing else.
+
+**What survived the sweep, and why:** `OutputCapture`'s `#[cfg(unix)]` arms in `worker.rs` are
+paired with `#[cfg(windows)]` arms and are three small functions — a portable abstraction, not
+cruft. `main.rs`'s ~60 lines of **Linux** Wayland/X11 probing are flagged, not removed; they are
+a real feature for a real platform, `#[cfg]`'d out here, and untested. <!-- unverified -->
+
+### Two `hrw/` citations were sitting inside upstream-bound crates
+
+Found while sweeping for the above, and worse than the cruft. `CLAUDE.md` requires the
+instrumentation stay "separable from `hrw/` so an upstream PR is a clean cherry-pick":
+
+- **`live_trace.rs` cited `hrw/docs/windows-migration.md` — a file deleted in `77754d61`.** A
+  dangling cross-repo pointer, in code destined for CogniPilot, naming a directory upstream does
+  not have. Replaced with the platform triple, which is the load-bearing part.
+- **`pre_lowering.rs` cited `hrw/DECISIONS.md`.** Dropped; the paragraph already made its own
+  argument.
+
+**`doc_citations` could not have caught either** — it scans HRW's tree, not `crates/rumoca-*`.
+Four `HRW`-by-name mentions remain in those crates and are left alone: each names the consumer
+that exercises an observer API, which is ordinary context rather than a pointer into a directory
+the reader lacks.
+
 ### How it was found, because three confident wrong answers came first
 
 **Every one of them was eliminated by evidence rather than by reasoning**, and the order matters:

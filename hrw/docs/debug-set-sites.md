@@ -47,11 +47,12 @@ removes the breakpoint from VS Code, and updates the status bar. HRW used this a
 live debug session finished (all algorithm frames pushed), to prevent a SIGSTOP signal from the
 debugger hitting a breakpoint on an exiting thread.
 
-**That session-end removal no longer runs on Windows** (`app::RELEASE_ANCHOR_AT_SESSION_END`).
-Windows has no SIGSTOP, and **`cppvsdbg` will not re-bind a breakpoint at a location the extension
-removed earlier in the same debug session** — so the removal made every Debug press after the first
-arm a breakpoint that VS Code drew hollow and that never fired (`ideas.md` #74). HRW still sends
-`action: "remove"` when a session fails to spawn, when the specimen changes, and at app exit.
+**That session-end removal is deleted.** It was an LLDB workaround written before the move to
+`cppvsdbg`, and **`cppvsdbg` will not re-bind a breakpoint at a location whose breakpoint left its
+active set earlier in the same debug session** — by removal *or* by being disabled. So the removal
+made every Debug press after the first arm a breakpoint VS Code drew hollow and that never fired
+(`ideas.md` #74). HRW still sends `action: "remove"` when a session fails to spawn, when the
+specimen changes, and at app exit.
 
 **Ack handshake**: after processing any request (add or remove), the extension writes
 `.hrw-bridge/breakpoint-ack.json`. **It reports a verdict, not merely that the request was read**

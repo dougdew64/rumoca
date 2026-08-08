@@ -649,24 +649,24 @@ All three support two animation modes:
    See [Live trace debugging on Windows](#live-trace-debugging-on-windows) for
    the environment this depends on — it is not self-contained in the code.
 
-   **Breakpoint cleanup, and why it does NOT happen on Windows.** When the
-   algorithm finishes, the thread's `on_complete` callback removes the
-   `live_trace_breakpoint` breakpoint via the bridge's `action: "remove"`
-   protocol *before the thread exits*, with a UI-side safety net in
-   `live_debug_poll` behind it. This prevents LLDB from delivering
-   SIGSTOP/SIGCHLD when the thread terminates with the breakpoint still armed.
+   **The end of a session does NOT release the breakpoint, and the code that
+   used to is deleted.** An `on_complete` callback removed the anchor before the
+   algorithm thread exited, with a UI-side safety net in `live_debug_poll`
+   behind it, so LLDB would not deliver SIGSTOP/SIGCHLD on thread termination.
+   Both are gone, along with the `on_complete` parameter on all five
+   `start_live` functions — its only purpose (`docs/ideas.md` #74).
 
-   **Both are gated on `app::RELEASE_ANCHOR_AT_SESSION_END` (`cfg!(not(windows))`).**
-   Windows has no SIGSTOP and `cppvsdbg` is not LLDB, so the cleanup bought
-   nothing there — and it cost the feature after its first use, because
-   **`cppvsdbg` will not re-bind a breakpoint at a location the extension
-   removed earlier in the same debug session.** The second Debug press armed
-   the same line, VS Code drew it hollow, and the algorithm ran to completion
-   without stopping (`docs/ideas.md` #74).
+   The workaround was written under CodeLLDB before the move to `cppvsdbg`.
+   Windows has no SIGSTOP, nothing tested the LLDB path, and the release was
+   actively harmful: **`cppvsdbg` will not re-bind a breakpoint at a location
+   whose breakpoint left its active set earlier in the same debug session** —
+   by removal *or* by being disabled. The second Debug press armed the same
+   line, VS Code drew it hollow, and the algorithm ran to completion without
+   stopping.
 
    Leaving it armed between runs is safe: `live_trace_breakpoint` is
    unreachable outside a live session, so an ordinary compile never reaches it.
-   Three releases stay ungated, each ending the breakpoint's reason to exist —
+   Three releases remain, each ending the breakpoint's reason to exist —
    a `start_live` that failed to spawn, a specimen change, and app exit.
 
 The `LiveTrace<F>` type (in `rumoca-phase-structural/src/live_trace.rs`) is the

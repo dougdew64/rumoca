@@ -1268,16 +1268,15 @@ pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> 
 
 /// Remove the `live_trace_breakpoint` breakpoint.
 ///
-/// Written for the end of a live session, to prevent a SIGSTOP signal when the
-/// algorithm thread exits under LLDB. **That call site is now gated on
-/// `app::RELEASE_ANCHOR_AT_SESSION_END`**: Windows has no SIGSTOP, and removing
-/// the anchor there breaks the *next* Debug press, because `cppvsdbg` will not
-/// re-bind a location the extension has removed within the same debug session
-/// (`docs/ideas.md` #74).
+/// **Not called when a live session ends**, which is the opposite of what it
+/// was written for. It existed to prevent a SIGSTOP signal when the algorithm
+/// thread exited under LLDB; that call site is **deleted** (`docs/ideas.md`
+/// #74). `cppvsdbg` will not re-bind a location whose breakpoint left its
+/// active set within the same debug session, so releasing the anchor at the end
+/// of a run made the *next* Debug press arm a breakpoint that never bound.
 ///
-/// The function itself is unconditional and still used by the three releases
-/// that end the breakpoint's reason to exist: a session that failed to spawn, a
-/// specimen change, and app exit.
+/// It remains in use for the three events that end the breakpoint's reason to
+/// exist: a session that failed to spawn, a specimen change, and app exit.
 pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
     let (file, line) = find_live_trace_line()?;
     let path_str = file.display().to_string();

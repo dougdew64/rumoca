@@ -45,7 +45,6 @@ impl ReductionAnimation {
     pub fn start_live(
         dae: rumoca_ir_dae::Dae,
         frame_delay: std::time::Duration,
-        on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(frame_delay);
@@ -89,7 +88,6 @@ impl ReductionAnimation {
                         &mut dae, Some(&observe), &mut frames, &demoted_so_far,
                         round_offset,
                     );
-                on_complete();
                 done_for_thread.store(true, Ordering::Release);
             })
             .ok()?;
