@@ -1815,6 +1815,28 @@ impl App {
         self.pending_sub_view = None;
     }
 
+    /// Ask the bridge to remove the live-trace breakpoint, if HRW believes one is
+    /// armed. Returns whether a removal was issued.
+    ///
+    /// **Separate from [`eframe::App::on_exit`] so it can be tested at all** —
+    /// `eframe` owns the call to `on_exit`, so nothing in the test harness can
+    /// reach it. Extracting the body is the only way the shutdown path gets a
+    /// regression guard, and per `docs/format-and-app-plan.md` an extraction is
+    /// justified by exactly that: a test that could not have been written before
+    /// it.
+    ///
+    /// The boolean is what makes the test non-vacuous. Without it, a test could
+    /// only assert on a request file, which a *different* code path may also have
+    /// written.
+    pub(crate) fn release_live_breakpoint_at_exit(&mut self) -> bool {
+        if !self.live_breakpoint_armed {
+            return false;
+        }
+        let _ = bridge::remove_live_trace_breakpoint();
+        self.live_breakpoint_armed = false;
+        true
+    }
+
     /// Fetch a class by qualified name for navigation (async; pushed on arrival).
     /// The worker resolves the name to a class definition and returns it as a
     /// `FromWorker::DefTree` message; `drain_worker` pushes it onto `self.nav`.
@@ -7109,6 +7131,30 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.frame_ui(ui);
     }
+
+    /// Release the live-trace breakpoint on the way out.
+    ///
+    /// **Why this exists** (`docs/tech-debt.md`, "HRW never clears its live-trace
+    /// breakpoint on shutdown"). All the in-app removal sites are *reactive* — a
+    /// live session ending, a stage changing, a new Debug click — so quitting with
+    /// one armed left it registered in VS Code. The orphan is a breakpoint the
+    /// user never set, sitting in `live_trace.rs`, and it stops **any** later
+    /// debug session that reaches that code. A stop nobody remembers arming is a
+    /// confusing signal, which this project treats as teaching something false.
+    ///
+    /// **This is not a guarantee and is not meant to read as one.** A debugger
+    /// stop, a panic or a kill runs no destructor, so only the extension side
+    /// could ever promise it — `HRW: Clear Armed Breakpoints` remains the manual
+    /// remedy. What this closes is the ordinary case: quitting the app.
+    ///
+    /// **It also cannot clear an orphan HRW never tracked.** Since `#71`,
+    /// `live_breakpoint_armed` is true only when the bridge acked, so a *late* ack
+    /// leaves a breakpoint this method will not see. That was the accepted trade —
+    /// HRW must not claim state it cannot see — and it stays accepted here rather
+    /// than being quietly undone by removing unconditionally.
+    fn on_exit(&mut self) {
+        self.release_live_breakpoint_at_exit();
+    }
 }
 
 impl App {
@@ -9098,6 +9144,66 @@ mod tests {
         );
 
         let _ = std::fs::remove_file(ack);
+    }
+
+    /// **Quitting HRW releases an armed live-trace breakpoint** (`docs/tech-debt.md`).
+    ///
+    /// Every other removal site is reactive to an in-app event, so closing the
+    /// window used to leave the breakpoint registered in VS Code — a breakpoint
+    /// the user never set, which then stops any later debug session reaching
+    /// `live_trace.rs`.
+    ///
+    /// Drives `release_live_breakpoint_at_exit` rather than `on_exit`, because
+    /// `eframe` owns the call to the latter and no test can reach it. Both
+    /// branches are checked: **doing nothing when nothing is armed matters as
+    /// much as acting when something is**, since an unconditional removal would
+    /// write a request on every quit and undo `#71`'s rule that HRW must not
+    /// assert state it cannot see.
+    #[test]
+    fn quitting_releases_an_armed_live_breakpoint() {
+        let (mut app, _tx) = App::test_with_sender();
+        let request = std::path::Path::new(bridge::BREAKPOINT_REQUEST_FILE);
+
+        // --- Nothing armed: no request, no claim. ---
+        let _ = std::fs::remove_file(request);
+        app.live_breakpoint_armed = false;
+        assert!(
+            !app.release_live_breakpoint_at_exit(),
+            "with nothing armed there is nothing to release"
+        );
+        assert!(
+            !request.exists(),
+            "a quit with no breakpoint must not write a removal request"
+        );
+
+        // --- Armed: the removal is issued and the flag drops. ---
+        app.live_breakpoint_armed = true;
+        assert!(
+            app.release_live_breakpoint_at_exit(),
+            "an armed breakpoint must be released on the way out"
+        );
+        assert!(
+            !app.live_breakpoint_armed,
+            "releasing it must also drop the claim that it is armed"
+        );
+
+        let text = std::fs::read_to_string(request)
+            .expect("the removal request must reach the bridge as a file");
+        let json: serde_json::Value =
+            serde_json::from_str(&text).expect("the request must be valid JSON");
+        assert_eq!(
+            json["action"], "remove",
+            "an exit must ask for removal, not arm another one: {text}"
+        );
+        assert!(
+            json["breakpoints"][0]["path"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("live_trace"),
+            "the request must name the live-trace anchor: {text}"
+        );
+
+        let _ = std::fs::remove_file(request);
     }
 
     /// **An ack and a timeout are different outcomes, and only one of them arms

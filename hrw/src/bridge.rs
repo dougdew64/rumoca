@@ -97,7 +97,11 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge")
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
 
 /// HRW writes breakpoint requests here; the VS Code extension watches it.
-const BREAKPOINT_REQUEST_FILE: &str = concat!(
+///
+/// `pub(crate)` to match [`BREAKPOINT_ACK_FILE`]: the shutdown-release test in
+/// `app.rs` asserts on the request this path receives, and a test that rebuilt
+/// the path itself could pass while the real one moved.
+pub(crate) const BREAKPOINT_REQUEST_FILE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/.hrw-bridge/breakpoint-request.json"
 );
