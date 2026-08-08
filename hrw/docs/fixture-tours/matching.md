@@ -353,6 +353,96 @@ The correspondences worth carrying, each visible on the pane above rather than a
 against the pane, not as a fact retrieved from a file — see `docs/ideas.md` #67 for why that
 distinction is a rule rather than a preference.
 
+## Act 5 — How Rumoca spells it
+
+Acts 1-3 showed the algorithm **running**. Act 4 showed what it **builds**. The third question
+is the one this tour has never answered: **what does the code look like, and where is it?**
+
+Everything below names things you can go and read. **Nothing here transcribes code** — quoted
+source is the most rot-prone thing a tour can carry, and nothing compiles a tour.
+
+### Two functions, one file
+
+Both live in `crates/rumoca-phase-structural/src/matching.rs`.
+
+- **`maximum_matching_with_trace`** — the outer loop. One attempt per equation, in index order.
+  Every *"Starting augmenting-path search for equation i"* you read in Act 1 is one turn of it.
+- **`augment_traced`** — the search for a single equation, and **it calls itself**. The entirety
+  of Act 2 — the exploring, the displacement, the backing up — happens inside one invocation of
+  this function and its recursive descendants.
+
+**Two arrays are the whole state:** `match_eq` and `match_var`, each an `Option<usize>` per
+entry, pointing at each other. **`match_eq` *is* Act 4's permutation** — one entry per row, each
+holding the column it was matched to. The permutation matrix is not built at the end; it is
+this array, filled in as the search succeeds.
+
+### The log lines are enum variants
+
+The narration you have been reading all tour is not prose HRW invents. Each line is one
+`MatchingStep`, declared beside the algorithm and rendered in `hrw/src/matching_anim.rs`:
+
+| The line you read | `MatchingStep` | Emitted when |
+|---|---|---|
+| `Starting augmenting-path search for equation i` | `TryEquation` | the outer loop begins an equation |
+| `Equation i exploring variable j` | `Explore` | the search reaches a variable it has not visited |
+| `Variable j is free — augmenting path found` | `FoundFree` | that variable has no holder |
+| `Variable j held by eq h. Can eq h find an alternative?` | `TryDisplace` | it does have a holder, and the recursive call is about to happen |
+| `Displacement succeeded` / `failed` | `DisplaceOk` / `DisplaceFail` | that recursive call returned |
+| `Matched: equation i ↔ variable j` | `Assign` | both arrays are written |
+| `Equation i has no augmenting path — unmatched` | `EquationFailed` | the outer loop's attempt returned false |
+
+**So the animation is not an illustration of the algorithm — it is the algorithm reporting
+itself.** Those frames were recorded during the compile you loaded.
+
+### The textbook name, and a correction worth carrying
+
+This is **Kuhn's algorithm** — the Hungarian augmenting-path method for bipartite matching.
+Depth-first, one augmenting path per equation, O(V·E).
+
+**It is not Hopcroft-Karp**, which a course is more likely to name. Hopcroft-Karp uses BFS to
+find many *vertex-disjoint* augmenting paths per phase and runs in O(E√V). **Same idea, different
+schedule** — and worth knowing, because the two produce different frame counts and different
+intermediate matchings for the same input. What you watched in Act 2 is specifically Kuhn's
+backing-up, and Hopcroft-Karp would not have shown it that way.
+
+### Why the animation is reproducible
+
+`eq_vars` is a `HashSet`, whose iteration order is not stable — so `augment_traced` **sorts the
+variables before exploring them**. Without that sort, Act 1's *"variable 0 first"* would be a
+coin flip, and every `**Expected:**` line in this tour would be *sometimes* true, which is worse
+than being wrong. Pinned by `test_maximum_matching_is_deterministic_under_ties` in the same file.
+
+### Stand inside it
+
+[ProportionalLoop → Structural → Matching](hrw://load/ProportionalLoop/Structural/MatchingAnim)
+
+**Expected:** the matching animation, unstarted.
+
+Click **Debug**. Execution stops at the live-trace anchor *before any algorithm work*, showing
+`frame_index` as `usize::MAX` — the startup gate.
+
+**Expected:** VS Code stops, and the Debug Console shows that frame index rather than `0`.
+
+**F5 advances one algorithm step**, and the animation follows each press.
+
+**Expected:** one press moves the animation forward exactly one frame.
+
+To stand *inside* the algorithm rather than beside it, set your own breakpoint on the
+`match match_var[var]` expression in `augment_traced`. **That one branch is the entire
+free-versus-displace decision** — Act 1 is what it looks like when the first arm keeps being
+taken, and Act 2 is what it looks like when the second one is.
+
+> **When you ask Claude about the line you are stopped at, select it first.**
+> Measured 2026-08-07 (`docs/ideas.md` #70): **Claude cannot see a debugger stop at all** — no
+> location, no frame, no call stack. Stopping reveals the *file*, and that much does reach
+> Claude, but never the line. **Selecting the line does reach it**, verified against the source.
+> So the gesture is one click, and without it Claude knows only which file you are in.
+>
+> If a selection ever seems not to land, **name the place instead** — *"I'm stopped in
+> `augment_traced` at the `match`"* — which always works, because Claude then reads the file.
+> This stop is where the tour hands off to a conversation, so it is worth knowing which gesture
+> carries and which does not.
+
 ## What this tour cannot check
 
 Whether the **matrix view** makes the search legible — whether the moving highlight reads as
@@ -368,6 +458,12 @@ minutes before deciding.
 And whether Act 2's punchline — no equation matched to its own left-hand side — lands as
 *revelation* or as *arbitrary*. It is the strongest claim in the tour and the one I am least
 able to judge from this side.
+
+**And Act 5 most of all, because it is the newest and the least like the others.** It names
+functions instead of showing them, on the theory that a name plus a debugger beats transcribed
+code that rots. **If it instead reads as homework** — a list of things to go look up rather than
+something that closes the loop — then the theory is wrong and the stop should carry a small
+amount of real code after all. That judgement is yours; I cannot make it from here.
 
 ## What comes next in the chain
 

@@ -174,6 +174,7 @@ A curriculum tour, and the second in the chain. `dae-construction.md` ended with
   - `act-2-when-greed-fails-and-the-algorithm-backs-up` — Act 2 — When greed fails, and the algorithm backs up
   - `act-3-when-no-augmenting-path-exists` — Act 3 — When no augmenting path exists
   - `act-4-the-thing-you-have-been-building-is-a-permutation` — Act 4 — The thing you have been building is a permutation
+  - `act-5-how-rumoca-spells-it` — Act 5 — How Rumoca spells it
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
