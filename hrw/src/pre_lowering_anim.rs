@@ -74,10 +74,11 @@ impl PreLoweringAnimation {
     /// callback — the phase crate never learns that `LiveTrace` exists.
     pub fn start_live(
         flat: rumoca_ir_flat::Model,
+        frame_delay: std::time::Duration,
         on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
-        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let lt = lt.with_frame_delay(frame_delay);
         let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
 

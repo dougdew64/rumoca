@@ -249,10 +249,11 @@ impl MatchingAnimation {
     /// (`docs/ideas.md` #74).
     pub fn start_live(
         mat: &IncidenceMatrix,
+        frame_delay: std::time::Duration,
         on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
-        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let lt = lt.with_frame_delay(frame_delay);
         let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
 
@@ -902,7 +903,10 @@ mod tests {
     #[test]
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim = MatchingAnimation::start_live(&mat, || {}).expect("spawn thread");
+        // The unarmed delay deliberately: no breakpoint exists in a test, and
+        // the stepped delay would make this sleep for seconds.
+        let mut anim = MatchingAnimation::start_live(&mat, crate::live_frame_delay(false), || {})
+            .expect("spawn thread");
         for _ in 0..100 {
             if anim.live_state(false) == crate::LiveState::Finished {
                 break;

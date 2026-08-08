@@ -255,6 +255,7 @@ impl TearingAnimation {
     /// the debugger attaches, pushing frames as they are produced.
     pub fn start_live(
         dae: rumoca_ir_dae::Dae,
+        frame_delay: std::time::Duration,
         on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         // Names are needed by the *renderer* from the first frame onward, so
@@ -262,7 +263,7 @@ impl TearingAnimation {
         let blocks = walk_blocks(&dae, &|_, _| {});
 
         let (lt, rx) = LiveTrace::new();
-        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let lt = lt.with_frame_delay(frame_delay);
         let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
 

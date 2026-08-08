@@ -122,6 +122,51 @@ pub fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
 /// vanishes gives no clue that the action exists or why it is unavailable, and
 /// the row reflows under the pointer. Everything stays in place; only
 /// interactivity changes.
+/// How long [`LiveTrace::push`] sleeps between sending a frame and hitting the
+/// breakpoint anchor, when a human is stepping the session in a debugger.
+///
+/// **This is a race against the compositor, and 20 ms was losing it.** The sleep
+/// is the *only* window in which egui can draw the frame that was just sent:
+/// once `live_trace_breakpoint` is reached, `cppvsdbg` freezes every thread
+/// including the UI's, so whatever is on screen at that instant stays there for
+/// as long as the user is stopped. A 60 Hz vsync interval is **16.7 ms**, so a
+/// 20 ms budget gave egui barely one frame period to wake, drain the channel and
+/// complete a paint — starting from wherever it happened to be in its own cycle.
+///
+/// **Measured 2026-08-08** (`docs/ideas.md` #73): stepping `ProportionalLoop`,
+/// the screen was in step at frames 3 and 12 and **one frame behind at frame
+/// 11**. An intermittent lag is worse than a constant one, because a tour cannot
+/// describe it and a learner reads it as their own mistake.
+///
+/// 150 ms is ~9 vsync intervals. It is invisible to a user who is clicking
+/// Continue, which is the only situation it applies to.
+pub const STEPPED_FRAME_DELAY: std::time::Duration = std::time::Duration::from_millis(150);
+
+/// The delay when the session will run without stopping — no breakpoint armed.
+///
+/// **Deliberately still 20 ms, and this is the reason the delay is two-tier
+/// rather than simply larger.** Nothing pauses here, so the sleep is pure
+/// wall-clock: it paces the producer so the animation is watchable rather than
+/// instantaneous. Raising it to [`STEPPED_FRAME_DELAY`] would make a
+/// thousand-frame `Drivetrain` trace sleep for **two and a half minutes** with
+/// nobody watching any individual frame.
+pub const FREE_RUN_FRAME_DELAY: std::time::Duration = std::time::Duration::from_millis(20);
+
+/// Pick the frame delay for a live session about to start.
+///
+/// `breakpoint_armed` must be HRW's *evidence* that a breakpoint exists — an
+/// acked handshake — not its hope. `docs/ideas.md` #71: a timeout is not an ack,
+/// and a session that believes it is being stepped when it is not would pay
+/// [`STEPPED_FRAME_DELAY`] per frame for nothing.
+#[must_use]
+pub fn live_frame_delay(breakpoint_armed: bool) -> std::time::Duration {
+    if breakpoint_armed {
+        STEPPED_FRAME_DELAY
+    } else {
+        FREE_RUN_FRAME_DELAY
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LiveState {
     /// No live session. Ordinary recorded playback.
@@ -479,6 +524,61 @@ pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests_live_delay {
+    /// One 60 Hz vsync interval. Not a tunable — a fact about the hardware the
+    /// stepped delay is racing, kept here so the assertion below states *why*
+    /// 150 ms rather than merely pinning the number someone happened to pick.
+    const VSYNC_60HZ: std::time::Duration = std::time::Duration::from_micros(16_667);
+
+    /// **A stepped session must give egui several frame periods, not one**
+    /// (`docs/ideas.md` #73).
+    ///
+    /// The sleep in `LiveTrace::push` is the only window in which the frame just
+    /// sent can be drawn: after it, `live_trace_breakpoint` freezes every thread
+    /// including the UI's, and whatever is on screen stays there until the user
+    /// continues. At 20 ms — **1.2 vsync intervals** — the paint completed
+    /// sometimes and not others, which was measured live: in step at frames 3
+    /// and 12, one frame behind at frame 11.
+    ///
+    /// **An intermittent lag is worse than a constant one**, because a tour
+    /// cannot describe it and a learner reads it as their own mistake. So this
+    /// asserts a *margin*, not equality: pinning `== 150ms` would pass for a
+    /// value that had drifted back under the vsync interval by a different route.
+    #[test]
+    fn a_stepped_session_clears_a_vsync_interval_with_margin() {
+        let stepped = super::live_frame_delay(true);
+        assert!(
+            stepped >= VSYNC_60HZ * 4,
+            "a stepped frame delay of {stepped:?} leaves egui too little room to \
+             finish a paint before the anchor freezes the UI thread; it must clear \
+             several 60 Hz vsync intervals ({VSYNC_60HZ:?} each)"
+        );
+    }
+
+    /// **A free-running session must NOT pay the stepped delay**, which is the
+    /// whole reason the delay is two-tier instead of simply larger.
+    ///
+    /// Nothing stops when no breakpoint is armed, so the sleep is pure
+    /// wall-clock. At `STEPPED_FRAME_DELAY` a thousand-frame `Drivetrain` trace
+    /// would sleep for two and a half minutes with nobody watching any
+    /// individual frame.
+    #[test]
+    fn a_free_running_session_keeps_the_short_delay() {
+        let free = super::live_frame_delay(false);
+        let stepped = super::live_frame_delay(true);
+        assert!(
+            free < stepped,
+            "an unstepped session must not pay the stepping delay: {free:?} vs {stepped:?}"
+        );
+        assert_eq!(
+            free,
+            super::FREE_RUN_FRAME_DELAY,
+            "the unarmed branch must return the free-run delay"
+        );
+    }
 }
 
 #[cfg(test)]

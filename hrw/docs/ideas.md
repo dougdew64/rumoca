@@ -4557,6 +4557,103 @@ being made, with a question to ask, instead of at a reading list.
 **This is the template for every algorithm tour's third leg** (Tarjan, index reduction, solve
 lowering), so the shape is worth getting right once here rather than five times later.
 
+### ✅ WALKED 2026-08-08 — both unknowns settled, and one claim above is wrong
+
+Doug stepped `ProportionalLoop` through `augment_traced` with the anchor plus a breakpoint at
+`matching.rs:189`, reading `debug-state.json` at every stop. **Twelve of twelve predictions about
+the next stop held**, which is the evidence that the model Act 5 will be written from is sound.
+
+**Unknown 1 — do two breakpoints interleave cleanly? Neither answer above.** It is **not** a
+two-stop rhythm, because the anchor fires for *every* frame while `189` fires only after
+`Explore`. The real shape is: one startup gate, then one anchor stop per emitted frame, with a
+`189` stop interleaved at each exploration. **It is legible only if each stop can be named**, and
+the material for naming turned out not to be at the breakpoint at all:
+
+| stop | how you know which it is |
+|---|---|
+| startup gate | `frame_index == usize::MAX`, `wait_for_debugger` on the stack |
+| `TryEquation` | caller is `matching.rs:114` — **no `augment_traced` frame at all** |
+| `Explore` | caller is `augment_traced:181` |
+| `FoundFree` | caller is `augment_traced:191` |
+| `TryDisplace` | caller is `augment_traced:202` |
+| `DisplaceOk` / `DisplaceFail` | caller is `augment_traced:213` |
+| `Assign` | caller is `augment_traced:233` |
+
+**The discriminator is the CALLER's line number**, which exists only at runtime — no amount of
+reading `live_trace.rs` would have produced this table, because at the anchor every stop looks
+identical. `DisplaceFail` and `EquationFailed` are **not** in this list as observations:
+`ProportionalLoop` succeeds, so they need `CapacitorLoop`. <!-- unverified -->
+
+**Unknown 2 — does the screen stay legible? Usually, but NOT reliably.** Read three times: in step
+at `frame_index` 3 and 12, **one frame behind** at 11. The arithmetic explains it — `frame_delay`
+is **20 ms** and a 60 Hz vsync interval is **16.7 ms**, so egui gets barely one frame period to
+wake, drain the channel and complete a paint, starting from wherever it was in its own cycle.
+**And the lag cannot recover while stopped**, because `cppvsdbg` freezes the UI thread too.
+
+> **The first read was in step and was over-generalised into "Act 5 can promise
+> synchronization."** One confirming observation is not a guarantee, and the correction cost
+> nothing only because Doug read the screen a third time. **A tour that promised lockstep would
+> have taught something false on roughly every third stop.**
+
+**Fixed by the two-tier delay** (see `DECISIONS.md`, 2026-08-08): a stepped session gets a delay
+comfortably longer than a vsync interval; a free-running one keeps 20 ms, because raising it
+globally would make a thousand-frame `Drivetrain` trace sleep for minutes.
+
+### The correction: "N nested frames is an N-edge alternating path" is WRONG
+
+Observed at depth 2 — `augment_traced:181` over `augment_traced:210` — the path is
+**eq1 → var0 → eq0 → var2**: two frames, **three** edges. The right statement:
+
+- **N frames = N equation-nodes** on the path
+- **N unmatched edges**, one per frame reaching for a variable
+- **N − 1 matched edges**, one per displaced holder
+- **2N − 1 edges total**
+
+`maximum_bipartite_matching.md` already had this right (its
+$e_0 - v_0 - e_1 - \dots - v_k$ form); only this entry was wrong. **The alternation is the
+content**, and "N-edge" hides it — which matters directly for `#67`'s linear-algebra semester.
+
+### Two instrument limits, both hit for real rather than anticipated
+
+- **An anchor stop exposes only `frame_index`.** The innermost scope is `live_trace_breakpoint`,
+  whose sole local it is; the algorithm's state is four frames up and the tracker fetches one
+  scope. So **`173` tells you *which step*, `189` tells you *what the algorithm knows*** — the two
+  breakpoints are not interchangeable and Act 5 must say so.
+- **`Option` payloads are invisible.** `match_var[0]` renders as `Some` with no holder, because
+  `#72` expands one level and the payload is one deeper. On a 3×3 the holder is deducible from
+  history; **on `Drivetrain` it would not be.** This is the concrete question `#72`'s "do not
+  deepen speculatively" was waiting for.
+
+**And the frame numbers disagree by one, permanently:** `frame_index` is 0-based (`push` uses
+`fetch_add`, returning the pre-increment value) while the UI prints `cursor + 1`
+(`lib.rs:230`). **`frame_index + 1` is the number on screen**, and a tour that quotes one while
+the learner reads the other is a defect the learner will blame on themselves.
+
+### The ledger, `ProportionalLoop`, every row read from a live stack
+
+| idx | step | emit line | depth |
+|---|---|---|---|
+| 0 | `TryEquation(0)` | 114 | 0 |
+| 1 | `Explore {0, 0}` | 181 | 1 |
+| 2 | `FoundFree {0, 0}` | 191 | 1 |
+| 3 | `Assign {0, 0}` | 233 | 1 |
+| 4 | `TryEquation(1)` | 114 | 0 |
+| 5 | `Explore {1, 0}` | 181 | 1 |
+| 6 | `TryDisplace {1, 0, 0}` | 202 | 1 |
+| 7 | `Explore {0, 2}` | 181 | **2** |
+| 8 | `FoundFree {0, 2}` | 191 | **2** |
+| 9 | `Assign {0, 2}` | 233 | **2** |
+| 10 | `DisplaceOk {1, 0}` | 213 | 1 |
+| 11 | `Assign {1, 0}` | 233 | 1 |
+
+**Frames 5-11 are one augmenting path**, first reach to final commit. **The depth column is what
+`matching.md` has never had** — without it the twelve rows are a list of steps; with it they have
+a shape: two flat greedy assignments, a descent, a discovery, and an unwind committing two edges
+on the way back. `frameCount` moves 19 → 20 → 19 across rows 6-10 and is the cheapest way to see
+it.
+
+**Act 5 should be built on the depth column and the naming table, not on the value readouts.**
+
 ---
 
 ## 74. Only the FIRST Debug press worked — cppvsdbg will not re-bind a removed line

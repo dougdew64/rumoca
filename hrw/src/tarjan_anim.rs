@@ -206,6 +206,7 @@ impl TarjanAnimation {
     /// (`docs/ideas.md` #74).
     pub fn start_live(
         mat: &IncidenceMatrix,
+        frame_delay: std::time::Duration,
         on_complete: impl FnOnce() + Send + 'static,
     ) -> Option<Self> {
         let n_eq = mat.n_eq();
@@ -223,7 +224,7 @@ impl TarjanAnimation {
         let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
 
         let (lt, rx) = LiveTrace::new();
-        let lt = lt.with_frame_delay(std::time::Duration::from_millis(20));
+        let lt = lt.with_frame_delay(frame_delay);
         let done = Arc::new(AtomicBool::new(false));
         let done_for_thread = Arc::clone(&done);
         let adj_for_thread = adj.clone();
@@ -777,7 +778,8 @@ mod tests {
     #[test]
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim = TarjanAnimation::start_live(&mat, || {}).unwrap();
+        let mut anim =
+            TarjanAnimation::start_live(&mat, crate::live_frame_delay(false), || {}).unwrap();
         for _ in 0..100 {
             if anim.live_state(false) == crate::LiveState::Finished {
                 break;

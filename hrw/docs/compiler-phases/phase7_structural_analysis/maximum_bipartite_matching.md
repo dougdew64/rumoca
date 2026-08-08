@@ -393,6 +393,66 @@ two displacements, one new pairing, matching grew by one.
 
 ---
 
+## Observed Under the Debugger
+
+*Measured 2026-08-08 by stepping `ProportionalLoop` live in `cppvsdbg`, reading
+`.hrw-bridge/debug-state.json` at every stop (`docs/ideas.md` #73).* Everything above this section
+is derived from reading the source; everything in it was read off a running stack.
+
+**This is the traced twin, `augment_traced`**, not the `augment` shown above — same algorithm with
+`emit_matching_frame` calls interleaved. The emit sites are what make a live session legible,
+because at the breakpoint anchor every stop looks identical:
+
+| `MatchingStep` | emitted from |
+|---|---|
+| `TryEquation` | `maximum_matching_with_trace:114` — **outside `augment_traced` entirely** |
+| `Explore` | `augment_traced:181` |
+| `FoundFree` | `augment_traced:191` |
+| `TryDisplace` | `augment_traced:202` |
+| `DisplaceOk` / `DisplaceFail` | `augment_traced:213` |
+| `Assign` | `augment_traced:233` |
+
+**Recursion depth is directly readable as the number of `augment_traced` frames**, and the line
+number of each *non-innermost* one is always **210** — the recursive call site. So an outer frame
+parked at 210 is an equation that has been asked to move and has not yet answered.
+
+### The claim "the call stack is the augmenting path" is exact, with a caveat on counting
+
+Observed at depth 2: `augment_traced:181` (equation 0, probing unknown 2) over
+`augment_traced:210` (equation 1, waiting) over `maximum_matching_with_trace:123`. The path is
+
+$$ eq_1 - v_0 - eq_0 - v_2 $$
+
+**Two frames, three edges.** In general **N frames = N equation-nodes, N unmatched edges,
+N − 1 matched edges, 2N − 1 edges total** — matching the $e_0 - v_0 - e_1 - \dots - v_k$ form
+above. Counting frames as edges is the easy error and it erases the alternation, which is the
+content.
+
+### `visited` is shared down the recursion, and that is visible
+
+At the depth-2 stop, `visited = [true, false, true]` in equation 0's frame — **unknown 0 was
+marked `true` by equation 1**, before it recursed (line 180 runs before line 210). So equation 0
+re-runs its own search over the *same* candidate list `[0, 2]` it used the first time, skips
+unknown 0 at line 177, and takes a different branch purely because the context changed. Without
+that shared mark, equation 0 would reclaim unknown 0 from equation 1 and the two would displace
+each other forever.
+
+**That is the difference between a path and a cycle, and it is three booleans.**
+
+### One `Assign` per return, which is the toggle happening
+
+Rows 9 and 11 of the observed run are both `Assign`, at depths 2 and 1, with `DisplaceOk` between
+them. The inner frame commits `eq0 → v2` and returns `true`; the outer frame then commits
+`eq1 → v0`. **Nothing walks a stored path** — confirming the claim above from a live stack rather
+than from reading.
+
+There is a moment mid-unwind when the two arrays genuinely disagree: after the inner `Assign`,
+`match_eq[0]` is `Some(2)` while `match_var[0]` still says equation 0 owns unknown 0, until the
+outer frame overwrites it. Consumers must not read the pair as consistent mid-recursion. *(Derived
+from lines 231-232, not observed — an anchor stop exposes only `frame_index`.)*
+
+---
+
 ## Determining Structural Singularity
 
 After `maximum_matching` returns, the caller in `lib.rs` counts how many

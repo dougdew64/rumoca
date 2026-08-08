@@ -3605,7 +3605,11 @@ impl App {
         if matches!(action, LiveDebugAction::SpawnLive)
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
-            let live = matching_anim::MatchingAnimation::start_live(mat, || {
+            // The delay is chosen from whether a breakpoint was actually acked:
+            // a stepped session needs egui to finish painting inside the sleep,
+            // a free-running one must not crawl. See `crate::live_frame_delay`.
+            let delay = crate::live_frame_delay(self.live_breakpoint_armed);
+            let live = matching_anim::MatchingAnimation::start_live(mat, delay, || {
                 // The session ending is not a reason to release the anchor on
                 // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
                 if RELEASE_ANCHOR_AT_SESSION_END {
@@ -3695,7 +3699,8 @@ impl App {
         if matches!(action, LiveDebugAction::SpawnLive)
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
-            let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
+            let delay = crate::live_frame_delay(self.live_breakpoint_armed);
+            let live = tarjan_anim::TarjanAnimation::start_live(mat, delay, || {
                 // The session ending is not a reason to release the anchor on
                 // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
                 if RELEASE_ANCHOR_AT_SESSION_END {
@@ -3787,7 +3792,8 @@ impl App {
         if matches!(action, LiveDebugAction::SpawnLive)
             && let Some(dae) = &self.cached_dae
         {
-            let live = reduction_anim::ReductionAnimation::start_live(dae.clone(), || {
+            let delay = crate::live_frame_delay(self.live_breakpoint_armed);
+            let live = reduction_anim::ReductionAnimation::start_live(dae.clone(), delay, || {
                 // The session ending is not a reason to release the anchor on
                 // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
                 if RELEASE_ANCHOR_AT_SESSION_END {
@@ -3856,7 +3862,8 @@ impl App {
         if matches!(action, LiveDebugAction::SpawnLive)
             && let Some(dae) = self.tearing_dae()
         {
-            let live = tearing_anim::TearingAnimation::start_live(dae, || {
+            let delay = crate::live_frame_delay(self.live_breakpoint_armed);
+            let live = tearing_anim::TearingAnimation::start_live(dae, delay, || {
                 // The session ending is not a reason to release the anchor on
                 // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
                 if RELEASE_ANCHOR_AT_SESSION_END {
@@ -4048,7 +4055,8 @@ impl App {
         if matches!(action, LiveDebugAction::SpawnLive)
             && let Some(flat) = &self.cached_flat
         {
-            let live = pre_lowering_anim::PreLoweringAnimation::start_live(flat.clone(), || {
+            let delay = crate::live_frame_delay(self.live_breakpoint_armed);
+            let live = pre_lowering_anim::PreLoweringAnimation::start_live(flat.clone(), delay, || {
                 // The session ending is not a reason to release the anchor on
                 // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
                 if RELEASE_ANCHOR_AT_SESSION_END {

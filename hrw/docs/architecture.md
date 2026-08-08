@@ -552,8 +552,18 @@ All three support two animation modes:
    separate algorithm thread runs. Clicking the "Debug" button automatically
    arms a breakpoint on `live_trace_breakpoint` via the HRW Debugger Bridge
    extension, then spawns the algorithm thread — no manual breakpoint setup
-   needed. After each frame push, a 20ms delay lets the UI render, then the
+   needed. After each frame push, a delay lets the UI render, then the
    breakpoint fires. The user steps through the algorithm with Continue (F5).
+
+   **That delay is two-tier** (`crate::live_frame_delay`, 2026-08-08):
+   **150 ms when a breakpoint is armed**, 20 ms when none is. The sleep is the
+   only window in which egui can draw the frame just sent — after it,
+   `cppvsdbg` freezes every thread including the UI's — and 20 ms is barely one
+   60 Hz vsync interval, so the paint completed only sometimes. Measured
+   stepping `ProportionalLoop`: in step at frames 3 and 12, **one frame behind
+   at frame 11** (`docs/ideas.md` #73). The short delay is kept for unstepped
+   runs because nothing pauses there, so it is pure wall-clock: 150 ms would
+   make a thousand-frame `Drivetrain` trace sleep for two and a half minutes.
 
    All animation controls sit on **one row**, built by `animation_controls`:
 
@@ -674,11 +684,13 @@ The traced algorithms (`maximum_matching_with_trace`, `tarjan_scc_with_trace`,
 `index_reduce_missing_state_derivatives_with_trace`) accept an optional
 `&LiveTrace<Frame>` — when present, each frame is pushed to both the local vec
 (returned in the result) and the channel (drained by the UI).
-Live mode uses `LiveTrace::new()` + `.with_frame_delay(20ms)`, which adds a
-sleep after each push (so the UI thread can render before the debugger pauses
-all threads) and calls `live_trace_breakpoint` — a dedicated `#[inline(never)]`
-function that the debugger resolves unambiguously. This is the upstreamable
-observability API.
+Live mode uses `LiveTrace::new()` + `.with_frame_delay(crate::live_frame_delay(armed))`,
+which adds a sleep after each push (so the UI thread can render before the
+debugger pauses all threads) and calls `live_trace_breakpoint` — a dedicated
+`#[inline(never)]` function that the debugger resolves unambiguously. This is
+the upstreamable observability API. The delay is passed in by `app.rs` rather
+than chosen by the animation, because only the app knows whether the breakpoint
+handshake was *acked* — and `#71`'s rule is that a timeout is not an ack.
 
 ### Live trace debugging on Windows
 

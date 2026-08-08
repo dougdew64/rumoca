@@ -2431,3 +2431,35 @@ not arm, so it isolates the remove/re-add cycle from the line, the anchor and th
 now branches on `cfg!(windows)` — the platform, not the value under test — and was verified
 must-fire by breaking the gate. **A test that reads the value under test cannot fail**, and only
 running the break reveals it. See `docs/ideas.md` #74.
+
+## 2026-08-08 — the live-trace frame delay is two-tier, chosen by the app
+
+`crate::live_frame_delay(breakpoint_armed)` returns **150 ms** when a breakpoint was acked and
+**20 ms** when none was. `app.rs` picks it and passes it into all five `start_live` functions,
+which previously hard-coded 20 ms.
+
+**The sleep in `LiveTrace::push` is the only window in which egui can draw the frame just sent.**
+After it, `live_trace_breakpoint` is reached and `cppvsdbg` freezes every thread including the
+UI's — so whatever is on screen at that instant stays there for as long as the user is stopped,
+and the lag cannot recover by waiting. A 60 Hz vsync interval is 16.7 ms, so a 20 ms budget gave
+egui about **1.2 frame periods** to wake, drain the channel and complete a paint, starting from
+wherever it was in its own cycle.
+
+**Measured, not theorised** (`docs/ideas.md` #73): stepping `ProportionalLoop`, the screen was in
+step at `frame_index` 3 and 12 and **one frame behind at 11**. An intermittent lag is worse than a
+constant one — a tour cannot describe it, and the learner reads it as their own mistake. The first
+reading was in step and had already been generalised into "Act 5 can promise synchronization";
+only a third reading caught it.
+
+**Two tiers rather than one larger number**, because the delay also applies when no breakpoint is
+armed, and there nothing pauses: the sleep is pure wall-clock. At 150 ms a thousand-frame
+`Drivetrain` trace would sleep for two and a half minutes with nobody watching any single frame.
+
+**The app chooses, not the animation.** Only `app.rs` knows whether the handshake was *acked*, and
+`#71`'s rule is that a timeout is not an ack — a session that believed it was being stepped when it
+was not would pay 150 ms per frame for nothing.
+
+**The test asserts a margin, not the number.** `a_stepped_session_clears_a_vsync_interval_with_margin`
+requires at least four vsync intervals, because pinning `== 150ms` would pass for a value that had
+drifted back under the interval by some other route. Both tests were verified must-fire by setting
+the stepped delay back to 20 ms and watching them fail.
