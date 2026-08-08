@@ -2400,3 +2400,34 @@ said *eventually*.
   parsing**, sending the next session after a defect that does not exist. Guarded by
   `doc_citations::the_working_tree_is_checked_out_with_lf_endings`, which checks the attributes
   file still exists and then names the real cause.
+
+## 2026-08-08 — the live-trace anchor stays armed between runs on Windows
+
+`app::RELEASE_ANCHOR_AT_SESSION_END` is `cfg!(not(windows))`, gating the five `on_complete`
+closures and the safety net in `live_debug_poll`. **Only the first Debug press of a debug session
+worked before this**; every later one armed `live_trace.rs:173`, VS Code drew it hollow, and the
+algorithm ran to completion without stopping — silently, with the animation reaching "Live (done)"
+exactly as a successful run does.
+
+**The cause is a platform fact worth keeping: `cppvsdbg` will not re-bind a breakpoint at a
+location the extension removed earlier in the same debug session.** The teardown that created that
+situation exists only as an LLDB SIGSTOP/SIGCHLD workaround, and Windows has no SIGSTOP.
+
+**Gated rather than deleted**, because the LLDB rationale is real where LLDB runs, and one constant
+with the measurement written above it is cheaper to re-decide than a deletion is to reconstruct.
+**Three releases stay ungated** — a `start_live` that failed to spawn, a specimen change, and app
+exit — because each ends the breakpoint's *reason to exist* rather than merely pausing it. Leaving
+it armed between runs costs nothing: `live_trace_breakpoint` is unreachable outside a live session.
+
+**The diagnosis is worth more than the fix.** Three confident explanations were eliminated by
+evidence, not reasoning — `isDuplicate` (killed by the output channel), the safety net firing during
+`wait_for_debugger` (killed by reading `live_state`), and the new `#72` tracker poisoning the adapter
+(killed by a control: a hand-set breakpoint at the same line bound and hit on every press). **The
+control was free and decisive**, because `handleRemove` never touches a breakpoint the extension did
+not arm, so it isolates the remove/re-add cycle from the line, the anchor and the session.
+
+**And the regression test was vacuous on the first attempt.** It branched on
+`RELEASE_ANCHOR_AT_SESSION_END`, so forcing the gate to `true` took the other branch and passed. It
+now branches on `cfg!(windows)` — the platform, not the value under test — and was verified
+must-fire by breaking the gate. **A test that reads the value under test cannot fail**, and only
+running the break reveals it. See `docs/ideas.md` #74.

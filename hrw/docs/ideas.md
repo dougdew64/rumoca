@@ -4557,3 +4557,70 @@ being made, with a question to ask, instead of at a reading list.
 **This is the template for every algorithm tour's third leg** (Tarjan, index reduction, solve
 lowering), so the shape is worth getting right once here rather than five times later.
 
+---
+
+## 74. Only the FIRST Debug press worked — cppvsdbg will not re-bind a removed line
+
+**Doug, 2026-08-08**, walking `matching.md` in preparation for `#73`: *"the first time that I hit
+the 'Debug' button, the breakpoint is correctly set and execution stops… when I then hit the
+'Debug' button a second time, the breakpoint is again set, but only briefly. In fact, it only
+shows an empty circle instead of a red circle."*
+
+### ✅ FIXED 2026-08-08 — the teardown was an LLDB workaround, and Windows has no SIGSTOP
+
+**The finding, and it is an operating fact worth keeping: `cppvsdbg` will not re-bind a
+breakpoint at a location the extension REMOVED earlier in the same debug session.** VS Code
+accepts the new breakpoint, lists it, and draws it **hollow** — unverified. Nothing errors. The
+algorithm runs to completion and the animation reaches "Live (done)" looking like a successful
+run that simply had nothing to stop at.
+
+**Why HRW was removing it at all:** when a live session ends, the algorithm thread's
+`on_complete` released the anchor, with a UI-side safety net behind it. Every rationale in the
+repository is Unix-only — *"preventing a SIGSTOP signal when the algorithm thread exits"*
+(`bridge.rs`), *"preventing SIGSTOP from LLDB"* (five `*_anim.rs` files), *"prevents LLDB from
+delivering SIGSTOP/SIGCHLD"* (`architecture.md`). **Windows has no SIGSTOP and `cppvsdbg` is not
+LLDB**, so the teardown bought nothing here and cost the entire feature after its first use.
+
+**The fix is `RELEASE_ANCHOR_AT_SESSION_END` in `app.rs`** — `cfg!(not(windows))`, gating the
+five `on_complete` closures and the safety net. **Three releases are deliberately NOT gated**,
+because each ends the *reason* the breakpoint existed rather than merely pausing it: a session
+that failed to spawn, a specimen change, and app exit. Leaving it armed between runs is safe:
+`live_trace_breakpoint` is unreachable outside a live session, since its only callers are
+`wait_for_debugger` and `push`, and `push` reaches it only with a `frame_delay` set — which only
+`start_live` does. **An ordinary compile never touches it.**
+
+### How it was found, because three confident wrong answers came first
+
+**Every one of them was eliminated by evidence rather than by reasoning**, and the order matters:
+
+1. **`isDuplicate` skipping the arm** — the change from `armedBreakpoints` to all of
+   `vscode.debug.breakpoints` (`1585432d`) had *just* gone live on this machine. Killed by the
+   output channel: it said `Armed:`, never `Already armed: … skipped`.
+2. **HRW tearing it down during the 500 ms `wait_for_debugger` sleep** — killed by reading
+   `live_state`, which reports `Running` for the whole sleep, so the safety net cannot fire.
+3. **The new `#72` tracker poisoning the adapter** — 27 `customRequest` round-trips across nine
+   stops, and press 1 was the only arm that preceded any stop. **Killed by the control**: a
+   hand-set breakpoint at the same line bound and hit on every press.
+
+**The control is what turned a hypothesis into a diagnosis**, and it was free. A hand-set
+breakpoint is never removed by the extension (`handleRemove` only touches what it armed), so it
+isolates the remove/re-add cycle from the line, the anchor, the adapter and the session.
+
+### The trap this left behind, caught only by trying to break the test
+
+**The first version of the regression test asserted whatever the constant already said.** It
+branched on `RELEASE_ANCHOR_AT_SESSION_END`, so forcing the gate to `true` took the *other*
+branch and **passed**. It was rewritten to branch on `cfg!(windows)` — the platform, not the
+value under test — and then verified must-fire by breaking the gate and watching it fail.
+
+**A test that reads the value under test cannot fail**, and it is indistinguishable from a
+passing one. Same shape as the deleted scroll-configuration tests and as a provenance tag that
+resolves nothing. **The only thing that caught it was running the break.**
+
+### Still open, and separate
+
+**The ack means "I read your request", not "a breakpoint exists".** The extension writes
+`breakpoint-ack.json` unconditionally, including when `handleAdd` skipped every entry as a
+duplicate — and HRW does `live_breakpoint_armed = acked`. That is `#71`'s fiction one layer
+down. It is not what caused this bug, and it is logged in `tech-debt.md`.
+

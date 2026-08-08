@@ -43,9 +43,15 @@ and deletes the file. Breakpoints **accumulate** across requests for the same sp
 The status bar shows the total count; clicking it clears all armed breakpoints manually.
 
 To **remove** a breakpoint, set `"action": "remove"` — the extension matches by file path and line,
-removes the breakpoint from VS Code, and updates the status bar. HRW uses this automatically when
-a live debug session finishes (all algorithm frames pushed) to prevent a SIGSTOP signal from the
+removes the breakpoint from VS Code, and updates the status bar. HRW used this automatically when a
+live debug session finished (all algorithm frames pushed), to prevent a SIGSTOP signal from the
 debugger hitting a breakpoint on an exiting thread.
+
+**That session-end removal no longer runs on Windows** (`app::RELEASE_ANCHOR_AT_SESSION_END`).
+Windows has no SIGSTOP, and **`cppvsdbg` will not re-bind a breakpoint at a location the extension
+removed earlier in the same debug session** — so the removal made every Debug press after the first
+arm a breakpoint that VS Code drew hollow and that never fired (`ideas.md` #74). HRW still sends
+`action: "remove"` when a session fails to spawn, when the specimen changes, and at app exit.
 
 **Ack handshake**: after processing any request (add or remove), the extension writes
 `.hrw-bridge/breakpoint-ack.json`. For live debug sessions, HRW polls for this file before spawning

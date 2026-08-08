@@ -197,10 +197,13 @@ impl TarjanAnimation {
     /// first (non-live) to build the dependency graph, then spawns a thread
     /// for Tarjan's SCC with a `LiveTrace` producer.
     ///
-    /// `on_complete` runs inside the algorithm thread after the last frame
-    /// but before the thread exits — the caller uses this to remove the
-    /// armed breakpoint via the bridge, preventing SIGSTOP from LLDB when
-    /// the thread terminates.
+    /// `on_complete` runs inside the algorithm thread after the last frame but
+    /// before the thread exits. It exists so the caller can remove the armed
+    /// breakpoint via the bridge, preventing SIGSTOP from LLDB when the thread
+    /// terminates — **and the caller now gates that removal on
+    /// `RELEASE_ANCHOR_AT_SESSION_END`**, because Windows has no SIGSTOP and
+    /// releasing the anchor there breaks the next Debug press
+    /// (`docs/ideas.md` #74).
     pub fn start_live(
         mat: &IncidenceMatrix,
         on_complete: impl FnOnce() + Send + 'static,

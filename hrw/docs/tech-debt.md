@@ -400,6 +400,23 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   deeper resolution would need to walk into library class IRs that are loaded on demand.
   *File:* `app.rs`.
 
+- [ ] **The bridge ack says "I read your request", and HRW reads it as "a breakpoint exists."**
+  *(Found 2026-08-08 while diagnosing `ideas.md` #74; **not** what caused that bug.)* The
+  extension writes `.hrw-bridge/breakpoint-ack.json` unconditionally at the end of
+  `handleRequest` — after an add that armed nothing because every entry was a duplicate, after a
+  remove that matched nothing, after any request at all. HRW then does
+  `self.live_breakpoint_armed = acked`.
+  **This is `#71`'s fiction one layer down**: that fix stopped a *timeout* passing for success,
+  and left an ack that carries no information about what happened passing for success. It reaches
+  Claude too — the context capture emits `breakpoint_armed`.
+  **It is live right now**, because the #74 fix makes the second Debug press hit
+  `Already armed: … — skipped`: a breakpoint does exist, so the claim is true by luck rather than
+  by evidence. **The shape of the fix** is for the ack to carry counts (`armed`, `skipped`,
+  `removed`) and for HRW to believe only a positive one. Needs a must-fire test on both sides;
+  the extension half belongs in `debug_state.ts`-style pure code, not in `extension.ts`, which
+  imports `vscode` and cannot be tested. *Files:* `vscode-extension/src/extension.ts`,
+  `src/app.rs`, `src/bridge.rs`.
+
 - [x] **HRW never clears its live-trace breakpoint on shutdown.** *(Doug, 2026-08-07;
   **FIXED 2026-08-08**.)* `eframe::App::on_exit` now calls
   `App::release_live_breakpoint_at_exit`, guarded by

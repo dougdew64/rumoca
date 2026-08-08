@@ -98,6 +98,37 @@ pub(crate) const SCRATCH_POLL_INTERVAL: std::time::Duration =
 /// Named and shared with the pre-warm so the two waits cannot drift apart.
 const LIVE_DEBUG_ACK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
 
+/// Whether the *end of a live session* releases the anchor breakpoint.
+///
+/// **The teardown is an LLDB workaround, and on Windows it breaks the feature
+/// it was meant to protect.** Its only stated purpose is to stop LLDB
+/// delivering SIGSTOP/SIGCHLD when the algorithm thread terminates with a
+/// breakpoint still armed — see [`bridge::remove_live_trace_breakpoint`].
+/// Windows has no SIGSTOP and `cppvsdbg` is not LLDB, so it buys nothing here.
+///
+/// **What it costs was measured on 2026-08-08** (`docs/ideas.md` #74).
+/// `cppvsdbg` will not re-bind a breakpoint at a location the extension has
+/// **removed earlier in the same debug session**. Observed on `BouncingBall`:
+/// the first Debug press armed `live_trace.rs:173` and stopped nine times; the
+/// session-end teardown removed it; the second press re-armed the same line,
+/// VS Code drew it hollow (unverified), and the algorithm ran to completion
+/// without stopping. A *hand-set* breakpoint at the same line worked on every
+/// press — which is the control that rules out the line, the anchor and the
+/// adapter, and leaves the remove/re-add cycle.
+///
+/// **Leaving it armed between runs is safe**, which is what makes this the fix
+/// rather than a trade. `live_trace_breakpoint` is unreachable outside a live
+/// session: its only callers are `LiveTrace::wait_for_debugger` and
+/// `LiveTrace::push`, and `push` calls it only when a `frame_delay` is set —
+/// which only the animations' `start_live` paths do. An ordinary compile never
+/// reaches it, so a resident breakpoint costs an idle HRW nothing.
+///
+/// **Three releases are deliberately NOT gated on this**, because each one ends
+/// the reason the breakpoint existed rather than merely pausing it: a session
+/// that failed to spawn (`start_live` returning `None`), a specimen change, and
+/// app exit ([`App::release_live_breakpoint_at_exit`]).
+const RELEASE_ANCHOR_AT_SESSION_END: bool = cfg!(not(windows));
+
 /// Default specimen directory: `specimens/` next to this crate's manifest.
 pub(crate) const DEFAULT_SPECIMEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
 
@@ -1129,10 +1160,17 @@ pub struct App {
     // the request time for the timeout; the enum says which algorithm to spawn.
     pending_live_debug: Option<(std::time::Instant, PendingLiveDebug)>,
     // True while a `live_trace_breakpoint` is armed by the Debug button.
-    // Cleared in two places: (1) the algorithm thread's `on_complete` callback
-    // removes the breakpoint via the bridge *before* the thread exits (the
-    // primary path — prevents SIGSTOP/SIGCHLD from LLDB on thread termination);
-    // (2) the UI's `live_just_finished` check acts as a safety-net fallback.
+    //
+    // **On Windows it stays true across runs**, which is the point: the two
+    // session-end clears — the algorithm thread's `on_complete` callback and
+    // the UI safety net in `live_debug_poll` — are gated on
+    // `RELEASE_ANCHOR_AT_SESSION_END`. Off Windows they still run, releasing
+    // the breakpoint before the thread exits so LLDB delivers no
+    // SIGSTOP/SIGCHLD on thread termination.
+    //
+    // What clears it on every platform is the set of events that end the
+    // breakpoint's reason to exist: a `start_live` that failed to spawn, a
+    // specimen change, and app exit. See `docs/ideas.md` #74.
     live_breakpoint_armed: bool,
 
     // ---- 16. Breakpoint pre-warm ----
@@ -1449,7 +1487,11 @@ impl App {
     ) -> LiveDebugAction {
         // Safety net: an armed breakpoint with no live session in flight has
         // nothing left to stop for, so release it.
-        if self.live_breakpoint_armed && !live.is_busy() {
+        //
+        // Gated, because "nothing left to stop for" is only true until the next
+        // Debug press — and on Windows the release is what stops that press
+        // working at all. See [`RELEASE_ANCHOR_AT_SESSION_END`].
+        if RELEASE_ANCHOR_AT_SESSION_END && self.live_breakpoint_armed && !live.is_busy() {
             let _ = bridge::remove_live_trace_breakpoint();
             self.live_breakpoint_armed = false;
         }
@@ -3564,7 +3606,11 @@ impl App {
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
             let live = matching_anim::MatchingAnimation::start_live(mat, || {
-                let _ = bridge::remove_live_trace_breakpoint();
+                // The session ending is not a reason to release the anchor on
+                // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
+                if RELEASE_ANCHOR_AT_SESSION_END {
+                    let _ = bridge::remove_live_trace_breakpoint();
+                }
             });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
@@ -3650,7 +3696,11 @@ impl App {
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
             let live = tarjan_anim::TarjanAnimation::start_live(mat, || {
-                let _ = bridge::remove_live_trace_breakpoint();
+                // The session ending is not a reason to release the anchor on
+                // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
+                if RELEASE_ANCHOR_AT_SESSION_END {
+                    let _ = bridge::remove_live_trace_breakpoint();
+                }
             });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
@@ -3738,7 +3788,11 @@ impl App {
             && let Some(dae) = &self.cached_dae
         {
             let live = reduction_anim::ReductionAnimation::start_live(dae.clone(), || {
-                let _ = bridge::remove_live_trace_breakpoint();
+                // The session ending is not a reason to release the anchor on
+                // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
+                if RELEASE_ANCHOR_AT_SESSION_END {
+                    let _ = bridge::remove_live_trace_breakpoint();
+                }
             });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
@@ -3803,7 +3857,11 @@ impl App {
             && let Some(dae) = self.tearing_dae()
         {
             let live = tearing_anim::TearingAnimation::start_live(dae, || {
-                let _ = bridge::remove_live_trace_breakpoint();
+                // The session ending is not a reason to release the anchor on
+                // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
+                if RELEASE_ANCHOR_AT_SESSION_END {
+                    let _ = bridge::remove_live_trace_breakpoint();
+                }
             });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
@@ -3991,7 +4049,11 @@ impl App {
             && let Some(flat) = &self.cached_flat
         {
             let live = pre_lowering_anim::PreLoweringAnimation::start_live(flat.clone(), || {
-                let _ = bridge::remove_live_trace_breakpoint();
+                // The session ending is not a reason to release the anchor on
+                // Windows — see `RELEASE_ANCHOR_AT_SESSION_END`.
+                if RELEASE_ANCHOR_AT_SESSION_END {
+                    let _ = bridge::remove_live_trace_breakpoint();
+                }
             });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
@@ -9202,6 +9264,71 @@ mod tests {
                 .contains("live_trace"),
             "the request must name the live-trace anchor: {text}"
         );
+
+        let _ = std::fs::remove_file(request);
+    }
+
+    /// **A finished live session must not release the anchor on Windows**
+    /// (`docs/ideas.md` #74).
+    ///
+    /// The safety net in [`App::live_debug_poll`] used to fire the moment a
+    /// session stopped being busy, on every platform. That release is an LLDB
+    /// SIGSTOP workaround, and on Windows it silently destroyed the feature:
+    /// **`cppvsdbg` will not re-bind a breakpoint at a location the extension
+    /// removed earlier in the same debug session.** The second Debug press
+    /// armed `live_trace.rs:173`, VS Code drew it hollow, and the algorithm ran
+    /// to completion without stopping — no error anywhere.
+    ///
+    /// **The absence of a request is the whole assertion**, which is exactly
+    /// the shape the must-fire rule exists for: nothing observable fails when
+    /// this regresses, so the test has to look for the silence directly.
+    ///
+    /// **It branches on `cfg!(windows)`, NOT on `RELEASE_ANCHOR_AT_SESSION_END`
+    /// — and the difference is the whole test.** The first draft used the
+    /// constant, which made it assert whatever the constant already said:
+    /// forcing the gate to `true` on this machine took the *other* branch and
+    /// **passed**. A test that reads the value under test cannot fail. Verified
+    /// must-fire on 2026-08-08 by setting the gate to `true` and watching this
+    /// fail, which is the check the first version silently skipped.
+    #[test]
+    fn a_finished_live_session_keeps_the_anchor_armed_on_windows() {
+        let (mut app, _tx) = App::test_with_sender();
+        let request = std::path::Path::new(bridge::BREAKPOINT_REQUEST_FILE);
+        let ctx = egui::Context::default();
+
+        let _ = std::fs::remove_file(request);
+        app.live_breakpoint_armed = true;
+        // No handshake in flight: this exercises the safety net alone.
+        app.pending_live_debug = None;
+
+        // `Finished` is the state the safety net keys on — `is_busy()` is false
+        // for it, and it is what a completed animation reports.
+        let action =
+            app.live_debug_poll(&ctx, crate::LiveState::Finished, PendingLiveDebug::Matching);
+        assert!(
+            matches!(action, LiveDebugAction::None),
+            "a finished session with no pending handshake spawns nothing"
+        );
+
+        if !cfg!(windows) {
+            assert!(
+                request.exists(),
+                "off Windows the LLDB teardown must still run"
+            );
+            assert!(!app.live_breakpoint_armed, "and the claim must drop with it");
+        } else {
+            assert!(
+                !request.exists(),
+                "the session ending must not release the anchor on Windows \u{2014} \
+                 cppvsdbg will not re-bind a location it has removed, so the next \
+                 Debug press would arm a breakpoint that never binds"
+            );
+            assert!(
+                app.live_breakpoint_armed,
+                "the breakpoint is still armed, and HRW must keep saying so \u{2014} \
+                 dropping the flag here would make the next exit skip its release"
+            );
+        }
 
         let _ = std::fs::remove_file(request);
     }
