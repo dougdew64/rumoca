@@ -409,8 +409,9 @@ because at the breakpoint anchor every stop looks identical:
 | `Explore` | `augment_traced:181` |
 | `FoundFree` | `augment_traced:191` |
 | `TryDisplace` | `augment_traced:202` |
-| `DisplaceOk` / `DisplaceFail` | `augment_traced:213` |
+| `DisplaceOk` / `DisplaceFail` | `augment_traced:213` — **one line for both**; it names the site, not the outcome |
 | `Assign` | `augment_traced:233` |
+| `EquationFailed` | `maximum_matching_with_trace:133` |
 
 **Recursion depth is directly readable as the number of `augment_traced` frames**, and the line
 number of each *non-innermost* one is always **210** — the recursive call site. So an outer frame
@@ -450,6 +451,60 @@ There is a moment mid-unwind when the two arrays genuinely disagree: after the i
 `match_eq[0]` is `Some(2)` while `match_var[0]` still says equation 0 owns unknown 0, until the
 outer frame overwrites it. Consumers must not read the pair as consistent mid-recursion. *(Derived
 from lines 231-232, not observed — an anchor stop exposes only `frame_index`.)*
+
+### The failure path, and two steps that emit nothing at all
+
+*Measured 2026-08-08 stepping `TwiceDefined` — two equations that both mention only `a`, so `b` is
+reachable from nothing. Nine frames; the whole run fits in one walk.*
+
+**Two real algorithm steps never reach the frame stream.** Both are `augment_traced` returning
+`false` from line 243 — the bare `false` after the `for` loop:
+
+- **The inner one** is the displaced equation refusing. Equation 0 is asked to move, its only
+  candidate is `a`, `visited[a]` is already `true`, so line 177 `continue`s and the loop ends
+  **without reaching a single `emit_matching_frame`**. Observed at depth 2, stack `243 → 210 → 123`.
+- **The outer one** is equation 1 exhausting its candidate list, at depth 1.
+
+So a trace of a failing search reads `TryDisplace` → `DisplaceFail` → `EquationFailed` with
+nothing between, while the algorithm made two decisions in the gaps. **Anything reasoning from the
+frame stream alone will under-report a failure**; only the call stack shows the refusal.
+
+**Their debugger signature is `var` and `iter` both reading unavailable.** Inside the loop both are
+live; after it, they are gone — which distinguishes *"returning from inside the loop"* from
+*"fell out of it"*.
+
+### Alternating versus augmenting, as two stacks
+
+The same depth-2 stack shape means opposite things, and the difference is the innermost line:
+
+| | `ProportionalLoop` (succeeds) | `TwiceDefined` (fails) |
+|---|---|---|
+| stack | `181 → 210 → 123` | `243 → 210 → 123` |
+| path | eq1 → a → eq0 → **free variable** | eq1 → a → eq0 → **dead end** |
+| | **augmenting** | merely **alternating** |
+| the unwind | commits one edge per frame | commits nothing |
+
+The theorem quoted above — *a matching is maximum iff no augmenting path exists* — is exactly this
+distinction. Alternating paths are easy to find; the terminal condition is the whole content.
+
+**And a failed search is side-effect-free on the matching.** `match_eq` and `match_var` are
+identical before and after equation 1's attempt. Only `visited` is mutated, and it is reset per
+equation at line 122 — which is why the outer loop never has to backtrack or repair.
+
+### Hall's condition, visible as an empty column
+
+`TwiceDefined`'s incidence has **2 entries in a 2×2, both in column `a`**. Column `b` is empty, so
+no permutation can place a nonzero on its diagonal position — the failure is not a search
+shortcoming but an impossibility.
+
+**Hall's marriage theorem** states it exactly: a perfect matching exists iff |N(S)| ≥ |S| for every
+set S of equations. Here S = {eq0, eq1} and N(S) = {a}, so 1 < 2. Such an S is a *Hall violator*,
+and it is what the compiler reports as the unmatched pair.
+
+**`b` is never visited by any frame** — `visited[1]` stays `false` for the entire run, because no
+equation mentions it. The unmatched *unknown* is diagnosed by absence at the end, never discovered
+by the search, which is why `unmatched_equations` and `unmatched_unknowns` are reported together
+rather than derived from the trace.
 
 ---
 

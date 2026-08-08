@@ -4581,8 +4581,15 @@ the material for naming turned out not to be at the breakpoint at all:
 
 **The discriminator is the CALLER's line number**, which exists only at runtime — no amount of
 reading `live_trace.rs` would have produced this table, because at the anchor every stop looks
-identical. `DisplaceFail` and `EquationFailed` are **not** in this list as observations:
-`ProportionalLoop` succeeds, so they need `CapacitorLoop`. <!-- unverified -->
+identical.
+
+**The failure rows were added by the `TwiceDefined` walk below**, and the table is now complete
+for the success *and* failure paths:
+
+| stop | how you know which it is |
+|---|---|
+| `DisplaceOk` / `DisplaceFail` | caller is `augment_traced:213` — **the same line for both**, so this row names the site, not the outcome; only `frames.last()` distinguishes them |
+| `EquationFailed` | caller is `maximum_matching_with_trace:133` |
 
 **Unknown 2 — does the screen stay legible? Usually, but NOT reliably.** Read three times: in step
 at `frame_index` 3 and 12, **one frame behind** at 11. The arithmetic explains it — `frame_delay`
@@ -4653,6 +4660,109 @@ on the way back. `frameCount` moves 19 → 20 → 19 across rows 6-10 and is the
 it.
 
 **Act 5 should be built on the depth column and the naming table, not on the value readouts.**
+
+### ✅ THE FAILURE PATH WALKED 2026-08-08 — `TwiceDefined`, and Act 5 gets a second specimen
+
+**Doug: *"Comparisons between working models and models which don't work are very helpful for me.
+So, I want a tour which compares and contrasts two models."*** The success path alone could not
+supply `DisplaceFail` or `EquationFailed`, because `ProportionalLoop` succeeds.
+
+**`CapacitorLoop` was the obvious candidate and is the wrong one. Measured before walking**, from
+the generated notebook traces:
+
+| | ProportionalLoop | **TwiceDefined** | CapacitorLoop |
+|---|---|---|---|
+| size | 3 × 3 | **2 × 2** | 14 × 14 |
+| incidence entries | 9 | **2** | 42 |
+| outcome | perfect | rank 1 of 2 | 13 of 14 |
+| frames | 12 | **9** | ~114 |
+
+**CapacitorLoop's failure is at its LAST equation**, so the interesting stops sit ~110 Continues
+in — an ordeal, not a walk. `TwiceDefined` reaches both failure steps in nine frames. It stays the
+right specimen for Act 4's *physical* story (a capacitor across an ideal source is a real
+modelling mistake); for learning the algorithm's failure path under a debugger, the synthetic 2×2
+is strictly better. **Sizing a walk from the notebook trace before doing one is the reusable move
+here.**
+
+**Thirteen of fourteen predictions exact.** The ledger, every row read from a live stack:
+
+| idx | step | emit line | depth | |
+|---|---|---|---|---|
+| 0 | `TryEquation(0)` | 114 | 0 | |
+| 1 | `Explore {0, a}` | 181 | 1 | |
+| 2 | `FoundFree {0, a}` | 191 | 1 | |
+| 3 | `Assign {0, a}` | 233 | 1 | |
+| 4 | `TryEquation(1)` | 114 | 0 | |
+| 5 | `Explore {1, a}` | 181 | 1 | |
+| 6 | `TryDisplace {1, a, 0}` | 202 | 1 | |
+| — | *inner give-up* | **243** | **2** | **NO FRAME** |
+| 7 | `DisplaceFail {1, a}` | 213 | 1 | |
+| — | *outer give-up* | **243** | 1 | **NO FRAME** |
+| 8 | `EquationFailed(1)` | **133** | 0 | |
+
+### The two unnumbered rows are the argument for Act 5
+
+**Both `243` stops are real algorithm steps that never reach the frame stream.** The inner one is
+equation 0 being asked to move and refusing: its only candidate is `a`, `visited[a]` is already
+true, so line 177 skips it and the loop ends **without reaching a single emit**. The outer one is
+equation 1 exhausting its one candidate.
+
+So the animation runs `TryDisplace` → `DisplaceFail` → `EquationFailed` with nothing in between,
+while the debugger shows two genuine decisions. **There are steps the animation structurally
+cannot show and the debugger can** — which is the strongest case for the third leg that this
+project has produced.
+
+**Their signature is `var` and `iter` both reading `<unavailable>`.** At a `189` stop both are
+live; at a `243` stop the `for` loop has *ended*, so the debugger reports them gone. That is the
+adapter's "optimized away" prose doing real diagnostic work rather than being noise (`#72`'s
+finding 4): **it distinguishes "returning from inside the loop" from "fell out of it."**
+
+### The contrast, which is what the comparison tour is for
+
+Both specimens produce a depth-2 stack. They are identical in shape and opposite in the one
+property that decides everything:
+
+| | ProportionalLoop | TwiceDefined |
+|---|---|---|
+| stack at depth 2 | `181 → 210 → 123` | `243 → 210 → 123` |
+| path | eq1 → a → eq0 → **var2 (free)** | eq1 → a → eq0 → **dead end** |
+| Berge's name | **augmenting** path | merely **alternating** path |
+| the unwind | commits an edge per frame — the flip | **commits nothing** |
+| `vars` at the collision | `[0, 1]`, `iter` has one left | `[0]`, `iter` **already exhausted** |
+
+**An alternating path is cheap; you can always find one. It becomes *augmenting* only if it ends
+at a free variable, and that terminal condition is the entire content of the theorem.** The
+unwind is the flip in both runs — when the search fails, the flip is a no-op.
+
+**And `vars`' length is where the mathematics meets the loop bound.** `TwiceDefined`'s incidence
+has 2 entries in a 2×2, both in column `a`; **column `b` is empty**, so no permutation can place a
+nonzero on its diagonal. That is **Hall's condition** violated by S = {eq0, eq1}, whose
+neighbourhood N(S) = {a} has |N(S)| = 1 < 2 = |S|. The algorithm discovers this by exhausting the
+search; Hall's theorem says why the search was doomed before it began. **`b` is never visited by
+any frame** — `visited[1]` stays `false` for the whole run — so the unmatched *unknown* is
+reported by absence, never by discovery.
+
+**A failed search leaves the matching untouched.** `match_eq` and `match_var` are byte-identical
+before and after equation 1's attempt; `visited` is the only thing mutated, and line 122 resets it
+per equation. That is why Kuhn's outer loop never backtracks: the matching only grows.
+
+### One line number was wrong, and the tag did not contain it
+
+**`EquationFailed` is emitted at `matching.rs:133`, not 137.** Line 133 is the
+`emit_matching_frame(` call; 137 is `step: MatchingStep::EquationFailed(eq)` inside the struct
+literal argument, and **the stack reports the call site**. Every other row was taken from the call
+line; this one row was read from where the variant is *named*.
+
+**It was the only row never observed**, was tagged `<!-- unverified -->`, and was still stated as a
+number beside twelve measured ones — where it read as equally solid. **The tag marked the risk and
+did nothing to contain it.** It reached only conversation, never the repository, which was luck
+rather than process. **When a table mixes measured and read-off values, the unmeasured ones need
+the marking inside the cell, not in a sentence underneath.**
+
+### Frame-delay evidence
+
+Two screen readings this walk, **both in step** (`frame_index` 3 → "Frame 4", 8 → "Frame 9"),
+against one lag in three at 20 ms. Consistent with the two-tier delay; still a small sample.
 
 ---
 
