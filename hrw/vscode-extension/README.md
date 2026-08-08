@@ -37,15 +37,36 @@ side restarting.
 **`out/` is gitignored**, so a fresh clone has no compiled extension. This is the single most
 common reason live trace appears broken.
 
+**Node.js is a prerequisite** and is not needed anywhere else in this project, so a machine set
+up for HRW may well not have it: `winget install OpenJS.NodeJS.LTS`. A new shell is needed
+afterwards for `npm` to be on `PATH`.
+
 ```powershell
 cd hrw\vscode-extension
 npm install
 npm run build
-cd ..\..
-code --install-extension hrw\vscode-extension
+npm test          # 11 tests — the surface contract and the request/ack schemas
 ```
 
-Then **reload VS Code**.
+Then install it by **linking this folder into VS Code's extensions directory**, in a shell
+started after Node was installed:
+
+```powershell
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.vscode\extensions\dougdew64.hrw-debugger-bridge-0.1.0" -Target "$PWD"
+```
+
+Then **reload VS Code**. Confirm with `code --list-extensions`, which should list
+`dougdew64.hrw-debugger-bridge`.
+
+> **Why a junction and not `code --install-extension`.** That command takes a **marketplace ID
+> or a `.vsix` file** — handed a folder, VS Code 1.126.0 answers *"Extension
+> 'hrw\vscode-extension' not found"* and exits 1. This README and `docs/setup-windows.md` both
+> carried the folder form until 2026-08-07, when a fresh machine ran it for the first time.
+>
+> A junction is also **better than installing a copy**: the link points at this folder, so
+> `npm run build` updates the installed extension in place and only a window reload is needed.
+> A `.vsix` would have to be rebuilt and reinstalled after every edit. Junctions need no
+> administrator rights, unlike symlinks without Developer Mode.
 
 **To check it is working:** open the **"HRW Bridge"** output channel. A successful arm logs
 

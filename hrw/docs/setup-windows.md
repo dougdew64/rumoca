@@ -170,16 +170,38 @@ HRW arms its own breakpoints by writing request files that a small VS Code exten
 Its `out/` directory is gitignored, so **it must be built after cloning** or the Debug button
 does nothing:
 
+**It needs Node.js, which nothing else in this project does** — so a machine that runs HRW
+perfectly can still stop dead here with `npm: command not found`. Install it first, then use a
+**new shell** so `npm` is on `PATH`:
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
 ```powershell
 cd hrw\vscode-extension
 npm install
 npm run build
-cd ..\..
-code --install-extension hrw\vscode-extension
+npm test
 ```
 
-Reload VS Code afterwards. The extension logs to the "HRW Bridge" output channel — a working
-arm shows `Armed: live_trace.rs:<line>`.
+```powershell
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.vscode\extensions\dougdew64.hrw-debugger-bridge-0.1.0" -Target "$PWD"
+```
+
+Reload VS Code afterwards, and confirm with `code --list-extensions` — it should list
+`dougdew64.hrw-debugger-bridge`. The extension logs to the "HRW Bridge" output channel; a
+working arm shows `Armed: live_trace.rs:<line>`.
+
+> **This step said `code --install-extension hrw\vscode-extension` until 2026-08-07**, and that
+> command does not work: `--install-extension` takes a **marketplace ID or a `.vsix`**, and
+> VS Code 1.126.0 answers *"Extension 'hrw\vscode-extension' not found"*. The junction installs
+> the folder directly, and has the further advantage that `npm run build` then updates the
+> installed extension in place — no reinstall after an edit, only a window reload. Junctions
+> need no administrator rights; symlinks do, unless Developer Mode is on.
+>
+> *Both the Node.js prerequisite and the broken install command were found the first time this
+> page was followed on a genuinely bare machine.*
 
 ## 8. Launch
 
