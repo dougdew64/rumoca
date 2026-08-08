@@ -4175,3 +4175,76 @@ and never point into the code that runs it. Doug's stated remedy is to read the 
 debugger and ask. **The quality of that exchange is what substitutes for tour prose that does not
 exist yet** — so a friction of one click, repeated across a semester, is worth measuring rather
 than assuming.
+
+---
+
+## 71. The Debug button says "armed" when nothing is listening
+
+**Found 2026-08-07**, on the second Windows machine, because Doug asked whether the VS Code
+extension had been built. It had not — and the more interesting half is what HRW would have
+done about it.
+
+### The defect
+
+`App::live_debug_poll` ([`../src/app.rs`](../src/app.rs)) treats the two outcomes of the
+handshake as one:
+
+```rust
+let acked = bridge::check_breakpoint_ack();
+let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
+if acked || timed_out {
+    self.pending_live_debug = None;
+    self.live_breakpoint_armed = true;   // <-- true even when nothing acked
+    return LiveDebugAction::SpawnLive;
+}
+```
+
+**`live_breakpoint_armed = true` after a timeout is a claim that did not happen.** No ack means
+either no extension installed, or an extension that did not process the request — in both cases
+there is no breakpoint. HRW then spawns the algorithm thread, the animation runs to completion
+without stopping, and **nothing on screen says why**.
+
+### Why this belongs in the rules' own vocabulary, not the bug list
+
+Two of this project's standing rules land on it directly:
+
+- **The must-fire rule.** `check_breakpoint_ack` is a *reporter*, and its silence is currently a
+  pass. The rule says silence must be a failure.
+- **Nothing HRW shows may be invented.** `live_breakpoint_armed` is a state HRW asserts about
+  the *outside world*, and after a timeout it asserts it without evidence. This is the same
+  shape as the 2026-08-04 fictions — a plausible state, well-formed, and false.
+
+**The three-second timeout itself is right and should stay.** A slow extension should not
+deadlock the UI. What is wrong is that the fallback path is indistinguishable from success.
+
+### What it would have cost
+
+The failure is invisible in the direction that matters. A learner who presses **Debug** and
+watches the animation run has no way to tell *"the bridge is not installed"* from *"this phase
+has nothing to stop at"* — and the second is a plausible thing to believe about a compiler
+phase. **`#70`'s experiment would have been run against a bridge that was not there**, and its
+answer written into this file as fact.
+
+### ✅ FIXED 2026-08-07, same day
+
+1. **The timeout still spawns, but no longer passes for success.** `acked` proceeds silently — a
+   notice on every Debug click would train the eye to ignore the one that matters — while
+   `!acked` raises a status-bar notice naming the bridge and pointing at
+   `vscode-extension/README.md`.
+2. **`live_breakpoint_armed = acked`**, so HRW no longer asserts a breakpoint it has no evidence
+   for, and the capture's `breakpoint_armed` key became true again in the literal sense.
+3. **`LIVE_DEBUG_ACK_TIMEOUT`** now names the three seconds and is shared with the pre-warm,
+   which had its own copy of the literal.
+4. **`app::tests::a_timed_out_arm_claims_nothing_and_says_so`** covers both branches in one test
+   (they share `.hrw-bridge/breakpoint-ack.json` and would otherwise race, the same reason
+   `prewarm_arms_awaits_ack_then_removes` is combined). **Must-fire verified by reverting each
+   half separately** — the armed assertion and the notice assertion were each shown to fail on
+   the old code, since the first would otherwise mask the second.
+
+**The accepted trade, recorded because it is a real regression in bookkeeping:** an ack arriving
+*after* the timeout leaves a real breakpoint HRW no longer tracks. That is the honest side of
+the trade — **HRW must not claim state it cannot see** — and `HRW: Clear Armed Breakpoints`
+exists for exactly this. The previous tidiness was bought with a false statement.
+
+**Done before `#70`**, since `#70` is an experiment whose result gets written down as fact, and
+this defect is exactly what would have corrupted it.

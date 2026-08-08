@@ -87,6 +87,17 @@ const SEEK_ATTEMPTS: u8 = 5;
 pub(crate) const SCRATCH_POLL_INTERVAL: std::time::Duration =
     std::time::Duration::from_millis(1000);
 
+/// How long the breakpoint handshake waits for the VS Code extension's ack
+/// before giving up and running anyway.
+///
+/// **The fallback exists so a missing or wedged extension cannot deadlock the
+/// UI** — it is not evidence that a breakpoint was set. See
+/// [`App::live_debug_poll`], which must not confuse the two, and `docs/ideas.md`
+/// #71 for what happened when it did.
+///
+/// Named and shared with the pre-warm so the two waits cannot drift apart.
+const LIVE_DEBUG_ACK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+
 /// Default specimen directory: `specimens/` next to this crate's manifest.
 pub(crate) const DEFAULT_SPECIMEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
 
@@ -1276,7 +1287,7 @@ impl App {
                     return;
                 }
                 let acked = bridge::check_breakpoint_ack();
-                let timed_out = started.elapsed() >= std::time::Duration::from_secs(3);
+                let timed_out = started.elapsed() >= LIVE_DEBUG_ACK_TIMEOUT;
                 if acked || timed_out {
                     // Remove it again: pre-warming must not leave a breakpoint
                     // armed. Resolution stays cached in the debugger regardless.
@@ -1447,10 +1458,36 @@ impl App {
             && v == variant
         {
             let acked = bridge::check_breakpoint_ack();
-            let timed_out = armed_at.elapsed() >= std::time::Duration::from_secs(3);
+            let timed_out = armed_at.elapsed() >= LIVE_DEBUG_ACK_TIMEOUT;
             if acked || timed_out {
                 self.pending_live_debug = None;
-                self.live_breakpoint_armed = true;
+
+                // **Only an ack means a breakpoint exists.** Recording the
+                // timeout as `true` was a claim HRW had no grounds for — and it
+                // did not stay on screen: the context capture emits
+                // `breakpoint_armed`, so the fiction reached Claude's reasoning
+                // too. `docs/ideas.md` #71.
+                //
+                // A late ack (after the timeout) therefore leaves a real
+                // breakpoint that HRW no longer tracks. That is the honest
+                // trade: **HRW must not claim state it cannot see**, and the
+                // "HRW: Clear Armed Breakpoints" command exists for exactly
+                // this. Pretending otherwise bought tidy bookkeeping with a
+                // false statement.
+                self.live_breakpoint_armed = acked;
+
+                if !acked {
+                    // **The silence was the defect.** The animation runs to the
+                    // end either way, and a learner cannot tell "the bridge is
+                    // not installed" from "this phase has nothing to stop at" —
+                    // the second being a perfectly plausible thing to believe
+                    // about a compiler phase.
+                    self.notify(
+                        "no reply from the HRW Debugger Bridge \u{2014} running without a \
+                         breakpoint. Is the extension built and installed? See \
+                         hrw/vscode-extension/README.md",
+                    );
+                }
                 return LiveDebugAction::SpawnLive;
             }
             // No status text here — the control row already shows the
@@ -9061,6 +9098,91 @@ mod tests {
         );
 
         let _ = std::fs::remove_file(ack);
+    }
+
+    /// **An ack and a timeout are different outcomes, and only one of them arms
+    /// a breakpoint** (`docs/ideas.md` #71).
+    ///
+    /// Both paths used to be one branch: `if acked || timed_out` set
+    /// `live_breakpoint_armed = true` and spawned the thread. With no extension
+    /// installed — the state of any fresh clone, since `out/` is gitignored —
+    /// HRW recorded a breakpoint that did not exist, ran the algorithm to
+    /// completion, and **said nothing**. The claim also left the screen: the
+    /// context capture emits `breakpoint_armed`.
+    ///
+    /// The timeout still spawns, which is deliberate: a wedged extension must
+    /// not deadlock the UI. What it may not do is *pass for success*.
+    ///
+    /// Both paths share the single `.hrw-bridge/breakpoint-ack.json`, so they
+    /// live in one test for the same reason `prewarm_arms_awaits_ack_then_removes`
+    /// above does — as separate tests they would race for that file.
+    #[test]
+    fn a_timed_out_arm_claims_nothing_and_says_so() {
+        let ctx = egui::Context::default();
+        let (mut app, _tx) = App::test_with_sender();
+        let ack = std::path::Path::new(bridge::BREAKPOINT_ACK_FILE);
+        let _ = std::fs::remove_file(ack);
+
+        // Keep the pre-warm out of the way; it competes for the same ack file.
+        app.prewarm = Prewarm::Done;
+
+        // --- Path 1: the extension acks. ---
+        std::fs::write(ack, r#"{"acked":true}"#).unwrap();
+        app.notice = None;
+        app.live_breakpoint_armed = false;
+        app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
+
+        let action = app.live_debug_poll(&ctx, LiveState::Arming, PendingLiveDebug::Reduction);
+
+        assert!(
+            matches!(action, LiveDebugAction::SpawnLive),
+            "an ack should start the algorithm thread"
+        );
+        assert!(
+            app.live_breakpoint_armed,
+            "an ack is the evidence that a breakpoint exists"
+        );
+        assert_eq!(
+            app.notice, None,
+            "the happy path must stay quiet — a notice on every Debug click would \
+             train the eye to ignore the one that matters"
+        );
+
+        // --- Path 2: nothing acks, and the wait expires. ---
+        let _ = std::fs::remove_file(ack);
+        app.notice = None;
+        app.live_breakpoint_armed = false;
+
+        // Backdate the arm past the timeout. `expect` rather than a fallback:
+        // silently landing on "not yet timed out" would make this path vacuous,
+        // which is the failure mode the must-fire rule exists to refuse.
+        let long_ago = std::time::Instant::now()
+            .checked_sub(LIVE_DEBUG_ACK_TIMEOUT * 2)
+            .expect("the process must have been running longer than the ack timeout");
+        app.pending_live_debug = Some((long_ago, PendingLiveDebug::Reduction));
+
+        let action = app.live_debug_poll(&ctx, LiveState::Arming, PendingLiveDebug::Reduction);
+
+        assert!(
+            matches!(action, LiveDebugAction::SpawnLive),
+            "the timeout must still spawn — a missing extension may not deadlock the UI"
+        );
+        assert!(
+            !app.live_breakpoint_armed,
+            "nothing acked, so nothing is armed — this is the claim #71 was about"
+        );
+        let notice = app
+            .notice
+            .as_deref()
+            .expect("a timed-out handshake must say so; silence is the defect");
+        assert!(
+            notice.contains("Bridge"),
+            "the notice must name the bridge as the suspect, got: {notice}"
+        );
+        assert!(
+            notice.contains("vscode-extension"),
+            "the notice must point at the fix, got: {notice}"
+        );
     }
 
     /// `src.V` is not declared in the specimen — it is a parameter of `src`'s
