@@ -178,6 +178,26 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
   - `stop-6-seek-a-view-that-has-no-animation` — Stop 6 — Seek a view that has no animation
   - `what-this-cannot-check` — What this cannot check
 
+## `index-reduction`
+
+**Index reduction — when nine states are really three**
+
+Walk [`matching.md`](matching.md) first, and Act 3 of it especially. That act showed a
+
+- **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`
+- **Stages:** `IndexReduction`, `Structural`
+- **Stops:**
+  - `index-reduction-when-nine-states-are-really-three` — Index reduction — when nine states are really three
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
+  - `act-1-a-model-that-needs-nothing` — Act 1 — A model that needs nothing
+  - `act-2-one-state-that-was-not-a-state` — Act 2 — One state that was not a state
+  - `act-3-nine-states-three-degrees-of-freedom` — Act 3 — Nine states, three degrees of freedom
+  - `act-4-why-the-previous-phase-failed-and-why-that-was-correct` — Act 4 — Why the previous phase failed, and why that was correct
+  - `act-5-what-rumoca-actually-does-which-is-not-what-the-textbook-name-suggests` — Act 5 — What Rumoca actually does, which is not what the textbook name suggests
+  - `act-6-the-linear-algebra-in-one-paragraph` — Act 6 — The linear algebra, in one paragraph
+  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `matching-live`
 
 **Matching, live — standing inside the search**
