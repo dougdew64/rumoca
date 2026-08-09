@@ -252,6 +252,26 @@ The first cross-platform tour. Two stops in HRW, then a notebook — because the
   - `what-each-side-uniquely-holds` — What each side uniquely holds
   - `what-this-cannot-check` — What this cannot check
 
+## `tearing`
+
+**Tearing — turning a 3×3 solve into a 1×1 one**
+
+Walk [`blt-ordering.md`](blt-ordering.md) first. It ended with a coupled block of three
+
+- **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`
+- **Stages:** `Structural`
+- **Stops:**
+  - `tearing-turning-a-3-3-solve-into-a-1-1-one` — Tearing — turning a 3×3 solve into a 1×1 one
+  - `the-problem-this-step-exists-to-solve` — The problem this step exists to solve
+  - `act-1-guess-one-number-and-the-rest-falls-out` — Act 1 — Guess one number and the rest falls out
+  - `act-2-watch-the-choice-being-made` — Act 2 — Watch the choice being made
+  - `act-3-two-blocks-torn-independently` — Act 3 — Two blocks, torn independently
+  - `act-4-all-three-kinds-of-block-in-one-model` — Act 4 — All three kinds of block in one model
+  - `act-5-the-linear-algebra-this-is-a-schur-complement` — Act 5 — The linear algebra: this is a Schur complement
+  - `act-6-greedy-and-what-greedy-costs` — Act 6 — Greedy, and what greedy costs
+  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `the-oracle`
 
 **The oracle — when Rumoca and System Modeler disagree**
