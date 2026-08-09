@@ -72,6 +72,24 @@ pub struct Anchor {
     pub what: &'static str,
 }
 
+/// Look an anchor up by the name a tour uses in `hrw://breakpoint/<name>`.
+///
+/// Returns the file, the line **derived from the current source**, and what the
+/// reader is being sent to look at.
+///
+/// **The link names the anchor; it never carries the line.** Same decision, and
+/// the same reason, as `HrwLink::OpenTour` addressing stops by slug rather than
+/// ordinal: a number embedded in prose rots silently when the code moves, while
+/// a name fails loudly. Here it cannot even fail loudly — the line is resolved
+/// at click time, so the link is simply always right.
+#[must_use]
+pub fn anchor_by_name(name: &str) -> Option<(&'static str, usize, &'static str)> {
+    anchors()
+        .into_iter()
+        .find(|a| a.name == name)
+        .map(|a| (a.file, a.line, a.what))
+}
+
 /// First line at or after `from` satisfying `pred`, 1-based. `None` is a
 /// *finding*, never a fallback: a missing anchor must fail loudly rather than
 /// resolve to a plausible number.

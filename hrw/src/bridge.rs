@@ -247,6 +247,61 @@ const LIVE_TRACE_FILE: &str = concat!(
     "/../crates/rumoca-phase-structural/src/live_trace.rs"
 );
 
+/// The traced matching algorithm, for `hrw://breakpoint/<anchor>` links.
+const MATCHING_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../crates/rumoca-phase-structural/src/matching.rs"
+);
+
+/// Resolve a short source-file name to the path the extension needs.
+///
+/// **Only the files a tour may arm a breakpoint in**, deliberately: a link is
+/// user-facing text, and resolving arbitrary paths from one would let a tour —
+/// or an ad hoc tour Claude writes — point the debugger anywhere.
+pub fn traced_source_path(file: &str) -> std::io::Result<std::path::PathBuf> {
+    let raw = match file {
+        "live_trace.rs" => LIVE_TRACE_FILE,
+        "matching.rs" => MATCHING_FILE,
+        other => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("no traced source named {other}"),
+            ));
+        }
+    };
+    let path = std::fs::canonicalize(raw)?;
+    // Same treatment as the anchor: VS Code's breakpoint URIs will not match a
+    // `\\?\` extended-length path, so the prefix comes off.
+    #[cfg(windows)]
+    let path = strip_windows_prefix(&path);
+    Ok(path)
+}
+
+/// Arm a breakpoint at `file:line` on behalf of an `hrw://breakpoint/<anchor>`
+/// link.
+///
+/// **Add-only, and never a toggle.** `docs/ideas.md` #74: `cppvsdbg` will not
+/// re-bind a location whose breakpoint has left its active set during a session,
+/// so a link that removed a breakpoint would make the *next* click at the same
+/// line silently do nothing. Clicking twice is therefore harmless — the
+/// extension reports it as already present and changes nothing.
+///
+/// **No `specimen` field, also deliberately.** The extension clears every armed
+/// breakpoint when the specimen *changes*, so a link carrying one could tear
+/// down the live-trace anchor as a side effect of arming something else.
+pub fn arm_source_breakpoint(file: &str, line: usize) -> std::io::Result<()> {
+    // A stale ack must not be mistaken for this request's reply.
+    let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
+    let path = traced_source_path(file)?;
+    let request = json!({
+        "version": 1,
+        "breakpoints": [{ "path": path.display().to_string(), "line": line }]
+    });
+    let text = serde_json::to_string_pretty(&request)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    fs::write(BREAKPOINT_REQUEST_FILE, text)
+}
+
 /// The canonical list of pipeline stage file names written to `.hrw-bridge/stages/`.
 ///
 /// This constant is the single source of truth for which stage files exist.

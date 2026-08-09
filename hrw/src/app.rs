@@ -2765,6 +2765,36 @@ impl App {
                 }
                 None => self.notify(format!("specimen not found: {name}")),
             },
+            HrwLink::ArmBreakpoint(name) => {
+                // **Refused while the Debug handshake is in flight.** Both use the
+                // single `breakpoint-request.json` / `breakpoint-ack.json` pair,
+                // so arming here mid-handshake would overwrite the request the
+                // Debug button is waiting on and hand it someone else's ack —
+                // `#71`'s failure in a new dress.
+                if self.pending_live_debug.is_some() {
+                    self.notify(
+                        "a Debug session is still arming \u{2014} wait for it to stop, \
+                         then click this again",
+                    );
+                } else if let Some((file, line, what)) =
+                    crate::matching_ledger::anchor_by_name(&name)
+                {
+                    match bridge::arm_source_breakpoint(file, line) {
+                        // Deliberately not "armed": the ack is not read here, and
+                        // `#75` is the entry about claiming a breakpoint exists on
+                        // evidence that does not say so. The red dot in VS Code's
+                        // gutter is the confirmation, and it is already on screen.
+                        Ok(()) => self.notify(format!(
+                            "asked the bridge for a breakpoint at {file}:{line} \u{2014} {what}",
+                        )),
+                        Err(e) => self.notify(format!("could not arm {file}:{line}: {e}")),
+                    }
+                } else {
+                    // Unreachable via a parsed link — `parse_hrw_link` rejects an
+                    // unknown anchor — but stated rather than silently ignored.
+                    self.notify(format!("no breakpoint anchor named {name}"));
+                }
+            }
             HrwLink::Follow(name) => {
                 // Following is independent of what is pointed at: a stop may set one,
                 // the other, or both. So this deliberately does not touch the stage.
@@ -7762,6 +7792,29 @@ enum HrwLink {
     /// when the heading is renamed, and is immune to insertion — which is the
     /// behaviour the link checker can act on.
     OpenTour { tour: String, stop: Option<String> },
+    /// `hrw://breakpoint/<anchor>` — **arm a source breakpoint the reader would
+    /// otherwise set by hand.**
+    ///
+    /// Doug, 2026-08-08, walking `matching-live.md`: *"Having to manually set
+    /// breakpoints is friction. I'd like to instead click on links to set
+    /// breakpoints."* A live tour cannot avoid breakpoints — they are the
+    /// instrument — but it can stop making the reader transcribe a line number
+    /// into a gutter while holding the tour in their other hand.
+    ///
+    /// **The anchor is named, and the line is resolved at click time** from
+    /// [`crate::matching_ledger::anchor_by_name`], which locates it by what the
+    /// line *says*. This is `OpenTour`'s slug decision applied again: a number
+    /// in prose rots silently, a name does not. Here the link cannot even go
+    /// stale, because nothing about the line is stored in it.
+    ///
+    /// **A name that resolves to no anchor does not parse**, so
+    /// `fixture_tour_links_all_resolve` fails on a typo or on an anchor whose
+    /// locating fragment was edited away — the tour is checked at test time
+    /// rather than discovered broken mid-walk.
+    ///
+    /// **Add-only** (`bridge::arm_source_breakpoint`): `docs/ideas.md` #74 makes
+    /// removal a one-way door, so a toggle would break the next click.
+    ArmBreakpoint(String),
     /// `hrw://load/<Specimen>` — load and compile a specimen by name.
     LoadSpecimen(String),
     /// `hrw://stage/<Stage>[/<SubView>]` — switch to a stage tab, optionally to a
@@ -7907,6 +7960,11 @@ impl HrwLink {
                 | Self::OpenInSystemModeler(_)
                 // Opening a tour is navigation between documents; no model involved.
                 | Self::OpenTour { .. }
+                // Arming a breakpoint targets Rumoca's source, not the model —
+                // and a reader may well want the breakpoints in place *before*
+                // loading a specimen, which is exactly what `matching-live.md`
+                // warns them not to do the other way round.
+                | Self::ArmBreakpoint(_)
         )
     }
 
@@ -7944,6 +8002,7 @@ impl HrwLink {
             Self::Follow(name) => format!("follow/{name}"),
             Self::OpenNotebook(name) => format!("notebook/{name}"),
             Self::OpenInSystemModeler(name) => format!("systemmodeler/{name}"),
+            Self::ArmBreakpoint(name) => format!("breakpoint/{name}"),
         }
     }
 }
@@ -7971,6 +8030,12 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
             Some(HrwLink::LoadAndSwitch((*specimen).to_owned(), kind, None))
         }
         ["load", specimen] => Some(HrwLink::LoadSpecimen((*specimen).to_owned())),
+        // **Validated here, not at dispatch.** An unknown anchor failing to
+        // parse is what puts `fixture_tour_links_all_resolve` in front of it, so
+        // a renamed anchor breaks the suite instead of a walk.
+        ["breakpoint", name] if crate::matching_ledger::anchor_by_name(name).is_some() => {
+            Some(HrwLink::ArmBreakpoint((*name).to_owned()))
+        }
         ["tour", name, "stop", slug] if !name.is_empty() && !slug.is_empty() => {
             Some(HrwLink::OpenTour {
                 tour: (*name).to_owned(),
@@ -10502,6 +10567,45 @@ mod tests {
     fn parse_hrw_link_load_specimen() {
         let link = parse_hrw_link("hrw://load/BouncingBall");
         assert!(matches!(link, Some(HrwLink::LoadSpecimen(ref s)) if s == "BouncingBall"));
+    }
+
+    /// **An unknown breakpoint anchor must NOT parse** (`docs/ideas.md` #73).
+    ///
+    /// This is the whole reason the name is validated in the parser rather than
+    /// at dispatch: `fixture_tour_links_all_resolve` walks every link in every
+    /// tour, so a typo — or an anchor whose locating fragment was edited away —
+    /// fails the suite. Accepting the link and reporting the problem at click
+    /// time would move the discovery into the middle of a walk, which is exactly
+    /// where a tour must not surprise its reader.
+    #[test]
+    fn parse_hrw_link_breakpoint_validates_the_anchor_name() {
+        assert!(
+            matches!(
+                parse_hrw_link("hrw://breakpoint/decision"),
+                Some(HrwLink::ArmBreakpoint(ref n)) if n == "decision"
+            ),
+            "`decision` is a real anchor and must parse",
+        );
+        assert_eq!(
+            parse_hrw_link("hrw://breakpoint/desicion"),
+            None,
+            "a misspelled anchor must fail the link checker, not the walker",
+        );
+        assert_eq!(parse_hrw_link("hrw://breakpoint/"), None);
+    }
+
+    /// **Arming a breakpoint needs no specimen.**
+    ///
+    /// It targets Rumoca's source, and `matching-live.md` deliberately has the
+    /// reader place breakpoints in a session before the model finishes
+    /// compiling. Requiring one would refuse the link at exactly the moment the
+    /// tour tells them to click it.
+    #[test]
+    fn arming_a_breakpoint_does_not_require_a_specimen() {
+        assert!(
+            !HrwLink::ArmBreakpoint("decision".to_owned()).requires_specimen(),
+            "the anchor is in matching.rs, not in the model",
+        );
     }
 
     #[test]

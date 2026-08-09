@@ -43,12 +43,20 @@ run is what it replaced.
 
 **Expected:** the matching animation, unstarted, captioned `Matched 3 of 3`.
 
-**Now — and only now — set a breakpoint at `matching.rs:189`**, the `match match_var[var]`
-expression inside `augment_traced`.
+**Now — and only now — arm the decision breakpoint:**
 
-> **Set it after the model has compiled, never before.** `augment_traced` also runs during the
-> ordinary compile, where nothing is animated and `observer` is `None`. A breakpoint set too
+[⬤ Break at the free-versus-displace decision](hrw://breakpoint/decision)
+
+**Expected:** a red dot appears in VS Code at `matching.rs:189`, the `match match_var[var]`
+expression inside `augment_traced`. HRW's status bar names the line it asked for.
+
+> **Arm it after the model has compiled, never before.** `augment_traced` also runs during the
+> ordinary compile, where nothing is animated and `observer` is `None`. A breakpoint armed too
 > early stops you there instead, several times, before the animation exists.
+>
+> **The link names the anchor, never the line.** `hrw://breakpoint/decision` resolves to whatever
+> line the `match match_var[var]` expression is on *right now*, so it cannot rot when the code
+> moves — and clicking it twice is harmless, since it only ever adds.
 
 Press **Debug**.
 
@@ -136,8 +144,14 @@ Two equations, `a = 1.0` and `a = time`, and two unknowns. **Both equations ment
 **Expected:** the caption reads `Matched 1 of 2` — this model is structurally singular, and the
 tour's job is to show you *how the algorithm finds that out*.
 
-After it compiles, set **two** breakpoints: `matching.rs:189` as before, and **`matching.rs:243`**
-— the bare `false` that ends `augment_traced`.
+After it compiles, arm **two** breakpoints — the decision again, and the give-up:
+
+[⬤ Break at the free-versus-displace decision](hrw://breakpoint/decision)
+[⬤ Break where the search gives up](hrw://breakpoint/give_up)
+
+**Expected:** red dots at `matching.rs:189` and `matching.rs:243`, the latter on the bare `false`
+that ends `augment_traced`. If you are still in the Scene 2 session, the first click reports the
+line without adding a second dot — it is already there.
 
 Press **Debug** and continue to `frame_index` `5`, then once more to `189`.
 
