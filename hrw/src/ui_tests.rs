@@ -475,7 +475,19 @@ fn switching_tours_clears_the_stage_side_on_screen() {
 
     // Now pick a *different* tour. `contains`, because a row now carries its
     // specimens after the name.
-    h.get_by_label_contains("the-oracle").click();
+    //
+    // **Pick one near the TOP of the alphabetical list.** This was `the-oracle`
+    // until 2026-08-08, when eight curriculum tours took the picker from 14
+    // entries to 22 and pushed the last row outside the harness's viewport: the
+    // node is still in the accessibility tree, so the query succeeds, but the
+    // click lands nowhere and the assertion below fails with a message about
+    // tour state that has nothing to do with the cause.
+    //
+    // **The app itself is fine** — the list is inside an
+    // `egui::ScrollArea::vertical`, so a real reader scrolls to it. This is a
+    // constraint on the *test*, and the rule it produces is: name a tour that
+    // sorts early, or this fails again the next time tours are added.
+    h.get_by_label_contains("camera-aiming").click();
     h.run_steps(2);
 
     assert!(

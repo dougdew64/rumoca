@@ -369,6 +369,21 @@ Walk [`blt-ordering.md`](blt-ordering.md) first. It ended with a coupled block o
   - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
 
+## `the-mathematics`
+
+**The mathematics — a week's walk through the pipeline**
+
+Start here. This tour walks nothing itself; it is the map for the nine that do, in the order
+
+- **Stops:**
+  - `the-mathematics-a-week-s-walk-through-the-pipeline` — The mathematics — a week's walk through the pipeline
+  - `the-route` — The route
+  - `the-four-numbers-that-connect-the-tours` — The four numbers that connect the tours
+  - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
+  - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
+  - `two-open-questions-you-may-hit` — Two open questions you may hit
+  - `what-to-tell-me-afterwards` — What to tell me afterwards
+
 ## `the-oracle`
 
 **The oracle — when Rumoca and System Modeler disagree**
