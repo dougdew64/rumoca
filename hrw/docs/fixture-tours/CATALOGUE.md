@@ -42,6 +42,25 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
   - `stop-5-aiming-survives-a-resize` — Stop 5 — Aiming survives a resize
   - `what-this-cannot-check` — What this cannot check
 
+## `connect-expansion`
+
+**Flatten — what `connect` actually means**
+
+In the equations it is neither an assignment nor an equality — it is one edge in a graph, and
+
+- **Specimens:** `RcCircuit`, `TwoLoops`
+- **Stages:** `Flatten`, `Structural`
+- **Stops:**
+  - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
+  - `act-1-four-statements-three-sets` — Act 1 — Four statements, three sets
+  - `act-2-the-arithmetic-and-it-is-exact` — Act 2 — The arithmetic, and it is exact
+  - `act-3-where-the-other-sixteen-equations-came-from` — Act 3 — Where the other sixteen equations came from
+  - `act-4-a-model-with-no-connectors-at-all` — Act 4 — A model with no connectors at all
+  - `act-5-why-this-phase-is-where-a-model-s-size-explodes` — Act 5 — Why this phase is where a model's size explodes
+  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `dae-construction`
 
 **Fixture tour — DAE construction: the count that decides everything**
@@ -62,6 +81,25 @@ A curriculum tour. Most tours here verify an HRW capability; this one teaches a 
   - `stop-7-what-the-dae-does-not-tell-you` — Stop 7 — What the DAE does not tell you
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
+
+## `events`
+
+**Events — the equations that are not always true**
+
+A `when` clause is therefore not an `if`. An `if` chooses between values whenever it is
+
+- **Specimens:** `RcCircuit`, `BouncingBall`, `MotorWithBrake`, `GearWithBrake`
+- **Stages:** `Events`
+- **Stops:**
+  - `events-the-equations-that-are-not-always-true` — Events — the equations that are not always true
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
+  - `act-1-a-model-with-no-events` — Act 1 — A model with no events
+  - `act-2-a-state-that-jumps` — Act 2 — A state that jumps
+  - `act-3-a-mode-that-flips-with-no-state-jumping` — Act 3 — A mode that flips, with no state jumping
+  - `act-4-the-three-families-and-why-they-are-counted-separately` — Act 4 — The three families, and why they are counted separately
+  - `act-5-what-the-solver-actually-does-at-a-bounce` — Act 5 — What the solver actually does at a bounce
+  - `what-comes-next` — What comes next
+  - `what-this-tour-cannot-check` — What this tour cannot check
 
 ## `failure-flatten`
 
