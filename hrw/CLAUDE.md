@@ -368,111 +368,91 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> **Doug is walking the tours. That is the work; everything else is what stops interrupting it.**
-> His goal, 2026-08-05: *"I want to enjoy that learning experience, rather than be distracted by
-> the kinds of bug and usability annoyances which we are still discovering."*
+> ## THE CONVERSATION HAS CHANGED MODE
 >
-> **And the tours are the instrument, not the deliverable** — *"the curriculum tours and the
-> failure tours are pretty much the heart of my effort to learn the parts of rumoca which I most
-> care about now: math and algorithms."* **Every defect found in the week of 2026-08-04 came from
-> Doug walking a tour, not from a test.** `docs/ideas.md` **#66** carries the consequence,
-> including a **ranking of the phases** — structural analysis, index reduction, solve lowering and
-> initialization are the mathematics; parse/resolve/instantiate/typecheck are bookkeeping whose
-> *failure* tours already carry what a learner needs.
+> **Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift
+> our conversation to be about my education rather than about HRW features."*
 >
-> ### The live item, 2026-08-08 — `#73`, Act 5 of `matching.md` as a LIVE-TRACE session
+> **That is a standing instruction, not a mood.** For three weeks this project built the
+> instrument; the instrument is now good enough. **Default to teaching, not to building.** When
+> Doug reports something during a walk, the first question is *"what does this teach, and is it
+> true?"* — not *"what should we build?"* A feature is warranted when it unblocks the learning,
+> and `docs/ideas.md` is where the rest goes.
 >
-> Doug, on reading Act 5: *"It seems that for Act 5, we have an opportunity to accomplish
-> something much more spectacular: live trace debugging."* As shipped, Act 5 names
-> `maximum_matching_with_trace` and `augment_traced`, offers a breakpoint, and stops there —
-> ending on *"go and read this"*, the homework failure the tour's own *What this cannot check*
-> section warns about. **It turns `#66`'s thinnest leg (implementation) into its thickest.**
+> **He said the reason plainly, and it should not need saying twice:** *"We've been working on
+> this project for three weeks, and I have not yet been rewarded with a learning experience."*
+> Treat an hour spent on HRW polish during the walk as a cost, not a contribution.
 >
-> **The synchronization is designed, not lucky.** `LiveTrace::push` sends the frame, sleeps
-> `frame_delay` (`matching_anim.rs`: 20 ms), and *only then* calls `live_trace_breakpoint`. With
-> `Explore { eq, var }` emitted immediately before `match match_var[var]`, **the animation at
-> that stop shows the exact edge the next line decides.** And **the call stack IS the augmenting
-> path** — N nested `augment_traced` frames is an N-edge alternating path.
+> ## He is on VACATION, walking the tours (week of 2026-08-09)
 >
-> **Two unknowns are `<!-- unverified -->` and only Doug walking it can settle them:** whether the
-> anchor plus a second breakpoint interleave into a tidy rhythm or a confusing double-stop, and
-> whether egui completes a paint while stopped (20 ms guarantees time was *given*, not that the
-> frame was *drawn*). **Every expectation must be specific and violable** — *"the stack shows 3
-> frames of `augment_traced`; the animation shows edge 1 → 0"*, never *"they stay in step"*.
-> A tour that promises synchronization and then drifts teaches something false, which is worse
-> than homework. **It must be walked before it is called done; Claude cannot verify any of it.**
-> This is the template for every algorithm tour's third leg, so get the shape right once here.
+> **Entry point: [`docs/fixture-tours/the-mathematics.md`](docs/fixture-tours/the-mathematics.md)**
+> — the overview, whose rows are `hrw://tour/…` links that open each tour.
 >
-> ### `#72` shipped the debug channel, and IT IS PER-MACHINE
+> **Nine tours cover the pipeline, and SEVEN OF THEM HAVE NEVER BEEN WALKED.** Written in one
+> pass on 2026-08-08, at Doug's explicit direction to drop `#66`'s write-one-walk-one rule so a
+> week of vacation could start immediately.
 >
-> The bridge extension now publishes stops to `.hrw-bridge/debug-state.json` — see the
-> **"WHEN DOUG IS AT A BREAKPOINT"** section in the rules above for how to read it. Measured
-> against a real stop in `augment_traced`: **20 frames, 12 locals, and `Vec<Option<usize>>` comes
-> back READABLE** (`match_eq` → `[0]=None, [1]=None`), so `#73` can lean on values as well as the
-> stack. **Skip `[len]`, `[capacity]` and `[Raw View]`** — `cppvsdbg` mixes MSVC visualizer
-> artifacts in with real elements, flagged rather than filtered on purpose.
->
-> **THE EXTENSION IS NOT INSTALLED BY A PULL.** It was built and measured on Doug's *second*
-> machine; the first machine had `out/extension.js` from 2026-07-27 and no junction at all, so the
-> channel was silently dead there while every document described it as working. Per machine:
-> `npm run build` in `hrw/vscode-extension`, the `New-Item -ItemType Junction` line in
-> `docs/setup-windows.md` §6, then **reload the window**. Verify with `code --list-extensions`.
-> **Before answering from the payload, check `writtenAtMs`/`seq`** — and if there is no file at
-> all, say so rather than reaching for `breakpoint-request.json`, which `#70` records as the trap.
->
-> ### The curriculum gap `#73` is answering
->
-> **A revision rather than a new tour:** `matching.md` teaches augmenting paths and **never shows
-> the permutation it is constructing.** Structural analysis is linear algebra wearing graph
-> clothing — matching is a permutation, BLT is block triangularization, tearing is a Schur
-> complement — and Doug's Purdue applications class starts Fall 2026. See **#67** for the
-> semester's question shape, and its binding rule: **an index may record where to look, never
-> what the mathematics is.**
->
-> **A rebuild is owed if HRW was left running** — the Flatten equation map is compiled code.
->
-> **Relating a tree node to its Modelica source — where it stands.** Three affordances, built
-> 2026-08-05 and all three shared: a hover giving the source line, a
-> `📄 Show … in the Modelica source` context item, and a **wash** on the line it lands on.
->
-> | | works in |
+> | new 2026-08-08 | phase |
 > |---|---|
-> | **Variables** | **every stage tree** — `variable_lines` comes from the identifier index and is wired unconditionally |
-> | **Equations** | **DAE only**, and Flatten as of the same day |
+> | `connect-expansion.md` | Flatten — 4 `connect`s become 3 sets become 7 equations |
+> | `blt-ordering.md` | Tarjan/BLT — an order, no order, a system that splits |
+> | `tearing.md` | 3×3 → 1×1, and the phase's only heuristic |
+> | `index-reduction.md` | nine states, three degrees of freedom |
+> | `initialization.md` | one state, two conditions |
+> | `solve-lowering.md` | names become indices |
+> | `events.md` | the equations that are not always true |
+> | `the-mathematics.md` | the overview |
 >
-> **Equations are keyed by PATH, not index**, because the tree is type-agnostic by charter §4.4
-> and must not learn that `f_x[3]` is an equation. Both sides build the key with
-> `describe_path`, so the formats agree by construction. **A key that never matches produces no
-> tooltip and no error**, so each map has a test pinning that it resolves.
+> **Every COUNT in them is read from the specimens' generated notebook traces. Every RENDERING
+> claim is unverified.** Each tour's closing *"What this tour cannot check"* section names its own
+> two or three weakest claims — **read that section before defending anything in the tour.** If
+> Doug reports a count is wrong, that is the serious case: a trace changed or Claude misread one.
 >
-> **The stage gate is not just scoping — it prevents a wrong answer.** Measured span counts per
-> stage on `Drivetrain`: Flatten **1,856**, Events 12, and **index reduction, initialization and
-> structural have none**. Passing the DAE's map to index reduction would have looked up `f_x[i]`
-> against lines from the *raw* DAE, which renumbers under reduction — mis-attribution that is
-> well-formed and wrong.
+> ## PER-MACHINE SETUP — do this before answering any debugger question
 >
-> **Read the correction that came out of this.** An earlier entry claimed equations had no
-> recoverable origin and needed a Rumoca change. **False** — the field is `span`, not `location`,
-> and the measurement counted one spelling. Same shape as the `str_vec` blind spot. The feature
-> then took about an hour; **the measurement error was the expensive part.**
+> **The VS Code extension is not installed by `git pull`.** It brings `src/*.ts`; it runs no
+> `tsc` and creates no junction. This exact gap cost a day on 2026-08-08 (`docs/ideas.md` #72,
+> operating notes):
 >
-> **Done and closed, 2026-08-06 → 08:** **#70** (measured: Claude cannot see a debugger stop —
-> no location, no stack, no values; a click still works), **#71** (the Debug button said "armed"
-> when a handshake had merely timed out), **#72** (the debug-state channel, built *and* measured),
-> HRW clearing its live-trace breakpoint on shutdown (`on_exit` → `release_live_breakpoint_at_exit`,
-> both branches tested), and `.gitattributes` pinning LF because a CRLF clone lies about `app.rs`.
+> ```powershell
+> cd hrw\vscode-extension ; npm install ; npm run build ; npm test
+> New-Item -ItemType Junction -Path "$env:USERPROFILE\.vscode\extensions\dougdew64.hrw-debugger-bridge-0.1.0" -Target "$PWD"
+> ```
 >
-> **Done and closed 2026-08-05:** #46 (three specimens, six failure tours, `failure_map`), #62
-> (dissolved into the catalogue plus specimens-on-the-row), #63 (catalogue + `hrw://tour/<name>/
-> stop/<slug>` + verified end-to-end), Charter **v1.4** (Decisions 7, 8, 9).
+> Then **reload the VS Code window**, and confirm with `code --list-extensions`. **Rebuild HRW
+> too** — the `hrw://breakpoint/` links and the two-tier frame delay are compiled in.
 >
-> **Deferred, with reasons recorded:** **#64** — promoting `✨ Claude's answer`; smaller than
-> written now that answers *cite* fixtures rather than inventing specimens, and its open
-> questions have answers from #63's use. **#65** — Claude's answer as the UI centre; wait for
-> evidence from using the citation mechanism. **#60/#61** — still live, not next.
+> **Only `matching-live.md` needs any of this.** The other eight run from HRW alone.
 >
-> **Standing, 2026-08-05:** Claude never needs permission for context maintenance, **and accuracy
-> is never traded for it.**
+> ## Open questions a walk may hit
+>
+> - **A reproduced state-count inconsistency**, in `docs/upstream-issues.md`: `Drivetrain`'s index
+>   reduction demotes nine states to three while solve lowering reports **9**, and
+>   `GearWithBrake` shows the same gap. **Not diagnosed.** `solve-lowering.md` omits its natural
+>   example rather than write around it. Needs a System Modeler adjudication (`#43`).
+> - **`RcCircuit` reports one `zero_crossing_condition`** with no `when` clause at all.
+>   `events.md` Act 1 quotes only the four counts that are explicable.
+> - **`#77`** — a live tour needs three panes and the layout has two. Doug is running the divider
+>   at 15/85 and calls that workable *for now*.
+>
+> ## The debugger facts that were expensive to learn
+>
+> - **`cppvsdbg` will not re-bind a breakpoint at a location whose breakpoint left the adapter's
+>   active set during a session** — by removal *or* by being disabled. Only a new debug session
+>   recovers it. (`#74`)
+> - **VS Code exposes no `verified` field to extensions**, so `breakpointPresent` means *"an
+>   enabled breakpoint exists"* and can never mean *"execution will stop"*. (`#75`)
+> - **To read a debugger stop, read `.hrw-bridge/debug-state.json`** — check `writtenAtMs` and
+>   `seq` first, and skip `[len]`, `[capacity]`, `[Raw View]`. (`#72`)
+>
+> ## THE MEMORY STORE DID NOT TRAVEL WITH THIS PULL
+>
+> It lives outside the repo, keyed to the filesystem path, so a different machine or clone path
+> has none of it. **This box is the handoff.** If something here contradicts a recalled memory,
+> this box is newer.
+>
+> **Standing:** Claude never needs permission for context maintenance, **and accuracy is never
+> traded for it.**
 
 **Pass two: re-implement Arcs 1-7 with internal Rumoca access, delivering richer stage views
 than the public API allowed.** Per arc: scout what state the phase holds (read the crate under
