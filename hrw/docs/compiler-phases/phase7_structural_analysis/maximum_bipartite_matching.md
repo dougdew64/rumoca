@@ -403,15 +403,24 @@ is derived from reading the source; everything in it was read off a running stac
 `emit_matching_frame` calls interleaved. The emit sites are what make a live session legible,
 because at the breakpoint anchor every stop looks identical:
 
-| `MatchingStep` | emitted from |
-|---|---|
-| `TryEquation` | `maximum_matching_with_trace:114` — **outside `augment_traced` entirely** |
-| `Explore` | `augment_traced:181` |
-| `FoundFree` | `augment_traced:191` |
-| `TryDisplace` | `augment_traced:202` |
-| `DisplaceOk` / `DisplaceFail` | `augment_traced:213` — **one line for both**; it names the site, not the outcome |
-| `Assign` | `augment_traced:233` |
-| `EquationFailed` | `maximum_matching_with_trace:133` |
+> **The emit-site table and the per-specimen ledgers live in
+> [`matching-live-reference.md`](matching-live-reference.md), which is GENERATED.**
+> They were written out here until 2026-08-08 and deliberately are not any more: **a line number
+> written in two places goes stale in one of them**, and `EquationFailed` had already been
+> published as 137 when the call is at 133. `matching_ledger.rs` derives every number from
+> `matching.rs` *as compiled*, and `the_generated_reference_is_current` fails — naming the
+> regeneration command and the first line that moved — the moment the code shifts.
+> **Cite that file; do not copy from it.**
+
+Two properties of that table belong here rather than there, because they are facts about the
+*algorithm* rather than about line numbers:
+
+- **`TryEquation` and `EquationFailed` are emitted outside `augment_traced` entirely**, by the
+  driver loop. A stop for either has **no `augment_traced` frame on the stack at all**, which is
+  how you tell "starting an equation" from "exploring within one".
+- **`DisplaceOk` and `DisplaceFail` share a single emit**, whose `step:` is an `if` expression.
+  The site says *where*, never *which* — **a line number cannot tell you whether a displacement
+  succeeded**, only the frame can.
 
 **Recursion depth is directly readable as the number of `augment_traced` frames**, and the line
 number of each *non-innermost* one is always **210** — the recursive call site. So an outer frame

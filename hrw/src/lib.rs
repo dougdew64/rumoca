@@ -57,6 +57,7 @@ pub mod incidence_view;
 pub mod json_read;
 pub mod log_view;
 pub mod matching_anim;
+pub mod matching_ledger;
 pub mod model_list;
 pub mod modelica_lex;
 pub mod playback;

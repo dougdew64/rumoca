@@ -2537,3 +2537,44 @@ a dangling cross-repo pointer in code destined for CogniPilot, naming a director
 not have. `pre_lowering.rs` pointed at `hrw/DECISIONS.md`. Both removed, in a separate commit so
 the cherry-pick stays clean. **`doc_citations` cannot catch these** — it scans HRW's tree, not
 `crates/rumoca-*`, which is a real gap in a rule the project relies on.
+
+## 2026-08-08 — tour line numbers are generated from the source, not transcribed
+
+`matching_ledger.rs` derives the emit site of every `MatchingStep`, the per-frame recursion depth,
+and a full ledger per specimen; `examples/gen_matching_reference.rs` writes them to
+`docs/compiler-phases/phase7_structural_analysis/matching-live-reference.md`; and
+`the_generated_reference_is_current` compares disk against a fresh generation. Same
+generate-and-compare shape as `tour::catalogue`, and for the same reason: **a checker that
+reimplements what it checks drifts from it.**
+
+**The problem it closes is one `CLAUDE.md` already names** — tours quote line numbers, nothing
+compiles a Markdown table, so they go stale silently and a learner following one is simply
+confused. Until now the only thing keeping that table honest was Doug stepping a debugger.
+
+**Three quantities turned out to be derivable** that had each cost a walk: emit sites (scanned from
+source, attributed to the `emit_matching_frame(` **call** line — the line a stack reports), depth
+(recovered from the step sequence, since `TryDisplace` descends and `DisplaceOk`/`DisplaceFail`
+return), and the ledger itself (the real traced algorithm re-run over the specimen's *recorded*
+incidence from its notebook trace — no compile, no MSL, so it stays in the fast suite).
+
+**The derivation is pinned against measurement, not against itself.** Both debugger walks are
+hard-coded as the oracle for the depth derivation, and the generated `TwiceDefined` ledger must
+reproduce the nine frames Doug stepped. A derivation checked only against its own output is the
+vacuous test this project hit the same morning.
+
+**Verified must-fire** by shifting `matching.rs` two lines: every emit site moved and the test
+failed. Its message reports the **first differing line** rather than both documents — a whole-file
+`assert_eq!` printed 6 KB to say one number changed, and a failure nobody can read is a failure
+nobody acts on.
+
+**`maximum_bipartite_matching.md` stopped carrying the numbers.** It keeps only the two properties
+that are about the algorithm rather than about lines: that `TryEquation`/`EquationFailed` are
+emitted outside `augment_traced`, and that `DisplaceOk`/`DisplaceFail` share one emit so a line
+number cannot tell you which occurred. **A number written in two places goes stale in one of them**
+— `EquationFailed` was published as 137 when the call is at 133.
+
+**The boundary, stated because it will be tempting to forget:** generation replaces what is in the
+source. It does not replace what the walks learned about the *instrument*, it cannot represent the
+two `augment_traced:243` give-ups that emit no frame at all, and it cannot tell whether a tour's
+promised rhythm survives a human. Three confident claims were falsified by Doug walking that day,
+and a test written from the same wrong model would have agreed with all three.
