@@ -5076,3 +5076,51 @@ merely inert teaches the learner that the tour is broken.
 while HRW runs — so this is state, not configuration. See `tech-debt.md`'s platform entry for the
 separate question of which platforms HRW supports at all; the two are independent, and conflating
 them would put a runtime condition behind a compile-time flag.
+
+---
+
+## 77. A live tour needs THREE panes, and the layout only has two
+
+**Doug, 2026-08-08**, walking `matching-live.md`: *"there's a basic UI problem: I need to have HRW
+in tour mode, but then that makes the HRW RHS small when HRW is using only 50% of my screen and
+VS Code is using the other 50% of my screen."*
+
+**Doug is thinking about the solution; this entry is the problem and its constraints only.**
+Recorded rather than designed, because the first idea is unlikely to be the right one and the
+constraints below are the part that would otherwise be rediscovered.
+
+### What actually changed
+
+**Every earlier tour needed two surfaces: the tour text and HRW.** A live tour needs **three** —
+the tour text, HRW's animation, *and* VS Code's call stack and variables. The stack is not
+incidental: `#73`'s whole thesis is that the call stack **is** the augmenting path, so it is a
+primary surface, not a reference.
+
+So this is not "the right-hand side got small". **A two-pane split has nowhere to put a third
+thing**, and squeezing is the only move it offers.
+
+### The arithmetic, which is why squeezing runs out
+
+HRW at half-width, tour panel at its 40 % default, leaves the observatory **30 % of the screen** —
+and the matching animation is a matrix that wants width. Dragging to the 15 % floor buys back
+17 points and makes the tour column too narrow to read prose in.
+
+### What is already available, so a solution does not re-invent it
+
+- **The divider is draggable, 15–75 %** (`SplitState`, `#59`). A scene where the reader mostly
+  watches can run at 15/85 today.
+- **`main.rs --half`** sizes HRW to half-width, full-height, and exists for exactly this
+  side-by-side arrangement.
+- **The tour is a Markdown file.** Reading it outside HRW is possible — but `hrw://` links stop
+  working, which is precisely what `#73` and the breakpoint links just made load-bearing.
+
+### The constraint any solution has to respect
+
+**The tour's links are the reason the tour lives inside HRW.** Any layout that moves the prose
+out of HRW must keep `hrw://load/…`, `hrw://breakpoint/…` and `hrw://stage/…` clickable, or it
+trades one friction for a worse one. That rules out "just read it in VS Code" as-is, and it is
+the question a second window, a collapsible drawer, or an overlay each has to answer.
+
+**And whatever is chosen, controls are enabled and disabled, never shown and hidden** —
+`lib.rs`'s `LiveState` rule. A layout that makes the tour vanish with no trace of how to bring it
+back is the same defect in a new dress.
