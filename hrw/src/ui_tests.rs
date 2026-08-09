@@ -167,12 +167,19 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         "the-oracle",
         "dae-construction",
         "matching",
+        "matching-live",
     ] {
         // `contains`, not exact: since 2026-08-05 a row reads
         // "failure-typecheck  ·  DimensionMismatch" so the model can be searched for
         // as well as the phase. The tour name is still the row's identity.
+        //
+        // **`get_all_…().next()`, not `query_by_label_contains`** — the latter
+        // panics on two matches, and since `matching-live.md` split off on
+        // 2026-08-08 the substring "matching" matches two rows. Presence is all
+        // this loop asserts, so a second match is none of its business; the
+        // module doc above records the same rule.
         assert!(
-            h.query_by_label_contains(tour).is_some(),
+            h.get_all_by_label_contains(tour).next().is_some(),
             "the tour picker should offer {tour:?}; it is a checked-in fixture",
         );
     }

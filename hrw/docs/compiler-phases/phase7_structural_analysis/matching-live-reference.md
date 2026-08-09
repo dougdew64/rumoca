@@ -21,6 +21,20 @@ Where each `MatchingStep` is pushed. **This is the line a debugger reports for t
 
 **`DisplaceOk` and `DisplaceFail` share one line**, because a single emit chooses between them with an `if`. The site identifies *where*, never *which* — only the frame itself distinguishes the outcome.
 
+## Breakpoint anchors
+
+The lines a live tour sends you to. Each is located by what the line *says*, so moving the code moves the number here — and
+`every_line_the_live_tour_cites_is_a_real_anchor` fails if [`matching-live.md`](../../fixture-tours/matching-live.md) still quotes the old one.
+
+| name | line | what you are looking at |
+|---|---|---|
+| `decision` | `matching.rs:189` | the free-versus-displace branch — the whole decision, in one expression |
+| `recurse` | `matching.rs:210` | the recursive call — an outer frame sitting here is an equation asked to move |
+| `give_up` | `matching.rs:243` | the search giving up — reached only by falling out of the loop |
+| `gate` | `live_trace.rs:97` | the startup gate, called before any algorithm work |
+| `push` | `live_trace.rs:111` | the per-frame anchor call, after the frame is sent and the delay slept |
+| `anchor` | `live_trace.rs:173` | the breakpoint the Debug button arms — every live stop lands here |
+
 ## Ledger — `ProportionalLoop` (succeeds — the displacement finds a home)
 
 | idx | step | emit line | depth |

@@ -1197,7 +1197,7 @@ pub fn check_breakpoint_ack() -> BreakpointAck {
 /// the signature, advance to the line opening the body (which may be a later
 /// line if the signature ever wraps), then take the first line that is neither
 /// blank nor a comment.
-fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
+pub(crate) fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usize)> {
     let file = std::fs::canonicalize(LIVE_TRACE_FILE)?;
     // On Windows, canonicalize produces \\?\C:\... extended-length paths.
     // LLDB doesn't recognize that prefix, so strip it for breakpoint matching.

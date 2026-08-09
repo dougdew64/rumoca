@@ -412,36 +412,24 @@ variables before exploring them**. Without that sort, Act 1's *"variable 0 first
 coin flip, and every `**Expected:**` line in this tour would be *sometimes* true, which is worse
 than being wrong. Pinned by `test_maximum_matching_is_deterministic_under_ties` in the same file.
 
-### Stand inside it
+### Stand inside it — in its own tour
 
-[ProportionalLoop → Structural → Matching](hrw://load/ProportionalLoop/Structural/MatchingAnim)
+Everything above watched the algorithm from outside. **Standing inside it needs a debugger
+attached and the HRW Bridge extension running**, which is a precondition nothing else in this
+tour has — so it lives separately rather than gating four acts on a setup they never use.
 
-**Expected:** the matching animation, unstarted.
+**→ [`matching-live.md`](matching-live.md)** — the same two questions, asked from inside:
+`ProportionalLoop` displacing successfully and `TwiceDefined` displacing and failing, with the
+call stack read as the augmenting path. It also shows **two algorithm steps that emit no frame at
+all**, which is to say two steps none of the acts above could have shown you.
 
-Click **Debug**. Execution stops at the live-trace anchor *before any algorithm work*, showing
-`frame_index` as `usize::MAX` — the startup gate.
-
-**Expected:** VS Code stops, and the Debug Console shows that frame index rather than `0`.
-
-**F5 advances one algorithm step**, and the animation follows each press.
-
-**Expected:** one press moves the animation forward exactly one frame.
-
-To stand *inside* the algorithm rather than beside it, set your own breakpoint on the
-`match match_var[var]` expression in `augment_traced`. **That one branch is the entire
-free-versus-displace decision** — Act 1 is what it looks like when the first arm keeps being
-taken, and Act 2 is what it looks like when the second one is.
-
-> **When you ask Claude about the line you are stopped at, select it first.**
-> Measured 2026-08-07 (`docs/ideas.md` #70): **Claude cannot see a debugger stop at all** — no
-> location, no frame, no call stack. Stopping reveals the *file*, and that much does reach
-> Claude, but never the line. **Selecting the line does reach it**, verified against the source.
-> So the gesture is one click, and without it Claude knows only which file you are in.
+> **To ask Claude about where you are stopped, just say so.** The bridge publishes the stop —
+> location, call stack and the innermost scope's locals — to `.hrw-bridge/debug-state.json`.
+> No selecting, no naming the file.
 >
-> If a selection ever seems not to land, **name the place instead** — *"I'm stopped in
-> `augment_traced` at the `match`"* — which always works, because Claude then reads the file.
-> This stop is where the tour hands off to a conversation, so it is worth knowing which gesture
-> carries and which does not.
+> *(This reversed on 2026-08-08. Until `docs/ideas.md` #72 shipped, Claude genuinely could not
+> see a debugger stop and this tour told you to select the line first; #70 had measured that.
+> Both statements were true when written, which is why this one carries its date.)*
 
 ## What this tour cannot check
 
@@ -459,11 +447,12 @@ And whether Act 2's punchline — no equation matched to its own left-hand side 
 *revelation* or as *arbitrary*. It is the strongest claim in the tour and the one I am least
 able to judge from this side.
 
-**And Act 5 most of all, because it is the newest and the least like the others.** It names
-functions instead of showing them, on the theory that a name plus a debugger beats transcribed
-code that rots. **If it instead reads as homework** — a list of things to go look up rather than
-something that closes the loop — then the theory is wrong and the stop should carry a small
-amount of real code after all. That judgement is yours; I cannot make it from here.
+**And Act 5, which named functions instead of showing them** on the theory that a name plus a
+debugger beats transcribed code that rots. **It read as homework** — Doug, 2026-08-08:
+*"for Act 5, we have an opportunity to accomplish something much more spectacular: live trace
+debugging."* So the ending moved to [`matching-live.md`](matching-live.md) and Act 5 kept only the
+naming, which is now setup rather than payoff. **What remains unjudged is whether the naming still
+earns its place** once the reader knows the real ending is elsewhere.
 
 ## What comes next in the chain
 

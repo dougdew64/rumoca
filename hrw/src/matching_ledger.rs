@@ -46,6 +46,128 @@ use rumoca_phase_structural::matching::{MatchingStep, maximum_matching_with_trac
 /// produce a table that looks current.
 const MATCHING_SOURCE: &str = include_str!("../../crates/rumoca-phase-structural/src/matching.rs");
 
+/// The anchor's source, for the three lines a live tour tells the reader to
+/// stop at.
+const LIVE_TRACE_SOURCE: &str =
+    include_str!("../../crates/rumoca-phase-structural/src/live_trace.rs");
+
+/// The tour whose line citations are checked against [`anchors`].
+pub const LIVE_TOUR_PATH: &str = "docs/fixture-tours/matching-live.md";
+
+/// A line a live-trace tour points the reader at, found by what the line
+/// *says* rather than by where it currently sits.
+///
+/// **Doug, 2026-08-08: "Rotting is bad. If line numbers will help, add line
+/// numbers."** So the tour carries them — and
+/// `every_line_the_live_tour_cites_is_a_real_anchor` fails when they move,
+/// which is what makes carrying them safe rather than reckless.
+pub struct Anchor {
+    /// Stable name used in prose and in the generated reference.
+    pub name: &'static str,
+    /// File the line lives in, as a tour would write it.
+    pub file: &'static str,
+    /// 1-based line.
+    pub line: usize,
+    /// What the reader is looking at, and why they were sent there.
+    pub what: &'static str,
+}
+
+/// First line at or after `from` satisfying `pred`, 1-based. `None` is a
+/// *finding*, never a fallback: a missing anchor must fail loudly rather than
+/// resolve to a plausible number.
+fn line_where(source: &str, from: usize, pred: impl Fn(&str) -> bool) -> Option<usize> {
+    source
+        .lines()
+        .enumerate()
+        .skip(from)
+        .find(|(_, l)| pred(strip_comment(l)))
+        .map(|(i, _)| i + 1)
+}
+
+/// The lines a live tour cites, derived from source.
+///
+/// Each is located by a distinctive fragment of the line itself, so moving code
+/// changes the number here and in the tour together — the whole point.
+#[must_use]
+pub fn anchors() -> Vec<Anchor> {
+    let mut out = Vec::new();
+
+    let fn_start = line_where(MATCHING_SOURCE, 0, |l| l.contains("fn augment_traced(")).unwrap_or(0);
+
+    if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| {
+        l.contains("match match_var[var]")
+    }) {
+        out.push(Anchor {
+            name: "decision",
+            file: "matching.rs",
+            line,
+            what: "the free-versus-displace branch — the whole decision, in one expression",
+        });
+    }
+    // The recursive call, not the signature: the frame every non-innermost
+    // `augment_traced` is parked on while it waits for an answer.
+    if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| {
+        l.contains("augment_traced(") && !l.trim_start().starts_with("fn ")
+    }) {
+        out.push(Anchor {
+            name: "recurse",
+            file: "matching.rs",
+            line,
+            what: "the recursive call — an outer frame sitting here is an equation asked to move",
+        });
+    }
+    // The bare `false` closing the search: a give-up that emits no frame.
+    if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| l.trim_end() == "    false") {
+        out.push(Anchor {
+            name: "give_up",
+            file: "matching.rs",
+            line,
+            what: "the search giving up — reached only by falling out of the loop",
+        });
+    }
+
+    if let Some(line) = line_where(LIVE_TRACE_SOURCE, 0, |l| {
+        l.contains("live_trace_breakpoint(usize::MAX)")
+    }) {
+        out.push(Anchor {
+            name: "gate",
+            file: "live_trace.rs",
+            line,
+            what: "the startup gate, called before any algorithm work",
+        });
+    }
+    if let Some(line) = line_where(LIVE_TRACE_SOURCE, 0, |l| {
+        l.contains("live_trace_breakpoint(index)")
+    }) {
+        out.push(Anchor {
+            name: "push",
+            file: "live_trace.rs",
+            line,
+            what: "the per-frame anchor call, after the frame is sent and the delay slept",
+        });
+    }
+    // The anchor body — the line the bridge arms and the debugger reports.
+    // Structural, matching `bridge::find_live_trace_line`: signature, the line
+    // opening the body, then the first line that is neither blank nor comment.
+    if let Some(sig) = line_where(LIVE_TRACE_SOURCE, 0, |l| {
+        l.contains("pub fn live_trace_breakpoint(")
+    }) && let Some(open) = line_where(LIVE_TRACE_SOURCE, sig - 1, |l| l.contains('{'))
+        && let Some(line) = line_where(LIVE_TRACE_SOURCE, open, |l| {
+            let t = l.trim();
+            !t.is_empty() && !t.starts_with("//")
+        })
+    {
+        out.push(Anchor {
+            name: "anchor",
+            file: "live_trace.rs",
+            line,
+            what: "the breakpoint the Debug button arms — every live stop lands here",
+        });
+    }
+
+    out
+}
+
 /// Where the generated reference lives, relative to the crate manifest.
 pub const REFERENCE_PATH: &str =
     "docs/compiler-phases/phase7_structural_analysis/matching-live-reference.md";
@@ -325,6 +447,23 @@ pub fn reference() -> String {
          never *which* — only the frame itself distinguishes the outcome.\n\n",
     );
 
+    out.push_str("## Breakpoint anchors\n\n");
+    out.push_str(
+        "The lines a live tour sends you to. Each is located by what the line \
+         *says*, so moving the code moves the number here — and\n\
+         `every_line_the_live_tour_cites_is_a_real_anchor` fails if \
+         [`matching-live.md`](../../fixture-tours/matching-live.md) still quotes \
+         the old one.\n\n",
+    );
+    out.push_str("| name | line | what you are looking at |\n|---|---|---|\n");
+    for a in anchors() {
+        out.push_str(&format!(
+            "| `{}` | `{}:{}` | {} |\n",
+            a.name, a.file, a.line, a.what
+        ));
+    }
+    out.push('\n');
+
     for (model, why) in LEDGER_SPECIMENS {
         out.push_str(&format!("## Ledger — `{model}` ({why})\n\n"));
         match ledger_rows(model) {
@@ -500,6 +639,106 @@ mod tests {
 
         let depths: Vec<usize> = rows.iter().map(|(_, _, _, d)| *d).collect();
         assert_eq!(depths, vec![0, 1, 1, 1, 0, 1, 1, 1, 0]);
+    }
+
+    /// **Every anchor is found.** A `None` from the scan would silently drop a
+    /// row, and a tour citing a line the reference does not list is exactly the
+    /// rot this module exists to stop.
+    #[test]
+    fn every_anchor_resolves() {
+        let found: Vec<&str> = anchors().iter().map(|a| a.name).collect();
+        for name in ["decision", "recurse", "give_up", "gate", "push", "anchor"] {
+            assert!(
+                found.contains(&name),
+                "anchor `{name}` was not located in the source \u{2014} its \
+                 locating fragment must have changed: found {found:?}"
+            );
+        }
+    }
+
+    /// **The anchor agrees with what the bridge actually arms.**
+    ///
+    /// Two independent derivations of the same line: this module scans the
+    /// source compiled into the binary, `bridge::find_live_trace_line` scans the
+    /// file on disk at runtime and is what the Debug button sends to VS Code. If
+    /// they disagree, the tour tells the reader to look somewhere the debugger
+    /// will not stop.
+    #[test]
+    fn the_documented_anchor_is_the_one_the_bridge_arms() {
+        let documented = anchors()
+            .into_iter()
+            .find(|a| a.name == "anchor")
+            .expect("the anchor must resolve");
+        let (_, armed) = crate::bridge::find_live_trace_line().expect("bridge must locate it");
+        assert_eq!(
+            documented.line, armed,
+            "the tour would send the reader to live_trace.rs:{} while the Debug \
+             button arms :{armed}",
+            documented.line
+        );
+    }
+
+    /// **Every `file.rs:NNN` the live tour cites is a real anchor.**
+    ///
+    /// Doug, 2026-08-08: *"Rotting is bad. If line numbers will help, add line
+    /// numbers."* This is what makes carrying them safe. A tour is prose and
+    /// nothing compiles it, so without this a shifted line stays plausible
+    /// forever — and the reader who follows it blames themselves.
+    ///
+    /// **Set membership, not position**, so the tour may cite anchors in any
+    /// order and skip ones it does not need. A uniform shift is still caught:
+    /// after it, the old numbers are no longer anchors at all.
+    #[test]
+    fn every_line_the_live_tour_cites_is_a_real_anchor() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(LIVE_TOUR_PATH);
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            // The tour is optional; its absence is not a failure of this check.
+            return;
+        };
+
+        let known: Vec<(String, usize)> = anchors()
+            .iter()
+            .map(|a| (a.file.to_owned(), a.line))
+            .chain(
+                emit_sites(MATCHING_SOURCE)
+                    .values()
+                    .flatten()
+                    .map(|l| ("matching.rs".to_owned(), *l)),
+            )
+            .collect();
+
+        let mut checked = 0usize;
+        for file in ["matching.rs", "live_trace.rs"] {
+            let needle = format!("{file}:");
+            let mut rest = text.as_str();
+            while let Some(i) = rest.find(&needle) {
+                let tail = &rest[i + needle.len()..];
+                let end = tail.find(|c: char| !c.is_ascii_digit()).unwrap_or(tail.len());
+                if end > 0 {
+                    let line: usize = tail[..end].parse().expect("digits");
+                    assert!(
+                        known.contains(&(file.to_owned(), line)),
+                        "{LIVE_TOUR_PATH} cites {file}:{line}, which is not an anchor or an \
+                         emit site any more \u{2014} the code moved. Current anchors: {:?}",
+                        known
+                            .iter()
+                            .filter(|(f, _)| f == file)
+                            .map(|(_, l)| *l)
+                            .collect::<Vec<_>>()
+                    );
+                    checked += 1;
+                }
+                rest = &tail[end..];
+            }
+        }
+
+        // **Non-vacuity.** A tour that cites nothing would pass every assertion
+        // above while carrying no checkable claim at all.
+        assert!(
+            checked >= 4,
+            "expected the live tour to cite several source lines, found {checked} \u{2014} \
+             either it stopped citing them or the scan stopped finding them"
+        );
     }
 
     /// **The reference on disk matches a fresh generation.**

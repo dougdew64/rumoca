@@ -159,6 +159,24 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
   - `stop-6-seek-a-view-that-has-no-animation` — Stop 6 — Seek a view that has no animation
   - `what-this-cannot-check` — What this cannot check
 
+## `matching-live`
+
+**Matching, live — standing inside the search**
+
+Walk [`matching.md`](matching.md) first. That tour shows the algorithm running, what it
+
+- **Specimens:** `ProportionalLoop`, `TwiceDefined`
+- **Stages:** `Structural`
+- **Stops:**
+  - `matching-live-standing-inside-the-search` — Matching, live — standing inside the search
+  - `scene-0-two-things-must-be-true-before-any-of-this-works` — Scene 0 — Two things must be true before any of this works
+  - `scene-1-arm-it-and-learn-to-name-a-stop` — Scene 1 — Arm it, and learn to name a stop
+  - `scene-2-the-call-stack-is-the-augmenting-path` — Scene 2 — The call stack *is* the augmenting path
+  - `scene-3-the-same-machinery-refusing` — Scene 3 — The same machinery, refusing
+  - `scene-4-what-the-two-runs-say-together` — Scene 4 — What the two runs say together
+  - `scene-5-what-this-instrument-can-and-cannot-show-you` — Scene 5 — What this instrument can and cannot show you
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `matching`
 
 **Fixture tour — Matching: when greed is not enough**
