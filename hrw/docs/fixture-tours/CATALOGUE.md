@@ -198,6 +198,26 @@ Walk [`matching.md`](matching.md) first, and Act 3 of it especially. That act sh
   - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
 
+## `initialization`
+
+**Initialization — the equations that only run once**
+
+This tour is a pair one line apart. `RcCircuit` initializes cleanly. `OverInitRc` is the same
+
+- **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`
+- **Stages:** `Initialization`
+- **Stops:**
+  - `initialization-the-equations-that-only-run-once` — Initialization — the equations that only run once
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
+  - `act-1-nothing-specified-and-that-is-fine` — Act 1 — Nothing specified, and that is fine
+  - `act-2-a-real-circuit-initialized-from-one-number` — Act 2 — A real circuit, initialized from one number
+  - `act-3-the-same-circuit-over-determined` — Act 3 — The same circuit, over-determined
+  - `act-4-why-those-two-lines-fight` — Act 4 — Why those two lines fight
+  - `act-5-the-relaxation-hint` — Act 5 — The relaxation hint
+  - `act-6-the-arithmetic-stated-once` — Act 6 — The arithmetic, stated once
+  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `matching-live`
 
 **Matching, live — standing inside the search**
