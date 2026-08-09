@@ -6,6 +6,25 @@
 
 **Re-read a tour before citing it.** Everything below is derived and current; whether a tour's *claims* still hold is not something a catalogue can know, and a tour promised a tree the pane did not show for its whole existence.
 
+## `blt-ordering`
+
+**BLT — finding an order, and finding out there isn't one**
+
+Walk [`matching.md`](matching.md) first. Matching answered *which* equation solves *which*
+
+- **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
+- **Stages:** `Structural`
+- **Stops:**
+  - `blt-finding-an-order-and-finding-out-there-isn-t-one` — BLT — finding an order, and finding out there isn't one
+  - `the-problem-this-step-exists-to-solve` — The problem this step exists to solve
+  - `act-1-when-an-order-exists` — Act 1 — When an order exists
+  - `act-2-when-no-order-exists` — Act 2 — When no order exists
+  - `act-3-when-the-system-splits` — Act 3 — When the system splits
+  - `act-4-what-you-have-been-building-is-a-block-triangular-form` — Act 4 — What you have been building is a block triangular form
+  - `act-5-how-rumoca-spells-it` — Act 5 — How Rumoca spells it
+  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `camera-aiming`
 
 **Fixture tour — camera aiming**
