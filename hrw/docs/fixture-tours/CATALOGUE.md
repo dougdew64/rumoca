@@ -275,6 +275,25 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
   - `stop-7-follow-then-point-and-see-both` — Stop 7 — Follow, then point, and see both
   - `what-this-cannot-check` — What this cannot check
 
+## `solve-lowering`
+
+**Solve lowering — where names become numbers**
+
+This is the last compilation phase, and the one where the model stops being a model.
+
+- **Specimens:** `BouncingBall`, `ProportionalLoop`, `RcCircuit`
+- **Stages:** `SolveLowering`
+- **Stops:**
+  - `solve-lowering-where-names-become-numbers` — Solve lowering — where names become numbers
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
+  - `act-1-two-states-five-parameters-and-a-starting-vector` — Act 1 — Two states, five parameters, and a starting vector
+  - `act-2-a-model-with-no-dynamics-at-all` — Act 2 — A model with no dynamics at all
+  - `act-3-one-state-carrying-twenty-two-algebraic-variables` — Act 3 — One state carrying twenty-two algebraic variables
+  - `act-4-three-problems-not-one` — Act 4 — Three problems, not one
+  - `act-5-why-the-layout-is-frozen-at-compile-time` — Act 5 — Why the layout is frozen at compile time
+  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `what-this-tour-cannot-check` — What this tour cannot check
+
 ## `structural-vs-numerical-rank`
 
 **Structural rank vs numerical rank**

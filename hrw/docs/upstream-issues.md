@@ -267,6 +267,54 @@ every outcome matched exactly.
 
 ---
 
+## Index reduction's demoted states are still counted as states downstream
+
+**Found 2026-08-08** while writing `docs/fixture-tours/index-reduction.md` from generated
+notebook traces. **Reproduced on two specimens, same direction both times.**
+
+### Reproduction
+
+`cargo run -p hrw --example gen_trace -- Drivetrain`, then read the trace:
+
+| specimen | `index_reduction` `n_states_after` | `solve_lowering` `state_scalar_count` |
+|---|---|---|
+| `Drivetrain` | **3** | **9** |
+| `GearWithBrake` | **2** | **7** |
+
+`Drivetrain`'s index reduction demotes six states — `emf.phi`, `rotor.phi`, `rotor.w`,
+`shaft.phi`, `load.s`, `load.v` — leaving `L.i`, `shaft.w`, `mount.s_rel`. Its
+`solve_layout.solver_maps.names` nevertheless begins with all nine, the six demoted ones
+included.
+
+### Expected vs actual
+
+**Expected:** the solver layout carries the states index reduction left behind — three for
+`Drivetrain`, two for `GearWithBrake`.
+
+**Actual:** it carries the pre-reduction count.
+
+### The corroborating symptom
+
+`Drivetrain`'s **initialization is structurally singular**: *"80 matched out of 88 equations and
+88 unknowns"*, with `determinacy.states` also reading **9**. That is exactly the outcome expected
+if the reduction had not been applied — a high-index system is singular until its constraints are
+removed, which is what `index_reduction` reports having done.
+
+### Two readings, and this is where it stops being reproduced fact
+
+**Unverified.** Either
+
+1. index reduction's result is not propagated to the downstream stages, or
+2. `state_scalar_count` deliberately counts every variable that ever carried a `der`, demoted or
+   not, and the initialization singularity has an unrelated cause.
+
+**Nothing in the traces distinguishes these**, and no suspect source location is offered for the
+same reason. Reading (1) would be a real bug; reading (2) would make this a naming problem in the
+report. **Adjudicate before filing** — `docs/ideas.md` #43's System Modeler recipe applies:
+`Drivetrain` either simulates there or does not, and that answers it.
+
+---
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
