@@ -2578,3 +2578,62 @@ source. It does not replace what the walks learned about the *instrument*, it ca
 two `augment_traced:243` give-ups that emit no frame at all, and it cannot tell whether a tour's
 promised rhythm survives a human. Three confident claims were falsified by Doug walking that day,
 and a test written from the same wrong model would have agreed with all three.
+
+### 2026-08-09 — `architecture.md`'s derived numbers are generated into marker-delimited regions
+
+**The problem, found on a familiarisation read.** `architecture.md` is marked 👤 in
+`docs/README.md` — written for Doug and for Rumoca maintainers — and `docs/README.md` states in
+the same table the rule it was breaking in twenty places: *a 👤 document states facts it does not
+own by reference, never by transcription.* **Every one of its twenty module line counts was
+understated, several by more than 3×** (`app.rs` cited at "~3,850" against 12,570; `worker.rs`
+called "the largest module" when it is the second). Worse than any count, **the pipeline it
+described had ten stages and was missing `Dae`**, added 2026-08-03 — so the document showed the
+chain jumping Flatten → Structural with the phase they both depend on absent, which is exactly the
+fiction `worker.rs` had already been corrected for in the *log* on 2026-08-04.
+
+**Same failure as the deleted `end_to_end_tour.md`** — prose carrying a number nothing checks.
+`doc_citations` verifies cited *paths* resolve; nothing could see a cited *count* drift.
+
+**The shape is `tour::catalogue`'s, with one deliberate difference.** Generator in the **library**
+(`src/arch_doc.rs`) so `architecture_regions_are_current` checks the same code that writes the
+file; thin `examples/gen_architecture.rs`; generate-and-compare test naming the command. The
+difference: `CATALOGUE.md` is generated *whole*, which works because every word of it is derived.
+`architecture.md` is 1,900 lines of hand-written reasoning, so regenerating the file would destroy
+the part worth having — hence **three marker-delimited regions** (`pipeline-stages`,
+`module-sizes`, `app-field-groups`) rewritten in place, prose untouched.
+
+**A missing marker is an `Err`, never a silent no-op**, because the alternative is the
+stale-negative trap in a new dress: a splice that skipped a region it could not find would leave
+the stale numbers and report success, and the currentness test would then pass on a document the
+generator had never edited.
+
+**The stage roster reads `StageKind::ALL` itself**, not a text parse of it — and publishes all
+**three** namings per stage (`name` / `slug` / `log_name`), whose divergence once made two stages
+describable in a capture and unreachable by the link built from it. Module sizes are **scanned,
+not listed**, so a new module cannot be silently absent. `App` field groups are parsed from the
+`// ---- N. Title ----` headers, delimiting the struct exactly as
+`doc_citations::app_does_not_regrow_its_field_count` does; the hand-written list they replace
+still carried a **Bridge** group that had been extracted and lacked the **Breakpoint pre-warm**
+group added after it, **while the count stayed accidentally correct at 15** — the shape of error a
+total is powerless to catch.
+
+**Non-vacuity, twice.** `every_pipeline_stage_is_named_in_the_hand_written_prose` reads the
+document with the generated regions *stripped*, or it would be satisfied by the generator's own
+table; it is the check that would have caught the missing `Dae`, and its doc comment states the
+honest bound — strong for compound names like "DAE construction", weak for "Events". `module_sizes`
+carries a floor of 30 files, because an empty table is a well-formed table and would read as "this
+crate has no modules" rather than "the scan broke".
+
+**Verified must-fire twice, not argued.** Editing `arch_doc.rs` changed its own line count and the
+test failed unprompted; then `app.rs`'s row was hand-edited back to the original lie of 3,850 and
+the test failed naming the command.
+
+**The test count is deliberately NOT generated.** The document claimed "270 tests" in one place and
+"~411 fast / ~59 slow" in another. A generator counts 624 `#[test]` attributes where `cargo test`
+reports 549, because `#[cfg(…)]` gates some out — so a derived count next to a suite printing a
+different one replaces one stale number with **two live ones that disagree**. The prose points at
+the command; the suite owns that number.
+
+Suite 549 fast, 0 failed. Clippy exit 0. The two new files are rustfmt-clean; `hrw/`'s
+pre-existing formatting drift is `docs/format-and-app-plan.md`'s separate work and was left alone.
+

@@ -15,11 +15,18 @@ upstream PR to the Rumoca repository.
 ## 1. What HRW is
 
 HRW is a desktop application for **studying** the Rumoca Modelica compiler. It
-compiles Modelica specimens through Rumoca's pipeline (Parse → Resolve →
-Instantiate → Typecheck → Flatten → Structural Analysis → Index Reduction →
-Initialization → Events → Solve Lowering → Simulation) and renders each phase's
-intermediate representation (IR) in an interactive inspector. It also runs
-simulations and plots the resulting trajectories.
+compiles Modelica specimens through Rumoca's pipeline —
+
+> Parse → Resolve → Instantiate → Typecheck → Flatten → DAE construction →
+> Structural analysis → Index reduction → Initialization → Events →
+> Solve lowering → Simulation
+
+— and renders each phase's intermediate representation (IR) in an interactive
+inspector. It also runs simulations and plots the resulting trajectories. The
+roster with each stage's three names is in [§4](#the-compilation-pipeline), derived
+from `StageKind::ALL`; the names above are the ones the log uses, and
+`arch_doc`'s `every_pipeline_stage_is_named_in_the_hand_written_prose` fails if a
+stage is ever added to the compiler and not to this list.
 
 HRW lives inside a fork of the Rumoca workspace (`hrw/` directory) as a normal
 Cargo workspace member. This lets it depend on Rumoca crates via path deps
@@ -54,19 +61,85 @@ hrw/
 │   ├── equation_sheet.rs     # Readable equation sheet from the flat DAE
 │   ├── identifier_index.rs  # Cross-stage identifier index (source → flat names)
 │   ├── log_view.rs          # Timestamped compilation/simulation log panel
-│   └── field_help.rs        # Build-time-embedded IR field documentation
+│   ├── field_help.rs        # Build-time-embedded IR field documentation
+│   └── arch_doc.rs          # The derived numbers in this document (see below)
 ├── specimens/          # Modelica source files (the inputs)
 ├── examples/
 │   ├── gen_trace.rs    # Headless: writes a specimen's durable compilation trace
-│   └── gen_field_help.rs  # Extracts doc comments from rumoca-ir-ast
+│   ├── gen_field_help.rs  # Extracts doc comments from rumoca-ir-ast
+│   └── gen_architecture.rs  # Rewrites this document's generated regions
 ├── docs/               # Documentation (this file, charter, ideas, etc.)
 └── vendor/msl/         # Gitignored: the staged reference MSL 4.1.0
 ```
+
+That tree names the modules worth introducing, not all of them; the complete list
+with sizes is the generated table below.
 
 **Why a library + binary split?** Rust binaries can't be depended on by other
 targets. All modules live in the library crate (`lib.rs`), so both the GUI binary
 (`main.rs`) and headless tools (`gen_trace`, `gen_field_help`) share one
 implementation of the compilation pipeline.
+
+### Module sizes
+
+**Generated — the table below is rewritten by
+`cargo run -p hrw --example gen_architecture`.** Do not edit it by hand.
+
+Sizes used to be transcribed into each section heading below, and on 2026-08-09
+**all twenty were understated, several by more than 3×** — `app.rs` was cited at
+"~3,850" against a real 12,570. Nothing checked them, exactly as nothing checked
+the 7×7 incidence matrix that the retired `end_to_end_tour.md` asserted about a tab
+showing 48 equations. They are derived now, and
+`arch_doc::tests::architecture_regions_are_current` fails when they drift.
+
+<!-- BEGIN GENERATED module-sizes -->
+**41 modules, 51,052 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
+
+| module | lines |
+|---|---:|
+| `app.rs` | 12,570 |
+| `worker.rs` | 9,921 |
+| `bridge.rs` | 3,367 |
+| `ui_tests.rs` | 1,820 |
+| `fidelity.rs` | 1,765 |
+| `tree.rs` | 1,303 |
+| `doc_citations.rs` | 1,205 |
+| `autoplay.rs` | 1,083 |
+| `incidence_view.rs` | 1,056 |
+| `diagnostics.rs` | 986 |
+| `matching_anim.rs` | 964 |
+| `reduction_view.rs` | 875 |
+| `tarjan_anim.rs` | 871 |
+| `equation_sheet.rs` | 831 |
+| `matching_ledger.rs` | 804 |
+| `survey.rs` | 769 |
+| `lib.rs` | 746 |
+| `tearing_anim.rs` | 702 |
+| `canvas.rs` | 681 |
+| `arch_doc.rs` | 634 |
+| `ic_plan_anim.rs` | 624 |
+| `expr_format.rs` | 621 |
+| `model_list.rs` | 600 |
+| `modelica_lex.rs` | 595 |
+| `spyplot.rs` | 594 |
+| `identifier_index.rs` | 592 |
+| `source_view.rs` | 576 |
+| `connection_anim.rs` | 453 |
+| `reduction_anim.rs` | 445 |
+| `tour.rs` | 425 |
+| `playback.rs` | 395 |
+| `pre_lowering_anim.rs` | 379 |
+| `promote.rs` | 342 |
+| `alias_anim.rs` | 319 |
+| `report.rs` | 265 |
+| `log_view.rs` | 229 |
+| `colors.rs` | 221 |
+| `main.rs` | 178 |
+| `json_read.rs` | 119 |
+| `field_help.rs` | 67 |
+| `test_support.rs` | 60 |
+| **total** | **51,052** |
+<!-- END GENERATED module-sizes -->
 
 
 ## 3. The big picture: data flow
@@ -115,7 +188,7 @@ implementation of the compilation pipeline.
 
 ## 4. The worker thread
 
-**File:** `worker.rs` (~3950 lines, the largest module)
+**File:** `worker.rs`
 
 ### Why a separate thread?
 
@@ -152,7 +225,7 @@ lives in `WorkerState` on the worker thread — the UI never touches it.
 
 ### Progressive streaming
 
-Compilation doesn't wait until all 10 stages finish before reporting. All stages
+Compilation doesn't wait until every stage finishes before reporting. All stages
 are grouped in a `StageBundle` struct. After each stage completes, the worker sends
 a clone of the bundle via `FromWorker::CompileProgress`; the UI assigns it directly
 to `App.stages` so tabs update in real time:
@@ -181,25 +254,40 @@ not fire).
 
 ### The compilation pipeline
 
-`WorkerState::compile()` drives the 10-stage pipeline:
+`WorkerState::compile()` drives the compilation stages in order:
 
 1. **Parse** — `rumoca_phase_parse::parse()` → AST
 2. **Resolve** — `session.resolve()` → resolved tree (names bound to definitions)
 3. **Instantiate** — `rumoca_phase_instantiate::instantiate_model()` → `InstanceOverlay`
 4. **Typecheck** — `rumoca_phase_typecheck::typecheck_instanced()` → types assigned
 5. **Flatten** — `session.compile_model_strict_reachable_with_recovery()` → flat model
-   (this is an opaque Rumoca entry point that runs phases 5–9 internally)
-6. **Structural** — `build_structural_report()` on the raw (pre-reduction) DAE
-7. **Index reduction** — replicate Rumoca's reduction funnel on a clone of the DAE
-8. **Initialization** — `build_ic_plan()` + determinacy analysis
-9. **Events** — read hybrid partitions from the DAE's public fields
-10. **Solve lowering** — `lower_dae_to_solve_model()` → `SolveModel`
+   (this is an opaque Rumoca entry point that runs several phases internally,
+   DAE construction among them)
+6. **DAE construction** — the `Dae` already carried on the `CompilationResult`, serialized
+   directly. **There is no separate call**: `rumoca-ir-dae` is a boundary IR like
+   `rumoca-ir-flat` and `Dae` implements `Serialize`, so this stage was never work to
+   build — only a tab nobody had added, until 2026-08-03. Its note reports the balance
+   (states, algebraics, continuous equations), because that is the claim DAE construction
+   makes and the one everything downstream relies on.
+7. **Structural** — `build_structural_report()` on the raw (pre-reduction) DAE
+8. **Index reduction** — replicate Rumoca's reduction funnel on a clone of the DAE
+9. **Initialization** — `build_ic_plan()` + determinacy analysis
+10. **Events** — read hybrid partitions from the DAE's public fields
+11. **Solve lowering** — `lower_dae_to_solve_model()` → `SolveModel`
 
-Phases 5–10 depend on Rumoca's `PhaseResult`, which is either `Success(CompileResult)`
+**Stage 6 is logged in its true position, and that took a correction.** Until
+2026-08-04 the DAE stage was built *after* solve lowering and never logged, so the log
+showed the chain jumping Flatten → Structural with the phase they both depend on
+missing — Doug found it while walking the tour that teaches the step. It was moved
+rather than logged where it stood, because logging it in place would have reported DAE
+construction finishing *after* the five phases that consume its output: a second
+fiction in place of the first.
+
+Stages 5–11 depend on Rumoca's `PhaseResult`, which is either `Success(CompileResult)`
 (carrying the DAE + flat IR) or `Failed { phase, error }`. When a phase fails, later
 stages are skipped and show informational notes ("not reached — Flatten failed").
 
-Phases 5–10 use the `run_stage!` macro to avoid repeating the 7-line log/time/extract/
+They also use the `run_stage!` macro to avoid repeating the 7-line log/time/extract/
 emit pattern for each stage. The macro captures `log`, `drain_traces`, `bundle`, `emit`,
 and `path` from the enclosing scope.
 
@@ -209,8 +297,37 @@ for `Failed`/`NeedsInner`/`None` result variants, eliminating duplicated match a
 `unwrap_success()` extracts the `&CompilationResult` from a `PhaseResult::Success`,
 replacing inline `match` arms that were duplicated across five stage functions.
 
-`StageKind::ALL` is a const array of all 11 pipeline stages in order, used for
-exhaustive iteration and test assertions.
+#### The stage roster
+
+`StageKind::ALL` is the const array of every stage in pipeline order, used for
+exhaustive iteration and test assertions; `StageKind::COMPILATION` is the same list
+without `Simulation`.
+
+**Generated — rewritten by `cargo run -p hrw --example gen_architecture`.** Read
+straight from those constants, so it cannot disagree with them. Each stage carries
+**three** names and the distinction is load-bearing: a capture once emitted the display
+label `"Index reduction"` where the link grammar accepts only the slug
+`"IndexReduction"`, which made two stages describable in a capture and unreachable by
+the link built from it.
+
+<!-- BEGIN GENERATED pipeline-stages -->
+**12 stages, of which the first 11 are compilation phases.** `Simulation` is in the roster because it is a tab, but it is not a phase — `StageBundle::get()` panics on it, which is why `StageKind::COMPILATION` exists alongside `StageKind::ALL`.
+
+| # | variant | tab label | `hrw://stage/` slug | log name |
+|---|---|---|---|---|
+| 1 | `Parse` | Parse | `Parse` | Parse |
+| 2 | `Resolve` | Resolve | `Resolve` | Resolve |
+| 3 | `Instantiate` | Instantiate | `Instantiate` | Instantiate |
+| 4 | `Typecheck` | Typecheck | `Typecheck` | Typecheck |
+| 5 | `Flatten` | Flatten | `Flatten` | Flatten |
+| 6 | `Dae` | DAE | `Dae` | DAE construction |
+| 7 | `Structural` | Structural | `Structural` | Structural analysis |
+| 8 | `IndexReduction` | Index reduction | `IndexReduction` | Index reduction |
+| 9 | `Initialization` | Initialization | `Initialization` | Initialization |
+| 10 | `Events` | Events | `Events` | Events |
+| 11 | `SolveLowering` | Solve lowering | `SolveLowering` | Solve lowering |
+| 12 | `Simulation` | Simulation | `Simulation` | Simulation |
+<!-- END GENERATED pipeline-stages -->
 
 Both `compile()` and `simulate()` use `make_log(&t0, emit)` to build their timing-aware
 log closures from a shared helper, avoiding the identical closure pattern.
@@ -307,7 +424,7 @@ lets the generic tree inspector render any stage without knowing its Rust type.
 
 ## 5. The UI shell
 
-**File:** `app.rs` (~3850 lines)
+**File:** `app.rs`
 
 ### Immediate-mode UI
 
@@ -324,27 +441,55 @@ if ui.button("Run").clicked() {
 
 ### The `App` struct
 
-`App` holds all application state, organized into 15 field groups:
+`App` holds all application state, in field groups marked by
+`// ---- N. Title ----` comments inside the struct.
 
-1. **Worker** — the `Worker` handle (send/receive channels)
-2. **Library config** — MSL source-root paths, load status
-3. **Specimen list** — directory path, file list, purpose hints
-4. **Compilation results** — a `StageBundle` (all 10 pipeline stages in one struct), model name, def_index
-5. **Navigation** — the "go to definition" stack for browsing library classes
-6. **Bridge** — Claude Code capture state (monotonic `ask_seq` counter)
-7. **View toggles** — UI mode (Tour/Specimen/Debug), Settings, Help, About window visibility
-8. **Field help** — the embedded doc-comment lookup table (delivered as tree node tooltips)
-9. **Custom views** — sub-view selectors and pan/zoom cameras for spy-plot, incidence, matching, and Tarjan views
-10. **Log** — timestamped compilation/simulation log entries
-11. **Simulation** — `SimData`, plot flags, sim-in-progress state
-12. **Cached views** — `cached_spy_plot`, `cached_incidence`, `cached_reduction`,
-    `cached_equation_sheet`, `cached_matching_anim`, `cached_tarjan_anim`
-    (`Option<Option<T>>` — outer = cache state, inner = parse result) avoid per-frame
-    re-parsing of structural report JSON; invalidated on `Compiled` and when switching
-    between Structural/IndexReduction (tracked by `cached_report_stage`)
-13. **Markdown rendering** — `egui_commonmark` cache and per-specimen narrative cache
-14. **Pending stage** — deferred stage switch for `hrw://load/Specimen/Stage` links
-15. **Live debug spawn** — deferred algorithm thread spawn with breakpoint ack handshake
+**Generated — rewritten by `cargo run -p hrw --example gen_architecture`.** Read from
+those comments, so the table cannot describe a structure the struct no longer has. It
+did: the hand-written version of this list still carried a **Bridge** group that had
+been extracted into its own state struct and lacked the **Breakpoint pre-warm** group
+added after it, while the *count* stayed accidentally correct at 15 — the shape of
+error a total is powerless to catch.
+
+<!-- BEGIN GENERATED app-field-groups -->
+**15 groups**, numbered 1–16 with **6** unused — a number is retired when its group is extracted into its own state struct, and the surviving numbers stay put so they keep matching the comments in `app.rs`.
+
+| # | group |
+|---|---|
+| 1 | Worker thread |
+| 2 | Library configuration |
+| 3 | The model list |
+| 4 | Current selection + compilation results |
+| 5 | "Go to definition" navigation stack |
+| 7 | Panels and windows toggled from the menu bar |
+| 8 | Generic field help |
+| 9 | How the reader is looking at the current stage |
+| 10 | Compilation log |
+| 11 | On-demand simulation |
+| 12 | Cached structural views |
+| 13 | Markdown rendering |
+| 14 | Pending stage from hrw:// link |
+| 15 | Deferred live debug spawn (ack handshake) |
+| 16 | Breakpoint pre-warm |
+<!-- END GENERATED app-field-groups -->
+
+**The field count is ratcheted, not counted here.** `App` went 105 → 57 fields during
+the UI pause, and `doc_citations::app_does_not_regrow_its_field_count` holds it there:
+raising the bound requires the reasoning in the same commit. That test owns the number,
+so this document does not repeat it.
+
+Three groups need more than a title:
+
+- **Current selection + compilation results** holds a `StageBundle` — every compilation
+  stage in one struct — plus the model name and `def_index`. `StageBundle::get()`
+  *panics* on `Simulation`, which is why anything walking stages must use
+  `StageKind::COMPILATION` rather than `ALL`.
+- **Cached structural views** are `Option<Option<T>>`: the outer layer is cache state,
+  the inner one the parse result. They exist to keep structural-report JSON out of the
+  per-frame path, and are invalidated on `Compiled` and when switching between
+  Structural and IndexReduction (tracked by `cached_report_stage`).
+- **Deferred live debug spawn** is the breakpoint ack handshake, described in full under
+  [§7](#algorithm-animation-steppers) — four cooperating layers, none of them optional.
 
 ### Panel layout and UI modes
 
@@ -447,7 +592,7 @@ It dispatches `ToWorker::Simulate` and sets `simulating = true`.
 
 ## 6. The generic tree inspector
 
-**File:** `tree.rs` (~360 lines)
+**File:** `tree.rs`
 
 The charter mandates **one generic serde-value tree inspector** for all pipeline
 stages — not per-stage bespoke widgets. This is implemented as a recursive
@@ -485,7 +630,7 @@ the target class in the same generic tree.
 
 Three views use egui's low-level `Painter` API instead of the generic tree.
 
-### Canvas scaffold (`canvas.rs`, ~410 lines)
+### Canvas scaffold (`canvas.rs`)
 
 A reusable pan/zoom camera shared by the spy-plot and incidence views. It maintains
 a persistent transform (offset + zoom) and handles:
@@ -507,7 +652,7 @@ n_rows)` resolves the hover pointer to a cell index (shared by spy-plot and inci
 and `View::draw_grid(painter, n_cols, n_rows, color)` draws grid lines with a built-in
 zoom guard.
 
-### BLT spy-plot (`spyplot.rs`, ~450 lines)
+### BLT spy-plot (`spyplot.rs`)
 
 Visualizes the Block Lower Triangular (BLT) decomposition of the structural
 analysis. Each diagonal block is a group of equations that must be solved together:
@@ -521,7 +666,7 @@ Blocks are laid out consecutively along the diagonal. Colors distinguish block t
 (blue for scalar, orange for coupled with tearing). Hover shows the block's equations
 and tearing report; click captures the block into the bridge.
 
-### Incidence matrix (`incidence_view.rs`, ~700 lines)
+### Incidence matrix (`incidence_view.rs`)
 
 Visualizes the equation × unknown adjacency matrix — the bipartite graph that
 maximum matching runs on. Equations are rows, unknowns are columns; a filled cell
@@ -958,17 +1103,17 @@ boundaries — you'd get a compiler error, not a runtime bug. In C++ or Java, th
 equivalent code would work identically, but the safety guarantees would be
 conventions enforced by code review, not by the type system.
 
-**Matching animation** (`matching_anim.rs`, ~550 lines): replays Kuhn's
+**Matching animation** (`matching_anim.rs`): replays Kuhn's
 augmenting-path algorithm on the incidence matrix. Each frame highlights the
 current equation, explored edges, found/failed paths, and confirmed matches
 with step-by-step descriptions using readable equation text.
 
-**Tarjan SCC animation** (`tarjan_anim.rs`, ~550 lines): replays Tarjan's
+**Tarjan SCC animation** (`tarjan_anim.rs`): replays Tarjan's
 strongly connected component algorithm on the dependency graph (derived from
 the matching result). Nodes are colored by DFS state (on stack, in discovered
 SCC) and edges are classified as tree/back edges.
 
-**Reduction animation** (`reduction_anim.rs`, ~300 lines): replays the
+**Reduction animation** (`reduction_anim.rs`): replays the
 constrained-dummy-derivative and missing-state-derivative index reduction
 algorithms. Each frame shows the current step (begin state search, differentiate
 constraint, demote state, round complete) with before/after equation text and a
@@ -976,7 +1121,7 @@ running table of demoted states. Live mode receives the raw `Dae` (cloned from t
 worker's compilation result and stored in `App::cached_dae`) and spawns a thread
 running both reduction passes with a shared `LiveTrace<IndexReductionFrame>`.
 
-**Tearing animation** (`tearing_anim.rs`, ~450 lines): replays the greedy
+**Tearing animation** (`tearing_anim.rs`): replays the greedy
 heuristic that breaks an algebraic loop open. Each frame is one decision — tear
 the variable appearing in the most unsolved equations, or make an equation
 causal because the tears left it with exactly one unknown. The two counts that
@@ -997,8 +1142,8 @@ reduced one (`App::tearing_dae`), because that is the system its report
 describes — and a high-index model's raw DAE has no full matching, hence no
 blocks, hence nothing to tear.
 
-**Alias-elimination reveal** (`alias_anim.rs`, ~280 lines) and
-**initial-condition plan walk** (`ic_plan_anim.rs`, ~430 lines): both are
+**Alias-elimination reveal** (`alias_anim.rs`) and
+**initial-condition plan walk** (`ic_plan_anim.rs`): both are
 `Playback`-driven like the replays, but they are **reveals of recorded lists,
 not replays of searches**, and both say so in their module docs. Rumoca's
 elimination pass has no backtracking and no competing candidate; the IC plan is
@@ -1014,7 +1159,7 @@ forty rows. The IC view's header additionally carries the two facts that explain
 the plan's shape: the determinacy verdict, and which equations the planner
 dropped / unknowns it pinned to make the initial system square.
 
-**Connection-expansion replay** (`connection_anim.rs`, ~330 lines): watches
+**Connection-expansion replay** (`connection_anim.rs`): watches
 `connect()` statements become equations (MLS §9), on the Flatten stage. The rule
 it exists to show is short and asymmetric — a **potential** set of *n* connected
 variables becomes *n − 1* equality equations, while a **flow** set of the same
@@ -1069,7 +1214,7 @@ Phase 1 of `docs/answer-platform-plan.md`).
   have been a tour costs one follow-up, while a tour that should have been text
   costs minutes of walking stops to reach a two-sentence answer.
 
-### Index reduction summary (`reduction_view.rs`, ~650 lines)
+### Index reduction summary (`reduction_view.rs`)
 
 A scrollable panel (not a canvas) summarizing what the Pantelides / dummy-derivative
 funnel did: which states were demoted, which equations were differentiated, which
@@ -1078,7 +1223,7 @@ states → differentiated equations → trivial eliminations. Color-coded: green
 successful steps, red for stopped, neutral for no-ops.
 
 
-### Equation sheet (`equation_sheet.rs`, ~600 lines)
+### Equation sheet (`equation_sheet.rs`)
 
 A readable view of the flat DAE as math, replacing the raw JSON tree for the
 Flatten stage. Built from the typed `Dae` in the worker thread (where the typed IR
@@ -1127,7 +1272,7 @@ entries (reverse mapping from source lines to equation indices), built by
 
 ## 8. The Claude bridge
 
-**File:** `bridge.rs` (~1150 lines)
+**File:** `bridge.rs`
 
 ### Architecture: thin emitter, thick reasoner
 
@@ -1240,7 +1385,7 @@ compilation that hits armed breakpoints.
 
 ## 9. Supporting modules
 
-### Field help (`field_help.rs`, ~60 lines)
+### Field help (`field_help.rs`)
 
 A two-tier help system:
 
@@ -1252,7 +1397,7 @@ A two-tier help system:
 - **Specific tier (the bridge):** "Why did THIS particular field get this value?" —
   requires Claude to reason about the specimen, the IR, and the phase code.
 
-### Crash and diagnostic log (`diagnostics.rs`, ~370 lines)
+### Crash and diagnostic log (`diagnostics.rs`)
 
 **The problem:** when HRW dies, the evidence dies with it. HRW is a *windowed*
 application — a Rust panic prints to stderr, and launched from the VS Code
@@ -1336,7 +1481,7 @@ those four are the state changes that reach the compiler and the bridge.
 git rev and now also stamps `HRW_GIT_DIRTY`. Without the dirty flag the rev is
 actively misleading mid-session — it names a commit whose code is not what ran.
 
-### Expression pretty-printer (`expr_format.rs`, ~550 lines)
+### Expression pretty-printer (`expr_format.rs`)
 
 Renders `rumoca_core::Expression` trees as readable Modelica-like text — e.g.
 `der(w) - tau / J` instead of `f_x[0]`. The printer is **precedence-aware**: it
@@ -1363,7 +1508,7 @@ Used by:
 - **`incidence_view.rs`** — axis labels and tooltips show equation text
 - **`matching_anim.rs`** / **`tarjan_anim.rs`** — step descriptions use equation text
 
-### Colors (`colors.rs`, ~150 lines)
+### Colors (`colors.rs`)
 
 Shared color constants used across multiple view modules. Contains:
 - `OK_GREEN` — the fixed dark-mode success green, used in canvas painters
@@ -1378,7 +1523,7 @@ Centralizes what was previously inline `Color32::from_rgb(...)` and `if dark_mod
 blocks duplicated across `app.rs`, `spyplot.rs`, `incidence_view.rs`, `reduction_view.rs`,
 `log_view.rs`, and `tree.rs`.
 
-### Log view (`log_view.rs`, ~190 lines)
+### Log view (`log_view.rs`)
 
 Renders timestamped compilation and simulation log entries in a scrollable panel
 with stick-to-bottom behavior. Each entry is color-coded by level (green for Info,
@@ -1413,8 +1558,9 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
   from `hrw/` so an upstream PR is a clean cherry-pick of Rumoca-only changes.
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
-their call sites. The regression test suite (270 tests) guards against silent
-regressions during a rebase.
+their call sites. The regression test suite guards against silent regressions during a
+rebase; `CLAUDE.md`'s "Running things" carries the commands, and the suite reports its
+own size when it runs.
 
 
 ### A trap for anything instrumenting through the compile callback
@@ -1437,8 +1583,8 @@ project acquires a false sense of coverage.
 
 | Question | Instrument | Who can run it | Lives in |
 |---|---|---|---|
-| Does HRW's own code work? | ~411 fast unit tests (~7s) | Claude | every `src/*.rs` |
-| Does HRW work against a real compile? | ~59 slow tests, `slow-tests` feature | Claude | `src/worker.rs`, `src/fidelity.rs` |
+| Does HRW's own code work? | the fast unit suite, `cargo test -p hrw --lib` | Claude | every `src/*.rs` |
+| Does HRW work against a real compile? | the slow tests, `--features slow-tests` | Claude | `src/worker.rs`, `src/fidelity.rs` |
 | **Does the rendered UI work?** | fixture tours | **only Doug** | `docs/fixture-tours/` |
 | **Does HRW tell the truth about Rumoca?** | F1-F9 fidelity checks | Claude | `src/fidelity.rs`, `src/worker.rs` |
 | **Does Rumoca tell the truth about Modelica?** | the oracle (System Modeler) | Doug's tools | not built (`ideas.md` #43) |
@@ -1792,11 +1938,31 @@ cargo run -p hrw --example gen_field_help
 
 # Generate a specimen's durable compilation trace
 cargo run -p hrw --example gen_trace -- BouncingBall
+
+# Rewrite this document's generated regions (see below)
+cargo run -p hrw --example gen_architecture
 ```
 
 The `-p hrw` flag scopes to the HRW workspace member, avoiding a full workspace
 build (which would pull in all Rumoca crates, including platform-specific ones
 like `libudev-sys` that may not be needed).
+
+### What in this document is generated
+
+Three regions, marked by `<!-- BEGIN GENERATED … -->` comments and rewritten by
+`gen_architecture`: the **stage roster** (§4), the **module sizes** (§2), and the
+**`App` field groups** (§5). The generator lives in `hrw::arch_doc` rather than in the
+example, so `architecture_regions_are_current` checks the same code that writes the
+file — the same split, for the same reason, as `gen_tour_catalogue` and
+`hrw::tour::catalogue`. A missing marker is an error rather than a silent no-op, or a
+green currentness test could describe a document the generator never touched.
+
+**Not generated, deliberately: the suite's test count.** This document used to claim
+"270 tests" in one place and "~411 fast / ~59 slow" in another. A generator can count
+`#[test]` attributes, but the number it gets is larger than what `cargo test` reports,
+because `#[cfg(…)]` gates some out — so publishing a derived count next to a suite that
+prints a different one replaces one stale number with two live ones that disagree. The
+suite owns that number, and the prose points at the command.
 
 
 ## 13. Key design decisions explained

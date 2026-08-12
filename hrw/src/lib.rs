@@ -37,9 +37,13 @@
 //!   parameter slot is manufactured (idea #40).
 //! - **`colors`** — shared color constants used across canvas and view modules.
 //! - **`field_help`** — build-time-embedded doc comments for IR fields (fast help).
+//! - **`arch_doc`** — the derived numbers in `docs/architecture.md` (stage roster,
+//!   module sizes, `App` field groups), generated into marker-delimited regions so
+//!   the document cannot transcribe a count that then rots.
 
 pub mod alias_anim;
 pub mod app;
+pub mod arch_doc;
 pub mod autoplay;
 pub mod bridge;
 pub mod canvas;
