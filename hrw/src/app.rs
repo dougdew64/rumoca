@@ -67,9 +67,42 @@ use crate::worker::{
     Worker, discontinuity_segments,
 };
 
-/// Initial UI zoom (fonts + spacing) — readable on a hi-dpi display. Adjustable
-/// live via Settings (or Ctrl +/−); egui's `zoom_factor` is the idiomatic knob.
-const DEFAULT_ZOOM: f32 = 2.0;
+/// Initial UI zoom (fonts + spacing). Adjustable live via Settings or Ctrl +/−;
+/// egui's `zoom_factor` is the idiomatic knob.
+///
+/// # Why this is 1.0, and why it was 2.0
+///
+/// **Zoom multiplies the display's own scaling — it does not replace it.** egui:
+/// `pixels_per_point = zoom_factor * native_pixels_per_point`. So on a Windows
+/// laptop at 150 % display scaling, a zoom of 2.0 is an *effective 3.0*, and a
+/// 1920-pixel panel gives HRW **640 points** of layout width instead of 1280.
+///
+/// 2.0 was almost certainly right where it was written and wrong once the platform
+/// moved. It predates the WSL2 → native-Windows port (`docs/architecture.md`,
+/// 2026-07-27), and under WSLg a hi-dpi panel is commonly reported as
+/// `native_pixels_per_point = 1.0` — so the 2.0 *was* the DPI scaling. Native
+/// Windows reports the real value, and the compensation started double-counting.
+///
+/// **The cost was measured, not guessed** (2026-08-12). At 640 points the tour panel
+/// cannot go below ~33 % of the window, because its content needs ~210 points, so
+/// the tour and the stage view could not both be usable on Doug's 13" laptop —
+/// `docs/ideas.md` #77. The same 640-point regime hid the divider defect that
+/// [`MIN_LEFT_POINTS`] fixes, since HRW's own width tests stop at 800 points.
+///
+/// At 1.0 the UI renders at whatever size the display asks for, which is the
+/// behaviour a reader expects from every other application on the machine.
+///
+/// # A known limitation, stated because Doug works across machines
+///
+/// On a display whose scaling is *under*-reported (the WSLg case above), 1.0 gives
+/// small text and the Settings slider is the remedy — **but that choice does not
+/// currently survive a restart.** `App::new` calls `set_zoom_factor` on every
+/// startup, and `zoom_factor` is part of egui's persisted `Options`, so the stored
+/// value is overwritten before it is ever read. Deliberate for now: startup is
+/// deterministic, which is the same property `clear_persisted_split` protects. If a
+/// per-machine zoom needs to stick, the fix is to apply this default only when no
+/// value was persisted.
+const DEFAULT_ZOOM: f32 = 1.0;
 
 /// How often tour mode stats `.hrw-bridge/tour.md`. A quarter second is well
 /// under human notice and keeps filesystem work out of the paint path.
@@ -198,6 +231,47 @@ const MODE_SWITCH_RESET: std::time::Duration = std::time::Duration::from_millis(
 const MIN_LEFT_FRACTION: f32 = 0.15;
 const MAX_LEFT_FRACTION: f32 = 0.75;
 
+/// The narrowest the left panel may be, **in points** — a floor under the
+/// fractional one.
+///
+/// **A fraction is the wrong unit for a minimum, and that was a real defect**
+/// (Doug, 2026-08-12: *"the vertical divider refuses to go left beyond a certain
+/// horizontal position. However, the right edge of the LHS content continues to
+/// move leftward"*).
+///
+/// The panel has an intrinsic minimum width set by its own content — the tour-list
+/// rows and the autoplay controls. Measured across three window sizes it sits at
+/// **189–205 points** and does not move with the window, because content does not
+/// care how big the screen is. `MIN_LEFT_FRACTION` *did* move with the window, and
+/// the two only agreed by coincidence:
+///
+/// ```text
+/// window 1280pt   15% floor = 192pt   content min ~192pt   agree, no symptom
+/// window  640pt   15% floor =  96pt   content min ~189pt   DISAGREE
+/// ```
+///
+/// With the floor far below that minimum, the panel's **outer** rect holds at what
+/// the content needs while the **inner** `Ui` keeps taking the dragged width, so the
+/// content detaches from the divider and a gap opens — measured growing from 21 to
+/// **112 points** at 640pt wide. *(That the two rects diverge is measured; the exact
+/// egui path by which they do is not, and is not needed for the fix.)*
+///
+/// **Why this was invisible for three weeks.** HRW ran at [`DEFAULT_ZOOM`] = 2.0
+/// until 2026-08-12, so a 13" laptop gave it only ~640 points and the 15 % floor
+/// landed under the content minimum. On a large display 15 % is comfortably above
+/// it, which is why every earlier session and
+/// `the_chrome_stays_on_screen_at_every_width` — which tests down to 800×600
+/// *points* — never saw it. The zoom is 1.0 now, so a 13" laptop gets ~1280 points
+/// and this floor is no longer the binding one there; **the defect it prevents is
+/// still reachable**, by a small window or a raised zoom, and the regression test
+/// covers 640 and 500 points regardless of what the default happens to be.
+///
+/// 210 rather than 205: above every measured minimum, so the fractional floor and
+/// this one cannot straddle the content minimum again. If content grows past it,
+/// `the_left_panel_content_never_detaches_from_the_divider` fails rather than the
+/// gap silently returning.
+const MIN_LEFT_POINTS: f32 = 210.0;
+
 /// The draggable LHS/RHS split (`docs/ideas.md` #59).
 ///
 /// # Who owns the width
@@ -228,6 +302,16 @@ struct SplitState {
     /// Startup is the interesting window and it is short; after that a resize is
     /// the reader's own doing and needs no commentary.
     reports_left: u8,
+    /// The `available_width()` seen *inside* the panel closure — the width the LHS
+    /// content was actually laid out against.
+    ///
+    /// **Recorded because the outer and inner widths can disagree**, and when they
+    /// do the content visibly detaches from the divider ([`MIN_LEFT_POINTS`]). The
+    /// outer width alone cannot see that: it was correct throughout the defect.
+    /// Same reasoning as [`Self::fraction`] — a layout property is only checkable
+    /// once the app records the number — and
+    /// `the_left_panel_content_never_detaches_from_the_divider` is what reads it.
+    inner_width: Option<f32>,
     /// Hold the default until this instant. `None` once settled, and **`None` at
     /// startup** — nothing is held there any more.
     ///
@@ -261,6 +345,7 @@ impl Default for SplitState {
         Self {
             fraction: None,
             last_avail: None,
+            inner_width: None,
             reports_left: 6,
             reset_until: None,
         }
@@ -300,9 +385,14 @@ impl SplitState {
         let resized = self
             .last_avail
             .is_none_or(|last| (last - avail).abs() > 1.0);
+        // **One range, computed once, used by both the stored width and the panel**
+        // — they used to be two copies of the same expression, and a floor added to
+        // one and not the other is the next version of this bug.
+        let (min_w, max_w) = Self::width_range(avail);
+
         if resized || self.resetting() {
             let id = egui::Id::new(LEFT_PANEL_ID);
-            let width = (want * avail).clamp(avail * MIN_LEFT_FRACTION, avail * MAX_LEFT_FRACTION);
+            let width = (want * avail).clamp(min_w, max_w);
             let rect = egui::containers::panel::PanelState::load(ctx, id).map_or_else(
                 || egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, avail)),
                 |s| {
@@ -319,7 +409,25 @@ impl SplitState {
         panel
             .resizable(true)
             .default_size(want * avail)
-            .size_range(avail * MIN_LEFT_FRACTION..=avail * MAX_LEFT_FRACTION)
+            .size_range(min_w..=max_w)
+    }
+
+    /// The left panel's permitted width range in points, for a window of `avail`.
+    ///
+    /// Two floors, and the **larger wins**: a fraction of the window
+    /// ([`MIN_LEFT_FRACTION`]) and an absolute one ([`MIN_LEFT_POINTS`], the width
+    /// the content actually needs). Taking the max is what keeps the divider's stop
+    /// and the content's stop at the same place — see [`MIN_LEFT_POINTS`] for the
+    /// measurements.
+    ///
+    /// **The minimum is then capped by the maximum**, because on a narrow enough
+    /// window the absolute floor exceeds [`MAX_LEFT_FRACTION`] of it (210 pt against
+    /// 75 % of 250 pt) and an inverted range is not a range. There the panel simply
+    /// cannot be resized, which is honest: nothing about that width is draggable.
+    fn width_range(avail: f32) -> (f32, f32) {
+        let max_w = avail * MAX_LEFT_FRACTION;
+        let min_w = (avail * MIN_LEFT_FRACTION).max(MIN_LEFT_POINTS).min(max_w);
+        (min_w, max_w)
     }
 
     /// Record what was actually drawn, so the split is a number a test can read.
@@ -6060,6 +6168,7 @@ impl App {
             .split
             .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
+                self.split.inner_width = Some(ui.available_width());
                 // --- Top third: the tour list, laid out like the specimen list ---
                 //
                 // A vertical list rather than a wrapped bar: Doug, 2026-07-29 —
@@ -6167,7 +6276,31 @@ impl App {
                 //
                 // **Only while running.** Forcing the offset when idle would fight a
                 // reader who scrolled somewhere themselves.
-                let mut area = egui::ScrollArea::vertical().id_salt("tour");
+                // **`both`, not `vertical`, and the horizontal axis is load-bearing**
+                // (Doug, 2026-08-12: *"the divider does not move. Instead, only the
+                // right edge of the LHS tour content moves"*).
+                //
+                // A vertical-only scroll area reports its content's **full width** as
+                // the width it wants, and `egui_commonmark` does not wrap tables or
+                // code blocks — `the-mathematics.md` has a 178-character line. So the
+                // tour panel's intrinsic minimum width became the widest table in the
+                // document, egui sized the panel to it, and the divider had nothing
+                // left to give:
+                //
+                // ```text
+                // no tour loaded    panel opens 512pt (the 40% default), drags to 213pt
+                // real tour loaded  panel opens 899pt and is FROZEN; the inner Ui still
+                //                   follows the pointer, so the gap reached 705pt
+                // ```
+                //
+                // Enabling the horizontal axis makes wide content **scroll instead of
+                // push**, so the panel keeps the width the reader chose and the table
+                // is still reachable. Wrapping is not the alternative: a Markdown table
+                // does not wrap into anything readable.
+                //
+                // Note what this cost before it was found: the tour panel was quietly
+                // taking 70 % of a 1280pt window rather than the 40 % it reports.
+                let mut area = egui::ScrollArea::both().id_salt("tour");
                 if self.tour.autoplay.is_running()
                     && let Some(max_scroll) = self.tour.tour_max_scroll
                 {
@@ -7309,6 +7442,7 @@ impl App {
                 .split
                 .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
                 .show(ui, |ui| {
+                    self.split.inner_width = Some(ui.available_width());
                     let panel_height = ui.available_height();
                     let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
 
@@ -8387,6 +8521,13 @@ impl App {
     /// The left panel's share of the window, as last drawn.
     pub(crate) fn test_split_fraction(&self) -> Option<f32> {
         self.split.fraction
+    }
+
+    /// The width the LHS content was laid out against, for comparison with the
+    /// panel's own width — a gap between them is the content detaching from the
+    /// divider.
+    pub(crate) fn test_split_inner_width(&self) -> Option<f32> {
+        self.split.inner_width
     }
 
     /// Whether a reset back to the 40/60 default is queued for the next paint.

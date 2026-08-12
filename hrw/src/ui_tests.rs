@@ -337,6 +337,23 @@ fn clicking_a_tour_link_dispatches_it() {
 /// If this passes and manual clicking still misbehaves, the cause is **not** link
 /// dispatch, and the next place to look is what the pane does to the click before
 /// the link sees it.
+///
+/// # Why this clicks through accesskit, and what that costs
+///
+/// **It used to use a synthesized pointer click, and it passed for a reason that was
+/// itself a bug** (2026-08-12). The tour pane was a vertical-only `ScrollArea`, so the
+/// panel inflated to its content's width — 899pt of a 1280pt window — and the wide
+/// layout made the document short enough that this link fell inside the visible
+/// viewport. Enabling horizontal scrolling fixed the panel width, prose now wraps to
+/// the width the reader chose, the document is correspondingly **taller**, and the link
+/// moved below the fold. egui does not deliver pointer interaction outside a scroll
+/// area's clip rect, so the click landed on nothing.
+///
+/// `click_accesskit` *"can also click widgets that are not currently visible"*, which
+/// matches what this test is for: **dispatch**, not reachability. The pointer path stays
+/// covered by `a_link_near_the_top_of_a_tour_dispatches` above, on a link that is
+/// genuinely on screen — so the pair still covers both, and neither depends on the pane
+/// happening to be mis-sized.
 #[test]
 fn a_link_far_down_a_long_tour_still_dispatches() {
     let mut h = harness(App::test_default());
@@ -348,7 +365,7 @@ fn a_link_far_down_a_long_tour_still_dispatches() {
     h.run_steps(2);
 
     h.get_by_label_contains("BouncingBall \u{2192} Structural")
-        .click();
+        .click_accesskit();
     h.run_steps(2);
 
     assert_eq!(
@@ -1669,6 +1686,179 @@ fn the_chrome_stays_on_screen_at_every_width() {
                  in-the-viewport check and is still unusable",
                 r.width(),
                 r.height(),
+            );
+        }
+    }
+}
+
+/// **The left panel's content never detaches from the divider**, at any window
+/// size, however far the divider is dragged.
+///
+/// Doug, 2026-08-12, on a 13" laptop: *"the vertical divider refuses to go left
+/// beyond a certain horizontal position. However, the right edge of the LHS content
+/// continues to move leftward as I continue my attempted leftward drag."*
+///
+/// **The panel has an intrinsic minimum width — its content's — and the floor HRW
+/// set was a fraction of the window.** Above the content minimum the two agreed and
+/// nothing was visible; below it the outer rect held while the inner `Ui` kept taking
+/// the dragged width, and the content detached. Measured before the fix, at 640
+/// points wide, the gap grew from 21 to **112 points** as the drag continued. See
+/// `app::MIN_LEFT_POINTS`.
+///
+/// **Why the sizes here are small, and why that is the whole point.** HRW ran at
+/// `DEFAULT_ZOOM` = 2.0 until 2026-08-12, which gave a 13" screen only **~640×360
+/// points** — and `the_chrome_stays_on_screen_at_every_width` tests down to 800×600
+/// and never saw this, because at 800 points the 15 % floor is still above the
+/// content minimum. **The defect lives below 800 points.**
+///
+/// The default zoom is 1.0 now, so that regime is no longer where Doug sits — but
+/// **these sizes stay small deliberately.** A small window or a raised zoom puts him
+/// back there in one gesture, and a regression test pinned to the current default
+/// would stop covering the failure the moment the default moved again.
+///
+/// # The second defect, and why this test missed it the first time
+///
+/// Doug, hours later: *"the divider does not move. Instead, only the right edge of the
+/// LHS tour content moves."* A **different** cause with the same signature — a
+/// vertical-only `ScrollArea` reports its content's full width as the width it wants,
+/// and `egui_commonmark` does not wrap tables, so the tour panel's minimum became the
+/// widest table in the document: it opened at **899pt instead of 512pt and was frozen
+/// solid**, gap reaching 705pt.
+///
+/// **The first version of this test could not have caught it, because it loaded no
+/// tour.** `App::test_default` has no tour text and `test_set_walked_state` seeds one
+/// short line of source, so every width in the LHS was small and every drag worked.
+/// **A fixture narrow enough to pass is a fixture that tests nothing here** — so the
+/// tour case now loads `the-mathematics.md` from disk, the real document with the
+/// widest table in the set, and asserts the panel *opens at the default width* rather
+/// than at its content's.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one property checked across three window sizes, two modes and six drag \
+              positions; splitting it would hide which combination failed"
+)]
+#[test]
+fn the_left_panel_content_never_detaches_from_the_divider() {
+    use eframe::egui::{Pos2, Vec2};
+
+    // The frame padding plus the resize handle, measured at 19–23 points across
+    // every size and drag position after the fix. 40 is comfortably above that and
+    // far below the 98–148 the defect produced, so this bound distinguishes the two
+    // without asserting an exact chrome width that styling may legitimately change.
+    const MAX_CHROME: f32 = 40.0;
+
+    // Point-space sizes, with whether the divider can move at all at that size.
+    //
+    // 640×360 is the 13" laptop case. **500×340 cannot be dragged**, and that is
+    // correct rather than a gap in the test: there the panel already sits at its
+    // content's intrinsic minimum, so there is no travel to give. Requiring
+    // movement there was this test's first failure, and the honest fix was to stop
+    // requiring it — see `width_range`, which says a window that narrow simply has
+    // nothing draggable about it.
+    // **The real tour, from disk, not a fixture.** Its widest line is 178 characters
+    // and it carries the route table; a synthetic short document is exactly what let
+    // the 899pt freeze through unnoticed.
+    let real_tour = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/fixture-tours/the-mathematics.md"),
+    )
+    .expect("the-mathematics.md must be readable — it is the widest tour");
+
+    for (w, h_px, expect_movement) in [
+        (1280.0_f32, 720.0_f32, true),
+        (640.0, 360.0, true),
+        (500.0, 340.0, false),
+    ] {
+        for mode_is_tour in [true, false] {
+            let mut app = App::test_default();
+            // Tour is `UiMode`'s `#[default]`, so the tour case needs no switch.
+            if !mode_is_tour {
+                app.test_set_ui_mode_specimen();
+            }
+            app.test_set_walked_state(
+                "RcCircuit.mo",
+                "RcCircuit",
+                crate::worker::StageKind::Flatten,
+            );
+            if mode_is_tour {
+                app.test_set_tour_text(&real_tour);
+            }
+            let mut h = Harness::builder()
+                .with_size(Vec2::new(w, h_px))
+                .build_ui_state(|ui, app: &mut App| app.frame_ui(ui), app);
+            h.run_steps(3);
+
+            let started_at = h
+                .state()
+                .test_split_fraction()
+                .expect("the split must have been drawn");
+
+            // **The panel opens where HRW put it, not where its content wants.** This
+            // is the assertion that names the second defect directly: with the real
+            // tour loaded the panel opened at 899pt of a 1280pt window — 70 %, while
+            // reporting a 40 % default — because wide unwrapped content was setting
+            // the minimum. The floor may legitimately push it *wider* than 40 % on a
+            // narrow window, so this bounds it from above only.
+            assert!(
+                started_at <= 0.55,
+                "{w}x{h_px} tour={mode_is_tour}: the panel opened at {:.0}% of the \
+                 window ({:.1}pt) \u{2014} content is dictating the width instead of \
+                 the split, so there is nothing left to drag",
+                started_at * 100.0,
+                started_at * w,
+            );
+
+            // Grab the divider and walk it hard left, holding the button down —
+            // the gap only opened *during* a drag past the stop, so releasing
+            // first would miss it.
+            h.drag_at(Pos2::new(started_at * w, h_px * 0.5));
+            h.run_steps(1);
+            let mut moved = false;
+            for x in [w * 0.35, w * 0.25, w * 0.18, w * 0.10, w * 0.05, 8.0] {
+                h.hover_at(Pos2::new(x, h_px * 0.5));
+                h.run_steps(1);
+
+                let panel_w = h.state().test_split_fraction().unwrap_or(-1.0) * w;
+                let inner_w = h
+                    .state()
+                    .test_split_inner_width()
+                    .expect("the panel must have recorded its inner width");
+                moved |= (panel_w - started_at * w).abs() > 1.0;
+
+                assert!(
+                    panel_w - inner_w <= MAX_CHROME,
+                    "{w}x{h_px} tour={mode_is_tour}, pointer at x={x:.0}: the panel is \
+                     {panel_w:.1}pt wide but its content was laid out against \
+                     {inner_w:.1}pt \u{2014} a {:.1}pt gap, so the content has detached \
+                     from the divider",
+                    panel_w - inner_w,
+                );
+                assert!(
+                    inner_w > 0.0,
+                    "{w}x{h_px} tour={mode_is_tour}: the content was given {inner_w:.1}pt, \
+                     which is not a width",
+                );
+            }
+            h.drop_at(Pos2::new(8.0, h_px * 0.5));
+            h.run_steps(2);
+
+            // **Non-vacuity, where movement is possible.** If the drag never
+            // reached the divider, every assertion above passed by never testing
+            // anything — and a synthetic drag landing on the wrong pixel is exactly
+            // the way this test would rot into a tautology. The defect needed a drag
+            // *in progress* to appear, so a test that never drags cannot see it.
+            assert_eq!(
+                moved,
+                expect_movement,
+                "{w}x{h_px} tour={mode_is_tour}: expected the divider to be \
+                 {} at this size, and it was not \u{2014} either the synthetic drag is \
+                 missing the handle (which would make the checks above vacuous) or the \
+                 permitted range has changed",
+                if expect_movement {
+                    "draggable"
+                } else {
+                    "pinned at its content minimum"
+                },
             );
         }
     }

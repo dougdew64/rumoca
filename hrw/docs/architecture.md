@@ -93,14 +93,14 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**41 modules, 51,052 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
+**41 modules, 51,383 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
 
 | module | lines |
 |---|---:|
-| `app.rs` | 12,570 |
+| `app.rs` | 12,711 |
 | `worker.rs` | 9,921 |
 | `bridge.rs` | 3,367 |
-| `ui_tests.rs` | 1,820 |
+| `ui_tests.rs` | 2,010 |
 | `fidelity.rs` | 1,765 |
 | `tree.rs` | 1,303 |
 | `doc_citations.rs` | 1,205 |
@@ -138,7 +138,7 @@ showing 48 equations. They are derived now, and
 | `json_read.rs` | 119 |
 | `field_help.rs` | 67 |
 | `test_support.rs` | 60 |
-| **total** | **51,052** |
+| **total** | **51,383** |
 <!-- END GENERATED module-sizes -->
 
 

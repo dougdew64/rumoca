@@ -172,11 +172,27 @@ test** (added 2026-08-01). The Context Bar showed three true things and silently
 fourth — the background — for weeks, because **a partial report leaves no gap where the
 missing part was**: everything on screen was correct. Doug caught it; nothing could have.
 Retrofitting the existing panes is logged in [`docs/tech-debt.md`](docs/tech-debt.md) ("UI
-testing debt"), which also records what `egui_kittest` genuinely cannot reach — **three
-surfaces**: `incidence_view.rs` cells, `spyplot.rs`, and **scroll-area configuration**
-(`both()` vs `vertical()` is config, not behaviour; three tests for it all passed on the
-unfixed code before being deleted, 2026-08-04). The animations *are* testable.
+testing debt"), which also records what `egui_kittest` genuinely cannot reach — **two
+surfaces**: `incidence_view.rs` cells and `spyplot.rs`. The animations *are* testable.
 **Not growing the debt is free.**
+
+**SCROLL-AREA CONFIGURATION WAS THE THIRD, AND THAT CLAIM WAS FALSE** *(corrected
+2026-08-12, after a defect hid behind it for eight days)*. `both()` vs `vertical()` was
+recorded as *"config, not behaviour — nothing observable differs"*, on three real
+measurements that were all correct and all taken **inside** the scroll area. What differs
+is **the size of the enclosing panel**: a vertical-only area reports its content's full
+width as the width it wants, so the tour panel opened at 899pt of a 1280pt window instead
+of 512pt and the divider froze. **The question nobody asked was "does the container
+change?"** — and a scroll axis is precisely a claim about how a widget negotiates size
+with its parent. `ui_tests::the_left_panel_content_never_detaches_from_the_divider` now
+fails by name when the axis is reverted.
+
+**The transferable rule: when a null result is about to become "this cannot be tested",
+check whether every probe was aimed at the same level.** Three null results inside one
+widget were generalised into a property of the widget, and that sentence stopped anyone
+looking for eight days. A wrong *negative* is the error nobody catches, because acting on
+it means **not looking** — the same asymmetry the claims-of-absence rule below is built
+on.
 
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment
 and its attributes sit *above* the item, so anything placed between them is adopted by the
@@ -313,9 +329,10 @@ written."*
 > one function owning where a thing sits, so changing the layout is changing one place, and
 > drawing and camera-aiming cannot disagree.
 >
-> **AND THE SHARP PROBLEM: these are the least-testable files in the project.** The three
-> surfaces `egui_kittest` cannot reach are `incidence_view.rs` cells, `spyplot.rs`, and
-> scroll configuration — **exactly the code Doug will edit.** So the response is to
+> **AND THE SHARP PROBLEM: these are the least-testable files in the project.** The
+> surfaces `egui_kittest` cannot reach are `incidence_view.rs` cells and `spyplot.rs`
+> — **exactly the code Doug will edit.** *(Scroll configuration was listed here as a third
+> and is not one; see the correction above.)* So the response is to
 > **push logic out of the paint path into checkable data**, as `Plot::problems()` and
 > `IncidenceMatrix::problems()` now do: a thin renderer over verified data means his edits land
 > on a small surface whose correctness he can see, rather than on parsing whose errors are
@@ -432,8 +449,27 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   example rather than write around it. Needs a System Modeler adjudication (`#43`).
 > - **`RcCircuit` reports one `zero_crossing_condition`** with no `when` clause at all.
 >   `events.md` Act 1 quotes only the four counts that are explicable.
-> - **`#77`** — a live tour needs three panes and the layout has two. Doug is running the divider
->   at 15/85 and calls that workable *for now*.
+> - **`#77`** — a live tour needs three panes and the layout has two. **Largely resolved
+>   2026-08-12 and no longer blocking eight of the nine tours** (`docs/ideas.md` #77,
+>   `DECISIONS.md`). Doug walked the tours on a 13" laptop with no external monitor and could not
+>   fit the tour and the stage view at once; three defects were behind it, and **all three were one
+>   number or one call:**
+>   - **`DEFAULT_ZOOM` was 2.0**, which *multiplies* the display's own scaling, so a 13" screen gave
+>     HRW ~640 layout points instead of ~1280. A pre-port WSLg compensation that had been
+>     double-counting since 2026-07-27. Now 1.0.
+>   - **The left panel's minimum was a fraction of the window**, which fell below the content's own
+>     minimum on a small screen — the divider stopped while the content kept shrinking. Now
+>     `MIN_LEFT_POINTS`, an absolute floor.
+>   - **The tour pane was a vertical-only `ScrollArea`**, so it sized itself to the widest table in
+>     the document: it opened at **70 % of the window while reporting a 40 % default**, and froze the
+>     divider. Now `both()`, so wide content scrolls instead of pushing.
+>
+>   **Doug, 2026-08-12: *"Finally, HRW is usable on my 13" screen."*** Expect tours to be **taller**
+>   now — prose wraps to 40 % rather than 70 % — which is the correct trade, not a regression. What
+>   survives of #77 is only the genuine three-pane case: HRW at half width beside VS Code is back in
+>   the ~640-point regime, so **`matching-live.md` alone may still want a layout change.** The stop
+>   strip, drawer and alternating-mode options are recorded there; do not build one for the other
+>   eight tours.
 >
 > ## The debugger facts that were expensive to learn
 >

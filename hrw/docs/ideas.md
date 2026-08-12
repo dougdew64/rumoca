@@ -5124,3 +5124,59 @@ the question a second window, a collapsible drawer, or an overlay each has to an
 **And whatever is chosen, controls are enabled and disabled, never shown and hidden** —
 `lib.rs`'s `LiveState` rule. A layout that makes the tour vanish with no trace of how to bring it
 back is the same defect in a new dress.
+
+### The arithmetic is now measured, and it rules squeezing out entirely (2026-08-12)
+
+Doug reached the same wall from the other direction — a 13" laptop with no external monitor, walking
+the tours: *"there's not enough space on my small screen to display the tour and the RHS."*
+
+**The number that settles it: HRW runs at `DEFAULT_ZOOM` = 2.0**, so a 13" 1280×720 screen gives it
+**~640×360 points** of layout space, not 1280×720. Everything below is in points.
+
+**The tour panel has an intrinsic minimum width of ~190–210 points**, set by its own content (the
+tour-list rows and the autoplay controls) and **independent of window width** — measured across
+1280, 640 and 500 point windows while fixing the divider bug the same day (`DECISIONS.md`,
+2026-08-12). So at 640 points wide:
+
+```text
+tour panel minimum   ~210pt   =  33% of the window
+left for the RHS     ~430pt   =  67%, for a matrix that wants width
+```
+
+**The 15 % floor is unreachable at this size** — it is 96 points, below what the content can render,
+and trying to reach it was the defect: the divider stopped at the content minimum while the content
+kept shrinking, opening a 112-point gap.
+
+**At 640 points, squeezing is arithmetically finished** — a solution has to change the *container*,
+not the fraction.
+
+### But the 640 was self-inflicted, and it is fixed (2026-08-12, same day)
+
+**`DEFAULT_ZOOM` was 2.0 and is now 1.0.** Zoom *multiplies* the display's own scaling
+(`pixels_per_point = zoom_factor × native_pixels_per_point`), so at 150 % Windows scaling a 2.0 zoom
+was an effective 3.0 — and it predates the WSL2 → native-Windows port, where a hi-dpi panel really
+did report `native_pixels_per_point = 1.0` and the 2.0 *was* the DPI scaling. Native Windows reports
+the real value, so the compensation had been double-counting since 2026-07-27.
+
+**This changes the arithmetic above, and the honest version is much less dire.** The same 13" laptop
+now gets **~1280×720 points**:
+
+```text
+tour panel minimum   ~210pt   =  16% of the window   (was 33%)
+at the 40% default   ~512pt for prose, ~768pt for the stage view
+```
+
+which is the regime a large display was already in. **So this entry is no longer blocking**: a 13"
+screen can now show a readable tour column and a usable stage view at the ordinary 40/60 split, and
+the fix cost one constant rather than a new layout.
+
+**What survives, and it is the part worth keeping:** the tour panel still cannot go below ~210
+points, so the *three*-pane live-tour case this entry was opened for is improved but not solved —
+HRW at half width is ~640 points again, and that is exactly the regime measured above. The stop
+strip, drawer and alternating-mode options all remain on the table for `matching-live.md`; they are
+simply no longer needed to walk the other eight tours.
+
+**And the general lesson, which is bigger than the layout:** *a UI constant that compensates for a
+platform quirk becomes a bug when the platform changes, and it does not announce itself.* Three weeks
+of "HRW feels cramped" and one divider defect both trace to one number nobody re-derived after the
+port.

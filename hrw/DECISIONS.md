@@ -2637,3 +2637,191 @@ the command; the suite owns that number.
 Suite 549 fast, 0 failed. Clippy exit 0. The two new files are rustfmt-clean; `hrw/`'s
 pre-existing formatting drift is `docs/format-and-app-plan.md`'s separate work and was left alone.
 
+### 2026-08-12 — the left panel's minimum width is points, not a fraction of the window
+
+**Doug, on a 13" laptop:** *"When I drag the vertical divider to the left, the vertical divider
+refuses to go left beyond a certain horizontal position. However, the right edge of the LHS content
+continues to move leftward as I continue my attempted leftward drag."*
+
+**Reproduced headlessly, which took getting the size right.** The panel has an intrinsic minimum
+width set by its own content — the tour-list rows and the autoplay controls — measured at **189–205
+points and independent of window width**, because content does not care how big the screen is. The
+floor HRW set was `MIN_LEFT_FRACTION` = 15 % *of the window*, and the two only ever agreed by
+coincidence:
+
+```text
+window 1280pt   15% floor = 192pt   content min ~192pt   agree, no symptom
+window  640pt   15% floor =  96pt   content min ~189pt   DISAGREE
+```
+
+Below the content minimum the outer rect holds where the content needs it while the inner `Ui` keeps
+taking the dragged width. Measured at 640pt wide, tour mode, dragging left: panel frozen at 189.2
+while inner went 200.0 → 136.0 → 91.2 → 77.6, **gap growing 21 → 112 points**. *(The divergence is
+measured; the exact egui path producing it is not, and the fix does not need it.)*
+
+**Why nobody saw it for three weeks, and it is the interesting part.** HRW runs at `DEFAULT_ZOOM` =
+**2.0**, so a 13" 1280×720 screen gives it **~640×360 points** to lay out in.
+`the_chrome_stays_on_screen_at_every_width` already tests 1600, 1280, 1024 and 800 — but those are
+*points*, and at 800 points the 15 % floor is still above the content minimum. **The defect lives
+below 800 points, and until this week nobody ran HRW there.** A width sweep that stops above the
+failure region is a sweep that reports the layout is fine.
+
+**The fix:** one `SplitState::width_range(avail)` owning the range, with **two floors and the larger
+winning** — `max(avail * MIN_LEFT_FRACTION, MIN_LEFT_POINTS)`, then `.min(max_w)` so a narrow enough
+window cannot invert the range. Both the stored-width clamp and `size_range` now read that one
+function; they were previously two copies of the same expression, and a floor added to one and not
+the other is the next version of this bug.
+
+**A behaviour change worth stating:** at 1280 points the divider's leftmost position moves from 15 %
+to ~16.6 %, because `MIN_LEFT_POINTS` (210) exceeds 15 % of it. That is the width the content
+actually needs, so the divider now stops where the content stops — which is the whole point.
+
+**Verified must-fire by reverting**, not by argument: with `MIN_LEFT_POINTS` set to 0 the new test
+fails with *"640x360 tour=true, pointer at x=160: the panel is 189.2pt wide but its content was laid
+out against 136.0pt — a 53.2pt gap"*.
+
+**The test's first failure was its own non-vacuity guard, and the guard was right.** At 500×340 the
+panel already sits at its content minimum, so there is no travel to give and the drag legitimately
+moves nothing. Requiring movement there was wrong; the requirement is now per-size and stated, so a
+synthetic drag that silently misses the handle still fails rather than passing vacuously.
+
+**`inner_width` earned permanence.** It went in as a probe — the outer width was *correct throughout
+the defect*, so nothing already recorded could see the divergence. It stays because the regression
+test reads it, which is the same reason `fraction` exists: a layout property is checkable only once
+the app records the number.
+
+**And a process note, because it nearly cost the diff.** Running `rustfmt` on whole files reformatted
+**unrelated pre-existing code** in `app.rs` (the `TourSource::Fixture` closure, the `path_lines`
+blocks) — 34 deletions burying a two-line fix. Reverted both files to `HEAD` and re-applied only the
+fix, then checked `rustfmt --check`'s *line numbers* to confirm the new code is clean while leaving
+`hrw/`'s known drift to `docs/format-and-app-plan.md`. **`cargo fmt` is not a safe incidental step in
+a crate that is not yet formatted.**
+
+**This is quantitative evidence for `ideas.md` #77.** At 640 points the tour pane cannot be narrower
+than ~33 % of the window, whatever the divider does, because that is what its content needs. The
+two-pane split is not squeezable to fit a 13" screen — recorded in #77 rather than acted on, since
+the layout design is Doug's call.
+
+Suite 550 fast, 0 failed. Clippy exit 0.
+
+### 2026-08-12 — `DEFAULT_ZOOM` 2.0 → 1.0, because zoom multiplies the display's scaling
+
+**Doug's instruction**, after the divider fix measured what the old value cost him on a 13" laptop.
+
+**The mechanism, from egui's own documentation:**
+`pixels_per_point = zoom_factor × native_pixels_per_point`. **Zoom does not replace the display's
+scaling, it multiplies it.** So on a Windows laptop at 150 % scaling a 2.0 zoom is an *effective 3.0*,
+and a 1920-pixel panel gave HRW **640 points** of layout width instead of 1280.
+
+**2.0 was right where it was written and wrong once the platform moved.** It predates the WSL2 →
+native-Windows port (2026-07-27), and under WSLg a hi-dpi panel is commonly reported as
+`native_pixels_per_point = 1.0` — so the 2.0 *was* the DPI scaling. Native Windows reports the real
+value and the compensation began double-counting, silently, three weeks ago.
+
+**What that one number cost**, both found this same day:
+
+- **The tours were unwalkable on his laptop** (`docs/ideas.md` #77): at 640 points the tour panel
+  cannot go below ~33 % of the window, because its content needs ~210 points. At 1280 points that is
+  16 %, and the ordinary 40/60 split gives ~512pt of prose and ~768pt of stage view — the regime a
+  large display was always in. **#77 is no longer blocking**, and it says so now; the three-pane live
+  case survives, since HRW at half width is ~640 points again.
+- **The divider defect** fixed in the entry above lived below 800 points, which is why HRW's own width
+  sweep never reached it.
+
+**The general lesson, recorded because it is bigger than this constant:** *a UI constant that
+compensates for a platform quirk becomes a bug when the platform changes, and it does not announce
+itself.* Nothing failed. Nothing logged. The only symptom was "HRW feels cramped", for three weeks.
+
+**A limitation stated rather than fixed, because it is Doug's call.** `App::new` calls
+`set_zoom_factor` on **every** startup, and `zoom_factor` is part of egui's persisted `Options` (no
+`serde(skip)` — checked in the egui source) — so a zoom chosen with the Settings slider is
+**overwritten before it is ever read**. Startup is therefore deterministic, the same property
+`clear_persisted_split` protects, but it means the slider is not a durable per-machine preference.
+This matters because Doug works across machines with different displays, including one where the
+scaling may be under-reported. The fix, if wanted, is to apply the default only when nothing was
+persisted. **Advice given earlier in the session — "set it with the slider" — was wrong for this
+reason, and the constant's doc comment now records it.**
+
+**Two comments written earlier the same day were corrected rather than left**, since they asserted
+`DEFAULT_ZOOM = 2.0` as current: `MIN_LEFT_POINTS` and
+`the_left_panel_content_never_detaches_from_the_divider`. The regression test **keeps** its 640- and
+500-point cases deliberately: a small window or a raised zoom returns to that regime in one gesture,
+and a test pinned to the current default would stop covering the failure the moment the default moved
+again.
+
+**Not verified, and it is the part that matters to a reader:** whether the text is comfortable on a
+13" panel at native scaling. Claude cannot run the GUI. The layout arithmetic is test-verified; the
+legibility is Doug's judgement, and the Settings slider (range 0.75–3.0) is the knob if 1.0 is wrong.
+
+Suite 550 fast, 0 failed. Clippy exit 0 — which covers the binary, where `cargo test` does not.
+
+### 2026-08-12 — the tour pane scrolls horizontally, because a scroll axis sizes its parent
+
+**Doug, after the divider fix:** *"when I switch to tour mode, the vertical divider correctly
+repositions… when I open a specimen and then attempt to drag the vertical divider, the divider does
+not move. Instead, only the right edge of the LHS tour content moves."* **A second cause with the
+same signature as the first, and his wording named it exactly** — it was the tour content, not the
+specimen.
+
+**Measured, with the real documents rather than fixtures:**
+
+```text
+no tour loaded     panel opens 512pt (the 40% default), drags freely to 213pt, gap ~19pt
+real tour loaded   panel opens 899pt and is FROZEN; inner width still follows the pointer
+                   (376 → 276 → 226 → 194), so the gap reached 705pt
+```
+
+**A vertical-only `ScrollArea` reports its content's full width as the width it wants**, and
+`egui_commonmark` wraps neither tables nor code blocks — `the-mathematics.md` has a 178-character
+line. So the tour panel's minimum width *became the widest table in the document*, egui sized the
+panel to it, and the divider had nothing to give. `ScrollArea::both()` makes wide content **scroll
+instead of push**. Wrapping is not the alternative: a Markdown table does not wrap into anything
+readable.
+
+**It had also been silently taking 70 % of the window while reporting a 40 % default.** That is a
+large part of the cramping on a 13" screen, on top of the zoom.
+
+**Why the regression test written hours earlier missed it, which is the lesson.** It used
+`App::test_default` (no tour text) and `test_set_walked_state` (one short line of seeded source), so
+**every width in the LHS was small and every drag worked.** A fixture narrow enough to pass is a
+fixture that tests nothing about width. The test now **loads `the-mathematics.md` from disk** and
+additionally asserts the panel *opens* at ≤55 % — the assertion that names this defect directly, and
+the one that fails with *"the panel opened at 70% of the window (899.2pt)"* when the axis is
+reverted. Must-fire verified that way.
+
+**A documented claim was falsified, and correcting it matters more than the fix.**
+`docs/tech-debt.md` recorded scroll-area configuration as **the third surface `egui_kittest` cannot
+reach**, on the grounds that `both()` vs `vertical()` is *"config, not behaviour — nothing observable
+differs"*, with three tests deleted for passing on unfixed code. **Every measurement behind that was
+correct and every one was taken *inside* the scroll area** — row rects, `content_size.x`, wrap mode.
+What differs is **the size of the enclosing panel**, and nobody asked about the container. A scroll
+axis is precisely a claim about how a widget negotiates size with its *parent*.
+
+The three deleted tests were still rightly deleted; concluding the surface was unreachable was not.
+The entry's own prescription — *"drive a horizontal scroll and observe the offset move"*, still not
+ergonomic in `egui_kittest` — was also wrong: the way in was to measure the parent's width, available
+the whole time. Corrected in `tech-debt.md` and in `CLAUDE.md` (three surfaces → two), with the
+transferable rule recorded: **when a null result is about to become "this cannot be tested", check
+whether every probe was aimed at the same level.** Eight days, and it took a user-reported symptom
+that named the container.
+
+**One existing test was passing because of the bug.** `a_link_far_down_a_long_tour_still_dispatches`
+synthesized a pointer click, which worked only because the inflated 899pt panel made the document
+short enough for that link to fall inside the viewport. With the correct width, prose wraps more, the
+document is taller, the link is below the fold, and egui does not deliver pointer interaction outside
+a scroll area's clip rect. Switched to `click_accesskit`, which is documented as reaching widgets that
+are not visible and matches what that test asserts — **dispatch, not reachability**. The pointer path
+stays covered by the near-top sibling on a link genuinely on screen, so neither test now depends on
+the pane being mis-sized.
+
+**A consequence to expect, stated because it is a real cost:** at 40 % rather than 70 % the tour
+prose wraps more, so tours are taller and scroll further. That is the correct trade — the width is
+the reader's to choose — but it is a change in feel.
+
+**And a repeat of my own process error, logged because once was evidently not enough.** A `cd` left
+the shell inside `hrw/`, so `rustfmt --check hrw/src/app.rs` matched nothing and reported **zero**
+formatting findings on a file known to have seven. A tool that silently finds nothing is
+indistinguishable from a clean result — the same shape as everything else in this file. Every such
+check now carries an explicit `cd` to the repo root in the same command.
+
+Suite 550 fast, 0 failed. Clippy exit 0. Not committed.

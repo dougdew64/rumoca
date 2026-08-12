@@ -1161,26 +1161,45 @@ state text are ordinary widgets**. Six panes, no tests, and no line in the pause
 **Not scheduled**, deliberately: they are not on the refactor's path, so they are debt rather
 than blocking work.
 
-**A third surface the harness cannot reach: scroll-area configuration** *(added
-2026-08-04)*. `ScrollArea::both()` versus `ScrollArea::vertical()` decides whether a
-horizontal scrollbar is **offered**, and that is configuration rather than behaviour —
-nothing observable differs. Established by measurement, not assumed:
+**~~A third surface the harness cannot reach: scroll-area configuration~~ — CORRECTED
+2026-08-12.** This entry claimed *"nothing observable differs"* between
+`ScrollArea::both()` and `ScrollArea::vertical()`. **That is false, and a real defect hid
+behind it for eight days.** The correction is kept in full because the mistake is more
+instructive than the fact.
+
+**What differs is the SIZE OF THE ENCLOSING PANEL.** A vertical-only scroll area reports
+its content's full width as the width it *wants*, and that propagates outward: with the
+real `the-mathematics.md` loaded, the tour panel opened at **899pt of a 1280pt window
+instead of 512pt, and the divider froze solid** — the panel had been sized to the widest
+table in the document. Under `both()` the same document opens at 512pt and drags freely.
+Both numbers are read from `App`, and
+`ui_tests::the_left_panel_content_never_detaches_from_the_divider` fails by name when the
+axis is reverted.
+
+**The original measurements were all correct.** They were just all taken *inside* the
+scroll area:
 
 - The rendered row's a11y `rect()` is **logical** and reports full width whether or not
-  the pane can scroll to it.
-- `content_size.x` already exceeds the viewport under *both* settings, so it cannot
-  distinguish them either.
-- Wrapping cannot be guarded from outside either: under `both()` the inner `Ui` gets
-  infinite width, so forcing `TextWrapMode::Wrap` changes nothing measurable.
+  the pane can scroll to it. — still true.
+- `content_size.x` already exceeds the viewport under *both* settings. — still true.
+- Forcing `TextWrapMode::Wrap` changes nothing measurable under `both()`. — still true.
 
-**Three tests were written for this and all three passed on the unfixed code.** Each was
-caught by reverting the fix and watching the test stay green, and then deleted —
-*"a test that can pass while checking nothing is worse than none."* The honest record is
-this entry, not a green assertion.
+**So the lesson is not "measure harder", it is WHERE to measure.** Every probe asked
+*"does the content look different?"* and none asked *"does the container?"* A scroll
+axis is a claim about how a widget negotiates size with its parent, and the parent is
+the one place nobody looked. The entry then generalised three specific null results into
+*"configuration rather than behaviour"*, and that sentence is what made the surface
+un-investigated rather than merely untested.
 
-**What would make it testable** is a behavioural probe rather than a geometric one:
-drive a horizontal scroll and observe the offset move. `egui_kittest` has no ergonomic
-way to do that today, which is why this is debt and not a task.
+**The three deleted tests were still rightly deleted** — each passed on unfixed code,
+and *"a test that can pass while checking nothing is worse than none"* stands. Deleting
+them was correct; concluding the surface was unreachable was not.
+
+**And the prescription this entry gave was wrong too.** It said the way in would be to
+*"drive a horizontal scroll and observe the offset move"*, which `egui_kittest` still
+cannot do ergonomically. The way in was to measure the parent panel's width — available
+the whole time, needing no harness feature, and reached only because a **user-reported
+symptom named the container**: *"the divider does not move."*
 
 **Do not chase a coverage number.** The metric that would matter is *panes whose
 reports are guarded*, and counting tests instead would reward the tour-link tests
