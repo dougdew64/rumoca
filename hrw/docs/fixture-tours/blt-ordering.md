@@ -30,11 +30,13 @@ a digraph is exactly a **strongly connected component**.
 
 ## Act 1 — When an order exists
 
-[RcCircuit → Structural → Summary](hrw://load/RcCircuit/Structural/Summary)
+[RcCircuit → Structural → Spy-plot](hrw://load/RcCircuit/Structural/SpyPlot)
 
 A resistor, a capacitor, a voltage source and a ground. 23 equations, 23 unknowns.
 
-**Expected:** the summary reports **23 blocks** and **0 coupled**.
+**Expected:** the spy-plot shows **23 cells on the diagonal and no outlined boxes** — 23 blocks,
+none coupled. *(The Summary view is not offered here: it exists to explain a singular system, and
+this one is not. Hover any cell for that block's equation.)*
 
 Twenty-three blocks for twenty-three equations means **every block holds exactly one equation**.
 The system was fully ordered: there is a sequence in which each unknown can be computed from
@@ -64,12 +66,13 @@ the generated code will run in.
 
 ## Act 2 — When no order exists
 
-[ProportionalLoop → Structural → Summary](hrw://load/ProportionalLoop/Structural/Summary)
+[ProportionalLoop → Structural → Spy-plot](hrw://load/ProportionalLoop/Structural/SpyPlot)
 
 Three equations: `error = reference - measurement`, `command = controllerGain * error`,
 `measurement = plantGain * command`.
 
-**Expected:** the summary reports **1 block**, and **1 coupled**.
+**Expected:** the spy-plot shows **one outlined box covering the whole 3×3** — 1 block, and it is
+coupled. Contrast Act 1's twenty-three separate cells: same picture language, opposite verdict.
 
 One block for three equations. **Nothing was ordered at all.**
 

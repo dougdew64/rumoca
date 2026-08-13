@@ -29,11 +29,13 @@ handful are genuinely simultaneous.
 
 ## Act 1 — Guess one number and the rest falls out
 
-[ProportionalLoop → Structural → Summary](hrw://load/ProportionalLoop/Structural/Summary)
+[ProportionalLoop → Structural → Spy-plot](hrw://load/ProportionalLoop/Structural/SpyPlot)
 
-**Expected:** one coupled block, size 3, unknowns `command`, `error`, `measurement`.
+**Expected:** one outlined box covering the whole 3×3 — one coupled block, size 3, unknowns
+`command`, `error`, `measurement`.
 
-Now read what tearing did to it:
+**Hover the box.** The tearing report is in the hover text, not in a pane of its own — that is
+where the three rows below are read from.
 
 | | |
 |---|---|
@@ -87,9 +89,10 @@ the least behind.
 
 ## Act 3 — Two blocks, torn independently
 
-[TwoLoops → Structural → Summary](hrw://load/TwoLoops/Structural/Summary)
+[TwoLoops → Structural → Spy-plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
-**Expected:** two coupled blocks of size 2, each torn to **1 tear, 1 residual**:
+**Expected:** **two** outlined boxes on the diagonal, each 2×2 and not touching — two coupled
+blocks of size 2, each torn to **1 tear, 1 residual** (hover each box for its report):
 
 | block | tear | causal | residual |
 |---|---|---|---|
@@ -107,9 +110,10 @@ from two different algorithms, each doing its own job.
 
 ## Act 4 — All three kinds of block in one model
 
-[MixedLoop → Structural → Summary](hrw://load/MixedLoop/Structural/Summary)
+[MixedLoop → Structural → Spy-plot](hrw://load/MixedLoop/Structural/SpyPlot)
 
-Five equations. **Expected:** three blocks, in this order:
+Five equations. **Expected:** a single cell, then a 3×3 outlined box, then a single cell — three
+blocks, in this order:
 
 | block | kind | content |
 |---|---|---|

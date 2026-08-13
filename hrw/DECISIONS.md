@@ -2825,3 +2825,101 @@ indistinguishable from a clean result — the same shape as everything else in t
 check now carries an explicit `cd` to the repo root in the same command.
 
 Suite 550 fast, 0 failed. Clippy exit 0. Not committed.
+
+### 2026-08-12 — a tour link can resolve and still be wrong; both failures now have checkers
+
+**Doug, walking `connect-expansion.md`:** *"Act 2 describes content which is displayed in the
+Flatten → Equations sub tab, yet contains a link for RcCircuit → Structural → Summary, and that link
+actually navigates to RcCircuit → Structural → Incidence."* And separately: *"the Connect sub-tour
+has this equation text: `f_x[19]  connection equation: src.p.v = R.p.v` but in the Flatten →
+Equations sub-tab that equation is shown with `0 = src.p.v - R.p.v`."*
+
+**Two different defect classes, and neither was reachable by any existing check.**
+
+#### 1. Six links named a sub-view their specimen does not offer
+
+`Summary` exists on the **Structural** stage only for a **singular** system — it is the
+singular-system explanation. `RcCircuit` is not singular, so the app **refused the link, said so in
+the status bar, and left the sub-view where it was**. The reader sees the stage change and the wrong
+view, with the explanation in a pane nobody told them to look at. **The code is correct throughout;
+the tours were wrong.**
+
+`fixture_tour_links_all_resolve` passed every one of them and was right to: it checks the *grammar*,
+and `Structural/Summary` is a real stage plus a real sub-view. Availability is a property of the
+**specimen**, which the grammar cannot see.
+
+**Six links, three tours, and a walk found one:**
+
+| tour | link | now |
+|---|---|---|
+| `connect-expansion` Act 2 | `RcCircuit/Structural/Summary` | `RcCircuit/Flatten/EquationSheet` |
+| `blt-ordering` Act 1 | `RcCircuit/Structural/Summary` | `RcCircuit/Structural/SpyPlot` |
+| `blt-ordering` Act 2 | `ProportionalLoop/Structural/Summary` | `.../SpyPlot` |
+| `tearing` Act 1 | `ProportionalLoop/Structural/Summary` | `.../SpyPlot` |
+| `tearing` Act 3 | `TwoLoops/Structural/Summary` | `.../SpyPlot` |
+| `tearing` Act 4 | `MixedLoop/Structural/Summary` | `.../SpyPlot` |
+
+**`SpyPlot` rather than `Tree`, chosen from what each act asks the reader to do.** All five of those
+acts describe block structure — *"23 blocks and 0 coupled"*, *"two coupled blocks of size 2"*,
+*"three blocks, in this order"* — which is exactly what the spy-plot draws, and the tearing report
+each one then quotes is in the hover text. It is also **the app's own fallback** for a non-singular
+Structural stage (`app.rs`, the default-sub-view block), so the link now agrees with where HRW would
+have put the reader anyway. `connect-expansion` Act 2 is the exception: it counts equations *by
+origin category*, which is the equation sheet, and Doug had already identified the right pane.
+
+**The prose was rewritten with the links**, because five acts said *"the summary reports"*. Each now
+names the spy-plot and says **where to look** — `fixture-tours/README.md`'s second rule, of which
+this is the second recorded instance.
+
+**The checker:** `app::tests::every_tour_sub_view_link_is_available_for_its_specimen`. Singularity
+comes from the **committed manifest** (`docs/specimen-notebook/<Model>/trace/manifest.json`, whose
+per-stage `note` is the same string the app reads), and the verdict from
+`App::structural_view_available_from_stage` — **the same function the app calls**, extracted from
+`structural_view_available` for exactly this purpose, so the check cannot drift from the behaviour.
+No compile required. `Animate` and `AliasAnim` also depend on frames captured at compile time, which
+a trace cannot settle, so the predicate returns `None` and they are **counted as unchecked rather
+than assumed to pass**; no tour links to either today, and the count says so if one starts to.
+
+#### 2. Quoted equation text was real text from the wrong pane
+
+**Neither string was invented, and that is what made it invisible.** Rumoca stores every continuous
+equation as an expression that must equal zero, so the equation sheet prints the **residual** form
+`0 = src.p.v - R.p.v`, while the structural report writes a **label** for a human reading a
+matching: `f_x[19] (connection equation: src.p.v = R.p.v)`. Both appear verbatim in the trace. The
+tour quoted one and sent the reader to the other.
+
+**So this is a provenance error, not a fabrication** — a new species for this repository, which has
+so far caught *invented* content (the 2026-08-04 fictions) and *stale* content (the twenty rotted
+line counts). Here every string was true and current, and in the wrong place. No spell-check, link
+check, or count check can see that.
+
+Act 2 now quotes the residual form, and **the two renderings are explained rather than hidden** —
+the act closes by naming both and why they differ, which turns the defect into the lesson that
+Rumoca stores residuals.
+
+**Audited the rest:** only `connect-expansion` carried block-form pane text. The other inline quotes
+across the nine tours — `0 - (src.p.i + src.n.i)`, the two `Matched: equation 0 (…)` strings — are
+verbatim from the traces and were left alone.
+
+**The checker:** `doc_citations::tests::equation_text_quoted_in_tours_matches_the_traces` harvests
+every `equation` label and every `equation_text` residual from every committed `structural.json`,
+then requires each quoted string in a tour to appear in that union. Eight strings checked today.
+**What it deliberately does not do** is verify the string came from the pane the tour points at —
+that needs the equation sheet, built from a live `Dae`. It catches invented and drifted text; the
+pane attribution stays the author's job, which is precisely why the doc comment says so.
+
+**Both checkers verified must-fire by reverting**, not by argument: restoring `src.p.v = R.p.v`
+fails with *"connect-expansion.md:84 residual not in any trace"*, and the link checker fails naming
+all six links with the specimen's note quoted beside each.
+
+#### The pattern worth keeping
+
+**A checker that validates *form* will pass content that is wrong in *fact*.** `parse_hrw_link`
+answers *"is this a link?"*; the question that mattered was *"is this link true of this specimen?"*
+The same gap produced both defects here and the `architecture.md` rot three days ago: in every case
+something was mechanically checked and the thing that mattered was one level up from what the check
+could see. **When adding a checker, write down what it cannot see** — both new tests do, in the
+doc comment, next to what they can.
+
+Suite 552 fast, 0 failed. Clippy exit 0. `CATALOGUE.md` and `architecture.md` regenerated, since
+tour text and source sizes both moved.

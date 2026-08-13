@@ -5180,3 +5180,77 @@ simply no longer needed to walk the other eight tours.
 platform quirk becomes a bug when the platform changes, and it does not announce itself.* Three weeks
 of "HRW feels cramped" and one divider defect both trace to one number nobody re-derived after the
 port.
+
+## 78. Back / Forward for the RHS — an auto-navigation with no return path
+
+**Doug, 2026-08-12, walking `connect-expansion.md`:** *"I'm in the Connect sub-tour, looking at the
+Flatten stage, Equations sub tab. When I click on an equation, that correctly navigates me to the
+Structural stage, Incidence sub-tab. Unfortunately, there is no way to navigate backward to the
+Flatten stage, Equations sub tab that I had been at… It seems that I need buttons for navigating
+backward and forward in the RHS."*
+
+**The first walked finding from the nine tours, and it is about the instrument rather than a count.**
+
+### He is not stuck, and that is a separate problem
+
+**Clicking the `Flatten` tab returns him to the equation sheet.** The auto-switch
+(`equation_sheet_ui`, `app.rs`) sets only `self.stage = Structural` and
+`viewport.structural = Incidence`; `Viewport.flatten` is independent state and untouched, and its
+initializer deliberately opens on `Equations`. *(Read from the source, not observed in the GUI.)*
+
+**So the defect is not "no way back", it is "no way to know there is a way back."** Nothing on
+screen says a jump happened, and nothing names where it came from. Those are two distinct misses,
+and a Back button only fixes the first.
+
+### Why a tour-authored return link is NOT the fix
+
+The link scheme already reaches sub-views — `hrw://load/TwoLoops/Flatten/EquationSheet` is in this
+very tour, so **#34 is largely built** — and the reflex is to add a return link at the stop. It
+does not work here: **the stop Doug was on does not tell him to click an equation.** He clicked one
+because the sheet invites it, which is the behaviour the sheet exists to produce. The jump is
+triggered by *curiosity at an arbitrary moment*, so no authored link can be waiting for it. That is
+precisely the case a general history covers and a scripted one cannot.
+
+### What a location is
+
+The state a Back must restore is more than `stage`:
+
+- `stage`, and **that stage's** sub-view (`viewport.flatten` / `structural` / `init` / `events`)
+- `viewing_log` — the Log button sits left of the tabs and is a peer of the stages
+- `ui_mode` and `specimen_detail` — because **other jumps change those too**: clicking a variable in
+  the equation sheet switches to Specimen mode and the Source detail, and `HrwLink::ShowSource` does
+  the same. Any history that ignores them will fail on the second-most-common jump.
+
+Deliberately **not** included: canvas pan/zoom and `highlighted_eq_row`. They are where the reader
+was *looking*, not where they *were*, and restoring a camera is the kind of surprise a Back button
+should not spring.
+
+### The decision worth making deliberately, not drifting into
+
+**HRW already has a Back.** `nav` — the go-to-definition stack — renders `← Back / ⌂ Specimen` with
+a breadcrumb, and it means *"stop inspecting this library class."* A second arrow meaning *"go back
+to where I was in the pipeline"* would put two Backs on screen with different scopes, which is worse
+than having one. Three options, and this should be chosen rather than discovered:
+
+1. **Two histories, visually distinct** — `nav`'s stays with the breadcrumb, the new one lives in the
+   stage tab bar. Cheapest, and the scopes really are different: *what am I inspecting* vs *where in
+   the pipeline am I looking*.
+2. **One unified history** that records both kinds of move. Matches a browser, which is the model
+   Doug named. But `nav` is a stack with breadcrumb semantics rather than a linear history, so this
+   is a refactor of working code.
+3. **Extend `nav`** to carry view state. Risks making the breadcrumb mean two things.
+
+**Leaning (1)**, on the grounds that it is reversible and does not disturb `nav`; but (2) is what a
+reader would predict, and "what a reader predicts" has beaten "what is cheap" every previous time in
+this project.
+
+### Requirements it must meet
+
+- **Enabled and disabled, never shown and hidden** (`lib.rs`'s `LiveState` rule), with hover text
+  naming the destination — *"Back to Flatten · Equations"* is worth more than an arrow, and it also
+  fixes the second miss above by saying where you came from.
+- **Do not record your own navigation.** The classic history bug: Back pushes a new entry and
+  Forward becomes unreachable. Needs an explicit suppression flag, and a test for it.
+- **Ships with a headless test.** This is behaviour, not config, and every part of it is reachable
+  from `egui_kittest` — assert that a jump then Back restores stage *and* sub-view, that Forward
+  returns, and that Back at the start is disabled rather than absent.

@@ -1202,4 +1202,176 @@ Some prose.
             examples.join("\n  "),
         );
     }
+
+    /// **Equation text a tour quotes is text HRW actually renders.**
+    ///
+    /// Doug, 2026-08-12, walking `connect-expansion.md`: *"the Connect sub-tour has this
+    /// equation text: `f_x[19]  connection equation: src.p.v = R.p.v` but in the Flatten
+    /// → Equations sub-tab that equation is shown with `0 = src.p.v - R.p.v`."*
+    ///
+    /// **Neither string was invented — and that is what made it hard to see.** Rumoca
+    /// stores every continuous equation as an expression that must equal zero, so the
+    /// equation sheet prints the **residual** form `0 = src.p.v - R.p.v`, while the
+    /// structural report writes a **label** for a human reading a matching:
+    /// `f_x[19] (connection equation: src.p.v = R.p.v)`. Both are real; they live in
+    /// *different panes*. The tour quoted one and sent the reader to the other, which is
+    /// a **provenance** error rather than a fabrication — and no spell-check, link check
+    /// or count check could see it.
+    ///
+    /// # What this checks, and what it deliberately does not
+    ///
+    /// Both forms are recoverable from the committed traces without a compile:
+    /// `structural.json` carries every `equation` label and every `equation_text`. So a
+    /// quoted string must appear in that union. **It does not verify the string is quoted
+    /// from the pane the tour points at** — that needs the equation sheet, which is built
+    /// from a live `Dae`. This catches *invented* text and text that has drifted from the
+    /// traces; the pane attribution is still the author's to get right.
+    ///
+    /// Two shapes are recognised, because they are the two that appear:
+    /// - `` `f_x[N] (…)` `` inline — the label form, compared verbatim.
+    /// - `0 = <expr>` on its own line inside a fenced block — the sheet's form, compared
+    ///   after stripping `0 = `. Placeholders containing `<` are skipped, so
+    ///   `` `0 = <expression>` `` in prose is not mistaken for a quote.
+    #[test]
+    fn equation_text_quoted_in_tours_matches_the_traces() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        // Every equation label and every rendered residual, from every trace.
+        let mut labels: BTreeSet<String> = BTreeSet::new();
+        let mut residuals: BTreeSet<String> = BTreeSet::new();
+        let notebook = hrw.join("docs/specimen-notebook");
+        let Ok(entries) = std::fs::read_dir(&notebook) else {
+            panic!("no specimen notebook at {}", notebook.display());
+        };
+        for entry in entries.flatten() {
+            let structural = entry.path().join("trace/structural.json");
+            let Ok(raw) = std::fs::read_to_string(&structural) else {
+                continue;
+            };
+            let Ok(json) = serde_json::from_str::<serde_json::Value>(&raw) else {
+                continue;
+            };
+            collect_equation_strings(&json, &mut labels, &mut residuals);
+        }
+        assert!(
+            labels.len() > 50 && residuals.len() > 50,
+            "collected only {} labels and {} residuals from the traces — the scan is \
+             broken, so every assertion below would pass vacuously",
+            labels.len(),
+            residuals.len(),
+        );
+
+        let mut checked = 0usize;
+        let mut bad: Vec<String> = Vec::new();
+        let tours = hrw.join("docs/fixture-tours");
+        let mut tour_files: Vec<PathBuf> = Vec::new();
+        collect_markdown(&tours, &mut tour_files);
+
+        for path in tour_files {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+            let mut fenced = false;
+            for (i, line) in text.lines().enumerate() {
+                if line.trim_start().starts_with("```") {
+                    fenced = !fenced;
+                    continue;
+                }
+
+                // The label form, anywhere.
+                for quoted in backticked(line) {
+                    if quoted.starts_with("f_x[") && quoted.contains(" (") {
+                        checked += 1;
+                        if !labels.contains(&quoted) {
+                            bad.push(format!(
+                                "{name}:{}  label not in any trace: `{quoted}`",
+                                i + 1
+                            ));
+                        }
+                    }
+                }
+
+                // The sheet's residual form, only inside a fence.
+                let t = line.trim();
+                if fenced && let Some(expr) = t.strip_prefix("0 = ") {
+                    if expr.contains('<') {
+                        continue; // a placeholder, not a quote
+                    }
+                    checked += 1;
+                    if !residuals.contains(expr) {
+                        bad.push(format!(
+                            "{name}:{}  residual not in any trace: {:?}",
+                            i + 1,
+                            expr
+                        ));
+                    }
+                }
+            }
+        }
+
+        // **Non-vacuity.** The defect that prompted this was seven such lines in one
+        // tour; a run that inspects none of them has stopped working.
+        assert!(
+            checked >= 5,
+            "only {checked} quoted equation strings were inspected — the extraction is \
+             broken, not the tours",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} quoted equation string(s) match nothing HRW renders:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+        println!("equation strings checked against the traces: {checked}");
+    }
+
+    /// Recursively harvest `equation` labels and `equation_text` residuals.
+    fn collect_equation_strings(
+        v: &serde_json::Value,
+        labels: &mut BTreeSet<String>,
+        residuals: &mut BTreeSet<String>,
+    ) {
+        match v {
+            serde_json::Value::Object(map) => {
+                for (k, val) in map {
+                    if let Some(s) = val.as_str() {
+                        match k.as_str() {
+                            "equation" => {
+                                labels.insert(s.to_owned());
+                            }
+                            "equation_text" => {
+                                residuals.insert(s.to_owned());
+                            }
+                            _ => {}
+                        }
+                    }
+                    collect_equation_strings(val, labels, residuals);
+                }
+            }
+            serde_json::Value::Array(items) => {
+                for item in items {
+                    collect_equation_strings(item, labels, residuals);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// The contents of every `` `backticked` `` span on a line.
+    fn backticked(line: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut rest = line;
+        while let Some(start) = rest.find('`') {
+            let after = &rest[start + 1..];
+            match after.find('`') {
+                Some(end) => {
+                    out.push(after[..end].to_owned());
+                    rest = &after[end + 1..];
+                }
+                None => break,
+            }
+        }
+        out
+    }
 }

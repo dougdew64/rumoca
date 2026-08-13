@@ -49,7 +49,7 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
 In the equations it is neither an assignment nor an equality — it is one edge in a graph, and
 
 - **Specimens:** `RcCircuit`, `TwoLoops`
-- **Stages:** `Flatten`, `Structural`
+- **Stages:** `Flatten`
 - **Stops:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve

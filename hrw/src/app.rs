@@ -2669,26 +2669,72 @@ impl App {
     /// this is a question about what the compile produced.
     fn structural_view_available(&self, v: StructuralView) -> bool {
         let is_index_reduction = self.stage == StageKind::IndexReduction;
-        let is_singular = self
-            .stages
-            .get(self.stage)
-            .note
-            .as_deref()
-            .is_some_and(|n| n.contains("singular"));
+        let is_singular = Self::note_says_singular(self.stages.get(self.stage).note.as_deref());
         match v {
-            // Summary is the singular-system explanation, plus Index Reduction's report.
-            StructuralView::Summary => is_index_reduction || is_singular,
+            // The only two whose availability depends on what the compile
+            // *captured* rather than on which stage it is and whether the system
+            // was singular. Everything else defers to the pure predicate below,
+            // so a checker can reach it without running a compile.
             StructuralView::Animate => {
                 is_index_reduction && !self.frames.index_reduction.is_empty()
             }
             StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations(),
+            other => Self::structural_view_available_from_stage(
+                other,
+                is_index_reduction,
+                is_singular,
+            )
+            .expect("Animate and AliasAnim are the only frame-dependent views, both handled above"),
+        }
+    }
+
+    /// Whether a stage note reports a structurally singular system.
+    ///
+    /// One function, because the *tours* are now checked against the same rule the
+    /// app applies, and the note's wording varies: `RcCircuit` carries `null`,
+    /// `Drivetrain` carries `"singular"`, and `BenchActuator` carries a sentence
+    /// beginning *"structural analysis failed: structurally singular system: 47
+    /// matched out of 48…"*. A substring test is right here for the same reason it
+    /// is wrong for identity (`docs/identity-and-provenance.md`): this asks a
+    /// *question about prose Rumoca wrote*, not which thing a name refers to.
+    fn note_says_singular(note: Option<&str>) -> bool {
+        note.is_some_and(|n| n.contains("singular"))
+    }
+
+    /// Sub-view availability decided by **stage and singularity alone** — `None` for
+    /// the two views that additionally depend on captured frames.
+    ///
+    /// **Extracted 2026-08-12 so a tour link can be checked without a compile.**
+    /// Doug, walking `connect-expansion.md`: *"Act 2 … contains a link for RcCircuit
+    /// → Structural → Summary, and that link actually navigates to RcCircuit →
+    /// Structural → Incidence."* The link parsed, so
+    /// `fixture_tour_links_all_resolve` passed it; `Summary` is simply **not
+    /// available on the Structural stage of a non-singular model**, so the app
+    /// refused it, said so in the status bar, and left the sub-view where it was.
+    /// Six such links existed across three tours and one walk found one of them.
+    ///
+    /// `every_tour_sub_view_link_is_available_for_its_specimen` calls **this**
+    /// function against each specimen's committed manifest note, so the check cannot
+    /// drift from the behaviour — the reimplementation hazard
+    /// `docs/fidelity-plan.md` warns about.
+    fn structural_view_available_from_stage(
+        v: StructuralView,
+        is_index_reduction: bool,
+        is_singular: bool,
+    ) -> Option<bool> {
+        match v {
+            // Summary is the singular-system explanation, plus Index Reduction's report.
+            StructuralView::Summary => Some(is_index_reduction || is_singular),
             // These need a complete matching to mean anything.
             StructuralView::SpyPlot | StructuralView::TarjanAnim | StructuralView::TearingAnim => {
-                !is_singular || is_index_reduction
+                Some(!is_singular || is_index_reduction)
             }
             // Always available: the incidence pattern, the matching *search* (whose
             // failure is the point on a singular system), and the raw tree.
-            StructuralView::Incidence | StructuralView::MatchingAnim | StructuralView::Tree => true,
+            StructuralView::Incidence | StructuralView::MatchingAnim | StructuralView::Tree => {
+                Some(true)
+            }
+            StructuralView::Animate | StructuralView::AliasAnim => None,
         }
     }
 
@@ -11615,6 +11661,136 @@ mod tests {
         assert!(
             tours > 0 && links > 0,
             "expected at least one fixture tour with links"
+        );
+    }
+
+    /// **Every sub-view a tour link names is AVAILABLE for the specimen it names.**
+    ///
+    /// Doug, 2026-08-12, walking `connect-expansion.md`: *"Act 2 … contains a link for
+    /// RcCircuit → Structural → Summary, and that link actually navigates to RcCircuit
+    /// → Structural → Incidence."*
+    ///
+    /// **`fixture_tour_links_all_resolve` passed every one of these, and was right to.**
+    /// It checks the *grammar* — `Structural/Summary` is a real stage and a real
+    /// sub-view, so it parses. What it cannot know is that **`Summary` exists on the
+    /// Structural stage only for a singular system**: on `RcCircuit` the app refuses
+    /// it, says so in the status bar, and leaves the sub-view wherever it was. The
+    /// reader sees the stage change and the wrong view, with the explanation in a pane
+    /// they were not told to look at (`fixture-tours/README.md`'s second rule, which
+    /// this is the second instance of).
+    ///
+    /// **Six such links existed across three tours; one walk found one of them.**
+    ///
+    /// # How it checks without compiling
+    ///
+    /// Singularity comes from the **committed manifest** —
+    /// `docs/specimen-notebook/<Model>/trace/manifest.json`, whose per-stage `note` is
+    /// the same string the app reads — and the verdict from
+    /// `App::structural_view_available_from_stage`, the same function the app calls.
+    /// Neither is a reimplementation, so neither can drift.
+    ///
+    /// **`Animate` and `AliasAnim` are skipped, loudly.** Their availability also
+    /// depends on frames captured at compile time, which a trace cannot settle, so the
+    /// predicate returns `None` and this test counts them as unchecked rather than
+    /// assuming they pass. No tour links to either today; if one does, the count below
+    /// says so instead of the link going silently unverified.
+    #[test]
+    fn every_tour_sub_view_link_is_available_for_its_specimen() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut checked = 0usize;
+        let mut skipped_frame_dependent = 0usize;
+        let mut no_manifest: Vec<String> = Vec::new();
+        let mut broken: Vec<String> = Vec::new();
+
+        for path in bridge::fixture_tours() {
+            let tour = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("?")
+                .to_owned();
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+            for link in extract_hrw_links(&text) {
+                // Only the form that names a specimen AND a sub-view can be checked
+                // here: a bare `hrw://stage/...` carries no specimen, so which model
+                // is loaded when it is clicked depends on the walk.
+                let Some(HrwLink::LoadAndSwitch(model, stage, Some(sub))) = parse_hrw_link(&link)
+                else {
+                    continue;
+                };
+                let SubView::Structural(view) = sub else {
+                    // Flatten/Events/Initialization sub-views are always present.
+                    continue;
+                };
+
+                let manifest = root
+                    .join("docs/specimen-notebook")
+                    .join(&model)
+                    .join("trace/manifest.json");
+                let Ok(raw) = std::fs::read_to_string(&manifest) else {
+                    no_manifest.push(format!("{tour}: {link} (no trace for {model})"));
+                    continue;
+                };
+                let json: serde_json::Value = match serde_json::from_str(&raw) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        no_manifest.push(format!("{tour}: {link} (unreadable manifest: {e})"));
+                        continue;
+                    }
+                };
+                // The manifest keys stages by the trace's own snake_case names.
+                let key = match stage {
+                    StageKind::Structural => "structural",
+                    StageKind::IndexReduction => "index_reduction",
+                    _ => continue,
+                };
+                let note = json["stages"][key]["note"].as_str();
+                let is_singular = App::note_says_singular(note);
+                let is_index_reduction = stage == StageKind::IndexReduction;
+
+                match App::structural_view_available_from_stage(
+                    view,
+                    is_index_reduction,
+                    is_singular,
+                ) {
+                    None => skipped_frame_dependent += 1,
+                    Some(true) => checked += 1,
+                    Some(false) => {
+                        checked += 1;
+                        broken.push(format!(
+                            "{tour}: {link}\n      {model}'s {} note is {} \u{2014} so \
+                             {} is not offered there, and the click will land on whichever \
+                             sub-view was already showing",
+                            key,
+                            note.map_or_else(
+                                || "absent (not singular)".to_owned(),
+                                |n| format!("{:?}", n.chars().take(60).collect::<String>())
+                            ),
+                            structural_view_name(view),
+                        ));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            no_manifest.is_empty(),
+            "a tour names a specimen with no committed trace, so its links cannot be \
+             checked at all:\n  {}",
+            no_manifest.join("\n  "),
+        );
+        // **Non-vacuity.** Six of these links were broken when the test was written,
+        // so a run that checks none of them has stopped working rather than found
+        // nothing to complain about.
+        assert!(
+            checked >= 10,
+            "only {checked} sub-view links were checked ({skipped_frame_dependent} skipped as \
+             frame-dependent) \u{2014} the extraction is broken, not the tours",
+        );
+        assert!(
+            broken.is_empty(),
+            "{} tour link(s) name a sub-view the specimen does not offer:\n  {}",
+            broken.len(),
+            broken.join("\n  "),
         );
     }
 

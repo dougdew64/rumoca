@@ -72,24 +72,36 @@ A set of *n* connectors produces:
 | C | 3 | **2** | 1 |
 | | | **4** | **3** |
 
-[RcCircuit → Structural → Summary](hrw://load/RcCircuit/Structural/Summary)
+[RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
-**Expected:** exactly **4** equations described as `connection equation` and **3** described as
-`flow sum equation`:
+**Expected:** the sheet groups the equations by origin, with exactly **4** under
+`connection equation` and **3** under `flow sum equation`.
+
+**Expected:** those seven read as residuals — `0 = <expression>` — not as equalities:
 
 ```
-f_x[19]  connection equation: src.p.v = R.p.v
-f_x[20]  connection equation: R.n.v  = C.p.v
-f_x[21]  connection equation: C.n.v  = src.n.v
-f_x[22]  connection equation: src.n.v = gnd.p.v
+connection equation
+  0 = src.p.v - R.p.v
+  0 = R.n.v - C.p.v
+  0 = C.n.v - src.n.v
+  0 = src.n.v - gnd.p.v
 
-f_x[16]  flow sum equation: src.p.i + R.p.i = 0
-f_x[17]  flow sum equation: R.n.i  + C.p.i = 0
-f_x[18]  flow sum equation: C.n.i + src.n.i + gnd.p.i = 0
+flow sum equation
+  0 = src.p.i + R.p.i
+  0 = R.n.i + C.p.i
+  0 = C.n.i + src.n.i + gnd.p.i
 ```
 
-**Expected:** `f_x[18]` sums **three** currents while the other two sum two — that single row is
-set C, and it is the visible consequence of the transitive join.
+**Expected:** the third flow row sums **three** currents while the other two sum two — that single
+row is set C, and it is the visible consequence of the transitive join.
+
+**Why residuals, and why the same equation looks different in two panes.** Rumoca stores every
+continuous equation as an expression that must equal zero, so `src.p.v = R.p.v` is kept as
+`src.p.v - R.p.v`. The equation sheet prints that form. **The structural report labels the same
+equation differently** — over on Structural → Tree it appears as
+`f_x[19] (connection equation: src.p.v = R.p.v)`, because a *label* is written for a human reading
+a matching, while the *sheet* shows the mathematics as stored. Two renderings of one equation, and
+neither is a rounding of the other.
 
 **Why n − 1 and not n.** Writing all *n(n−1)/2* pairwise equalities would be redundant: equality
 is transitive, and the extra equations would make the system structurally singular — exactly the
