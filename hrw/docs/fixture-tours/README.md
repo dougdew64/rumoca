@@ -87,6 +87,49 @@ the stop that lands is the one you check yourself.
 
 ## Rules for writing one
 
+### The rule the others now serve: prose to the first PREDICTION, then the pane
+
+**Agreed with Doug 2026-08-12, and curriculum tours are to be written on this assumption.**
+It came out of his own account of walking the first two: the tours felt like **books** —
+gaps, and a struggle to read — while the conversation was unlike a **lecture**, because
+questions get answered *and the tour gets fixed*. See
+[`../vision.md`](../vision.md), "Why this beats books and lectures".
+
+**The RHS is a laboratory, not an illustration.** Doug: *"the RHS will be partly helpful for
+you to demonstrate what your tour prose attempts to explain, and the RHS will be mostly
+helpful as a kind of lab for me to explore and test my expectations."*
+
+**So the unit of a curriculum stop is a prediction the reader commits to before looking**, and
+the prose before it exists only to make that prediction possible:
+
+1. **Explain to the first point where a prediction is possible — then stop.** Not to
+   comprehension. *"There should be three groups"* is crude, falsifiable and available after
+   two sentences, and checking it is the fastest way to find out those two sentences were
+   misread. **Prose that continues past the first prediction is prose competing with the
+   lab.**
+2. **State what would FALSIFY it, not only what to see.** A description invites agreement; a
+   prediction invites a look. This is the existing violability rule with its purpose widened —
+   it was written so a tour could **test HRW**, and it turns out to be how Doug learns, so it
+   is now doing two jobs and gets stricter rather than looser.
+3. **Explanation comes AFTER the look**, not before. Explaining first leaves nothing to be
+   wrong about, which is comfortable and teaches less.
+4. **A stop whose pane cannot falsify anything does not belong in a tour.** Move it to
+   [`../compiler-phases/`](../compiler-phases/) as prose. A tour is for claims a pane can
+   refute.
+
+**And the reader audits the prose, which is the half Claude cannot do.** Every *count* in
+these tours is read from a generated trace and is sound; every *rendering* claim is
+**unverified**, because Claude cannot see the GUI. Doug: *"if ever during that learning
+process I find that the RHS does not agree with the prose, I will report that to you."*
+**That report is the only instrument in this project that can falsify a tour's rendering
+claims** — so a stop should make disagreement easy to notice, which is the same demand as
+rule 2.
+
+**Applied as tours are touched, not as a campaign.** `connect-expansion.md` is the first one
+converted, because it was being revised anyway.
+
+### The rules this rests on
+
 **One capability per tour, and keep it narrow.** The scarce resource is **attention per
 expectation**, not the number of walks. A wide tour consumes the surplus that produces
 off-stop findings rather than multiplying them, and a stop failure in a narrow tour implicates

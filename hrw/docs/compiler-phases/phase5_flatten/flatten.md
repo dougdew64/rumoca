@@ -299,3 +299,94 @@ instance as a flat system:
 
 The next phase, [DAE construction](../phase6_dae_construction/dae_construction.md),
 classifies these variables and equations into the MLS Appendix B partition.
+
+---
+
+## Two different "connection graphs", and only one is confined to this phase
+
+*Verified 2026-08-12 against `crates/rumoca-phase-flatten/src/connections/mod.rs` and
+`crates/rumoca-phase-dae/src/overconstrained_interface.rs`* — read while answering Doug's question
+*"is the connection graph something which exists only in the Flatten stage?"* The private types, the
+two union-finds and the DAE phase's separate spanning-tree check were all read directly; §3 below is
+explicitly marked as not verified.
+
+**Held here rather than in `fixture-tours/connect-expansion.md` — Doug's call:** *"past the level of
+useful detail for this tour."* It is the right answer for a later, deeper pass.
+
+**1. The `connect`-expansion graph — confined to Flatten, and destroyed with it.**
+
+Vertices are connector variables, edges are the `connect` statements, undirected; the question is
+connected components. Built by a **private** `UnionFind` (path compression, union-by-rank) over
+`VarName` indices, with a **private** `ConnectionSet { variables, kind, scope, span }` — both
+non-`pub` in `crates/rumoca-phase-flatten/src/connections/mod.rs`. Discarded when the phase returns.
+`ConnectionKind` is `{Flow, Potential, Stream}`, and there are two union-finds, `potential_uf` and
+`stream_uf`.
+
+**What survives the graph's destruction:**
+
+- **Potential equations** — *n − 1* per component, each one edge of a **spanning tree** of that
+  component.
+- **Flow sum equations** — one per component, naming **every member**
+  (`0 = C.n.i + src.n.i + gnd.p.i`). These are a verbatim record of the partition, so the components
+  are recoverable from the flat model even though the graph is not stored.
+- **Spans** — each generated equation carries the originating `connect()` span (SPEC_0008), enforced
+  by `crates/rumoca/tests/architecture_hardening/.../source_named_spans.rs`.
+
+**Consequence for HRW:** `worker::record_connection_frames` must **re-run** instantiate + typecheck
++ flatten with an observer to show this graph, because the frames exist only while the pass runs.
+A labelled derived view, permitted precisely because it is labelled.
+
+**2. The overconstrained-connector graph (MLS §9.4) — outlives Flatten.**
+
+A different question: *is the user's declared spanning tree legal?* Driven by
+`Connections.branch/root/potentialRoot`. The flat model **retains** `branches` and `definite_roots`,
+and `crates/rumoca-phase-dae/src/overconstrained_interface.rs` runs its **own** union-find over
+`flat.branches` to reject a required edge that closes a cycle (CONN-014) and two definite roots in
+one tree (CONN-015), via `ToDaeError::InvalidConnectionGraph`.
+
+So "does the connection graph survive Flatten?" has opposite answers for the two graphs, and the
+curated specimens exercise only the first — `RcCircuit` has no `Connections.branch` at all.
+
+**3. Unverified, and a candidate for `upstream-issues.md` rather than a claim.**
+
+`crates/rumoca-ir-flat/src/connections.rs` declares and exports a fuller family —
+`ConnectionSet`, `ConnectionSets`, `ConnectionGraph`, `GraphNode`, `GraphEdge`, `SpanningTree`,
+`SpanningTreeEdge` — and **grep found nothing in the workspace that constructs any of them**; the
+flatten phase uses its own private type of the same name. That *suggests* declared-but-unpopulated
+IR, but absence of a constructor by grep is not proof (a `Default`, a struct-update or a
+deserialization would not match the patterns searched). **Do not report this upstream without
+checking properly.**
+
+### The five connection validations, and the one thing none of them checks
+
+*Verified 2026-08-12 against `crates/rumoca-phase-flatten/src/connections/mod.rs`* — read while
+answering Doug's question about connector type checking. The tour carries the conceptual version;
+this is the code-level list.
+
+`validate_connections` (line 499) applies these to **each pair of variables being joined**:
+
+| fn | MLS rule | rejects |
+|---|---|---|
+| `validate_flow_consistency` | CONN-001 homogeneity, CONN-003 flow-to-flow | one `flow`, one not |
+| `validate_quantity_compatibility` | CONN-005 | two non-empty `quantity` attributes that differ |
+| `validate_type_compatibility` | CONN-002 | different primitive types, **only when both are known** |
+| `validate_dimension_compatibility` | CONN-008 | scalar-to-array, or mismatched array dims |
+| `validate_expanded_connector_connection` | — | (expandable connectors) |
+
+**All five are pairwise on members that got paired.** `validate_type_compatibility` additionally
+canonicalises through a *second* union-find (`type_roots` / `canonical_type_id`) so that two names
+for one type compare equal.
+
+**The gap is ALREADY KNOWN — `docs/upstream-issues.md` #2**, found 2026-07-29 and adjudicated by
+System Modeler, and the "Connection Expansion" section above has recorded it since 2026-07-30.
+Nothing verifies that the two connectors have the **same member set**: `IncompatibleConnect` joins
+`PinA {v, flow i}` to `PinB {v}`, `a.v` and `b.v` pair and pass every check, `a.i` is never paired,
+and flatten **succeeds**. The wiring error then surfaces at Structural as a *singularity*.
+
+So the honest summary: **Rumoca checks that paired variables are compatible; it does not check that
+the pairing is complete.**
+
+*Added here because the enumeration of the five validations was not written down; the gap itself was.
+**Claude re-derived it on 2026-08-12 without checking this file first** — which is what appending to
+a teaching-database page without reading it produces, and the reason the duplication above was
+trimmed to the part that is new.*

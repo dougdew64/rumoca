@@ -54,6 +54,80 @@ must perform, and the problems that motivate each transformation. This understan
 should transfer equally to Rumoca, Wolfram System Modeler, OpenModelica, Dymola, or
 any other tool.
 
+
+## Why this beats books and lectures — Doug's model, after the first tour walk
+
+*(Doug, 2026-08-12, having walked `connect-expansion.md` and started `dae-construction.md`. His
+words; the refinements after them are Claude's, and one of them contradicts him.)*
+
+> *"I began this effort because I believed that it would be possible to create a learning tool and
+> process which would be more effective for me than books and attending lectures. I believe that we
+> are on the right track. But, after just a bit of tour walking, it is striking to me how similar the
+> tours are initially to the books, yet how different our conversation is from the lectures. At least
+> initially, the tours have gaps and I struggle to understand what is written in the tours. That
+> experience is very much like my experience with books. However, during our conversation, you answer
+> questions and improve the tours. I don't get to ask questions during lectures and the lecturer
+> doesn't improve the books."*
+
+**The tours are books. The difference is not the prose, it is the repair loop.** This is a design
+finding rather than a complaint, and it was measured within an hour: three questions produced three
+tour defects, every one of them **a term used before it was defined** — "the graph is solved", "the
+connection graph", "the components are computed". Prose fails the same way in a tour as in a
+textbook. What a textbook lacks is a reader who can make it change.
+
+**And the compounding property is the thing neither medium has.** A lecture is synchronous but lossy;
+a book is durable but static. Here a question is answered synchronously *and* the answer is routed
+into the repository — the tour, [`compiler-phases/`](compiler-phases/),
+[`question-ledger.md`](question-ledger.md). **Asking permanently improves the artifact**, including
+for future-Doug, which is why the routing discipline in
+[`working-with-doug.md`](working-with-doug.md) is load-bearing rather than tidy.
+
+### The three surfaces have distinct jobs, and the RHS is a lab
+
+Doug's model, in his words:
+
+> *"I haven't yet used the RHS features of HRW to learn. My sense is that I will begin to use those
+> features after I have gained a very basic conceptual understanding… my very basic conceptual
+> understanding will enable me to form expectations for what I should see in the RHS features of HRW,
+> so that I will use those RHS features to test my expectations. In other words, the RHS will be
+> partly helpful for you to demonstrate what your tour prose attempts to explain, and the RHS will be
+> mostly helpful as a kind of lab for me to explore and test my expectations."*
+
+**Accept this, and note what it settles.** It gives a criterion for whether a pane is worth building:
+**a pane that only illustrates what the prose said is redundant; a pane that can falsify an
+expectation is not.** That is the same rule `fixture-tours/README.md` already imposes for a different
+reason — *every `**Expected:**` line must be violable* — which was written to make the tours **test
+HRW**. Doug has arrived at it from the other side: violable expectations are also how **he** learns.
+One mechanism, two purposes, and the second one is the reason to keep it strict.
+
+### Two refinements, one of which contradicts the ordering above
+
+**1. The threshold is a PREDICTION, not understanding — so the lab enters much earlier than Doug
+expects.** He proposes prose first, lab after "very basic conceptual understanding". The trap is that
+"later" never arrives: if the RHS waits for understanding, the prose has to carry the whole
+explanation, and the tours drift to reference depth one good question at a time — the failure already
+identified. **A prediction is far cheaper than understanding.** *"There should be three groups"* is a
+crude, testable, falsifiable prediction available after two sentences, and checking it is the
+fastest way to find out the two sentences were misread. So: **prose to the first prediction, then the
+pane.** Not prose to comprehension.
+
+**2. The lab checks CLAUDE, not only Doug — and this is the stronger argument for using it early.**
+Doug framed the RHS as testing *his* expectations. It also tests the prose. Every tour count is read
+from a generated trace and is therefore sound; **every rendering claim is unverified**, and Claude
+cannot see the GUI. Twice on 2026-08-12 Claude asserted something it had not checked and was caught —
+once by Doug, once by a checker. So each time Doug compares a pane against a tour claim he is
+auditing the tour, and that audit exists nowhere else. **The lab is the only instrument that can
+falsify Claude.**
+
+### What this predicts about what to build
+
+- **Phrase expectations as predictions to check, not descriptions to read**, and say what would
+  falsify them. A description invites agreement; a prediction invites a look.
+- **[`ideas.md`](ideas.md) #78 (Back/Forward for the RHS) rises in value**, because lab work is
+  constant round-tripping between prose and pane. Doug hit that friction before adopting the lab
+  framing, which is corroboration rather than coincidence.
+- **A tour whose panes cannot falsify anything is a tour that should be prose in
+  `compiler-phases/`** instead of a walk.
 ## The opportunity
 
 Books like Cellier's *Continuous System Modeling* and *Continuous System Simulation*

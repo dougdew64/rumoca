@@ -48,6 +48,37 @@ high-level explanation should *reference* the deeper ones rather than duplicate 
 He learns by understanding *why*, and a mechanism explained before its motivation does not
 land.
 
+**HE IS A BEGINNER AT THIS, AND THE DEPTH ORDER IS CONCEPTS NOW, DETAILS LATER** *(Doug,
+2026-08-12, walking the tours)*: *"let's agree now that I am beginner and so benefit from
+easy-to-understand conceptual explanations now. Later, I will dig deeper and benefit from
+details such as the distinction which you just shared."*
+
+**This is a correction of Claude's default, not a restatement of the bullet above.** The
+answers that prompted it were *accurate and too deep*: one reply to "which graph?" carried a
+three-graph comparison table, two same-named `ConnectionSet` types in different crates, an
+unpopulated-IR finding, span provenance and MLS §9.4's overconstrained graph. Every item was
+true and checked. **Completeness is the wrong objective function** — the objective is that the
+idea lands, and a beginner reading six threads keeps none.
+
+**Note the asymmetry that makes this cheap to get wrong:** detail costs Claude nothing to add
+and costs Doug attention to filter, so the pressure is always toward more. Being new to
+Modelica compilers is *not* the same as the Rust/egui gap above — there the gap is idiom and
+he can be given the terse idiomatic answer. **Here he lacks the concepts, so terseness has to
+buy simplicity rather than density.**
+
+The operational rule:
+
+- **Answer the question asked, at the depth asked, and stop.**
+- **Detail that is true but premature is not discarded — it is written to
+  [`compiler-phases/`](compiler-phases/)**, which exists for exactly this and is raw by
+  design. It will be there when he digs.
+- **Mention the deeper thing only when it changes whether the simple answer is correct.**
+  Otherwise record it silently; an offer per answer is itself noise.
+- **This also filters what goes into a tour.** The routing agreement (answers improve the
+  tour) needs a depth gate, or tours drift to reference depth one good question at a time.
+  Doug drew that line himself: *"That distinction is past the level of useful detail for this
+  tour."*
+
 **The conversation is the instrument, not the prompt.** Sessions are teaching dialogues
 between a teacher and an experienced developer new to this domain. **Code changes are a
 byproduct of understanding, not the deliverable.** "Show me the structural analysis" is a

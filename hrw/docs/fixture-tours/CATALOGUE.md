@@ -46,12 +46,13 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
 
 **Flatten — what `connect` actually means**
 
-In the equations it is neither an assignment nor an equality — it is one edge in a graph, and
+In the equations it is neither an assignment nor an equality.
 
 - **Specimens:** `RcCircuit`, `TwoLoops`
 - **Stages:** `Flatten`
 - **Stops:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
+  - `what-a-connector-holds-and-where-its-variables-come-from` — What a connector holds, and where its variables come from
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `act-1-four-statements-three-sets` — Act 1 — Four statements, three sets
   - `act-2-the-arithmetic-and-it-is-exact` — Act 2 — The arithmetic, and it is exact
@@ -380,6 +381,7 @@ Start here. This tour walks nothing itself; it is the map for the nine that do, 
   - `the-route` — The route
   - `the-four-numbers-that-connect-the-tours` — The four numbers that connect the tours
   - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
+  - `three-graphs-three-classical-questions` — Three graphs, three classical questions
   - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
   - `two-open-questions-you-may-hit` — Two open questions you may hit
   - `what-to-tell-me-afterwards` — What to tell me afterwards

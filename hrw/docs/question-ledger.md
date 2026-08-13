@@ -304,3 +304,68 @@ be confirmed or killed later.
   than one that produces tours.
 - **n = 3.** Still nothing that supports a generalisation. Resist reading trends
   into it.
+
+---
+
+## 2026-08-12 — `connect-expansion.md`, the tour's own opening sentence
+
+**The first question from the nine-tour walk, and it is about wording rather than about a count.**
+
+**Doug, verbatim:** *"In the connection tour, you wrote: 'it is one edge in a graph, and the graph is
+solved before any equation exists.' Which graph are you referencing?"*
+
+**Traces back to:** the tour's lead paragraph, before Act 1 — so the very first sentence of prose in
+the tour, not a stop.
+
+### Which shape of question this is
+
+**A question revealing imprecise wording, not a misconception.** Doug did not misunderstand the
+phase; he correctly detected that the sentence names neither the graph nor the operation and asked
+which one was meant. That is the cheapest of the four shapes to fix and the easiest to have missed —
+**nothing checks prose for underspecification**, and the sentence reads fluently, which is exactly
+what let it ship.
+
+**Two things were wrong with it:**
+
+1. **"a graph" was ambiguous** across the tour set. Three graphs appear in the nine tours, and this
+   sentence sits in the first of them — so the ambiguity is worst exactly where the reader has the
+   least context to resolve it.
+2. **"solved" is not an operation on a graph.** What happens is that the **connected components** are
+   computed. The word was doing rhetorical work and carrying no meaning, which is the failure mode
+   `CLAUDE.md` names for log lines — *"a claim that reads nicely is still a claim"* — pointed at
+   prose.
+
+### What the answer had to contain
+
+The useful answer was not just "the connection graph" but the **disambiguation his question
+implies**, because the distinction is load-bearing for the two tours he walks next:
+
+| graph | where | vertices | edges | question asked | algorithm |
+|---|---|---|---|---|---|
+| connection graph | Flatten | connector variables | the `connect` statements | connected components | union-find |
+| incidence graph | Structural | equations ∪ unknowns (bipartite) | "this equation mentions this unknown" | maximum matching | augmenting paths |
+| dependency digraph | Structural | equations | derived from the matching, **directed** | strongly connected components | Tarjan |
+
+**The insight worth keeping from this exchange:** rows 1 and 3 are both *"find the components"*, and
+the only difference is **undirected versus directed** — which is precisely why one is union-find and
+the other is Tarjan. That single contrast connects Flatten to BLT across four tours, and it existed
+nowhere in the tour set before this question.
+
+### Verified against the source, not against prose
+
+`crates/rumoca-phase-flatten/src/connections/mod.rs` — `struct UnionFind` with path compression and
+union-by-rank, over `VarName` indices. **Two of them**, `potential_uf` and `stream_uf`
+(`connections/mod.rs`, the builder's parameters), and `ConnectionSet` carries
+`kind: {Flow, Potential, Stream}`. *Inferred, not traced: that a Flow set shares its membership with
+the Potential set rather than having a union-find of its own. The per-set arithmetic (n−1 potential +
+1 flow) is trace-verified; that implementation detail is not.*
+
+### What was changed
+
+The lead paragraph now names the graph, its vertices and its edges, says **components are computed**
+rather than "solved", and adds the three-graph note so the ambiguity cannot recur for the next
+reader. Per this file's standing rule, the tour says it was reworded and why.
+
+**What this says about the tours' grading criterion:** the question is evidence the tour is *being
+read closely* — it came from the lead paragraph, which a skimmer skips entirely. That is a better
+signal than agreement would have been.

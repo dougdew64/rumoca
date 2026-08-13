@@ -75,6 +75,30 @@ a linear-algebra course — and the coarse form of matching-plus-SCCs has a name
 
 ---
 
+## Three graphs, three classical questions
+
+*(Added 2026-08-12, from a question on `connect-expansion.md`'s first paragraph. It lives here rather
+than in any one tour because it spans four of them.)*
+
+The word "graph" appears in three tours meaning three different things. They are easy to conflate and
+the distinction is what makes each algorithm the obvious choice rather than an arbitrary one:
+
+| graph | tour | vertices | edges | question asked | algorithm |
+|---|---|---|---|---|---|
+| **connection** | connect-expansion | connector variables | the `connect` statements, **undirected** | connected components | union-find |
+| **incidence** | matching | equations ∪ unknowns, **bipartite** | "this equation mentions this unknown" | maximum matching | augmenting paths |
+| **dependency** | blt-ordering | equations | derived from the matching, **directed** | *strongly* connected components | Tarjan |
+
+**The contrast worth carrying: rows 1 and 3 ask the same question on different graphs.** Both are
+*"find the components"* — and the only difference is **undirected versus directed**. That is exactly
+why one is union-find and the other is Tarjan: union-find merges symmetric relations and cannot
+express a dependency that runs one way, which is the whole content of an evaluation order.
+
+So when Tarjan arrives in `blt-ordering.md` it is not a new idea. It is this idea, on a digraph,
+where "same node" has become "each needs the other".
+
+---
+
 ## Three things worth knowing before you start
 
 **Structural singularity means two opposite things.** `CapacitorLoop` is singular because the
