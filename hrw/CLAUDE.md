@@ -441,6 +441,29 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **Only `matching-live.md` needs any of this.** The other eight run from HRW alone.
 >
+> **AND CHECK THE PERMISSION ALLOWLIST EXISTS — first thing, on any machine.** `.claude/` is
+> gitignored **by upstream Rumoca** (`e658c776`), so `.claude/settings.json` does not travel and a
+> fresh clone prompts Doug for approval on **every** Bash call. Doug reported that as real friction
+> on 2026-08-13; the contents and the reasoning are in
+> [`docs/setup-windows.md`](docs/setup-windows.md) §8.
+>
+> ```powershell
+> Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")
+> ```
+>
+> **Anchored at the repo root on purpose, and the bare relative form is a trap.** The first version
+> of this line was `Test-Path .claude\settings.json`, which reported **False on a machine where the
+> file exists** because the shell happened to be in `hrw/` — so the check would have ordered a
+> future session to recreate a file it already had. Caught within a minute of writing it, by
+> running it. **A check that reports absence from the wrong directory is worse than no check**, and
+> this is the third time in one day that a stale working directory produced a confidently wrong
+> result (see `DECISIONS.md`, 2026-08-12).
+>
+> **Claude must check this unprompted, because Claude cannot see permission prompts.** Doug feels
+> the cost and has no reason to suspect a file he has never read; Claude can read the file's
+> *existence* and cannot read the prompts. **Only one of us can detect this, and it is not the one
+> paying for it.**
+>
 > ## Open questions a walk may hit
 >
 > - **A reproduced state-count inconsistency**, in `docs/upstream-issues.md`: `Drivetrain`'s index
