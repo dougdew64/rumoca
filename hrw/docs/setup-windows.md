@@ -203,7 +203,40 @@ working arm shows `Armed: live_trace.rs:<line>`.
 > *Both the Node.js prerequisite and the broken install command were found the first time this
 > page was followed on a genuinely bare machine.*
 
-## 8. Launch
+## 8. Claude Code's permission allowlist — per machine, and it does NOT travel
+
+**`.claude/` is gitignored by upstream Rumoca** (not by us), so a permission allowlist cannot be
+committed. On a fresh clone every Bash call prompts for approval, and Doug reported that as real
+friction while walking tours: *"the high latency of your answers… seems to be caused by you asking
+for my approval to perform tasks."* **This section is the durable record, since the file itself
+cannot be** — the same reason `working-with-doug.md` exists.
+
+Create `.claude/settings.json` at the **repository root**:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo test -p hrw --lib *)",
+      "Bash(cargo clippy -p hrw --all-targets)",
+      "Bash(rustfmt --edition 2024 --check *)"
+    ]
+  }
+}
+```
+
+**Why only these three.** Everything else Claude runs often is either already auto-allowed by
+Claude Code (`grep`, `sed -n`, `cat`, `echo`, `git status`, `git diff`) or genuinely mutating and
+*should* keep asking — `git push`, `git commit`, and `cargo run --example gen_*`, which rewrites
+`architecture.md` and `CATALOGUE.md`.
+
+**The one judgement call, recorded so it can be revisited rather than rediscovered:** `cargo test`
+executes code, and the general rule is not to allowlist patterns permitting arbitrary execution. It
+is scoped to `-p hrw --lib` — this crate's own library tests, which are built and run constantly
+anyway — because it was **40 of 418 observed calls**, the single largest source of prompts. Narrow
+it or drop it if that trade stops being worth it.
+
+## 9. Launch
 
 Open **the repository root** as the VS Code folder (not `hrw/`), and launch **"Debug HRW
 Observatory"** from the launch-configuration dropdown.

@@ -998,13 +998,47 @@ Some prose.
             format!("mod {leaf}"),
             format!("{leaf}:"), // a struct field
         ];
-        rust_sources().iter().any(|p| {
-            let Ok(text) = std::fs::read_to_string(p) else {
+        rust_source_texts().iter().any(|(_, text)| {
+            // **Cheap prefilter, and it is exact rather than approximate.** Every
+            // form above contains `leaf`, so a file that does not contain `leaf`
+            // anywhere cannot match any form — skipping it changes no verdict.
+            //
+            // It matters because of what this check is *for*: proving a symbol is
+            // **absent**. An absent symbol matches nothing, so the scan cannot
+            // short-circuit and pays the full corpus every time — 1,218 files and
+            // 24.7 MB, times nine substring forms per line. One `contains` per file
+            // rejects almost all of them before any line is split.
+            if !text.contains(leaf) {
                 return false;
-            };
+            }
             text.lines()
                 .filter(|l| !l.trim_start().starts_with("//"))
                 .any(|l| forms.iter().any(|f| l.contains(f.as_str())))
+        })
+    }
+
+    /// Every Rust source in the workspace, walked and read **once**.
+    ///
+    /// **Memoised because [`symbol_is_defined`] is called once per `unbuilt:` tag**,
+    /// and each call used to re-walk `crates/` — 56 crates — and re-read every file
+    /// it found. Nine tags therefore paid for nine full-workspace reads.
+    ///
+    /// **Measured 2026-08-13**, after Doug reported answer latency as friction:
+    /// `claims_of_absence_are_still_true` took **10,427 ms** while every other test
+    /// in this module took under 900 ms, so one test was **~85 %** of the module's
+    /// cost and most of what a prose edit had to wait for. Reading once removes it.
+    ///
+    /// A `OnceLock` rather than a parameter thread-through: the callers are tests
+    /// that run in one process against a tree that does not change mid-run, and the
+    /// alternative is passing a corpus through predicates that read better without
+    /// one.
+    fn rust_source_texts() -> &'static [(PathBuf, String)] {
+        static CACHE: std::sync::OnceLock<Vec<(PathBuf, String)>> = std::sync::OnceLock::new();
+        CACHE.get_or_init(|| {
+            rust_sources()
+                .into_iter()
+                .filter_map(|p| std::fs::read_to_string(&p).ok().map(|text| (p, text)))
+                .collect()
         })
     }
 
