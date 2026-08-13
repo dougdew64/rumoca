@@ -118,15 +118,83 @@ the prose before it exists only to make that prediction possible:
    refute.
 
 **And the reader audits the prose, which is the half Claude cannot do.** Every *count* in
-these tours is read from a generated trace and is sound; every *rendering* claim is
-**unverified**, because Claude cannot see the GUI. Doug: *"if ever during that learning
-process I find that the RHS does not agree with the prose, I will report that to you."*
-**That report is the only instrument in this project that can falsify a tour's rendering
-claims** — so a stop should make disagreement easy to notice, which is the same demand as
+these tours is read from a generated trace and is sound. Doug: *"if ever during that
+learning process I find that the RHS does not agree with the prose, I will report that to
+you."* So a stop should make disagreement easy to notice, which is the same demand as
 rule 2.
+
+**Rendering claims are no longer wholly unverified — as of 2026-08-13, for published
+panes** *(this paragraph used to say every one of them was, and that is now false)*. HRW
+publishes the pane on screen to `.hrw-bridge/view.json` as **the renderer's own input**,
+and because that value is a pure function of a headless compile, a test can check a tour
+against it. So:
+
+- **A pane with a `to_bridge_json` gets a group table**, marked `<!-- pane-groups -->`, and
+  `doc_citations::tour_group_tables_match_the_real_equation_sheet` verifies every label and
+  count against a real compile. Today that is **Flatten → Equations** only.
+- **Everything else is still unverified**, and so is everything about *pixels* on any pane —
+  whether a `category` is drawn as a heading, whether rows are legible, whether something is
+  scrolled out of view. The checker verifies **content, never rendering**.
+
+**What this cost to learn:** Doug walked `connect-expansion.md` against the real pane on
+2026-08-13 and found **six** disagreements in one sitting — wrong group headings, a layout
+implied by a table that had no counterpart, and a claim that two renderings of an equation
+lived in different panes when both are columns of the same row. Four of the six are now the
+kind a test catches.
+
+### The template — `connect-expansion.md`
+
+**Doug, after walking it: *"That is the template for all other tours."*** It is the worked example;
+read it before writing or converting one. The shape of every act:
+
+```markdown
+## Act N — <a question, not a topic>
+
+<setup: the least that makes the prediction possible>
+
+> **Predict.** <a question with a committed answer>
+
+[▶ Look — <Specimen> → <Stage> → <SubView>](hrw://load/…)
+
+**Expected:** <the answer, exact>
+
+**Falsified if** <what would refute it>
+
+### What just happened
+
+<the explanation, only now>
+```
+
+**Five things make it work, and four of them are not the format:**
+
+1. **Acts chain.** Each prediction is answerable from the previous act's *result* — nodes in Act 1
+   become the input to Act 2's equation count, which becomes Act 3's row-pairing. A tour whose acts
+   could be reordered is a list of observations, which is what this one was before.
+2. **Every term is defined at first use, and one word never does two jobs.** This tour needs three
+   levels — **connector**, **node**, **connection set** — and conflating any two of them broke it
+   three separate times. Fixing the wording was never enough; the levels had to be named.
+3. **Say where a claim is *not* visible.** A flow set of *n* prints as one row naming all *n*; a
+   potential set prints as *n* − 1 pairs and its size appears nowhere. Stating that turned the
+   tour's most persistent confusion into its spine. **If a number you assert cannot be found on the
+   screen, say so in the act that asserts it.**
+4. **Numbers are declared falsifiable up front.** The tour opens by saying its counts come from
+   generated traces and asks to be told when one disagrees — which is what makes the reader an
+   instrument rather than an audience.
+5. **No historical asides.** See below.
 
 **Applied as tours are touched, not as a campaign.** `connect-expansion.md` is the first one
 converted, because it was being revised anyway.
+
+### Keep the tour's history out of the tour
+
+**A tour is written for Doug; a changelog is written for Claude.** No *"reworded after Doug
+asked"*, no *"corrected 2026-08-13"*, no dated parentheticals. They accumulated to eight in one
+file and made it read as a maintenance log.
+
+That history is not lost, it is **filed where it belongs**: the decision and its reasoning in
+[`../../DECISIONS.md`](../../DECISIONS.md), the question that prompted it in
+[`../question-ledger.md`](../question-ledger.md), and the mechanism in a code comment or
+[`../compiler-phases/`](../compiler-phases/). A tour states what is true now.
 
 ### The rules this rests on
 

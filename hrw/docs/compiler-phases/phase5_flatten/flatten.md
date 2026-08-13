@@ -322,6 +322,33 @@ non-`pub` in `crates/rumoca-phase-flatten/src/connections/mod.rs`. Discarded whe
 `ConnectionKind` is `{Flow, Potential, Stream}`, and there are two union-finds, `potential_uf` and
 `stream_uf`.
 
+**CORRECTION 2026-08-13 — the "two union-finds" description above was wrong, and so was the
+inference beneath it.** *Verified against
+`crates/rumoca-phase-flatten/src/connections/mod.rs`* (`connect_primitive_vars`, and the set
+extraction near the end of `build_connection_sets`). Doug's question — *"the connections are
+actually between the connector variables rather than between the connectors, correct?"* — made it
+load-bearing, so it was traced rather than left as an inference.
+
+**A `connect` is expanded into pairs of matching MEMBER VARIABLES first**
+(`expand_connector_connection`), and each pair is then routed by kind into **one of three**
+mechanisms:
+
+| both members are | goes to | grouped |
+|---|---|---|
+| `flow` | `flow_pairs`, a plain `Vec<(VarName, VarName)>` | later, by its **own** union-find, **per scope** |
+| `stream` | `stream_uf` | globally |
+| neither | `potential_uf` | globally |
+
+**So flow is NOT a union-find at collection time, and flow sets do NOT share membership with
+potential sets** — which is exactly what the earlier note inferred and marked as unverified. Flow
+pairs are accumulated as a list and grouped separately afterwards, and a flow set is emitted only
+when `vars.len() >= 2`. Potential sets are extracted globally, with the source noting that merging
+or splitting them does not change the equation count — *N−1 for N variables either way*.
+
+**The provenance convention did its job here.** The claim was tagged *"Inferred, not traced"*, so
+when it mattered it was checked, and it was false. An untagged version of the same sentence would
+have been read as fact.
+
 **What survives the graph's destruction:**
 
 - **Potential equations** — *n − 1* per component, each one edge of a **spanning tree** of that

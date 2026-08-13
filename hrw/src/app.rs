@@ -677,6 +677,22 @@ fn structural_view_name(v: StructuralView) -> &'static str {
     }
 }
 
+/// The name of the sub-view the given stage is currently showing.
+///
+/// `None` for the stages that have only one view — a tree-only stage has no sub-tab,
+/// and reporting an invented name for it would be a claim about UI that does not exist.
+fn sub_view_name_for(stage: StageKind, viewport: &Viewport) -> Option<&'static str> {
+    match stage {
+        StageKind::Flatten => Some(flatten_view_name(viewport.flatten)),
+        StageKind::Structural | StageKind::IndexReduction => {
+            Some(structural_view_name(viewport.structural))
+        }
+        StageKind::Initialization => Some(init_view_name(viewport.init)),
+        StageKind::Events => Some(events_view_name(viewport.events)),
+        _ => None,
+    }
+}
+
 fn flatten_view_name(v: FlattenView) -> &'static str {
     match v {
         FlattenView::Equations => "EquationSheet",
@@ -1003,6 +1019,20 @@ struct Viewport {
     highlighted_eq_row: Option<usize>,
     /// Source line under the reader's attention, if any.
     highlighted_source_line: Option<u32>,
+    /// What `.hrw-bridge/view.json` was last written for, as `"Stage/SubView"`.
+    ///
+    /// **Here rather than on `App` deliberately**: this is viewport state, and `App`'s
+    /// field count is ratcheted by
+    /// `doc_citations::app_does_not_regrow_its_field_count`. A field that genuinely
+    /// belongs to an existing grouping should go into it rather than spend the budget
+    /// — which is the question the ratchet exists to force.
+    ///
+    /// **Change detection rather than interception.** The sub-view is set from several
+    /// places — a sub-tab click, an `hrw://` link through `apply_sub_view`, and the
+    /// default-sub-view logic that forces Summary on a singular report stage. Comparing
+    /// once per frame catches all of them; hooking each one would miss whichever is
+    /// added next.
+    last_published_view: Option<String>,
 }
 
 impl Default for Viewport {
@@ -1025,6 +1055,7 @@ impl Default for Viewport {
             before_incidence: Canvas::default().with_fit_vertical_bias(0.15),
             highlighted_eq_row: None,
             highlighted_source_line: None,
+            last_published_view: None,
         }
     }
 }
@@ -3069,6 +3100,70 @@ impl App {
     /// 2026-07-28). `stages` lists which IRs exist rather than judging the
     /// compile good or bad, because "Flatten produced a note but no value" is a
     /// fact and "compilation partly failed" is a conclusion.
+    /// Publish the pane on screen to `.hrw-bridge/view.json`, when it changes.
+    ///
+    /// # What this closes
+    ///
+    /// The diagnostic snapshot already carried `stage_tab`, so Claude knew Doug was on
+    /// Flatten — but not **which Flatten sub-tab**, and not the pane's contents. That
+    /// single gap is what had him about to type out an equation sheet by hand
+    /// (2026-08-13). A transcription is friction *and* a place for an error neither of
+    /// us would catch.
+    ///
+    /// # Only on change, and only the current view
+    ///
+    /// Writing every view on every compile would add to the bridge's existing 1.5 MB
+    /// per compile for no benefit, since almost all of it is never read. Comparing
+    /// against [`Viewport::last_published_view`] means the file is written when the
+    /// reader moves and not otherwise.
+    ///
+    /// # Views without a publisher state their absence
+    ///
+    /// A pane with no `to_bridge_json` **removes** the file. Leaving the previous view's
+    /// content would be a stale report indistinguishable from a current one — and
+    /// `view.json` naming a pane the reader has left is worse than no file at all.
+    /// Adding a view here is: give its data type a `to_bridge_json`, then add an arm.
+    fn publish_current_view(&mut self) {
+        let sub = sub_view_name_for(self.stage, &self.viewport);
+        let key = match sub {
+            Some(name) => format!("{}/{name}", self.stage.slug()),
+            None => self.stage.slug().to_owned(),
+        };
+        if self.viewport.last_published_view.as_deref() == Some(key.as_str()) {
+            return;
+        }
+
+        // One arm per publishable view. The body is the renderer's own input, never a
+        // description of it — see `EquationSheet::to_bridge_json`.
+        let body = match self.stage {
+            StageKind::Flatten if self.viewport.flatten == FlattenView::Equations => self
+                .cached_equation_sheet
+                .as_ref()
+                .map(equation_sheet::EquationSheet::to_bridge_json),
+            // The painter-drawn view no accessibility tree can reach. Both report
+            // stages share it; `stage_views` already holds whichever was built.
+            StageKind::Structural | StageKind::IndexReduction
+                if self.viewport.structural == StructuralView::Incidence =>
+            {
+                self.stage_views
+                    .incidence
+                    .as_ref()
+                    .and_then(Option::as_ref)
+                    .map(incidence_view::IncidenceMatrix::to_bridge_json)
+            }
+            _ => None,
+        };
+
+        let kind = body.as_ref().map(|_| key.as_str());
+        if let Err(e) = bridge::write_view(kind, body.as_ref()) {
+            // Reported, not swallowed: a bridge write that fails silently is a file
+            // Claude would read as "this pane is empty".
+            self.context.point_error = Some(format!("view.json: {e}"));
+        }
+        diagnostics::record_action("view", key.clone());
+        self.viewport.last_published_view = Some(key);
+    }
+
     fn diagnostic_snapshot(&self) -> Value {
         let anim = self.animation_diagnostic();
         json!({
@@ -3077,6 +3172,12 @@ impl App {
             "ui_mode": format!("{:?}", self.ui_mode),
             "specimen_detail": format!("{:?}", self.specimen_detail),
             "stage_tab": self.stage.name(),
+            // **Which sub-tab of that stage**, which `stage_tab` alone does not say.
+            // `null` means the stage has only one view, not that the field was omitted.
+            "sub_view": sub_view_name_for(self.stage, &self.viewport),
+            // Whether `.hrw-bridge/view.json` currently describes this pane. A reader
+            // comparing the two can tell a stale file from a current one.
+            "view_published": self.viewport.last_published_view,
             "viewing_log": self.viewing_log,
             "compiling": self.compiling,
             // Non-empty means the view is showing a library class, not the
@@ -3608,12 +3709,48 @@ impl App {
                 ui.add_space(8.0);
 
                 let tracked = self.tracked_identifier.as_deref();
+                // **The family heading, drawn once above a contiguous run.** The three
+                // `connect`-derived groups share a cause, and rendering them as flat
+                // siblings of `Component equations` implied they did not — Doug,
+                // 2026-08-13: *"the flow variables are presented as though they create
+                // some other kind of equations which are not connection equations."*
+                // `cmp_key` keeps the run contiguous, so tracking the previous family
+                // is enough; no grouping pass is needed.
+                let mut family_shown: Option<&'static str> = None;
                 for (cat, eqs) in &sheet.groups {
                     ui.add_space(6.0);
-                    ui.label(
-                        egui::RichText::new(format!("{} ({})", cat.label(), eqs.len())).strong(),
-                    );
-                    ui.weak(cat.description());
+                    if let Some(family) = cat.family()
+                        && family_shown != Some(family)
+                    {
+                        let total: usize = sheet
+                            .groups
+                            .iter()
+                            .filter(|(c, _)| c.family() == Some(family))
+                            .map(|(_, e)| e.len())
+                            .sum();
+                        ui.label(
+                            egui::RichText::new(format!("{family} ({total})"))
+                                .strong()
+                                .size(15.0),
+                        );
+                        ui.weak("Every one of these exists because two connectors were joined.");
+                        ui.add_space(2.0);
+                    }
+                    family_shown = cat.family();
+                    // Indented under the family heading when there is one, so the
+                    // nesting is visible rather than merely asserted.
+                    let indent = if cat.family().is_some() { 16.0 } else { 0.0 };
+                    ui.horizontal(|ui| {
+                        ui.add_space(indent);
+                        ui.label(
+                            egui::RichText::new(format!("{} ({})", cat.label(), eqs.len()))
+                                .strong(),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.add_space(indent);
+                        ui.weak(cat.description());
+                    });
                     ui.add_space(2.0);
                     // Equations are Modelica-shaped text, so they get the same
                     // syntax colouring as the specimen source view. The tracked
@@ -4744,13 +4881,13 @@ impl App {
                                     // initialization and structural carry no spans at
                                     // all and get `None`, which also keeps them from
                                     // paying for a path string per row.
-                                    path_lines: self.cached_equation_sheet.as_ref().and_then(
-                                        |s| match self.stage {
+                                    path_lines: self.cached_equation_sheet.as_ref().and_then(|s| {
+                                        match self.stage {
                                             StageKind::Dae => Some(&s.node_lines),
                                             StageKind::Flatten => Some(&s.flat_node_lines),
                                             _ => None,
-                                        },
-                                    ),
+                                        }
+                                    }),
 
                                     jump_to: jump_to.as_deref(),
                                     highlight: self.context.jump_highlight.as_deref(),
@@ -4835,24 +4972,21 @@ impl App {
                             tracked: self.tracked_identifier.as_deref(),
                             known_variables: self.known_variables.as_ref(),
                             declaring_classes: Some(&self.declaring_classes),
-                                    variable_lines: self
-                                        .identifier_index
-                                        .as_ref()
-                                        .map(|i| &i.variables),
-                                    // **Each stage gets ITS OWN map, or none.**
-                                    // Flatten numbers equations differently from the
-                                    // DAE, so sharing one map would resolve
-                                    // confidently and wrongly. Index reduction,
-                                    // initialization and structural carry no spans at
-                                    // all and get `None`, which also keeps them from
-                                    // paying for a path string per row.
-                                    path_lines: self.cached_equation_sheet.as_ref().and_then(
-                                        |s| match self.stage {
-                                            StageKind::Dae => Some(&s.node_lines),
-                                            StageKind::Flatten => Some(&s.flat_node_lines),
-                                            _ => None,
-                                        },
-                                    ),
+                            variable_lines: self.identifier_index.as_ref().map(|i| &i.variables),
+                            // **Each stage gets ITS OWN map, or none.**
+                            // Flatten numbers equations differently from the
+                            // DAE, so sharing one map would resolve
+                            // confidently and wrongly. Index reduction,
+                            // initialization and structural carry no spans at
+                            // all and get `None`, which also keeps them from
+                            // paying for a path string per row.
+                            path_lines: self.cached_equation_sheet.as_ref().and_then(
+                                |s| match self.stage {
+                                    StageKind::Dae => Some(&s.node_lines),
+                                    StageKind::Flatten => Some(&s.flat_node_lines),
+                                    _ => None,
+                                },
+                            ),
 
                             // A navigated library class is a different IR, so a
                             // jump target addressed into the stage tree would
@@ -6267,13 +6401,12 @@ impl App {
                                     // filter — Charter Decision 8 permits the first and
                                     // forbids the second.
                                     let label = match source {
-                                        TourSource::Fixture(p) => self
-                                            .tour
-                                            .row_specimens
-                                            .get(p)
-                                            .map_or_else(|| source.label(), |sp| {
-                                                format!("{}  \u{00b7}  {sp}", source.label())
-                                            }),
+                                        TourSource::Fixture(p) => {
+                                            self.tour.row_specimens.get(p).map_or_else(
+                                                || source.label(),
+                                                |sp| format!("{}  \u{00b7}  {sp}", source.label()),
+                                            )
+                                        }
                                         TourSource::AdHoc => source.label(),
                                     };
                                     let resp = ui.selectable_label(selected, label);
@@ -7711,6 +7844,18 @@ impl App {
         //
         // `flush_session` is a no-op unless an action was recorded, so an idle frame
         // costs one bool check.
+        // **End of frame, so the sub-view has settled**, and before the snapshot below
+        // so `view_published` describes the file that now exists rather than the
+        // previous one.
+        //
+        // Per frame rather than at a choke point, deliberately: the first attempt put
+        // this beside the `pending_sub_view` handling, which lives in
+        // `report_sub_view_row_ui` and therefore **only runs on report stages** — so
+        // Flatten, the very pane it was built for, published nothing. Caught by
+        // `ui_tests::a_rendered_frame_publishes_the_current_view` rather than by
+        // reading. The cost of running it every frame is one string compare, because
+        // `publish_current_view` returns early when nothing moved.
+        self.publish_current_view();
         diagnostics::set_snapshot(self.diagnostic_snapshot());
         diagnostics::flush_session();
     }
@@ -8151,7 +8296,10 @@ impl HrwLink {
     fn describe(&self) -> String {
         match self {
             Self::OpenTour { tour, stop: None } => format!("tour/{tour}"),
-            Self::OpenTour { tour, stop: Some(s) } => format!("tour/{tour}/stop/{s}"),
+            Self::OpenTour {
+                tour,
+                stop: Some(s),
+            } => format!("tour/{tour}/stop/{s}"),
             Self::LoadSpecimen(name) => format!("load/{name}"),
             Self::SwitchStage(kind, None) => format!("stage/{}", kind.slug()),
             Self::SwitchStage(kind, Some(sub)) => {
@@ -8812,6 +8960,28 @@ impl App {
         // fragile and is logged in the UI-testing debt.
         self.source.text = Some("// (fixture source)\n".to_owned());
         self.source.load_error = None;
+    }
+
+    /// Seed one equation-sheet row, so a harness frame has something to publish.
+    ///
+    /// Index 0 deliberately, so the assertion can look for the literal `f_x[0]` — the
+    /// id form the other views use.
+    pub(crate) fn test_set_equation_sheet_for_publish(&mut self) {
+        self.viewport.flatten = FlattenView::Equations;
+        self.cached_equation_sheet = Some(equation_sheet::EquationSheet {
+            groups: vec![(
+                equation_sheet::EquationCategory::Connection,
+                vec![equation_sheet::FormattedEquation {
+                    index: 0,
+                    text: "0 = src.p.v - R.p.v".to_owned(),
+                    origin: "connection equation".to_owned(),
+                    category: equation_sheet::EquationCategory::Connection,
+                    source_lines: vec![],
+                }],
+            )],
+            n_equations: 1,
+            ..equation_sheet::EquationSheet::default()
+        });
     }
 
     /// Drop the model name, leaving the selection: the mid-compile state.
@@ -10699,7 +10869,10 @@ mod tests {
         // Navigation between documents: no model is involved, so a reader with
         // nothing loaded must still be able to follow a citation.
         for link in [
-            HrwLink::OpenTour { tour: "failure-parse".to_owned(), stop: None },
+            HrwLink::OpenTour {
+                tour: "failure-parse".to_owned(),
+                stop: None,
+            },
             HrwLink::OpenTour {
                 tour: "failure-parse".to_owned(),
                 stop: Some("stop-1-the-failure-itself".to_owned()),
@@ -10740,7 +10913,9 @@ mod tests {
             }),
         );
         assert_eq!(
-            parse_hrw_link("hrw://tour/failure-parse/stop/stop-4-the-distinction-this-specimen-anchors"),
+            parse_hrw_link(
+                "hrw://tour/failure-parse/stop/stop-4-the-distinction-this-specimen-anchors"
+            ),
             Some(HrwLink::OpenTour {
                 tour: "failure-parse".to_owned(),
                 stop: Some("stop-4-the-distinction-this-specimen-anchors".to_owned()),
@@ -12883,5 +13058,82 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
             "pending_stage should be cleared"
         );
         assert!(app.viewing_log, "viewing_log should be true");
+    }
+
+    /// **The snapshot names the sub-tab, not just the stage.**
+    ///
+    /// `stage_tab` said `Flatten` and stopped there, so Claude could not tell the
+    /// equation sheet from the source map from the connections replay — the gap that had
+    /// Doug about to transcribe a pane by hand on 2026-08-13.
+    #[test]
+    fn the_diagnostic_snapshot_names_the_sub_view() {
+        let mut app = App::test_default();
+        app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Flatten);
+
+        app.viewport.flatten = FlattenView::Equations;
+        assert_eq!(app.diagnostic_snapshot()["sub_view"], "EquationSheet");
+
+        app.viewport.flatten = FlattenView::Connections;
+        assert_eq!(app.diagnostic_snapshot()["sub_view"], "Connections");
+
+        // A tree-only stage has no sub-tab, and must say so rather than invent one.
+        app.stage = StageKind::Parse;
+        assert!(
+            app.diagnostic_snapshot()["sub_view"].is_null(),
+            "a stage with one view reports null, not a fabricated name",
+        );
+    }
+
+    /// **Leaving a published view removes the file; it never leaves the old one.**
+    ///
+    /// A `view.json` describing a pane the reader has left is indistinguishable from a
+    /// current one by content alone, and Claude would answer confidently about the wrong
+    /// pane. That is the failure this whole file's rules exist to prevent, so the empty
+    /// case is the one worth a test.
+    ///
+    /// **Touches the real bridge path**, as the `focus.json` tests already do — the
+    /// directory is a compile-time constant. It restores the file's absence afterwards.
+    #[test]
+    fn leaving_a_published_view_removes_the_file() {
+        let mut app = App::test_default();
+        app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Flatten);
+        app.viewport.flatten = FlattenView::Equations;
+        app.cached_equation_sheet = Some(equation_sheet::EquationSheet {
+            n_equations: 1,
+            ..equation_sheet::EquationSheet::default()
+        });
+
+        app.publish_current_view();
+        let path = std::path::Path::new(bridge::VIEW_FILE);
+        assert!(path.exists(), "the equation sheet must be published");
+        let text = std::fs::read_to_string(path).expect("read view.json");
+        assert!(
+            text.contains("Flatten/EquationSheet"),
+            "the file must name the pane it describes, got: {text}",
+        );
+
+        // Move to a stage with no publisher.
+        app.stage = StageKind::Parse;
+        app.publish_current_view();
+        assert!(
+            !path.exists(),
+            "a view with no publisher must remove the file, not leave the previous \
+             pane's content behind",
+        );
+    }
+
+    /// The publish is skipped when nothing moved, so the file is not rewritten per frame.
+    #[test]
+    fn republishing_the_same_view_is_a_no_op() {
+        let mut app = App::test_default();
+        app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Parse);
+
+        app.publish_current_view();
+        let first = app.viewport.last_published_view.clone();
+        assert_eq!(first.as_deref(), Some("Parse"));
+
+        // A second call with nothing changed must return before touching the disk.
+        app.publish_current_view();
+        assert_eq!(app.viewport.last_published_view, first);
     }
 }

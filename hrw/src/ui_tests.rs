@@ -1164,7 +1164,8 @@ fn a_flagged_stage_shows_its_artifact_beside_its_error() {
     let h = harness(app);
 
     assert!(
-        h.query_by_label_contains("dimension mismatch 2 vs 3").is_some(),
+        h.query_by_label_contains("dimension mismatch 2 vs 3")
+            .is_some(),
         "the diagnostic must still be shown \u{2014} it is the more urgent half",
     );
     assert!(
@@ -1689,6 +1690,51 @@ fn the_chrome_stays_on_screen_at_every_width() {
             );
         }
     }
+}
+
+/// **A real frame publishes the pane on screen**, not just the function in isolation.
+///
+/// The unit tests around `publish_current_view` call it directly, so **all of them would
+/// still pass if the call site vanished from `frame_ui`** — the gap between testing a
+/// function and testing that anything invokes it. This drives an actual frame through the
+/// harness and asserts the file appears, which is the only version that catches a deleted
+/// call.
+///
+/// Doug's use for it (2026-08-13): stop having to transcribe a pane into chat before
+/// asking about it.
+#[test]
+fn a_rendered_frame_publishes_the_current_view() {
+    let path = std::path::Path::new(crate::bridge::VIEW_FILE);
+    let _ = std::fs::remove_file(path);
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state(
+        "RcCircuit.mo",
+        "RcCircuit",
+        crate::worker::StageKind::Flatten,
+    );
+    app.test_set_equation_sheet_for_publish();
+
+    let mut h = harness(app);
+    h.run_steps(2);
+
+    assert!(
+        path.exists(),
+        "a frame on Flatten with an equation sheet must publish it \u{2014} \
+         `publish_current_view` is not being reached from `frame_ui`",
+    );
+    let text = std::fs::read_to_string(path).expect("read view.json");
+    assert!(
+        text.contains("Flatten/EquationSheet"),
+        "the published file must name the pane, got: {text}",
+    );
+    assert!(
+        text.contains("f_x[0]"),
+        "the published rows must carry their cross-view id, got: {text}",
+    );
+
+    let _ = std::fs::remove_file(path);
 }
 
 /// **The left panel's content never detaches from the divider**, at any window

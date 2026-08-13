@@ -1,129 +1,21 @@
 # Flatten — what `connect` actually means
 
-`connect(src.p, R.p)` looks like wiring two things together, and in a drawing that is all it is.
-**In the equations it is neither an assignment nor an equality.**
+`connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an
+assignment nor an equality** — it is one edge in a graph, and the equations do not exist until that
+graph has been solved.
 
-**It is one edge in a graph.** Define that graph, because everything below is arithmetic over it:
+**This tour counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
+step from one number to the other is something you can predict before you look.
 
-> **The connection graph.** Its **vertices** are connector variables — `src.p.v`, `R.p.v`,
-> `src.n.i`, one per member of every connector instance. Its **edges** are the `connect` statements
-> themselves, one edge each, and they are **undirected**: `connect(a, b)` says *a and b are the same
-> node*, which is symmetric.
->
-> The only question asked of it is **which connectors belong together**. Nothing else about the
-> graph is used.
-
-**"Computing the components" means sorting the connectors into groups, and the groups are the
-output.** The procedure is as plain as it sounds: pick any connector, walk along every `connect` you
-can reach from it, and everything you reach is one group; repeat with whatever is left over until
-nothing is. **Act 1's table of sets A, B and C is that output** — three groups, one per node in the
-circuit.
-
-**Two names for one thing, and you will meet both.** Graph theory calls a group like that a
-**connected component**; Modelica calls it a **connection set** (MLS §9.2). Same object.
-
-**The grouping happens first, and only then does any equation exist** — and that ordering is forced
-rather than tidy. A set of *n* connectors yields *n − 1* equations plus one flow equation, so the
-*count* depends on group **size**. Emitting an equation early would be a guess:
-`connect(src.n, gnd.p)` retroactively changes how many equations the earlier `connect(C.n, src.n)`
-is responsible for. You cannot know until no group can still grow.
-
-Rumoca does the grouping with **union-find** (`crates/rumoca-phase-flatten/src/connections/mod.rs`),
-the standard tool for exactly this question — it is the walking procedure above, made fast.
-
-*(Lead rewritten 2026-08-12, twice, both times because Doug asked. First version said "the graph is
-solved", naming neither the graph nor the operation. Second version named the connection graph
-without defining it — the definition lived only in the answer, which is the failure this paragraph
-now exists to prevent. **The three-graph contrast that came out of the same question is in
-[`the-mathematics.md`](the-mathematics.md)**, since it spans four tours and belongs to none of
-them.)*
+Each act asks you to **commit to an answer**, then sends you to the pane that settles it. The
+answers are read from generated compiler traces, so if a count disagrees with your screen, the tour
+is wrong and I want to know.
 
 ---
 
-## What a connector holds, and where its variables come from
+## Act 1 — How many nodes?
 
-**A connector is not a wire. It is a small bundle of variables**, and `RcCircuit`'s connectors are
-all `Pin`, which holds exactly two: a voltage `v` and a current `i`.
-
-**Those variables are discovered one phase earlier than you might expect.** Instantiate expands the
-class hierarchy, so by the time flattening starts it already knows that `src` has a connector `p`,
-and that `p` contains `v` and `i` — 53 component instances for this four-component circuit. Flatten's
-job is to give each one a single flat name: `src.p.v`. So **Instantiate discovers the connector
-variables; Flatten names them.** The graph cannot be built before Instantiate, because `connect`
-names *connectors* and the graph's vertices are their *members*.
-
-**This is the bridge to the arithmetic below.** The graph is drawn on **connectors**, but equations
-come out **per member** — so four `connect` statements over `Pin`s produce equations about `v` *and*
-equations about `i`, and they are different kinds of equation.
-
-### Three kinds of connector variable
-
-Modelica gives each member of a connector one of three roles, and **the role decides what happens
-when connectors are joined**:
-
-| kind | written | the physical question | at a junction | example |
-|---|---|---|---|---|
-| **potential** | *(no prefix)* | measured **across** two points | all of them are **equal** | voltage, temperature, angle |
-| **flow** | `flow` | measured **through** a point | they **sum to zero** | current, heat flow, torque |
-| **stream** | `stream` | **carried along** by a flow | depends on flow *direction* | specific enthalpy in a fluid |
-
-**Potential and flow are the pair that makes a junction work.** Equal potentials say *"this is one
-node"*; flows summing to zero says *"nothing accumulates here"* — Kirchhoff's current law, and the
-same statement for heat, torque or mass. **That asymmetry is the whole reason a set of *n* connectors
-gives *n − 1* equations and 1, rather than *n* and *n*** — the arithmetic in Act 2.
-
-**Stream exists for fluids** and does not appear in this tour: a mixing junction cannot simply
-average enthalpy, because what arrives depends on which way each stream is flowing. `Pin` has no
-stream variable, and neither does any specimen here. It is named so the set of three is complete.
-
-**Expected:** in the equation sheet, every `connection equation` is about a `.v` and every
-`flow sum equation` is about a `.i`. Nothing mixes the two.
-
-### What stops you connecting the wrong things
-
-Rumoca checks each **pair** of variables it is about to join, and refuses the connection if they
-disagree on any of:
-
-- **flow versus non-flow** — a current cannot be joined to a voltage
-- **primitive type** — `Real` to `Real`, not `Real` to `Boolean`
-- **quantity** — a variable declared as `"ElectricPotential"` will not join one declared `"Length"`
-- **array shape** — scalars to scalars, arrays to arrays of the same size
-
-**But note what that list is: checks on the pairs that *were* made.** Nothing checks that every
-member found a partner — so connecting a connector holding `{v, i}` to one holding only `{v}` passes
-every check above, because `v` pairs with `v` and `i` is simply never looked at. The model is invalid
-and Rumoca accepts it. That gap has its own tour: [▶ the-oracle](hrw://tour/the-oracle), where
-System Modeler is asked to adjudicate and rejects the same model.
-
-This tour counts. `RcCircuit` has **four `connect` statements** and they produce **seven
-equations** — and the reason it is seven rather than four or eight is the whole content of the
-phase.
-
-> Every count below is read from the specimens' generated traces.
-
----
-
-## The problem this phase exists to solve
-
-A connector carries two kinds of variable, and they obey opposite rules:
-
-- a **potential** variable — voltage, pressure, angle. Joined connectors are all **equal**.
-- a **flow** variable — current, mass flow, torque. Joined connectors **sum to zero**.
-
-That is Kirchhoff's two laws, stated once and reused for every physical domain. Modelica's
-`connect` is the general form, which is why the same construct wires a circuit, a pipe network
-and a gearbox.
-
-**And `connect` is not directional.** Nothing says which side is input; `src.p` and `R.p` are
-peers. That is what makes Modelica *acausal*, and it is why matching had a job to do at all —
-the causality every later phase computes was never written down by the modeller.
-
----
-
-## Act 1 — Four statements, three sets
-
-**Do the grouping yourself before opening anything.** `RcCircuit`'s entire connect section is
-four lines:
+Here is every `connect` in `RcCircuit`:
 
 ```modelica
 connect(src.p, R.p);
@@ -132,177 +24,269 @@ connect(C.n, src.n);
 connect(src.n, gnd.p);
 ```
 
-Apply the walking procedure from the lead: start anywhere, follow every `connect` you can reach,
-that is one group.
+**A connector is not a value — it is a bundle of variables.** `src.p` is a `Pin`, and a `Pin` holds
+a voltage `v` and a current `i`. So `connect(src.p, R.p)` does not relate `src.p` to `R.p`; it
+relates their **members, pairwise**:
 
-> **Predict, and commit to a number before you look.** How many groups are there, and what is the
-> size of the largest?
->
-> **Four statements, so four groups, is the obvious answer and it is wrong.** If you got four, the
-> reason is worth finding before you read on.
+```text
+connect(src.p, R.p)   →   src.p.v — R.p.v      (the voltages)
+                          src.p.i — R.p.i      (the currents)
+```
 
-[▶ Now look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
+Two connectors form the same **node** if you can walk from one to the other along `connect`
+statements — so joining `a` to `b` and `b` to `c` puts all three on one node, even though no
+statement names `a` and `c` together. That is **transitivity**, and it is the only property you need
+here.
 
-**Expected:** **three** groups, of sizes **2, 2 and 3**.
+> **Predict.** How many nodes do these four statements make, and how many connectors are on the
+> largest one?
 
-**Falsified if** you see four groups, or three groups all of size 2, or any group containing a
-connector from two different junctions. Any of those means either the grouping is wrong or this
-tour is.
+[▶ Look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
 
-### Why three and not four
+**Expected:** **three** nodes, of sizes **2, 2 and 3** connectors.
 
-**`src.n` appears in two statements.** That is the whole answer. `connect(C.n, src.n)` and
-`connect(src.n, gnd.p)` are not two junctions — they describe *one* junction with three things
-attached, because grouping is **transitive**: if `C.n` is joined to `src.n`, and `src.n` to
-`gnd.p`, then all three are one node. The walk from `C.n` reaches `gnd.p` without ever meeting a
-`connect` that names them together.
+**Falsified if** you count four, or if all three are the same size, or if any connector appears on
+two nodes.
 
-| set | connectors | size |
+### What just happened
+
+Four statements, three nodes — because **`src.n` appears twice**. `connect(C.n, src.n)` and
+`connect(src.n, gnd.p)` are not two nodes; they are one node with three connectors on it.
+
+| node | connectors | size |
 |---|---|---|
 | A | `src.p`, `R.p` | 2 |
 | B | `R.n`, `C.p` | 2 |
 | C | `C.n`, `src.n`, `gnd.p` | **3** |
 
-**This is the fact Act 2's arithmetic runs on**, and it is why counting `connect` statements can
-never give you the equation count.
+### And this is where the counting has to get precise
+
+**Nothing downstream ever groups connectors.** Because each `connect` expands per member, what
+actually gets grouped are **variables**, in **two separate graphs that share no vertices**:
+
+| graph | vertices | edges from `connect(src.p, R.p)` |
+|---|---|---|
+| **potential** | every `.v` | `src.p.v — R.p.v` |
+| **flow** | every `.i` | `src.p.i — R.p.i` |
+
+Each graph is asked the same question — *which vertices are reachable from which*, the **connected
+components** — and each yields three components of sizes 2, 2 and 3, mirroring the nodes above
+because the same statements built both. Modelica calls one such component a **connection set**
+(MLS §9.2), and a connection set is a set of **variables of one kind**, never a set of connectors.
+Rumoca computes them with **union-find**, in
+`crates/rumoca-phase-flatten/src/connections/mod.rs`, and keeps the two kinds apart throughout.
+
+**So "a node of size 3" means three connectors, hence a potential set of three `.v` and a flow set
+of three `.i`** — six variables, in two sets that never mix.
+
+**The order is forced, not tidy.** The number of equations depends on how *big* each node is, so
+no equation can be written until no node can still grow. `connect(src.n, gnd.p)` changes what
+the earlier `connect(C.n, src.n)` is worth.
 
 ---
 
-## Act 2 — The arithmetic, and it is exact
+## Act 2 — How many equations do three nodes make?
 
-A set of *n* connectors produces:
+Act 1 left you with two sets per node — the `.v` and the `.i`. They do **not** produce equations the
+same way, and `Pin`'s two members are why:
 
-- **n − 1 potential equations** — enough to make all *n* voltages equal, and no more
-- **exactly 1 flow equation** — the sum of all *n* currents is zero
+| variable | kind | what it means on a node |
+|---|---|---|
+| `v` — voltage | **potential** | measured *across*; all of them are **equal** |
+| `i` — current | **flow** | measured *through*; they **sum to zero** |
 
-| set | size | potential eqs | flow eqs |
-|---|---|---|---|
-| A | 2 | 1 | 1 |
-| B | 2 | 1 | 1 |
-| C | 3 | **2** | 1 |
-| | | **4** | **3** |
+*(Modelica has a third kind, `stream`, for fluid connectors carrying enthalpy. `Pin` has none, and
+neither does any specimen in this tour.)*
 
-[RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+That asymmetry decides everything. Making *n* voltages equal takes **n − 1** equations — a chain is
+enough, and more would be redundant. Making *n* currents sum to zero takes exactly **1**, whatever
+*n* is. That is Kirchhoff's current law, and the same statement for heat, torque or mass flow.
 
-**Expected:** the sheet groups the equations by origin, with exactly **4** under
-`connection equation` and **3** under `flow sum equation`.
+> **Predict.** Nodes of 2, 2 and 3 connectors — so potential sets of 2, 2 and 3 `.v`, and flow sets
+> of 2, 2 and 3 `.i`. How many equations in total, and how do they split between the two kinds?
 
-**Expected:** those seven read as residuals — `0 = <expression>` — not as equalities:
+[▶ Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+
+**Expected:** **7** — four potential and three flow. `Component equations` stands alone, and a
+`Connector equations` heading covers two sub-groups:
+
+<!-- pane-groups -->
+
+| group | rows |
+|---|---|
+| `Component equations` | 16 |
+| `Potential equality` | 4 |
+| `Flow conservation` | 3 |
+
+**Falsified if** the two connector sub-groups hold four and three of anything other than voltages
+and currents respectively, or if their total is not seven.
+
+### What just happened
+
+| node | connectors | potential set | → rows | flow set | → rows |
+|---|---|---|---|---|---|
+| A | 2 | 2 × `.v` | 1 | 2 × `.i` | 1 |
+| B | 2 | 2 × `.v` | 1 | 2 × `.i` | 1 |
+| C | 3 | 3 × `.v` | **2** | 3 × `.i` | 1 |
+| | | | **4** | | **3** |
+
+**Read the last two columns against the screen, because they behave completely differently.** A flow
+set of size *n* becomes **one row naming all *n* variables**, so the sizes 2, 2 and 3 are literally
+there to be counted:
 
 ```
-connection equation
+0 = src.p.i + R.p.i
+0 = R.n.i + C.p.i
+0 = C.n.i + src.n.i + gnd.p.i
+```
+
+A potential set of size *n* becomes ***n* − 1 rows, each naming only a pair**, so a set of three
+arrives as two rows and **its size is never printed anywhere**. If you go looking for "2, 2, 3"
+among the potential rows you will not find it — you will find four pairs, and you have to
+reassemble the sets yourself. That is Act 3.
+
+Both sub-groups sit under **`Connector equations`** because both exist for the same reason: two
+connectors were joined. A flow sum is every bit as connection-derived as a potential equality.
+
+**The equations are residuals.** Rumoca stores every continuous equation as an expression that must
+equal zero, so `src.p.v = R.p.v` is kept as:
+
+```
+0 = src.p.v - R.p.v
+```
+
+The readable form has not been lost — each row's **origin** carries it, reading
+`connection equation: src.p.v = R.p.v`. Two renderings of one equation, in two columns of the same
+row.
+
+**Why *n* − 1 and not every pair.** Writing all pairwise equalities would be redundant, and
+redundant equations make a system structurally singular — the rank deficiency `matching.md` Act 3
+diagnoses. The phase produces a **spanning tree** of each potential set, never its complete graph.
+
+---
+
+## Act 3 — Which rows belong to the same node?
+
+The sheet groups equations by *kind*, not by node. Nodes A, B and C are nowhere on the
+screen — but they are still recoverable, and the two kinds give them up differently.
+
+> **Predict.** Of the four `Potential equality` rows, which **two** belong to the same node —
+> and which single `Flow conservation` row is that same node seen whole?
+
+[▶ Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+
+**Expected:**
+
+```
+Connector equations
+ └ Potential equality
   0 = src.p.v - R.p.v
   0 = R.n.v - C.p.v
   0 = C.n.v - src.n.v
   0 = src.n.v - gnd.p.v
 
-flow sum equation
+ └ Flow conservation
   0 = src.p.i + R.p.i
   0 = R.n.i + C.p.i
   0 = C.n.i + src.n.i + gnd.p.i
 ```
 
-**Expected:** the third flow row sums **three** currents while the other two sum two — that single
-row is set C, and it is the visible consequence of the transitive join.
+Rows three and four are node C: they **chain** through `src.n.v`. The third flow row is that
+same node, and it names all three members at once.
 
-**Why residuals, and why the same equation looks different in two panes.** Rumoca stores every
-continuous equation as an expression that must equal zero, so `src.p.v = R.p.v` is kept as
-`src.p.v - R.p.v`. The equation sheet prints that form. **The structural report labels the same
-equation differently** — over on Structural → Tree it appears as
-`f_x[19] (connection equation: src.p.v = R.p.v)`, because a *label* is written for a human reading
-a matching, while the *sheet* shows the mathematics as stored. Two renderings of one equation, and
-neither is a rounding of the other.
+**Falsified if** no two potential rows share a variable, or if the three-term flow row's members are
+not the union of the connectors in that chain.
 
-**Why n − 1 and not n.** Writing all *n(n−1)/2* pairwise equalities would be redundant: equality
-is transitive, and the extra equations would make the system structurally singular — exactly the
-rank deficiency `matching.md` Act 3 diagnoses. **The phase must produce a spanning tree of the
-set, not its complete graph.**
+### What just happened
+
+**A potential set of *n* arrives as *n* − 1 rows naming pairs; a flow set of *n* arrives as one row
+naming all *n*.** So the flow row is the only place a node appears whole, and the potential rows
+*are* the spanning tree — drawn one edge at a time.
+
+That is the same asymmetry as Act 2's arithmetic, seen from the other side.
 
 ---
 
-## Act 3 — Where the other sixteen equations came from
+## Act 4 — How big is a four-component circuit?
 
-**Expected:** the 23 equations break down as:
+`RcCircuit` is a voltage source, a resistor, a capacitor and a ground. Seven of its equations come
+from the connect graph.
 
-| origin | count |
+> **Predict.** How many equations does the whole model have — and of the rest, how many belong to
+> the resistor alone?
+
+[▶ Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+
+**Expected:** **23 equations**, of which **16** are `Component equations`, split by origin:
+
+| origin text | rows |
 |---|---|
 | equation from `R` | 7 |
 | equation from `src` | 4 |
 | equation from `C` | 4 |
 | equation from `gnd` | 1 |
-| **connection equations** | **4** |
-| **flow sum equations** | **3** |
 
-**Sixteen of the twenty-three are constitutive** — Ohm's law, the capacitor's `i = C·der(v)`,
-the source's voltage definition, the ground's `v = 0`, and each component's own internal pin
-equations. The connect graph contributes seven.
+**Falsified if** the total is not 23, or if the resistor contributes fewer than the source and the
+capacitor.
 
-**That ratio is worth carrying.** Flattening is mostly *copying* — instantiating each component's
-equations with its own prefix — and only a minority of the output is genuinely new. But that
-minority is the part that could not have been written by hand at model scale, and it is the part
-that determines the system's structure.
+### What just happened
 
----
+**A resistor is seven equations.** Look at four of them:
 
-## Act 4 — A model with no connectors at all
+```
+0 = R.T_heatPort - R.T
+0 = R.R_actual - R.R * (1 + R.alpha * (R.T_heatPort - R.T_ref))
+0 = R.v - R.R_actual * R.i
+0 = R.LossPower - R.v * R.i
+```
 
-[TwoLoops → Flatten → Equations](hrw://load/TwoLoops/Flatten/EquationSheet)
+Ohm's law here is not `v = R·i`. It is `v = R_actual·i`, against a resistance computed from a
+**temperature**, with a heat port and dissipated power alongside. Nobody asked for thermal
+modelling; MSL's `Resistor` has it, so the model has it.
 
-**Expected:** **4 equations**, all described as `top-level model equation`, and **no** connection
-or flow-sum equations.
+**Below the equations the pane lists every variable** — 30 of them, with kind, start value and unit:
+**1 state, 22 algebraic, 7 parameters**. One interesting quantity, twenty-nine bookkeeping ones.
 
-`TwoLoops` writes its equations directly, with no components and no `connect`. **This is why it
-was the clean specimen for `blt-ordering.md`** — its equation indices map straight onto what the
-source says, with no expansion in between.
-
-**Compare the two models' variable counts.** `RcCircuit` flattens to **30 variables** for a
-circuit a person would describe as having one interesting quantity. Twenty-nine of them are pin
-voltages, pin currents and component internals that no one typed.
+**Flattening is mostly copying.** Sixteen of twenty-three equations are each component's own,
+instantiated with a prefix. Only seven are new. But those seven are the ones that could not have
+been written by hand at model scale, and they are what determines the system's structure.
 
 ---
 
-## Act 5 — Why this phase is where a model's size explodes
+## Act 5 — What if there are no connectors at all?
 
-Every later tour's numbers begin here:
+`TwoLoops` writes its equations directly, with no components and no `connect`.
 
-| model | after flattening |
-|---|---|
-| `RcCircuit` | 30 variables, 23 equations |
-| `Drivetrain` | **97 equations** before index reduction |
+> **Predict.** How many groups will the equation sheet show?
 
-`Drivetrain`'s source is a few dozen lines. The 97 equations are connectors expanded, components
-instantiated, and every flange's force and position given its own name.
+[▶ Look — TwoLoops → Flatten → Equations](hrw://load/TwoLoops/Flatten/EquationSheet)
 
-**So the whole downstream pipeline exists because this phase is generous.** Matching, BLT,
-tearing and index reduction are all, in part, machinery for undoing the size that flattening
-necessarily creates — 97 equations become 20 after reduction, and those 20 become 12 blocks of
-which 11 are trivial.
+**Expected:** **4 equations**, all `Component equations` described as `top-level model equation`,
+and **no** `Connector equations` heading at all.
 
-**None of that is waste.** Flattening's job is to be *complete and mechanical*, so that nothing
-depends on a modeller having simplified by hand. Making it small again is somebody else's job,
-and you have now met all of them.
+**Falsified if** a connector group appears, or if any equation's origin names a component.
+
+### What just happened
+
+With no `connect`, the connection graph is empty, and a phase that spends most of its effort on
+connection sets contributes nothing. `TwoLoops`' equation indices map straight onto what its source
+says, with no expansion in between — which is exactly why `blt-ordering.md` uses it.
 
 ---
 
 ## What comes next in the chain
 
-DAE construction, then everything you have already walked. If you are reading these in pipeline
-order, this is the earliest one — and [`dae-construction.md`](dae-construction.md) is the next
-link.
-
----
+The flat model is a pile of equations with no order and no classification. **DAE construction**
+partitions it — which variables are states, which are algebraic, which equations are which kind —
+and that is [`dae-construction`](dae-construction.md). After that, `matching.md` asks which equation
+solves which unknown.
 
 ## What this tour cannot check
 
-**Whether the Connections view shows sets or statements.** Act 1's entire claim is that four
-statements make three sets, and it assumes the view groups connectors by set. If it lists the
-four `connect` statements instead, the tour is asserting something the screen contradicts, and
-Act 1 should be rewritten around the structural equation names — which is where the evidence
-actually is.
-
-**Whether the spanning-tree point in Act 2 is convincing without a demonstration.** "Pairwise
-equalities would be redundant" is stated, not shown. A specimen that *did* over-connect would
-show it, and none exists — that may be a specimen worth adding.
-
-**Whether Act 5 belongs here or in an overview.** It is the argument that ties the whole pipeline
-together, and it is placed in the first phase's tour, which a reader may not reach first.
+- **That the `Connections` replay in Act 1 shows nodes the way the prose implies.** The counts
+  come from a trace; how the replay presents them is unverified.
+- **Whether a connection is legal.** Rumoca checks that *paired* variables agree — flow with flow,
+  `Real` with `Real`, matching array shapes — but nothing checks that both connectors have the
+  **same member set**, so joining a `{v, i}` connector to a `{v}` connector is accepted. That gap
+  has its own tour: [▶ the-oracle](hrw://tour/the-oracle).
+- **Stream connectors.** Named in Act 2 and exercised by no specimen here.

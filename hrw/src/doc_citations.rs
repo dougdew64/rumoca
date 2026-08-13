@@ -1237,6 +1237,163 @@ Some prose.
         );
     }
 
+    /// **A tour's claims about the equation-sheet PANE match what the pane will show.**
+    ///
+    /// # The gap this closes
+    ///
+    /// Until 2026-08-13, every *count* in a tour was read from a generated trace and was
+    /// sound, while every *rendering* claim — what the groups are called, how many are in
+    /// each — was **unverified**, because Claude cannot see the GUI. Doug walked
+    /// `connect-expansion.md` against the real pane and found six disagreements in one
+    /// sitting. Four of them were structure claims of exactly the kind this now checks.
+    ///
+    /// # Why this is possible at all
+    ///
+    /// `EquationSheet::to_bridge_json` publishes **the renderer's input**, and
+    /// `compile_specimen` runs headless. So the pane's content is a pure function of a
+    /// compile, callable from a test — no GUI, no running app, no transcription. That
+    /// property came from the *data-not-description* rule, not from the bridge being
+    /// file-based; the file choice bought travel and headless availability instead.
+    ///
+    /// # The convention it enforces
+    ///
+    /// A tour that describes a pane carries a table of its groups:
+    ///
+    /// ```markdown
+    /// | group | rows |
+    /// |---|---|
+    /// | `Connection equations` | 4 |
+    /// ```
+    ///
+    /// Each row is checked against a real compile: the label must be a label the pane
+    /// actually produces, and the count must be its real count. **A table row is used
+    /// rather than prose because prose cannot be checked without guessing at it** — the
+    /// same reason `unbuilt:` claims carry a tag instead of being inferred from wording.
+    ///
+    /// # What it still cannot see
+    ///
+    /// Whether a `category` is *drawn* as a heading, whether rows are legible, whether
+    /// anything is scrolled out of view. It verifies **content, never pixels** — Doug's
+    /// report remains the only instrument for the rest, and `docs/vision.md` says so.
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    #[test]
+    fn tour_group_tables_match_the_real_equation_sheet() {
+        // (tour file, specimen) pairs. Grows as tours gain group tables.
+        const PANES: &[(&str, &str)] = &[("connect-expansion.md", "RcCircuit")];
+
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let msl = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let libraries = vec![
+            PathBuf::from(format!("{msl}/Modelica 4.1.0")),
+            PathBuf::from(format!("{msl}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{msl}/Complex.mo")),
+        ];
+
+        let mut bad: Vec<String> = Vec::new();
+        let mut checked = 0usize;
+
+        for (tour, specimen) in PANES {
+            let path = hrw.join(format!("specimens/{specimen}.mo"));
+            let compiled = crate::worker::compile_specimen(&path, libraries.clone())
+                .unwrap_or_else(|e| panic!("compile {specimen}: {e}"));
+            let crate::worker::FromWorker::Compiled { equation_sheet, .. } = compiled else {
+                panic!("{specimen}: expected Compiled");
+            };
+            let sheet = equation_sheet
+                .unwrap_or_else(|| panic!("{specimen}: healthy specimen must have a sheet"));
+
+            // The pane's real groups, from the value the renderer walks.
+            let real: Vec<(String, usize)> = sheet
+                .groups
+                .iter()
+                .map(|(c, eqs)| (c.label().to_owned(), eqs.len()))
+                .collect();
+
+            let families: std::collections::BTreeSet<&str> =
+                sheet.groups.iter().filter_map(|(c, _)| c.family()).collect();
+
+            let text = std::fs::read_to_string(hrw.join("docs/fixture-tours").join(tour))
+                .unwrap_or_else(|e| panic!("read {tour}: {e}"));
+
+            // **The table is found by an explicit marker, not by shape.** The first
+            // version scanned every `| \`x\` |` row in the file and reported the tour's
+            // *specimen* table as claiming groups called `RcCircuit` and `Drivetrain`.
+            // A checker that guesses which table it is looking at produces findings the
+            // reader has to triage, which is how a checker stops being read.
+            const MARKER: &str = "<!-- pane-groups -->";
+            let Some(start) = text.find(MARKER) else {
+                bad.push(format!(
+                    "{tour}: no `{MARKER}` marker, so its group table cannot be checked \
+                     \u{2014} add one above the table, or remove this tour from PANES"
+                ));
+                continue;
+            };
+            let claimed: Vec<(String, String)> = text[start..]
+                .lines()
+                .skip_while(|l| !l.starts_with("| `"))
+                .take_while(|l| l.starts_with("| `"))
+                .filter_map(|l| {
+                    let label = l.split('`').nth(1)?.to_owned();
+                    let count = l.rsplit('|').nth(1)?.trim().to_owned();
+                    Some((label, count))
+                })
+                .collect();
+
+            // **The family heading is checked too**, because the nesting is a claim
+            // about *why* those equations exist. A tour that lists the children while
+            // never naming the parent is back to presenting them as unrelated siblings
+            // — the defect the grouping was introduced to fix.
+            for family in &families {
+                checked += 1;
+                if !text.contains(family) {
+                    bad.push(format!(
+                        "{tour}: the pane groups several kinds under `{family}` and the tour \
+                         never names it"
+                    ));
+                }
+            }
+
+            for (label, n) in &real {
+                checked += 1;
+                match claimed.iter().find(|(l, _)| l == label) {
+                    // Distinguish "named wrongly" from "counted wrongly": the fixes
+                    // differ, and one message for both hides which it is.
+                    Some((_, claimed_n)) if claimed_n != &n.to_string() => bad.push(format!(
+                        "{tour}: `{label}` is listed as {claimed_n}; the pane has {n}"
+                    )),
+                    Some(_) => {}
+                    None => bad.push(format!(
+                        "{tour}: the pane produces a group `{label}` ({n} rows) that the \
+                         table never names"
+                    )),
+                }
+            }
+
+            // And the reverse: a row naming a group the pane does not produce.
+            for (label, _) in &claimed {
+                if !real.iter().any(|(l, _)| l == label) {
+                    bad.push(format!(
+                        "{tour}: the table claims a group `{label}` that {specimen}'s pane \
+                         does not produce"
+                    ));
+                }
+            }
+        }
+
+        assert!(
+            checked >= 3,
+            "expected several groups to check, got {checked}"
+        );
+        assert!(
+            bad.is_empty(),
+            "tour prose disagrees with the equation-sheet pane:\n  {}",
+            bad.join("\n  "),
+        );
+    }
+
     /// **Equation text a tour quotes is text HRW actually renders.**
     ///
     /// Doug, 2026-08-12, walking `connect-expansion.md`: *"the Connect sub-tour has this
@@ -1247,19 +1404,23 @@ Some prose.
     /// stores every continuous equation as an expression that must equal zero, so the
     /// equation sheet prints the **residual** form `0 = src.p.v - R.p.v`, while the
     /// structural report writes a **label** for a human reading a matching:
-    /// `f_x[19] (connection equation: src.p.v = R.p.v)`. Both are real; they live in
-    /// *different panes*. The tour quoted one and sent the reader to the other, which is
-    /// a **provenance** error rather than a fabrication — and no spell-check, link check
-    /// or count check could see it.
+    /// `f_x[19] (connection equation: src.p.v = R.p.v)`. Both are real. The tour quoted
+    /// one and sent the reader to the other, which is a **provenance** error rather than
+    /// a fabrication — and no spell-check, link check or count check could see it.
+    ///
+    /// *(Corrected 2026-08-13: this comment used to say the two forms "live in *different
+    /// panes*". They do not. `view.json` shows the equation sheet carries **both** — the
+    /// residual as `text`, the label as `origin` — which is the claim the tour got wrong
+    /// too. Reading the pane rather than reasoning about it is what settled it.)*
     ///
     /// # What this checks, and what it deliberately does not
     ///
     /// Both forms are recoverable from the committed traces without a compile:
     /// `structural.json` carries every `equation` label and every `equation_text`. So a
     /// quoted string must appear in that union. **It does not verify the string is quoted
-    /// from the pane the tour points at** — that needs the equation sheet, which is built
-    /// from a live `Dae`. This catches *invented* text and text that has drifted from the
-    /// traces; the pane attribution is still the author's to get right.
+    /// from the pane the tour points at** — `tour_group_tables_match_the_real_equation_sheet`
+    /// above does that, by compiling. This catches *invented* text and text that has
+    /// drifted from the traces.
     ///
     /// Two shapes are recognised, because they are the two that appear:
     /// - `` `f_x[N] (…)` `` inline — the label form, compared verbatim.

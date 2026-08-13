@@ -1351,6 +1351,53 @@ pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
 /// written as a separate file so Claude can diff any two stages by reading
 /// both files. A stage with no IR (e.g., it failed or doesn't apply) has
 /// its file removed, keeping the directory in sync with the current specimen.
+/// `.hrw-bridge/view.json` — **what the pane on screen is currently showing.**
+pub const VIEW_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/view.json");
+
+/// Publish the current view's content, or remove the file when there is none.
+///
+/// # Why one file, rewritten, rather than one per view
+///
+/// Doug, 2026-08-13, arguing for an MCP server instead: *"HRW having to write out
+/// lengthy files which are usually ignored"*. He is right about the cost — the bridge
+/// already writes **1.5 MB per compile** for a four-component circuit, and publishing
+/// every view on every compile would add to a path that `docs/architecture.md` §11
+/// already measures as HRW's scaling bottleneck.
+///
+/// So this writes **only the view the reader is actually looking at**, at the moment it
+/// changes. One small file, always current, nothing speculative. That removes the waste
+/// the pull-based design was proposed to solve, without a server that would not travel
+/// between machines and would not exist headlessly.
+///
+/// # Absence is stated, never stale
+///
+/// A view with no publisher **removes** the file rather than leaving the previous view's
+/// content in place. A stale `view.json` describing a pane the reader left is precisely
+/// the "confidently wrong" failure this repository spends most of its rules on — and it
+/// would be indistinguishable from a current one by content alone. `kind` names the view
+/// so a reader can tell what they are holding.
+pub fn write_view(kind: Option<&str>, body: Option<&Value>) -> std::io::Result<()> {
+    let path = Path::new(VIEW_FILE);
+    match (kind, body) {
+        (Some(kind), Some(body)) => {
+            fs::create_dir_all(BRIDGE_DIR)?;
+            let doc = serde_json::json!({
+                "note": "What the HRW pane on screen is currently showing. Written for \
+                         Claude. This is the RENDERER'S INPUT, serialized -- not a \
+                         description of what was drawn. Every row carries an `id` that \
+                         names the same object across views.",
+                "view": kind,
+                "content": body,
+            });
+            fs::write(path, serde_json::to_string_pretty(&doc).unwrap_or_default())
+        }
+        _ => {
+            let _ = fs::remove_file(path);
+            Ok(())
+        }
+    }
+}
+
 pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
     fs::create_dir_all(STAGES_DIR)?;
     for (name, value) in stages {

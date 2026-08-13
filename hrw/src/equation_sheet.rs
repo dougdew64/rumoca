@@ -33,24 +33,226 @@ pub struct FormattedEquation {
     pub source_lines: Vec<u32>,
 }
 
+impl EquationSheet {
+    /// The sheet as the bridge publishes it — **the renderer's input, serialized.**
+    ///
+    /// # Why this exists
+    ///
+    /// Doug, 2026-08-13, mid-walk: *"I was just about to describe to you with a bunch
+    /// of text what the HRW Flatten → Equations view is showing when I realized that we
+    /// should implement a way for you to 'see' what that view is showing."* Claude
+    /// cannot see the GUI, so every question about a pane was costing a manual
+    /// transcription — and a transcription can be wrong in ways neither party notices.
+    ///
+    /// # The rule this function has to obey
+    ///
+    /// **It serializes the struct the renderer walks. It does not describe what was
+    /// drawn.** A second implementation that re-derived "what the pane shows" would be
+    /// a fiction generator of exactly the kind `CLAUDE.md` bans: plausible, unfalsifiable
+    /// from the outside, and wrong the moment the renderer changes. `equation_sheet_ui`
+    /// reads *this* value and nothing else, so publishing it is publishing the pane's
+    /// content.
+    ///
+    /// **The honest bound:** a field present here that the renderer chooses not to draw
+    /// is still published. The converse cannot happen — the renderer has no other source
+    /// — which is the direction that matters.
+    ///
+    /// # Identity, which is the point
+    ///
+    /// Every row carries `id`, spelled **`f_x[N]`** — the same key the structural report
+    /// uses (`"equation": "f_x[0] (equation from src)"`), so a row here and a row in the
+    /// incidence matrix or the matching are *the same named object*. That is what lets
+    /// Doug say *"why is **this** equation…"* and have the noun resolve, rather than
+    /// having to invent a name for it (his deixis requirement, and charter Decision 8:
+    /// *the noun is assembled by mouse, the verb is an unbounded utterance*).
+    #[must_use]
+    pub fn to_bridge_json(&self) -> serde_json::Value {
+        let groups: Vec<serde_json::Value> = self
+            .groups
+            .iter()
+            .map(|(category, equations)| {
+                serde_json::json!({
+                    "category": category.label(),
+                    // `null` for a top-level group. Published because the nesting is a
+                    // claim about *why* these equations exist, and a flat list of
+                    // labels cannot express it.
+                    "family": category.family(),
+                    "description": category.description(),
+                    "n": equations.len(),
+                    "equations": equations
+                        .iter()
+                        .map(|e| serde_json::json!({
+                            "id": format!("f_x[{}]", e.index),
+                            "index": e.index,
+                            "text": e.text,
+                            "origin": e.origin,
+                            "source_lines": e.source_lines,
+                        }))
+                        .collect::<Vec<_>>(),
+                })
+            })
+            .collect();
+
+        let variables: Vec<serde_json::Value> = self
+            .variables
+            .iter()
+            .map(|v| {
+                serde_json::json!({
+                    "id": v.name,
+                    "kind": v.kind,
+                    "start": v.start,
+                    "unit": v.unit,
+                })
+            })
+            .collect();
+
+        serde_json::json!({
+            "n_equations": self.n_equations,
+            "groups": groups,
+            "counts": {
+                "states": self.n_states,
+                "algebraics": self.n_algebraics,
+                "parameters": self.n_parameters,
+                "constants": self.n_constants,
+                "discrete": self.n_discrete,
+                "inputs": self.n_inputs,
+                "outputs": self.n_outputs,
+            },
+            "variables": variables,
+        })
+    }
+}
+
+#[cfg(test)]
+mod bridge_json_tests {
+    use super::*;
+
+    fn sheet_with(indices: &[usize]) -> EquationSheet {
+        EquationSheet {
+            groups: vec![(
+                EquationCategory::Connection,
+                indices
+                    .iter()
+                    .map(|&index| FormattedEquation {
+                        index,
+                        text: format!("0 = a{index} - b{index}"),
+                        origin: "connection equation".to_owned(),
+                        category: EquationCategory::Connection,
+                        source_lines: vec![7],
+                    })
+                    .collect(),
+            )],
+            n_equations: indices.len(),
+            ..EquationSheet::default()
+        }
+    }
+
+    /// **Every published row carries the identity the other views use.**
+    ///
+    /// This is the deixis requirement in a test. Doug, 2026-08-13: *"I will want to make
+    /// use of deixis and ask you questions such as 'Why is this partial derivative value
+    /// so high…'"* — for *"this"* to resolve, a row here and a row in the incidence
+    /// matrix have to be **the same named object**, not two renderings that happen to
+    /// look alike. `f_x[N]` is that name: the structural report writes
+    /// `"equation": "f_x[0] (equation from src)"`, so the ids join.
+    ///
+    /// **Publishing the text alone would not do it.** Text is ambiguous — two equations
+    /// can format identically — and matching by string is the heuristic name-matching
+    /// `docs/identity-and-provenance.md` forbids outright.
+    #[test]
+    fn every_published_equation_carries_its_cross_view_id() {
+        let json = sheet_with(&[0, 19]).to_bridge_json();
+        let rows = json["groups"][0]["equations"].as_array().expect("rows");
+
+        assert_eq!(rows[0]["id"], "f_x[0]");
+        assert_eq!(rows[1]["id"], "f_x[19]");
+        // The id is derived from the index, so the two can never disagree.
+        for row in rows {
+            let index = row["index"].as_u64().expect("index");
+            assert_eq!(row["id"], format!("f_x[{index}]"));
+        }
+        assert_eq!(json["groups"][0]["category"], "Potential equality");
+        assert_eq!(json["groups"][0]["family"], "Connector equations");
+        assert_eq!(rows[1]["text"], "0 = a19 - b19");
+        assert_eq!(json["n_equations"], 2);
+    }
+
+    /// An empty sheet publishes an empty sheet, not nothing.
+    ///
+    /// **Absence is stated, never filled.** A model whose flatten produced no equations
+    /// must read as *"this pane has no rows"* rather than as a missing field that Claude
+    /// would have to guess the meaning of.
+    #[test]
+    fn an_empty_sheet_still_publishes_its_shape() {
+        let json = EquationSheet::default().to_bridge_json();
+        assert_eq!(json["n_equations"], 0);
+        assert!(json["groups"].as_array().expect("groups").is_empty());
+        assert!(
+            json["counts"]["states"].is_number(),
+            "counts are always present"
+        );
+    }
+}
+
 /// Broad categories for grouping equations in the sheet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EquationCategory {
     Component,
     Connection,
     FlowSum,
+    /// A flow variable with nothing connected to it, set to zero (MLS §9.2).
+    ///
+    /// **Its own category since 2026-08-13.** It was folded into `FlowSum`, which is a
+    /// different statement: a flow *sum* says several flows cancel at a junction, while
+    /// this says one flow has no junction at all. Rumoca distinguishes them
+    /// (`EquationOrigin::UnconnectedFlow`) and the pane was discarding that.
+    UnconnectedFlow,
     Binding,
     Event,
 }
 
 impl EquationCategory {
+    /// The heading this group is drawn under.
+    ///
+    /// **`Connection` is called "Potential equality", not "Connection equations".**
+    /// Doug, 2026-08-13: *"the equations pane implies that only the potential variables
+    /// of connectors yield connection equations. The flow variables are presented as
+    /// though they create some other kind of equations which are not connection
+    /// equations."* He was right, and it was the pane asserting something false: all
+    /// three of these come from expanding `connect`, so giving the family's name to one
+    /// child made the other two look unrelated to it. Each child is now named for what
+    /// it *says*, and [`Self::family`] carries what they share.
+    ///
+    /// The three map one-to-one onto `rumoca_ir_flat::EquationOrigin`, which is what
+    /// keeps them faithful rather than merely clearer:
+    ///
+    /// | this label | Rumoca's variant |
+    /// |---|---|
+    /// | Potential equality | `Connection { lhs, rhs }` |
+    /// | Flow conservation | `FlowSum { description }` |
+    /// | Unconnected flow | `UnconnectedFlow { variable }` |
     pub fn label(self) -> &'static str {
         match self {
             Self::Component => "Component equations",
-            Self::Connection => "Connection equations",
+            Self::Connection => "Potential equality",
             Self::FlowSum => "Flow conservation",
+            Self::UnconnectedFlow => "Unconnected flow",
             Self::Binding => "Bindings",
             Self::Event => "Event equations",
+        }
+    }
+
+    /// The parent heading this group belongs under, if any.
+    ///
+    /// Only the `connect`-derived kinds have one, and they share it because they share
+    /// a cause: every equation in this family exists because two connectors were joined.
+    /// Grouping them visually is the pane finally saying what Rumoca's
+    /// `EquationOriginKind::is_connect_generated` already knew.
+    #[must_use]
+    pub fn family(self) -> Option<&'static str> {
+        match self {
+            Self::Connection | Self::FlowSum | Self::UnconnectedFlow => Some("Connector equations"),
+            _ => None,
         }
     }
 
@@ -58,9 +260,14 @@ impl EquationCategory {
         match self {
             Self::Component => "Equations from component instances (their equation sections)",
             Self::Connection => {
-                "Equality constraints from connect() statements (potential variables)"
+                "One connection set's potential variables made equal: n-1 equations for n connectors"
             }
-            Self::FlowSum => "Flow conservation: sum of signed flows = 0 at each connection node",
+            Self::FlowSum => {
+                "One connection set's flow variables summed to zero: exactly 1 equation per set"
+            }
+            Self::UnconnectedFlow => {
+                "A flow variable with no connection at all, set to zero (MLS 9.2)"
+            }
             Self::Binding => "Variable bindings from declarations (parameter values, fixed starts)",
             Self::Event => "Discrete assignments from when/elsewhen clauses and reinit",
         }
@@ -70,7 +277,9 @@ impl EquationCategory {
         match self {
             Self::Component => crate::colors::EQ_CAT_COMPONENT,
             Self::Connection => crate::colors::EQ_CAT_CONNECTION,
-            Self::FlowSum => crate::colors::EQ_CAT_FLOW_SUM,
+            // Shares the flow-sum colour: both are about flow variables, and the
+            // family heading is what distinguishes them structurally.
+            Self::FlowSum | Self::UnconnectedFlow => crate::colors::EQ_CAT_FLOW_SUM,
             Self::Binding => crate::colors::EQ_CAT_BINDING,
             Self::Event => crate::colors::EQ_CAT_EVENT,
         }
@@ -186,17 +395,40 @@ pub fn flat_node_lines(
     out
 }
 
+/// Classify an equation by the **kind Rumoca gave it**, not by reading its prose.
+///
+/// # What this replaced, and why it was wrong
+///
+/// Until 2026-08-13 this function tested prefixes itself —
+/// `origin.starts_with("connection equation")`, `origin.contains("when")`, and so on.
+/// That is **substring search deciding a classification**, which
+/// `docs/identity-and-provenance.md` forbids outright, and it was a private guess at
+/// what `rumoca_ir_flat::EquationOrigin`'s `Display` produces, linked to it by nothing.
+///
+/// [`EquationOriginKind::from_rendered`] is now the one inverse of that `Display`, lives
+/// beside it in `rumoca-ir-flat`, and is proven against **every variant** by
+/// `rendered_origins_round_trip_to_their_kind`. The guess became a checked mapping.
+///
+/// **Why parsing at all:** the typed origin does not survive the DAE boundary —
+/// `rumoca_ir_dae::Equation::origin` is a `String` — so a consumer downstream of DAE
+/// construction has only the rendered text. Carrying the type across would mean adding a
+/// field to a struct built at **532 sites across ten crates**, which is not the additive
+/// change the instrumentation rules require.
+///
+/// `Unknown` maps to `Component` **as a stated fallback, not a guess**: an unrecognised
+/// origin is some equation the model produced, and `Component equations` is the group
+/// that means "from the model itself".
 fn categorize_origin(origin: &str) -> EquationCategory {
-    if origin.starts_with("connection equation") {
-        EquationCategory::Connection
-    } else if origin.starts_with("flow sum") || origin.starts_with("unconnected flow") {
-        EquationCategory::FlowSum
-    } else if origin.starts_with("binding") {
-        EquationCategory::Binding
-    } else if origin.contains("reinit") || origin.contains("when") {
-        EquationCategory::Event
-    } else {
-        EquationCategory::Component
+    match rumoca_ir_flat::EquationOriginKind::from_rendered(origin) {
+        rumoca_ir_flat::EquationOriginKind::Connection => EquationCategory::Connection,
+        rumoca_ir_flat::EquationOriginKind::FlowSum => EquationCategory::FlowSum,
+        rumoca_ir_flat::EquationOriginKind::UnconnectedFlow => EquationCategory::UnconnectedFlow,
+        rumoca_ir_flat::EquationOriginKind::Binding => EquationCategory::Binding,
+        rumoca_ir_flat::EquationOriginKind::Reinit
+        | rumoca_ir_flat::EquationOriginKind::WhenAssignment => EquationCategory::Event,
+        rumoca_ir_flat::EquationOriginKind::ComponentEquation
+        | rumoca_ir_flat::EquationOriginKind::Algorithm
+        | rumoca_ir_flat::EquationOriginKind::Unknown => EquationCategory::Component,
     }
 }
 
@@ -470,10 +702,13 @@ impl EquationCategory {
     fn cmp_key(self) -> u8 {
         match self {
             Self::Component => 0,
+            // The three connect-derived kinds sort adjacently, so the family heading
+            // they share covers a contiguous run rather than an interleaved one.
             Self::Connection => 1,
             Self::FlowSum => 2,
-            Self::Binding => 3,
-            Self::Event => 4,
+            Self::UnconnectedFlow => 3,
+            Self::Binding => 4,
+            Self::Event => 5,
         }
     }
 }
@@ -496,34 +731,73 @@ mod tests {
 
     #[test]
     fn categorize_origin_covers_all_variants() {
+        // **Every input here is RENDERED BY RUMOCA, not written by hand.**
+        //
+        // The previous version of this test asserted on invented strings —
+        // `"flow sum: ..."`, `"unconnected flow x"`, `"binding for p"` — none of which
+        // `EquationOrigin`'s `Display` ever produces. It passed because the old
+        // hand-rolled prefixes (`starts_with("flow sum")`) were loose enough to catch
+        // them, so **the parser was being validated against fiction**: it proved the
+        // categoriser handled strings that cannot occur, and proved nothing about the
+        // ones that do. Found 2026-08-13 when the categoriser was tightened to Rumoca's
+        // real vocabulary and this test failed on three rows.
+        use rumoca_ir_flat::EquationOrigin;
+        let rendered = |o: &EquationOrigin| o.to_string();
+
         assert_eq!(
-            categorize_origin("equation from motor"),
+            categorize_origin(&rendered(&EquationOrigin::ComponentEquation {
+                component: "motor".into()
+            })),
             EquationCategory::Component
         );
         assert_eq!(
-            categorize_origin("top-level model equation"),
+            categorize_origin(&rendered(&EquationOrigin::ComponentEquation {
+                component: String::new()
+            })),
             EquationCategory::Component
         );
         assert_eq!(
-            categorize_origin("connection equation: a = b"),
+            categorize_origin(&rendered(&EquationOrigin::Connection {
+                lhs: "a".into(),
+                rhs: "b".into()
+            })),
             EquationCategory::Connection
         );
         assert_eq!(
-            categorize_origin("flow sum: ..."),
+            categorize_origin(&rendered(&EquationOrigin::FlowSum {
+                description: "a + b = 0".into()
+            })),
             EquationCategory::FlowSum
         );
+        // **Its own category now**, not folded into FlowSum: "no junction at all" is a
+        // different statement from "these flows cancel at a junction".
         assert_eq!(
-            categorize_origin("unconnected flow x"),
-            EquationCategory::FlowSum
+            categorize_origin(&rendered(&EquationOrigin::UnconnectedFlow {
+                variable: "c.n.i".into()
+            })),
+            EquationCategory::UnconnectedFlow
         );
         assert_eq!(
-            categorize_origin("binding for p"),
+            categorize_origin(&rendered(&EquationOrigin::Binding {
+                variable: "p".into()
+            })),
             EquationCategory::Binding
         );
-        assert_eq!(categorize_origin("reinit of v"), EquationCategory::Event);
         assert_eq!(
-            categorize_origin("when assignment x"),
+            categorize_origin(&rendered(&EquationOrigin::Reinit { state: "v".into() })),
             EquationCategory::Event
+        );
+        assert_eq!(
+            categorize_origin(&rendered(&EquationOrigin::WhenAssignment {
+                target: "x".into()
+            })),
+            EquationCategory::Event
+        );
+        // An origin Rumoca does not produce is not silently binned as something
+        // plausible; it lands in the group that means "from the model itself".
+        assert_eq!(
+            categorize_origin("something nobody writes"),
+            EquationCategory::Component
         );
     }
 
@@ -533,11 +807,25 @@ mod tests {
             EquationCategory::Component,
             EquationCategory::Connection,
             EquationCategory::FlowSum,
+            EquationCategory::UnconnectedFlow,
             EquationCategory::Binding,
             EquationCategory::Event,
         ] {
             assert!(!cat.label().is_empty());
             assert!(!cat.description().is_empty());
+            // The family is the nesting claim; only the connect-derived kinds have
+            // one, and they must all agree on it or the heading would split.
+            assert_eq!(
+                cat.family().is_some(),
+                matches!(
+                    cat,
+                    EquationCategory::Connection
+                        | EquationCategory::FlowSum
+                        | EquationCategory::UnconnectedFlow
+                ),
+                "{} has the wrong family",
+                cat.label(),
+            );
         }
     }
 
@@ -748,7 +1036,10 @@ mod tests {
     /// never matches produces **no tooltip and no error** — the silent-absence failure
     /// this project keeps finding.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn an_equation_node_path_resolves_to_its_source_line() {
         use crate::worker::FromWorker;
 
@@ -789,7 +1080,10 @@ mod tests {
     /// map keyed by both conventions would resolve **confidently and wrongly**, which
     /// is the exact failure this feature exists to prevent.
     #[test]
-    #[cfg_attr(not(feature = "slow-tests"), ignore = "compile-heavy; run with --features slow-tests")]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn the_flatten_tree_resolves_equations_under_its_own_paths() {
         use crate::worker::FromWorker;
 

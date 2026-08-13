@@ -46,19 +46,17 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
 
 **Flatten — what `connect` actually means**
 
-In the equations it is neither an assignment nor an equality.
+This tour counts. `RcCircuit` has four `connect` statements and twenty-three equations, and every
 
 - **Specimens:** `RcCircuit`, `TwoLoops`
 - **Stages:** `Flatten`
 - **Stops:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
-  - `what-a-connector-holds-and-where-its-variables-come-from` — What a connector holds, and where its variables come from
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-four-statements-three-sets` — Act 1 — Four statements, three sets
-  - `act-2-the-arithmetic-and-it-is-exact` — Act 2 — The arithmetic, and it is exact
-  - `act-3-where-the-other-sixteen-equations-came-from` — Act 3 — Where the other sixteen equations came from
-  - `act-4-a-model-with-no-connectors-at-all` — Act 4 — A model with no connectors at all
-  - `act-5-why-this-phase-is-where-a-model-s-size-explodes` — Act 5 — Why this phase is where a model's size explodes
+  - `act-1-how-many-nodes` — Act 1 — How many nodes?
+  - `act-2-how-many-equations-do-three-nodes-make` — Act 2 — How many equations do three nodes make?
+  - `act-3-which-rows-belong-to-the-same-node` — Act 3 — Which rows belong to the same node?
+  - `act-4-how-big-is-a-four-component-circuit` — Act 4 — How big is a four-component circuit?
+  - `act-5-what-if-there-are-no-connectors-at-all` — Act 5 — What if there are no connectors at all?
   - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
 

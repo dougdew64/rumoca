@@ -324,6 +324,66 @@ impl IncidenceMatrix {
     /// **Rendered by the caller, above the matrix**, because every entry here means
     /// the picture below is not the compiler's picture. See the field's docs for the
     /// three ways that used to happen silently.
+    /// The matrix as the bridge publishes it — **the painter's input, serialized.**
+    ///
+    /// # Why this one, second
+    ///
+    /// The equation sheet was first because Doug was standing in front of it. This is
+    /// second because it is **the pane nothing else can reach**: a custom `Painter` view
+    /// is invisible to `egui_kittest`'s accessibility tree, so before this the only way
+    /// to know what the incidence matrix showed was for Doug to describe it. It is also
+    /// the object `matching.md`, `blt-ordering.md` and `tearing.md` all teach on.
+    ///
+    /// # Rows, not cells
+    ///
+    /// The sparse row storage is published as-is — `rows[i]` is the sorted column indices
+    /// where equation *i* has an entry. That is exactly what `draw_matrix` walks, so it is
+    /// the pane's content rather than a rendering of it. A dense grid would be a
+    /// *different* representation and would need its own correctness argument.
+    ///
+    /// # Identity
+    ///
+    /// Equations carry `f_x[N]` and unknowns their flat names, the same keys the equation
+    /// sheet and the structural report use — so *"this equation"* means one object across
+    /// all three panes.
+    ///
+    /// **`problems` is published too, and deliberately first.** It is what the parser
+    /// could not resolve, and a matrix with unresolved entries is *quietly a different
+    /// matrix* — publishing the content without it would hand Claude a well-formed lie.
+    #[must_use]
+    pub fn to_bridge_json(&self) -> serde_json::Value {
+        let equations: Vec<serde_json::Value> = (0..self.n_eq)
+            .map(|i| {
+                serde_json::json!({
+                    "id": self.equation_names.get(i),
+                    "text": self.equation_texts.get(i),
+                    "unknown_columns": self.rows.get(i),
+                    "matched_column": self.matched_col.get(i).copied().flatten(),
+                })
+            })
+            .collect();
+
+        serde_json::json!({
+            "problems": self.problems,
+            "n_equations": self.n_eq,
+            "n_unknowns": self.n_var,
+            "n_matched": self.n_matched,
+            "structurally_singular": self.n_matched < self.n_eq,
+            "caption": self.caption(),
+            "unknowns": self.unknown_names,
+            "equations": equations,
+            "blt_blocks": self
+                .blt_blocks
+                .iter()
+                .map(|b| serde_json::json!({
+                    "equations": b.eq_indices,
+                    "unknowns": b.var_indices,
+                    "coupled": b.coupled,
+                }))
+                .collect::<Vec<_>>(),
+        })
+    }
+
     pub fn problems(&self) -> &[String] {
         &self.problems
     }
