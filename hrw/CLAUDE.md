@@ -400,6 +400,54 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > this project for three weeks, and I have not yet been rewarded with a learning experience."*
 > Treat an hour spent on HRW polish during the walk as a cost, not a contribution.
 >
+> ## WHERE THE WALK ACTUALLY IS (2026-08-13) — read this before the older notes below
+>
+> **`connect-expansion.md` is walked, rewritten, and validated.** Doug: *"That is the template
+> for all other tours."* The template and the five things that make it work are in
+> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) — **read that before writing or
+> converting a tour.** Its shape: short setup → **Predict** → ▶ Look → **Expected** →
+> **Falsified if** → *What just happened*, with the explanation only ever **after** the look.
+>
+> **Convert ONE TOUR AT A TIME — the one he is about to walk**, never a campaign. Doug:
+> *"working through each conversion with you is educational for me"*, so the conversion is
+> itself teaching, not preparation for teaching. The other eight are unconverted.
+>
+> ### The three agreements that govern every answer now
+>
+> - **The RHS is a lab, not an illustration** (`docs/vision.md`). Prose runs only to the first
+>   **prediction**, then he tests it on screen. **The threshold is a prediction, not
+>   understanding** — a crude falsifiable guess beats a complete explanation.
+> - **Beginner depth: concepts now, details later** (`docs/working-with-doug.md`). Detail costs
+>   Claude nothing and costs Doug attention, so the pressure always runs one way. Premature
+>   detail goes to `docs/compiler-phases/`, not into the answer.
+> - **Neither the tours nor the UI are fundamental — the mathematics as Rumoca implements it
+>   is.** So a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But
+>   **labels must expose Rumoca's structure, not a pedagogically convenient one**; when prose
+>   and pane disagree, **Rumoca is the arbiter**.
+>
+> ### CLAUDE CAN NOW READ THE PANE — use it before asking Doug to describe anything
+>
+> **`hrw/.hrw-bridge/view.json` holds the view on screen**, as the renderer's own input.
+> Published for **Flatten → EquationSheet** and **Structural → Incidence**; a view with no
+> publisher removes the file, so absence is honest. `diagnostics/session.json` names the current
+> `sub_view`. Every row carries `id` (`f_x[N]`) so *"this equation"* resolves across panes.
+>
+> **Adding a view is: give its data type a `to_bridge_json`, then add one arm in
+> `App::publish_current_view`.** The unpublished pane that matters most is **Flatten →
+> Connections**, which is the only one that shows connection sets and therefore the only
+> unverifiable claim left in `connect-expansion.md` Act 1.
+>
+> **A tour's group table is machine-checked** by
+> `doc_citations::tour_group_tables_match_the_real_equation_sheet` (slow-gated), against a real
+> compile. Mark the table `<!-- pane-groups -->`.
+>
+> ### What a walk still cannot be replaced by
+>
+> Claude verifies **content, never pixels**. Whether a layout is legible or an animation reads as
+> a search is Doug's report and nothing else. Four of the six mismatches he found on 2026-08-13
+> are now the kind a test catches; **the other two were conceptual** — a tour whose central idea
+> had no counterpart on screen — and no test closes that.
+>
 > ## He is on VACATION, walking the tours (week of 2026-08-09)
 >
 > **Entry point: [`docs/fixture-tours/the-mathematics.md`](docs/fixture-tours/the-mathematics.md)**
