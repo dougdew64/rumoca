@@ -1237,6 +1237,34 @@ Some prose.
         );
     }
 
+    /// Cells of the table under `<!-- <marker>: <Specimen> -->`, backticks stripped.
+    ///
+    /// **The marker names the specimen**, because one tour describes several panes of
+    /// several models — `connect-expansion.md` covers `RcCircuit` and `TwoLoops` — and a
+    /// checker that took "the first table after the marker" would compare one model's
+    /// table against another model's compile and report confident nonsense.
+    ///
+    /// Returns `None` when the marker is absent, which callers must treat as a
+    /// **finding** rather than as "nothing to check": an unmarked table is exactly a
+    /// table nobody verifies.
+    fn marked_rows(text: &str, marker: &str, specimen: &str) -> Option<Vec<Vec<String>>> {
+        let needle = format!("<!-- {marker}: {specimen} -->");
+        let start = text.find(&needle)?;
+        Some(
+            text[start + needle.len()..]
+                .lines()
+                .skip_while(|l| !l.starts_with("| `"))
+                .take_while(|l| l.starts_with("| `"))
+                .map(|l| {
+                    l.trim_matches('|')
+                        .split('|')
+                        .map(|c| c.trim().trim_matches('`').to_owned())
+                        .collect()
+                })
+                .collect(),
+        )
+    }
+
     /// **A tour's claims about the equation-sheet PANE match what the pane will show.**
     ///
     /// # The gap this closes
@@ -1282,7 +1310,13 @@ Some prose.
     #[test]
     fn tour_group_tables_match_the_real_equation_sheet() {
         // (tour file, specimen) pairs. Grows as tours gain group tables.
-        const PANES: &[(&str, &str)] = &[("connect-expansion.md", "RcCircuit")];
+        // Every (tour, specimen) pane a tour makes a table claim about. `TwoLoops` was
+        // added 2026-08-15: Act 5's claims had rested on a hand-read trace, which is the
+        // footing every other act had already been lifted off.
+        const PANES: &[(&str, &str)] = &[
+            ("connect-expansion.md", "RcCircuit"),
+            ("connect-expansion.md", "TwoLoops"),
+        ];
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let msl = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
@@ -1312,8 +1346,11 @@ Some prose.
                 .map(|(c, eqs)| (c.label().to_owned(), eqs.len()))
                 .collect();
 
-            let families: std::collections::BTreeSet<&str> =
-                sheet.groups.iter().filter_map(|(c, _)| c.family()).collect();
+            let families: std::collections::BTreeSet<&str> = sheet
+                .groups
+                .iter()
+                .filter_map(|(c, _)| c.family())
+                .collect();
 
             let text = std::fs::read_to_string(hrw.join("docs/fixture-tours").join(tour))
                 .unwrap_or_else(|e| panic!("read {tour}: {e}"));
@@ -1323,24 +1360,45 @@ Some prose.
             // *specimen* table as claiming groups called `RcCircuit` and `Drivetrain`.
             // A checker that guesses which table it is looking at produces findings the
             // reader has to triage, which is how a checker stops being read.
-            const MARKER: &str = "<!-- pane-groups -->";
-            let Some(start) = text.find(MARKER) else {
+            let Some(rows) = marked_rows(&text, "pane-groups", specimen) else {
                 bad.push(format!(
-                    "{tour}: no `{MARKER}` marker, so its group table cannot be checked \
-                     \u{2014} add one above the table, or remove this tour from PANES"
+                    "{tour}: no `<!-- pane-groups: {specimen} -->` marker, so that pane's \
+                     group table cannot be checked \u{2014} add one above the table, or \
+                     remove the pair from PANES"
                 ));
                 continue;
             };
-            let claimed: Vec<(String, String)> = text[start..]
-                .lines()
-                .skip_while(|l| !l.starts_with("| `"))
-                .take_while(|l| l.starts_with("| `"))
-                .filter_map(|l| {
-                    let label = l.split('`').nth(1)?.to_owned();
-                    let count = l.rsplit('|').nth(1)?.trim().to_owned();
-                    Some((label, count))
-                })
+            let claimed: Vec<(String, String)> = rows
+                .iter()
+                .filter_map(|r| Some((r.first()?.clone(), r.get(1)?.clone())))
                 .collect();
+
+            // **Act 4's per-origin breakdown**, checked the same way. It is a different
+            // question from the group table — origins are per *row*, groups are the
+            // headings — and it was the last table in this tour holding numbers that
+            // only a hand-count had ever confirmed.
+            if let Some(rows) = marked_rows(&text, "pane-origins", specimen) {
+                let mut real_origins: std::collections::BTreeMap<&str, usize> =
+                    std::collections::BTreeMap::new();
+                for (_, eqs) in &sheet.groups {
+                    for e in eqs {
+                        *real_origins.entry(e.origin.as_str()).or_default() += 1;
+                    }
+                }
+                for row in &rows {
+                    let (Some(origin), Some(n)) = (row.first(), row.get(1)) else {
+                        continue;
+                    };
+                    checked += 1;
+                    let actual = real_origins.get(origin.as_str()).copied().unwrap_or(0);
+                    if actual.to_string() != *n {
+                        bad.push(format!(
+                            "{tour} ({specimen}): claims {n} rows with origin `{origin}`; \
+                             the pane has {actual}"
+                        ));
+                    }
+                }
+            }
 
             // **The family heading is checked too**, because the nesting is a claim
             // about *why* those equations exist. A tour that lists the children while
@@ -1392,6 +1450,191 @@ Some prose.
             "tour prose disagrees with the equation-sheet pane:\n  {}",
             bad.join("\n  "),
         );
+    }
+
+    /// **`connect-expansion.md` Act 1's node sizes match the connection replay.**
+    ///
+    /// # The last claim in that tour nobody could check
+    ///
+    /// Act 1 predicts *three nodes, of sizes 2, 2 and 3*, and sends the reader to
+    /// **Flatten → Connections** — the only pane that shows connection sets. Every other
+    /// claim in the tour became checkable when the equation sheet started publishing;
+    /// this one rested on Claude having read a trace correctly and never on anything a
+    /// test could see.
+    ///
+    /// # What it checks, and the distinction it is careful about
+    ///
+    /// Act 1 counts **nodes**, which are sets of *connectors*. The compiler never groups
+    /// connectors — it groups **variables**, in two independent graphs, one per kind. So
+    /// a node of size 3 shows up as a **potential set of three `.v`** *and* a **flow set
+    /// of three `.i`**, and the tour's `2, 2, 3` must appear as the set sizes of **each
+    /// kind separately**, not as some total across both.
+    ///
+    /// Getting that wrong is the mistake the tour itself made twice before Doug pinned
+    /// the vocabulary down, so the check asserts it per kind rather than in aggregate.
+    ///
+    /// # What it does not check
+    ///
+    /// That the pane *renders* those sets legibly, or that stepping the replay reads as
+    /// an expansion. Content, never pixels.
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    #[test]
+    fn tour_node_sizes_match_the_connection_replay() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let msl = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
+        let libraries = vec![
+            PathBuf::from(format!("{msl}/Modelica 4.1.0")),
+            PathBuf::from(format!("{msl}/ModelicaServices 4.1.0")),
+            PathBuf::from(format!("{msl}/Complex.mo")),
+        ];
+
+        let compiled =
+            crate::worker::compile_specimen(&hrw.join("specimens/RcCircuit.mo"), libraries)
+                .expect("compile RcCircuit");
+        let crate::worker::FromWorker::Compiled {
+            connection_frames, ..
+        } = compiled
+        else {
+            panic!("expected Compiled");
+        };
+        assert!(
+            !connection_frames.is_empty(),
+            "RcCircuit has four connect statements; no frames means the capture scope \
+             stopped recording, not that the model stopped connecting"
+        );
+
+        let published = crate::connection_anim::ConnectionAnimation::from_frames(connection_frames)
+            .to_bridge_json();
+        let frames = published["frames"]
+            .as_array()
+            .expect("frames must be an array");
+
+        // Set sizes per kind, in the order the pass formed them.
+        let sizes_of = |kind: &str| -> Vec<u64> {
+            frames
+                .iter()
+                .filter(|f| f["step"] == "SetFormed" && f["kind"] == kind)
+                .filter_map(|f| f["size"].as_u64())
+                .collect()
+        };
+
+        let mut potential = sizes_of("potential");
+        let mut flow = sizes_of("flow");
+        potential.sort_unstable();
+        flow.sort_unstable();
+
+        assert_eq!(
+            potential,
+            vec![2, 2, 3],
+            "Act 1 predicts nodes of 2, 2 and 3 connectors, so the POTENTIAL sets must be \
+             three sets of 2, 2 and 3 `.v` variables"
+        );
+        assert_eq!(
+            flow,
+            vec![2, 2, 3],
+            "...and the FLOW sets must independently be 2, 2 and 3 `.i` variables. A node \
+             is a set of connectors; the compiler groups variables, one graph per kind"
+        );
+
+        // **The set count the pane declares**, which is not the node count and was the
+        // first thing reading the live pane turned up: the replay's last frame says
+        // 6 sets, while Act 1 predicts 3 nodes. Both are right — one node yields one
+        // set per kind — and the tour now states both numbers, so both are pinned.
+        let complete = frames
+            .iter()
+            .find(|f| f["step"] == "Complete")
+            .expect("the pass must report a Complete frame");
+        assert_eq!(
+            complete["sets"].as_u64(),
+            Some((potential.len() + flow.len()) as u64),
+            "the declared set count must equal the sets actually formed"
+        );
+        assert_eq!(
+            complete["equations_added"].as_u64(),
+            Some(7),
+            "three nodes over two kinds produce 4 potential + 3 flow equations"
+        );
+
+        // The tour's own words, so a reworded prediction cannot drift from this check.
+        let tour = std::fs::read_to_string(hrw.join("docs/fixture-tours/connect-expansion.md"))
+            .expect("read connect-expansion.md");
+
+        // **Every frame the tour cites by ORDINAL is the frame it says it is.**
+        //
+        // Act 2 links `…/Connections/frame/7` and `/frame/13` to point at the moment the
+        // n-1 asymmetry happens. `fixture_tour_links_all_resolve` checks only that such a
+        // link *parses*. An ordinal citation is the fragility this repository already
+        // designed around once — `OpenTour` addresses stops by **slug**, because
+        // "inserting a stop shifts every later citation silently, exactly as a source
+        // line number does" — and one extra frame emitted by the flatten pass would move
+        // both of these with nothing to notice.
+        //
+        // The answer is `matching_ledger`'s, and Doug's: *"Rotting is bad. If line
+        // numbers will help, add line numbers."* Carry the ordinals, and fail loudly
+        // when they move. This also pins the **order** the sets are formed in — flow
+        // before potential — which the size assertions above cannot see, since they
+        // sort.
+        let cited = marked_rows(&tour, "pane-frames", "RcCircuit")
+            .expect("Act 2 cites frames by number; the table pinning them must exist");
+        assert!(
+            !cited.is_empty(),
+            "the pane-frames table is empty, so the frame links it exists to pin are \
+             unchecked"
+        );
+        for row in &cited {
+            let [n, step, kind, set_size, equations] = &row[..] else {
+                panic!("a pane-frames row needs 5 cells, got {row:?}");
+            };
+            let idx: usize = n.parse().expect("frame ordinal must be a number");
+            let frame = frames
+                .get(idx - 1)
+                .unwrap_or_else(|| panic!("the tour cites frame {n}, past the end of the replay"));
+            assert_eq!(
+                frame["frame"].as_u64(),
+                Some(idx as u64),
+                "1-based mismatch"
+            );
+            assert_eq!(
+                frame["step"],
+                step.as_str(),
+                "frame {n} is a different step"
+            );
+            assert_eq!(
+                frame["kind"],
+                kind.as_str(),
+                "frame {n} is a different kind"
+            );
+            assert_eq!(
+                frame["set_size"].as_u64().map(|v| v.to_string()).as_deref(),
+                Some(set_size.as_str()),
+                "frame {n} has a different set size",
+            );
+            assert_eq!(
+                frame["equations_added"]
+                    .as_u64()
+                    .map(|v| v.to_string())
+                    .as_deref(),
+                Some(equations.as_str()),
+                "frame {n} added a different number of equations",
+            );
+        }
+        assert!(
+            tour.contains("/frame/") && cited.len() >= 2,
+            "Act 2's two frame citations must both be pinned"
+        );
+        for claim in [
+            "**three** nodes, of sizes **2, 2 and 3**",
+            "**6 connection sets** producing **7 equations**",
+        ] {
+            assert!(
+                tour.contains(claim),
+                "Act 1 no longer states {claim:?}; this check pins that wording and must be \
+                 updated with it, or it silently stops matching the tour it guards"
+            );
+        }
     }
 
     /// **Equation text a tour quotes is text HRW actually renders.**

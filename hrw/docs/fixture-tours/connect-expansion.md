@@ -39,14 +39,18 @@ statement names `a` and `c` together. That is **transitivity**, and it is the on
 here.
 
 > **Predict.** How many nodes do these four statements make, and how many connectors are on the
-> largest one?
+> largest one? Then a second number, and expect it to disagree with the first: **how many
+> *connection sets* will the replay say it built?**
 
 [▶ Look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
 
-**Expected:** **three** nodes, of sizes **2, 2 and 3** connectors.
+**Expected:** **three** nodes, of sizes **2, 2 and 3** connectors — and the replay's last frame
+declaring **6 connection sets** producing **7 equations**.
 
-**Falsified if** you count four, or if all three are the same size, or if any connector appears on
-two nodes.
+**Falsified if** you count four nodes, or if all three are the same size, or if any connector
+appears on two nodes — or if the set count is anything but **twice** the node count.
+
+**Three and six are both right**, and the gap between them is the point of the rest of this act.
 
 ### What just happened
 
@@ -79,6 +83,17 @@ Rumoca computes them with **union-find**, in
 **So "a node of size 3" means three connectors, hence a potential set of three `.v` and a flow set
 of three `.i`** — six variables, in two sets that never mix.
 
+**That is where six comes from: three nodes × two kinds.** The replay never counts nodes, because
+the compiler never forms them; it counts the sets it actually built. Step through and you can watch
+them arrive in two runs of three — **the flow sets first, then the potential sets.** That ordering
+is not cosmetic: it is why the flow equations end up with *lower* indices than the potential ones,
+which you will meet again in Act 3.
+
+**One frame does nothing, and it is worth knowing why.** Near the end, an `unconnected flow` step
+reports **0 equations added**. MLS §9.2 requires a flow variable in no connection set to be given
+`f = 0`; `RcCircuit` has none, so the step fires and adds nothing. That is also why the equation
+sheet has no `Unconnected flow` group later — the category exists, and this model is empty of it.
+
 **The order is forced, not tidy.** The number of equations depends on how *big* each node is, so
 no equation can be written until no node can still grow. `connect(src.n, gnd.p)` changes what
 the earlier `connect(C.n, src.n)` is worth.
@@ -102,6 +117,23 @@ That asymmetry decides everything. Making *n* voltages equal takes **n − 1** e
 enough, and more would be redundant. Making *n* currents sum to zero takes exactly **1**, whatever
 *n* is. That is Kirchhoff's current law, and the same statement for heat, torque or mass flow.
 
+**You can watch the asymmetry happen on one model in two frames.** Back in the replay, the
+three-connector node produces its two kinds of set at different times, and each set is followed
+immediately by the equations it generated:
+
+- [▶ frame 7](hrw://stage/Flatten/Connections/frame/7) — the **flow** set of size 3 → **1** equation
+- [▶ frame 13](hrw://stage/Flatten/Connections/frame/13) — the **potential** set of size 3 → **2**
+
+<!-- pane-frames: RcCircuit -->
+
+| frame | step | kind | set size | equations |
+|---|---|---|---|---|
+| `7` | `EquationsGenerated` | `flow` | `3` | `1` |
+| `13` | `EquationsGenerated` | `potential` | `3` | `2` |
+
+Same three connectors, same instant in the pass, different arithmetic. Everything below is that one
+observation multiplied by three nodes.
+
 > **Predict.** Nodes of 2, 2 and 3 connectors — so potential sets of 2, 2 and 3 `.v`, and flow sets
 > of 2, 2 and 3 `.i`. How many equations in total, and how do they split between the two kinds?
 
@@ -110,7 +142,7 @@ enough, and more would be redundant. Making *n* currents sum to zero takes exact
 **Expected:** **7** — four potential and three flow. `Component equations` stands alone, and a
 `Connector equations` heading covers two sub-groups:
 
-<!-- pane-groups -->
+<!-- pane-groups: RcCircuit -->
 
 | group | rows |
 |---|---|
@@ -219,12 +251,14 @@ from the connect graph.
 
 **Expected:** **23 equations**, of which **16** are `Component equations`, split by origin:
 
+<!-- pane-origins: RcCircuit -->
+
 | origin text | rows |
 |---|---|
-| equation from `R` | 7 |
-| equation from `src` | 4 |
-| equation from `C` | 4 |
-| equation from `gnd` | 1 |
+| `equation from R` | 7 |
+| `equation from src` | 4 |
+| `equation from C` | 4 |
+| `equation from gnd` | 1 |
 
 **Falsified if** the total is not 23, or if the resistor contributes fewer than the source and the
 capacitor.
@@ -261,8 +295,19 @@ been written by hand at model scale, and they are what determines the system's s
 
 [▶ Look — TwoLoops → Flatten → Equations](hrw://load/TwoLoops/Flatten/EquationSheet)
 
-**Expected:** **4 equations**, all `Component equations` described as `top-level model equation`,
-and **no** `Connector equations` heading at all.
+**Expected:** one group only — **no** `Connector equations` heading at all:
+
+<!-- pane-groups: TwoLoops -->
+
+| group | rows |
+|---|---|
+| `Component equations` | 4 |
+
+<!-- pane-origins: TwoLoops -->
+
+| origin text | rows |
+|---|---|
+| `top-level model equation` | 4 |
 
 **Falsified if** a connector group appears, or if any equation's origin names a component.
 

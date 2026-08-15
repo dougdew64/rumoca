@@ -168,6 +168,16 @@ impl<T> Playback<T> {
         &self.frames
     }
 
+    /// The cursor, **0-based**.
+    ///
+    /// The on-screen counter and `hrw://…/frame/<n>` links are **1-based** — this
+    /// plus one. Anything publishing a frame position for a reader must add the one,
+    /// or a tour link built from it lands a frame early.
+    #[must_use]
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
     /// The frame under the cursor, or `None` before any frame has arrived.
     pub fn current(&self) -> Option<&T> {
         self.frames.get(self.cursor)

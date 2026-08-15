@@ -3140,6 +3140,14 @@ impl App {
                 .cached_equation_sheet
                 .as_ref()
                 .map(equation_sheet::EquationSheet::to_bridge_json),
+            // The only pane that shows connection sets, and therefore the only
+            // evidence for `connect-expansion.md` Act 1.
+            StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => self
+                .stage_views
+                .connection_anim
+                .as_ref()
+                .and_then(Option::as_ref)
+                .map(connection_anim::ConnectionAnimation::to_bridge_json),
             // The painter-drawn view no accessibility tree can reach. Both report
             // stages share it; `stage_views` already holds whichever was built.
             StageKind::Structural | StageKind::IndexReduction

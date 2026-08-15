@@ -66,6 +66,106 @@ impl ConnectionAnimation {
         self.playback.is_empty()
     }
 
+    /// The replay as the bridge publishes it — **the frames, as recorded.**
+    ///
+    /// # Why this pane, and why it was the one left
+    ///
+    /// It is the **only view that shows connection sets**, which makes it the only
+    /// evidence for `connect-expansion.md` Act 1 — *three nodes, of sizes 2, 2 and 3*.
+    /// Every other claim in that tour became checkable when the equation sheet started
+    /// publishing; this one stayed on Claude's word alone.
+    ///
+    /// # No summary is synthesized, and that is the whole design
+    ///
+    /// The obvious convenience would be a `sets: [{kind, size}]` array collected from the
+    /// frames. It is deliberately absent. Projecting a summary means *deciding* what the
+    /// replay proved, and a reader could not tell that decision from something Rumoca
+    /// reported — the fiction this repository spent 2026-08-04 removing.
+    ///
+    /// The summary already exists **in the data, from the compiler**:
+    /// `ConnectionStep::Complete` carries `sets` and `equations_added`, and
+    /// `EquationsGenerated` carries `set_size` and `equations_added` per set. Those are
+    /// Rumoca's counts. Anything that wants totals reads them; nothing needs Claude to
+    /// add up frames and be believed.
+    ///
+    /// # Frame numbering
+    ///
+    /// `frame` is **1-based**, matching the on-screen counter *and*
+    /// `hrw://stage/Flatten/Connections/frame/<n>`, so a number read here can be pasted
+    /// into a tour link. `index` is the raw cursor. Both are published because getting
+    /// this wrong lands a reader one frame early, silently.
+    #[must_use]
+    pub fn to_bridge_json(&self) -> serde_json::Value {
+        let frames: Vec<serde_json::Value> = self
+            .playback
+            .frames()
+            .iter()
+            .enumerate()
+            .map(|(i, f)| {
+                let mut row = serde_json::json!({
+                    "id": format!("frame[{}]", i + 1),
+                    "frame": i + 1,
+                    "index": i,
+                    "sets_so_far": f.sets_so_far,
+                    "equations_so_far": f.equations_so_far,
+                });
+                let step = match &f.step {
+                    ConnectionStep::Start { connect_statements } => serde_json::json!({
+                        "step": "Start",
+                        "connect_statements": connect_statements,
+                    }),
+                    ConnectionStep::SetFormed {
+                        kind,
+                        scope,
+                        variables,
+                    } => serde_json::json!({
+                        "step": "SetFormed",
+                        "kind": kind,
+                        "scope": scope,
+                        "size": variables.len(),
+                        "variables": variables,
+                    }),
+                    ConnectionStep::EquationsGenerated {
+                        kind,
+                        set_size,
+                        equations_added,
+                    } => serde_json::json!({
+                        "step": "EquationsGenerated",
+                        "kind": kind,
+                        "set_size": set_size,
+                        "equations_added": equations_added,
+                    }),
+                    ConnectionStep::UnconnectedFlow { equations_added } => serde_json::json!({
+                        "step": "UnconnectedFlow",
+                        "equations_added": equations_added,
+                    }),
+                    ConnectionStep::Complete {
+                        sets,
+                        equations_added,
+                    } => serde_json::json!({
+                        "step": "Complete",
+                        "sets": sets,
+                        "equations_added": equations_added,
+                    }),
+                };
+                if let (Some(row), Some(step)) = (row.as_object_mut(), step.as_object()) {
+                    for (k, v) in step {
+                        row.insert(k.clone(), v.clone());
+                    }
+                }
+                row
+            })
+            .collect();
+
+        serde_json::json!({
+            // What the counter reads right now. A replay's "content" is the sequence
+            // *and* where the reader is in it, so both are published.
+            "cursor_frame": self.playback.cursor() + 1,
+            "n_frames": frames.len(),
+            "frames": frames,
+        })
+    }
+
     /// Render the controls, the step line, and the running state.
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         if self.playback.is_empty() {
