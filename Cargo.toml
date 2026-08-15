@@ -261,6 +261,23 @@ opt-level = 0
 [profile.dev.package.rumoca-phase-dae]
 opt-level = 0
 
+# Connection expansion: the union-find that groups connector variables into sets,
+# and the equation generation that turns each set into equalities or a flow sum.
+#
+# Added 2026-08-15 BEFORE anyone set a breakpoint there, which is the whole point.
+# `docs/architecture.md` §2: "Extend this to any crate the moment you first try to
+# set a breakpoint in it, not after losing time to the failure — because the
+# failure is quiet. A breakpoint on a line with no line-table entry still BINDS,
+# so VS Code shows an ordinary verified breakpoint that simply never fires."
+# `rumoca-phase-dae` was added after exactly that detour; this one is not.
+#
+# Doug's goal for the connection replay makes it necessary: frames driven by
+# instrumented Rumoca code mean live-trace stepping lands in the compiler's
+# algorithm rather than in HRW's rendering — but only if the locals are readable
+# when it stops.
+[profile.dev.package.rumoca-phase-flatten]
+opt-level = 0
+
 # HRW itself. Added 2026-07-28 after discovering that a breakpoint in HRW's own
 # worker would not bind at all — `hrw` was the one package still inheriting
 # `[profile.dev] opt-level = 1`, so its line tables were degraded like everyone

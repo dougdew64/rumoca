@@ -479,12 +479,20 @@ fn generate_connection_set_equations(
             ConnectionKind::Stream => mark_stream_connection_set(flat, &set.variables),
         }
         sets_so_far += 1;
+        // The equations this set just added, named rather than merely counted. Read
+        // back from the model so the trace reports what was generated, not what was
+        // expected to be.
+        let generated: Vec<String> = flat.equations[before..]
+            .iter()
+            .map(|eq| eq.origin.to_string())
+            .collect();
         trace::emit(
             observer,
             ConnectionStep::EquationsGenerated {
                 kind,
                 set_size: set.variables.len(),
                 equations_added: flat.equations.len() - before,
+                equations: generated,
             },
             sets_so_far,
             flat.equations.len() - equations_at_start,

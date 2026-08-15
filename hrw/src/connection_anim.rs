@@ -49,6 +49,114 @@ use crate::playback::{Animated, Playback};
 /// that belong together, so the pace is brisk enough to read them as a pair.
 const FRAME_INTERVAL: f64 = 0.5;
 
+/// One connection set as the lane view shows it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LaneSet {
+    /// The set's members, from `SetFormed`.
+    pub variables: Vec<String>,
+    /// The equations it produced — empty until its `EquationsGenerated` frame.
+    pub equations: Vec<String>,
+}
+
+/// Every set of one kind — `"potential"`, `"flow"` or `"stream"` — built so far.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Lane {
+    pub kind: String,
+    pub sets: Vec<LaneSet>,
+}
+
+/// **What the replay has built by a given frame, grouped by kind.**
+///
+/// # Why this exists
+///
+/// Doug, 2026-08-15, after stepping the replay: *"it is underwhelming… mostly a
+/// text-based log of results which I can step through"*, and the specific thing
+/// missing was that *"the connector variables are divided into sets: potential, flow
+/// and sometimes also stream"* was nowhere on screen. One frame at a time shows one
+/// set; nothing showed the **division**.
+///
+/// # This groups, it does not compute
+///
+/// Every value here is read out of frames Rumoca emitted — memberships from
+/// `SetFormed`, equations from `EquationsGenerated`. **No set is inferred and no
+/// count is derived by re-running anything.** That is the line agreed with Doug the
+/// same day: *compute freely for presentation — layout, grouping for display — and
+/// compute nothing that Rumoca also computes.*
+///
+/// Grouping frames by their own `kind` field is presentation. Deciding which
+/// variables belong together would not be, and is exactly what the frames already
+/// answer.
+///
+/// # A pure function, deliberately
+///
+/// `Lanes::upto` takes frames and a cursor and returns data. Nothing here touches
+/// `egui`, so the interesting part is testable without a harness — the response to
+/// custom-painted views being the least reachable surface in the project
+/// (`CLAUDE.md`: *move a computation out before adding one in*).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Lanes {
+    pub lanes: Vec<Lane>,
+}
+
+impl Lanes {
+    /// The sets built by the time the reader reaches `cursor`, inclusive.
+    ///
+    /// Sets appear in the lane for their kind in the order the pass formed them, and
+    /// gain their equations when the following `EquationsGenerated` frame is reached
+    /// — so stepping shows a set arrive, then pay out. Lanes appear in first-seen
+    /// order rather than a fixed one, because a model with no flow variables should
+    /// not be shown an empty flow lane implying it lost something.
+    #[must_use]
+    pub fn upto(frames: &[ConnectionFrame], cursor: usize) -> Self {
+        let mut lanes: Vec<Lane> = Vec::new();
+        for frame in frames.iter().take(cursor + 1) {
+            match &frame.step {
+                ConnectionStep::SetFormed {
+                    kind, variables, ..
+                } => {
+                    let lane = match lanes.iter_mut().find(|l| l.kind == *kind) {
+                        Some(l) => l,
+                        None => {
+                            lanes.push(Lane {
+                                kind: (*kind).to_owned(),
+                                sets: Vec::new(),
+                            });
+                            lanes.last_mut().expect("just pushed")
+                        }
+                    };
+                    lane.sets.push(LaneSet {
+                        variables: variables.clone(),
+                        equations: Vec::new(),
+                    });
+                }
+                ConnectionStep::EquationsGenerated {
+                    kind, equations, ..
+                } => {
+                    // The most recent set of that kind is the one that just paid out:
+                    // the pass emits `SetFormed` then `EquationsGenerated` per set, so
+                    // "last of this kind" is the pairing, not a guess about identity.
+                    if let Some(set) = lanes
+                        .iter_mut()
+                        .find(|l| l.kind == *kind)
+                        .and_then(|l| l.sets.last_mut())
+                    {
+                        set.equations = equations.clone();
+                    }
+                }
+                _ => {}
+            }
+        }
+        Self { lanes }
+    }
+
+    /// Total sets across all lanes — the number the replay's own `Complete` frame
+    /// reports, recomputed here only to be *compared* against it.
+    #[must_use]
+    pub fn set_count(&self) -> usize {
+        self.lanes.iter().map(|l| l.sets.len()).sum()
+    }
+}
+
 /// Replay of connection expansion.
 pub struct ConnectionAnimation {
     playback: Playback<ConnectionFrame>,
@@ -129,11 +237,15 @@ impl ConnectionAnimation {
                         kind,
                         set_size,
                         equations_added,
+                        equations,
                     } => serde_json::json!({
                         "step": "EquationsGenerated",
                         "kind": kind,
                         "set_size": set_size,
                         "equations_added": equations_added,
+                        // Named, not just counted: the equation IS the rule this
+                        // replay exists to show.
+                        "equations": equations,
                     }),
                     ConnectionStep::UnconnectedFlow { equations_added } => serde_json::json!({
                         "step": "UnconnectedFlow",
@@ -215,6 +327,33 @@ impl ConnectionAnimation {
                     }
                 });
         }
+
+        // **The equations themselves, not just how many.** Doug, 2026-08-15, after
+        // stepping this replay: *"it is underwhelming… mostly a text-based log of
+        // results"* — and the sharpest instance was here, where the rule the whole
+        // view exists to teach was rendered as an integer. A flow set of three
+        // producing "1 equation" says nothing; producing
+        // `flow sum equation: C.n.i + src.n.i + gnd.p.i = 0` **is** Kirchhoff's law.
+        //
+        // These are Rumoca's rendered origins, read back from the model after the
+        // generating call — not text this view composed.
+        if let ConnectionStep::EquationsGenerated { equations, .. } = &frame.step
+            && !equations.is_empty()
+        {
+            ui.add_space(4.0);
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, true])
+                .max_height(200.0)
+                .show(ui, |ui| {
+                    for e in equations {
+                        ui.label(
+                            egui::RichText::new(e)
+                                .monospace()
+                                .color(crate::colors::MATCHED_MARKER),
+                        );
+                    }
+                });
+        }
     }
 
     /// Goal line plus the two running totals: sets closed, equations made.
@@ -238,6 +377,95 @@ impl ConnectionAnimation {
             frame.equations_so_far,
             if frame.equations_so_far == 1 { "" } else { "s" },
         ));
+
+        ui.add_space(8.0);
+        self.render_lanes(ui);
+    }
+
+    /// The sets built so far, **one column per kind**.
+    ///
+    /// This is the answer to "the pane never shows that the variables are divided
+    /// into potential, flow and stream sets": stepping now fills two columns side by
+    /// side, and a set's equations appear beneath it as it pays out. A thin renderer
+    /// over [`Lanes`], which is where the only logic lives.
+    fn render_lanes(&self, ui: &mut egui::Ui) {
+        let lanes = Lanes::upto(self.playback.frames(), self.playback.cursor());
+        if lanes.lanes.is_empty() {
+            return;
+        }
+        ui.separator();
+        ui.label(
+            egui::RichText::new(
+                "Connection sets so far \u{2014} one column per kind. A set of n \
+                 potentials pays out n-1 equations; a set of n flows pays out exactly one.",
+            )
+            .italics()
+            .color(crate::colors::ANIM_EXPLORE),
+        );
+        ui.add_space(4.0);
+
+        // `columns` rather than a manual split: egui divides the width evenly and
+        // the lane count is small and data-driven.
+        ui.columns(lanes.lanes.len(), |cols| {
+            for (col, lane) in cols.iter_mut().zip(&lanes.lanes) {
+                col.label(
+                    egui::RichText::new(format!(
+                        "{} \u{00b7} {} set(s)",
+                        lane.kind,
+                        lane.sets.len()
+                    ))
+                    .strong()
+                    .color(kind_color(&lane.kind)),
+                );
+                egui::ScrollArea::vertical()
+                    .id_salt(format!("lane-{}", lane.kind))
+                    .auto_shrink([false, true])
+                    .max_height(240.0)
+                    .show(col, |col| {
+                        for (i, set) in lane.sets.iter().enumerate() {
+                            col.add_space(4.0);
+                            col.label(
+                                egui::RichText::new(format!(
+                                    "set {} \u{2014} {} variable(s)",
+                                    i + 1,
+                                    set.variables.len()
+                                ))
+                                .strong(),
+                            );
+                            for v in &set.variables {
+                                col.label(egui::RichText::new(format!("  {v}")).monospace());
+                            }
+                            // Absent until this set's equations frame is reached, and
+                            // said rather than left blank: an empty gap reads as "this
+                            // set produced nothing", which is a different claim.
+                            if set.equations.is_empty() {
+                                col.label(
+                                    egui::RichText::new("  (equations not generated yet)")
+                                        .weak()
+                                        .italics(),
+                                );
+                            } else {
+                                for e in &set.equations {
+                                    col.label(
+                                        egui::RichText::new(format!("  \u{2192} {e}"))
+                                            .monospace()
+                                            .color(crate::colors::MATCHED_MARKER),
+                                    );
+                                }
+                            }
+                        }
+                    });
+            }
+        });
+    }
+}
+
+/// Colour per connection kind, so the two columns are distinguishable at a glance.
+fn kind_color(kind: &str) -> egui::Color32 {
+    match kind {
+        "flow" => crate::colors::EQ_CAT_FLOW_SUM,
+        "potential" => crate::colors::EQ_CAT_CONNECTION,
+        _ => crate::colors::ANIM_EXPLORE,
     }
 }
 
@@ -332,6 +560,10 @@ fn step_style(frame: &ConnectionFrame) -> (&'static str, egui::Color32, String) 
             kind,
             set_size,
             equations_added,
+            // Rendered below the summary line by `render_current`, not squeezed into
+            // it: the equations are the content, and a one-line summary that swallows
+            // them is the "text log of results" this replay was criticised for being.
+            equations: _,
         } => {
             let why = match *kind {
                 // The two halves of MLS §9.2, each said where it applies.
@@ -399,6 +631,10 @@ mod tests {
                 kind: "potential",
                 set_size: 3,
                 equations_added: 2,
+                equations: vec![
+                    "connection equation: a = b".into(),
+                    "connection equation: b = c".into(),
+                ],
             },
             1,
             2,
@@ -418,6 +654,7 @@ mod tests {
                 kind: "flow",
                 set_size: 3,
                 equations_added: 1,
+                equations: vec!["flow sum equation: a.i + b.i + c.i = 0".into()],
             },
             2,
             3,
@@ -489,6 +726,7 @@ mod tests {
                 kind: "stream",
                 set_size: 2,
                 equations_added: 0,
+                equations: Vec::new(),
             },
             ConnectionStep::UnconnectedFlow { equations_added: 2 },
             ConnectionStep::Complete {
@@ -549,5 +787,129 @@ mod tests {
         assert!(anim.is_empty());
         assert!(anim.current_frame_context().is_none());
         assert_eq!(anim.live_state(true), crate::LiveState::Idle);
+    }
+}
+
+#[cfg(test)]
+mod lane_tests {
+    use super::*;
+
+    fn set_formed(kind: &'static str, vars: &[&str]) -> ConnectionFrame {
+        ConnectionFrame {
+            step: ConnectionStep::SetFormed {
+                kind,
+                scope: String::new(),
+                variables: vars.iter().map(|v| (*v).to_string()).collect(),
+            },
+            sets_so_far: 0,
+            equations_so_far: 0,
+        }
+    }
+
+    fn generated(kind: &'static str, eqs: &[&str]) -> ConnectionFrame {
+        ConnectionFrame {
+            step: ConnectionStep::EquationsGenerated {
+                kind,
+                set_size: 0,
+                equations_added: eqs.len(),
+                equations: eqs.iter().map(|e| (*e).to_string()).collect(),
+            },
+            sets_so_far: 0,
+            equations_so_far: 0,
+        }
+    }
+
+    /// The realistic shape: a flow set and its equation, then a potential set and
+    /// its two — the order the pass actually emits for `RcCircuit`.
+    fn chain() -> Vec<ConnectionFrame> {
+        vec![
+            set_formed("flow", &["a.i", "b.i", "c.i"]),
+            generated("flow", &["flow sum equation: a.i + b.i + c.i = 0"]),
+            set_formed("potential", &["a.v", "b.v", "c.v"]),
+            generated(
+                "potential",
+                &[
+                    "connection equation: a.v = b.v",
+                    "connection equation: b.v = c.v",
+                ],
+            ),
+        ]
+    }
+
+    /// **Sets land in the lane for their own kind, and never mix.**
+    ///
+    /// The division Doug reported as invisible: potential and flow are separate
+    /// graphs over disjoint variables, and a view that merged them would be showing
+    /// something the compiler never built.
+    #[test]
+    fn each_kind_gets_its_own_lane() {
+        let lanes = Lanes::upto(&chain(), 3);
+        assert_eq!(lanes.lanes.len(), 2, "one lane per kind: {lanes:?}");
+        assert_eq!(lanes.set_count(), 2);
+
+        let flow = lanes.lanes.iter().find(|l| l.kind == "flow").expect("flow");
+        let potential = lanes
+            .lanes
+            .iter()
+            .find(|l| l.kind == "potential")
+            .expect("potential");
+        assert!(
+            flow.sets[0].variables.iter().all(|v| v.ends_with(".i")),
+            "a flow lane holds only flow variables: {:?}",
+            flow.sets[0].variables,
+        );
+        assert!(
+            potential.sets[0]
+                .variables
+                .iter()
+                .all(|v| v.ends_with(".v")),
+            "a potential lane holds only potential variables: {:?}",
+            potential.sets[0].variables,
+        );
+    }
+
+    /// **A set shows its members before its equations exist, and gains them at the
+    /// frame that generates them** — which is what makes stepping show the payout
+    /// rather than a finished table.
+    #[test]
+    fn a_set_gains_its_equations_only_when_that_frame_is_reached() {
+        let frames = chain();
+
+        let at_set = Lanes::upto(&frames, 0);
+        let flow = &at_set.lanes[0].sets[0];
+        assert_eq!(flow.variables.len(), 3);
+        assert!(
+            flow.equations.is_empty(),
+            "before its equations frame, a set has produced nothing yet",
+        );
+
+        let at_equations = Lanes::upto(&frames, 1);
+        assert_eq!(
+            at_equations.lanes[0].sets[0].equations.len(),
+            1,
+            "a flow set of three pays out exactly one equation",
+        );
+        assert_eq!(
+            Lanes::upto(&frames, 3).lanes[1].sets[0].equations.len(),
+            2,
+            "a potential set of three pays out n-1 = 2",
+        );
+    }
+
+    /// The cursor bounds what is shown: a reader at frame 1 has not seen the
+    /// potential set, and a view that showed it would be reporting the future.
+    #[test]
+    fn lanes_never_show_past_the_cursor() {
+        let frames = chain();
+        assert_eq!(Lanes::upto(&frames, 1).lanes.len(), 1, "flow only so far");
+        assert_eq!(Lanes::upto(&frames, 2).lanes.len(), 2, "potential appears");
+    }
+
+    /// A model with no connections produces no lanes — stated by absence rather
+    /// than by an empty flow column implying something was lost.
+    #[test]
+    fn no_frames_means_no_lanes() {
+        assert!(Lanes::upto(&[], 0).lanes.is_empty());
+        assert_eq!(Lanes::upto(&[], 0).set_count(), 0);
     }
 }

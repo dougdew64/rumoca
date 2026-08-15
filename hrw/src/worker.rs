@@ -2519,10 +2519,8 @@ impl WorkerState {
 
                 let eq_sheet = match result {
                     Some(PhaseResult::Success(cr)) => {
-                        let mut sheet = crate::equation_sheet::build(
-                            &cr.dae,
-                            Some((&uri, display_source)),
-                        );
+                        let mut sheet =
+                            crate::equation_sheet::build(&cr.dae, Some((&uri, display_source)));
                         // **Filled here because this is where both halves exist.**
                         // `build` sees only the DAE; the flat model is on the compile
                         // result beside it, and the source is already resolved for
@@ -6828,6 +6826,7 @@ mod tests {
                     kind,
                     set_size,
                     equations_added,
+                    ..
                 } => Some((*kind, *set_size, *equations_added)),
                 _ => None,
             })
@@ -6851,6 +6850,38 @@ mod tests {
             connection_frames.last().unwrap().equations_so_far,
             equations_added,
             "the running count and the Complete frame must agree",
+        );
+
+        // **The lane view's grouping agrees with Rumoca's own set count.**
+        //
+        // `Lanes` groups frames by kind for display, which is presentation — but a
+        // grouping that dropped or duplicated a set would be presenting a different
+        // decomposition than the compiler built, and would look entirely plausible.
+        // Comparing against the `Complete` frame's `sets` is the check that cannot be
+        // satisfied by a well-formed mistake: the number comes from Rumoca, not from
+        // counting the same frames a second way.
+        let lanes = crate::connection_anim::Lanes::upto(
+            &connection_frames,
+            connection_frames.len().saturating_sub(1),
+        );
+        let declared_sets = connection_frames
+            .iter()
+            .find_map(|f| match f.step {
+                ConnectionStep::Complete { sets, .. } => Some(sets),
+                _ => None,
+            })
+            .expect("the pass must report Complete");
+        assert_eq!(
+            lanes.set_count(),
+            declared_sets,
+            "the lane view shows {} sets; Rumoca reported {declared_sets}",
+            lanes.set_count(),
+        );
+        assert!(
+            lanes.lanes.len() >= 2,
+            "RcCircuit has both potential and flow sets, so a single lane means the \
+             kinds were merged: {:?}",
+            lanes.lanes.iter().map(|l| &l.kind).collect::<Vec<_>>(),
         );
     }
 

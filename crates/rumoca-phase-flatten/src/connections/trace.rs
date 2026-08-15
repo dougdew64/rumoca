@@ -58,6 +58,26 @@ pub enum ConnectionStep {
         kind: &'static str,
         set_size: usize,
         equations_added: usize,
+        /// The equations this set produced, as their rendered
+        /// [`EquationOrigin`](rumoca_ir_flat::EquationOrigin)s — e.g.
+        /// `"flow sum equation: C.n.i + src.n.i + gnd.p.i = 0"`.
+        ///
+        /// **Without this the trace says how many equations a set produced and never
+        /// which**, so an observer can report *"3 variables became 1 equation"* but
+        /// cannot show the equation. That is the difference between a step counter and
+        /// a view of the rule: Kirchhoff's law is the *content* of the flow row, not
+        /// its count.
+        ///
+        /// Rendered origins rather than residual expressions, deliberately — the origin
+        /// is the form a reader can check against the flat model's own equation listing,
+        /// so an observer showing this and a tool showing the equation sheet cannot
+        /// disagree about what was generated.
+        ///
+        /// Read from `Model::equations` after the generating call, so it is what the
+        /// model actually gained. Like `equations_added` it is **measured, not
+        /// predicted**, and stays honest when array scalarization turns one logical
+        /// equation into several.
+        equations: Vec<String>,
     },
     /// A flow variable in no connection set: MLS §9.2 gives it `f = 0`.
     UnconnectedFlow { equations_added: usize },
@@ -263,6 +283,10 @@ mod tests {
                 kind: "potential",
                 set_size: 3,
                 equations_added: 2,
+                equations: vec![
+                    "connection equation: a = b".to_string(),
+                    "connection equation: b = c".to_string(),
+                ],
             },
             1,
             2,

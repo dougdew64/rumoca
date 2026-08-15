@@ -2021,6 +2021,7 @@ fn the_connection_trace_reports_the_potential_flow_asymmetry() {
                 kind,
                 set_size,
                 equations_added,
+                ..
             } => Some((*kind, *set_size, *equations_added)),
             _ => None,
         })
@@ -2032,6 +2033,46 @@ fn the_connection_trace_reports_the_potential_flow_asymmetry() {
     assert!(
         generated.contains(&("flow", 3, 1)),
         "a flow set of 3 must yield 1 sum-to-zero equation: {generated:?}",
+    );
+
+    // **Each set NAMES the equations it produced, not just how many.** A count
+    // tells an observer "3 variables became 1 equation"; the name is the rule
+    // itself — `flow sum equation: a.i + b.i + c.i = 0` *is* Kirchhoff's law, and
+    // a view rendering the integer instead is the "text log of results" this trace
+    // exists to stop being.
+    let mut saw_flow_equation = false;
+    for f in &frames {
+        let ConnectionStep::EquationsGenerated {
+            kind,
+            equations_added,
+            equations,
+            ..
+        } = &f.step
+        else {
+            continue;
+        };
+        assert_eq!(
+            equations.len(),
+            *equations_added,
+            "the named equations must be exactly the ones counted, for the {kind} set",
+        );
+        assert!(
+            equations.iter().all(|e| !e.trim().is_empty()),
+            "an empty origin string reports nothing: {equations:?}",
+        );
+        if *kind == "flow" {
+            saw_flow_equation = true;
+            assert!(
+                equations
+                    .iter()
+                    .any(|e| e.starts_with("flow sum equation:")),
+                "a flow set's equation must render as its origin: {equations:?}",
+            );
+        }
+    }
+    assert!(
+        saw_flow_equation,
+        "no flow set was generated, so the assertions above checked nothing",
     );
 }
 
