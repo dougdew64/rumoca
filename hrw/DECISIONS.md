@@ -2923,3 +2923,67 @@ doc comment, next to what they can.
 
 Suite 552 fast, 0 failed. Clippy exit 0. `CATALOGUE.md` and `architecture.md` regenerated, since
 tour text and source sizes both moved.
+
+---
+
+## 2026-08-15 — "Do we have evidence?" — the sites were enumerated by the data, not by Claude
+
+Doug, after the `blocks[]` id fix landed: *"Do we have an evidence-based reason to conclude that
+we have fixed all id bugs? Or should we pause and perform an id-focused tech debt sweep?"*
+
+**The honest answer was no, and looking for the evidence produced two more findings inside three
+minutes.** That is the whole justification for what was built.
+
+### Why a sweep was the wrong instrument
+
+**Four writers had been found in four attempts** — `incidence.rows`, `matching`,
+`blocks[].id`, `blocks[].ids` — each discovered by looking harder after the previous fix had
+felt complete, twice because Doug asked whether it was. A fifth (`blocks[].tearing`) turned up
+while writing the recommendation. **Manual enumeration was not converging**, and a sweep finds
+today's instances while leaving tomorrow's to the same process that had already missed five.
+
+**And the check that existed was partly vacuous.** `an_equation_id_names_the_same_equation_in_every_pane`
+asserts on coupled blocks, but it runs on `RcCircuit`, whose `coupled_block_count` is **0** — so
+those assertions were code that never executed. The field worked; nothing was checking that it
+did. This is exactly the non-vacuity failure the fidelity rules already warn about, arriving in a
+test written two hours earlier.
+
+### What was built instead
+
+`lib::unidentified_equation_labels` walks a published stage tree, finds every decorated label
+(`f_x[19] (connection equation: …)`), and requires the bare id to be recoverable **from the same
+JSON object**. It asserts a *property*, not a spelling: both shapes in use —
+`{"equation": …, "id": …}` and `{"equations": […], "ids": […]}` — satisfy it, because what a
+capture needs is that the identity is in the node it captured.
+
+**Inverting who enumerates is the point.** A stage that grows a new equation-naming field next
+month fails on arrival instead of waiting to be pointed at.
+
+### What it found that a field-name scan could not
+
+- **`blocks[].tearing.residual_equations`** — labels as **bare array elements with no field name
+  at all**, which is why a scan for `"<key>": "f_x[…"` was blind to them.
+- **`blocks[].tearing.causal_sequence[].equation`**.
+- **`index_reduction.json`'s `before.matching[].equation` — 321 of them**, an entire stage writer
+  nobody had looked at. That pane could identify none of the equations it named.
+
+`partial_matching_to_json` had `inc.equation_refs` in hand, so that one publishes the
+**authoritative** id rather than a derivation.
+
+### Two checks, deliberately not one
+
+- **Fast, over every committed trace** (`tests_equation_identity`, ~0.5 s, no compile) — covers
+  every specimen including the coupled and torn shapes `RcCircuit` cannot reach.
+- **Slow, over a live compile of `TwoLoops`** (`a_coupled_model_identifies_every_equation_it_publishes`)
+  — guards against the traces going stale relative to the writers, **which they had, for seven
+  specimens**. It opens by asserting `coupled >= 2` and `torn >= 1`, so it fails loudly rather
+  than quietly reverting to the scalar-only path.
+
+### What was scoped around, and written down rather than hidden
+
+Regenerating the notebook to prove the fix exposed that the traces predate the pipeline *and*
+that regenerating writes **6,604 machine-specific absolute paths**. Only `structural.json` and
+`index_reduction.json` were kept; 85 files were restored. Full account, including why
+normalising the path brushes the accuracy rule, in `docs/tech-debt.md`.
+
+Suite 660 passed, 0 failed (full gate). Clippy exit 0, fmt clean. `architecture.md` regenerated.

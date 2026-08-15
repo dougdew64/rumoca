@@ -1,0 +1,35 @@
+{
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 8 matched out of 10 equations and 10 unknowns; unmatched equations: equation from inertia, unconnected flow: inertia.flange_b.tau = 0; unmatched unknowns: inertia.flange_b.phi, torque.flange.phi",
+    "n_equations": 10,
+    "n_unknowns": 10,
+    "n_matched": 8,
+    "rank_deficiency": 2,
+    "unmatched_equations": [
+      "equation from inertia",
+      "unconnected flow: inertia.flange_b.tau = 0"
+    ],
+    "unmatched_unknowns": [
+      "inertia.flange_b.phi",
+      "torque.flange.phi"
+    ],
+    "guidance": "The initialization subsystem is structurally singular: the algebraic equations (beyond the state derivatives) cannot be fully matched to unknowns. Check for missing or redundant initial equations, and verify that start values are specified for the right variables.",
+    "determinacy": {
+      "states": 2,
+      "initial_equations": 0,
+      "fixed_start_states": 0,
+      "explicit_initial_conditions": 0,
+      "surplus_over_states": -2,
+      "verdict": "well-posed (remaining states initialize from their start attributes)"
+    }
+  },
+  "determinacy": {
+    "states": 2,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": -2,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

@@ -5,82 +5,102 @@
   "matching": [
     {
       "equation": "f_x[0] (equation from L)",
+      "id": "f_x[0]",
       "unknown": "der(L.i)"
     },
     {
       "equation": "f_x[1] (equation from rotor)",
+      "id": "f_x[1]",
       "unknown": "shaft.a"
     },
     {
       "equation": "f_x[2] (equation from gear)",
+      "id": "f_x[2]",
       "unknown": "gear.flange_a.tau"
     },
     {
       "equation": "f_x[3] (equation from shaft)",
+      "id": "f_x[3]",
       "unknown": "mount.v_rel"
     },
     {
       "equation": "f_x[4] (equation from shaft)",
+      "id": "f_x[4]",
       "unknown": "der(shaft.w)"
     },
     {
       "equation": "f_x[5] (equation from shaft)",
+      "id": "f_x[5]",
       "unknown": "shaft.flange_a.tau"
     },
     {
       "equation": "f_x[6] (equation from r2t)",
+      "id": "f_x[6]",
       "unknown": "r2t.flangeR.tau"
     },
     {
       "equation": "f_x[7] (equation from load)",
+      "id": "f_x[7]",
       "unknown": "load.flange_a.f"
     },
     {
       "equation": "f_x[8] (equation from mount)",
+      "id": "f_x[8]",
       "unknown": "der(mount.s_rel)"
     },
     {
       "equation": "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+      "id": "f_x[9]",
       "unknown": "rotor.flange_b.tau"
     },
     {
       "equation": "f_x[10] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+      "id": "f_x[10]",
       "unknown": "gear.flange_b.tau"
     },
     {
       "equation": "f_x[11] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+      "id": "f_x[11]",
       "unknown": "shaft.flange_b.tau"
     },
     {
       "equation": "f_x[12] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+      "id": "f_x[12]",
       "unknown": "r2t.flangeT.f"
     },
     {
       "equation": "f_x[13] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "id": "f_x[13]",
       "unknown": "emf.internalSupport.flange.phi"
     },
     {
       "equation": "f_x[14] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+      "id": "f_x[14]",
       "unknown": "r2t.internalSupportR.flange.phi"
     },
     {
       "equation": "f_x[15] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+      "id": "f_x[15]",
       "unknown": "r2t.internalSupportT.flange.s"
     },
     {
       "equation": "f_x[16] (connection equation: src.n.v = gnd.p.v)",
+      "id": "f_x[16]",
       "unknown": "src.n.v"
     },
     {
       "equation": "f_x[17] (connection equation: r2t.flangeT.s = load.flange_a.s)",
+      "id": "f_x[17]",
       "unknown": "r2t.flangeT.s"
     },
     {
       "equation": "f_x[18] (connection equation: load.flange_b.s = mount.flange_a.s)",
+      "id": "f_x[18]",
       "unknown": "load.s"
     },
     {
       "equation": "f_x[19] (connection equation: mount.flange_b.s = wall.flange.s)",
+      "id": "f_x[19]",
       "unknown": "mount.flange_b.s"
     }
   ],
@@ -89,18 +109,21 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[16] (connection equation: src.n.v = gnd.p.v)",
+      "id": "f_x[16]",
       "unknown": "src.n.v"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (equation from L)",
+      "id": "f_x[0]",
       "unknown": "der(L.i)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[3] (equation from shaft)",
+      "id": "f_x[3]",
       "unknown": "mount.v_rel"
     },
     {
@@ -116,6 +139,17 @@
         "f_x[2] (equation from gear)",
         "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
         "f_x[1] (equation from rotor)"
+      ],
+      "ids": [
+        "f_x[7]",
+        "f_x[12]",
+        "f_x[6]",
+        "f_x[11]",
+        "f_x[5]",
+        "f_x[10]",
+        "f_x[2]",
+        "f_x[9]",
+        "f_x[1]"
       ],
       "unknowns": [
         "load.flange_a.f",
@@ -135,37 +169,48 @@
         "residual_equations": [
           "f_x[5] (equation from shaft)"
         ],
+        "residual_equation_ids": [
+          "f_x[5]"
+        ],
         "causal_sequence": [
           {
             "equation": "f_x[7] (equation from load)",
+            "id": "f_x[7]",
             "variable": "load.flange_a.f"
           },
           {
             "equation": "f_x[1] (equation from rotor)",
+            "id": "f_x[1]",
             "variable": "rotor.flange_b.tau"
           },
           {
             "equation": "f_x[12] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+            "id": "f_x[12]",
             "variable": "r2t.flangeT.f"
           },
           {
             "equation": "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+            "id": "f_x[9]",
             "variable": "gear.flange_a.tau"
           },
           {
             "equation": "f_x[6] (equation from r2t)",
+            "id": "f_x[6]",
             "variable": "r2t.flangeR.tau"
           },
           {
             "equation": "f_x[2] (equation from gear)",
+            "id": "f_x[2]",
             "variable": "gear.flange_b.tau"
           },
           {
             "equation": "f_x[11] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+            "id": "f_x[11]",
             "variable": "shaft.flange_b.tau"
           },
           {
             "equation": "f_x[10] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+            "id": "f_x[10]",
             "variable": "shaft.flange_a.tau"
           }
         ]
@@ -175,48 +220,56 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[4] (equation from shaft)",
+      "id": "f_x[4]",
       "unknown": "der(shaft.w)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[8] (equation from mount)",
+      "id": "f_x[8]",
       "unknown": "der(mount.s_rel)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[13] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "id": "f_x[13]",
       "unknown": "emf.internalSupport.flange.phi"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[14] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+      "id": "f_x[14]",
       "unknown": "r2t.internalSupportR.flange.phi"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[15] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+      "id": "f_x[15]",
       "unknown": "r2t.internalSupportT.flange.s"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[19] (connection equation: mount.flange_b.s = wall.flange.s)",
+      "id": "f_x[19]",
       "unknown": "mount.flange_b.s"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[18] (connection equation: load.flange_b.s = mount.flange_a.s)",
+      "id": "f_x[18]",
       "unknown": "load.s"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[17] (connection equation: r2t.flangeT.s = load.flange_a.s)",
+      "id": "f_x[17]",
       "unknown": "r2t.flangeT.s"
     }
   ],
@@ -248,6 +301,7 @@
     "rows": [
       {
         "equation": "f_x[0] (equation from L)",
+        "id": "f_x[0]",
         "unknowns": [
           0,
           5
@@ -256,6 +310,7 @@
       },
       {
         "equation": "f_x[1] (equation from rotor)",
+        "id": "f_x[1]",
         "unknowns": [
           3,
           7
@@ -264,6 +319,7 @@
       },
       {
         "equation": "f_x[2] (equation from gear)",
+        "id": "f_x[2]",
         "unknowns": [
           8,
           9
@@ -272,6 +328,7 @@
       },
       {
         "equation": "f_x[3] (equation from shaft)",
+        "id": "f_x[3]",
         "unknowns": [
           4
         ],
@@ -279,6 +336,7 @@
       },
       {
         "equation": "f_x[4] (equation from shaft)",
+        "id": "f_x[4]",
         "unknowns": [
           1
         ],
@@ -286,6 +344,7 @@
       },
       {
         "equation": "f_x[5] (equation from shaft)",
+        "id": "f_x[5]",
         "unknowns": [
           3,
           10,
@@ -295,6 +354,7 @@
       },
       {
         "equation": "f_x[6] (equation from r2t)",
+        "id": "f_x[6]",
         "unknowns": [
           12,
           14
@@ -303,6 +363,7 @@
       },
       {
         "equation": "f_x[7] (equation from load)",
+        "id": "f_x[7]",
         "unknowns": [
           3,
           4,
@@ -312,6 +373,7 @@
       },
       {
         "equation": "f_x[8] (equation from mount)",
+        "id": "f_x[8]",
         "unknowns": [
           2
         ],
@@ -319,6 +381,7 @@
       },
       {
         "equation": "f_x[9] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+        "id": "f_x[9]",
         "unknowns": [
           7,
           8
@@ -327,6 +390,7 @@
       },
       {
         "equation": "f_x[10] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+        "id": "f_x[10]",
         "unknowns": [
           9,
           10
@@ -335,6 +399,7 @@
       },
       {
         "equation": "f_x[11] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+        "id": "f_x[11]",
         "unknowns": [
           11,
           12
@@ -343,6 +408,7 @@
       },
       {
         "equation": "f_x[12] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+        "id": "f_x[12]",
         "unknowns": [
           14,
           17
@@ -351,6 +417,7 @@
       },
       {
         "equation": "f_x[13] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+        "id": "f_x[13]",
         "unknowns": [
           6
         ],
@@ -358,6 +425,7 @@
       },
       {
         "equation": "f_x[14] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+        "id": "f_x[14]",
         "unknowns": [
           15
         ],
@@ -365,6 +433,7 @@
       },
       {
         "equation": "f_x[15] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+        "id": "f_x[15]",
         "unknowns": [
           16
         ],
@@ -372,6 +441,7 @@
       },
       {
         "equation": "f_x[16] (connection equation: src.n.v = gnd.p.v)",
+        "id": "f_x[16]",
         "unknowns": [
           5
         ],
@@ -379,6 +449,7 @@
       },
       {
         "equation": "f_x[17] (connection equation: r2t.flangeT.s = load.flange_a.s)",
+        "id": "f_x[17]",
         "unknowns": [
           13,
           19
@@ -387,6 +458,7 @@
       },
       {
         "equation": "f_x[18] (connection equation: load.flange_b.s = mount.flange_a.s)",
+        "id": "f_x[18]",
         "unknowns": [
           18,
           19
@@ -395,6 +467,7 @@
       },
       {
         "equation": "f_x[19] (connection equation: mount.flange_b.s = wall.flange.s)",
+        "id": "f_x[19]",
         "unknowns": [
           18
         ],
@@ -408,375 +481,468 @@
     "n_matched": 93,
     "matching": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (binding equation for emf.internalSupport.tau)",
+        "id": "f_x[0]",
         "unknown": "emf.internalSupport.tau"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (binding equation for r2t.internalSupportR.tau)",
+        "id": "f_x[1]",
         "unknown": "r2t.internalSupportR.tau"
       },
       {
-        "equation": "f_x[2]",
+        "equation": "f_x[2] (binding equation for r2t.internalSupportT.f)",
+        "id": "f_x[2]",
         "unknown": "r2t.internalSupportT.f"
       },
       {
-        "equation": "f_x[3]",
+        "equation": "f_x[3] (equation from src)",
+        "id": "f_x[3]",
         "unknown": "src.n.i"
       },
       {
-        "equation": "f_x[4]",
+        "equation": "f_x[4] (equation from src)",
+        "id": "f_x[4]",
         "unknown": "src.i"
       },
       {
-        "equation": "f_x[5]",
+        "equation": "f_x[5] (equation from src)",
+        "id": "f_x[5]",
         "unknown": "src.p.v"
       },
       {
-        "equation": "f_x[6]",
+        "equation": "f_x[6] (equation from src)",
+        "id": "f_x[6]",
         "unknown": "src.v"
       },
       {
-        "equation": "f_x[7]",
+        "equation": "f_x[7] (equation from R)",
+        "id": "f_x[7]",
         "unknown": "R.p.i"
       },
       {
-        "equation": "f_x[8]",
+        "equation": "f_x[8] (equation from R)",
+        "id": "f_x[8]",
         "unknown": "R.i"
       },
       {
-        "equation": "f_x[9]",
+        "equation": "f_x[9] (equation from R)",
+        "id": "f_x[9]",
         "unknown": "R.n.v"
       },
       {
-        "equation": "f_x[10]",
+        "equation": "f_x[10] (equation from R)",
+        "id": "f_x[10]",
         "unknown": "R.T_heatPort"
       },
       {
-        "equation": "f_x[11]",
+        "equation": "f_x[11] (equation from R)",
+        "id": "f_x[11]",
         "unknown": "R.R_actual"
       },
       {
-        "equation": "f_x[12]",
+        "equation": "f_x[12] (equation from R)",
+        "id": "f_x[12]",
         "unknown": "R.v"
       },
       {
-        "equation": "f_x[13]",
+        "equation": "f_x[13] (equation from R)",
+        "id": "f_x[13]",
         "unknown": "R.LossPower"
       },
       {
-        "equation": "f_x[14]",
+        "equation": "f_x[14] (equation from L)",
+        "id": "f_x[14]",
         "unknown": "L.n.i"
       },
       {
-        "equation": "f_x[15]",
+        "equation": "f_x[15] (equation from L)",
+        "id": "f_x[15]",
         "unknown": "L.p.i"
       },
       {
-        "equation": "f_x[16]",
+        "equation": "f_x[16] (equation from L)",
+        "id": "f_x[16]",
         "unknown": "L.v"
       },
       {
-        "equation": "f_x[17]",
+        "equation": "f_x[17] (equation from L)",
+        "id": "f_x[17]",
         "unknown": "der(L.i)"
       },
       {
-        "equation": "f_x[18]",
+        "equation": "f_x[18] (equation from emf.fixed)",
+        "id": "f_x[18]",
         "unknown": "emf.fixed.flange.phi"
       },
       {
-        "equation": "f_x[19]",
+        "equation": "f_x[19] (equation from emf.internalSupport)",
+        "id": "f_x[19]",
         "unknown": "emf.internalSupport.flange.tau"
       },
       {
-        "equation": "f_x[20]",
+        "equation": "f_x[20] (equation from emf.internalSupport)",
+        "id": "f_x[20]",
         "unknown": "emf.internalSupport.phi"
       },
       {
-        "equation": "f_x[21]",
+        "equation": "f_x[21] (equation from emf)",
+        "id": "f_x[21]",
         "unknown": "emf.v"
       },
       {
-        "equation": "f_x[22]",
+        "equation": "f_x[22] (equation from emf)",
+        "id": "f_x[22]",
         "unknown": "emf.n.i"
       },
       {
-        "equation": "f_x[23]",
+        "equation": "f_x[23] (equation from emf)",
+        "id": "f_x[23]",
         "unknown": "emf.i"
       },
       {
-        "equation": "f_x[24]",
+        "equation": "f_x[24] (equation from emf)",
+        "id": "f_x[24]",
         "unknown": "emf.flange.phi"
       },
       {
-        "equation": "f_x[25]",
+        "equation": "f_x[25] (equation from emf)",
+        "id": "f_x[25]",
         "unknown": "der(emf.phi)"
       },
       {
-        "equation": "f_x[26]",
+        "equation": "f_x[26] (equation from emf)",
+        "id": "f_x[26]",
         "unknown": "emf.w"
       },
       {
-        "equation": "f_x[27]",
+        "equation": "f_x[27] (equation from emf)",
+        "id": "f_x[27]",
         "unknown": "emf.tau"
       },
       {
-        "equation": "f_x[28]",
+        "equation": "f_x[28] (equation from emf)",
+        "id": "f_x[28]",
         "unknown": "emf.tauElectrical"
       },
       {
-        "equation": "f_x[29]",
+        "equation": "f_x[29] (equation from emf)",
+        "id": "f_x[29]",
         "unknown": "emf.flange.tau"
       },
       {
-        "equation": "f_x[30]",
+        "equation": "f_x[30] (equation from gnd)",
+        "id": "f_x[30]",
         "unknown": "gnd.p.v"
       },
       {
-        "equation": "f_x[31]",
+        "equation": "f_x[31] (equation from rotor)",
+        "id": "f_x[31]",
         "unknown": "rotor.flange_a.phi"
       },
       {
-        "equation": "f_x[32]",
+        "equation": "f_x[32] (equation from rotor)",
+        "id": "f_x[32]",
         "unknown": "rotor.flange_b.phi"
       },
       {
-        "equation": "f_x[33]",
+        "equation": "f_x[33] (equation from rotor)",
+        "id": "f_x[33]",
         "unknown": "der(rotor.phi)"
       },
       {
-        "equation": "f_x[34]",
+        "equation": "f_x[34] (equation from rotor)",
+        "id": "f_x[34]",
         "unknown": "der(rotor.w)"
       },
       {
-        "equation": "f_x[35]",
+        "equation": "f_x[35] (equation from rotor)",
+        "id": "f_x[35]",
         "unknown": "rotor.a"
       },
       {
-        "equation": "f_x[36]",
+        "equation": "f_x[36] (equation from gear)",
+        "id": "f_x[36]",
         "unknown": "gear.phi_support"
       },
       {
-        "equation": "f_x[37]",
+        "equation": "f_x[37] (equation from gear)",
+        "id": "f_x[37]",
         "unknown": "gear.phi_a"
       },
       {
-        "equation": "f_x[38]",
+        "equation": "f_x[38] (equation from gear)",
+        "id": "f_x[38]",
         "unknown": "gear.flange_b.phi"
       },
       {
-        "equation": "f_x[39]",
+        "equation": "f_x[39] (equation from gear)",
+        "id": "f_x[39]",
         "unknown": "gear.phi_b"
       },
       {
-        "equation": "f_x[40]",
+        "equation": "f_x[40] (equation from gear)",
+        "id": "f_x[40]",
         "unknown": "gear.flange_a.tau"
       },
       {
-        "equation": "f_x[41]",
+        "equation": "f_x[41] (equation from shaft)",
+        "id": "f_x[41]",
         "unknown": "shaft.flange_a.phi"
       },
       {
-        "equation": "f_x[42]",
+        "equation": "f_x[42] (equation from shaft)",
+        "id": "f_x[42]",
         "unknown": "shaft.flange_b.phi"
       },
       {
-        "equation": "f_x[43]",
+        "equation": "f_x[43] (equation from shaft)",
+        "id": "f_x[43]",
         "unknown": "der(shaft.phi)"
       },
       {
-        "equation": "f_x[44]",
+        "equation": "f_x[44] (equation from shaft)",
+        "id": "f_x[44]",
         "unknown": "der(shaft.w)"
       },
       {
-        "equation": "f_x[45]",
+        "equation": "f_x[45] (equation from shaft)",
+        "id": "f_x[45]",
         "unknown": "shaft.a"
       },
       {
-        "equation": "f_x[46]",
+        "equation": "f_x[46] (equation from r2t.internalSupportR)",
+        "id": "f_x[46]",
         "unknown": "r2t.internalSupportR.flange.tau"
       },
       {
-        "equation": "f_x[47]",
+        "equation": "f_x[47] (equation from r2t.internalSupportR)",
+        "id": "f_x[47]",
         "unknown": "r2t.internalSupportR.phi"
       },
       {
-        "equation": "f_x[48]",
+        "equation": "f_x[48] (equation from r2t.internalSupportT)",
+        "id": "f_x[48]",
         "unknown": "r2t.internalSupportT.flange.f"
       },
       {
-        "equation": "f_x[49]",
+        "equation": "f_x[49] (equation from r2t.internalSupportT)",
+        "id": "f_x[49]",
         "unknown": "r2t.internalSupportT.s"
       },
       {
-        "equation": "f_x[50]",
+        "equation": "f_x[50] (equation from r2t.fixedR)",
+        "id": "f_x[50]",
         "unknown": "r2t.fixedR.flange.phi"
       },
       {
-        "equation": "f_x[51]",
+        "equation": "f_x[51] (equation from r2t.fixedT)",
+        "id": "f_x[51]",
         "unknown": "r2t.fixedT.flange.s"
       },
       {
-        "equation": "f_x[52]",
+        "equation": "f_x[52] (equation from r2t)",
+        "id": "f_x[52]",
         "unknown": "r2t.flangeT.s"
       },
       {
-        "equation": "f_x[53]",
+        "equation": "f_x[53] (equation from r2t)",
+        "id": "f_x[53]",
         "unknown": "r2t.flangeR.tau"
       },
       {
-        "equation": "f_x[54]",
+        "equation": "f_x[54] (equation from load)",
+        "id": "f_x[54]",
         "unknown": "load.flange_a.s"
       },
       {
-        "equation": "f_x[55]",
+        "equation": "f_x[55] (equation from load)",
+        "id": "f_x[55]",
         "unknown": "load.flange_b.s"
       },
       {
-        "equation": "f_x[56]",
+        "equation": "f_x[56] (equation from load)",
+        "id": "f_x[56]",
         "unknown": "der(load.s)"
       },
       {
-        "equation": "f_x[57]",
+        "equation": "f_x[57] (equation from load)",
+        "id": "f_x[57]",
         "unknown": "der(load.v)"
       },
       {
-        "equation": "f_x[58]",
+        "equation": "f_x[58] (equation from load)",
+        "id": "f_x[58]",
         "unknown": "load.a"
       },
       {
-        "equation": "f_x[59]",
+        "equation": "f_x[59] (equation from mount)",
+        "id": "f_x[59]",
         "unknown": "mount.flange_b.s"
       },
       {
-        "equation": "f_x[60]",
+        "equation": "f_x[60] (equation from mount)",
+        "id": "f_x[60]",
         "unknown": "der(mount.s_rel)"
       },
       {
-        "equation": "f_x[61]",
+        "equation": "f_x[61] (equation from mount)",
+        "id": "f_x[61]",
         "unknown": "mount.f"
       },
       {
-        "equation": "f_x[62]",
+        "equation": "f_x[62] (equation from mount)",
+        "id": "f_x[62]",
         "unknown": "mount.flange_a.f"
       },
       {
-        "equation": "f_x[63]",
+        "equation": "f_x[63] (equation from mount)",
+        "id": "f_x[63]",
         "unknown": "mount.f_c"
       },
       {
-        "equation": "f_x[64]",
+        "equation": "f_x[64] (equation from mount)",
+        "id": "f_x[64]",
         "unknown": "mount.v_rel"
       },
       {
-        "equation": "f_x[65]",
+        "equation": "f_x[65] (equation from mount)",
+        "id": "f_x[65]",
         "unknown": "mount.f_d"
       },
       {
-        "equation": "f_x[66]",
+        "equation": "f_x[66] (equation from mount)",
+        "id": "f_x[66]",
         "unknown": "mount.lossPower"
       },
       {
-        "equation": "f_x[67]",
+        "equation": "f_x[67] (equation from wall)",
+        "id": "f_x[67]",
         "unknown": "wall.flange.s"
       },
       {
-        "equation": "f_x[68]",
+        "equation": "f_x[68] (flow sum equation: emf.internalSupport.flange.tau + emf.fixed.flange.tau = 0)",
+        "id": "f_x[68]",
         "unknown": "emf.fixed.flange.tau"
       },
       {
-        "equation": "f_x[69]",
+        "equation": "f_x[69] (flow sum equation: r2t.internalSupportR.flange.tau + r2t.fixedR.flange.tau = 0)",
+        "id": "f_x[69]",
         "unknown": "r2t.fixedR.flange.tau"
       },
       {
-        "equation": "f_x[70]",
+        "equation": "f_x[70] (flow sum equation: r2t.fixedT.flange.f + r2t.internalSupportT.flange.f = 0)",
+        "id": "f_x[70]",
         "unknown": "r2t.fixedT.flange.f"
       },
       {
-        "equation": "f_x[71]",
+        "equation": "f_x[71] (flow sum equation: src.p.i + R.p.i = 0)",
+        "id": "f_x[71]",
         "unknown": "src.p.i"
       },
       {
-        "equation": "f_x[72]",
+        "equation": "f_x[72] (flow sum equation: R.n.i + L.p.i = 0)",
+        "id": "f_x[72]",
         "unknown": "R.n.i"
       },
       {
-        "equation": "f_x[73]",
+        "equation": "f_x[73] (flow sum equation: L.n.i + emf.p.i = 0)",
+        "id": "f_x[73]",
         "unknown": "emf.p.i"
       },
       {
-        "equation": "f_x[74]",
+        "equation": "f_x[74] (flow sum equation: emf.n.i + src.n.i + gnd.p.i = 0)",
+        "id": "f_x[74]",
         "unknown": "gnd.p.i"
       },
       {
-        "equation": "f_x[75]",
+        "equation": "f_x[75] (flow sum equation: emf.flange.tau + rotor.flange_a.tau = 0)",
+        "id": "f_x[75]",
         "unknown": "rotor.flange_a.tau"
       },
       {
-        "equation": "f_x[76]",
+        "equation": "f_x[76] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+        "id": "f_x[76]",
         "unknown": "rotor.flange_b.tau"
       },
       {
-        "equation": "f_x[77]",
+        "equation": "f_x[77] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+        "id": "f_x[77]",
         "unknown": "gear.flange_b.tau"
       },
       {
-        "equation": "f_x[78]",
+        "equation": "f_x[78] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+        "id": "f_x[78]",
         "unknown": "shaft.flange_b.tau"
       },
       {
-        "equation": "f_x[79]",
+        "equation": "f_x[79] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+        "id": "f_x[79]",
         "unknown": "r2t.flangeT.f"
       },
       {
-        "equation": "f_x[80]",
+        "equation": "f_x[80] (flow sum equation: load.flange_b.f + mount.flange_a.f = 0)",
+        "id": "f_x[80]",
         "unknown": "load.flange_b.f"
       },
       {
-        "equation": "f_x[81]",
+        "equation": "f_x[81] (flow sum equation: mount.flange_b.f + wall.flange.f = 0)",
+        "id": "f_x[81]",
         "unknown": "mount.flange_b.f"
       },
       {
-        "equation": "f_x[82]",
+        "equation": "f_x[82] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+        "id": "f_x[82]",
         "unknown": "emf.internalSupport.flange.phi"
       },
       {
-        "equation": "f_x[83]",
+        "equation": "f_x[83] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+        "id": "f_x[83]",
         "unknown": "r2t.internalSupportR.flange.phi"
       },
       {
-        "equation": "f_x[84]",
+        "equation": "f_x[84] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+        "id": "f_x[84]",
         "unknown": "r2t.internalSupportT.flange.s"
       },
       {
-        "equation": "f_x[85]",
+        "equation": "f_x[85] (connection equation: src.p.v = R.p.v)",
+        "id": "f_x[85]",
         "unknown": "R.p.v"
       },
       {
-        "equation": "f_x[86]",
+        "equation": "f_x[86] (connection equation: R.n.v = L.p.v)",
+        "id": "f_x[86]",
         "unknown": "L.p.v"
       },
       {
-        "equation": "f_x[87]",
+        "equation": "f_x[87] (connection equation: L.n.v = emf.p.v)",
+        "id": "f_x[87]",
         "unknown": "L.n.v"
       },
       {
-        "equation": "f_x[88]",
+        "equation": "f_x[88] (connection equation: emf.n.v = src.n.v)",
+        "id": "f_x[88]",
         "unknown": "emf.n.v"
       },
       {
-        "equation": "f_x[89]",
+        "equation": "f_x[89] (connection equation: src.n.v = gnd.p.v)",
+        "id": "f_x[89]",
         "unknown": "src.n.v"
       },
       {
-        "equation": "f_x[91]",
+        "equation": "f_x[91] (connection equation: rotor.flange_b.phi = gear.flange_a.phi)",
+        "id": "f_x[91]",
         "unknown": "gear.flange_a.phi"
       },
       {
-        "equation": "f_x[93]",
+        "equation": "f_x[93] (connection equation: shaft.flange_b.phi = r2t.flangeR.phi)",
+        "id": "f_x[93]",
         "unknown": "r2t.flangeR.phi"
       },
       {
-        "equation": "f_x[95]",
+        "equation": "f_x[95] (connection equation: load.flange_b.s = mount.flange_a.s)",
+        "id": "f_x[95]",
         "unknown": "mount.flange_a.s"
       }
     ],
@@ -885,6 +1051,7 @@
       "rows": [
         {
           "equation": "f_x[0] (binding equation for emf.internalSupport.tau)",
+          "id": "f_x[0]",
           "unknowns": [
             41,
             51
@@ -893,6 +1060,7 @@
         },
         {
           "equation": "f_x[1] (binding equation for r2t.internalSupportR.tau)",
+          "id": "f_x[1]",
           "unknowns": [
             72,
             75
@@ -901,6 +1069,7 @@
         },
         {
           "equation": "f_x[2] (binding equation for r2t.internalSupportT.f)",
+          "id": "f_x[2]",
           "unknowns": [
             74,
             79
@@ -909,6 +1078,7 @@
         },
         {
           "equation": "f_x[3] (equation from src)",
+          "id": "f_x[3]",
           "unknowns": [
             26,
             28
@@ -917,6 +1087,7 @@
         },
         {
           "equation": "f_x[4] (equation from src)",
+          "id": "f_x[4]",
           "unknowns": [
             24,
             26
@@ -925,6 +1096,7 @@
         },
         {
           "equation": "f_x[5] (equation from src)",
+          "id": "f_x[5]",
           "unknowns": [
             9,
             25,
@@ -934,6 +1106,7 @@
         },
         {
           "equation": "f_x[6] (equation from src)",
+          "id": "f_x[6]",
           "unknowns": [
             9
           ],
@@ -941,6 +1114,7 @@
         },
         {
           "equation": "f_x[7] (equation from R)",
+          "id": "f_x[7]",
           "unknowns": [
             32,
             34
@@ -949,6 +1123,7 @@
         },
         {
           "equation": "f_x[8] (equation from R)",
+          "id": "f_x[8]",
           "unknowns": [
             29,
             32
@@ -957,6 +1132,7 @@
         },
         {
           "equation": "f_x[9] (equation from R)",
+          "id": "f_x[9]",
           "unknowns": [
             30,
             31,
@@ -966,6 +1142,7 @@
         },
         {
           "equation": "f_x[10] (equation from R)",
+          "id": "f_x[10]",
           "unknowns": [
             10
           ],
@@ -973,6 +1150,7 @@
         },
         {
           "equation": "f_x[11] (equation from R)",
+          "id": "f_x[11]",
           "unknowns": [
             10,
             19
@@ -981,6 +1159,7 @@
         },
         {
           "equation": "f_x[12] (equation from R)",
+          "id": "f_x[12]",
           "unknowns": [
             19,
             29,
@@ -990,6 +1169,7 @@
         },
         {
           "equation": "f_x[13] (equation from R)",
+          "id": "f_x[13]",
           "unknowns": [
             29,
             30,
@@ -999,6 +1179,7 @@
         },
         {
           "equation": "f_x[14] (equation from L)",
+          "id": "f_x[14]",
           "unknowns": [
             37,
             39
@@ -1007,6 +1188,7 @@
         },
         {
           "equation": "f_x[15] (equation from L)",
+          "id": "f_x[15]",
           "unknowns": [
             37
           ],
@@ -1014,6 +1196,7 @@
         },
         {
           "equation": "f_x[16] (equation from L)",
+          "id": "f_x[16]",
           "unknowns": [
             11,
             36,
@@ -1023,6 +1206,7 @@
         },
         {
           "equation": "f_x[17] (equation from L)",
+          "id": "f_x[17]",
           "unknowns": [
             0,
             11
@@ -1031,6 +1215,7 @@
         },
         {
           "equation": "f_x[18] (equation from emf.fixed)",
+          "id": "f_x[18]",
           "unknowns": [
             49
           ],
@@ -1038,6 +1223,7 @@
         },
         {
           "equation": "f_x[19] (equation from emf.internalSupport)",
+          "id": "f_x[19]",
           "unknowns": [
             51,
             54
@@ -1046,6 +1232,7 @@
         },
         {
           "equation": "f_x[20] (equation from emf.internalSupport)",
+          "id": "f_x[20]",
           "unknowns": [
             52,
             53
@@ -1054,6 +1241,7 @@
         },
         {
           "equation": "f_x[21] (equation from emf)",
+          "id": "f_x[21]",
           "unknowns": [
             20,
             43,
@@ -1063,6 +1251,7 @@
         },
         {
           "equation": "f_x[22] (equation from emf)",
+          "id": "f_x[22]",
           "unknowns": [
             44,
             46
@@ -1071,6 +1260,7 @@
         },
         {
           "equation": "f_x[23] (equation from emf)",
+          "id": "f_x[23]",
           "unknowns": [
             40,
             44
@@ -1079,6 +1269,7 @@
         },
         {
           "equation": "f_x[24] (equation from emf)",
+          "id": "f_x[24]",
           "unknowns": [
             47,
             52
@@ -1087,6 +1278,7 @@
         },
         {
           "equation": "f_x[25] (equation from emf)",
+          "id": "f_x[25]",
           "unknowns": [
             1
           ],
@@ -1094,6 +1286,7 @@
         },
         {
           "equation": "f_x[26] (equation from emf)",
+          "id": "f_x[26]",
           "unknowns": [
             12,
             20
@@ -1102,6 +1295,7 @@
         },
         {
           "equation": "f_x[27] (equation from emf)",
+          "id": "f_x[27]",
           "unknowns": [
             40,
             41
@@ -1110,6 +1304,7 @@
         },
         {
           "equation": "f_x[28] (equation from emf)",
+          "id": "f_x[28]",
           "unknowns": [
             41,
             42
@@ -1118,6 +1313,7 @@
         },
         {
           "equation": "f_x[29] (equation from emf)",
+          "id": "f_x[29]",
           "unknowns": [
             41,
             48
@@ -1126,6 +1322,7 @@
         },
         {
           "equation": "f_x[30] (equation from gnd)",
+          "id": "f_x[30]",
           "unknowns": [
             55
           ],
@@ -1133,6 +1330,7 @@
         },
         {
           "equation": "f_x[31] (equation from rotor)",
+          "id": "f_x[31]",
           "unknowns": [
             57
           ],
@@ -1140,6 +1338,7 @@
         },
         {
           "equation": "f_x[32] (equation from rotor)",
+          "id": "f_x[32]",
           "unknowns": [
             59
           ],
@@ -1147,6 +1346,7 @@
         },
         {
           "equation": "f_x[33] (equation from rotor)",
+          "id": "f_x[33]",
           "unknowns": [
             2
           ],
@@ -1154,6 +1354,7 @@
         },
         {
           "equation": "f_x[34] (equation from rotor)",
+          "id": "f_x[34]",
           "unknowns": [
             3
           ],
@@ -1161,6 +1362,7 @@
         },
         {
           "equation": "f_x[35] (equation from rotor)",
+          "id": "f_x[35]",
           "unknowns": [
             13,
             58,
@@ -1170,6 +1372,7 @@
         },
         {
           "equation": "f_x[36] (equation from gear)",
+          "id": "f_x[36]",
           "unknowns": [
             14
           ],
@@ -1177,6 +1380,7 @@
         },
         {
           "equation": "f_x[37] (equation from gear)",
+          "id": "f_x[37]",
           "unknowns": [
             14,
             61,
@@ -1186,6 +1390,7 @@
         },
         {
           "equation": "f_x[38] (equation from gear)",
+          "id": "f_x[38]",
           "unknowns": [
             14,
             63,
@@ -1195,6 +1400,7 @@
         },
         {
           "equation": "f_x[39] (equation from gear)",
+          "id": "f_x[39]",
           "unknowns": [
             65,
             66
@@ -1203,6 +1409,7 @@
         },
         {
           "equation": "f_x[40] (equation from gear)",
+          "id": "f_x[40]",
           "unknowns": [
             62,
             64
@@ -1211,6 +1418,7 @@
         },
         {
           "equation": "f_x[41] (equation from shaft)",
+          "id": "f_x[41]",
           "unknowns": [
             67
           ],
@@ -1218,6 +1426,7 @@
         },
         {
           "equation": "f_x[42] (equation from shaft)",
+          "id": "f_x[42]",
           "unknowns": [
             69
           ],
@@ -1225,6 +1434,7 @@
         },
         {
           "equation": "f_x[43] (equation from shaft)",
+          "id": "f_x[43]",
           "unknowns": [
             4
           ],
@@ -1232,6 +1442,7 @@
         },
         {
           "equation": "f_x[44] (equation from shaft)",
+          "id": "f_x[44]",
           "unknowns": [
             5
           ],
@@ -1239,6 +1450,7 @@
         },
         {
           "equation": "f_x[45] (equation from shaft)",
+          "id": "f_x[45]",
           "unknowns": [
             15,
             68,
@@ -1248,6 +1460,7 @@
         },
         {
           "equation": "f_x[46] (equation from r2t.internalSupportR)",
+          "id": "f_x[46]",
           "unknowns": [
             75,
             78
@@ -1256,6 +1469,7 @@
         },
         {
           "equation": "f_x[47] (equation from r2t.internalSupportR)",
+          "id": "f_x[47]",
           "unknowns": [
             76,
             77
@@ -1264,6 +1478,7 @@
         },
         {
           "equation": "f_x[48] (equation from r2t.internalSupportT)",
+          "id": "f_x[48]",
           "unknowns": [
             79,
             82
@@ -1272,6 +1487,7 @@
         },
         {
           "equation": "f_x[49] (equation from r2t.internalSupportT)",
+          "id": "f_x[49]",
           "unknowns": [
             80,
             81
@@ -1280,6 +1496,7 @@
         },
         {
           "equation": "f_x[50] (equation from r2t.fixedR)",
+          "id": "f_x[50]",
           "unknowns": [
             83
           ],
@@ -1287,6 +1504,7 @@
         },
         {
           "equation": "f_x[51] (equation from r2t.fixedT)",
+          "id": "f_x[51]",
           "unknowns": [
             85
           ],
@@ -1294,6 +1512,7 @@
         },
         {
           "equation": "f_x[52] (equation from r2t)",
+          "id": "f_x[52]",
           "unknowns": [
             71,
             73,
@@ -1304,6 +1523,7 @@
         },
         {
           "equation": "f_x[53] (equation from r2t)",
+          "id": "f_x[53]",
           "unknowns": [
             72,
             74
@@ -1312,6 +1532,7 @@
         },
         {
           "equation": "f_x[54] (equation from load)",
+          "id": "f_x[54]",
           "unknowns": [
             87
           ],
@@ -1319,6 +1540,7 @@
         },
         {
           "equation": "f_x[55] (equation from load)",
+          "id": "f_x[55]",
           "unknowns": [
             89
           ],
@@ -1326,6 +1548,7 @@
         },
         {
           "equation": "f_x[56] (equation from load)",
+          "id": "f_x[56]",
           "unknowns": [
             6
           ],
@@ -1333,6 +1556,7 @@
         },
         {
           "equation": "f_x[57] (equation from load)",
+          "id": "f_x[57]",
           "unknowns": [
             7
           ],
@@ -1340,6 +1564,7 @@
         },
         {
           "equation": "f_x[58] (equation from load)",
+          "id": "f_x[58]",
           "unknowns": [
             16,
             88,
@@ -1349,6 +1574,7 @@
         },
         {
           "equation": "f_x[59] (equation from mount)",
+          "id": "f_x[59]",
           "unknowns": [
             91,
             93
@@ -1357,6 +1583,7 @@
         },
         {
           "equation": "f_x[60] (equation from mount)",
+          "id": "f_x[60]",
           "unknowns": [
             8
           ],
@@ -1364,6 +1591,7 @@
         },
         {
           "equation": "f_x[61] (equation from mount)",
+          "id": "f_x[61]",
           "unknowns": [
             22,
             94
@@ -1372,6 +1600,7 @@
         },
         {
           "equation": "f_x[62] (equation from mount)",
+          "id": "f_x[62]",
           "unknowns": [
             22,
             92
@@ -1380,6 +1609,7 @@
         },
         {
           "equation": "f_x[63] (equation from mount)",
+          "id": "f_x[63]",
           "unknowns": [
             18
           ],
@@ -1387,6 +1617,7 @@
         },
         {
           "equation": "f_x[64] (equation from mount)",
+          "id": "f_x[64]",
           "unknowns": [
             17,
             21
@@ -1395,6 +1626,7 @@
         },
         {
           "equation": "f_x[65] (equation from mount)",
+          "id": "f_x[65]",
           "unknowns": [
             18,
             21,
@@ -1404,6 +1636,7 @@
         },
         {
           "equation": "f_x[66] (equation from mount)",
+          "id": "f_x[66]",
           "unknowns": [
             17,
             21,
@@ -1413,6 +1646,7 @@
         },
         {
           "equation": "f_x[67] (equation from wall)",
+          "id": "f_x[67]",
           "unknowns": [
             95
           ],
@@ -1420,6 +1654,7 @@
         },
         {
           "equation": "f_x[68] (flow sum equation: emf.internalSupport.flange.tau + emf.fixed.flange.tau = 0)",
+          "id": "f_x[68]",
           "unknowns": [
             50,
             54
@@ -1428,6 +1663,7 @@
         },
         {
           "equation": "f_x[69] (flow sum equation: r2t.internalSupportR.flange.tau + r2t.fixedR.flange.tau = 0)",
+          "id": "f_x[69]",
           "unknowns": [
             78,
             84
@@ -1436,6 +1672,7 @@
         },
         {
           "equation": "f_x[70] (flow sum equation: r2t.fixedT.flange.f + r2t.internalSupportT.flange.f = 0)",
+          "id": "f_x[70]",
           "unknowns": [
             82,
             86
@@ -1444,6 +1681,7 @@
         },
         {
           "equation": "f_x[71] (flow sum equation: src.p.i + R.p.i = 0)",
+          "id": "f_x[71]",
           "unknowns": [
             26,
             32
@@ -1452,6 +1690,7 @@
         },
         {
           "equation": "f_x[72] (flow sum equation: R.n.i + L.p.i = 0)",
+          "id": "f_x[72]",
           "unknowns": [
             34,
             37
@@ -1460,6 +1699,7 @@
         },
         {
           "equation": "f_x[73] (flow sum equation: L.n.i + emf.p.i = 0)",
+          "id": "f_x[73]",
           "unknowns": [
             39,
             44
@@ -1468,6 +1708,7 @@
         },
         {
           "equation": "f_x[74] (flow sum equation: emf.n.i + src.n.i + gnd.p.i = 0)",
+          "id": "f_x[74]",
           "unknowns": [
             28,
             46,
@@ -1477,6 +1718,7 @@
         },
         {
           "equation": "f_x[75] (flow sum equation: emf.flange.tau + rotor.flange_a.tau = 0)",
+          "id": "f_x[75]",
           "unknowns": [
             48,
             58
@@ -1485,6 +1727,7 @@
         },
         {
           "equation": "f_x[76] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+          "id": "f_x[76]",
           "unknowns": [
             60,
             62
@@ -1493,6 +1736,7 @@
         },
         {
           "equation": "f_x[77] (flow sum equation: gear.flange_b.tau + shaft.flange_a.tau = 0)",
+          "id": "f_x[77]",
           "unknowns": [
             64,
             68
@@ -1501,6 +1745,7 @@
         },
         {
           "equation": "f_x[78] (flow sum equation: shaft.flange_b.tau + r2t.flangeR.tau = 0)",
+          "id": "f_x[78]",
           "unknowns": [
             70,
             72
@@ -1509,6 +1754,7 @@
         },
         {
           "equation": "f_x[79] (flow sum equation: r2t.flangeT.f + load.flange_a.f = 0)",
+          "id": "f_x[79]",
           "unknowns": [
             74,
             88
@@ -1517,6 +1763,7 @@
         },
         {
           "equation": "f_x[80] (flow sum equation: load.flange_b.f + mount.flange_a.f = 0)",
+          "id": "f_x[80]",
           "unknowns": [
             90,
             92
@@ -1525,6 +1772,7 @@
         },
         {
           "equation": "f_x[81] (flow sum equation: mount.flange_b.f + wall.flange.f = 0)",
+          "id": "f_x[81]",
           "unknowns": [
             94,
             96
@@ -1533,6 +1781,7 @@
         },
         {
           "equation": "f_x[82] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+          "id": "f_x[82]",
           "unknowns": [
             49,
             53
@@ -1541,6 +1790,7 @@
         },
         {
           "equation": "f_x[83] (connection equation: r2t.internalSupportR.flange.phi = r2t.fixedR.flange.phi)",
+          "id": "f_x[83]",
           "unknowns": [
             77,
             83
@@ -1549,6 +1799,7 @@
         },
         {
           "equation": "f_x[84] (connection equation: r2t.fixedT.flange.s = r2t.internalSupportT.flange.s)",
+          "id": "f_x[84]",
           "unknowns": [
             81,
             85
@@ -1557,6 +1808,7 @@
         },
         {
           "equation": "f_x[85] (connection equation: src.p.v = R.p.v)",
+          "id": "f_x[85]",
           "unknowns": [
             25,
             31
@@ -1565,6 +1817,7 @@
         },
         {
           "equation": "f_x[86] (connection equation: R.n.v = L.p.v)",
+          "id": "f_x[86]",
           "unknowns": [
             33,
             36
@@ -1573,6 +1826,7 @@
         },
         {
           "equation": "f_x[87] (connection equation: L.n.v = emf.p.v)",
+          "id": "f_x[87]",
           "unknowns": [
             38,
             43
@@ -1581,6 +1835,7 @@
         },
         {
           "equation": "f_x[88] (connection equation: emf.n.v = src.n.v)",
+          "id": "f_x[88]",
           "unknowns": [
             27,
             45
@@ -1589,6 +1844,7 @@
         },
         {
           "equation": "f_x[89] (connection equation: src.n.v = gnd.p.v)",
+          "id": "f_x[89]",
           "unknowns": [
             27,
             55
@@ -1597,6 +1853,7 @@
         },
         {
           "equation": "f_x[90] (connection equation: emf.flange.phi = rotor.flange_a.phi)",
+          "id": "f_x[90]",
           "unknowns": [
             47,
             57
@@ -1605,6 +1862,7 @@
         },
         {
           "equation": "f_x[91] (connection equation: rotor.flange_b.phi = gear.flange_a.phi)",
+          "id": "f_x[91]",
           "unknowns": [
             59,
             61
@@ -1613,6 +1871,7 @@
         },
         {
           "equation": "f_x[92] (connection equation: gear.flange_b.phi = shaft.flange_a.phi)",
+          "id": "f_x[92]",
           "unknowns": [
             63,
             67
@@ -1621,6 +1880,7 @@
         },
         {
           "equation": "f_x[93] (connection equation: shaft.flange_b.phi = r2t.flangeR.phi)",
+          "id": "f_x[93]",
           "unknowns": [
             69,
             71
@@ -1629,6 +1889,7 @@
         },
         {
           "equation": "f_x[94] (connection equation: r2t.flangeT.s = load.flange_a.s)",
+          "id": "f_x[94]",
           "unknowns": [
             73,
             87
@@ -1637,6 +1898,7 @@
         },
         {
           "equation": "f_x[95] (connection equation: load.flange_b.s = mount.flange_a.s)",
+          "id": "f_x[95]",
           "unknowns": [
             89,
             91
@@ -1645,6 +1907,7 @@
         },
         {
           "equation": "f_x[96] (connection equation: mount.flange_b.s = wall.flange.s)",
+          "id": "f_x[96]",
           "unknowns": [
             93,
             95

@@ -5,50 +5,62 @@
   "matching": [
     {
       "equation": "f_x[0] (equation from inertia)",
+      "id": "f_x[0]",
       "unknown": "inertia.flange_a.phi"
     },
     {
       "equation": "f_x[1] (equation from inertia)",
+      "id": "f_x[1]",
       "unknown": "inertia.flange_b.phi"
     },
     {
       "equation": "f_x[2] (equation from inertia)",
+      "id": "f_x[2]",
       "unknown": "der(inertia.phi)"
     },
     {
       "equation": "f_x[3] (equation from inertia)",
+      "id": "f_x[3]",
       "unknown": "der(inertia.w)"
     },
     {
       "equation": "f_x[4] (equation from inertia)",
+      "id": "f_x[4]",
       "unknown": "inertia.a"
     },
     {
       "equation": "f_x[5] (equation from torque)",
+      "id": "f_x[5]",
       "unknown": "torque.phi_support"
     },
     {
       "equation": "f_x[6] (equation from torque)",
+      "id": "f_x[6]",
       "unknown": "torque.flange.tau"
     },
     {
       "equation": "f_x[7] (equation from tau)",
+      "id": "f_x[7]",
       "unknown": "tau.y"
     },
     {
       "equation": "f_x[8] (flow sum equation: torque.flange.tau + inertia.flange_a.tau = 0)",
+      "id": "f_x[8]",
       "unknown": "inertia.flange_a.tau"
     },
     {
       "equation": "f_x[9] (connection equation: tau.y = torque.tau)",
+      "id": "f_x[9]",
       "unknown": "torque.tau"
     },
     {
       "equation": "f_x[10] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
+      "id": "f_x[10]",
       "unknown": "torque.flange.phi"
     },
     {
       "equation": "f_x[11] (unconnected flow: inertia.flange_b.tau = 0)",
+      "id": "f_x[11]",
       "unknown": "inertia.flange_b.tau"
     }
   ],
@@ -57,72 +69,84 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (equation from inertia)",
+      "id": "f_x[0]",
       "unknown": "inertia.flange_a.phi"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[1] (equation from inertia)",
+      "id": "f_x[1]",
       "unknown": "inertia.flange_b.phi"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[2] (equation from inertia)",
+      "id": "f_x[2]",
       "unknown": "der(inertia.phi)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[3] (equation from inertia)",
+      "id": "f_x[3]",
       "unknown": "der(inertia.w)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[7] (equation from tau)",
+      "id": "f_x[7]",
       "unknown": "tau.y"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[9] (connection equation: tau.y = torque.tau)",
+      "id": "f_x[9]",
       "unknown": "torque.tau"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[6] (equation from torque)",
+      "id": "f_x[6]",
       "unknown": "torque.flange.tau"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[8] (flow sum equation: torque.flange.tau + inertia.flange_a.tau = 0)",
+      "id": "f_x[8]",
       "unknown": "inertia.flange_a.tau"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[11] (unconnected flow: inertia.flange_b.tau = 0)",
+      "id": "f_x[11]",
       "unknown": "inertia.flange_b.tau"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[4] (equation from inertia)",
+      "id": "f_x[4]",
       "unknown": "inertia.a"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[5] (equation from torque)",
+      "id": "f_x[5]",
       "unknown": "torque.phi_support"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[10] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
+      "id": "f_x[10]",
       "unknown": "torque.flange.phi"
     }
   ],
@@ -145,35 +169,40 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (equation from inertia)",
+        "id": "f_x[0]",
         "unknowns": [
           7
         ],
         "equation_text": "inertia.phi - inertia.flange_a.phi"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (equation from inertia)",
+        "id": "f_x[1]",
         "unknowns": [
           2
         ],
         "equation_text": "inertia.phi - inertia.flange_b.phi"
       },
       {
-        "equation": "f_x[2]",
+        "equation": "f_x[2] (equation from inertia)",
+        "id": "f_x[2]",
         "unknowns": [
           0
         ],
         "equation_text": "inertia.w - der(inertia.phi)"
       },
       {
-        "equation": "f_x[3]",
+        "equation": "f_x[3] (equation from inertia)",
+        "id": "f_x[3]",
         "unknowns": [
           1
         ],
         "equation_text": "inertia.a - der(inertia.w)"
       },
       {
-        "equation": "f_x[4]",
+        "equation": "f_x[4] (equation from inertia)",
+        "id": "f_x[4]",
         "unknowns": [
           3,
           4,
@@ -182,14 +211,16 @@
         "equation_text": "inertia.J * inertia.a - (inertia.flange_a.tau + inertia.flange_b.tau)"
       },
       {
-        "equation": "f_x[5]",
+        "equation": "f_x[5] (equation from torque)",
+        "id": "f_x[5]",
         "unknowns": [
           5
         ],
         "equation_text": "torque.phi_support - 0"
       },
       {
-        "equation": "f_x[6]",
+        "equation": "f_x[6] (equation from torque)",
+        "id": "f_x[6]",
         "unknowns": [
           6,
           10
@@ -197,14 +228,16 @@
         "equation_text": "torque.flange.tau - -torque.tau"
       },
       {
-        "equation": "f_x[7]",
+        "equation": "f_x[7] (equation from tau)",
+        "id": "f_x[7]",
         "unknowns": [
           11
         ],
         "equation_text": "tau.y - tau.k"
       },
       {
-        "equation": "f_x[8]",
+        "equation": "f_x[8] (flow sum equation: torque.flange.tau + inertia.flange_a.tau = 0)",
+        "id": "f_x[8]",
         "unknowns": [
           8,
           10
@@ -212,7 +245,8 @@
         "equation_text": "torque.flange.tau + inertia.flange_a.tau"
       },
       {
-        "equation": "f_x[9]",
+        "equation": "f_x[9] (connection equation: tau.y = torque.tau)",
+        "id": "f_x[9]",
         "unknowns": [
           6,
           11
@@ -220,7 +254,8 @@
         "equation_text": "tau.y - torque.tau"
       },
       {
-        "equation": "f_x[10]",
+        "equation": "f_x[10] (connection equation: torque.flange.phi = inertia.flange_a.phi)",
+        "id": "f_x[10]",
         "unknowns": [
           7,
           9
@@ -228,7 +263,8 @@
         "equation_text": "torque.flange.phi - inertia.flange_a.phi"
       },
       {
-        "equation": "f_x[11]",
+        "equation": "f_x[11] (unconnected flow: inertia.flange_b.tau = 0)",
+        "id": "f_x[11]",
         "unknowns": [
           3
         ],

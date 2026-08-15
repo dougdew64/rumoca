@@ -5,10 +5,12 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "commandA"
     },
     {
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "errorB"
     }
   ],
@@ -17,12 +19,14 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "commandA"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "errorB"
     }
   ],
@@ -35,14 +39,16 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0
         ],
         "equation_text": "commandA - gainA * (reference - plantA * commandA)"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
         "unknowns": [
           0,
           1
@@ -50,6 +56,82 @@
         "equation_text": "errorB - (commandA - plantB * gainB * errorB)"
       }
     ]
+  },
+  "before": {
+    "n_equations": 4,
+    "n_unknowns": 4,
+    "n_matched": 4,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknown": "commandA"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknown": "errorA"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknown": "commandB"
+      },
+      {
+        "equation": "f_x[3] (top-level model equation)",
+        "id": "f_x[3]",
+        "unknown": "errorB"
+      }
+    ],
+    "incidence": {
+      "n_eq": 4,
+      "n_var": 4,
+      "unknown_names": [
+        "errorA",
+        "commandA",
+        "errorB",
+        "commandB"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0,
+            1
+          ],
+          "equation_text": "errorA - (reference - plantA * commandA)"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
+          "unknowns": [
+            0,
+            1
+          ],
+          "equation_text": "commandA - gainA * errorA"
+        },
+        {
+          "equation": "f_x[2] (top-level model equation)",
+          "id": "f_x[2]",
+          "unknowns": [
+            1,
+            2,
+            3
+          ],
+          "equation_text": "errorB - (commandA - plantB * commandB)"
+        },
+        {
+          "equation": "f_x[3] (top-level model equation)",
+          "id": "f_x[3]",
+          "unknowns": [
+            2,
+            3
+          ],
+          "equation_text": "commandB - gainB * errorB"
+        }
+      ]
+    }
   },
   "reduction": {
     "states_before": [],
@@ -103,11 +185,11 @@
     "eliminations": [
       {
         "variable": "errorA",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1610787096272471993,\"start\":751,\"end\":765},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":1610787096272471993,\"start\":751,\"end\":765},\"subs\":[]}],\"def_id\":39466}},\"subscripts\":[],\"span\":{\"source\":1610787096272471993,\"start\":1219,\"end\":1228}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"plantA\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1610787096272471993,\"start\":865,\"end\":876},\"parts\":[{\"ident\":\"plantA\",\"span\":{\"source\":1610787096272471993,\"start\":865,\"end\":876},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":1610787096272471993,\"start\":1231,\"end\":1237}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"commandA\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1610787096272471993,\"start\":1058,\"end\":1071},\"parts\":[{\"ident\":\"commandA\",\"span\":{\"source\":1610787096272471993,\"start\":1058,\"end\":1071},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":1610787096272471993,\"start\":1240,\"end\":1248}}},\"span\":{\"source\":1610787096272471993,\"start\":1231,\"end\":1248}}},\"span\":{\"source\":1610787096272471993,\"start\":1219,\"end\":1248}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":751,\"end\":765},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":7235249937028297655,\"start\":751,\"end\":765},\"subs\":[]}],\"def_id\":39466}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1219,\"end\":1228}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"plantA\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":865,\"end\":876},\"parts\":[{\"ident\":\"plantA\",\"span\":{\"source\":7235249937028297655,\"start\":865,\"end\":876},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1231,\"end\":1237}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"commandA\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":1058,\"end\":1071},\"parts\":[{\"ident\":\"commandA\",\"span\":{\"source\":7235249937028297655,\"start\":1058,\"end\":1071},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1240,\"end\":1248}}},\"span\":{\"source\":7235249937028297655,\"start\":1231,\"end\":1248}}},\"span\":{\"source\":7235249937028297655,\"start\":1219,\"end\":1248}}}"
       },
       {
         "variable": "commandB",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"gainB\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1610787096272471993,\"start\":923,\"end\":933},\"parts\":[{\"ident\":\"gainB\",\"span\":{\"source\":1610787096272471993,\"start\":923,\"end\":933},\"subs\":[]}],\"def_id\":39469}},\"subscripts\":[],\"span\":{\"source\":1610787096272471993,\"start\":1440,\"end\":1445}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"errorB\",\"component_ref\":{\"local\":false,\"span\":{\"source\":1610787096272471993,\"start\":1127,\"end\":1138},\"parts\":[{\"ident\":\"errorB\",\"span\":{\"source\":1610787096272471993,\"start\":1127,\"end\":1138},\"subs\":[]}],\"def_id\":39473}},\"subscripts\":[],\"span\":{\"source\":1610787096272471993,\"start\":1448,\"end\":1454}}},\"span\":{\"source\":1610787096272471993,\"start\":1440,\"end\":1454}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"gainB\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":923,\"end\":933},\"parts\":[{\"ident\":\"gainB\",\"span\":{\"source\":7235249937028297655,\"start\":923,\"end\":933},\"subs\":[]}],\"def_id\":39469}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1440,\"end\":1445}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"errorB\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":1127,\"end\":1138},\"parts\":[{\"ident\":\"errorB\",\"span\":{\"source\":7235249937028297655,\"start\":1127,\"end\":1138},\"subs\":[]}],\"def_id\":39473}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1448,\"end\":1454}}},\"span\":{\"source\":7235249937028297655,\"start\":1440,\"end\":1454}}}"
       }
     ],
     "stopped_at": null,

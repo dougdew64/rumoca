@@ -1,0 +1,85 @@
+{
+  "n_states": 0,
+  "n_equations": 3,
+  "block_count": 2,
+  "blocks": [
+    {
+      "kind": "scalar_direct",
+      "var": "a.v",
+      "solution": {
+        "VarRef": {
+          "name": {
+            "name": "b.v",
+            "component_ref": {
+              "local": false,
+              "span": {
+                "source": 10351280120072388815,
+                "start": 1664,
+                "end": 1670
+              },
+              "parts": [
+                {
+                  "ident": "b",
+                  "span": {
+                    "source": 10351280120072388815,
+                    "start": 1664,
+                    "end": 1670
+                  },
+                  "subs": []
+                },
+                {
+                  "ident": "v",
+                  "span": {
+                    "source": 10351280120072388815,
+                    "start": 1664,
+                    "end": 1670
+                  },
+                  "subs": []
+                }
+              ],
+              "def_id": 39470
+            }
+          },
+          "subscripts": [],
+          "span": {
+            "source": 10351280120072388815,
+            "start": 1557,
+            "end": 1563
+          }
+        }
+      }
+    },
+    {
+      "kind": "scalar_direct",
+      "var": "a.i",
+      "solution": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 10351280120072388815,
+            "start": 1574,
+            "end": 1580
+          }
+        }
+      }
+    }
+  ],
+  "relaxation_hint": {
+    "dropped_equations": [
+      2
+    ],
+    "pinned_unknowns": [
+      "b.v"
+    ]
+  },
+  "determinacy": {
+    "states": 0,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": 0,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

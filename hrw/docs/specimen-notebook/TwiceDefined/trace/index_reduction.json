@@ -14,6 +14,7 @@
     "matching": [
       {
         "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknown": "a"
       }
     ],
@@ -27,6 +28,7 @@
       "rows": [
         {
           "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
           "unknowns": [
             0
           ],
@@ -34,6 +36,7 @@
         },
         {
           "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
           "unknowns": [
             0
           ],

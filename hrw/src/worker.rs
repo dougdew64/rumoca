@@ -3763,7 +3763,15 @@ fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_
         "matching": rep
             .matching
             .iter()
-            .map(|(e, u)| serde_json::json!({ "equation": e, "unknown": u }))
+            .map(|(e, u)| serde_json::json!({
+                "equation": e,
+                // The cross-pane identity, so pointing at a matching row resolves to
+                // the same object as pointing at an incidence cell. Derived rather
+                // than carried, because `StructuralReport::matching` keeps labels
+                // only — see `equation_id_from_label`.
+                "id": crate::equation_id_from_label(e),
+                "unknown": u,
+            }))
             .collect::<Vec<_>>(),
         "blocks": rep.blocks.iter().map(block_to_json).collect::<Vec<_>>(),
     })
@@ -3803,6 +3811,22 @@ fn incidence_to_json(
             };
             let mut row = serde_json::json!({
                 "equation": eq_name,
+                // **The bare reference, as the cross-pane identity.**
+                //
+                // `equation` above is `equation_label`'s output — `"f_x[4] (equation
+                // from R)"` — and matching/BLT lookups correlate by that exact string,
+                // so it cannot change. But the equation *sheet* names the same equation
+                // `"f_x[4]"`, so a reader pointing at an incidence cell and asking
+                // "why is **this** equation…" produced an id that matched nothing in
+                // the other pane. Doug hit that on 2026-08-15 the first time he used
+                // deixis for real.
+                //
+                // Emitted here rather than recovered by splitting the label, because
+                // the reference **is** the identity and the label is a decoration of
+                // it. Publishing the writer's own value beats parsing the writer's
+                // output — the split worked, and `identity-and-provenance.md` is right
+                // that it should not have to.
+                "id": inc.equation_refs[i].to_string(),
                 "unknowns": sorted,
             });
             if let Some(text) = eq_texts.get(i) {
@@ -3873,6 +3897,13 @@ fn partial_matching_to_json(
                     "equation": rumoca_phase_structural::equation_label(
                         dae, &inc.equation_refs[eq_idx],
                     ),
+                    // The AUTHORITATIVE identity, not a derivation: the reference
+                    // Rumoca kept is in hand here, unlike in `structural_to_json`
+                    // where `StructuralReport` has already discarded it. Without
+                    // this, pointing at a row of the index-reduction Before pane
+                    // resolved to nothing — the pane names 321 equations across the
+                    // notebook and could identify none of them.
+                    "id": inc.equation_refs[eq_idx].to_string(),
                     "unknown": inc.unknown_names[v].to_string(),
                 })
             })
@@ -4027,6 +4058,11 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
             "kind": "scalar",
             "size": 1,
             "equation": equation,
+            // **The spy-plot's cross-pane identity.** Clicking a block captures this
+            // node, and without an `id` the capture named the equation differently
+            // from every other pane — the spy-plot being one of the two surfaces
+            // nothing but a capture can reach.
+            "id": crate::equation_id_from_label(equation),
             "unknown": unknown,
         }),
         BlockReport::Coupled {
@@ -4037,6 +4073,12 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
             "kind": "coupled",
             "size": unknowns.len(),
             "equations": equations,
+            // Plural, matching `equations`: a coupled block is several equations
+            // solved together, and "this block" resolves to all of them.
+            "ids": equations
+                .iter()
+                .map(|e| crate::equation_id_from_label(e))
+                .collect::<Vec<_>>(),
             "unknowns": unknowns,
             "tearing": tearing.as_ref().map(tearing_to_json),
         }),
@@ -4047,14 +4089,38 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
 /// iteration size: "tear variables" are guessed, the remaining equations
 /// are solved causally (one at a time), and the residual equations check
 /// convergence. The causal sequence is the order of the sequential solves.
+/// The tearing report, with an identity beside every equation it names.
+///
+/// **`TearingReport` keeps labels only**, like the rest of `StructuralReport`, so
+/// these ids are derived by [`crate::equation_id_from_label`] and checked against the
+/// authoritative incidence ids by
+/// `doc_citations::an_equation_id_names_the_same_equation_in_every_pane`.
+///
+/// This was the **fifth** writer found to name equations without identifying them,
+/// and it is the one that showed manual enumeration was not converging: its labels
+/// sit in a bare string array (`residual_equations`) with no field name of their own,
+/// so the scan that found the first four could not see it at all.
+/// `lib::unidentified_equation_labels` now walks for them instead.
 fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Value {
     serde_json::json!({
         "tear_vars": t.tear_vars,
         "residual_equations": t.residual_equations,
+        // Parallel to `residual_equations`, one id per entry, same order. Named
+        // explicitly rather than `ids` because this object also lists `tear_vars`,
+        // and a bare `ids` here would not say which list it identifies.
+        "residual_equation_ids": t
+            .residual_equations
+            .iter()
+            .map(|e| crate::equation_id_from_label(e))
+            .collect::<Vec<_>>(),
         "causal_sequence": t
             .causal_sequence
             .iter()
-            .map(|(e, v)| serde_json::json!({ "equation": e, "variable": v }))
+            .map(|(e, v)| serde_json::json!({
+                "equation": e,
+                "id": crate::equation_id_from_label(e),
+                "variable": v,
+            }))
             .collect::<Vec<_>>(),
     })
 }

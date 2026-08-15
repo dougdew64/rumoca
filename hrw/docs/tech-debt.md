@@ -349,6 +349,42 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
 ## UI defects — found by walking
 
+- [ ] **The "✨ Claude's answer" row vanishes when no ad hoc tour exists, and its absence is
+  indistinguishable from breakage.** *(Doug, 2026-08-15: "the 'Claude's Answer' tour seems to
+  have disappeared from the tours list in the tour mode.")*
+
+  **Not a regression — diagnosed before logging.** `.hrw-bridge/tour.md` does not exist, and
+  `tour.rs:181` gates the row on that file:
+
+  ```rust
+  if std::path::Path::new(bridge::TOUR_FILE).exists() {
+      tours.push(TourSource::AdHoc);
+  }
+  ```
+
+  No ad hoc tour has been written this week, `.hrw-bridge/` is gitignored and ephemeral by
+  design, and the listing logic has not changed — the last commits touching `tour.rs` all
+  predate the session. So the row is behaving exactly as built.
+
+  **The defect is that "exactly as built" is wrong here**, and the project already has the rule
+  it breaks. `lib.rs`'s `LiveState` convention, restated in `docs/ideas.md` #77: *"controls are
+  enabled and disabled, never shown and hidden… A layout that makes the tour vanish with no
+  trace of how to bring it back is the same defect in a new dress."* A row that silently ceases
+  to exist gives the reader no way to tell **"nothing has been written yet"** from **"the
+  feature broke"** — and Doug read it, correctly by the available evidence, as the second.
+
+  **Fix:** render the row **always**, disabled when the file is absent, with hover text saying
+  what makes one appear (Claude writes `.hrw-bridge/tour.md`; it is regenerated per question,
+  never retrieved — `docs/ideas.md` #42). Same shape as the disabled Debug button.
+
+  **Why it matters more than one row.** The ad hoc tour is the whole *"Claude can compose an
+  answer inside HRW"* capability (#42). If it looks broken, it stops being reached for, and the
+  capability dies of apparent absence rather than of any decision.
+
+  **Who caught it: Doug.** That is the backward sweep trigger — the code lives somewhere nothing
+  checks, and no test asserts what the tour list offers when the ad hoc file is missing.
+  *Files:* `tour.rs`, `app.rs`.
+
 - [ ] **A selected fixture tour does not always open scrolled to the top.**
   *(Doug, 2026-08-01, walking the fixture tours as a smoke test.)*
 
@@ -501,6 +537,41 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   *Files:* `app.rs` (no exit hook), `bridge.rs` (`remove_live_trace_breakpoint`).
   **Note a hook cannot be complete**: a debugger stop, a panic or a kill runs no destructor, so
   the extension side is the only place a guarantee could live.
+
+## The committed notebook traces are stale, and regenerating them writes machine paths
+
+**Found 2026-08-15, while regenerating traces for the equation-id sweep.** Not fixed, because
+the fix is a change to how a generated artefact is written and it is separable from the sweep
+that surfaced it. **Two problems, and the second is why the first has not simply been paid.**
+
+**1. The traces predate the pipeline.** `parse.json`, `resolve.json`, `instantiate.json`,
+`typecheck.json` and `flatten.json` have not changed since the subtree import (`57c646a6`).
+Only **7 of 21** manifests list the `dae` stage at all, so a reader of the committed notebook
+sees a pipeline HRW no longer has. Every count *about a specimen* is read from here
+(`hrw/CLAUDE.md`), which makes staleness a correctness question, not tidiness.
+
+**2. Regenerating writes 6,604 absolute paths from whoever ran it.** Rumoca's `Location` gained
+the document URI (the 2026-08-02 change `CLAUDE.md` records), so `file_name` went from
+`RcCircuit.mo` to `C:\Users\dougd\source\repos\rumoca\hrw/specimens/RcCircuit.mo` across 92
+files. That is **faithful** — it is what Rumoca now produces — but it is not committable: it
+leaks a home directory into a public repository and re-churns on every machine and clone path.
+
+**The tension is the interesting part.** Normalising the path to `hrw/specimens/RcCircuit.mo`
+before writing is *editing what the compiler said*, which the accuracy rule exists to forbid.
+It is defensible here only because a repo-relative path names the same file — but it must be
+**labelled at the writer**, not done quietly, or the next reader has no way to know the trace is
+not verbatim. Passing a relative path to the compiler instead is worse: it makes the recorded
+string depend on the working directory, and a stale working directory has produced three
+confidently wrong results in this project already (`DECISIONS.md`, 2026-08-12).
+
+**Scoped around for now**: the equation-id fix regenerated only `structural.json` and
+`index_reduction.json`, which carry no paths, and the other 85 files were restored. So the
+notebook is now *internally inconsistent* as well as stale — two stages fresh, the rest at the
+import — which is a worse state than either, and the reason this is written down rather than
+left as a working-tree observation.
+
+*Files:* `examples/gen_trace.rs` (the writer), `docs/specimen-notebook/*/trace/`.
+**Do this before the next tour conversion that quotes a pre-Flatten stage.**
 
 ## The Context Bar reported less than it emitted, and only Doug noticed
 

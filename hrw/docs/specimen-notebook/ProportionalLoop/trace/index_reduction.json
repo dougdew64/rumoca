@@ -5,6 +5,7 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "measurement"
     }
   ],
@@ -13,6 +14,7 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "measurement"
     }
   ],
@@ -25,6 +27,7 @@
     "rows": [
       {
         "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0
         ],
@@ -38,15 +41,18 @@
     "n_matched": 3,
     "matching": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknown": "measurement"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
         "unknown": "error"
       },
       {
-        "equation": "f_x[2]",
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
         "unknown": "command"
       }
     ],
@@ -61,6 +67,7 @@
       "rows": [
         {
           "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
           "unknowns": [
             0,
             2
@@ -69,6 +76,7 @@
         },
         {
           "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
           "unknowns": [
             0,
             1
@@ -77,6 +85,7 @@
         },
         {
           "equation": "f_x[2] (top-level model equation)",
+          "id": "f_x[2]",
           "unknowns": [
             1,
             2

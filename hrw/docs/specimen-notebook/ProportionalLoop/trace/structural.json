@@ -5,14 +5,17 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "measurement"
     },
     {
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "error"
     },
     {
       "equation": "f_x[2] (top-level model equation)",
+      "id": "f_x[2]",
       "unknown": "command"
     }
   ],
@@ -24,6 +27,11 @@
         "f_x[2] (top-level model equation)",
         "f_x[1] (top-level model equation)",
         "f_x[0] (top-level model equation)"
+      ],
+      "ids": [
+        "f_x[2]",
+        "f_x[1]",
+        "f_x[0]"
       ],
       "unknowns": [
         "command",
@@ -37,13 +45,18 @@
         "residual_equations": [
           "f_x[0] (top-level model equation)"
         ],
+        "residual_equation_ids": [
+          "f_x[0]"
+        ],
         "causal_sequence": [
           {
             "equation": "f_x[1] (top-level model equation)",
+            "id": "f_x[1]",
             "variable": "error"
           },
           {
             "equation": "f_x[2] (top-level model equation)",
+            "id": "f_x[2]",
             "variable": "measurement"
           }
         ]
@@ -61,6 +74,7 @@
     "rows": [
       {
         "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0,
           2
@@ -69,6 +83,7 @@
       },
       {
         "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
         "unknowns": [
           0,
           1
@@ -77,6 +92,7 @@
       },
       {
         "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
         "unknowns": [
           1,
           2

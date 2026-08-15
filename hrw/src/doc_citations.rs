@@ -1319,20 +1319,15 @@ Some prose.
         ];
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let msl = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let libraries = vec![
-            PathBuf::from(format!("{msl}/Modelica 4.1.0")),
-            PathBuf::from(format!("{msl}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{msl}/Complex.mo")),
-        ];
-
         let mut bad: Vec<String> = Vec::new();
         let mut checked = 0usize;
 
         for (tour, specimen) in PANES {
-            let path = hrw.join(format!("specimens/{specimen}.mo"));
-            let compiled = crate::worker::compile_specimen(&path, libraries.clone())
-                .unwrap_or_else(|e| panic!("compile {specimen}: {e}"));
+            // **The memoised helper, not a fresh compile.** Written the other way first
+            // and measured at 8.6s of the slow suite's 194s, for specimens other tests
+            // had already compiled in the same process. `docs/ideas.md` #48 exists for
+            // exactly this and every other module was already using it.
+            let compiled = crate::worker::test_msl::compile_specimen_shared(specimen);
             let crate::worker::FromWorker::Compiled { equation_sheet, .. } = compiled else {
                 panic!("{specimen}: expected Compiled");
             };
@@ -1484,19 +1479,11 @@ Some prose.
     #[test]
     fn tour_node_sizes_match_the_connection_replay() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let msl = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-        let libraries = vec![
-            PathBuf::from(format!("{msl}/Modelica 4.1.0")),
-            PathBuf::from(format!("{msl}/ModelicaServices 4.1.0")),
-            PathBuf::from(format!("{msl}/Complex.mo")),
-        ];
-
-        let compiled =
-            crate::worker::compile_specimen(&hrw.join("specimens/RcCircuit.mo"), libraries)
-                .expect("compile RcCircuit");
+        // Memoised, for the reason above: `RcCircuit` is compiled by several tests in
+        // this process and a fresh compile here bought nothing but 4.3 seconds.
         let crate::worker::FromWorker::Compiled {
             connection_frames, ..
-        } = compiled
+        } = crate::worker::test_msl::compile_specimen_shared("RcCircuit")
         else {
             panic!("expected Compiled");
         };
@@ -1633,6 +1620,294 @@ Some prose.
                 tour.contains(claim),
                 "Act 1 no longer states {claim:?}; this check pins that wording and must be \
                  updated with it, or it silently stops matching the tour it guards"
+            );
+        }
+    }
+
+    /// **`f_x[N]` names the same equation in the equation sheet and in the incidence
+    /// matrix.**
+    ///
+    /// # What rests on this
+    ///
+    /// Doug's deixis requirement — *"I will want to… ask you questions such as 'why is
+    /// **this** partial derivative value so high', with the hope that you would be able
+    /// to leverage our point-at context scheme and relieve me of the friction of having
+    /// to invent a name."* Every published pane carries an `id` per row so that *"this
+    /// equation"* resolves to one object across panes. **If the two panes number their
+    /// equations differently, that resolution is silently wrong** — a question about
+    /// `f_x[19]` would be answered from a different equation than the one under his
+    /// cursor, with nothing on either side to reveal it.
+    ///
+    /// # Why a test rather than an argument
+    ///
+    /// Both panes derive their ids from the same DAE ordering *today*, which is exactly
+    /// the kind of shared assumption that holds until one of them starts sorting for
+    /// display. The failure would be invisible: both panes stay well-formed, both look
+    /// right, and only a cross-reference disagrees.
+    ///
+    /// Checked on a real compile, since the ids exist only after one.
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    #[test]
+    fn an_equation_id_names_the_same_equation_in_every_pane() {
+        let crate::worker::FromWorker::Compiled {
+            equation_sheet,
+            stages,
+            ..
+        } = crate::worker::test_msl::compile_specimen_shared("RcCircuit")
+        else {
+            panic!("expected Compiled");
+        };
+        let sheet = equation_sheet.expect("RcCircuit has an equation sheet");
+        let report = stages
+            .get(crate::worker::StageKind::Structural)
+            .value
+            .clone()
+            .expect("structural report");
+        let matrix = crate::incidence_view::IncidenceMatrix::from_report(&report)
+            .expect("RcCircuit has an incidence matrix");
+
+        // The sheet's ids, as `to_bridge_json` spells them.
+        let sheet_ids: Vec<String> = sheet
+            .groups
+            .iter()
+            .flat_map(|(_, eqs)| eqs.iter().map(|e| format!("f_x[{}]", e.index)))
+            .collect();
+        let matrix_ids: Vec<String> = matrix.to_bridge_json()["equations"]
+            .as_array()
+            .expect("equations array")
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_owned))
+            .collect();
+
+        assert!(
+            !sheet_ids.is_empty() && !matrix_ids.is_empty(),
+            "both panes must produce ids, or this compares nothing",
+        );
+
+        // Every id the sheet publishes must name a row the matrix also knows. The
+        // reverse is not required: the matrix is built from the *continuous* system
+        // and the sheet groups every equation the model gained.
+        let known: std::collections::BTreeSet<&str> =
+            matrix_ids.iter().map(String::as_str).collect();
+        let orphans: Vec<&String> = sheet_ids
+            .iter()
+            .filter(|id| !known.contains(id.as_str()))
+            .collect();
+        assert!(
+            orphans.is_empty(),
+            "these ids exist in the equation sheet and name nothing in the incidence \
+             matrix, so \"this equation\" would resolve to different things in the two \
+             panes: {orphans:?}",
+        );
+
+        // **And the STAGE JSON carries it too, which is the surface deixis uses.**
+        //
+        // The first version of this test checked only `to_bridge_json`, so it passed
+        // while the bug it was written for was still live. `focus.json` — what a
+        // point-at capture writes, and what Claude actually reads to resolve "this
+        // equation" — carries the raw stage node, not the published view. Doug pointed
+        // at an incidence cell on 2026-08-15 *after rebuilding* and the capture still
+        // read `"f_x[4] (equation from R)"`.
+        //
+        // **A test that covers one of two writers is a test that certifies half a
+        // fix.** The two rows below are the two writers.
+        let rows = report["incidence"]["rows"]
+            .as_array()
+            .expect("the stage JSON has incidence rows");
+        // The AUTHORITATIVE ids: these come from `Incidence::equation_refs`, the bare
+        // reference Rumoca kept. Everything below is checked against them.
+        let mut authoritative: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+        for (i, row) in rows.iter().enumerate() {
+            let id = row["id"].as_str().unwrap_or_else(|| {
+                panic!("stage row {i} has no `id`; a capture of it resolves to nothing")
+            });
+            assert!(
+                known.contains(id),
+                "stage row {i} publishes id {id:?}, which names nothing the sheet knows",
+            );
+            assert!(
+                !id.contains(" ("),
+                "the stage `id` must be the bare reference, not the decorated label \
+                 ({id:?}) \u{2014} the label is `equation`, beside it",
+            );
+            authoritative.insert(id);
+        }
+
+        // **Every array that names an equation must carry an id, and the derived ones
+        // must agree with the authoritative set.**
+        //
+        // `matching` and `blocks` cannot carry the true reference — `StructuralReport`
+        // keeps labels only — so their ids come from `equation_id_from_label`. That is
+        // a *derivation* where the incidence path has a *value*, and this is what makes
+        // it safe rather than assumed: the derivation is required to land inside the
+        // set the authoritative path produced, on real data.
+        //
+        // Written after fixing `incidence.rows` alone and being asked whether the other
+        // panes were fixed too. They were not: each equation is named in **three**
+        // places and one had been done. A test that covers one writer certifies a
+        // fraction of a fix.
+        let mut derived = 0usize;
+        let mut check = |id: &str, what: &str| {
+            assert!(
+                !id.contains(" ("),
+                "{what} publishes a decorated label as its id ({id:?})",
+            );
+            assert!(
+                authoritative.contains(id),
+                "{what} publishes id {id:?}, which is not one of the incidence rows' \
+                 ids \u{2014} so the derivation from the label disagrees with the \
+                 reference Rumoca kept",
+            );
+            derived += 1;
+        };
+
+        for (i, m) in report["matching"]
+            .as_array()
+            .expect("matching array")
+            .iter()
+            .enumerate()
+        {
+            check(
+                m["id"].as_str().unwrap_or_else(|| {
+                    panic!("matching[{i}] has no `id`; pointing at it resolves to nothing")
+                }),
+                &format!("matching[{i}]"),
+            );
+        }
+
+        for (i, b) in report["blocks"]
+            .as_array()
+            .expect("blocks array")
+            .iter()
+            .enumerate()
+        {
+            match b["kind"].as_str() {
+                Some("scalar") => check(
+                    b["id"].as_str().unwrap_or_else(|| {
+                        panic!("blocks[{i}] (scalar) has no `id` \u{2014} the spy-plot's capture")
+                    }),
+                    &format!("blocks[{i}]"),
+                ),
+                Some("coupled") => {
+                    let ids = b["ids"]
+                        .as_array()
+                        .unwrap_or_else(|| panic!("blocks[{i}] (coupled) has no `ids`"));
+                    let n_eq = b["equations"].as_array().map_or(0, Vec::len);
+                    assert_eq!(
+                        ids.len(),
+                        n_eq,
+                        "blocks[{i}] must give one id per equation in the block",
+                    );
+                    for id in ids {
+                        check(
+                            id.as_str().expect("id is a string"),
+                            &format!("blocks[{i}].ids"),
+                        );
+                    }
+                }
+                other => panic!("blocks[{i}] has an unknown kind {other:?}"),
+            }
+        }
+
+        assert!(
+            derived >= 20,
+            "only {derived} derived ids were checked; RcCircuit has 23 equations \
+             matched and blocked, so this is not exercising what it claims",
+        );
+    }
+
+    /// **A live compile of a COUPLED model publishes no equation it cannot identify.**
+    ///
+    /// # Why a second specimen, and why this one
+    ///
+    /// The test above runs on `RcCircuit`, whose `coupled_block_count` is **0**. Every
+    /// one of its 23 blocks is scalar, so the assertions covering `blocks[].ids` and
+    /// the tearing report were code that **never executed** — asserted, and vacuous.
+    /// Doug, 2026-08-15: *"Do we have an evidence-based reason to conclude that we have
+    /// fixed all id bugs?"* For the coupled path the answer was no, and the reason was
+    /// not a missing check but a specimen that could not reach it.
+    ///
+    /// `TwoLoops` has two coupled blocks, each with a tearing report — the only shape
+    /// that reaches `residual_equations` and `causal_sequence`, which were **unidentified
+    /// until this test was written**.
+    ///
+    /// # Why it runs the general walker rather than naming fields
+    ///
+    /// [`crate::unidentified_equation_labels`] finds every decorated label in the tree
+    /// and demands its identity be recoverable from the same object, so a stage that
+    /// grows a new equation-naming field fails here on arrival. Enumerating the sites by
+    /// hand is what produced five separate half-fixes; the point of this test is that
+    /// nobody has to enumerate them again.
+    ///
+    /// The committed-trace counterpart is
+    /// `crate::tests_equation_identity::every_committed_trace_identifies_every_equation_it_names`,
+    /// which is fast and covers every specimen. This one guards against the traces going
+    /// stale relative to the writers — which they had, for seven specimens.
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    #[test]
+    fn a_coupled_model_identifies_every_equation_it_publishes() {
+        let crate::worker::FromWorker::Compiled { stages, .. } =
+            crate::worker::test_msl::compile_specimen_shared("TwoLoops")
+        else {
+            panic!("expected Compiled");
+        };
+
+        let structural = stages
+            .get(crate::worker::StageKind::Structural)
+            .value
+            .clone()
+            .expect("structural report");
+
+        // **Non-vacuity, stated as a precondition rather than assumed.** If TwoLoops
+        // ever stops producing coupled blocks, this test must fail loudly rather than
+        // quietly go back to covering only the scalar path.
+        let coupled = structural["blocks"]
+            .as_array()
+            .expect("blocks array")
+            .iter()
+            .filter(|b| b["kind"].as_str() == Some("coupled"))
+            .count();
+        assert!(
+            coupled >= 2,
+            "TwoLoops must produce coupled blocks or this test covers the same \
+             scalar-only path RcCircuit already covers; found {coupled}",
+        );
+        let torn = structural["blocks"]
+            .as_array()
+            .expect("blocks array")
+            .iter()
+            .filter(|b| b["tearing"].is_object())
+            .count();
+        assert!(
+            torn >= 1,
+            "no block carried a tearing report, so the two sites that were broken \
+             when this test was written are not being reached",
+        );
+
+        for stage in [
+            crate::worker::StageKind::Structural,
+            crate::worker::StageKind::IndexReduction,
+        ] {
+            let Some(value) = stages.get(stage).value.clone() else {
+                continue;
+            };
+            let orphans = crate::unidentified_equation_labels(&value);
+            assert!(
+                orphans.is_empty(),
+                "{} equation labels in the live {stage:?} stage carry no identity, so \
+                 pointing at them resolves to nothing:\n  {}",
+                orphans.len(),
+                orphans
+                    .iter()
+                    .map(|u| format!("{} = {:?}", u.path, u.label))
+                    .collect::<Vec<_>>()
+                    .join("\n  "),
             );
         }
     }

@@ -5,6 +5,7 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "measurement"
     }
   ],
@@ -13,6 +14,7 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "measurement"
     }
   ],
@@ -24,13 +26,74 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0
         ],
         "equation_text": "measurement - plantGain * controllerGain * (reference - measurement) * controllerGain * (reference - measurement)"
       }
     ]
+  },
+  "before": {
+    "n_equations": 3,
+    "n_unknowns": 3,
+    "n_matched": 3,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknown": "measurement"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknown": "error"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknown": "command"
+      }
+    ],
+    "incidence": {
+      "n_eq": 3,
+      "n_var": 3,
+      "unknown_names": [
+        "error",
+        "command",
+        "measurement"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0,
+            2
+          ],
+          "equation_text": "error - (reference - measurement)"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
+          "unknowns": [
+            0,
+            1
+          ],
+          "equation_text": "command - controllerGain * error"
+        },
+        {
+          "equation": "f_x[2] (top-level model equation)",
+          "id": "f_x[2]",
+          "unknowns": [
+            1,
+            2
+          ],
+          "equation_text": "measurement - plantGain * command * command"
+        }
+      ]
+    }
   },
   "reduction": {
     "states_before": [],
@@ -84,11 +147,11 @@
     "eliminations": [
       {
         "variable": "error",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1280}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":15628019766462556768,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":15628019766462556768,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":15628019766462556768,\"start\":1257,\"end\":1280}}}"
       },
       {
         "variable": "command",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":974,\"end\":993},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":16342562026599975374,\"start\":974,\"end\":993},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1294,\"end\":1308}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":16342562026599975374,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":16342562026599975374,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":16342562026599975374,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":16342562026599975374,\"start\":1257,\"end\":1280}}},\"span\":{\"source\":16342562026599975374,\"start\":1294,\"end\":1316}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":974,\"end\":993},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":15628019766462556768,\"start\":974,\"end\":993},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1294,\"end\":1308}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":15628019766462556768,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":15628019766462556768,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":15628019766462556768,\"start\":1257,\"end\":1280}}},\"span\":{\"source\":15628019766462556768,\"start\":1294,\"end\":1316}}}"
       }
     ],
     "stopped_at": null,

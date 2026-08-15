@@ -21,6 +21,7 @@
     "rows": [
       {
         "equation": "f_x[0] (equation from src)",
+        "id": "f_x[0]",
         "unknowns": [
           5,
           7
@@ -29,6 +30,7 @@
       },
       {
         "equation": "f_x[1] (equation from src)",
+        "id": "f_x[1]",
         "unknowns": [
           3,
           5
@@ -37,6 +39,7 @@
       },
       {
         "equation": "f_x[2] (equation from src)",
+        "id": "f_x[2]",
         "unknowns": [
           1,
           4,
@@ -46,6 +49,7 @@
       },
       {
         "equation": "f_x[3] (equation from src)",
+        "id": "f_x[3]",
         "unknowns": [
           1
         ],
@@ -53,6 +57,7 @@
       },
       {
         "equation": "f_x[4] (equation from C)",
+        "id": "f_x[4]",
         "unknowns": [
           9,
           11
@@ -61,6 +66,7 @@
       },
       {
         "equation": "f_x[5] (equation from C)",
+        "id": "f_x[5]",
         "unknowns": [
           2,
           9
@@ -69,6 +75,7 @@
       },
       {
         "equation": "f_x[6] (equation from C)",
+        "id": "f_x[6]",
         "unknowns": [
           8,
           10
@@ -77,6 +84,7 @@
       },
       {
         "equation": "f_x[7] (equation from C)",
+        "id": "f_x[7]",
         "unknowns": [
           0
         ],
@@ -84,6 +92,7 @@
       },
       {
         "equation": "f_x[8] (equation from gnd)",
+        "id": "f_x[8]",
         "unknowns": [
           12
         ],
@@ -91,6 +100,7 @@
       },
       {
         "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+        "id": "f_x[9]",
         "unknowns": [
           5,
           9
@@ -99,6 +109,7 @@
       },
       {
         "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+        "id": "f_x[10]",
         "unknowns": [
           7,
           11,
@@ -108,6 +119,7 @@
       },
       {
         "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+        "id": "f_x[11]",
         "unknowns": [
           4,
           8
@@ -116,6 +128,7 @@
       },
       {
         "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+        "id": "f_x[12]",
         "unknowns": [
           6,
           10
@@ -124,6 +137,7 @@
       },
       {
         "equation": "f_x[13] (connection equation: C.n.v = gnd.p.v)",
+        "id": "f_x[13]",
         "unknowns": [
           10,
           12
@@ -135,54 +149,67 @@
   "matching": [
     {
       "equation": "f_x[0] (equation from src)",
+      "id": "f_x[0]",
       "unknown": "src.p.i"
     },
     {
       "equation": "f_x[1] (equation from src)",
+      "id": "f_x[1]",
       "unknown": "src.i"
     },
     {
       "equation": "f_x[2] (equation from src)",
+      "id": "f_x[2]",
       "unknown": "src.p.v"
     },
     {
       "equation": "f_x[3] (equation from src)",
+      "id": "f_x[3]",
       "unknown": "src.v"
     },
     {
       "equation": "f_x[4] (equation from C)",
+      "id": "f_x[4]",
       "unknown": "C.n.i"
     },
     {
       "equation": "f_x[5] (equation from C)",
+      "id": "f_x[5]",
       "unknown": "C.i"
     },
     {
       "equation": "f_x[6] (equation from C)",
+      "id": "f_x[6]",
       "unknown": "C.n.v"
     },
     {
       "equation": "f_x[7] (equation from C)",
+      "id": "f_x[7]",
       "unknown": "der(C.v)"
     },
     {
       "equation": "f_x[8] (equation from gnd)",
+      "id": "f_x[8]",
       "unknown": "gnd.p.v"
     },
     {
       "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+      "id": "f_x[9]",
       "unknown": "C.p.i"
     },
     {
       "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+      "id": "f_x[10]",
       "unknown": "src.n.i"
     },
     {
       "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+      "id": "f_x[11]",
       "unknown": "C.p.v"
     },
     {
       "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+      "id": "f_x[12]",
       "unknown": "src.n.v"
     }
   ],

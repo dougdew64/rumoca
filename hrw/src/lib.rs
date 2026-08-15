@@ -744,3 +744,308 @@ mod tests {
         assert_eq!(truncate_label(s, 2), "é");
     }
 }
+
+/// The bare cross-pane identity inside a structural-report equation **label**.
+///
+/// `"f_x[0] (equation from src)"` → `"f_x[0]"`. A label with no parenthetical is
+/// already the identity and passes through unchanged.
+///
+/// # Why this exists, and why it is not the preferred answer
+///
+/// `Incidence` keeps `equation_refs`, so `incidence_to_json` emits the true identity
+/// straight from the writer. **`StructuralReport` does not** — its `matching` is
+/// `Vec<(String, String)>` and `BlockReport::Scalar.equation` is documented as
+/// *"Equation label"*, so the bare reference is discarded at that boundary. The
+/// matching and BLT panes have nothing else to publish an `id` from.
+///
+/// So this recovers an identity Rumoca's own `equation_label` put there, from its own
+/// documented shape `<identity> (<origin>)`. It is parsing our own format, not guessing
+/// at someone else's — but it is still a *derivation* where the incidence path has a
+/// *value*, and that difference is why it is checked rather than trusted:
+/// `an_equation_id_names_the_same_equation_in_every_pane` requires every id produced
+/// here to appear among the authoritative ids the incidence rows carry.
+///
+/// **The better fix is upstream**, and is logged rather than done: carrying the
+/// reference alongside the label in `StructuralReport` would make this function
+/// unnecessary. That is a change to a public Rumoca type with many construction sites,
+/// which is not the additive shape the instrumentation rules ask for.
+#[must_use]
+pub fn equation_id_from_label(label: &str) -> &str {
+    match label.find(" (") {
+        Some(at) => &label[..at],
+        None => label,
+    }
+}
+
+/// Is this string a bare cross-pane equation identity — `f_x[19]`, and nothing else?
+///
+/// The shape is `<name>[<digits>]`. Deliberately not hard-coded to `f_x`: the
+/// identity prefix is Rumoca's, and a second residual family would otherwise be
+/// invisible to every check built on this.
+#[must_use]
+pub fn is_equation_id(s: &str) -> bool {
+    let Some(rest) = s.strip_suffix(']') else {
+        return false;
+    };
+    let Some((name, digits)) = rest.split_once('[') else {
+        return false;
+    };
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+        && !digits.is_empty()
+        && digits.chars().all(|c| c.is_ascii_digit())
+}
+
+/// Is this a *decorated* equation label — an identity followed by its origin,
+/// `f_x[19] (connection equation: src.p.v = R.p.v)`?
+///
+/// This is what a human reads in a matching or a block. It is **not** an identity:
+/// pointing at it resolves to nothing, which is the bug this whole family exists for.
+#[must_use]
+pub fn is_decorated_equation_label(s: &str) -> bool {
+    s.contains(" (") && is_equation_id(equation_id_from_label(s))
+}
+
+/// A place where a published stage tree names an equation but does not publish
+/// the identity of the equation it named.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnidentifiedLabel {
+    /// JSON path to the offending string, e.g. `blocks[3].tearing.residual_equations[0]`.
+    pub path: String,
+    /// The decorated label found there.
+    pub label: String,
+}
+
+/// **Every decorated equation label in a published tree must have its bare id
+/// recoverable from the same object.** This returns the places that fail.
+///
+/// # Why this is a walker and not a list of sites
+///
+/// Doug, 2026-08-15: *"Do we have an evidence-based reason to conclude that we have
+/// fixed all id bugs?"* We did not. Four writers had been found in four attempts —
+/// `incidence.rows`, `matching`, `blocks` (scalar), `blocks` (coupled) — each one
+/// discovered by looking harder rather than by any check, and each fix had felt
+/// complete at the time. A fifth (`blocks[].tearing`) turned up while writing this
+/// paragraph, and it was invisible to a field-name scan because its labels are **bare
+/// array elements with no field name at all.**
+///
+/// Manual enumeration was not converging, so this inverts it: **the data enumerates
+/// the sites.** A stage tree that grows a new equation-naming field next month fails
+/// on arrival rather than waiting to be pointed at.
+///
+/// # The property, exactly
+///
+/// For each JSON object, the identities *available* there are every bare id appearing
+/// as one of its own field values or inside one of its own string arrays. Every
+/// decorated label at that same level must have its id among them. That admits both
+/// shapes actually in use — `{"equation": <label>, "id": <id>}` and
+/// `{"equations": [<label>…], "ids": [<id>…]}` — without mandating a spelling, because
+/// what a capture needs is that **the identity is in the node it captured**, not that a
+/// particular key was used.
+///
+/// It deliberately does *not* check ordering within the parallel-array shape; that is
+/// `an_equation_id_names_the_same_equation_in_every_pane`'s job, which compares against
+/// the authoritative ids from a real compile.
+#[must_use]
+pub fn unidentified_equation_labels(value: &serde_json::Value) -> Vec<UnidentifiedLabel> {
+    let mut out = Vec::new();
+    walk_for_labels(value, String::new(), &mut out);
+    out
+}
+
+fn walk_for_labels(value: &serde_json::Value, path: String, out: &mut Vec<UnidentifiedLabel>) {
+    use serde_json::Value;
+    match value {
+        Value::Object(map) => {
+            // Every identity this object makes available, whatever key carries it.
+            let mut ids: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+            for v in map.values() {
+                match v {
+                    Value::String(s) if is_equation_id(s) => {
+                        ids.insert(s.as_str());
+                    }
+                    Value::Array(a) => {
+                        for e in a {
+                            if let Value::String(s) = e
+                                && is_equation_id(s)
+                            {
+                                ids.insert(s.as_str());
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            for (k, v) in map {
+                let child = if path.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{path}.{k}")
+                };
+                match v {
+                    Value::String(s)
+                        if is_decorated_equation_label(s)
+                            && !ids.contains(equation_id_from_label(s)) =>
+                    {
+                        out.push(UnidentifiedLabel {
+                            path: child.clone(),
+                            label: s.clone(),
+                        });
+                    }
+                    Value::Array(a) => {
+                        for (i, e) in a.iter().enumerate() {
+                            if let Value::String(s) = e
+                                && is_decorated_equation_label(s)
+                                && !ids.contains(equation_id_from_label(s))
+                            {
+                                out.push(UnidentifiedLabel {
+                                    path: format!("{child}[{i}]"),
+                                    label: s.clone(),
+                                });
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+                walk_for_labels(v, child, out);
+            }
+        }
+        Value::Array(a) => {
+            for (i, e) in a.iter().enumerate() {
+                walk_for_labels(e, format!("{path}[{i}]"), out);
+            }
+        }
+        _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests_equation_identity {
+    use super::{UnidentifiedLabel, unidentified_equation_labels};
+    use serde_json::json;
+
+    /// **The checker must fail on a label with no id beside it** — the must-fire
+    /// rule. A walker that reports nothing is indistinguishable from a clean tree,
+    /// and this one exists precisely because "looks clean" was wrong four times.
+    #[test]
+    fn a_label_without_its_id_is_reported() {
+        // The object shape: `equation` with no sibling `id`.
+        let bad = json!({ "blocks": [{ "equation": "f_x[3] (equation from R)" }] });
+        let found = unidentified_equation_labels(&bad);
+        assert_eq!(
+            found,
+            vec![UnidentifiedLabel {
+                path: "blocks[0].equation".to_owned(),
+                label: "f_x[3] (equation from R)".to_owned(),
+            }],
+            "a decorated label with no identity beside it must be reported",
+        );
+
+        // The bare-array shape, which a field-name scan cannot see at all — this
+        // is how `tearing.residual_equations` hid.
+        let bad = json!({ "tearing": { "residual_equations": ["f_x[0] (top-level)"] } });
+        assert_eq!(
+            unidentified_equation_labels(&bad)
+                .iter()
+                .map(|u| u.path.clone())
+                .collect::<Vec<_>>(),
+            vec!["tearing.residual_equations[0]"],
+        );
+    }
+
+    /// Both shapes that carry an id are accepted, and the id may sit under any key —
+    /// what a capture needs is the identity *in the node*, not a particular spelling.
+    #[test]
+    fn a_label_beside_its_id_is_accepted() {
+        let ok = json!({
+            "rows": [{ "equation": "f_x[3] (equation from R)", "id": "f_x[3]" }],
+            "blocks": [{
+                "equations": ["f_x[1] (a)", "f_x[2] (b)"],
+                "ids": ["f_x[1]", "f_x[2]"],
+            }],
+        });
+        assert!(
+            unidentified_equation_labels(&ok).is_empty(),
+            "both published shapes carry the identity: {:?}",
+            unidentified_equation_labels(&ok),
+        );
+    }
+
+    /// An id belonging to a *different* equation does not satisfy the label.
+    ///
+    /// Without this, a block that published one id for three equations would pass,
+    /// and pointing at the other two would resolve to the first.
+    #[test]
+    fn the_wrong_id_does_not_count_as_an_id() {
+        let bad = json!({ "equations": ["f_x[1] (a)", "f_x[2] (b)"], "ids": ["f_x[1]"] });
+        assert_eq!(
+            unidentified_equation_labels(&bad)
+                .iter()
+                .map(|u| u.label.clone())
+                .collect::<Vec<_>>(),
+            vec!["f_x[2] (b)"],
+        );
+    }
+
+    /// **No committed trace names an equation it cannot identify.**
+    ///
+    /// The traces are what `gen_trace` wrote through the same `*_to_json` writers the
+    /// running app uses, so this is a fast (no-compile) check over every stage of every
+    /// specimen — including the coupled blocks and tearing reports that `RcCircuit` does
+    /// not have. The live-compile counterpart is
+    /// `doc_citations::an_equation_id_names_the_same_equation_in_every_pane`.
+    #[test]
+    fn every_committed_trace_identifies_every_equation_it_names() {
+        let notebook =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+        let mut checked = 0usize;
+        let mut labels_seen = 0usize;
+        let mut findings: Vec<String> = Vec::new();
+
+        for specimen in std::fs::read_dir(&notebook)
+            .expect("the notebook exists")
+            .flatten()
+        {
+            let trace = specimen.path().join("trace");
+            let Ok(stages) = std::fs::read_dir(&trace) else {
+                continue;
+            };
+            for stage in stages.flatten() {
+                let path = stage.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let text = std::fs::read_to_string(&path).expect("readable stage file");
+                let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+                    continue;
+                };
+                checked += 1;
+                labels_seen += text.matches("] (").count();
+                let rel = format!(
+                    "{}/{}",
+                    specimen.file_name().to_string_lossy(),
+                    path.file_name().unwrap_or_default().to_string_lossy(),
+                );
+                for u in unidentified_equation_labels(&value) {
+                    findings.push(format!("{rel}: {} = {:?}", u.path, u.label));
+                }
+            }
+        }
+
+        assert!(
+            checked > 50 && labels_seen > 100,
+            "only {checked} stage files with {labels_seen} labels were scanned; this is \
+             not exercising what it claims",
+        );
+        assert!(
+            findings.is_empty(),
+            "{} published equation labels carry no identity, so pointing at them \
+             resolves to nothing:\n  {}",
+            findings.len(),
+            findings.join("\n  "),
+        );
+    }
+}

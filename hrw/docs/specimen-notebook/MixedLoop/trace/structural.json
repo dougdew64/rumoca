@@ -5,22 +5,27 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "setpoint"
     },
     {
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "measurement"
     },
     {
       "equation": "f_x[2] (top-level model equation)",
+      "id": "f_x[2]",
       "unknown": "error"
     },
     {
       "equation": "f_x[3] (top-level model equation)",
+      "id": "f_x[3]",
       "unknown": "command"
     },
     {
       "equation": "f_x[4] (top-level model equation)",
+      "id": "f_x[4]",
       "unknown": "result"
     }
   ],
@@ -29,6 +34,7 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "setpoint"
     },
     {
@@ -38,6 +44,11 @@
         "f_x[3] (top-level model equation)",
         "f_x[2] (top-level model equation)",
         "f_x[1] (top-level model equation)"
+      ],
+      "ids": [
+        "f_x[3]",
+        "f_x[2]",
+        "f_x[1]"
       ],
       "unknowns": [
         "command",
@@ -51,13 +62,18 @@
         "residual_equations": [
           "f_x[1] (top-level model equation)"
         ],
+        "residual_equation_ids": [
+          "f_x[1]"
+        ],
         "causal_sequence": [
           {
             "equation": "f_x[2] (top-level model equation)",
+            "id": "f_x[2]",
             "variable": "error"
           },
           {
             "equation": "f_x[3] (top-level model equation)",
+            "id": "f_x[3]",
             "variable": "measurement"
           }
         ]
@@ -67,6 +83,7 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[4] (top-level model equation)",
+      "id": "f_x[4]",
       "unknown": "result"
     }
   ],
@@ -82,14 +99,16 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0
         ],
         "equation_text": "setpoint - sensorGain * reference"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
         "unknowns": [
           0,
           1,
@@ -98,7 +117,8 @@
         "equation_text": "error - (setpoint - measurement)"
       },
       {
-        "equation": "f_x[2]",
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
         "unknowns": [
           1,
           2
@@ -106,7 +126,8 @@
         "equation_text": "command - controllerGain * error"
       },
       {
-        "equation": "f_x[3]",
+        "equation": "f_x[3] (top-level model equation)",
+        "id": "f_x[3]",
         "unknowns": [
           2,
           3
@@ -114,7 +135,8 @@
         "equation_text": "measurement - plantGain * command"
       },
       {
-        "equation": "f_x[4]",
+        "equation": "f_x[4] (top-level model equation)",
+        "id": "f_x[4]",
         "unknowns": [
           3,
           4

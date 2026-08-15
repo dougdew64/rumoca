@@ -72,6 +72,8 @@ pub struct IncidenceMatrix {
     n_eq: usize,
     n_var: usize,
     // Equation identifiers for matching/BLT overlay lookups (e.g. `f_x[0]`).
+    /// The bare cross-pane identity per row (`f_x[4]`), from the report's `id`.
+    equation_ids: Vec<String>,
     equation_names: Vec<String>,
     // Pretty-printed equation text for display (e.g. `der(w) - tau / J`).
     // Falls back to equation_names when unavailable.
@@ -132,6 +134,7 @@ impl IncidenceMatrix {
         }
 
         let mut problems: Vec<String> = Vec::new();
+        let mut equation_ids = Vec::with_capacity(n_eq);
         let mut equation_names = Vec::with_capacity(n_eq);
         let mut equation_texts = Vec::with_capacity(n_eq);
         let mut rows = Vec::with_capacity(n_eq);
@@ -159,6 +162,15 @@ impl IncidenceMatrix {
                 .and_then(Value::as_str)
                 .unwrap_or(eq_name.as_str())
                 .to_owned();
+            // **The report's own `id` when it has one.** The bare reference is the
+            // cross-pane identity, and taking it from the writer is exact where
+            // splitting its label was merely reliable. Falls back to the split for a
+            // trace written before `id` existed, so committed notebooks stay readable.
+            let eq_id = r.get("id").and_then(Value::as_str).map_or_else(
+                || crate::equation_id_from_label(&eq_name).to_owned(),
+                str::to_owned,
+            );
+            equation_ids.push(eq_id);
             equation_names.push(eq_name);
             equation_texts.push(eq_text);
             // **A dropped column is a different sparsity pattern.** This was
@@ -308,6 +320,7 @@ impl IncidenceMatrix {
             problems,
             n_eq,
             n_var,
+            equation_ids,
             equation_names,
             equation_texts,
             unknown_names,
@@ -354,8 +367,18 @@ impl IncidenceMatrix {
     pub fn to_bridge_json(&self) -> serde_json::Value {
         let equations: Vec<serde_json::Value> = (0..self.n_eq)
             .map(|i| {
+                let label = self.equation_names.get(i).map(String::as_str).unwrap_or("");
                 serde_json::json!({
-                    "id": self.equation_names.get(i),
+                    // **The bare `f_x[N]`, not the full label.** The structural report
+                    // names equations `"f_x[0] (equation from src)"` while the equation
+                    // sheet publishes `"f_x[0]"`, so publishing the label raw meant the
+                    // two panes gave the *same* equation *different* ids — and every
+                    // cross-pane "this equation" resolved to nothing. Found by the
+                    // 2026-08-15 sweep, by the test written for exactly this promise.
+                    "id": self.equation_ids.get(i).map(String::as_str).unwrap_or(label),
+                    // The report's own wording, kept because it carries the origin and
+                    // is what a tour quoting the structural report will have copied.
+                    "label": label,
                     "text": self.equation_texts.get(i),
                     "unknown_columns": self.rows.get(i),
                     "matched_column": self.matched_col.get(i).copied().flatten(),
@@ -1014,7 +1037,7 @@ mod tests {
     }
 
     /// A 2x2 report that reads cleanly, for the three tests below to perturb.
-    fn clean_report() -> Value {
+    pub(super) fn clean_report() -> Value {
         serde_json::json!({
             "incidence": {
                 "n_eq": 2, "n_var": 2,
@@ -1111,6 +1134,86 @@ mod tests {
             mat.problems()[0].contains("3 equation(s)") && mat.problems()[0].contains("2 and 2"),
             "the notice must give both sizes so the gap is visible: {:?}",
             mat.problems()[0],
+        );
+    }
+}
+
+#[cfg(test)]
+mod bridge_json_tests {
+    use super::tests::clean_report;
+    use super::*;
+
+    /// **The published matrix is THIS matrix**, not an empty well-formed one.
+    ///
+    /// Added by the 2026-08-15 sweep, which found `to_bridge_json` had **no test at
+    /// all** — one grep hit, its own definition. That is a reporter with nothing
+    /// proving it reports, and it is the publisher for the pane *nothing else can
+    /// reach*: a custom `Painter` view is invisible to `egui_kittest`, so if this
+    /// silently emitted an empty matrix Claude would read it as "this model has no
+    /// incidence" and say so with confidence.
+    ///
+    /// Every assertion here is one a plausible bug would break: dimensions, the
+    /// per-equation sparsity that is the pane's whole content, the matching that makes
+    /// it a *decomposition* rather than a picture, and ids without which "this
+    /// equation" resolves to nothing.
+    #[test]
+    fn the_published_matrix_carries_this_matrix() {
+        let mat = IncidenceMatrix::from_report(&clean_report()).expect("parses");
+        let published = mat.to_bridge_json();
+
+        assert_eq!(published["n_equations"], 2);
+        assert_eq!(published["n_unknowns"], 2);
+        assert_eq!(published["n_matched"], 2);
+        assert_eq!(
+            published["structurally_singular"], false,
+            "a fully matched 2x2 is not singular, and this flag is what a tour quotes",
+        );
+        assert_eq!(
+            published["unknowns"],
+            serde_json::json!(["x", "y"]),
+            "the columns are named, or a cell reference means nothing",
+        );
+
+        let eqs = published["equations"].as_array().expect("equations array");
+        assert_eq!(eqs.len(), 2, "one row per equation");
+        assert_eq!(eqs[0]["id"], "e0", "the row carries its identity");
+        assert_eq!(
+            eqs[0]["unknown_columns"],
+            serde_json::json!([0, 1]),
+            "the sparsity IS the pane's content \u{2014} an empty row would render as \
+             an equation depending on nothing",
+        );
+        assert_eq!(eqs[1]["unknown_columns"], serde_json::json!([1]));
+        assert_eq!(
+            eqs[0]["matched_column"], 0,
+            "the matching overlay must survive publication",
+        );
+    }
+
+    /// **`problems` is published, and published even when the content looks fine.**
+    ///
+    /// A matrix that dropped a column is *quietly a different matrix*; content without
+    /// the parser's complaints is a well-formed lie. This is the 2026-08-04 sweep's
+    /// finding carried into the bridge — that sweep put `problems` on the struct, and
+    /// publishing the struct without it would have thrown the guarantee away at the
+    /// last step.
+    #[test]
+    fn the_parsers_complaints_are_published() {
+        let mut report = clean_report();
+        // A non-numeric entry: the exact silent-loss case that sweep found.
+        report["incidence"]["rows"][0]["unknowns"] = serde_json::json!(["not a column"]);
+        let mat = IncidenceMatrix::from_report(&report).expect("parses");
+
+        assert!(
+            !mat.problems().is_empty(),
+            "precondition: this report is lossy",
+        );
+        let problems = mat.to_bridge_json();
+        let problems = problems["problems"].as_array().expect("problems array");
+        assert!(
+            !problems.is_empty(),
+            "a lossy parse must reach the reader; publishing the content alone would \
+             hand over a matrix that is confidently wrong",
         );
     }
 }

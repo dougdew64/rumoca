@@ -5,10 +5,12 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "der(phi)"
     },
     {
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "der(w)"
     }
   ],
@@ -17,12 +19,14 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "der(phi)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "der(w)"
     }
   ],
@@ -36,6 +40,7 @@
     "rows": [
       {
         "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0
         ],
@@ -43,6 +48,7 @@
       },
       {
         "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
         "unknowns": [
           1
         ],

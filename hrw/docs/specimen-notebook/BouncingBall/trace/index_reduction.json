@@ -5,10 +5,12 @@
   "matching": [
     {
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "der(h)"
     },
     {
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "der(v)"
     }
   ],
@@ -17,12 +19,14 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
       "unknown": "der(h)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
       "unknown": "der(v)"
     }
   ],
@@ -35,20 +39,65 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
         "unknowns": [
           0
         ],
         "equation_text": "der(h) - v"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
         "unknowns": [
           1
         ],
         "equation_text": "der(v) - -g"
       }
     ]
+  },
+  "before": {
+    "n_equations": 2,
+    "n_unknowns": 2,
+    "n_matched": 2,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknown": "der(h)"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      }
+    ],
+    "incidence": {
+      "n_eq": 2,
+      "n_var": 2,
+      "unknown_names": [
+        "der(h)",
+        "der(v)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "der(h) - v"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "der(v) - -g"
+        }
+      ]
+    }
   },
   "reduction": {
     "states_before": [

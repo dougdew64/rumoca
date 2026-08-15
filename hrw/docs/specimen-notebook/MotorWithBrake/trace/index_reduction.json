@@ -5,30 +5,37 @@
   "matching": [
     {
       "equation": "f_x[0] (equation from L)",
+      "id": "f_x[0]",
       "unknown": "der(L.i)"
     },
     {
       "equation": "f_x[1] (equation from load)",
+      "id": "f_x[1]",
       "unknown": "der(load.phi)"
     },
     {
       "equation": "f_x[2] (equation from load)",
+      "id": "f_x[2]",
       "unknown": "der(load.w)"
     },
     {
       "equation": "f_x[3] (equation from load)",
+      "id": "f_x[3]",
       "unknown": "load.a"
     },
     {
       "equation": "f_x[4] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "id": "f_x[4]",
       "unknown": "emf.internalSupport.flange.phi"
     },
     {
       "equation": "f_x[5] (connection equation: src.n.v = gnd.p.v)",
+      "id": "f_x[5]",
       "unknown": "src.n.v"
     },
     {
       "equation": "f_x[6] (connection equation: emf.flange.phi = load.flange_a.phi)",
+      "id": "f_x[6]",
       "unknown": "emf.flange.phi"
     }
   ],
@@ -37,42 +44,49 @@
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[5] (connection equation: src.n.v = gnd.p.v)",
+      "id": "f_x[5]",
       "unknown": "src.n.v"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[0] (equation from L)",
+      "id": "f_x[0]",
       "unknown": "der(L.i)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[1] (equation from load)",
+      "id": "f_x[1]",
       "unknown": "der(load.phi)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[2] (equation from load)",
+      "id": "f_x[2]",
       "unknown": "der(load.w)"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[3] (equation from load)",
+      "id": "f_x[3]",
       "unknown": "load.a"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[4] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+      "id": "f_x[4]",
       "unknown": "emf.internalSupport.flange.phi"
     },
     {
       "kind": "scalar",
       "size": 1,
       "equation": "f_x[6] (connection equation: emf.flange.phi = load.flange_a.phi)",
+      "id": "f_x[6]",
       "unknown": "emf.flange.phi"
     }
   ],
@@ -90,7 +104,8 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0]",
+        "equation": "f_x[0] (equation from L)",
+        "id": "f_x[0]",
         "unknowns": [
           0,
           4
@@ -98,48 +113,781 @@
         "equation_text": "L.L * der(L.i) - (src.V - -src.n.v - R.R * (1 + R.alpha * (R.T - R.T_ref)) * L.i - (emf.k * -(-1 * load.w) - -src.n.v))"
       },
       {
-        "equation": "f_x[1]",
+        "equation": "f_x[1] (equation from load)",
+        "id": "f_x[1]",
         "unknowns": [
           1
         ],
         "equation_text": "load.w - der(load.phi)"
       },
       {
-        "equation": "f_x[2]",
+        "equation": "f_x[2] (equation from load)",
+        "id": "f_x[2]",
         "unknowns": [
           2
         ],
         "equation_text": "load.a - der(load.w)"
       },
       {
-        "equation": "f_x[3]",
+        "equation": "f_x[3] (equation from load)",
+        "id": "f_x[3]",
         "unknowns": [
           3
         ],
         "equation_text": "load.J * load.a - emf.k * L.i"
       },
       {
-        "equation": "f_x[4]",
+        "equation": "f_x[4] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+        "id": "f_x[4]",
         "unknowns": [
           6
         ],
         "equation_text": "emf.internalSupport.flange.phi - emf.fixed.phi0"
       },
       {
-        "equation": "f_x[5]",
+        "equation": "f_x[5] (connection equation: src.n.v = gnd.p.v)",
+        "id": "f_x[5]",
         "unknowns": [
           4
         ],
         "equation_text": "src.n.v"
       },
       {
-        "equation": "f_x[6]",
+        "equation": "f_x[6] (connection equation: emf.flange.phi = load.flange_a.phi)",
+        "id": "f_x[6]",
         "unknowns": [
           5
         ],
         "equation_text": "emf.flange.phi - load.phi"
       }
     ]
+  },
+  "before": {
+    "n_equations": 48,
+    "n_unknowns": 48,
+    "n_matched": 47,
+    "matching": [
+      {
+        "equation": "f_x[0] (binding equation for emf.internalSupport.tau)",
+        "id": "f_x[0]",
+        "unknown": "emf.internalSupport.tau"
+      },
+      {
+        "equation": "f_x[1] (equation from src)",
+        "id": "f_x[1]",
+        "unknown": "src.n.i"
+      },
+      {
+        "equation": "f_x[2] (equation from src)",
+        "id": "f_x[2]",
+        "unknown": "src.i"
+      },
+      {
+        "equation": "f_x[3] (equation from src)",
+        "id": "f_x[3]",
+        "unknown": "src.p.v"
+      },
+      {
+        "equation": "f_x[4] (equation from src)",
+        "id": "f_x[4]",
+        "unknown": "src.v"
+      },
+      {
+        "equation": "f_x[5] (equation from R)",
+        "id": "f_x[5]",
+        "unknown": "R.p.i"
+      },
+      {
+        "equation": "f_x[6] (equation from R)",
+        "id": "f_x[6]",
+        "unknown": "R.i"
+      },
+      {
+        "equation": "f_x[7] (equation from R)",
+        "id": "f_x[7]",
+        "unknown": "R.n.v"
+      },
+      {
+        "equation": "f_x[8] (equation from R)",
+        "id": "f_x[8]",
+        "unknown": "R.T_heatPort"
+      },
+      {
+        "equation": "f_x[9] (equation from R)",
+        "id": "f_x[9]",
+        "unknown": "R.R_actual"
+      },
+      {
+        "equation": "f_x[10] (equation from R)",
+        "id": "f_x[10]",
+        "unknown": "R.v"
+      },
+      {
+        "equation": "f_x[11] (equation from R)",
+        "id": "f_x[11]",
+        "unknown": "R.LossPower"
+      },
+      {
+        "equation": "f_x[12] (equation from L)",
+        "id": "f_x[12]",
+        "unknown": "L.n.i"
+      },
+      {
+        "equation": "f_x[13] (equation from L)",
+        "id": "f_x[13]",
+        "unknown": "L.p.i"
+      },
+      {
+        "equation": "f_x[14] (equation from L)",
+        "id": "f_x[14]",
+        "unknown": "L.v"
+      },
+      {
+        "equation": "f_x[15] (equation from L)",
+        "id": "f_x[15]",
+        "unknown": "der(L.i)"
+      },
+      {
+        "equation": "f_x[16] (equation from emf.fixed)",
+        "id": "f_x[16]",
+        "unknown": "emf.fixed.flange.phi"
+      },
+      {
+        "equation": "f_x[17] (equation from emf.internalSupport)",
+        "id": "f_x[17]",
+        "unknown": "emf.internalSupport.flange.tau"
+      },
+      {
+        "equation": "f_x[18] (equation from emf.internalSupport)",
+        "id": "f_x[18]",
+        "unknown": "emf.internalSupport.phi"
+      },
+      {
+        "equation": "f_x[19] (equation from emf)",
+        "id": "f_x[19]",
+        "unknown": "emf.v"
+      },
+      {
+        "equation": "f_x[20] (equation from emf)",
+        "id": "f_x[20]",
+        "unknown": "emf.n.i"
+      },
+      {
+        "equation": "f_x[21] (equation from emf)",
+        "id": "f_x[21]",
+        "unknown": "emf.i"
+      },
+      {
+        "equation": "f_x[22] (equation from emf)",
+        "id": "f_x[22]",
+        "unknown": "emf.flange.phi"
+      },
+      {
+        "equation": "f_x[23] (equation from emf)",
+        "id": "f_x[23]",
+        "unknown": "der(emf.phi)"
+      },
+      {
+        "equation": "f_x[24] (equation from emf)",
+        "id": "f_x[24]",
+        "unknown": "emf.w"
+      },
+      {
+        "equation": "f_x[25] (equation from emf)",
+        "id": "f_x[25]",
+        "unknown": "emf.tau"
+      },
+      {
+        "equation": "f_x[26] (equation from emf)",
+        "id": "f_x[26]",
+        "unknown": "emf.tauElectrical"
+      },
+      {
+        "equation": "f_x[27] (equation from emf)",
+        "id": "f_x[27]",
+        "unknown": "emf.flange.tau"
+      },
+      {
+        "equation": "f_x[28] (equation from gnd)",
+        "id": "f_x[28]",
+        "unknown": "gnd.p.v"
+      },
+      {
+        "equation": "f_x[29] (equation from load)",
+        "id": "f_x[29]",
+        "unknown": "load.flange_a.phi"
+      },
+      {
+        "equation": "f_x[30] (equation from load)",
+        "id": "f_x[30]",
+        "unknown": "load.flange_b.phi"
+      },
+      {
+        "equation": "f_x[31] (equation from load)",
+        "id": "f_x[31]",
+        "unknown": "der(load.phi)"
+      },
+      {
+        "equation": "f_x[32] (equation from load)",
+        "id": "f_x[32]",
+        "unknown": "der(load.w)"
+      },
+      {
+        "equation": "f_x[33] (equation from load)",
+        "id": "f_x[33]",
+        "unknown": "load.a"
+      },
+      {
+        "equation": "f_x[34] (flow sum equation: emf.internalSupport.flange.tau + emf.fixed.flange.tau = 0)",
+        "id": "f_x[34]",
+        "unknown": "emf.fixed.flange.tau"
+      },
+      {
+        "equation": "f_x[35] (flow sum equation: src.p.i + R.p.i = 0)",
+        "id": "f_x[35]",
+        "unknown": "src.p.i"
+      },
+      {
+        "equation": "f_x[36] (flow sum equation: R.n.i + L.p.i = 0)",
+        "id": "f_x[36]",
+        "unknown": "R.n.i"
+      },
+      {
+        "equation": "f_x[37] (flow sum equation: L.n.i + emf.p.i = 0)",
+        "id": "f_x[37]",
+        "unknown": "emf.p.i"
+      },
+      {
+        "equation": "f_x[38] (flow sum equation: emf.n.i + src.n.i + gnd.p.i = 0)",
+        "id": "f_x[38]",
+        "unknown": "gnd.p.i"
+      },
+      {
+        "equation": "f_x[39] (flow sum equation: emf.flange.tau + load.flange_a.tau = 0)",
+        "id": "f_x[39]",
+        "unknown": "load.flange_a.tau"
+      },
+      {
+        "equation": "f_x[40] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+        "id": "f_x[40]",
+        "unknown": "emf.internalSupport.flange.phi"
+      },
+      {
+        "equation": "f_x[41] (connection equation: src.p.v = R.p.v)",
+        "id": "f_x[41]",
+        "unknown": "R.p.v"
+      },
+      {
+        "equation": "f_x[42] (connection equation: R.n.v = L.p.v)",
+        "id": "f_x[42]",
+        "unknown": "L.p.v"
+      },
+      {
+        "equation": "f_x[43] (connection equation: L.n.v = emf.p.v)",
+        "id": "f_x[43]",
+        "unknown": "L.n.v"
+      },
+      {
+        "equation": "f_x[44] (connection equation: emf.n.v = src.n.v)",
+        "id": "f_x[44]",
+        "unknown": "emf.n.v"
+      },
+      {
+        "equation": "f_x[45] (connection equation: src.n.v = gnd.p.v)",
+        "id": "f_x[45]",
+        "unknown": "src.n.v"
+      },
+      {
+        "equation": "f_x[47] (unconnected flow: load.flange_b.tau = 0)",
+        "id": "f_x[47]",
+        "unknown": "load.flange_b.tau"
+      }
+    ],
+    "incidence": {
+      "n_eq": 48,
+      "n_var": 48,
+      "unknown_names": [
+        "der(L.i)",
+        "der(emf.phi)",
+        "der(load.phi)",
+        "der(load.w)",
+        "src.v",
+        "R.T_heatPort",
+        "L.v",
+        "emf.w",
+        "load.flange_b.phi",
+        "load.flange_b.tau",
+        "load.a",
+        "R.R_actual",
+        "emf.v",
+        "src.i",
+        "src.p.v",
+        "src.p.i",
+        "src.n.v",
+        "src.n.i",
+        "R.i",
+        "R.v",
+        "R.p.v",
+        "R.p.i",
+        "R.n.v",
+        "R.n.i",
+        "R.LossPower",
+        "L.p.v",
+        "L.p.i",
+        "L.n.v",
+        "L.n.i",
+        "emf.i",
+        "emf.tau",
+        "emf.tauElectrical",
+        "emf.p.v",
+        "emf.p.i",
+        "emf.n.v",
+        "emf.n.i",
+        "emf.flange.phi",
+        "emf.flange.tau",
+        "emf.fixed.flange.phi",
+        "emf.fixed.flange.tau",
+        "emf.internalSupport.tau",
+        "emf.internalSupport.phi",
+        "emf.internalSupport.flange.phi",
+        "emf.internalSupport.flange.tau",
+        "gnd.p.v",
+        "gnd.p.i",
+        "load.flange_a.phi",
+        "load.flange_a.tau"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (binding equation for emf.internalSupport.tau)",
+          "id": "f_x[0]",
+          "unknowns": [
+            30,
+            40
+          ],
+          "equation_text": "emf.internalSupport.tau - -emf.tau"
+        },
+        {
+          "equation": "f_x[1] (equation from src)",
+          "id": "f_x[1]",
+          "unknowns": [
+            15,
+            17
+          ],
+          "equation_text": "0 - (src.p.i + src.n.i)"
+        },
+        {
+          "equation": "f_x[2] (equation from src)",
+          "id": "f_x[2]",
+          "unknowns": [
+            13,
+            15
+          ],
+          "equation_text": "src.i - src.p.i"
+        },
+        {
+          "equation": "f_x[3] (equation from src)",
+          "id": "f_x[3]",
+          "unknowns": [
+            4,
+            14,
+            16
+          ],
+          "equation_text": "src.v - (src.p.v - src.n.v)"
+        },
+        {
+          "equation": "f_x[4] (equation from src)",
+          "id": "f_x[4]",
+          "unknowns": [
+            4
+          ],
+          "equation_text": "src.v - src.V"
+        },
+        {
+          "equation": "f_x[5] (equation from R)",
+          "id": "f_x[5]",
+          "unknowns": [
+            21,
+            23
+          ],
+          "equation_text": "0 - (R.p.i + R.n.i)"
+        },
+        {
+          "equation": "f_x[6] (equation from R)",
+          "id": "f_x[6]",
+          "unknowns": [
+            18,
+            21
+          ],
+          "equation_text": "R.i - R.p.i"
+        },
+        {
+          "equation": "f_x[7] (equation from R)",
+          "id": "f_x[7]",
+          "unknowns": [
+            19,
+            20,
+            22
+          ],
+          "equation_text": "R.v - (R.p.v - R.n.v)"
+        },
+        {
+          "equation": "f_x[8] (equation from R)",
+          "id": "f_x[8]",
+          "unknowns": [
+            5
+          ],
+          "equation_text": "R.T_heatPort - R.T"
+        },
+        {
+          "equation": "f_x[9] (equation from R)",
+          "id": "f_x[9]",
+          "unknowns": [
+            5,
+            11
+          ],
+          "equation_text": "R.R_actual - R.R * (1 + R.alpha * (R.T_heatPort - R.T_ref))"
+        },
+        {
+          "equation": "f_x[10] (equation from R)",
+          "id": "f_x[10]",
+          "unknowns": [
+            11,
+            18,
+            19
+          ],
+          "equation_text": "R.v - R.R_actual * R.i"
+        },
+        {
+          "equation": "f_x[11] (equation from R)",
+          "id": "f_x[11]",
+          "unknowns": [
+            18,
+            19,
+            24
+          ],
+          "equation_text": "R.LossPower - R.v * R.i"
+        },
+        {
+          "equation": "f_x[12] (equation from L)",
+          "id": "f_x[12]",
+          "unknowns": [
+            26,
+            28
+          ],
+          "equation_text": "0 - (L.p.i + L.n.i)"
+        },
+        {
+          "equation": "f_x[13] (equation from L)",
+          "id": "f_x[13]",
+          "unknowns": [
+            26
+          ],
+          "equation_text": "L.i - L.p.i"
+        },
+        {
+          "equation": "f_x[14] (equation from L)",
+          "id": "f_x[14]",
+          "unknowns": [
+            6,
+            25,
+            27
+          ],
+          "equation_text": "L.v - (L.p.v - L.n.v)"
+        },
+        {
+          "equation": "f_x[15] (equation from L)",
+          "id": "f_x[15]",
+          "unknowns": [
+            0,
+            6
+          ],
+          "equation_text": "L.L * der(L.i) - L.v"
+        },
+        {
+          "equation": "f_x[16] (equation from emf.fixed)",
+          "id": "f_x[16]",
+          "unknowns": [
+            38
+          ],
+          "equation_text": "emf.fixed.flange.phi - emf.fixed.phi0"
+        },
+        {
+          "equation": "f_x[17] (equation from emf.internalSupport)",
+          "id": "f_x[17]",
+          "unknowns": [
+            40,
+            43
+          ],
+          "equation_text": "emf.internalSupport.flange.tau - emf.internalSupport.tau"
+        },
+        {
+          "equation": "f_x[18] (equation from emf.internalSupport)",
+          "id": "f_x[18]",
+          "unknowns": [
+            41,
+            42
+          ],
+          "equation_text": "emf.internalSupport.flange.phi - emf.internalSupport.phi"
+        },
+        {
+          "equation": "f_x[19] (equation from emf)",
+          "id": "f_x[19]",
+          "unknowns": [
+            12,
+            32,
+            34
+          ],
+          "equation_text": "emf.v - (emf.p.v - emf.n.v)"
+        },
+        {
+          "equation": "f_x[20] (equation from emf)",
+          "id": "f_x[20]",
+          "unknowns": [
+            33,
+            35
+          ],
+          "equation_text": "0 - (emf.p.i + emf.n.i)"
+        },
+        {
+          "equation": "f_x[21] (equation from emf)",
+          "id": "f_x[21]",
+          "unknowns": [
+            29,
+            33
+          ],
+          "equation_text": "emf.i - emf.p.i"
+        },
+        {
+          "equation": "f_x[22] (equation from emf)",
+          "id": "f_x[22]",
+          "unknowns": [
+            36,
+            41
+          ],
+          "equation_text": "emf.phi - (emf.flange.phi - emf.internalSupport.phi)"
+        },
+        {
+          "equation": "f_x[23] (equation from emf)",
+          "id": "f_x[23]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "emf.w - der(emf.phi)"
+        },
+        {
+          "equation": "f_x[24] (equation from emf)",
+          "id": "f_x[24]",
+          "unknowns": [
+            7,
+            12
+          ],
+          "equation_text": "emf.k * emf.w - emf.v"
+        },
+        {
+          "equation": "f_x[25] (equation from emf)",
+          "id": "f_x[25]",
+          "unknowns": [
+            29,
+            30
+          ],
+          "equation_text": "emf.tau - -(emf.k * emf.i)"
+        },
+        {
+          "equation": "f_x[26] (equation from emf)",
+          "id": "f_x[26]",
+          "unknowns": [
+            30,
+            31
+          ],
+          "equation_text": "emf.tauElectrical - -emf.tau"
+        },
+        {
+          "equation": "f_x[27] (equation from emf)",
+          "id": "f_x[27]",
+          "unknowns": [
+            30,
+            37
+          ],
+          "equation_text": "emf.tau - emf.flange.tau"
+        },
+        {
+          "equation": "f_x[28] (equation from gnd)",
+          "id": "f_x[28]",
+          "unknowns": [
+            44
+          ],
+          "equation_text": "gnd.p.v - 0"
+        },
+        {
+          "equation": "f_x[29] (equation from load)",
+          "id": "f_x[29]",
+          "unknowns": [
+            46
+          ],
+          "equation_text": "load.phi - load.flange_a.phi"
+        },
+        {
+          "equation": "f_x[30] (equation from load)",
+          "id": "f_x[30]",
+          "unknowns": [
+            8
+          ],
+          "equation_text": "load.phi - load.flange_b.phi"
+        },
+        {
+          "equation": "f_x[31] (equation from load)",
+          "id": "f_x[31]",
+          "unknowns": [
+            2
+          ],
+          "equation_text": "load.w - der(load.phi)"
+        },
+        {
+          "equation": "f_x[32] (equation from load)",
+          "id": "f_x[32]",
+          "unknowns": [
+            3
+          ],
+          "equation_text": "load.a - der(load.w)"
+        },
+        {
+          "equation": "f_x[33] (equation from load)",
+          "id": "f_x[33]",
+          "unknowns": [
+            9,
+            10,
+            47
+          ],
+          "equation_text": "load.J * load.a - (load.flange_a.tau + load.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[34] (flow sum equation: emf.internalSupport.flange.tau + emf.fixed.flange.tau = 0)",
+          "id": "f_x[34]",
+          "unknowns": [
+            39,
+            43
+          ],
+          "equation_text": "emf.internalSupport.flange.tau + emf.fixed.flange.tau"
+        },
+        {
+          "equation": "f_x[35] (flow sum equation: src.p.i + R.p.i = 0)",
+          "id": "f_x[35]",
+          "unknowns": [
+            15,
+            21
+          ],
+          "equation_text": "src.p.i + R.p.i"
+        },
+        {
+          "equation": "f_x[36] (flow sum equation: R.n.i + L.p.i = 0)",
+          "id": "f_x[36]",
+          "unknowns": [
+            23,
+            26
+          ],
+          "equation_text": "R.n.i + L.p.i"
+        },
+        {
+          "equation": "f_x[37] (flow sum equation: L.n.i + emf.p.i = 0)",
+          "id": "f_x[37]",
+          "unknowns": [
+            28,
+            33
+          ],
+          "equation_text": "L.n.i + emf.p.i"
+        },
+        {
+          "equation": "f_x[38] (flow sum equation: emf.n.i + src.n.i + gnd.p.i = 0)",
+          "id": "f_x[38]",
+          "unknowns": [
+            17,
+            35,
+            45
+          ],
+          "equation_text": "emf.n.i + src.n.i + gnd.p.i"
+        },
+        {
+          "equation": "f_x[39] (flow sum equation: emf.flange.tau + load.flange_a.tau = 0)",
+          "id": "f_x[39]",
+          "unknowns": [
+            37,
+            47
+          ],
+          "equation_text": "emf.flange.tau + load.flange_a.tau"
+        },
+        {
+          "equation": "f_x[40] (connection equation: emf.internalSupport.flange.phi = emf.fixed.flange.phi)",
+          "id": "f_x[40]",
+          "unknowns": [
+            38,
+            42
+          ],
+          "equation_text": "emf.internalSupport.flange.phi - emf.fixed.flange.phi"
+        },
+        {
+          "equation": "f_x[41] (connection equation: src.p.v = R.p.v)",
+          "id": "f_x[41]",
+          "unknowns": [
+            14,
+            20
+          ],
+          "equation_text": "src.p.v - R.p.v"
+        },
+        {
+          "equation": "f_x[42] (connection equation: R.n.v = L.p.v)",
+          "id": "f_x[42]",
+          "unknowns": [
+            22,
+            25
+          ],
+          "equation_text": "R.n.v - L.p.v"
+        },
+        {
+          "equation": "f_x[43] (connection equation: L.n.v = emf.p.v)",
+          "id": "f_x[43]",
+          "unknowns": [
+            27,
+            32
+          ],
+          "equation_text": "L.n.v - emf.p.v"
+        },
+        {
+          "equation": "f_x[44] (connection equation: emf.n.v = src.n.v)",
+          "id": "f_x[44]",
+          "unknowns": [
+            16,
+            34
+          ],
+          "equation_text": "emf.n.v - src.n.v"
+        },
+        {
+          "equation": "f_x[45] (connection equation: src.n.v = gnd.p.v)",
+          "id": "f_x[45]",
+          "unknowns": [
+            16,
+            44
+          ],
+          "equation_text": "src.n.v - gnd.p.v"
+        },
+        {
+          "equation": "f_x[46] (connection equation: emf.flange.phi = load.flange_a.phi)",
+          "id": "f_x[46]",
+          "unknowns": [
+            36,
+            46
+          ],
+          "equation_text": "emf.flange.phi - load.flange_a.phi"
+        },
+        {
+          "equation": "f_x[47] (unconnected flow: load.flange_b.tau = 0)",
+          "id": "f_x[47]",
+          "unknowns": [
+            9
+          ],
+          "equation_text": "load.flange_b.tau"
+        }
+      ]
+    }
   },
   "reduction": {
     "states_before": [
@@ -204,167 +952,167 @@
     "eliminations": [
       {
         "variable": "src.v",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":5054978072937110061,\"start\":261,\"end\":262}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":2471142840645193943,\"start\":261,\"end\":262}}}"
       },
       {
         "variable": "R.T_heatPort",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":16961345721610102190,\"start\":925,\"end\":926}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}}"
       },
       {
         "variable": "L.p.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}}"
       },
       {
         "variable": "emf.fixed.flange.phi",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.fixed.phi0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"subs\":[]},{\"ident\":\"fixed\",\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"subs\":[]},{\"ident\":\"phi0\",\"span\":{\"source\":16206293870977540163,\"start\":116,\"end\":129},\"subs\":[]}],\"def_id\":39535}},\"subscripts\":[],\"span\":{\"source\":16206293870977540163,\"start\":329,\"end\":333}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.fixed.phi0\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11851819825308717373,\"start\":116,\"end\":129},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11851819825308717373,\"start\":116,\"end\":129},\"subs\":[]},{\"ident\":\"fixed\",\"span\":{\"source\":11851819825308717373,\"start\":116,\"end\":129},\"subs\":[]},{\"ident\":\"phi0\",\"span\":{\"source\":11851819825308717373,\"start\":116,\"end\":129},\"subs\":[]}],\"def_id\":39535}},\"subscripts\":[],\"span\":{\"source\":11851819825308717373,\"start\":329,\"end\":333}}}"
       },
       {
         "variable": "emf.w",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"load.w\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"subs\":[]},{\"ident\":\"w\",\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"subs\":[]}],\"def_id\":39567}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":925,\"end\":926}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"load.w\",\"component_ref\":{\"local\":false,\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"subs\":[]},{\"ident\":\"w\",\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"subs\":[]}],\"def_id\":39567}},\"subscripts\":[],\"span\":{\"source\":9505113861025472581,\"start\":925,\"end\":926}}},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}}"
       },
       {
         "variable": "gnd.p.v",
-        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":2609301896917617192,\"start\":222,\"end\":225}}}"
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":3863566413367295742,\"start\":222,\"end\":225}}}"
       },
       {
         "variable": "load.flange_a.phi",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39566}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":881,\"end\":884}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":9505113861025472581,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":9505113861025472581,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":9505113861025472581,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39566}},\"subscripts\":[],\"span\":{\"source\":9505113861025472581,\"start\":881,\"end\":884}}}"
       },
       {
         "variable": "load.flange_b.phi",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":10383162805277989159,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39566}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":903,\"end\":906}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"load.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":9505113861025472581,\"start\":373,\"end\":385},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":9505113861025472581,\"start\":373,\"end\":385},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":9505113861025472581,\"start\":373,\"end\":385},\"subs\":[]}],\"def_id\":39566}},\"subscripts\":[],\"span\":{\"source\":9505113861025472581,\"start\":903,\"end\":906}}}"
       },
       {
         "variable": "load.flange_b.tau",
-        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}}"
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":12345605953554932806,\"start\":162,\"end\":175}}}"
       },
       {
         "variable": "emf.internalSupport.tau",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":683,\"end\":696},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":683,\"end\":696},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":16793327652531069364,\"start\":683,\"end\":696},\"subs\":[]}],\"def_id\":39519}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1648,\"end\":1651}}},\"span\":{\"source\":16793327652531069364,\"start\":1647,\"end\":1651}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":683,\"end\":696},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":683,\"end\":696},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":11157628283630720498,\"start\":683,\"end\":696},\"subs\":[]}],\"def_id\":39519}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1648,\"end\":1651}}},\"span\":{\"source\":11157628283630720498,\"start\":1647,\"end\":1651}}}"
       },
       {
         "variable": "src.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":245,\"end\":248}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}}"
       },
       {
         "variable": "R.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39485}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":245,\"end\":248}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39485}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}}"
       },
       {
         "variable": "R.R_actual",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.R\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17867382465268392184,\"start\":103,\"end\":118},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":103,\"end\":118},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":17867382465268392184,\"start\":735,\"end\":736}}},\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Literal\":{\"value\":{\"Integer\":1},\"span\":{\"source\":17867382465268392184,\"start\":738,\"end\":739}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.alpha\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17867382465268392184,\"start\":244,\"end\":281},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"alpha\",\"span\":{\"source\":17867382465268392184,\"start\":244,\"end\":281},\"subs\":[]}],\"def_id\":39496}},\"subscripts\":[],\"span\":{\"source\":17867382465268392184,\"start\":742,\"end\":747}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":16961345721610102190,\"start\":925,\"end\":926}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T_ref\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17867382465268392184,\"start\":179,\"end\":199},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"T_ref\",\"span\":{\"source\":17867382465268392184,\"start\":179,\"end\":199},\"subs\":[]}],\"def_id\":39495}},\"subscripts\":[],\"span\":{\"source\":17867382465268392184,\"start\":762,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":749,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":742,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":738,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":735,\"end\":767}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.R\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":736}}},\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Literal\":{\"value\":{\"Integer\":1},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":739}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.alpha\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"alpha\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]}],\"def_id\":39496}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":747}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T_ref\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"T_ref\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]}],\"def_id\":39495}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":762,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":749,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":767}}}"
       },
       {
         "variable": "L.n.i",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":2769899009535713388,\"start\":228,\"end\":237}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":2336715272576324994,\"start\":228,\"end\":237}}}"
       },
       {
         "variable": "emf.internalSupport.flange.tau",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":683,\"end\":696},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":683,\"end\":696},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":16793327652531069364,\"start\":683,\"end\":696},\"subs\":[]}],\"def_id\":39519}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1648,\"end\":1651}}},\"span\":{\"source\":16793327652531069364,\"start\":1647,\"end\":1651}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.tau\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":683,\"end\":696},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":683,\"end\":696},\"subs\":[]},{\"ident\":\"tau\",\"span\":{\"source\":11157628283630720498,\"start\":683,\"end\":696},\"subs\":[]}],\"def_id\":39519}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1648,\"end\":1651}}},\"span\":{\"source\":11157628283630720498,\"start\":1647,\"end\":1651}}}"
       },
       {
         "variable": "emf.internalSupport.phi",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.internalSupport.flange.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"internalSupport\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39546}},\"subscripts\":[],\"span\":{\"source\":3391961103708391217,\"start\":610,\"end\":620}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.internalSupport.flange.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"internalSupport\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39546}},\"subscripts\":[],\"span\":{\"source\":14525797650516073299,\"start\":610,\"end\":620}}}"
       },
       {
         "variable": "emf.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1794,\"end\":1797}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1794,\"end\":1797}}}"
       },
       {
         "variable": "emf.v",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1860,\"end\":1861}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"load.w\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"subs\":[]},{\"ident\":\"w\",\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"subs\":[]}],\"def_id\":39567}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":925,\"end\":926}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16793327652531069364,\"start\":1860,\"end\":1863}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1860,\"end\":1861}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"load.w\",\"component_ref\":{\"local\":false,\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"subs\":[]},{\"ident\":\"w\",\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"subs\":[]}],\"def_id\":39567}},\"subscripts\":[],\"span\":{\"source\":9505113861025472581,\"start\":925,\"end\":926}}},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"span\":{\"source\":11157628283630720498,\"start\":1860,\"end\":1863}}}"
       },
       {
         "variable": "emf.tau",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1794,\"end\":1797}}},\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1881}}},\"span\":{\"source\":16793327652531069364,\"start\":1877,\"end\":1881}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1794,\"end\":1797}}},\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1881}}},\"span\":{\"source\":11157628283630720498,\"start\":1877,\"end\":1881}}}"
       },
       {
         "variable": "emf.tauElectrical",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1794,\"end\":1797}}},\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1881}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1794,\"end\":1797}}},\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1881}}}"
       },
       {
         "variable": "emf.flange.tau",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1794,\"end\":1797}}},\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1881}}},\"span\":{\"source\":16793327652531069364,\"start\":1877,\"end\":1881}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39524}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1794,\"end\":1797}}},\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1881}}},\"span\":{\"source\":11157628283630720498,\"start\":1877,\"end\":1881}}}"
       },
       {
         "variable": "R.n.i",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":6051448600711416507,\"start\":477,\"end\":489}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489}}}"
       },
       {
         "variable": "emf.p.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}}"
       },
       {
         "variable": "load.flange_a.tau",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1881}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1881}}}"
       },
       {
         "variable": "R.p.v",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}}"
       },
       {
         "variable": "L.p.v",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}}"
       },
       {
         "variable": "L.n.v",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39523}},\"subscripts\":[],\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"emf.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39523}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}}"
       },
       {
         "variable": "emf.n.v",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
       },
       {
         "variable": "R.v",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":18390250018824270476,\"start\":417,\"end\":420}}},\"span\":{\"source\":18390250018824270476,\"start\":411,\"end\":420}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":417,\"end\":420}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}}"
       },
       {
         "variable": "R.LossPower",
-        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":18390250018824270476,\"start\":417,\"end\":420}}},\"span\":{\"source\":18390250018824270476,\"start\":411,\"end\":420}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39485}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":245,\"end\":248}}},\"span\":{\"source\":17867382465268392184,\"start\":803,\"end\":806}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39471}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":417,\"end\":420}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39485}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}},\"span\":{\"source\":17631980999968599698,\"start\":803,\"end\":806}}}"
       },
       {
         "variable": "L.v",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":15508185773615376835,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39523}},\"subscripts\":[],\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134}}},\"span\":{\"source\":18390250018824270476,\"start\":411,\"end\":420}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39488}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39523}},\"subscripts\":[],\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}}"
       },
       {
         "variable": "emf.phi",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.flange.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39531}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1808,\"end\":1818}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.internalSupport.flange.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"internalSupport\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39546}},\"subscripts\":[],\"span\":{\"source\":3391961103708391217,\"start\":610,\"end\":620}}},\"span\":{\"source\":16793327652531069364,\"start\":1808,\"end\":1840}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.flange.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39531}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1808,\"end\":1818}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.internalSupport.flange.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"internalSupport\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39546}},\"subscripts\":[],\"span\":{\"source\":14525797650516073299,\"start\":610,\"end\":620}}},\"span\":{\"source\":11157628283630720498,\"start\":1808,\"end\":1840}}}"
       },
       {
         "variable": "R.p.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}}"
       },
       {
         "variable": "emf.n.i",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":16793327652531069364,\"start\":1777,\"end\":1786}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":11157628283630720498,\"start\":1777,\"end\":1786}}}"
       },
       {
         "variable": "emf.fixed.flange.tau",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":16793327652531069364,\"start\":1878,\"end\":1881}}},\"span\":{\"source\":16773711586059280972,\"start\":162,\"end\":175}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1879}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":11157628283630720498,\"start\":1878,\"end\":1881}}},\"span\":{\"source\":12345605953554932806,\"start\":162,\"end\":175}}}"
       },
       {
         "variable": "src.p.i",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":15508185773615376835,\"start\":477,\"end\":489}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489}}}"
       },
       {
         "variable": "src.n.i",
-        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}}"
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}}"
       },
       {
         "variable": "gnd.p.i",
-        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":16793327652531069364,\"start\":1777,\"end\":1786}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":6051448600711416507,\"start\":477,\"end\":489}}},\"span\":{\"source\":6051448600711416507,\"start\":477,\"end\":489}}}"
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":11157628283630720498,\"start\":1777,\"end\":1786}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}},\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}}"
       },
       {
         "variable": "src.p.v",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":5054978072937110061,\"start\":261,\"end\":262}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":18390250018824270476,\"start\":407,\"end\":408}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":18390250018824270476,\"start\":417,\"end\":420}}},\"span\":{\"source\":18390250018824270476,\"start\":407,\"end\":408}}},\"span\":{\"source\":18390250018824270476,\"start\":407,\"end\":408}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":2471142840645193943,\"start\":261,\"end\":262}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":417,\"end\":420}}},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}}"
       },
       {
         "variable": "R.n.v",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":5054978072937110061,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":5054978072937110061,\"start\":261,\"end\":262}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":18390250018824270476,\"start\":417,\"end\":420}}},\"span\":{\"source\":18390250018824270476,\"start\":407,\"end\":408}}},\"span\":{\"source\":18390250018824270476,\"start\":407,\"end\":408}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.R\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17867382465268392184,\"start\":103,\"end\":118},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":103,\"end\":118},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":17867382465268392184,\"start\":735,\"end\":736}}},\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Literal\":{\"value\":{\"Integer\":1},\"span\":{\"source\":17867382465268392184,\"start\":738,\"end\":739}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.alpha\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17867382465268392184,\"start\":244,\"end\":281},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"alpha\",\"span\":{\"source\":17867382465268392184,\"start\":244,\"end\":281},\"subs\":[]}],\"def_id\":39496}},\"subscripts\":[],\"span\":{\"source\":17867382465268392184,\"start\":742,\"end\":747}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":16961345721610102190,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":16961345721610102190,\"start\":925,\"end\":926}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T_ref\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17867382465268392184,\"start\":179,\"end\":199},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17867382465268392184,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"T_ref\",\"span\":{\"source\":17867382465268392184,\"start\":179,\"end\":199},\"subs\":[]}],\"def_id\":39495}},\"subscripts\":[],\"span\":{\"source\":17867382465268392184,\"start\":762,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":749,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":742,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":738,\"end\":767}}},\"span\":{\"source\":17867382465268392184,\"start\":735,\"end\":767}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2769899009535713388,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2769899009535713388,\"start\":241,\"end\":242}}},\"span\":{\"source\":17867382465268392184,\"start\":777,\"end\":787}}},\"span\":{\"source\":17867382465268392184,\"start\":773,\"end\":774}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":2471142840645193943,\"start\":261,\"end\":262}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":417,\"end\":420}}},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.R\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":736}}},\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Literal\":{\"value\":{\"Integer\":1},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":739}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.alpha\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"alpha\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]}],\"def_id\":39496}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":747}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39491}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"R.T_ref\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"parts\":[{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"T_ref\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]}],\"def_id\":39495}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":762,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":749,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":767}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"L.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"parts\":[{\"ident\":\"L\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":2336715272576324994,\"start\":161,\"end\":173},\"subs\":[]}],\"def_id\":39500}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":241,\"end\":242}}},\"span\":{\"source\":17631980999968599698,\"start\":777,\"end\":787}}},\"span\":{\"source\":17631980999968599698,\"start\":773,\"end\":774}}}"
       },
       {
         "variable": "emf.p.v",
-        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":16793327652531069364,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":16793327652531069364,\"start\":1860,\"end\":1861}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"load.w\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"subs\":[]},{\"ident\":\"w\",\"span\":{\"source\":10383162805277989159,\"start\":530,\"end\":550},\"subs\":[]}],\"def_id\":39567}},\"subscripts\":[],\"span\":{\"source\":10383162805277989159,\"start\":925,\"end\":926}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16773711586059280972,\"start\":105,\"end\":117}}},\"span\":{\"source\":16793327652531069364,\"start\":1860,\"end\":1863}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":16793327652531069364,\"start\":1756,\"end\":1757}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":6051448600711416507,\"start\":112,\"end\":134}}},\"span\":{\"source\":16793327652531069364,\"start\":1756,\"end\":1757}}},\"span\":{\"source\":16793327652531069364,\"start\":1756,\"end\":1757}}}"
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"emf.k\",\"component_ref\":{\"local\":false,\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"parts\":[{\"ident\":\"emf\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]},{\"ident\":\"k\",\"span\":{\"source\":11157628283630720498,\"start\":322,\"end\":351},\"subs\":[]}],\"def_id\":39514}},\"subscripts\":[],\"span\":{\"source\":11157628283630720498,\"start\":1860,\"end\":1861}}},\"rhs\":{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":-1.0},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"load.w\",\"component_ref\":{\"local\":false,\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"parts\":[{\"ident\":\"load\",\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"subs\":[]},{\"ident\":\"w\",\"span\":{\"source\":9505113861025472581,\"start\":530,\"end\":550},\"subs\":[]}],\"def_id\":39567}},\"subscripts\":[],\"span\":{\"source\":9505113861025472581,\"start\":925,\"end\":926}}},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117}}},\"span\":{\"source\":11157628283630720498,\"start\":1860,\"end\":1863}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":11157628283630720498,\"start\":1756,\"end\":1757}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"span\":{\"source\":11157628283630720498,\"start\":1756,\"end\":1757}}},\"span\":{\"source\":11157628283630720498,\"start\":1756,\"end\":1757}}}"
       }
     ],
     "stopped_at": null,
