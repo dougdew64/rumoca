@@ -79,6 +79,44 @@ in HRW. A curriculum tour is spending it on the concept instead. The rule it doe
 one that matters for both: **claims stay austere and trace-sourced, however long the prose
 gets.** Length is bought with explanation, never with hedging.
 
+#### Two passes over every subject: the idea, then the code
+
+**Agreed with Doug 2026-08-15**, generalising a split that had already happened by accident
+between [`matching.md`](matching.md) and [`matching-live.md`](matching-live.md):
+
+> *"The connections tour which we just completed is about the concepts, math and algorithms, but
+> not about the rumoca code… We're going to make two walking passes through the tour subjects.
+> During the first pass, we will focus on concepts, math and algorithms… During the second pass,
+> we will focus on the rumoca code."*
+
+| pass | subject | lab | example |
+|---|---|---|---|
+| **1** | concepts, mathematics, the algorithm as an idea | the HRW pane | `connect-expansion.md` |
+| **2** | how Rumoca implements it | the source and the debugger | `matching-live.md` |
+
+**Pass 2 is not defined by the debugger**, even though `matching-live.md` is a debugger tour.
+Stepping is the sharpest instrument for reading an algorithm's *behaviour*; it is useless for
+why a phase is organised as it is, why a type sits at one IR boundary and not another, or why an
+origin is a `String` on one side of DAE construction and an enum on the other. Those are read,
+not stepped. **So `-live` in a filename names the instrument, not the pass** — prefer a suffix
+that names the pass for new ones, and leave `matching-live.md` alone rather than break its links.
+
+**The template still applies, with the lab swapped.** *Predict → look → falsified if →
+explanation after.* Predict what a function returns, which branch runs, what the union-find holds
+at this step — then step, and check. A pass-2 tour that merely narrates source is prose competing
+with the reader's own editor.
+
+**What this fixes, and it is the reason to adopt it rather than a nicety.** The depth rule sends
+premature detail to [`../compiler-phases/`](../compiler-phases/), which is raw, unsummarised, and
+**read by nobody** — a graveyard dressed as a database. Under two passes that same material is
+the *source* for a pass-2 tour, so exiling it is deferral rather than disposal. It also lets a
+pass-1 tour be **ruthless** about excluding implementation detail, because there is somewhere
+specific for it to go.
+
+**Write pass 2 when he starts pass 2**, not alongside pass 1. The rule to write while you still
+know what should happen is satisfied by capturing the material in `compiler-phases/` as it comes
+up; composing it into a walk before it is wanted is building what nobody has asked to read.
+
 Cross-platform tours may route through Wolfram Desktop or System Modeler when the point cannot
 be made in HRW. Their notebooks are versioned in [`notebooks/`](notebooks/) — a *fixture*
 notebook is kept for the same reason a fixture tour is, while an ad hoc notebook is ephemeral.

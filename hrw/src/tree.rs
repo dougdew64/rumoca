@@ -449,14 +449,13 @@ fn node_ui(
             // Explain the underline. Appended to the field's own help rather
             // than replacing it, so discoverability does not cost the
             // documentation that is already there.
-            resp.clone()
-                .on_hover_text(row_hover(
-                    field_help.get(key),
-                    trackable.as_deref(),
-                    // The same value the menu item uses — resolved once above, so the
-                    // tooltip and the jump can never name different declarations.
-                    declared_line,
-                ));
+            resp.clone().on_hover_text(row_hover(
+                field_help.get(key),
+                trackable.as_deref(),
+                // The same value the menu item uses — resolved once above, so the
+                // tooltip and the jump can never name different declarations.
+                declared_line,
+            ));
         }
     });
 

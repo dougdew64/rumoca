@@ -110,7 +110,8 @@ fn line_where(source: &str, from: usize, pred: impl Fn(&str) -> bool) -> Option<
 pub fn anchors() -> Vec<Anchor> {
     let mut out = Vec::new();
 
-    let fn_start = line_where(MATCHING_SOURCE, 0, |l| l.contains("fn augment_traced(")).unwrap_or(0);
+    let fn_start =
+        line_where(MATCHING_SOURCE, 0, |l| l.contains("fn augment_traced(")).unwrap_or(0);
 
     if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| {
         l.contains("match match_var[var]")
@@ -196,7 +197,10 @@ pub const REFERENCE_PATH: &str =
 /// content: both reach a displacement at depth 2, and only one of them ends at
 /// a free variable (`docs/ideas.md` #73).
 const LEDGER_SPECIMENS: &[(&str, &str)] = &[
-    ("ProportionalLoop", "succeeds — the displacement finds a home"),
+    (
+        "ProportionalLoop",
+        "succeeds — the displacement finds a home",
+    ),
     ("TwiceDefined", "fails — the displacement has nowhere to go"),
 ];
 
@@ -347,7 +351,12 @@ fn incidence_of(model: &str) -> Option<(usize, usize, Vec<HashSet<usize>>)> {
         .map(|r| {
             r.get("unknowns")
                 .and_then(|u| u.as_array())
-                .map(|a| a.iter().filter_map(|v| v.as_u64()).map(|v| v as usize).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_u64())
+                        .map(|v| v as usize)
+                        .collect()
+                })
                 .unwrap_or_default()
         })
         .collect();
@@ -645,10 +654,17 @@ mod tests {
     fn the_generated_ledger_reproduces_the_twicedefined_walk() {
         let rows = ledger_rows("TwiceDefined").expect("TwiceDefined must have a structural trace");
         let steps: Vec<&str> = rows.iter().map(|(_, s, _, _)| s.as_str()).collect();
-        assert_eq!(rows.len(), 9, "the walk produced nine frames, got {steps:?}");
+        assert_eq!(
+            rows.len(),
+            9,
+            "the walk produced nine frames, got {steps:?}"
+        );
 
         assert!(steps[0].contains("TryEquation(0)"));
-        assert!(steps[6].contains("TryDisplace"), "frame 6 is the displacement");
+        assert!(
+            steps[6].contains("TryDisplace"),
+            "frame 6 is the displacement"
+        );
         assert!(steps[7].contains("DisplaceFail"), "frame 7 is the refusal");
         assert!(
             steps[8].contains("EquationFailed(1)"),
@@ -731,7 +747,9 @@ mod tests {
             let mut rest = text.as_str();
             while let Some(i) = rest.find(&needle) {
                 let tail = &rest[i + needle.len()..];
-                let end = tail.find(|c: char| !c.is_ascii_digit()).unwrap_or(tail.len());
+                let end = tail
+                    .find(|c: char| !c.is_ascii_digit())
+                    .unwrap_or(tail.len());
                 if end > 0 {
                     let line: usize = tail[..end].parse().expect("digits");
                     assert!(

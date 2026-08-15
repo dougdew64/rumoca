@@ -42,10 +42,7 @@ impl ReductionAnimation {
 
     /// Start a live debug session: spawn a thread that runs the index
     /// reduction algorithm with a `LiveTrace` producer.
-    pub fn start_live(
-        dae: rumoca_ir_dae::Dae,
-        frame_delay: std::time::Duration,
-    ) -> Option<Self> {
+    pub fn start_live(dae: rumoca_ir_dae::Dae, frame_delay: std::time::Duration) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(frame_delay);
         let done = Arc::new(AtomicBool::new(false));

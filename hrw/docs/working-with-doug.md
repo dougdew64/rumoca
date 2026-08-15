@@ -79,6 +79,41 @@ The operational rule:
   Doug drew that line himself: *"That distinction is past the level of useful detail for this
   tour."*
 
+**A CO-DEVELOPED TOUR IS A MEASUREMENT OF WHAT HE KNOWS — stop guessing at "beginner"**
+*(Doug, 2026-08-15)*: *"now we have a measurement of my knowledge that you can reference when
+drafting prose… Because we worked together to complete that tour, you can assume that I
+understand the material of that connections tour. And you can assume that I don't know anything
+more about connections than what is in that tour."*
+
+**This is better than a level, because it is an artifact.** "Beginner" is a guess that has to be
+re-made every time; a finished tour can be *read*. It binds in both directions, and both matter:
+**do not re-explain what is in it** (it spends the attention the depth rule exists to protect),
+and **do not assume anything past it** (which is how a gap gets left).
+
+**The baseline comes from CO-DEVELOPMENT, not from a tour existing.** Doug's claim is well
+supported here because he argued this one into shape over a week. A tour he merely *walked* is
+much weaker evidence — [`question-ledger.md`](question-ledger.md) already records that **silence
+is ambiguous and must never be read as success**. So:
+
+| how the tour came to be | what may be assumed |
+|---|---|
+| **co-developed** — he questioned it into shape | he knows its material |
+| **walked, no questions** | ambiguous. Ask before building on it |
+| **written, unwalked** | nothing |
+
+**One exception to the ceiling: what he brings from outside.** Decades of C/C++/Java, the
+robotics goal in [`vision.md`](vision.md), and any reading he does on his own — he mentioned
+intending to read about union-find in a textbook. The ceiling is *"nothing more from this
+project"*, and he will say when that changes.
+
+**The consequence for authoring: tours may now CITE their predecessors instead of re-explaining
+them.** `blt-ordering.md` can say *"a connection set is a set of variables of one kind, from
+`connect-expansion`"* and build from there. That turns the nine tours from independent documents
+into a **sequence**, in the route order
+[`the-mathematics.md`](fixture-tours/the-mathematics.md) already defines — so a tour that assumes
+a predecessor must **say which one at the top**, or a reader entering mid-route is stranded with
+no way to know why.
+
 **The conversation is the instrument, not the prompt.** Sessions are teaching dialogues
 between a teacher and an experienced developer new to this domain. **Code changes are a
 byproduct of understanding, not the deliverable.** "Show me the structural analysis" is a

@@ -253,10 +253,7 @@ impl TearingAnimation {
 
     /// Start a live debug session: the same walk, on a thread that parks until
     /// the debugger attaches, pushing frames as they are produced.
-    pub fn start_live(
-        dae: rumoca_ir_dae::Dae,
-        frame_delay: std::time::Duration,
-    ) -> Option<Self> {
+    pub fn start_live(dae: rumoca_ir_dae::Dae, frame_delay: std::time::Duration) -> Option<Self> {
         // Names are needed by the *renderer* from the first frame onward, so
         // they are computed here rather than waiting on the thread.
         let blocks = walk_blocks(&dae, &|_, _| {});

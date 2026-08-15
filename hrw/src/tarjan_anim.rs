@@ -202,10 +202,7 @@ impl TarjanAnimation {
     /// `on_complete` that used to release the anchor breakpoint here was an
     /// LLDB SIGSTOP workaround, and releasing it is what broke every Debug
     /// press after the first (`docs/ideas.md` #74).
-    pub fn start_live(
-        mat: &IncidenceMatrix,
-        frame_delay: std::time::Duration,
-    ) -> Option<Self> {
+    pub fn start_live(mat: &IncidenceMatrix, frame_delay: std::time::Duration) -> Option<Self> {
         let n_eq = mat.n_eq();
         let n_var = mat.n_var();
         if n_eq == 0 {
@@ -774,8 +771,7 @@ mod tests {
     #[test]
     fn live_mode_receives_all_frames() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim =
-            TarjanAnimation::start_live(&mat, crate::live_frame_delay(false)).unwrap();
+        let mut anim = TarjanAnimation::start_live(&mat, crate::live_frame_delay(false)).unwrap();
         for _ in 0..100 {
             if anim.live_state(false) == crate::LiveState::Finished {
                 break;

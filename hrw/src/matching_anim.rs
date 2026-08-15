@@ -249,10 +249,7 @@ impl MatchingAnimation {
     /// fail to stop (`docs/ideas.md` #74). The anchor now clears only on the
     /// three events that end its reason to exist: a failed spawn, a specimen
     /// change, and app exit.
-    pub fn start_live(
-        mat: &IncidenceMatrix,
-        frame_delay: std::time::Duration,
-    ) -> Option<Self> {
+    pub fn start_live(mat: &IncidenceMatrix, frame_delay: std::time::Duration) -> Option<Self> {
         let (lt, rx) = LiveTrace::new();
         let lt = lt.with_frame_delay(frame_delay);
         let done = Arc::new(AtomicBool::new(false));
@@ -905,8 +902,8 @@ mod tests {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         // The unarmed delay deliberately: no breakpoint exists in a test, and
         // the stepped delay would make this sleep for seconds.
-        let mut anim =
-            MatchingAnimation::start_live(&mat, crate::live_frame_delay(false)).expect("spawn thread");
+        let mut anim = MatchingAnimation::start_live(&mat, crate::live_frame_delay(false))
+            .expect("spawn thread");
         for _ in 0..100 {
             if anim.live_state(false) == crate::LiveState::Finished {
                 break;

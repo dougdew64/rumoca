@@ -698,10 +698,53 @@ than a drift.
 ## Running things
 
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~8s,   431 tests — between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~2min, 491 tests — before committing
+cargo test -p hrw --lib -- --test-threads=1                        # ~15s,  between edits
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~190s, the FULL gate
 cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
+
+**MATCH THE GATE TO THE CHANGE — and let the diff decide, not judgement** *(measured
+2026-08-15, after Doug reported test latency as genuine friction)*. Most commits in a walking
+session touch only documents, and a docs-only change **cannot regress compile-heavy behaviour**,
+so paying 190 s for it is ritual rather than evidence. On 2026-08-15 that ritual cost about ten
+minutes across one session.
+
+Run this against what is staged; it answers which gate, with no room for a judgement call:
+
+```bash
+git diff --cached --name-only | grep -qE '(^|/)(src|crates|examples)/|Cargo\.toml' && echo FULL || echo FAST
+```
+
+| verdict | run |
+|---|---|
+| **FAST** — docs, tours, notebooks only | `cargo test -p hrw --lib -- --test-threads=1` **and** the doc checks below |
+| **FULL** — any `src/`, `crates/`, `examples/` or `Cargo.toml` | the slow-tests line, plus clippy |
+
+**FAST is not "skip the tests"** — the doc and tour checkers are exactly what a docs-only change
+*can* break, and they are the cheap ones:
+
+```text
+cargo test -p hrw --lib doc_citations -- --test-threads=1   # ~1.4s
+cargo test -p hrw --lib tour          -- --test-threads=1   # ~0.3s
+```
+
+**The one exception, and it is not optional:** a tour's `<!-- pane-groups -->` /
+`pane-origins` / `pane-frames` tables are checked by *slow* tests, because verifying them needs a
+real compile. **Editing one of those tables means FULL**, whatever the grep says — the diff
+touches only `docs/`, and the check that guards it does not run in the fast suite.
+
+**Where the ~190 s actually goes**, so nobody re-derives it: about twenty tests carry ~129 s of
+it, led by `all_healthy_specimens_simulate` (16 s), `every_stage_serializes_without_panicking`
+(15 s) and `a_rumoca_failure_is_represented_faithfully` (14 s). A rebuild after touching one file
+is **8 s**; a no-op build is **1 s**.
+
+**Two levers already ruled out by measurement — do not re-propose them.** Parallelism buys about
+two seconds, because the worker tests serialise on a global `Mutex<WorkerState>` regardless
+(`docs/ideas.md` #48). And **memoising simulations buys about two seconds**: a simulation's key
+must include `t_end`, and the sites are almost all distinct pairs —
+`all_healthy_specimens_simulate` is nine *different* specimens at one `t_end`, so there is
+nothing to reuse. Claude proposed that on 2026-08-15 from a sum of slow-looking tests and
+withdrew it on measuring, which is the same mistake #48 already records once.
 
 **`--test-threads=1` is required** — two pre-existing tests race on process-global stdout and
 on `focus.json`, and the suite can **hang** under the default harness on a clean tree.

@@ -6455,6 +6455,32 @@ impl App {
                         egui::ScrollArea::vertical()
                             .id_salt("tour_list")
                             .show(ui, |ui| {
+                                // **The ad hoc row is shown even when there is none**,
+                                // disabled rather than absent.
+                                //
+                                // Doug, 2026-08-15: *"the 'Claude's Answer' tour seems
+                                // to have disappeared from the tours list"* — and it
+                                // had not; no ad hoc tour had been written, so the row
+                                // was correctly absent. That is the defect. A row that
+                                // silently ceases to exist gives no way to tell
+                                // **"nothing written yet"** from **"the feature
+                                // broke"**, and he read it, reasonably, as the second.
+                                //
+                                // Same rule as `LiveState`'s disabled controls, stated
+                                // in `docs/ideas.md` #77: *controls are enabled and
+                                // disabled, never shown and hidden.* This is the tour
+                                // list's instance of it.
+                                if !self.tour.available.contains(&TourSource::AdHoc) {
+                                    ui.add_enabled(
+                                        false,
+                                        egui::Button::selectable(false, TourSource::AdHoc.label()),
+                                    )
+                                    .on_disabled_hover_text(
+                                        "No answer written yet. Ask Claude a question and \
+                                         it writes one here \u{2014} regenerated per \
+                                         question, never stored.",
+                                    );
+                                }
                                 for source in &self.tour.available {
                                     let selected = self.tour.selected.as_ref() == Some(source);
                                     // **The row names its specimens.** Tours are named

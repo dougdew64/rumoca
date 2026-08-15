@@ -1377,10 +1377,27 @@ pub const VIEW_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/vi
 /// would be indistinguishable from a current one by content alone. `kind` names the view
 /// so a reader can tell what they are holding.
 pub fn write_view(kind: Option<&str>, body: Option<&Value>) -> std::io::Result<()> {
-    let path = Path::new(VIEW_FILE);
+    write_view_to(Path::new(VIEW_FILE), kind, body)
+}
+
+/// [`write_view`] against a caller-chosen path.
+///
+/// **Split out by the 2026-08-15 sweep so the absence behaviour could be tested.**
+/// `write_view`'s whole safety property is that a view with no publisher *removes* the
+/// file rather than leaving the previous pane's contents — and that was asserted in a
+/// doc comment and checked nowhere. A test could not use `write_view` directly without
+/// clobbering the running app's live `view.json`, and `VIEW_FILE` is a single constant
+/// path, so there was no test-safe name to use the way `write_stages`' test uses
+/// `test_alpha`.
+fn write_view_to(path: &Path, kind: Option<&str>, body: Option<&Value>) -> std::io::Result<()> {
     match (kind, body) {
         (Some(kind), Some(body)) => {
-            fs::create_dir_all(BRIDGE_DIR)?;
+            // The file's own directory, not `BRIDGE_DIR` — otherwise a caller-chosen
+            // path outside the bridge silently fails to have its parent created, and
+            // the only caller that does that is the test proving this function works.
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent)?;
+            }
             let doc = serde_json::json!({
                 "note": "What the HRW pane on screen is currently showing. Written for \
                          Claude. This is the RENDERER'S INPUT, serialized -- not a \
@@ -3410,5 +3427,72 @@ mod tests {
         let path = test_file_path();
         let src = fs::read_to_string(&path).unwrap();
         assert!(slice_source(&path, None, 0, src.len() + 1).is_none());
+    }
+}
+
+#[cfg(test)]
+mod view_file_tests {
+    use super::*;
+
+    fn temp_view_path(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("hrw-view-test-{name}.json"))
+    }
+
+    /// **A view with no publisher REMOVES the file; it never leaves the last one.**
+    ///
+    /// The 2026-08-15 sweep found this asserted in a doc comment and checked nowhere.
+    /// It is the property the whole file rests on: a stale `view.json` naming a pane
+    /// the reader has left is **indistinguishable from a current one by content
+    /// alone**, so Claude would answer questions about the equation sheet while Doug
+    /// stood in front of the incidence matrix — confidently, and with a real file to
+    /// point at.
+    ///
+    /// Uses a temp path rather than `VIEW_FILE`, which is a single constant and would
+    /// clobber the running app's live view.
+    #[test]
+    fn a_view_with_no_publisher_removes_the_file() {
+        let path = temp_view_path("absence");
+        let body = json!({"rows": [1, 2, 3]});
+
+        write_view_to(&path, Some("Flatten/EquationSheet"), Some(&body)).expect("write");
+        assert!(path.exists(), "a published view must be written");
+
+        let doc: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            doc["view"], "Flatten/EquationSheet",
+            "the file must name which pane it describes, or a reader cannot tell \
+             whether it is the one on screen",
+        );
+        assert_eq!(doc["content"]["rows"], json!([1, 2, 3]));
+
+        write_view_to(&path, None, None).expect("remove");
+        assert!(
+            !path.exists(),
+            "a pane with no publisher must remove the file \u{2014} leaving the \
+             previous pane's contents is a confidently wrong report",
+        );
+
+        let _ = fs::remove_file(&path);
+    }
+
+    /// A half-specified call is treated as absence, not as a partial write.
+    ///
+    /// `kind` without `body` (or the reverse) would otherwise produce a file naming a
+    /// pane whose content is missing, which reads as "this pane is empty".
+    #[test]
+    fn a_half_specified_view_is_absence() {
+        let path = temp_view_path("half");
+        let body = json!({"rows": []});
+        write_view_to(&path, Some("Structural/Incidence"), Some(&body)).expect("write");
+        assert!(path.exists());
+
+        write_view_to(&path, Some("Structural/Incidence"), None).expect("kind only");
+        assert!(!path.exists(), "kind without body is absence");
+
+        write_view_to(&path, Some("Structural/Incidence"), Some(&body)).expect("write");
+        write_view_to(&path, None, Some(&body)).expect("body only");
+        assert!(!path.exists(), "body without kind is absence");
+
+        let _ = fs::remove_file(&path);
     }
 }

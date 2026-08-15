@@ -2054,3 +2054,44 @@ fn the_log_button_returns_without_changing_the_stage() {
          about which stage you are studying",
     );
 }
+
+/// **The "Claude's answer" row is always on screen — disabled when there is none.**
+///
+/// Doug, 2026-08-15: *"the 'Claude's Answer' tour seems to have disappeared from the
+/// tours list in the tour mode."* It had not broken; no ad hoc tour had been written,
+/// and the row was gated on `.hrw-bridge/tour.md` existing. **The absence was correct
+/// and the design was wrong** — a row that silently ceases to exist gives no way to
+/// distinguish *"nothing written yet"* from *"the feature broke"*, and he read it as
+/// the second, which was the only reading the evidence supported.
+///
+/// `docs/ideas.md` #77 states the rule this breaks: *controls are enabled and disabled,
+/// never shown and hidden.*
+///
+/// **Why this matters beyond one row:** the ad hoc tour is the whole *"Claude composes
+/// an answer inside HRW"* capability (#42). A feature that looks broken stops being
+/// reached for, and dies of apparent absence rather than of any decision.
+///
+/// The test asserts the row is **present**; that it is *disabled* is not reachable
+/// through the accessibility tree here, and saying so is better than implying coverage
+/// this does not have.
+#[test]
+fn the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour() {
+    // The bridge file is gitignored and absent in a clean checkout, which is exactly
+    // the state Doug hit. Asserting it rather than assuming it: if some other test
+    // leaves one behind, this would pass for the wrong reason.
+    assert!(
+        !std::path::Path::new(crate::bridge::TOUR_FILE).exists(),
+        "precondition: no ad hoc tour is written, which is the state under test",
+    );
+
+    // Tour is `UiMode`'s `#[default]`, so no mode switch is needed.
+    let mut h = harness(App::test_default());
+    h.run_steps(2);
+
+    let label = crate::tour::TourSource::AdHoc.label();
+    assert!(
+        h.query_by_label_contains(&label).is_some(),
+        "the {label:?} row must be listed even with no ad hoc tour \u{2014} its absence \
+         is indistinguishable from the feature being broken",
+    );
+}

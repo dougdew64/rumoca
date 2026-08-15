@@ -119,6 +119,47 @@ once by Doug, once by a checker. So each time Doug compares a pane against a tou
 auditing the tour, and that audit exists nowhere else. **The lab is the only instrument that can
 falsify Claude.**
 
+### The repair loop may BE the teaching, not the thing that improves the teaching
+
+*(Doug, 2026-08-15, after `connect-expansion.md` was finished.)*
+
+> *"My most important observation is that working together to improve that tour was
+> educational. In fact, at least so far, more educational than actually walking the completed
+> tour."*
+
+**This inverts the assumed order.** The model above treats the tour as the artifact and the
+conversation as its repair mechanism. This says the repair is where the learning happened, and the
+finished tour is closer to a by-product.
+
+**Three mechanisms, and they are identifiable rather than mysterious:**
+
+1. **He had to hold a model precise enough to detect a mismatch.** *"This does not agree with the
+   pane"* is impossible without a prediction already in hand. Every disagreement was a
+   prediction error **he generated himself**, and walking a correct tour produces agreement,
+   which produces nothing.
+2. **The disagreements were conceptual, never typographical.** Nodes versus connection sets;
+   potential and flow as siblings versus as kinds of one thing; three versus six; spanning tree
+   versus roster. **The friction was the curriculum**, and it clustered precisely where Claude
+   had asserted something it could not check.
+3. **He chose the questions.** A tour explains what *Claude* predicts will confuse him. *"Which
+   graph?"* and *"what does 'computed' mean?"* came from real confusion about phrases Claude had
+   used believing them clear — and could not have been anticipated.
+
+**The confound, stated because it is large.** The tour he walked at the end was one **he had
+co-written**, so of course it taught less; he already knew it. The honest comparison is walking a
+tour he had no hand in, which has not been run. It may be that improving beats walking, or merely
+that *first contact* beats *second contact* with the same material. **The next tour is that
+test**, and it should be treated as one.
+
+**The design consequence, if it survives the test.** It reads as an argument for shipping
+under-polished tours, and is not. The disagreements that taught were concentrated in **claims
+Claude could not verify** — not in claims it had been lazy about. So: get every checkable thing
+right, and be *loud* about what remains unchecked, because that is where his attention pays.
+
+That is what `**Falsified if**` and *"What this tour cannot check"* already are. **So the
+unverified half is the valuable half, and it should stop being written about as a regrettable
+gap.** A tour that could be fully machine-checked would teach less, not more.
+
 ### What this predicts about what to build
 
 - **Phrase expectations as predictions to check, not descriptions to read**, and say what would
