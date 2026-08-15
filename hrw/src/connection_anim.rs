@@ -170,6 +170,33 @@ impl ConnectionAnimation {
         }
     }
 
+    /// Attach to a live session the **worker** is running.
+    ///
+    /// # Why this takes a receiver instead of spawning
+    ///
+    /// Every other animation's `start_live` spawns a thread here and re-runs its
+    /// algorithm on copied data. This one cannot — connection expansion happens
+    /// inside `compile_model_strict_reachable_*`, which needs the session and the
+    /// resolved `ClassTree`, and both live on the worker.
+    ///
+    /// So the direction is reversed: the UI makes the channel, hands the producer to
+    /// the worker in [`crate::worker::ToWorker::LiveDebugConnections`], and keeps the
+    /// consumer. The animation's job is only to drain it.
+    ///
+    /// **`done` cannot be inferred from an empty channel** — a live pass between two
+    /// breakpoint stops is silent for as long as the reader stands there — so the
+    /// worker sets it, and the animation reads it to know the session ended rather
+    /// than stalled.
+    #[must_use]
+    pub fn start_live(
+        rx: std::sync::mpsc::Receiver<ConnectionFrame>,
+        done: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
+        Self {
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.playback.is_empty()
     }
@@ -279,27 +306,47 @@ impl ConnectionAnimation {
     }
 
     /// Render the controls, the step line, and the running state.
-    pub fn ui(&mut self, ui: &mut egui::Ui) {
-        if self.playback.is_empty() {
+    ///
+    /// Returns `true` on the frame the Debug button is clicked — the same contract as
+    /// every other animated view, so `app.rs` owns the arming and this owns the row.
+    #[must_use]
+    pub fn ui(&mut self, ui: &mut egui::Ui, arming: bool, debug_enabled: bool) -> bool {
+        // **First, always.** Frames arrive on the worker thread; nothing else moves
+        // them into the playback, and `tick` only advances a *recorded* cursor. Omit
+        // this and a live session behaves exactly as Doug saw it: the breakpoint
+        // fires, Continue re-fires it, and the animation never moves — because the
+        // channel fills while the view redraws the same frame it started on.
+        //
+        // Before the empty check too, since a live session's first frames arrive
+        // before anything else has put a frame in `frames`.
+        self.playback.sync_live();
+
+        // **Empty is not the same as not-yet-live.** A live session begins with no
+        // frames at all — the worker is waiting at the startup gate for the reader to
+        // arrive — so bailing out on `is_empty` alone would hide the controls exactly
+        // when the reader needs to see the session is armed.
+        if self.playback.is_empty() && !self.playback.is_live() && !arming {
             ui.label("No connections in this model.");
             ui.weak(
                 "Nothing to expand \u{2014} every equation in the flat model was written by hand, \
                  not generated from a connect().",
             );
-            return;
+            return false;
         }
 
-        let live = crate::LiveState::Idle;
+        let live = self.live_state(arming);
         let dt = ui.input(|i| i.stable_dt) as f64;
         if self.playback.tick(dt, live) {
             ui.ctx().request_repaint();
         }
-        let _ = crate::animation_controls(ui, self.playback.controls(), live, false);
+        let debug_clicked =
+            crate::animation_controls(ui, self.playback.controls(), live, debug_enabled);
 
         ui.add_space(4.0);
         self.render_current(ui);
         ui.add_space(8.0);
         self.render_running_state(ui);
+        debug_clicked
     }
 
     fn render_current(&self, ui: &mut egui::Ui) {
@@ -478,9 +525,13 @@ impl Animated for ConnectionAnimation {
         self.playback.position()
     }
 
-    fn live_state(&self, _arming: bool) -> crate::LiveState {
-        // Recorded only — see the module note on why there is no live path yet.
-        crate::LiveState::Idle
+    fn live_state(&self, arming: bool) -> crate::LiveState {
+        // **Was hardcoded to `Idle`** while this view was recorded-only, and that
+        // stub outlived the reason for it: with a live path in place it reported
+        // "no session" during a real one, so the playback controls stayed enabled
+        // while the debugger owned the cursor, and `Finished` never arrived to
+        // re-enable them afterwards.
+        self.playback.live_state(arming)
     }
 
     fn current_frame_context(&self) -> Option<serde_json::Value> {
@@ -786,7 +837,17 @@ mod tests {
         let anim = ConnectionAnimation::from_frames(Vec::new());
         assert!(anim.is_empty());
         assert!(anim.current_frame_context().is_none());
-        assert_eq!(anim.live_state(true), crate::LiveState::Idle);
+        assert_eq!(
+            anim.live_state(false),
+            crate::LiveState::Idle,
+            "no frames and no session is Idle",
+        );
+        // **`Arming`, not `Idle`** — this used to assert `Idle` because
+        // `live_state` was stubbed to it while the view was recorded-only. The flag
+        // exists precisely so the controls disable during the breakpoint handshake,
+        // when the view is still showing the recorded animation and cannot tell from
+        // its own state that a session is starting.
+        assert_eq!(anim.live_state(true), crate::LiveState::Arming);
     }
 }
 
@@ -911,5 +972,90 @@ mod lane_tests {
     fn no_frames_means_no_lanes() {
         assert!(Lanes::upto(&[], 0).lanes.is_empty());
         assert_eq!(Lanes::upto(&[], 0).set_count(), 0);
+    }
+}
+
+#[cfg(test)]
+mod live_session_tests {
+    use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    fn frame(n: usize) -> ConnectionFrame {
+        ConnectionFrame {
+            step: ConnectionStep::Start {
+                connect_statements: n,
+            },
+            sets_so_far: 0,
+            equations_so_far: 0,
+        }
+    }
+
+    /// **A live session's frames reach the animation, and the cursor follows them.**
+    ///
+    /// The defect this exists for, reported by Doug on 2026-08-15 the first time the
+    /// Connections Debug button was used: *"a breakpoint is set on live_trace.rs:173.
+    /// That breakpoint is hit. When I click continue, I hit the breakpoint again. But
+    /// the connections animation does not advance."*
+    ///
+    /// The worker half was correct — frames were being pushed and the anchor was
+    /// firing. `ConnectionAnimation::ui` simply never called `Playback::sync_live`,
+    /// which is the only thing that moves frames out of the channel; `tick` advances
+    /// a *recorded* cursor and nothing else. Every other animated view called it as
+    /// the first statement of `ui`, and this one was written without it.
+    ///
+    /// **The failure is silent and looks like a debugger problem**, which is what
+    /// makes it worth a test: the breakpoint behaves perfectly, so the natural
+    /// suspicion falls on the anchor, the adapter or the frame delay — none of which
+    /// are at fault.
+    #[test]
+    fn live_frames_reach_the_animation_and_move_the_cursor() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let done = Arc::new(AtomicBool::new(false));
+        let mut anim = ConnectionAnimation::start_live(rx, Arc::clone(&done));
+
+        tx.send(frame(1)).expect("send");
+        tx.send(frame(2)).expect("send");
+        anim.playback.sync_live();
+
+        assert!(!anim.is_empty(), "frames pushed by the worker must arrive");
+        let published = anim.to_bridge_json();
+        assert_eq!(
+            published["n_frames"].as_u64(),
+            Some(2),
+            "both frames must be drained, not just the first",
+        );
+        assert_eq!(
+            published["cursor_frame"].as_u64(),
+            Some(2),
+            "the cursor jumps to the newest arrival \u{2014} that is what makes a \
+             debugger step visibly advance the view",
+        );
+
+        // A second stop delivers more, and the cursor keeps up.
+        tx.send(frame(3)).expect("send");
+        anim.playback.sync_live();
+        assert_eq!(anim.to_bridge_json()["cursor_frame"].as_u64(), Some(3));
+    }
+
+    /// The session ending is reported, so the controls come back.
+    ///
+    /// Without it a finished live session leaves playback disabled for good —
+    /// `docs/ideas.md` #74's defect, which cost a session to diagnose once already.
+    #[test]
+    fn a_finished_live_session_reports_itself() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let done = Arc::new(AtomicBool::new(false));
+        let mut anim = ConnectionAnimation::start_live(rx, Arc::clone(&done));
+        tx.send(frame(1)).expect("send");
+        anim.playback.sync_live();
+
+        assert_eq!(anim.live_state(false), crate::LiveState::Running);
+        done.store(true, Ordering::Release);
+        assert_eq!(
+            anim.live_state(false),
+            crate::LiveState::Finished,
+            "the worker signals completion; the view must notice",
+        );
     }
 }

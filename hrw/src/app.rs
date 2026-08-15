@@ -1367,6 +1367,14 @@ enum PendingLiveDebug {
     /// Tearing. Re-runs from the DAE, like Reduction, because tearing needs the
     /// BLT blocks and those are rebuilt from the incidence each time.
     Tearing,
+    /// Connection expansion — **the only one the worker runs**, and the only one
+    /// that does not re-run its phase.
+    ///
+    /// The others spawn a thread here on copied data. This pass lives inside
+    /// `compile_model_strict_reachable_*`, needing the session and the resolved
+    /// `ClassTree`, so the request goes to the worker instead
+    /// (`ToWorker::LiveDebugConnections`) and the reader steps the real compile.
+    Connections,
 }
 
 impl PendingLiveDebug {
@@ -1383,6 +1391,7 @@ impl PendingLiveDebug {
         PendingLiveDebug::Reduction,
         PendingLiveDebug::PreLowering,
         PendingLiveDebug::Tearing,
+        PendingLiveDebug::Connections,
     ];
 }
 
@@ -1595,6 +1604,9 @@ impl App {
             // The flat model, not the DAE: `pre()` lowering runs inside DAE
             // construction, so the DAE is already past it.
             PendingLiveDebug::PreLowering => self.cached_flat.is_some(),
+            // A specimen with a compiled model is all the worker needs; the
+            // session it will re-compile through lives there, not here.
+            PendingLiveDebug::Connections => self.selected.is_some() && self.model.is_some(),
             _ => matches!(&self.stage_views.incidence, Some(Some(_))),
         }
     }
@@ -4253,7 +4265,51 @@ impl App {
     /// Recorded only — see `connection_anim`'s module note on why there is no
     /// Debug button yet (re-running flatten needs the resolved ClassTree, which
     /// contains the whole MSL).
+    /// The connection-expansion replay, with live debug driven by the **worker**.
+    ///
+    /// Follows the same six-step lifecycle as every other animated view, with one
+    /// difference at step 3: instead of spawning an algorithm thread here, it hands
+    /// the channel's producer to the worker and lets the real compile drive it. See
+    /// [`PendingLiveDebug::Connections`].
     fn connection_anim_ui(&mut self, ui: &mut egui::Ui) {
+        let arming = self.is_arming(PendingLiveDebug::Connections);
+        let live = self
+            .stage_views
+            .connection_anim
+            .as_ref()
+            .and_then(|o| o.as_ref())
+            .map_or(
+                if arming {
+                    LiveState::Arming
+                } else {
+                    LiveState::Idle
+                },
+                |a| a.live_state(arming),
+            );
+        let debug_enabled =
+            self.has_live_debug_data(PendingLiveDebug::Connections) && !live.is_busy();
+        let mut debug_clicked = false;
+
+        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::Connections);
+        if matches!(action, LiveDebugAction::SpawnLive)
+            && let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone())
+        {
+            // The UI owns the consumer; the worker gets the producer. Reversed from
+            // every other view, because the data this pass needs cannot come here.
+            let (trace, rx) = rumoca_phase_structural::live_trace::LiveTrace::new();
+            let trace = trace.with_frame_delay(crate::live_frame_delay(self.live_breakpoint_armed));
+            let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            self.worker.send(ToWorker::LiveDebugConnections {
+                path,
+                model,
+                trace,
+                done: std::sync::Arc::clone(&done),
+            });
+            self.stage_views.connection_anim = Some(Some(
+                connection_anim::ConnectionAnimation::start_live(rx, done),
+            ));
+        }
+
         if self.stage_views.connection_anim.is_none() {
             let frames = &self.frames.connection;
             self.stage_views.connection_anim = Some(if frames.is_empty() {
@@ -4265,11 +4321,15 @@ impl App {
             });
         }
         if let Some(Some(anim)) = &mut self.stage_views.connection_anim {
-            egui::ScrollArea::vertical()
+            debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui));
+                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .inner;
         } else {
             ui.weak("(no connections in this model)");
+        }
+        if debug_clicked {
+            self.start_live_debug(PendingLiveDebug::Connections);
         }
     }
 

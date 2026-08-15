@@ -128,6 +128,39 @@ pub enum ToWorker {
     },
     /// Enable or disable Rumoca's internal `tracing` subscriber on this thread.
     SetTracing(bool),
+    /// **Step connection expansion under the debugger, on this thread.**
+    ///
+    /// # Why this one is a worker command when no other live debug is
+    ///
+    /// Every other live-stepped view spawns an algorithm thread from the *UI* thread
+    /// with copied data — matching gets an `IncidenceMatrix`, `pre()` lowering gets a
+    /// flat model. Connection expansion cannot: it runs inside
+    /// `compile_model_strict_reachable_*`, which needs the resolved `ClassTree` (the
+    /// whole MSL) and the session that owns it. Shipping that to the UI thread to arm
+    /// a breakpoint was the blocker recorded as `docs/ideas.md` #9.
+    ///
+    /// The session already lives here, so the work comes to the data rather than the
+    /// reverse.
+    ///
+    /// # And the pass being stepped is the compilation
+    ///
+    /// The others *re-run* their algorithm so the debugger has something to stop
+    /// inside — a second execution that has to be argued equivalent to the first.
+    /// This installs `connections::trace::start_live` around a real compile, so the
+    /// frames and the breakpoint both come from the run that actually happens.
+    ///
+    /// `trace` carries the producer half of the channel the UI is already draining;
+    /// `done` tells the animation the session ended, since a live `Playback` cannot
+    /// know that from an empty channel.
+    LiveDebugConnections {
+        path: PathBuf,
+        /// Simple model name, so the worker need not re-parse to qualify it.
+        model: String,
+        trace: rumoca_phase_structural::live_trace::LiveTrace<
+            rumoca_phase_flatten::connections::trace::ConnectionFrame,
+        >,
+        done: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    },
 }
 
 /// Simulation output for plotting — one time axis and, per output variable,
@@ -1264,6 +1297,20 @@ impl WorkerState {
                 Some(FromWorker::Libraries(self.load_libraries(roots)))
             }
             ToWorker::Compile(path) => Some(self.compile(&path, emit)),
+            ToWorker::LiveDebugConnections {
+                path,
+                model,
+                trace,
+                done,
+            } => {
+                self.live_debug_connections(&path, &model, &trace);
+                // Signalled whatever happened, including a failed compile: a live
+                // `Playback` that never learns the session ended leaves its controls
+                // disabled for good, which is `docs/ideas.md` #74's defect in a new
+                // place.
+                done.store(true, std::sync::atomic::Ordering::Release);
+                None
+            }
             ToWorker::CompileLibraryModel(name) => Some(self.compile_model_by_name(&name, emit)),
             ToWorker::OpenDef(name) => Some(self.open_def(&name)),
             ToWorker::Simulate {
@@ -1685,6 +1732,77 @@ impl WorkerState {
     /// session, and take its first class as the model.
     fn compile(&mut self, path: &Path, emit: &impl Fn(FromWorker)) -> FromWorker {
         self.compile_target(CompileTarget::File(path), emit)
+    }
+
+    /// Run a real compile with a **live** connection sink installed, so a debugger
+    /// stopped on the live-trace anchor is stopped inside connection expansion.
+    ///
+    /// # What the reader is standing in when it stops
+    ///
+    /// `trace::start_live` hands each frame to a closure that calls
+    /// `LiveTrace::push`, and `push` calls `live_trace_breakpoint`. So the stack at
+    /// the stop is:
+    ///
+    /// ```text
+    /// compile_model_strict_reachable_uncached_with_recovery
+    ///   └ … flatten …
+    ///       └ generate_connection_set_equations   <- Rumoca's algorithm
+    ///           └ connections::trace::emit
+    ///               └ (this closure)
+    ///                   └ LiveTrace::push
+    ///                       └ live_trace_breakpoint   <- the anchor
+    /// ```
+    ///
+    /// Walking *up* from the anchor lands in Rumoca's own code with Rumoca's own
+    /// locals — which is the point, and why `rumoca-phase-flatten` was given
+    /// `opt-level = 0` before anyone tried it.
+    ///
+    /// # No re-run, unlike every other live-stepped view
+    ///
+    /// The others execute their algorithm a second time so there is something to
+    /// step. This steps **the compilation**, because the live sink is ambient and the
+    /// session lives on this thread.
+    ///
+    /// # The scope is closed on every path
+    ///
+    /// A sink left installed keeps firing on later compiles — the reader would hit a
+    /// breakpoint during an ordinary specimen load with no session in flight. So
+    /// `end_live` runs whether the compile succeeded, failed, or produced no model.
+    fn live_debug_connections(
+        &mut self,
+        path: &Path,
+        model: &str,
+        trace: &rumoca_phase_structural::live_trace::LiveTrace<
+            rumoca_phase_flatten::connections::trace::ConnectionFrame,
+        >,
+    ) {
+        let Ok(source) = std::fs::read_to_string(path) else {
+            return;
+        };
+        let uri = path.to_string_lossy().to_string();
+        // Same reason as `compile`: an unchanged document short-circuits and the
+        // phase code never re-executes, so nothing would be emitted and nothing
+        // would stop.
+        self.session.remove_document(&uri);
+        self.session.update_document(&uri, &source);
+        let qualified = self.session.qualify_model_name(&uri, model);
+
+        // Gate the start, so the reader can arrive before the first frame does.
+        // Identical in purpose to `LiveTrace::wait_for_debugger` on the spawned
+        // threads: without it the pass can run to completion between the click and
+        // the debugger attaching, and the session looks like it never happened.
+        trace.wait_for_debugger();
+
+        let sink = trace.clone();
+        rumoca_phase_flatten::connections::trace::start_live(Box::new(
+            move |frame: &rumoca_phase_flatten::connections::trace::ConnectionFrame| {
+                sink.push(frame.clone());
+            },
+        ));
+        let _ = self
+            .session
+            .compile_model_strict_reachable_uncached_with_recovery(&qualified);
+        rumoca_phase_flatten::connections::trace::end_live();
     }
 
     /// Compile a model **already present in a loaded library**, by qualified
