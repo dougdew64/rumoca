@@ -145,6 +145,57 @@ pub fn take_capture() -> Vec<ConnectionFrame> {
     CAPTURE.with(|c| c.borrow_mut().take()).unwrap_or_default()
 }
 
+thread_local! {
+    /// Ambient live sink: `Some` while a live scope is open.
+    #[allow(clippy::type_complexity)]
+    static LIVE: std::cell::RefCell<Option<Box<dyn Fn(&ConnectionFrame)>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **Deliver each connection frame the moment it is emitted**, rather than buffering.
+///
+/// # Why this exists alongside [`start_capture`]
+///
+/// Same problem, opposite deadline. [`start_capture`] answers *"what did that pass
+/// do?"* after it finishes. This answers *"what is that pass doing right now?"* —
+/// which is what a debugger-driven walk needs, because the reader is stopped
+/// **inside** the pass and the buffer will not exist for another few thousand
+/// statements.
+///
+/// A caller that can pass a [`FrameObserver`] should. This is for the same callers
+/// [`start_capture`] exists for: those driving the *session* API from a dozen stack
+/// frames above, where threading an observer down is the invasive change described
+/// there.
+///
+/// # What it buys, and why it is not a re-run
+///
+/// The alternative — and what every other live-stepped view in Rumoca's observatory
+/// does — is to **re-run the phase** with an observer attached, so the debugger has
+/// something to stop inside. That is a second execution, and the tool must then
+/// prove it was configured like the first.
+///
+/// With this, the pass being stepped **is the compilation**. The reader stops in the
+/// real run, in the real call stack, with the real values. Nothing has to be proven
+/// equivalent, because nothing was repeated.
+///
+/// # Cost, and the one hazard
+///
+/// One thread-local read per emit when closed, as with the buffer. While open, the
+/// sink runs **on the emitting thread, inside the pass** — so a sink that blocks
+/// blocks the compiler. That is precisely what a debugger sink wants (it is how the
+/// reader is held at a breakpoint), and precisely what a logging sink must avoid.
+///
+/// [`end_live`] closes the scope. Leaving it open leaks the closure for the life of
+/// the thread and keeps paying the call on every later compile.
+pub fn start_live(sink: Box<dyn Fn(&ConnectionFrame)>) {
+    LIVE.with(|c| *c.borrow_mut() = Some(sink));
+}
+
+/// Close the live scope opened by [`start_live`].
+pub fn end_live() {
+    LIVE.with(|c| *c.borrow_mut() = None);
+}
+
 /// Emit one frame if an observer is attached.
 ///
 /// Free function rather than a method so the call sites read as a single line
@@ -165,6 +216,20 @@ pub(crate) fn emit(
     if let Some(obs) = observer {
         obs(&frame);
     }
+    // **Before the buffer, deliberately.** A live sink is usually a debugger stop, so
+    // the frame must reach the reader *while the pass is still standing here*. Pushing
+    // to the buffer first would be harmless today and wrong the moment a sink panics
+    // or a scope is closed mid-pass: the reader would be shown a frame the buffer had
+    // already recorded and the sink never saw.
+    //
+    // Borrowed for the call rather than cloned out, so a sink cannot re-enter `emit`
+    // and deadlock on the `RefCell` — the failure would present as a hang inside the
+    // compiler with no message.
+    LIVE.with(|c| {
+        if let Some(sink) = c.borrow().as_ref() {
+            sink(&frame);
+        }
+    });
     CAPTURE.with(|c| {
         if let Some(buf) = c.borrow_mut().as_mut() {
             buf.push(frame);
@@ -304,5 +369,95 @@ mod tests {
                 ..
             },
         ));
+    }
+}
+
+#[cfg(test)]
+mod live_scope_tests {
+    use super::*;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    fn start_frame(n: usize) -> ConnectionStep {
+        ConnectionStep::Start {
+            connect_statements: n,
+        }
+    }
+
+    /// **A live sink sees each frame as it is emitted, and stops when closed.**
+    ///
+    /// The three properties a debugger-driven walk depends on, and the two that
+    /// would make it untrustworthy: frames arriving from nowhere (a sink left
+    /// installed) and one model's frames reaching the sink of the next.
+    #[test]
+    fn a_live_scope_delivers_frames_and_stops_when_closed() {
+        let seen: Rc<RefCell<Vec<usize>>> = Rc::new(RefCell::new(Vec::new()));
+
+        // Closed: nothing is delivered.
+        emit(None, start_frame(1), 0, 0);
+        assert!(seen.borrow().is_empty());
+
+        let sink_seen = Rc::clone(&seen);
+        start_live(Box::new(move |f: &ConnectionFrame| {
+            if let ConnectionStep::Start { connect_statements } = f.step {
+                sink_seen.borrow_mut().push(connect_statements);
+            }
+        }));
+
+        emit(None, start_frame(2), 0, 0);
+        emit(None, start_frame(3), 0, 0);
+        assert_eq!(
+            *seen.borrow(),
+            vec![2, 3],
+            "each frame must reach the sink as it is emitted",
+        );
+
+        end_live();
+        emit(None, start_frame(4), 0, 0);
+        assert_eq!(
+            *seen.borrow(),
+            vec![2, 3],
+            "a closed scope must deliver nothing \u{2014} otherwise one model's frames \
+             appear under the next",
+        );
+    }
+
+    /// **The live sink and the capture buffer see the same frames.**
+    ///
+    /// They are independent destinations for one emit, and a reader stepping live
+    /// while a recording is taken must not be shown a different pass from the one
+    /// that gets recorded.
+    #[test]
+    fn a_live_sink_and_a_capture_scope_agree() {
+        let seen: Rc<RefCell<Vec<usize>>> = Rc::new(RefCell::new(Vec::new()));
+        let sink_seen = Rc::clone(&seen);
+        start_live(Box::new(move |f: &ConnectionFrame| {
+            if let ConnectionStep::Start { connect_statements } = f.step {
+                sink_seen.borrow_mut().push(connect_statements);
+            }
+        }));
+        start_capture();
+
+        emit(None, start_frame(7), 0, 0);
+        emit(None, start_frame(8), 0, 0);
+
+        let captured: Vec<usize> = take_capture()
+            .into_iter()
+            .filter_map(|f| match f.step {
+                ConnectionStep::Start { connect_statements } => Some(connect_statements),
+                _ => None,
+            })
+            .collect();
+        end_live();
+
+        assert_eq!(
+            *seen.borrow(),
+            captured,
+            "the stepped pass and the recorded pass must be the same pass",
+        );
+        assert!(
+            !captured.is_empty(),
+            "nothing was emitted, so nothing was compared"
+        );
     }
 }
