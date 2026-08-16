@@ -64,20 +64,20 @@ This tour counts. `RcCircuit` has four `connect` statements and twenty-three equ
 
 **Fixture tour — DAE construction: the count that decides everything**
 
-A curriculum tour. Most tours here verify an HRW capability; this one teaches a step of the
+A curriculum tour. It teaches a step of the chain
 
 - **Specimens:** `SingleInertia`, `UnbalancedShaft`
-- **Stages:** `Dae`, `Structural`
+- **Stages:** `Dae`, `Flatten`, `Structural`
 - **Stops:**
   - `fixture-tour-dae-construction-the-count-that-decides-everything` — Fixture tour — DAE construction: the count that decides everything
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `stop-1-the-dae-itself` — Stop 1 — The DAE itself
-  - `stop-2-what-the-solver-is-actually-solving-for` — Stop 2 — What the solver is actually solving for
-  - `stop-3-the-equations-and-the-claim` — Stop 3 — The equations, and the claim
-  - `stop-4-the-counterexample-and-what-the-compiler-says` — Stop 4 — The counterexample, and what the compiler says
-  - `stop-5-why-2-equations-3-unknowns-is-not-no-solution` — Stop 5 — Why "2 equations, 3 unknowns" is not "no solution"
-  - `stop-6-what-state-looks-like-when-it-runs` — Stop 6 — What "state" looks like when it runs
-  - `stop-7-what-the-dae-does-not-tell-you` — Stop 7 — What the DAE does not tell you
+  - `act-1-which-declarations-carry-the-past` — Act 1 — Which declarations carry the past?
+  - `act-2-what-makes-a-variable-a-state` — Act 2 — What makes a variable a state?
+  - `act-3-what-is-the-solver-actually-solving-for` — Act 3 — What is the solver actually solving for?
+  - `act-4-the-claim` — Act 4 — The claim
+  - `act-5-what-the-compiler-says-when-the-claim-fails` — Act 5 — What the compiler says when the claim fails
+  - `act-6-where-it-fails-and-why-that-is-the-right-place` — Act 6 — Where it fails, and why that is the right place
+  - `two-excursions-if-you-want-them` — Two excursions, if you want them
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
