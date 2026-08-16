@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 
 use eframe::egui;
-use rumoca_core::SourceId;
+use rumoca_core::{SourceId, VarName};
 use rumoca_ir_dae as dae;
 
 use crate::expr_format;
@@ -286,6 +286,30 @@ impl EquationCategory {
     }
 }
 
+/// Why a variable is a state: the equation that puts a derivative on it.
+///
+/// Doug, 2026-08-16, following `C.v` on the equation sheet: *"There's no hint
+/// provided in the HRW UI as to why this is a state instead of an algebraic."*
+/// The pane asserted a classification and left the reason to a conversation.
+///
+/// **It belongs on screen by the charter's own test** (Decision 8: *is the answer
+/// known in advance?*). The answer's shape never varies — *because `der(x)` appears
+/// in equation N* — only `N` changes. That is a fixed answer with a lookup, not a
+/// question needing a reasoner, and a tooltip beats a question for latency.
+///
+/// The `equation_id` is the **same `f_x[N]`** the sheet, the incidence matrix, the
+/// matching and the BLT blocks use, so the hover names an object Doug can go and
+/// look at rather than a claim he has to take on trust.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DerivativeEvidence {
+    /// `f_x[14]` — the index into `dae.continuous.equations`, spelled the way every
+    /// other pane spells it.
+    pub equation_id: String,
+    /// The equation as this sheet renders it, through the same formatter, so two
+    /// panes cannot show different text for one equation.
+    pub equation_text: String,
+}
+
 /// A variable in the classification summary.
 #[derive(Debug, Clone)]
 pub struct ClassifiedVariable {
@@ -294,6 +318,50 @@ pub struct ClassifiedVariable {
     pub unit: Option<String>,
     pub description: Option<String>,
     pub start: Option<String>,
+    /// For a **state**, the equation whose derivative made it one.
+    ///
+    /// `None` for every other kind, and for algebraic that is itself the answer:
+    /// a variable is algebraic *because* no equation differentiates it, so there is
+    /// no equation to name. [`ClassifiedVariable::kind_explanation`] says that in
+    /// words rather than leaving the hover blank — absence is stated, never filled.
+    ///
+    /// A **state** with `None` here would be a genuine finding: Rumoca would have
+    /// partitioned a variable into `x` with no `der()` anywhere in `f_x`. The hover
+    /// reports that case as a discrepancy instead of hiding it, and
+    /// `every_state_names_the_equation_that_made_it_one` fails on it.
+    pub derivative_evidence: Option<DerivativeEvidence>,
+}
+
+impl ClassifiedVariable {
+    /// One hover's worth of text: the classification, and why it holds.
+    ///
+    /// `None` for kinds whose reason is not an equation — `parameter`, `input`,
+    /// `constant` and the rest are decided by the **declaration**, and inventing an
+    /// equation-shaped story for them would be exactly the kind of plausible fiction
+    /// `CLAUDE.md` bans. Only the state/algebraic split is derived from `f_x`, and
+    /// only it is explained here.
+    #[must_use]
+    pub fn kind_explanation(&self) -> Option<String> {
+        match (self.kind, &self.derivative_evidence) {
+            ("state", Some(e)) => Some(format!(
+                "State \u{2014} its derivative appears in {}:\n    {}\n\nA state is \
+                 integrated over time, so it carries the model's memory and needs an \
+                 initial condition.",
+                e.equation_id, e.equation_text,
+            )),
+            ("state", None) => Some(format!(
+                "State, but no equation in this DAE contains der({}). HRW cannot show \
+                 why, and that disagreement is worth reporting rather than guessing at.",
+                self.name,
+            )),
+            ("algebraic", _) => Some(format!(
+                "Algebraic \u{2014} no equation contains der({}), so it is solved at \
+                 each instant rather than integrated, and needs no initial condition.",
+                self.name,
+            )),
+            _ => None,
+        }
+    }
 }
 
 /// One line of the specimen source with its equation associations.
@@ -629,18 +697,53 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
 
     let mut variables = Vec::new();
 
+    /// Find the equation that differentiates `var_name`, if any.
+    ///
+    /// **This walks the expression tree; it does not search text.**
+    /// `expr_contains_der_of` is Rumoca's own structural query — it visits
+    /// `BuiltinCall { function: Der, .. }` nodes and asks whether the argument
+    /// *refers to* this variable. Searching the rendered string for `"der(C.v)"`
+    /// would be heuristic name-matching, which `docs/identity-and-provenance.md`
+    /// forbids outright, and it would be wrong in a way nobody would notice:
+    /// `der(C.v1)` contains `der(C.v)` as a substring, so the hover would cite a
+    /// real equation about a different variable.
+    ///
+    /// Returns the **first** match. A variable can be differentiated in more than
+    /// one equation; one real citation answers *why it is a state* better than a
+    /// summary of several.
+    fn derivative_evidence(dae: &dae::Dae, var_name: &VarName) -> Option<DerivativeEvidence> {
+        dae.continuous
+            .equations
+            .iter()
+            .enumerate()
+            .find(|(_, eq)| rumoca_ir_dae::expr_contains_der_of(&eq.rhs, var_name))
+            .map(|(index, eq)| DerivativeEvidence {
+                // Spelled exactly as this sheet spells it above, so the hover names
+                // a row Doug can navigate to rather than a number he must trust.
+                equation_id: format!("f_x[{index}]"),
+                equation_text: expr_format::format_equation(eq),
+            })
+    }
+
     fn collect_vars(
         vars: &mut Vec<ClassifiedVariable>,
-        iter: impl Iterator<Item = (String, dae::Variable)>,
+        iter: impl Iterator<Item = (VarName, dae::Variable)>,
         kind: &'static str,
+        dae: &dae::Dae,
     ) {
-        for (name, v) in iter {
+        for (var_name, v) in iter {
             vars.push(ClassifiedVariable {
-                name,
+                name: var_name.to_string(),
                 kind,
                 unit: v.unit.clone().filter(|u| !u.is_empty()),
                 description: v.description.clone().filter(|d| !d.is_empty()),
                 start: v.start.as_ref().map(expr_format::format_expr),
+                // Only states are searched: for every other kind the scan would
+                // cost a walk of `f_x` to learn nothing, since their reason is
+                // either the absence of a match or the declaration itself.
+                derivative_evidence: (kind == "state")
+                    .then(|| derivative_evidence(dae, &var_name))
+                    .flatten(),
             });
         }
     }
@@ -649,8 +752,9 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
         ($map:expr, $kind:expr) => {
             collect_vars(
                 &mut variables,
-                $map.iter().map(|(n, v)| (n.to_string(), v.clone())),
+                $map.iter().map(|(n, v)| (n.clone(), v.clone())),
                 $kind,
+                dae,
             )
         };
     }
@@ -1121,5 +1225,171 @@ mod tests {
                  so a shared key resolves to the wrong equation",
             );
         }
+    }
+
+    /// **The hover explains state and algebraic, and stays silent about the rest.**
+    ///
+    /// Silence is the load-bearing half. A `parameter` is a parameter because it was
+    /// *declared* one, not because of anything in `f_x`, so an equation-shaped
+    /// sentence about it would be a plausible fiction — the exact failure mode
+    /// `CLAUDE.md` spends most of its rules on. This pins that the explanation is
+    /// offered only where HRW actually derived something.
+    #[test]
+    fn kind_explanation_covers_state_and_algebraic_and_says_nothing_else() {
+        let base = ClassifiedVariable {
+            name: "C.v".to_owned(),
+            kind: "state",
+            unit: None,
+            description: None,
+            start: None,
+            derivative_evidence: Some(DerivativeEvidence {
+                equation_id: "f_x[14]".to_owned(),
+                equation_text: "0 = C.i - C.C * der(C.v)".to_owned(),
+            }),
+        };
+
+        // A state with evidence cites the equation, by the id every pane shares.
+        let text = base.kind_explanation().expect("a state is explained");
+        assert!(text.contains("f_x[14]"), "must name the equation: {text}");
+        assert!(
+            text.contains("0 = C.i - C.C * der(C.v)"),
+            "must quote it, so the claim is checkable on screen: {text}"
+        );
+        assert!(
+            text.contains("initial condition"),
+            "must say what being a state costs the solver: {text}"
+        );
+
+        // A state WITHOUT evidence reports the discrepancy rather than inventing one.
+        let orphan = ClassifiedVariable {
+            derivative_evidence: None,
+            ..base.clone()
+        };
+        let text = orphan.kind_explanation().expect("still explained");
+        assert!(
+            text.contains("no equation") && text.contains("reporting"),
+            "an unjustifiable state must read as a discrepancy, not as an answer: {text}"
+        );
+
+        // Algebraic states its absence directly.
+        let alg = ClassifiedVariable {
+            kind: "algebraic",
+            name: "R.v".to_owned(),
+            derivative_evidence: None,
+            ..base.clone()
+        };
+        let text = alg.kind_explanation().expect("algebraic is explained");
+        assert!(
+            text.contains("der(R.v)") && text.contains("no equation"),
+            "absence is stated, never left blank: {text}"
+        );
+
+        // Every other kind is silent.
+        for kind in ["parameter", "constant", "input", "output", "discrete"] {
+            let other = ClassifiedVariable {
+                kind,
+                derivative_evidence: None,
+                ..base.clone()
+            };
+            assert!(
+                other.kind_explanation().is_none(),
+                "{kind} has no equation-shaped reason, so HRW must not invent one",
+            );
+        }
+    }
+
+    /// **Every state names the equation that made it one, and that equation really
+    /// differentiates it.**
+    ///
+    /// Doug, 2026-08-16: *"There's no hint provided in the HRW UI as to why this is a
+    /// state instead of an algebraic."* This is the must-fire half of the fix: the
+    /// hover is a *claim about Rumoca's partitioning*, and an unbacked claim is worse
+    /// than the blank label it replaced.
+    ///
+    /// Two things are checked per state, on a real compile:
+    ///
+    /// 1. **Evidence exists.** A state with none would mean Rumoca put a variable in
+    ///    `x` with no `der()` anywhere in `f_x` — a genuine finding about the compiler,
+    ///    not a rendering bug.
+    /// 2. **The cited equation is the right one.** The id is re-resolved against the
+    ///    sheet's own equation list and required to differentiate *this* variable, so
+    ///    an off-by-one in the `f_x[N]` spelling fails here rather than sending Doug to
+    ///    a plausible neighbour.
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    #[test]
+    fn every_state_names_the_equation_that_made_it_one() {
+        let mut states_checked = 0usize;
+
+        for specimen in [
+            "RcCircuit",
+            "BouncingBall",
+            "RotationalInertia",
+            "Drivetrain",
+        ] {
+            let crate::worker::FromWorker::Compiled { equation_sheet, .. } =
+                crate::worker::test_msl::compile_specimen_shared(specimen)
+            else {
+                panic!("{specimen} should compile");
+            };
+            let Some(sheet) = equation_sheet else {
+                continue;
+            };
+
+            for v in sheet.variables.iter().filter(|v| v.kind == "state") {
+                states_checked += 1;
+                let e = v.derivative_evidence.as_ref().unwrap_or_else(|| {
+                    panic!(
+                        "{specimen}: `{}` is a state with no equation to justify it, so \
+                         the hover cannot say why it is one",
+                        v.name
+                    )
+                });
+
+                // The id must resolve, and to an equation that mentions this
+                // variable's derivative. `format_equation` is the same renderer the
+                // sheet uses, so the text here is the text on screen.
+                let index: usize = e
+                    .equation_id
+                    .trim_start_matches("f_x[")
+                    .trim_end_matches(']')
+                    .parse()
+                    .unwrap_or_else(|_| panic!("{specimen}: malformed id {:?}", e.equation_id));
+                let cited = sheet
+                    .groups
+                    .iter()
+                    .flat_map(|(_, eqs)| eqs.iter())
+                    .find(|q| q.index == index)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{specimen}: `{}` cites {} , which names no equation in the \
+                             sheet \u{2014} the hover would send Doug nowhere",
+                            v.name, e.equation_id
+                        )
+                    });
+                assert_eq!(
+                    cited.text, e.equation_text,
+                    "{specimen}: the hover for `{}` quotes different text than the sheet \
+                     shows for {}",
+                    v.name, e.equation_id,
+                );
+                assert!(
+                    e.equation_text.contains("der("),
+                    "{specimen}: `{}` cites {} as its reason, but that equation has no \
+                     derivative in it: {}",
+                    v.name,
+                    e.equation_id,
+                    e.equation_text,
+                );
+            }
+        }
+
+        assert!(
+            states_checked >= 8,
+            "only {states_checked} states were checked across four specimens; this is \
+             not exercising what it claims",
+        );
     }
 }

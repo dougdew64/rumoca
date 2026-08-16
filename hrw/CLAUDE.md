@@ -729,10 +729,21 @@ ratchets and a dozen checkers, and elapsed time has no mechanism whatever. Doug 
 and cannot see what is about to run; Claude can see it and does not feel it — the same asymmetry
 this file already records for the permission allowlist.
 
-**And regenerate `docs/architecture.md` BEFORE the gate whenever `src/` changed**, never after.
-Its module-size regions are derived from the source, so an edit staled them, the gate failed on
-`architecture_regions_are_current`, and the whole 225 s was paid twice. That happened twice on
-2026-08-15.
+**The pre-commit order is FMT, then GENERATE, then GATE — and it is an order, not a set.**
+`docs/architecture.md` carries module **line counts** derived from the source, so:
+
+```text
+cargo fmt -p hrw                                   # rewraps lines -> changes the counts
+cargo run -q -p hrw --example gen_architecture     # only now are the counts final
+cargo clippy -p hrw --all-targets                  # lint the code in the shape it ships in
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1
+```
+
+**Getting this wrong costs the whole 225 s, and it has now cost it three times.** Twice on
+2026-08-15 by regenerating *after* the gate; once on 2026-08-16 by regenerating *before*
+`cargo fmt`, which then reformatted the file and staled the counts again. The failure is always
+`architecture_regions_are_current`, and it is always the last thing standing between a green
+suite and a commit.
 
 **A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
 2026-08-15)*. The committed specimen traces had been stale for **25 days** and nothing could

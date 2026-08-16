@@ -3858,7 +3858,16 @@ impl App {
                             // the same sentence drift, and this one still said
                             // "track" after the rename.
                             resp.on_hover_text(crate::follow_hover(&v.name, is_tracked));
-                            ui.label(v.kind);
+                            // **The classification says why it holds.** Doug,
+                            // 2026-08-16: "There's no hint provided in the HRW UI
+                            // as to why this is a state instead of an algebraic."
+                            // The sentence is computed in `identifier_index`, not
+                            // here — the paint path renders it and decides nothing,
+                            // so what the hover claims is unit-testable.
+                            let kind_label = ui.label(v.kind);
+                            if let Some(why) = v.kind_explanation() {
+                                kind_label.on_hover_text(why);
+                            }
                             ui.label(v.start.as_deref().unwrap_or("—"));
                             ui.label(v.unit.as_deref().unwrap_or(""));
                             ui.end_row();
@@ -10082,6 +10091,7 @@ mod tests {
             unit: None,
             description: None,
             start: None,
+            derivative_evidence: None,
         };
         let sheet = EquationSheet {
             variables: vec![var("src.V"), var("plain.x"), var("h"), var("nosuch.y")],
