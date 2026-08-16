@@ -18,13 +18,14 @@
 use hrw::worker::{FromWorker, StageKind};
 
 fn main() {
-    let mut names: Vec<String> = std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"))
-        .expect("specimens/ must be readable")
-        .filter_map(|e| {
-            let p = e.ok()?.path();
-            (p.extension()? == "mo").then(|| p.file_stem()?.to_str().map(str::to_owned))?
-        })
-        .collect();
+    let mut names: Vec<String> =
+        std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"))
+            .expect("specimens/ must be readable")
+            .filter_map(|e| {
+                let p = e.ok()?.path();
+                (p.extension()? == "mo").then(|| p.file_stem()?.to_str().map(str::to_owned))?
+            })
+            .collect();
     names.sort();
 
     let libs = vec![std::path::PathBuf::from(format!(
@@ -35,8 +36,10 @@ fn main() {
     println!("{:<26} {:<22} note", "specimen", "where it stops");
     println!("{}", "-".repeat(96));
     for name in names {
-        let path =
-            std::path::PathBuf::from(format!("{}/specimens/{name}.mo", env!("CARGO_MANIFEST_DIR")));
+        let path = std::path::PathBuf::from(format!(
+            "{}/specimens/{name}.mo",
+            env!("CARGO_MANIFEST_DIR")
+        ));
         let compiled = hrw::worker::compile_specimen(&path, libs.clone());
         let Ok(FromWorker::Compiled { stages, .. }) = compiled else {
             println!("{name:<26} <compile call failed>");
@@ -60,7 +63,12 @@ fn main() {
             .map(|k| {
                 (
                     k.name(),
-                    stages.get(*k).note.clone().unwrap_or_default().replace('\n', " "),
+                    stages
+                        .get(*k)
+                        .note
+                        .clone()
+                        .unwrap_or_default()
+                        .replace('\n', " "),
                 )
             })
             .collect();
@@ -85,6 +93,9 @@ fn main() {
         } else {
             String::new()
         };
-        println!("{name:<26} {where_:<22} {}{also}", &note[..note.len().min(40)]);
+        println!(
+            "{name:<26} {where_:<22} {}{also}",
+            &note[..note.len().min(40)]
+        );
     }
 }

@@ -1224,7 +1224,12 @@ pub fn parse_breakpoint_ack(text: &str) -> BreakpointAck {
 /// Check whether the extension has acknowledged the last breakpoint request,
 /// consuming the ack file if it exists.
 pub fn check_breakpoint_ack() -> BreakpointAck {
-    let path = std::path::Path::new(BREAKPOINT_ACK_FILE);
+    check_breakpoint_ack_at(std::path::Path::new(BREAKPOINT_ACK_FILE))
+}
+
+/// [`check_breakpoint_ack`] against an arbitrary path, so a test can exercise the
+/// consume-and-delete behaviour without touching the live bridge directory.
+pub(crate) fn check_breakpoint_ack_at(path: &Path) -> BreakpointAck {
     if !path.exists() {
         return BreakpointAck::Pending;
     }
@@ -1322,7 +1327,35 @@ pub(crate) fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usi
 ///
 /// Both in-app call sites ignore the value, so this is additive.
 pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<serde_json::Value> {
-    let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
+    arm_live_trace_breakpoint_to(Path::new(BREAKPOINT_REQUEST_FILE), specimen)
+}
+
+/// [`arm_live_trace_breakpoint`], writing to `request_path`.
+///
+/// # This exists so that NO TEST EVER ARMS A REAL BREAKPOINT
+///
+/// Doug, 2026-08-15, after a first fix that was not enough: *"There's still a
+/// live_trace.rs breakpoint set."* Writing an arm request to
+/// `BREAKPOINT_REQUEST_FILE` is not a simulation — the extension is watching that
+/// exact path and puts a breakpoint in his editor. A guard that removes it
+/// afterwards was the wrong shape of answer, because **the extension declines to
+/// remove a breakpoint it did not add**: an arm landing on a location that already
+/// has one is reported `alreadyEnabled` and never enters `armedBreakpoints`, which
+/// is the only list either removal path consults. One reload of the VS Code window
+/// resets that list, and any breakpoint HRW armed before it becomes permanently
+/// unremovable — by HRW, and by the extension's own Clear command.
+///
+/// So the fix is not to clean up more reliably. It is to **never create it**:
+/// every test writes to a temp path, and
+/// `no_test_arms_a_breakpoint_on_the_watched_path` fails if one stops doing so.
+///
+/// The ack is cleared *beside the request*, not at `BREAKPOINT_ACK_FILE`, so a
+/// test cannot delete an ack the extension just wrote for the running app.
+pub(crate) fn arm_live_trace_breakpoint_to(
+    request_path: &Path,
+    specimen: Option<&str>,
+) -> std::io::Result<serde_json::Value> {
+    let _ = fs::remove_file(request_path.with_file_name("breakpoint-ack.json"));
     let (file, line) = find_live_trace_line()?;
     let path_str = file.display().to_string();
     let mut request = json!({
@@ -1332,7 +1365,7 @@ pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<serd
     if let Some(s) = specimen {
         request["specimen"] = json!(s);
     }
-    write_breakpoint_request_to(Path::new(BREAKPOINT_REQUEST_FILE), &request)?;
+    write_breakpoint_request_to(request_path, &request)?;
     Ok(request)
 }
 
@@ -1368,6 +1401,18 @@ fn write_breakpoint_request_to(path: &Path, request: &serde_json::Value) -> std:
 /// Returns the request it wrote, for the same reason as
 /// [`arm_live_trace_breakpoint`] — see that function's docs.
 pub fn remove_live_trace_breakpoint() -> std::io::Result<serde_json::Value> {
+    remove_live_trace_breakpoint_to(Path::new(BREAKPOINT_REQUEST_FILE))
+}
+
+/// [`remove_live_trace_breakpoint`], writing to `request_path`.
+///
+/// Exists for the same reason as [`arm_live_trace_breakpoint_to`], though the
+/// stakes are lower: a removal request cannot *create* a breakpoint. What it
+/// avoids is the read-back race — the extension consumes a request and unlinks it,
+/// so a test that reopens the path to check what it wrote is racing a watcher.
+pub(crate) fn remove_live_trace_breakpoint_to(
+    request_path: &Path,
+) -> std::io::Result<serde_json::Value> {
     let (file, line) = find_live_trace_line()?;
     let path_str = file.display().to_string();
     let request = json!({
@@ -1375,7 +1420,7 @@ pub fn remove_live_trace_breakpoint() -> std::io::Result<serde_json::Value> {
         "action": "remove",
         "breakpoints": [{ "path": path_str, "line": line }]
     });
-    write_breakpoint_request_to(Path::new(BREAKPOINT_REQUEST_FILE), &request)?;
+    write_breakpoint_request_to(request_path, &request)?;
     Ok(request)
 }
 
@@ -3216,69 +3261,33 @@ mod tests {
         );
     }
 
-    /// Leaves the live-trace anchor **disarmed** however the test ends —
-    /// normally, or by a failing assertion unwinding out of the middle.
+    /// A request path in the system temp directory — **never** the bridge
+    /// directory.
     ///
-    /// # Why a guard, and why it must not delete the request file
-    ///
-    /// `.hrw-bridge/` is not a fixture. It is **the live bridge directory of
-    /// Doug's running VS Code**, because `BREAKPOINT_REQUEST_FILE` is built from
-    /// `CARGO_MANIFEST_DIR`. So `arm_live_trace_breakpoint` in a test is not a
-    /// simulation: the extension's watcher fires, and a **real breakpoint appears
-    /// in his editor** on `live_trace.rs`. Doug reported exactly that on
-    /// 2026-08-15 — a breakpoint he never set, left behind by a test run.
-    ///
-    /// The test used to end by *deleting* the request file, and that is the bug.
-    /// `extension.ts` consumes a request by reading it, acting, and unlinking it;
-    /// a file deleted before its watcher fires is a request that never happened.
-    /// So the sequence arm → remove → delete could leave the **arm** applied and
-    /// the **remove** discarded, which is the one ordering that strands a
-    /// breakpoint.
-    ///
-    /// Leaving a removal request in place is therefore the correct end state, and
-    /// it is also what the app itself does: every `remove_live_trace_breakpoint`
-    /// call site in `app.rs` writes the file and never deletes it. The extension
-    /// picks it up on the next watcher event, or on its next activation via the
-    /// startup `if (fs.existsSync(requestPath))` path.
-    struct DisarmAnchor;
-
-    /// How many times [`DisarmAnchor`] has released the anchor.
-    ///
-    /// **The tests below count instead of reading the bridge directory, and that
-    /// is not squeamishness — it is the only race-free option.** The extension
-    /// *consumes* a request: it reads the file, acts, and unlinks it. So
-    /// "assert the removal request is still on disk" is a bet that the test wins
-    /// a race against a filesystem watcher. It was written that way first and
-    /// **passed**, which is precisely how a flaky test enters a suite.
-    static DISARMS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-
-    impl Drop for DisarmAnchor {
-        fn drop(&mut self) {
-            // Deliberately no `remove_file` afterwards — see the type's docs.
-            let _ = remove_live_trace_breakpoint();
-            // The ack is ours or the extension's reply to a request that is now
-            // moot either way; leaving it would be read as a pending handshake.
-            let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
-            DISARMS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        }
+    /// `.hrw-bridge/breakpoint-request.json` is watched by Doug's running VS Code,
+    /// so writing an arm request there is not a simulation: a breakpoint appears in
+    /// his editor. See [`arm_live_trace_breakpoint_to`] for why cleaning up
+    /// afterwards was the wrong shape of answer.
+    fn temp_request_path(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("hrw-breakpoint-request-{name}.json"))
     }
 
-    /// Tests arm, remove, and ack together to avoid races on the shared
-    /// bridge directory (all three write to the same request/ack files).
+    /// Tests arm, remove, and ack together, against a temp path.
     ///
-    /// **Every assertion here is on the value the bridge function returned, never
-    /// on the file it wrote.** Re-reading `breakpoint-request.json` raced the VS
-    /// Code extension, which consumes a request and unlinks it; the read landed
-    /// microseconds after the write and so never lost, which is what a flake looks
-    /// like before it surfaces. See [`arm_live_trace_breakpoint`]'s docs.
+    /// **Every assertion is on the value the bridge function returned, never on the
+    /// file it wrote.** Even off the watched path that is the better shape, and on
+    /// the watched path it was a race: the extension consumes a request and unlinks
+    /// it, and the read landed microseconds after the write, so it never lost —
+    /// which is what a flake looks like before it surfaces.
     #[test]
     fn live_trace_breakpoint_arm_remove_and_ack() {
-        // Armed before anything can fail, so no assertion below can leave a
-        // breakpoint in Doug's editor.
-        let _disarm = DisarmAnchor;
+        let request = temp_request_path("arm-remove-ack");
+        let ack = request.with_file_name("breakpoint-ack.json");
+        let _ = fs::remove_file(&request);
+        let _ = fs::remove_file(&ack);
 
         // arm
-        let req = arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
+        let req = arm_live_trace_breakpoint_to(&request, Some("TestModel")).expect("arm");
         assert_eq!(req["version"], json!(1));
         assert_eq!(req["specimen"], json!("TestModel"));
         let bp = &req["breakpoints"][0];
@@ -3287,7 +3296,7 @@ mod tests {
         assert_eq!(bp.get("condition"), None, "no condition field when absent");
 
         // remove
-        let req = remove_live_trace_breakpoint().expect("remove");
+        let req = remove_live_trace_breakpoint_to(&request).expect("remove");
         assert_eq!(req["version"], json!(1));
         assert_eq!(req["action"], json!("remove"));
         assert!(
@@ -3300,163 +3309,163 @@ mod tests {
         // ack — the LEGACY payload, which is what a stale extension writes.
         // It replies, so the handshake ends; it cannot say what it armed, so it
         // must not be read as armed. See `docs/ideas.md` #75.
-        fs::write(BREAKPOINT_ACK_FILE, r#"{"acked":true}"#).unwrap();
-        let ack = check_breakpoint_ack();
+        fs::write(&ack, r#"{"acked":true}"#).unwrap();
+        let verdict = check_breakpoint_ack_at(&ack);
         assert_eq!(
-            ack,
+            verdict,
             BreakpointAck::Unreportable,
             "a pre-#75 ack cannot report what it armed"
         );
-        assert!(ack.replied(), "it did reply, so the wait is over");
+        assert!(verdict.replied(), "it did reply, so the wait is over");
         assert!(
-            !ack.is_armed(),
+            !verdict.is_armed(),
             "but replying is not evidence that a breakpoint exists"
         );
-        assert!(
-            !Path::new(BREAKPOINT_ACK_FILE).exists(),
-            "ack file should be deleted"
-        );
+        assert!(!ack.exists(), "ack file should be deleted");
         assert_eq!(
-            check_breakpoint_ack(),
+            check_breakpoint_ack_at(&ack),
             BreakpointAck::Pending,
             "should be Pending once the ack file is gone"
         );
 
-        // No cleanup here on purpose: `DisarmAnchor` runs on the way out and
-        // leaves a *removal request* behind rather than an empty directory.
-        // Deleting the file was the bug this test used to cause.
+        let _ = fs::remove_file(&request);
     }
 
-    /// **The guard releases the anchor even when the body panics** — the case
-    /// that matters, because a failing assertion between arm and remove is
-    /// exactly when a breakpoint would otherwise be stranded in Doug's editor.
+    /// **Arming writes only where it was told to, and clears only the ack beside
+    /// it.**
     ///
-    /// # Why nothing here reads the bridge directory
+    /// The isolation the rest of this fix rests on. If `arm_live_trace_breakpoint_to`
+    /// leaked back to the constants — a stray `BREAKPOINT_REQUEST_FILE` in the body,
+    /// which is exactly the edit someone makes while "simplifying" — every test
+    /// would resume arming breakpoints in Doug's editor and
+    /// [`no_test_arms_a_breakpoint_on_the_watched_path`] below would still pass,
+    /// because the call site would look correct.
     ///
-    /// **`.hrw-bridge/` is shared with a live VS Code extension, and the
-    /// extension *consumes* a request** — `extension.ts` reads it, acts, unlinks
-    /// it, and writes an ack. So any assertion of the form "the removal request
-    /// is on disk" is a race against a filesystem watcher.
-    ///
-    /// That is not a theoretical concern. This test's first draft asserted the
-    /// file was present after the guard ran; it **passed**, and an inspection of
-    /// the bridge directory three seconds later showed the extension had already
-    /// deleted it and replied. A test that wins a race is not a passing test, it
-    /// is a flake that has not surfaced yet.
-    ///
-    /// So the guard counts its own releases, and the two claims are split:
-    /// this owns *"the release runs, including while unwinding"*, and
-    /// [`live_trace_breakpoint_arm_remove_and_ack`] above owns *"a release writes
-    /// `action: "remove"` naming the anchor"*. Neither needs to observe the other
-    /// process.
-    ///
-    /// # What no test here can check
-    ///
-    /// The symptom itself. The state that goes wrong lives in **VS Code**, as a
-    /// breakpoint on `live_trace.rs` that nobody set, and `#75` records that VS
-    /// Code exposes no `verified` field to extensions. Doug saw it; HRW cannot.
+    /// So this asserts on the bridge directory *not changing*: a real observation of
+    /// the real path, and the one case where reading it is safe, because nothing in
+    /// this test ever writes there.
     #[test]
-    fn the_disarm_guard_releases_the_anchor_even_on_panic() {
-        use std::sync::atomic::Ordering;
+    fn arming_to_a_temp_path_does_not_touch_the_bridge_directory() {
+        let request = temp_request_path("isolation");
+        let _ = fs::remove_file(&request);
 
-        // --- The ordinary path: leaving the scope. ---
-        let before = DISARMS.load(Ordering::SeqCst);
-        {
-            let _disarm = DisarmAnchor;
-            arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
-        }
+        // Snapshot the real paths. Absent is the ordinary case and is a state too.
+        let before_request = fs::read_to_string(BREAKPOINT_REQUEST_FILE).ok();
+        let before_ack = fs::read_to_string(BREAKPOINT_ACK_FILE).ok();
+
+        arm_live_trace_breakpoint_to(&request, Some("TestModel")).expect("arm");
+        remove_live_trace_breakpoint_to(&request).expect("remove");
+
+        assert!(
+            request.exists(),
+            "the temp path must be where the request actually went",
+        );
         assert_eq!(
-            DISARMS.load(Ordering::SeqCst),
-            before + 1,
-            "leaving the scope must release the anchor",
+            fs::read_to_string(BREAKPOINT_REQUEST_FILE).ok(),
+            before_request,
+            "arming to a temp path must not write the watched request file",
+        );
+        assert_eq!(
+            fs::read_to_string(BREAKPOINT_ACK_FILE).ok(),
+            before_ack,
+            "arming to a temp path must not clear the live bridge's ack",
         );
 
-        // --- The path that matters: unwinding out of the middle. ---
-        let before = DISARMS.load(Ordering::SeqCst);
-        let result = std::panic::catch_unwind(|| {
-            let _disarm = DisarmAnchor;
-            arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
-            panic!("simulating a failed assertion between arm and remove");
-        });
-        assert!(result.is_err(), "the inner panic must have happened");
-        assert_eq!(
-            DISARMS.load(Ordering::SeqCst),
-            before + 1,
-            "a panicking test must not strand an armed breakpoint in the editor",
-        );
+        let _ = fs::remove_file(&request);
     }
 
-    /// **Every test that arms the anchor declares the guard.**
+    /// **No test arms a breakpoint on the watched path.**
     ///
-    /// The guard above is only as good as its use, and *forgetting* it is the
-    /// regression that actually happens — the mistake is invisible, since the
-    /// test still passes and the damage lands in an editor nobody is watching
-    /// during a test run.
+    /// Doug, 2026-08-15, after a first fix that only cleaned up afterwards:
+    /// *"There's still a live_trace.rs breakpoint set."* Cleanup could not work,
+    /// because **the extension declines to remove a breakpoint it did not add** —
+    /// an arm onto an existing breakpoint is reported `alreadyEnabled` and never
+    /// enters `armedBreakpoints`, the only list either removal path consults. A
+    /// window reload empties that list, and anything armed before it becomes
+    /// permanently unremovable by HRW *and* by the extension's own Clear command.
     ///
-    /// Nothing dynamic can catch that: a test that never constructs
-    /// `DisarmAnchor` simply does not release, and there is no observable HRW
-    /// state to assert on. So this reads the source, which is the same
-    /// instrument `doc_citations::no_function_has_two_test_attributes` uses
-    /// against a defect the compiler cannot see either.
+    /// So the invariant is not "clean up reliably", it is **never arm**. Every test
+    /// uses `arm_live_trace_breakpoint_to` with a temp path; calling the
+    /// bridge-path `arm_live_trace_breakpoint` from a test is the regression.
     ///
-    /// Splitting on `#[test]` gives one chunk per test function, which is enough:
-    /// the guard must be *named* in the same test that arms. It does not verify
-    /// the guard is declared **before** the arm, and that ordering matters —
-    /// stated here rather than left as a silent gap, because a guard constructed
-    /// after a panicking arm would never run.
+    /// # Why a source check, and what the previous one taught
     ///
-    /// **This took three attempts to make fire, and each failure was the same
-    /// mistake in a new place: matching prose instead of code.**
+    /// Nothing dynamic can see this: the damage lands in an editor, and `#75`
+    /// records that VS Code exposes no `verified` field to extensions. The check it
+    /// replaces needed **three attempts to fire**, each failing the same way —
+    /// matching prose rather than code — and this one needed a fourth for the same
+    /// reason in a new dress: **a source check is text, and its own text is part of
+    /// the corpus.** Written literally, it matched itself, and the attribute it
+    /// splits on appeared in its own prose, cutting a chunk out of a doc comment.
     ///
-    /// 1. Splitting `#[test]`-to-`#[test]` runs past the end of a function and
-    ///    into the *following* item's `///` lines — which discuss `DisarmAnchor`
-    ///    at length. Every chunk inherited the word it was searching for. Fixed by
-    ///    truncating each chunk at the next doc comment.
-    /// 2. The body still passed, because a **comment inside it** says
-    ///    "`DisarmAnchor` runs on the way out". Fixed by searching for the
-    ///    *construction* `= DisarmAnchor` rather than the bare name.
+    /// So the needle is *assembled at runtime* and the attribute is never written
+    /// out here. Both are load-bearing, not style: spelling either one literally
+    /// makes this test report itself and mask a real offender behind the noise.
+    /// # Why every source file, not just this one
     ///
-    /// Both were found by deleting the guard and watching this test stay green.
-    /// **A check verified only by passing on correct code has not been verified**,
-    /// and a source-text check is unusually good at looking right while matching
-    /// something that was never the point.
+    /// The first version scanned `bridge.rs` alone and passed while a full gate run
+    /// was still arming a real breakpoint — `app.rs`'s `prewarm_arms_awaits_ack_then_removes`
+    /// drives `tick_prewarm`, which arms the anchor for real. **A check scoped to
+    /// the file it lives in reads as a check on the invariant**, and the gap was
+    /// visible only in an ack timestamped inside the run.
     #[test]
-    fn a_test_that_arms_the_anchor_also_declares_the_guard() {
-        let source = include_str!("bridge.rs");
-        let mut arming = 0usize;
-        let mut unguarded: Vec<String> = Vec::new();
+    fn no_test_arms_a_breakpoint_on_the_watched_path() {
+        // Assembled so these files do not contain the strings being searched for.
+        let attribute = format!("#[{}]", "test");
+        let watched_call = format!("{}(", "arm_live_trace_breakpoint");
+        let prewarm_call = format!("{}(", "tick_prewarm");
 
-        for chunk in source.split("#[test]").skip(1) {
-            // Stop at the next item's doc comment; everything after it belongs to
-            // a different test.
-            let body = chunk.split("\n    ///").next().unwrap_or(chunk);
-            if !body.contains("arm_live_trace_breakpoint(") {
+        let src = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut offenders: Vec<String> = Vec::new();
+        let mut scanned = 0usize;
+        let mut files = 0usize;
+
+        for entry in fs::read_dir(&src).expect("src/ is readable").flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
                 continue;
             }
-            arming += 1;
-            // The **construction**, not the name: prose about the guard is not
-            // the guard. See the third paragraph of this test's docs.
-            if !body.contains("= DisarmAnchor") {
-                let name = body
+            let source = fs::read_to_string(&path).expect("a source file is readable");
+            let file = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("?")
+                .to_owned();
+            files += 1;
+
+            for chunk in source.split(attribute.as_str()).skip(1) {
+                // Everything past the next doc comment belongs to a different item.
+                let body = chunk.split("\n    ///").next().unwrap_or(chunk);
+                let Some(name) = body
                     .lines()
                     .find(|l| l.trim_start().starts_with("fn "))
-                    .unwrap_or("<unnamed>")
-                    .trim()
-                    .to_owned();
-                unguarded.push(name);
+                    .map(|l| l.trim().to_owned())
+                else {
+                    // Not a test body — a prose fragment, or an attribute mentioned
+                    // in a comment. Skipped rather than counted, so `scanned` stays
+                    // a count of real bodies.
+                    continue;
+                };
+                scanned += 1;
+                // The direct call, and the app-level state machine that performs
+                // one. Both reach the same watched file.
+                if body.contains(watched_call.as_str()) || body.contains(prewarm_call.as_str()) {
+                    offenders.push(format!("{file}: {name}"));
+                }
             }
         }
 
         assert!(
-            arming >= 2,
-            "only {arming} arming tests were found; the split must have stopped \
-             matching, so this checks nothing",
+            files >= 10 && scanned >= 100,
+            "only {scanned} test bodies across {files} files were scanned; the walk \
+             or the split stopped matching, so this checks nothing",
         );
         assert!(
-            unguarded.is_empty(),
-            "these tests arm the live-trace anchor without declaring \
-             `DisarmAnchor`, so a breakpoint is left in the editor after the run: \
-             {unguarded:?}",
+            offenders.is_empty(),
+            "these tests arm the anchor on the WATCHED path, which puts a real \
+             breakpoint in the editor that the extension will refuse to remove \
+             later \u{2014} use `arm_live_trace_breakpoint_to` with \
+             `temp_request_path`: {offenders:?}",
         );
     }
 

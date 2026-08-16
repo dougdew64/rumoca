@@ -468,9 +468,39 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
      exactly the returned value, against a **temp path nothing watches**. Verified must-fire by
      making the writer alter the request.
 
-     `DisarmAnchor` was never exposed to this: it asserts on a counter, never on the bridge
-     directory. Its first draft did read the file, and passed while the extension had already
-     deleted it three seconds earlier.
+     ~~`DisarmAnchor`~~ — the guard this originally shipped with is **deleted**. It was the
+     wrong shape of answer, and Doug said so by reporting the symptom again: *"There's still a
+     live_trace.rs breakpoint set."*
+
+     **Cleanup could never have worked**, because `extension.ts` declines to remove a breakpoint
+     it did not add. An arm onto a location that already has one is reported `alreadyEnabled` and
+     never enters `armedBreakpoints` — the only list `handleRemove` *or* `clearArmed` consults. A
+     window reload empties that list, so anything HRW armed before it is permanently unremovable
+     by HRW **and** by the extension's own Clear command. Doug's decision, 2026-08-15: the
+     extension keeps that rule.
+
+     So the invariant is **never arm**, and it is now enforced three ways, deepest first:
+
+     - **By construction:** `App::test_with_sender` starts at `Prewarm::Done`. This is the one
+       that mattered — `frame_ui` ticks the pre-warm every frame, so *every `egui_kittest`
+       harness* armed a real breakpoint on its first paint, and **no test body mentions the
+       pre-warm at all.** Two earlier fixes missed it for exactly that reason. The comment there
+       claimed "tests drive `tick_prewarm` explicitly; nothing is armed for them", which was
+       false the whole time.
+     - **By path:** `arm_live_trace_breakpoint_to` / `remove_live_trace_breakpoint_to` /
+       `check_breakpoint_ack_at` / `tick_prewarm_at` take the path, and every test passes a temp
+       one. `arming_to_a_temp_path_does_not_touch_the_bridge_directory` asserts the real files
+       are unchanged.
+     - **By source check:** `no_test_arms_a_breakpoint_on_the_watched_path`, over **all** of
+       `src/`. Its first version scanned only `bridge.rs` and passed while `app.rs` was still
+       arming — *a check scoped to the file it lives in reads as a check on the invariant.*
+
+     **The measurement that closed it:** clear the bridge, run the full gate, read what appears.
+     Before, an ack timestamped inside the run said `"action":"add"`. Now the only artefact is
+     `"action":"remove"`, from the shutdown-release test — a request that cannot create anything.
+
+     **The transferable rule: isolation by construction beats isolation by convention.** A source
+     check sees only what a test *names*, and this arrived through the frame loop.
 
 - [ ] **A stage's emitted JSON depends on what else the session holds.**
   *(Found 2026-08-01 while building the memoisation guard for #48.)* Compiling `Drivetrain`

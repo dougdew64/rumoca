@@ -1443,11 +1443,33 @@ impl App {
     /// (`.hrw-bridge/breakpoint-request.json`), so removing before the extension
     /// has read the arm request would simply overwrite it.
     fn tick_prewarm(&mut self, ctx: &egui::Context) {
+        self.tick_prewarm_at(ctx, std::path::Path::new(bridge::BREAKPOINT_REQUEST_FILE));
+    }
+
+    /// [`tick_prewarm`](Self::tick_prewarm), driving the handshake through
+    /// `request_path` instead of the bridge's own file.
+    ///
+    /// # Why this seam exists
+    ///
+    /// **The pre-warm arms the anchor for real**, and `.hrw-bridge/` is watched by
+    /// Doug's running VS Code, so a test driving this state machine puts a
+    /// breakpoint in his editor — which the extension will later refuse to remove,
+    /// because it only clears breakpoints it added and a window reload empties that
+    /// list (`bridge::arm_live_trace_breakpoint_to`).
+    ///
+    /// This was missed by the first pass at that fix, which moved only `bridge.rs`'s
+    /// own tests to a temp path. The evidence was an ack written *during* a full
+    /// gate run reading `"action":"add"` — a test suite arming a breakpoint while
+    /// claiming it no longer could. The ack file is derived beside `request_path`
+    /// for the same reason: consuming the live one would steal the reply the
+    /// running app is waiting for.
+    fn tick_prewarm_at(&mut self, ctx: &egui::Context, request_path: &std::path::Path) {
+        let ack_path = request_path.with_file_name("breakpoint-ack.json");
         match self.prewarm {
             Prewarm::NotStarted => {
                 // No specimen is loaded yet, so pass no model name — this arms
                 // the anchor purely to force line-table resolution.
-                if bridge::arm_live_trace_breakpoint(None).is_ok() {
+                if bridge::arm_live_trace_breakpoint_to(request_path, None).is_ok() {
                     self.prewarm = Prewarm::Awaiting(std::time::Instant::now());
                     ctx.request_repaint();
                 } else {
@@ -1469,12 +1491,12 @@ impl App {
                 // is warming the debugger's line resolution, not arming
                 // anything, and it removes the breakpoint either way. Which
                 // verdict came back is the Debug click's business.
-                let replied = bridge::check_breakpoint_ack().replied();
+                let replied = bridge::check_breakpoint_ack_at(&ack_path).replied();
                 let timed_out = started.elapsed() >= LIVE_DEBUG_ACK_TIMEOUT;
                 if replied || timed_out {
                     // Remove it again: pre-warming must not leave a breakpoint
                     // armed. Resolution stays cached in the debugger regardless.
-                    let _ = bridge::remove_live_trace_breakpoint();
+                    let _ = bridge::remove_live_trace_breakpoint_to(request_path);
                     self.prewarm = Prewarm::Done;
                 } else {
                     ctx.request_repaint();
@@ -9152,8 +9174,21 @@ impl App {
             live_breakpoint_armed: false,
             pending_stage: None,
             pending_sub_view: None,
-            // Tests drive `tick_prewarm` explicitly; nothing is armed for them.
-            prewarm: Prewarm::NotStarted,
+            // **Done, so a test App can never arm the live-trace anchor.**
+            //
+            // This said "Tests drive `tick_prewarm` explicitly; nothing is armed
+            // for them" and was **false**: `frame_ui` calls `tick_prewarm` on
+            // every frame, so each `egui_kittest` harness armed a real breakpoint
+            // in Doug's editor on its first paint — `.hrw-bridge/` is his running
+            // VS Code's directory, not a fixture. He reported the breakpoint
+            // twice; the first two fixes moved *tests* off the watched path and
+            // missed this one, because no test body mentions the pre-warm at all.
+            //
+            // Isolation by construction beats isolation by convention: a source
+            // check can only see what a test names, and this arrived through the
+            // frame loop. `prewarm_arms_awaits_ack_then_removes` opts back in
+            // deliberately, against a temp path.
+            prewarm: Prewarm::Done,
         };
         (app, from_tx)
     }
@@ -9650,21 +9685,39 @@ mod tests {
     /// The pre-warm state machine: arm → await ack → remove, and — critically —
     /// abandon *without consuming the ack* if a Debug click takes over.
     ///
-    /// Both paths live in one test because they share the single
-    /// `.hrw-bridge/breakpoint-{request,ack}.json` pair; as separate tests they
-    /// would race each other (the same reason `bridge`'s arm/remove/ack test is
-    /// combined).
+    /// Both paths live in one test because they share a single
+    /// request/ack pair; as separate tests they would race each other (the same
+    /// reason `bridge`'s arm/remove/ack test is combined).
+    ///
+    /// **Driven through a temp path, because the pre-warm arms for real.** Against
+    /// `.hrw-bridge/` this test put a breakpoint in Doug's editor on every run —
+    /// found 2026-08-15 by an ack timestamped inside a full gate run reading
+    /// `"action":"add"`, after a first fix that had moved only `bridge.rs`'s tests
+    /// off the watched path. See `App::tick_prewarm_at`.
     #[test]
     fn prewarm_arms_awaits_ack_then_removes() {
         let ctx = egui::Context::default();
         let (mut app, _tx) = App::test_with_sender();
-        let ack = std::path::Path::new(bridge::BREAKPOINT_ACK_FILE);
+        let request = std::env::temp_dir().join("hrw-prewarm-request.json");
+        let ack_buf = request.with_file_name("breakpoint-ack.json");
+        let ack = ack_buf.as_path();
+        let _ = std::fs::remove_file(&request);
         let _ = std::fs::remove_file(ack);
 
-        assert_eq!(app.prewarm, Prewarm::NotStarted);
+        // **A test App starts Done, so nothing arms behind a test's back.** Pinned
+        // here rather than assumed: `frame_ui` ticks the pre-warm every frame, so
+        // any other default would have every UI harness arming a real breakpoint.
+        assert_eq!(
+            app.prewarm,
+            Prewarm::Done,
+            "a test App must not arm the anchor on its own",
+        );
+        // Opt in deliberately — this is the one test that drives the state
+        // machine, and it does so against a temp path.
+        app.prewarm = Prewarm::NotStarted;
 
         // First tick writes the arm request and begins waiting for the ack.
-        app.tick_prewarm(&ctx);
+        app.tick_prewarm_at(&ctx, &request);
         assert!(
             matches!(app.prewarm, Prewarm::Awaiting(_)),
             "first tick should arm and wait, got {:?}",
@@ -9672,7 +9725,7 @@ mod tests {
         );
 
         // Without an ack it keeps waiting (the 3s timeout has not elapsed).
-        app.tick_prewarm(&ctx);
+        app.tick_prewarm_at(&ctx, &request);
         assert!(
             matches!(app.prewarm, Prewarm::Awaiting(_)),
             "should still be waiting"
@@ -9680,7 +9733,7 @@ mod tests {
 
         // The extension acks; the next tick removes the breakpoint and finishes.
         std::fs::write(ack, r#"{"acked":true}"#).unwrap();
-        app.tick_prewarm(&ctx);
+        app.tick_prewarm_at(&ctx, &request);
         assert_eq!(
             app.prewarm,
             Prewarm::Done,
@@ -9690,12 +9743,12 @@ mod tests {
 
         // --- Abandon path: a Debug click owns the handshake mid-pre-warm. ---
         app.prewarm = Prewarm::NotStarted;
-        app.tick_prewarm(&ctx);
+        app.tick_prewarm_at(&ctx, &request);
         assert!(matches!(app.prewarm, Prewarm::Awaiting(_)));
 
         std::fs::write(ack, r#"{"acked":true}"#).unwrap();
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
-        app.tick_prewarm(&ctx);
+        app.tick_prewarm_at(&ctx, &request);
 
         assert_eq!(
             app.prewarm,
@@ -9708,6 +9761,7 @@ mod tests {
         );
 
         let _ = std::fs::remove_file(ack);
+        let _ = std::fs::remove_file(&request);
     }
 
     /// **Quitting HRW releases an armed live-trace breakpoint** (`docs/tech-debt.md`).
