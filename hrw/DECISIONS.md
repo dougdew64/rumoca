@@ -3036,3 +3036,60 @@ removing a manifest and watching it name the specimen.
 **The transferable rule: when a check walks the artefact, it can only find things that are wrong
 in the artefact — never things missing from it.** Coverage has to be driven from the source of
 truth, in the opposite direction from correctness.
+
+---
+
+## 2026-08-15 — a test armed a breakpoint in Doug's editor, and deleting the file was the bug
+
+Doug: *"During test runs, you are setting a breakpoint in live_trace.rs. But, you are not
+clearing that breakpoint when testing is complete."*
+
+**`.hrw-bridge/` is not a fixture directory.** `BREAKPOINT_REQUEST_FILE` is built from
+`CARGO_MANIFEST_DIR`, so it is the live bridge of Doug's running VS Code. A test calling
+`arm_live_trace_breakpoint` is not simulating anything: the extension's watcher fires and a real
+breakpoint appears in his editor, on a line he never chose.
+
+### Why the existing cleanup did not clean up
+
+`live_trace_breakpoint_arm_remove_and_ack` did call `remove_live_trace_breakpoint()` — and then
+ended with `fs::remove_file(BREAKPOINT_REQUEST_FILE)`.
+
+**`extension.ts` consumes a request by reading it, acting, and unlinking it.** A request deleted
+before its watcher fires is a request that never happened. So arm → remove → delete has an
+ordering where the **arm** is applied and the **remove** is discarded, which is the one ordering
+that strands a breakpoint. The cleanup looked like cleanup and was the defect.
+
+**Leaving a removal request in place is the correct end state**, and it is what the app already
+does: every `remove_live_trace_breakpoint` call site in `app.rs` writes the file and never
+deletes it. The extension picks it up on the next watcher event or on its next activation.
+
+### The fix, and why it is a guard
+
+`bridge::tests::DisarmAnchor` — an RAII guard whose `Drop` writes the removal. **The case that
+matters is a panic**: an assertion failing between arm and remove is exactly when a stranded
+breakpoint would be left behind, and a cleanup line at the end of the test body cannot run then.
+`the_disarm_guard_survives_a_panic` drives it through `catch_unwind`.
+
+**Verified end to end, not by argument:** with the bridge cleared, running the test left
+`breakpoint-request.json` present; three seconds later the file was **gone** and an ack had
+appeared — the extension had consumed the removal.
+
+### One assertion deliberately not made
+
+The first draft asserted the ack file was absent afterwards. It is not HRW's file to promise:
+the extension writes it asynchronously, and asserting the absence of something another process
+may create at any moment is a flake waiting for a slow machine. A stale ack is harmless —
+`arm_live_trace_breakpoint` deletes it before every real arm.
+
+### What the experiment also revealed: the installed extension is stale
+
+The ack came back as `{"acked": true}`, the **pre-#75 legacy payload**. The current source writes
+a full `ArmVerdict`. `vscode-extension/out/` was built **2026-08-08 07:35** while
+`src/extension.ts` and `src/arm_verdict.ts` were last changed **2026-08-09 18:34**, and
+`out/arm_verdict.js` does not exist at all.
+
+**So Doug's editor is running the build that cannot report what it armed** — exactly the case
+`docs/ideas.md` #75 describes, live rather than hypothetical. HRW handles it correctly
+(`BreakpointAck::Unreportable`), so nothing is broken; but breakpoint arming cannot be *verified*
+on that machine until `npm run build` and a window reload. This is the per-machine setup step
+`CLAUDE.md` already names, and it had silently not been done.

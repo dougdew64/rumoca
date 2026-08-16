@@ -9767,7 +9767,14 @@ mod tests {
             "the request must name the live-trace anchor: {text}"
         );
 
-        let _ = std::fs::remove_file(request);
+        // **The removal request is left in place, deliberately.** `.hrw-bridge/`
+        // is the live directory of Doug's VS Code, and `extension.ts` consumes a
+        // request by reading it and unlinking it — so a request deleted before
+        // its watcher fires is a request that never happened. Deleting a
+        // *removal* here would discard the very instruction that releases the
+        // anchor. `bridge::tests::DisarmAnchor` documents the full account.
+        // Every test that inspects this file clears it on entry, so leaving it
+        // is safe for the suite.
     }
 
     /// **A finished live session must not release the anchor** (`docs/ideas.md`

@@ -3182,10 +3182,50 @@ mod tests {
         );
     }
 
+    /// Leaves the live-trace anchor **disarmed** however the test ends —
+    /// normally, or by a failing assertion unwinding out of the middle.
+    ///
+    /// # Why a guard, and why it must not delete the request file
+    ///
+    /// `.hrw-bridge/` is not a fixture. It is **the live bridge directory of
+    /// Doug's running VS Code**, because `BREAKPOINT_REQUEST_FILE` is built from
+    /// `CARGO_MANIFEST_DIR`. So `arm_live_trace_breakpoint` in a test is not a
+    /// simulation: the extension's watcher fires, and a **real breakpoint appears
+    /// in his editor** on `live_trace.rs`. Doug reported exactly that on
+    /// 2026-08-15 — a breakpoint he never set, left behind by a test run.
+    ///
+    /// The test used to end by *deleting* the request file, and that is the bug.
+    /// `extension.ts` consumes a request by reading it, acting, and unlinking it;
+    /// a file deleted before its watcher fires is a request that never happened.
+    /// So the sequence arm → remove → delete could leave the **arm** applied and
+    /// the **remove** discarded, which is the one ordering that strands a
+    /// breakpoint.
+    ///
+    /// Leaving a removal request in place is therefore the correct end state, and
+    /// it is also what the app itself does: every `remove_live_trace_breakpoint`
+    /// call site in `app.rs` writes the file and never deletes it. The extension
+    /// picks it up on the next watcher event, or on its next activation via the
+    /// startup `if (fs.existsSync(requestPath))` path.
+    struct DisarmAnchor;
+
+    impl Drop for DisarmAnchor {
+        fn drop(&mut self) {
+            // Deliberately no `remove_file` afterwards — see the type's docs.
+            let _ = remove_live_trace_breakpoint();
+            // The ack is ours or the extension's reply to a request that is now
+            // moot either way; leaving it would be read as a pending handshake.
+            let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
+        }
+    }
+
     /// Tests arm, remove, and ack together to avoid races on the shared
     /// bridge directory (all three write to the same request/ack files).
     #[test]
     fn live_trace_breakpoint_arm_remove_and_ack() {
+        // Armed before anything can fail, so no assertion below can leave a
+        // breakpoint in Doug's editor.
+        let _disarm = DisarmAnchor;
+
         // arm
         arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
         let content = fs::read_to_string(BREAKPOINT_REQUEST_FILE).expect("read request");
@@ -3235,7 +3275,71 @@ mod tests {
             "should be Pending once the ack file is gone"
         );
 
+        // No cleanup here on purpose: `DisarmAnchor` runs on the way out and
+        // leaves a *removal request* behind rather than an empty directory.
+        // Deleting the file was the bug this test used to cause.
+    }
+
+    /// **A test that arms the anchor must leave a removal request behind, not an
+    /// empty bridge directory.**
+    ///
+    /// The must-fire half of the fix above. Nothing observable inside HRW breaks
+    /// when the guard is removed — the state that goes wrong lives in **VS Code**,
+    /// as a breakpoint on `live_trace.rs` that nobody set. So the only thing a
+    /// test can check is that the last word HRW leaves in the bridge is
+    /// `"remove"`, which is precisely what the extension needs to find.
+    #[test]
+    fn arming_in_a_test_leaves_the_anchor_disarmed() {
+        {
+            let _disarm = DisarmAnchor;
+            arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
+        } // guard drops here
+
+        let text = fs::read_to_string(BREAKPOINT_REQUEST_FILE)
+            .expect("the guard must leave a request file, not delete it");
+        let req: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
+        assert_eq!(
+            req["action"], "remove",
+            "the last request left in the bridge must be a removal, or the \
+             extension keeps the breakpoint it was asked to add: {text}"
+        );
+        assert!(
+            req["breakpoints"][0]["path"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("live_trace"),
+            "the removal must name the anchor it is releasing: {text}"
+        );
+        // **No assertion about the ack file, deliberately.** The guard clears it,
+        // but `.hrw-bridge/` is shared with a *live* VS Code extension that
+        // replies to the removal request asynchronously — measured at ~3 s here.
+        // Asserting the absence of a file another process may create at any
+        // moment is a flake waiting for a slow machine, and it is not the
+        // property under test. A stale ack is harmless anyway:
+        // `arm_live_trace_breakpoint` deletes it before every real arm.
+    }
+
+    /// The guard must fire when an assertion **panics**, which is the case that
+    /// matters: a test failing between arm and remove is exactly when a stranded
+    /// breakpoint would otherwise be left behind.
+    #[test]
+    fn the_disarm_guard_survives_a_panic() {
         let _ = fs::remove_file(BREAKPOINT_REQUEST_FILE);
+
+        let result = std::panic::catch_unwind(|| {
+            let _disarm = DisarmAnchor;
+            arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
+            panic!("simulating a failed assertion between arm and remove");
+        });
+        assert!(result.is_err(), "the inner panic must have happened");
+
+        let text = fs::read_to_string(BREAKPOINT_REQUEST_FILE)
+            .expect("unwinding must still leave a removal request");
+        let req: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
+        assert_eq!(
+            req["action"], "remove",
+            "a panicking test must not strand an armed breakpoint: {text}"
+        );
     }
 
     /// **An ack that cannot answer must not be read as either answer**
