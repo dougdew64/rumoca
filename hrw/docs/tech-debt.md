@@ -443,26 +443,34 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   fails *and* hangs** — and a hang reads as a broken build rather than a test-isolation problem.
   *Files:* `bridge.rs`, `worker.rs` — test modules.
 
-  3. **A third cause, and `--test-threads=1` does nothing for it** *(found 2026-08-15)*: the other
-     process is **VS Code**. `live_trace_breakpoint_arm_remove_and_ack` writes
-     `breakpoint-request.json` and reads it back on the next line, while `extension.ts` is
-     watching that exact file and *consumes* it — read, act, `unlinkSync`, write ack. The read-back
-     is a race with a filesystem watcher on a path the test does not own.
+  3. ~~**A third cause, and `--test-threads=1` does nothing for it**~~ — **PAID 2026-08-15**,
+     hours after being logged, at Doug's direction. The other process was **VS Code**:
+     `live_trace_breakpoint_arm_remove_and_ack` wrote `breakpoint-request.json` and read it back
+     on the next line, while `extension.ts` watched that exact file and *consumed* it — read,
+     act, `unlinkSync`, write ack. The read-back raced a filesystem watcher on a path the test
+     did not own.
 
-     **Not observed failing**, because the test's read is microseconds after its write and the
-     watcher's latency is far longer. Logged rather than fixed to keep an unrelated commit
-     scoped, and because the odds are genuinely long — but it is a real flake with a fuse, and
-     the fuse is lit only on a machine where the extension is installed, which is Doug's.
+     **It was never observed failing**, because the read landed microseconds after the write and
+     the watcher's latency is far longer. That is the part worth keeping: *a test that has never
+     lost a race it should not be running is indistinguishable from a correct test*, and the fuse
+     was lit only on a machine with the extension installed — Doug's.
 
-     **The fix is small and named:** have `arm_live_trace_breakpoint` and
-     `remove_live_trace_breakpoint` *return* the JSON they wrote, and assert on that instead of
-     re-reading the file. Both current call sites ignore the value (`let _ =`, `.is_ok()`), so it
-     is additive. This is the same move as `Plot::problems()` — push the checkable data out of
-     the I/O path rather than testing through it.
+     `arm_live_trace_breakpoint` and `remove_live_trace_breakpoint` now **return the JSON they
+     wrote**, and the tests assert on that. Both in-app call sites ignore the value, so the change
+     is additive. Same move as `Plot::problems()`: push the checkable data out of the I/O path
+     rather than testing through it.
 
-     `DisarmAnchor` (the guard added the same day) is deliberately **not** exposed to this: it
-     asserts on a counter, never on the bridge directory. Its first draft did read the file, and
-     passed while the extension had already deleted it three seconds earlier.
+     **And the return value is verified, not trusted.** Trading a read for a return is only sound
+     if the two cannot disagree — otherwise the tests pass while the extension receives something
+     else, which is *worse* than the race, because it fails silently instead of intermittently.
+     `write_breakpoint_request_to` is split out so
+     `a_written_breakpoint_request_round_trips_to_the_returned_value` can prove the file gets
+     exactly the returned value, against a **temp path nothing watches**. Verified must-fire by
+     making the writer alter the request.
+
+     `DisarmAnchor` was never exposed to this: it asserts on a counter, never on the bridge
+     directory. Its first draft did read the file, and passed while the extension had already
+     deleted it three seconds earlier.
 
 - [ ] **A stage's emitted JSON depends on what else the session holds.**
   *(Found 2026-08-01 while building the memoisation guard for #48.)* Compiling `Drivetrain`

@@ -1305,7 +1305,23 @@ pub(crate) fn find_live_trace_line() -> std::io::Result<(std::path::PathBuf, usi
 ///
 /// Clears any stale ack file first so that only a fresh ack from *this*
 /// request triggers the spawn.
-pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> {
+///
+/// # Returns the request it wrote, and that is not a convenience
+///
+/// **The file cannot be read back, because it does not stay there.** `.hrw-bridge/`
+/// is watched by a live VS Code extension that *consumes* a request — reads it,
+/// acts, `unlinkSync`s it, writes an ack — so any code verifying what was written
+/// by re-opening the path is racing a filesystem watcher on a file it does not own.
+///
+/// The test did exactly that and never failed, because its read landed microseconds
+/// after its write. That is a flake with a long fuse, not a passing test, and the
+/// fuse is lit only on a machine where the extension is installed. Returning the
+/// value removes the race rather than narrowing it: the same move as
+/// `Plot::problems()` and `IncidenceMatrix::problems()` — **push the checkable data
+/// out of the I/O path instead of testing through it.**
+///
+/// Both in-app call sites ignore the value, so this is additive.
+pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<serde_json::Value> {
     let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
     let (file, line) = find_live_trace_line()?;
     let path_str = file.display().to_string();
@@ -1316,9 +1332,25 @@ pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> 
     if let Some(s) = specimen {
         request["specimen"] = json!(s);
     }
-    let text = serde_json::to_string_pretty(&request)
+    write_breakpoint_request_to(Path::new(BREAKPOINT_REQUEST_FILE), &request)?;
+    Ok(request)
+}
+
+/// Serialize a breakpoint request to `path`.
+///
+/// Split out of the two public functions so that **one test can prove the file
+/// receives exactly the value they return**, which is the claim their new return
+/// type rests on and which cannot be checked at
+/// `BREAKPOINT_REQUEST_FILE` — the extension deletes that one. Pointed at a temp
+/// path, this is an ordinary round-trip test with no second process in it.
+///
+/// Without this seam the return value would be trusted rather than verified: today
+/// the same `request` is both written and returned, but nothing would fail if a
+/// later edit wrote a modified copy.
+fn write_breakpoint_request_to(path: &Path, request: &serde_json::Value) -> std::io::Result<()> {
+    let text = serde_json::to_string_pretty(request)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-    fs::write(BREAKPOINT_REQUEST_FILE, text)
+    fs::write(path, text)
 }
 
 /// Remove the `live_trace_breakpoint` breakpoint.
@@ -1332,7 +1364,10 @@ pub fn arm_live_trace_breakpoint(specimen: Option<&str>) -> std::io::Result<()> 
 ///
 /// It remains in use for the three events that end the breakpoint's reason to
 /// exist: a session that failed to spawn, a specimen change, and app exit.
-pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
+///
+/// Returns the request it wrote, for the same reason as
+/// [`arm_live_trace_breakpoint`] — see that function's docs.
+pub fn remove_live_trace_breakpoint() -> std::io::Result<serde_json::Value> {
     let (file, line) = find_live_trace_line()?;
     let path_str = file.display().to_string();
     let request = json!({
@@ -1340,9 +1375,8 @@ pub fn remove_live_trace_breakpoint() -> std::io::Result<()> {
         "action": "remove",
         "breakpoints": [{ "path": path_str, "line": line }]
     });
-    let text = serde_json::to_string_pretty(&request)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-    fs::write(BREAKPOINT_REQUEST_FILE, text)
+    write_breakpoint_request_to(Path::new(BREAKPOINT_REQUEST_FILE), &request)?;
+    Ok(request)
 }
 
 /// Write each stage's full IR to `.hrw-bridge/stages/<name>.json`.
@@ -3231,6 +3265,12 @@ mod tests {
 
     /// Tests arm, remove, and ack together to avoid races on the shared
     /// bridge directory (all three write to the same request/ack files).
+    ///
+    /// **Every assertion here is on the value the bridge function returned, never
+    /// on the file it wrote.** Re-reading `breakpoint-request.json` raced the VS
+    /// Code extension, which consumes a request and unlinks it; the read landed
+    /// microseconds after the write and so never lost, which is what a flake looks
+    /// like before it surfaces. See [`arm_live_trace_breakpoint`]'s docs.
     #[test]
     fn live_trace_breakpoint_arm_remove_and_ack() {
         // Armed before anything can fail, so no assertion below can leave a
@@ -3238,9 +3278,7 @@ mod tests {
         let _disarm = DisarmAnchor;
 
         // arm
-        arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
-        let content = fs::read_to_string(BREAKPOINT_REQUEST_FILE).expect("read request");
-        let req: serde_json::Value = serde_json::from_str(&content).expect("parse JSON");
+        let req = arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
         assert_eq!(req["version"], json!(1));
         assert_eq!(req["specimen"], json!("TestModel"));
         let bp = &req["breakpoints"][0];
@@ -3249,9 +3287,7 @@ mod tests {
         assert_eq!(bp.get("condition"), None, "no condition field when absent");
 
         // remove
-        remove_live_trace_breakpoint().expect("remove");
-        let content = fs::read_to_string(BREAKPOINT_REQUEST_FILE).expect("read request");
-        let req: serde_json::Value = serde_json::from_str(&content).expect("parse JSON");
+        let req = remove_live_trace_breakpoint().expect("remove");
         assert_eq!(req["version"], json!(1));
         assert_eq!(req["action"], json!("remove"));
         assert!(
@@ -3422,6 +3458,49 @@ mod tests {
              `DisarmAnchor`, so a breakpoint is left in the editor after the run: \
              {unguarded:?}",
         );
+    }
+
+    /// **What the bridge functions return is what reaches the file.**
+    ///
+    /// `arm_live_trace_breakpoint` and `remove_live_trace_breakpoint` now return
+    /// their request so tests need not re-read a path the VS Code extension
+    /// deletes. That trade is only sound if the returned value and the written
+    /// bytes cannot disagree — otherwise every assertion above would be checking a
+    /// value that never reached disk, which is a *worse* failure than the race it
+    /// replaced: it would pass while the extension received something else.
+    ///
+    /// Verified against a **temp path**, which nothing watches, so the round trip
+    /// is an ordinary file test with no second process in it.
+    #[test]
+    fn a_written_breakpoint_request_round_trips_to_the_returned_value() {
+        let path = std::env::temp_dir().join("hrw-breakpoint-request-test.json");
+        let _ = fs::remove_file(&path);
+
+        // The two real shapes, so neither is checked only in the abstract.
+        for request in [
+            json!({
+                "version": 1,
+                "specimen": "TestModel",
+                "breakpoints": [{ "path": "x/live_trace.rs", "line": 173 }],
+            }),
+            json!({
+                "version": 1,
+                "action": "remove",
+                "breakpoints": [{ "path": "x/live_trace.rs", "line": 173 }],
+            }),
+        ] {
+            write_breakpoint_request_to(&path, &request).expect("write");
+            let text = fs::read_to_string(&path).expect("read back");
+            let parsed: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
+            assert_eq!(
+                parsed, request,
+                "the file must carry exactly the request the caller was handed, or \
+                 asserting on the return value proves nothing about what the \
+                 extension will read",
+            );
+        }
+
+        let _ = fs::remove_file(&path);
     }
 
     /// **An ack that cannot answer must not be read as either answer**
