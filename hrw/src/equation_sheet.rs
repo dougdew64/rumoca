@@ -333,6 +333,28 @@ pub struct ClassifiedVariable {
 }
 
 impl ClassifiedVariable {
+    /// The reason, short enough for a table cell.
+    ///
+    /// **This is the visible half, and it is the half that was missing.** The first
+    /// version of this feature put the explanation behind a tooltip on the Kind
+    /// cell, and Doug reported the same complaint that had prompted it: *"I don't
+    /// see what you've added to enable me to understand why `h` is a state."*
+    /// Nothing on screen suggested there was anything to hover, so the answer was
+    /// present and undiscoverable — which is indistinguishable from absent.
+    ///
+    /// A state reads `der in f_x[14]`; everything else is blank, and **the blank is
+    /// the contrast**: scanning the column shows at a glance that exactly one
+    /// variable in `RcCircuit` earns its classification from an equation.
+    #[must_use]
+    pub fn why_short(&self) -> String {
+        match (self.kind, &self.derivative_evidence) {
+            ("state", Some(e)) => format!("der in {}", e.equation_id),
+            // Loud, because it means Rumoca and HRW disagree about this variable.
+            ("state", None) => "der not found".to_owned(),
+            _ => String::new(),
+        }
+    }
+
     /// One hover's worth of text: the classification, and why it holds.
     ///
     /// `None` for kinds whose reason is not an equation — `parameter`, `input`,
@@ -1295,7 +1317,57 @@ mod tests {
                 other.kind_explanation().is_none(),
                 "{kind} has no equation-shaped reason, so HRW must not invent one",
             );
+            assert!(
+                other.why_short().is_empty(),
+                "{kind} must leave the Why column blank rather than assert something",
+            );
         }
+    }
+
+    /// **The reason is VISIBLE, not only hoverable.**
+    ///
+    /// Doug looked at the finished table and said *"I don't see what you've added to
+    /// enable me to understand why `h` is a state."* The explanation was there, behind
+    /// a tooltip, with nothing on screen to suggest hovering. **An answer that cannot
+    /// be discovered is indistinguishable from one that was never added**, which is
+    /// the same failure the feature was built to fix.
+    ///
+    /// So the short reason is a column, and this pins that it names the equation
+    /// rather than restating the classification. A cell reading "state" again would
+    /// pass a naive test and teach nothing.
+    #[test]
+    fn the_why_column_names_the_equation_rather_than_repeating_the_kind() {
+        let state = ClassifiedVariable {
+            name: "h".to_owned(),
+            kind: "state",
+            unit: None,
+            description: None,
+            start: None,
+            derivative_evidence: Some(DerivativeEvidence {
+                equation_id: "f_x[3]".to_owned(),
+                equation_text: "0 = der(h) - v".to_owned(),
+            }),
+        };
+        let cell = state.why_short();
+        assert!(
+            cell.contains("f_x[3]"),
+            "the visible cell must name the equation: {cell:?}"
+        );
+        assert!(
+            !cell.contains("state"),
+            "restating the Kind column teaches nothing: {cell:?}"
+        );
+
+        // An unjustifiable state is loud in the column too, not merely in the hover.
+        let orphan = ClassifiedVariable {
+            derivative_evidence: None,
+            ..state.clone()
+        };
+        assert!(
+            orphan.why_short().contains("not found"),
+            "a state HRW cannot justify must be visible as such: {:?}",
+            orphan.why_short()
+        );
     }
 
     /// **Every state names the equation that made it one, and that equation really

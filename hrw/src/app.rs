@@ -3827,11 +3827,22 @@ impl App {
 
                 egui::Grid::new("var_grid")
                     .striped(true)
-                    .num_columns(4)
+                    .num_columns(5)
                     .spacing([12.0, 2.0])
                     .show(ui, |ui| {
                         ui.label(egui::RichText::new("Name").strong());
                         ui.label(egui::RichText::new("Kind").strong());
+                        // **A hover is not a hint.** The first version of this put the
+                        // reason behind a tooltip on the Kind cell, and Doug reported
+                        // the identical complaint that prompted it: "I don't see what
+                        // you've added to enable me to understand why h is a state."
+                        // Nothing on screen suggested there was anything to hover.
+                        // The column is the hint; the tooltip is the detail.
+                        ui.label(egui::RichText::new("Why").strong()).on_hover_text(
+                            "Why the Kind column says what it says. A variable is a \
+                                 state exactly when some equation differentiates it \u{2014} \
+                                 hover a cell for the equation itself.",
+                        );
                         ui.label(egui::RichText::new("Start").strong());
                         ui.label(egui::RichText::new("Unit").strong());
                         ui.end_row();
@@ -3861,13 +3872,28 @@ impl App {
                             // **The classification says why it holds.** Doug,
                             // 2026-08-16: "There's no hint provided in the HRW UI
                             // as to why this is a state instead of an algebraic."
-                            // The sentence is computed in `identifier_index`, not
-                            // here — the paint path renders it and decides nothing,
-                            // so what the hover claims is unit-testable.
+                            // Both the short reason and the full sentence are
+                            // computed in `equation_sheet`, not here — the paint
+                            // path renders strings and decides nothing, so every
+                            // claim it makes is unit-testable.
+                            let why = v.kind_explanation();
                             let kind_label = ui.label(v.kind);
-                            if let Some(why) = v.kind_explanation() {
-                                kind_label.on_hover_text(why);
+                            if let Some(text) = &why {
+                                kind_label.on_hover_text(text.clone());
                             }
+
+                            // The visible reason. `Sense::hover()` is explicit
+                            // because the tooltip is the whole point of the cell and
+                            // a bare `ui.label` leaves that to the widget default.
+                            let cell = egui::Label::new(
+                                egui::RichText::new(v.why_short()).monospace().weak(),
+                            )
+                            .sense(egui::Sense::hover());
+                            let resp = ui.add(cell);
+                            if let Some(text) = &why {
+                                resp.on_hover_text(text.clone());
+                            }
+
                             ui.label(v.start.as_deref().unwrap_or("—"));
                             ui.label(v.unit.as_deref().unwrap_or(""));
                             ui.end_row();
