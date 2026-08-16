@@ -697,11 +697,42 @@ than a drift.
 
 ## Running things
 
+**ITERATING AND GATING ARE DIFFERENT ACTS, AND CONFLATING THEM COST DOUG TWO HOURS**
+*(measured 2026-08-15, from the session transcript)*. Of 274 minutes of compute that day,
+**172 went to `--features slow-tests` across 61 invocations** — 63 % of all waiting, for
+**six** commits. The gate itself is not the problem; running it thirty-odd times is.
+
 ```text
-cargo test -p hrw --lib -- --test-threads=1                        # ~15s,  between edits
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~190s, the FULL gate
-cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
+# ITERATE — while editing, and for every must-fire revert-and-check. ~10s.
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1 <name-filter>
+
+# GATE — ONCE, immediately before the commit. ~225s.
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1
+cargo clippy -p hrw --all-targets                  # covers the BIN; check the exit code
+
+# The fast suite, when nothing slow-gated is in play. ~15s.
+cargo test -p hrw --lib -- --test-threads=1
 ```
+
+**The filtered line was missing from this file until 2026-08-15, and its absence is the whole
+story.** The gate table below answers *"which gate before I commit?"* and returns **FULL** for
+any `src/` change — correctly. But it was the **only** decision procedure written down, so it
+got applied after every edit as well, and there was no sanctioned cheap option to reach for
+instead. A rule that is right for its own question becomes wrong when it is the only rule
+present. **Switching feature sets is not why**: measured at 1–2 s, cargo keeps both variants.
+
+**ANNOUNCE THE COST BEFORE PAYING IT.** Before any command expected to exceed ~60 s, say what
+it is and roughly what it costs, so Doug can redirect *before* the wait rather than discover it.
+**This is the only item here that addresses cause rather than symptom**, because nothing else in
+Claude's loop has a clock: correctness in this repository has must-fire, non-vacuity guards,
+ratchets and a dozen checkers, and elapsed time has no mechanism whatever. Doug feels the cost
+and cannot see what is about to run; Claude can see it and does not feel it — the same asymmetry
+this file already records for the permission allowlist.
+
+**And regenerate `docs/architecture.md` BEFORE the gate whenever `src/` changed**, never after.
+Its module-size regions are derived from the source, so an edit staled them, the gate failed on
+`architecture_regions_are_current`, and the whole 225 s was paid twice. That happened twice on
+2026-08-15.
 
 **A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
 2026-08-15)*. The committed specimen traces had been stale for **25 days** and nothing could
@@ -731,10 +762,14 @@ path is *spelled*, since `parse_to_ast` stamps it into every `Location` and a `\
 **MATCH THE GATE TO THE CHANGE — and let the diff decide, not judgement** *(measured
 2026-08-15, after Doug reported test latency as genuine friction)*. Most commits in a walking
 session touch only documents, and a docs-only change **cannot regress compile-heavy behaviour**,
-so paying 190 s for it is ritual rather than evidence. On 2026-08-15 that ritual cost about ten
+so paying 225 s for it is ritual rather than evidence. On 2026-08-15 that ritual cost about ten
 minutes across one session.
 
-Run this against what is staged; it answers which gate, with no room for a judgement call:
+**This decides what to run BEFORE A COMMIT. It is not the answer to "what do I run after this
+edit"** — that is the filtered line above. The distinction is written down because its absence
+turned a latency fix into a latency cost on the day it landed: keyed to `--cached`, the table
+speaks about staged changes, but being the only procedure in the file it got applied to every
+iteration, returning FULL for the `src/` work that filled the day.
 
 ```bash
 git diff --cached --name-only | grep -qE '(^|/)(src|crates|examples)/|Cargo\.toml' && echo FULL || echo FAST
@@ -758,18 +793,28 @@ cargo test -p hrw --lib tour          -- --test-threads=1   # ~0.3s
 real compile. **Editing one of those tables means FULL**, whatever the grep says — the diff
 touches only `docs/`, and the check that guards it does not run in the fast suite.
 
-**Where the ~190 s actually goes**, so nobody re-derives it: about twenty tests carry ~129 s of
+**Where the ~225 s actually goes**, so nobody re-derives it: about twenty tests carry ~129 s of
 it, led by `all_healthy_specimens_simulate` (16 s), `every_stage_serializes_without_panicking`
 (15 s) and `a_rumoca_failure_is_represented_faithfully` (14 s). A rebuild after touching one file
-is **8 s**; a no-op build is **1 s**.
+is **8 s**; a no-op build is **1 s**. It was ~190 s until 2026-08-15; the gate grows as tests are
+added, which is another reason to filter while iterating rather than treat it as a fixed price.
 
-**Two levers already ruled out by measurement — do not re-propose them.** Parallelism buys about
+**FOUR levers already ruled out by measurement — do not re-propose them.** Parallelism buys about
 two seconds, because the worker tests serialise on a global `Mutex<WorkerState>` regardless
-(`docs/ideas.md` #48). And **memoising simulations buys about two seconds**: a simulation's key
+(`docs/ideas.md` #48). **Memoising simulations buys about two seconds**: a simulation's key
 must include `t_end`, and the sites are almost all distinct pairs —
 `all_healthy_specimens_simulate` is nine *different* specimens at one `t_end`, so there is
 nothing to reuse. Claude proposed that on 2026-08-15 from a sum of slow-looking tests and
 withdrew it on measuring, which is the same mistake #48 already records once.
+**Memoising specimen *compiles* is already built** — `compile_specimen_shared` caches, so 47 of
+the 59 call sites are already free; #48's remaining title is misleading. And **feature-set
+thrashing is not a cost**: alternating `--features slow-tests` with the plain suite was measured
+at **1–2 s**, because cargo keeps both variants. Claude was one sentence from proposing a
+practice change on that theory before measuring it.
+
+**The pattern in all four: a sum of slow-looking names is not a measurement.** Three of these
+were proposed from arithmetic over test names and died on contact with a clock. Measure the
+thing, then decide.
 
 **`--test-threads=1` is required** — two pre-existing tests race on process-global stdout and
 on `focus.json`, and the suite can **hang** under the default harness on a clean tree.
