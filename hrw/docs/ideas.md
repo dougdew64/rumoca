@@ -5254,3 +5254,49 @@ this project.
 - **Ships with a headless test.** This is behaviour, not config, and every part of it is reachable
   from `egui_kittest` — assert that a jump then Back restores stage *and* sub-view, that Forward
   returns, and that Back at the start is disabled rather than absent.
+
+---
+
+## 79. `LoopWithInertia` becomes the final act of the tearing tour
+
+**Doug, 2026-08-16, having asked whether the specimen deserved a tour of its own:** *"Eventually,
+I will want very much to add LoopWithInertia to the tearing tour, as you've recommended. Please
+ensure that we do that."*
+
+**Not a tenth tour.** `README.md`'s first rule is one tour per capability, narrow — the scarce
+resource is Doug's attention per expectation, and a tenth tour would spend it re-establishing
+what a coupled block is, on a fourth loop specimen, to deliver one new idea. It is **one act**.
+
+### The idea it adds, which the existing six acts cannot
+
+Every specimen in `tearing.md` is **timeless**. `ProportionalLoop`, `TwoLoops` and `MixedLoop`
+have no state, so each loop is torn and solved **once**. The tour therefore never confronts the
+question its own subject raises:
+
+> **What does a coupled block cost when time is advancing?**
+
+`LoopWithInertia` is `ProportionalLoop` with the idealization removed — the same 3-cycle
+`command → measurement → error → command`, now with `der(w)` beside it. The torn block is
+re-solved **between every pair of integrator steps, for the whole run**. Tearing stops being a
+compile-time tidy-up and becomes a decision about the inner loop of the simulation. That reframes
+Act 1 rather than repeating it.
+
+### Why it is not written yet
+
+Tours are converted to the Predict/Look/Falsified template **as Doug walks them**, because the
+conversion is itself the teaching (`CLAUDE.md`, current work). He is walking in compiler-phase
+order and is on Connections → DAE, so tearing is some way off. Writing the act now would convert
+a tour he is not walking, which is the one thing that rule forbids.
+
+### How the commitment survives until then
+
+Two mechanisms, because a promise in a conversation does not survive the session:
+
+- **A marked `## OWED` section at the head of `tearing.md`'s closing material**, so it is seen at
+  the moment of use rather than found later.
+- **`doc_citations::the_tearing_tour_gains_its_dynamic_loop_when_it_is_converted`**, which passes
+  while the tour is unconverted, and fails the instant it gains two `**Predict.**` markers
+  without an `hrw://load/LoopWithInertia` link. It also fails if the OWED note is simply deleted
+  — abandoning the act is a decision to record, not a line to remove.
+
+Verified must-fire on both paths 2026-08-16.

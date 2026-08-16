@@ -753,16 +753,30 @@ this file already records for the permission allowlist.
 
 ```text
 cargo fmt -p hrw                                   # rewraps lines -> changes the counts
-cargo run -q -p hrw --example gen_architecture     # only now are the counts final
+cargo run -q -p hrw --example gen_architecture     # module sizes, App field groups
+cargo run -q -p hrw --example gen_tour_catalogue   # tour stops -- ANY heading edit changes these
 cargo clippy -p hrw --all-targets                  # lint the code in the shape it ships in
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1
+cargo test -p hrw --lib --test msl_resolve --features slow-tests -- --test-threads=1
 ```
 
-**Getting this wrong costs the whole 225 s, and it has now cost it three times.** Twice on
+**Getting this wrong costs the whole 225 s, and it has now cost it four times.** Twice on
 2026-08-15 by regenerating *after* the gate; once on 2026-08-16 by regenerating *before*
-`cargo fmt`, which then reformatted the file and staled the counts again. The failure is always
-`architecture_regions_are_current`, and it is always the last thing standing between a green
-suite and a commit.
+`cargo fmt`, which reflowed the source it measures; and once the same day by regenerating
+`architecture.md` while forgetting **`CATALOGUE.md` exists at all** — adding one `##` heading to
+a tour changes its stop list.
+
+**There are two generated documents, not one**, and the pattern each time has been *"I ran the
+generator"* rather than *"I ran the generators"*. The failures announce themselves as
+`architecture_regions_are_current` and `tour_catalogue_is_current`.
+
+**A third and fourth generator exist and are NOT in this list**, deliberately:
+`gen_field_help` (build-time doc comments, run by `build.rs`) and `gen_matching_reference`. If a
+gate ever fails on their output, they belong here too.
+
+**And the gate can fail while HRW is running** — `error: failed to remove file … hrw.exe,
+Access is denied`. Doug builds from the tree and keeps the app open, so this is the normal case,
+not an anomaly. It is transient: it happens when a preceding `clippy --all-targets` invalidates
+the binary's fingerprint. Re-run, or close HRW for the one gate run.
 
 **A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
 2026-08-15)*. The committed specimen traces had been stale for **25 days** and nothing could

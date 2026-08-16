@@ -2684,6 +2684,77 @@ Some prose.
         );
     }
 
+    /// **The tearing tour gains its dynamic-loop act at the moment it is converted.**
+    ///
+    /// # A commitment, made mechanical
+    ///
+    /// Doug, 2026-08-16: *"Eventually, I will want very much to add LoopWithInertia to
+    /// the tearing tour, as you've recommended. Please ensure that we do that."* He is
+    /// walking the tours in compiler-phase order and is on Connections → DAE, so
+    /// tearing is weeks away. A promise made now, in a conversation, is exactly the
+    /// thing `CLAUDE.md` says must live in the repository instead: *code whose
+    /// rationale exists only in chat violates the rule the moment the session ends.*
+    ///
+    /// # Why it triggers on conversion rather than on a date
+    ///
+    /// The act cannot simply be written today — `tearing.md` is still in its
+    /// 2026-08-08 prose form, and the agreement is that a tour is converted **as Doug
+    /// walks it**, because the conversion is itself the teaching. So the commitment
+    /// has to survive until that moment and fire precisely then.
+    ///
+    /// Conversion is detectable: a converted tour runs each act to a **Predict**. Only
+    /// `connect-expansion.md` has been converted, and it carries six. So two or more
+    /// `**Predict.**` markers means the work has started, and from that instant the
+    /// tour must also mention `LoopWithInertia`.
+    ///
+    /// **It cannot fire early** — `tearing.md` has zero markers today, so this passes
+    /// until someone begins the conversion, which is the only time the reminder is
+    /// worth anything.
+    ///
+    /// # What it does not claim
+    ///
+    /// That the act is *good*, or in the right place. It checks that the specimen is
+    /// named, not that the teaching landed — the half no test reaches, and the half
+    /// Doug reports.
+    #[test]
+    fn the_tearing_tour_gains_its_dynamic_loop_when_it_is_converted() {
+        let tour = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/tearing.md");
+        let text = std::fs::read_to_string(&tour).expect("tearing.md exists");
+
+        // The owed-work note must survive until the work is done: deleting it is how
+        // a commitment quietly stops existing.
+        assert!(
+            text.contains("LoopWithInertia"),
+            "tearing.md no longer mentions LoopWithInertia at all. The owed final act \
+             was recorded on 2026-08-16 at Doug's explicit request; if it has been \
+             delivered the note should say so, and if it has been abandoned that is a \
+             decision to record rather than a line to delete.",
+        );
+
+        let predicts = text.matches("**Predict.**").count();
+        let converted = predicts >= 2;
+        if !converted {
+            // Not yet walked. Nothing to enforce, and saying so keeps the pass honest
+            // rather than silent.
+            println!(
+                "tearing.md is not yet converted ({predicts} Predict marker(s)); the \
+                 LoopWithInertia act is still owed"
+            );
+            return;
+        }
+
+        // Converted. The specimen must now be a subject, not only a promise: a ▶ Look
+        // link is what makes an act walkable.
+        assert!(
+            text.contains("hrw://load/LoopWithInertia"),
+            "tearing.md has been converted to the Predict/Look template ({predicts} \
+             Predict markers) but still has no ▶ Look link for LoopWithInertia. The \
+             owed act is: the same 3-cycle as Act 1, now re-solved between every pair \
+             of integrator steps \u{2014} what a coupled block costs when time is \
+             advancing.",
+        );
+    }
+
     /// Recursively harvest `equation` labels and `equation_text` residuals.
     fn collect_equation_strings(
         v: &serde_json::Value,

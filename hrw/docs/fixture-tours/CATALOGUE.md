@@ -366,6 +366,7 @@ Walk [`blt-ordering.md`](blt-ordering.md) first. It ended with a coupled block o
   - `act-5-the-linear-algebra-this-is-a-schur-complement` — Act 5 — The linear algebra: this is a Schur complement
   - `act-6-greedy-and-what-greedy-costs` — Act 6 — Greedy, and what greedy costs
   - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `owed-a-final-act-on-loopwithinertia-do-this-when-converting-the-tour` — OWED: a final act on `LoopWithInertia` — do this when converting the tour
   - `what-this-tour-cannot-check` — What this tour cannot check
 
 ## `the-mathematics`

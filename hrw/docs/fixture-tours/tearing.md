@@ -195,6 +195,32 @@ the solver moves.
 
 ---
 
+## OWED: a final act on `LoopWithInertia` — do this when converting the tour
+
+**Every specimen in this tour is timeless.** `ProportionalLoop`, `TwoLoops` and `MixedLoop` have
+no state, so each loop is torn and solved **once** and that is the whole story. The tour therefore
+never confronts the question its own subject raises:
+
+> **What does a coupled block cost when time is advancing?**
+
+[`LoopWithInertia`](../specimen-notebook/LoopWithInertia/purpose.md) is `ProportionalLoop` with
+the idealization removed — the same 3-cycle `command → measurement → error → command`, but now
+with `der(w)` beside it. So the torn block is re-solved **between every pair of integrator steps,
+for the whole simulation**. Tearing stops being a compile-time tidy-up and becomes a decision
+about the inner loop of the run.
+
+That reframes Act 1 rather than repeating it, which is why it is **one act and not a tenth tour**
+(`README.md`: one tour per capability, narrow — the scarce resource is Doug's attention per
+expectation).
+
+**Doug, 2026-08-16, having asked whether the specimen deserved its own tour:** *"Eventually, I
+will want very much to add LoopWithInertia to the tearing tour, as you've recommended. Please
+ensure that we do that."* He is walking the tours in compiler-phase order and is on Connections →
+DAE, so tearing is some way off — which is exactly why this is written here and enforced by
+`doc_citations::the_tearing_tour_gains_its_dynamic_loop_when_it_is_converted` rather than left as
+a promise in a conversation that scrolls away. That test fails the moment this tour is converted
+to the Predict/Look/Falsified template without the act.
+
 ## What this tour cannot check
 
 **Whether Act 5's matrices help.** It is the most mathematical page in any tour so far, and it
