@@ -703,6 +703,31 @@ cargo test -p hrw --lib --features slow-tests -- --test-threads=1  # ~190s, the 
 cargo clippy -p hrw --all-targets                                  # covers the BIN; check the exit code
 ```
 
+**A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
+2026-08-15)*. The committed specimen traces had been stale for **25 days** and nothing could
+notice; `manifest_stage_rosters_match_the_pipeline` now catches a stage appearing or
+disappearing for free, but only this catches *contents* drifting:
+
+```text
+cargo test -p hrw --lib --features notebook-check -- --test-threads=1 the_committed_notebook
+cargo run -p hrw --example gen_trace -- --all      # 3m45s, the fix when it fails
+```
+
+**Run it after touching a `*_to_json` writer and after rebasing on upstream** — the same two
+triggers the large fidelity sweep carries. It costs **157 s** and has its own feature because it
+must give each specimen a **fresh** `WorkerState`: against the shared worker it is
+*order-dependent*, passing alone and failing in company.
+
+**That order-dependence is a fact about the notebook, not about the test, and it belongs
+here rather than in a test comment.** A committed trace is one sample of a function whose
+hidden argument is the session — `gen_trace` runs one process per specimen, so what is
+committed is the *virgin-session* value. Two specimens (`GearWithBrake`,
+`MissingComponentClass`) demonstrably emit different JSON depending on what the session already
+holds. So **"the trace is correct by construction" is true only of a virgin session**, and any
+future code that reproduces a trace must reproduce that condition — including how the specimen
+path is *spelled*, since `parse_to_ast` stamps it into every `Location` and a `\` for a `/` made
+109 of 109 files look like total drift.
+
 **MATCH THE GATE TO THE CHANGE — and let the diff decide, not judgement** *(measured
 2026-08-15, after Doug reported test latency as genuine friction)*. Most commits in a walking
 session touch only documents, and a docs-only change **cannot regress compile-heavy behaviour**,

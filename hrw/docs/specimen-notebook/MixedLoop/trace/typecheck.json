@@ -5,7 +5,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 846,
           "end": 860
         },
@@ -13,7 +13,7 @@
           {
             "ident": "reference",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 846,
               "end": 860
             },
@@ -37,7 +37,7 @@
         "end_column": 27,
         "start": 846,
         "end": 860,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -64,7 +64,7 @@
             "end_column": 12,
             "start": 836,
             "end": 845,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
           },
           "token_number": 12,
           "token_type": 48
@@ -85,13 +85,13 @@
               "end_column": 33,
               "start": 863,
               "end": 866,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 16,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 863,
             "end": 866
           }
@@ -118,13 +118,13 @@
               "end_column": 33,
               "start": 863,
               "end": 866,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 16,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 863,
             "end": 866
           }
@@ -150,7 +150,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 895,
           "end": 910
         },
@@ -158,7 +158,7 @@
           {
             "ident": "sensorGain",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 895,
               "end": 910
             },
@@ -182,7 +182,7 @@
         "end_column": 28,
         "start": 895,
         "end": 910,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -209,7 +209,7 @@
             "end_column": 12,
             "start": 885,
             "end": 894,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
           },
           "token_number": 19,
           "token_type": 48
@@ -230,13 +230,13 @@
               "end_column": 34,
               "start": 913,
               "end": 916,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 23,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 913,
             "end": 916
           }
@@ -263,13 +263,13 @@
               "end_column": 34,
               "start": 913,
               "end": 916,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 23,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 913,
             "end": 916
           }
@@ -295,7 +295,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 961,
           "end": 980
         },
@@ -303,7 +303,7 @@
           {
             "ident": "controllerGain",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 961,
               "end": 980
             },
@@ -327,7 +327,7 @@
         "end_column": 32,
         "start": 961,
         "end": 980,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -354,7 +354,7 @@
             "end_column": 12,
             "start": 951,
             "end": 960,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
           },
           "token_number": 26,
           "token_type": 48
@@ -375,13 +375,13 @@
               "end_column": 39,
               "start": 983,
               "end": 987,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 30,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 983,
             "end": 987
           }
@@ -408,13 +408,13 @@
               "end_column": 39,
               "start": 983,
               "end": 987,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 30,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 983,
             "end": 987
           }
@@ -440,7 +440,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1024,
           "end": 1038
         },
@@ -448,7 +448,7 @@
           {
             "ident": "plantGain",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1024,
               "end": 1038
             },
@@ -472,7 +472,7 @@
         "end_column": 27,
         "start": 1024,
         "end": 1038,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -499,7 +499,7 @@
             "end_column": 12,
             "start": 1014,
             "end": 1023,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
           },
           "token_number": 33,
           "token_type": 48
@@ -520,13 +520,13 @@
               "end_column": 33,
               "start": 1041,
               "end": 1044,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 37,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1041,
             "end": 1044
           }
@@ -553,13 +553,13 @@
               "end_column": 33,
               "start": 1041,
               "end": 1044,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 37,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1041,
             "end": 1044
           }
@@ -585,7 +585,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1084,
           "end": 1099
         },
@@ -593,7 +593,7 @@
           {
             "ident": "outputGain",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1084,
               "end": 1099
             },
@@ -617,7 +617,7 @@
         "end_column": 28,
         "start": 1084,
         "end": 1099,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -644,7 +644,7 @@
             "end_column": 12,
             "start": 1074,
             "end": 1083,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
           },
           "token_number": 40,
           "token_type": 48
@@ -665,13 +665,13 @@
               "end_column": 34,
               "start": 1102,
               "end": 1105,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 44,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1102,
             "end": 1105
           }
@@ -698,13 +698,13 @@
               "end_column": 34,
               "start": 1102,
               "end": 1105,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
             },
             "token_number": 44,
             "token_type": 68
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1102,
             "end": 1105
           }
@@ -730,7 +730,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1143,
           "end": 1156
         },
@@ -738,7 +738,7 @@
           {
             "ident": "setpoint",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1143,
               "end": 1156
             },
@@ -762,7 +762,7 @@
         "end_column": 16,
         "start": 1143,
         "end": 1156,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -801,7 +801,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1143,
             "end": 1156
           }
@@ -837,7 +837,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1208,
           "end": 1218
         },
@@ -845,7 +845,7 @@
           {
             "ident": "error",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1208,
               "end": 1218
             },
@@ -869,7 +869,7 @@
         "end_column": 13,
         "start": 1208,
         "end": 1218,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -908,7 +908,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1208,
             "end": 1218
           }
@@ -944,7 +944,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1250,
           "end": 1262
         },
@@ -952,7 +952,7 @@
           {
             "ident": "command",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1250,
               "end": 1262
             },
@@ -976,7 +976,7 @@
         "end_column": 15,
         "start": 1250,
         "end": 1262,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -1015,7 +1015,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1250,
             "end": 1262
           }
@@ -1051,7 +1051,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1300,
           "end": 1316
         },
@@ -1059,7 +1059,7 @@
           {
             "ident": "measurement",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1300,
               "end": 1316
             },
@@ -1083,7 +1083,7 @@
         "end_column": 19,
         "start": 1300,
         "end": 1316,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -1122,7 +1122,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1300,
             "end": 1316
           }
@@ -1158,7 +1158,7 @@
       "component_ref": {
         "local": false,
         "span": {
-          "source": 6374527633400164045,
+          "source": 10824456755098067363,
           "start": 1345,
           "end": 1356
         },
@@ -1166,7 +1166,7 @@
           {
             "ident": "result",
             "span": {
-              "source": 6374527633400164045,
+              "source": 10824456755098067363,
               "start": 1345,
               "end": 1356
             },
@@ -1190,7 +1190,7 @@
         "end_column": 14,
         "start": 1345,
         "end": 1356,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
       },
       "dims": [],
       "dims_expr": [],
@@ -1229,7 +1229,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1345,
             "end": 1356
           }
@@ -1295,7 +1295,7 @@
                           "end_column": 11,
                           "start": 1418,
                           "end": 1426,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                         },
                         "token_number": 68,
                         "token_type": 64
@@ -1304,7 +1304,7 @@
                     }
                   ],
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1418,
                     "end": 1426
                   }
@@ -1327,7 +1327,7 @@
                               "end_column": 24,
                               "start": 1429,
                               "end": 1439,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 70,
                             "token_type": 64
@@ -1336,7 +1336,7 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1429,
                         "end": 1439
                       }
@@ -1356,7 +1356,7 @@
                               "end_column": 36,
                               "start": 1442,
                               "end": 1451,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 72,
                             "token_type": 64
@@ -1365,14 +1365,14 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1442,
                         "end": 1451
                       }
                     }
                   },
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1429,
                     "end": 1451
                   }
@@ -1393,7 +1393,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1418,
             "end": 1426
           }
@@ -1415,7 +1415,7 @@
                           "end_column": 8,
                           "start": 1514,
                           "end": 1519,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                         },
                         "token_number": 75,
                         "token_type": 64
@@ -1424,7 +1424,7 @@
                     }
                   ],
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1514,
                     "end": 1519
                   }
@@ -1447,7 +1447,7 @@
                               "end_column": 19,
                               "start": 1522,
                               "end": 1530,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 77,
                             "token_type": 64
@@ -1456,7 +1456,7 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1522,
                         "end": 1530
                       }
@@ -1476,7 +1476,7 @@
                               "end_column": 33,
                               "start": 1533,
                               "end": 1544,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 79,
                             "token_type": 64
@@ -1485,14 +1485,14 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1533,
                         "end": 1544
                       }
                     }
                   },
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1522,
                     "end": 1544
                   }
@@ -1513,7 +1513,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1514,
             "end": 1519
           }
@@ -1535,7 +1535,7 @@
                           "end_column": 10,
                           "start": 1563,
                           "end": 1570,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                         },
                         "token_number": 82,
                         "token_type": 64
@@ -1544,7 +1544,7 @@
                     }
                   ],
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1563,
                     "end": 1570
                   }
@@ -1567,7 +1567,7 @@
                               "end_column": 27,
                               "start": 1573,
                               "end": 1587,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 84,
                             "token_type": 64
@@ -1576,7 +1576,7 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1573,
                         "end": 1587
                       }
@@ -1596,7 +1596,7 @@
                               "end_column": 35,
                               "start": 1590,
                               "end": 1595,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 86,
                             "token_type": 64
@@ -1605,14 +1605,14 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1590,
                         "end": 1595
                       }
                     }
                   },
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1573,
                     "end": 1595
                   }
@@ -1633,7 +1633,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1563,
             "end": 1570
           }
@@ -1655,7 +1655,7 @@
                           "end_column": 14,
                           "start": 1640,
                           "end": 1651,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                         },
                         "token_number": 89,
                         "token_type": 64
@@ -1664,7 +1664,7 @@
                     }
                   ],
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1640,
                     "end": 1651
                   }
@@ -1687,7 +1687,7 @@
                               "end_column": 26,
                               "start": 1654,
                               "end": 1663,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 91,
                             "token_type": 64
@@ -1696,7 +1696,7 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1654,
                         "end": 1663
                       }
@@ -1716,7 +1716,7 @@
                               "end_column": 36,
                               "start": 1666,
                               "end": 1673,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 93,
                             "token_type": 64
@@ -1725,14 +1725,14 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1666,
                         "end": 1673
                       }
                     }
                   },
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1654,
                     "end": 1673
                   }
@@ -1753,7 +1753,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1640,
             "end": 1651
           }
@@ -1775,7 +1775,7 @@
                           "end_column": 9,
                           "start": 1689,
                           "end": 1695,
-                          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                         },
                         "token_number": 96,
                         "token_type": 64
@@ -1784,7 +1784,7 @@
                     }
                   ],
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1689,
                     "end": 1695
                   }
@@ -1807,7 +1807,7 @@
                               "end_column": 22,
                               "start": 1698,
                               "end": 1708,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 98,
                             "token_type": 64
@@ -1816,7 +1816,7 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1698,
                         "end": 1708
                       }
@@ -1836,7 +1836,7 @@
                               "end_column": 36,
                               "start": 1711,
                               "end": 1722,
-                              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/MixedLoop.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MixedLoop.mo"
                             },
                             "token_number": 100,
                             "token_type": 64
@@ -1845,14 +1845,14 @@
                         }
                       ],
                       "span": {
-                        "source": 6374527633400164045,
+                        "source": 10824456755098067363,
                         "start": 1711,
                         "end": 1722
                       }
                     }
                   },
                   "span": {
-                    "source": 6374527633400164045,
+                    "source": 10824456755098067363,
                     "start": 1698,
                     "end": 1722
                   }
@@ -1873,7 +1873,7 @@
           },
           "source_scope_id": 1,
           "span": {
-            "source": 6374527633400164045,
+            "source": 10824456755098067363,
             "start": 1689,
             "end": 1695
           }

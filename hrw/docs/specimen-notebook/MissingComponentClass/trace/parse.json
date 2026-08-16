@@ -58,10 +58,10 @@
       "location": {
         "start_line": 1,
         "start_column": 7,
-        "end_line": 14,
+        "end_line": 23,
         "end_column": 26,
         "start": 6,
-        "end": 742,
+        "end": 1299,
         "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
       },
       "extends": [],
@@ -76,15 +76,15 @@
           "name_token": {
             "text": "part",
             "location": {
-              "start_line": 10,
+              "start_line": 19,
               "start_column": 15,
-              "end_line": 10,
+              "end_line": 19,
               "end_column": 19,
-              "start": 680,
-              "end": 684,
+              "start": 1237,
+              "end": 1241,
               "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
             },
-            "token_number": 12,
+            "token_number": 21,
             "token_type": 64
           },
           "type_name": {
@@ -92,15 +92,15 @@
               {
                 "text": "NoSuchBlock",
                 "location": {
-                  "start_line": 10,
+                  "start_line": 19,
                   "start_column": 3,
-                  "end_line": 10,
+                  "end_line": 19,
                   "end_column": 14,
-                  "start": 668,
-                  "end": 679,
+                  "start": 1225,
+                  "end": 1236,
                   "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
                 },
-                "token_number": 11,
+                "token_number": 20,
                 "token_type": 64
               }
             ]
@@ -113,8 +113,8 @@
             "Empty": {
               "span": {
                 "source": 17168237067893549695,
-                "start": 668,
-                "end": 684
+                "start": 1225,
+                "end": 1241
               }
             }
           },
@@ -132,12 +132,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 10,
+            "start_line": 19,
             "start_column": 3,
-            "end_line": 10,
+            "end_line": 19,
             "end_column": 19,
-            "start": 668,
-            "end": 684,
+            "start": 1225,
+            "end": 1241,
             "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
           },
           "condition": null,
@@ -160,15 +160,15 @@
           "name_token": {
             "text": "y",
             "location": {
-              "start_line": 11,
+              "start_line": 20,
               "start_column": 8,
-              "end_line": 11,
+              "end_line": 20,
               "end_column": 9,
-              "start": 693,
-              "end": 694,
+              "start": 1250,
+              "end": 1251,
               "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
             },
-            "token_number": 15,
+            "token_number": 24,
             "token_type": 64
           },
           "type_name": {
@@ -176,15 +176,15 @@
               {
                 "text": "Real",
                 "location": {
-                  "start_line": 11,
+                  "start_line": 20,
                   "start_column": 3,
-                  "end_line": 11,
+                  "end_line": 20,
                   "end_column": 7,
-                  "start": 688,
-                  "end": 692,
+                  "start": 1245,
+                  "end": 1249,
                   "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
                 },
-                "token_number": 14,
+                "token_number": 23,
                 "token_type": 64
               }
             ]
@@ -212,8 +212,8 @@
               },
               "span": {
                 "source": 17168237067893549695,
-                "start": 688,
-                "end": 694
+                "start": 1245,
+                "end": 1251
               }
             }
           },
@@ -231,12 +231,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 11,
+            "start_line": 20,
             "start_column": 3,
-            "end_line": 11,
+            "end_line": 20,
             "end_column": 9,
-            "start": 688,
-            "end": 694,
+            "start": 1245,
+            "end": 1251,
             "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
           },
           "condition": null,
@@ -263,15 +263,15 @@
                     "ident": {
                       "text": "y",
                       "location": {
-                        "start_line": 13,
+                        "start_line": 22,
                         "start_column": 3,
-                        "end_line": 13,
+                        "end_line": 22,
                         "end_column": 4,
-                        "start": 707,
-                        "end": 708,
+                        "start": 1264,
+                        "end": 1265,
                         "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
                       },
-                      "token_number": 18,
+                      "token_number": 27,
                       "token_type": 64
                     },
                     "subs": null
@@ -279,8 +279,8 @@
                 ],
                 "span": {
                   "source": 17168237067893549695,
-                  "start": 707,
-                  "end": 708
+                  "start": 1264,
+                  "end": 1265
                 }
               }
             },
@@ -292,15 +292,15 @@
                     "ident": {
                       "text": "time",
                       "location": {
-                        "start_line": 13,
+                        "start_line": 22,
                         "start_column": 7,
-                        "end_line": 13,
+                        "end_line": 22,
                         "end_column": 11,
-                        "start": 711,
-                        "end": 715,
+                        "start": 1268,
+                        "end": 1272,
                         "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
                       },
-                      "token_number": 20,
+                      "token_number": 29,
                       "token_type": 64
                     },
                     "subs": null
@@ -308,8 +308,8 @@
                 ],
                 "span": {
                   "source": 17168237067893549695,
-                  "start": 711,
-                  "end": 715
+                  "start": 1268,
+                  "end": 1272
                 }
               }
             }
@@ -322,15 +322,15 @@
       "equation_keyword": {
         "text": "equation",
         "location": {
-          "start_line": 12,
+          "start_line": 21,
           "start_column": 1,
-          "end_line": 12,
+          "end_line": 21,
           "end_column": 9,
-          "start": 696,
-          "end": 704,
+          "start": 1253,
+          "end": 1261,
           "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
         },
-        "token_number": 17,
+        "token_number": 26,
         "token_type": 24
       },
       "initial_equation_keyword": null,
@@ -339,15 +339,15 @@
       "end_name_token": {
         "text": "MissingComponentClass",
         "location": {
-          "start_line": 14,
+          "start_line": 23,
           "start_column": 5,
-          "end_line": 14,
+          "end_line": 23,
           "end_column": 26,
-          "start": 721,
-          "end": 742,
+          "start": 1278,
+          "end": 1299,
           "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MissingComponentClass.mo"
         },
-        "token_number": 23,
+        "token_number": 32,
         "token_type": 64
       },
       "enum_literals": [],

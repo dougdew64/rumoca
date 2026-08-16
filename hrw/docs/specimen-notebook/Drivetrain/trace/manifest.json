@@ -2,7 +2,7 @@
   "model": "Drivetrain",
   "specimen": "specimens/Drivetrain.mo",
   "specimen_fnv1a": "8a7b13d217d23398",
-  "rumoca_rev": "a608c177",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -24,6 +24,10 @@
     "flatten": {
       "has_ir": true,
       "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "9 state(s), 88 algebraic(s), 97 continuous equation(s)"
     },
     "structural": {
       "has_ir": true,

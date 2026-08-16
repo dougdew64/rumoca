@@ -2,7 +2,7 @@
   "model": "GearWithBrake",
   "specimen": "specimens/GearWithBrake.mo",
   "specimen_fnv1a": "1b099f72fdf7aea1",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -25,16 +25,20 @@
       "has_ir": true,
       "note": null
     },
+    "dae": {
+      "has_ir": true,
+      "note": "7 state(s), 37 algebraic(s), 44 continuous equation(s)"
+    },
     "structural": {
-      "has_ir": false,
-      "note": "structural analysis failed: structurally singular system: 41 matched out of 44 equations and 44 unknowns; unmatched equations: f_x[38], f_x[40], f_x[43]; unmatched unknowns: motor.w, spring.a_rel, load.flange_a.tau"
+      "has_ir": true,
+      "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
       "note": "index-reduced from a structurally singular (high-index) system — now solvable"
     },
     "initialization": {
-      "has_ir": false,
+      "has_ir": true,
       "note": "IC planning failed: structurally singular system: 33 matched out of 37 equations and 37 unknowns; unmatched equations: equation from rotor, equation from load, equation from spring, connection equation: spring.flange_b.phi = frame.flange.phi; unmatched unknowns: motor.phi_support, motor.w, motor.tau, rotor.flange_a.phi"
     },
     "events": {

@@ -2,7 +2,7 @@
   "model": "BenchActuator",
   "specimen": "specimens/BenchActuator.mo",
   "specimen_fnv1a": "716b198fefef781d",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -25,16 +25,20 @@
       "has_ir": true,
       "note": null
     },
+    "dae": {
+      "has_ir": true,
+      "note": "4 state(s), 44 algebraic(s), 48 continuous equation(s)"
+    },
     "structural": {
-      "has_ir": false,
-      "note": "structural analysis failed: structurally singular system: 47 matched out of 48 equations and 48 unknowns; unmatched equations: f_x[46]; unmatched unknowns: emf.p.v"
+      "has_ir": true,
+      "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
       "note": "index-reduced from a structurally singular (high-index) system — now solvable"
     },
     "initialization": {
-      "has_ir": false,
+      "has_ir": true,
       "note": "IC planning failed: structurally singular system: 41 matched out of 44 equations and 44 unknowns; unmatched equations: equation from load, connection equation: emf.flange.phi = load.flange_a.phi, unconnected flow: load.flange_b.tau = 0; unmatched unknowns: src.i, emf.internalSupport.flange.tau, gnd.p.i"
     },
     "events": {

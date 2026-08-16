@@ -23,22 +23,16 @@
 
 use std::path::PathBuf;
 
-use hrw::worker::{FromWorker, Stage, compile_specimen, simulate_specimen};
+use hrw::worker::{FromWorker, Stage, StageKind, compile_specimen, simulate_specimen};
 
-/// The pipeline stages, in order, as they appear in the app's tabs.
-const STAGES: [&str; 11] = [
-    "parse",
-    "resolve",
-    "instantiate",
-    "typecheck",
-    "flatten",
-    "dae",
-    "structural",
-    "index_reduction",
-    "initialization",
-    "events",
-    "solve_lowering",
-];
+// **The stage roster is `StageKind::COMPILATION`, not a list kept here.**
+//
+// This file used to carry `const STAGES: [&str; 11]`, a second roster nothing held
+// to the first. `Dae` was added to the pipeline and this list was not updated, so
+// every notebook regenerated afterwards described an eleven-stage compiler — 7 of 21
+// manifests had a `dae` entry and the other 14 did not, for seventeen days, with
+// nothing able to notice. `StageKind::notebook_key()` derives the key from the
+// canonical slug so the two cannot drift again.
 
 /// Default simulation stop time.
 const SIM_T_END: f64 = 2.0;
@@ -131,12 +125,21 @@ fn generate_trace(name: &str) -> Result<(), String> {
 
     // --- Compilation trace ---
     let mut manifest_stages = serde_json::Map::new();
-    for stage_name in STAGES {
+    for kind in StageKind::COMPILATION {
+        let stage_name = kind.notebook_key();
+        // A stage in the roster with no entry here is a wiring gap, not a missing
+        // file: `by_name` is this generator's own map from key to captured stage.
+        // Panicking names the stage rather than skipping it silently.
         let stage = by_name
             .iter()
             .find(|(n, _)| *n == stage_name)
             .map(|(_, s)| *s)
-            .unwrap();
+            .unwrap_or_else(|| {
+                panic!(
+                    "stage {stage_name:?} is in StageKind::COMPILATION but gen_trace \
+                     has no source for it \u{2014} add it to `by_name`"
+                )
+            });
         if let Some(value) = &stage.value {
             let path = trace_dir.join(format!("{stage_name}.json"));
             std::fs::write(
@@ -146,7 +149,7 @@ fn generate_trace(name: &str) -> Result<(), String> {
             .map_err(|e| format!("write {stage_name}: {e}"))?;
         }
         manifest_stages.insert(
-            stage_name.to_owned(),
+            stage_name,
             serde_json::json!({ "has_ir": stage.value.is_some(), "note": stage.note }),
         );
     }

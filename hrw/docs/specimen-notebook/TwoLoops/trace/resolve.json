@@ -10,7 +10,7 @@
       "end_column": 15,
       "start": 6,
       "end": 14,
-      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
     },
     "token_number": 1,
     "token_type": 64
@@ -25,7 +25,7 @@
       "end_column": 6,
       "start": 0,
       "end": 5,
-      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
     },
     "token_number": 0,
     "token_type": 41
@@ -47,7 +47,7 @@
         "end_column": 86,
         "start": 15,
         "end": 87,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "token_number": 2,
       "token_type": 66
@@ -60,7 +60,7 @@
     "end_column": 13,
     "start": 6,
     "end": 1581,
-    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
   },
   "extends": [],
   "imports": [],
@@ -80,7 +80,7 @@
           "end_column": 27,
           "start": 756,
           "end": 765,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 13,
         "token_type": 64
@@ -96,7 +96,7 @@
               "end_column": 17,
               "start": 751,
               "end": 755,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 12,
             "token_type": 64
@@ -113,7 +113,7 @@
             "end_column": 12,
             "start": 741,
             "end": 750,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 11,
           "token_type": 48
@@ -131,7 +131,7 @@
             "end_column": 55,
             "start": 772,
             "end": 793,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 16,
           "token_type": 66
@@ -155,7 +155,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 751,
             "end": 765
           }
@@ -176,13 +176,13 @@
               "end_column": 33,
               "start": 768,
               "end": 771,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 15,
             "token_type": 68
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 768,
             "end": 771
           }
@@ -204,7 +204,7 @@
         "end_column": 27,
         "start": 751,
         "end": 765,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -232,7 +232,7 @@
           "end_column": 23,
           "start": 812,
           "end": 817,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 20,
         "token_type": 64
@@ -248,7 +248,7 @@
               "end_column": 17,
               "start": 807,
               "end": 811,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 19,
             "token_type": 64
@@ -265,7 +265,7 @@
             "end_column": 12,
             "start": 797,
             "end": 806,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 18,
           "token_type": 48
@@ -283,7 +283,7 @@
             "end_column": 57,
             "start": 825,
             "end": 851,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 23,
           "token_type": 66
@@ -307,7 +307,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 807,
             "end": 817
           }
@@ -328,13 +328,13 @@
               "end_column": 30,
               "start": 820,
               "end": 824,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 22,
             "token_type": 68
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 820,
             "end": 824
           }
@@ -356,7 +356,7 @@
         "end_column": 23,
         "start": 807,
         "end": 817,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -384,7 +384,7 @@
           "end_column": 24,
           "start": 870,
           "end": 876,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 27,
         "token_type": 64
@@ -400,7 +400,7 @@
               "end_column": 17,
               "start": 865,
               "end": 869,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 26,
             "token_type": 64
@@ -417,7 +417,7 @@
             "end_column": 12,
             "start": 855,
             "end": 864,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 25,
           "token_type": 48
@@ -435,7 +435,7 @@
             "end_column": 57,
             "start": 883,
             "end": 909,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 30,
           "token_type": 66
@@ -459,7 +459,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 865,
             "end": 876
           }
@@ -480,13 +480,13 @@
               "end_column": 30,
               "start": 879,
               "end": 882,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 29,
             "token_type": 68
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 879,
             "end": 882
           }
@@ -508,7 +508,7 @@
         "end_column": 24,
         "start": 865,
         "end": 876,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -536,7 +536,7 @@
           "end_column": 23,
           "start": 928,
           "end": 933,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 34,
         "token_type": 64
@@ -552,7 +552,7 @@
               "end_column": 17,
               "start": 923,
               "end": 927,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 33,
             "token_type": 64
@@ -569,7 +569,7 @@
             "end_column": 12,
             "start": 913,
             "end": 922,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 32,
           "token_type": 48
@@ -587,7 +587,7 @@
             "end_column": 56,
             "start": 940,
             "end": 966,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 37,
           "token_type": 66
@@ -611,7 +611,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 923,
             "end": 933
           }
@@ -632,13 +632,13 @@
               "end_column": 29,
               "start": 936,
               "end": 939,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 36,
             "token_type": 68
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 936,
             "end": 939
           }
@@ -660,7 +660,7 @@
         "end_column": 23,
         "start": 923,
         "end": 933,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -688,7 +688,7 @@
           "end_column": 24,
           "start": 985,
           "end": 991,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 41,
         "token_type": 64
@@ -704,7 +704,7 @@
               "end_column": 17,
               "start": 980,
               "end": 984,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 40,
             "token_type": 64
@@ -721,7 +721,7 @@
             "end_column": 12,
             "start": 970,
             "end": 979,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 39,
           "token_type": 48
@@ -739,7 +739,7 @@
             "end_column": 57,
             "start": 998,
             "end": 1024,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 44,
           "token_type": 66
@@ -763,7 +763,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 980,
             "end": 991
           }
@@ -784,13 +784,13 @@
               "end_column": 30,
               "start": 994,
               "end": 997,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 43,
             "token_type": 68
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 994,
             "end": 997
           }
@@ -812,7 +812,7 @@
         "end_column": 24,
         "start": 980,
         "end": 991,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -840,7 +840,7 @@
           "end_column": 14,
           "start": 1033,
           "end": 1039,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 47,
         "token_type": 64
@@ -856,7 +856,7 @@
               "end_column": 7,
               "start": 1028,
               "end": 1032,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 46,
             "token_type": 64
@@ -876,7 +876,7 @@
             "end_column": 29,
             "start": 1040,
             "end": 1054,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 48,
           "token_type": 66
@@ -900,7 +900,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 1028,
             "end": 1039
           }
@@ -926,7 +926,7 @@
         "end_column": 14,
         "start": 1028,
         "end": 1039,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -954,7 +954,7 @@
           "end_column": 16,
           "start": 1063,
           "end": 1071,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 51,
         "token_type": 64
@@ -970,7 +970,7 @@
               "end_column": 7,
               "start": 1058,
               "end": 1062,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 50,
             "token_type": 64
@@ -990,7 +990,7 @@
             "end_column": 68,
             "start": 1072,
             "end": 1123,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 52,
           "token_type": 66
@@ -1014,7 +1014,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 1058,
             "end": 1071
           }
@@ -1040,7 +1040,7 @@
         "end_column": 16,
         "start": 1058,
         "end": 1071,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -1068,7 +1068,7 @@
           "end_column": 14,
           "start": 1132,
           "end": 1138,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 55,
         "token_type": 64
@@ -1084,7 +1084,7 @@
               "end_column": 7,
               "start": 1127,
               "end": 1131,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 54,
             "token_type": 64
@@ -1104,7 +1104,7 @@
             "end_column": 29,
             "start": 1139,
             "end": 1153,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 56,
           "token_type": 66
@@ -1128,7 +1128,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 1127,
             "end": 1138
           }
@@ -1154,7 +1154,7 @@
         "end_column": 14,
         "start": 1127,
         "end": 1138,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -1182,7 +1182,7 @@
           "end_column": 16,
           "start": 1162,
           "end": 1170,
-          "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
         },
         "token_number": 59,
         "token_type": 64
@@ -1198,7 +1198,7 @@
               "end_column": 7,
               "start": 1157,
               "end": 1161,
-              "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
             },
             "token_number": 58,
             "token_type": 64
@@ -1218,7 +1218,7 @@
             "end_column": 43,
             "start": 1171,
             "end": 1197,
-            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
           },
           "token_number": 60,
           "token_type": 66
@@ -1242,7 +1242,7 @@
             "token_type": 0
           },
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 1157,
             "end": 1170
           }
@@ -1268,7 +1268,7 @@
         "end_column": 16,
         "start": 1157,
         "end": 1170,
-        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
       },
       "condition": null,
       "inner": false,
@@ -1300,7 +1300,7 @@
                     "end_column": 9,
                     "start": 1210,
                     "end": 1216,
-                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                   },
                   "token_number": 63,
                   "token_type": 64
@@ -1309,7 +1309,7 @@
               }
             ],
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1210,
               "end": 1216
             }
@@ -1332,7 +1332,7 @@
                         "end_column": 21,
                         "start": 1219,
                         "end": 1228,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 65,
                       "token_type": 64
@@ -1341,7 +1341,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1219,
                   "end": 1228
                 }
@@ -1364,7 +1364,7 @@
                             "end_column": 30,
                             "start": 1231,
                             "end": 1237,
-                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                           },
                           "token_number": 67,
                           "token_type": 64
@@ -1373,7 +1373,7 @@
                       }
                     ],
                     "span": {
-                      "source": 1610787096272471993,
+                      "source": 7235249937028297655,
                       "start": 1231,
                       "end": 1237
                     }
@@ -1393,7 +1393,7 @@
                             "end_column": 41,
                             "start": 1240,
                             "end": 1248,
-                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                           },
                           "token_number": 69,
                           "token_type": 64
@@ -1402,21 +1402,21 @@
                       }
                     ],
                     "span": {
-                      "source": 1610787096272471993,
+                      "source": 7235249937028297655,
                       "start": 1240,
                       "end": 1248
                     }
                   }
                 },
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1231,
                   "end": 1248
                 }
               }
             },
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1219,
               "end": 1248
             }
@@ -1440,7 +1440,7 @@
                     "end_column": 11,
                     "start": 1284,
                     "end": 1292,
-                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                   },
                   "token_number": 72,
                   "token_type": 64
@@ -1449,7 +1449,7 @@
               }
             ],
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1284,
               "end": 1292
             }
@@ -1472,7 +1472,7 @@
                         "end_column": 19,
                         "start": 1295,
                         "end": 1300,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 74,
                       "token_type": 64
@@ -1481,7 +1481,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1295,
                   "end": 1300
                 }
@@ -1501,7 +1501,7 @@
                         "end_column": 28,
                         "start": 1303,
                         "end": 1309,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 76,
                       "token_type": 64
@@ -1510,14 +1510,14 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1303,
                   "end": 1309
                 }
               }
             },
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1295,
               "end": 1309
             }
@@ -1541,7 +1541,7 @@
                     "end_column": 9,
                     "start": 1335,
                     "end": 1341,
-                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                   },
                   "token_number": 79,
                   "token_type": 64
@@ -1550,7 +1550,7 @@
               }
             ],
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1335,
               "end": 1341
             }
@@ -1573,7 +1573,7 @@
                         "end_column": 20,
                         "start": 1344,
                         "end": 1352,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 81,
                       "token_type": 64
@@ -1582,7 +1582,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1344,
                   "end": 1352
                 }
@@ -1605,7 +1605,7 @@
                             "end_column": 29,
                             "start": 1355,
                             "end": 1361,
-                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                           },
                           "token_number": 83,
                           "token_type": 64
@@ -1614,7 +1614,7 @@
                       }
                     ],
                     "span": {
-                      "source": 1610787096272471993,
+                      "source": 7235249937028297655,
                       "start": 1355,
                       "end": 1361
                     }
@@ -1634,7 +1634,7 @@
                             "end_column": 40,
                             "start": 1364,
                             "end": 1372,
-                            "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                           },
                           "token_number": 85,
                           "token_type": 64
@@ -1643,21 +1643,21 @@
                       }
                     ],
                     "span": {
-                      "source": 1610787096272471993,
+                      "source": 7235249937028297655,
                       "start": 1364,
                       "end": 1372
                     }
                   }
                 },
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1355,
                   "end": 1372
                 }
               }
             },
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1344,
               "end": 1372
             }
@@ -1681,7 +1681,7 @@
                     "end_column": 11,
                     "start": 1429,
                     "end": 1437,
-                    "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                   },
                   "token_number": 88,
                   "token_type": 64
@@ -1690,7 +1690,7 @@
               }
             ],
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1429,
               "end": 1437
             }
@@ -1713,7 +1713,7 @@
                         "end_column": 19,
                         "start": 1440,
                         "end": 1445,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 90,
                       "token_type": 64
@@ -1722,7 +1722,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1440,
                   "end": 1445
                 }
@@ -1742,7 +1742,7 @@
                         "end_column": 28,
                         "start": 1448,
                         "end": 1454,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 92,
                       "token_type": 64
@@ -1751,14 +1751,14 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1448,
                   "end": 1454
                 }
               }
             },
             "span": {
-              "source": 1610787096272471993,
+              "source": 7235249937028297655,
               "start": 1440,
               "end": 1454
             }
@@ -1779,7 +1779,7 @@
       "end_column": 9,
       "start": 1199,
       "end": 1207,
-      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
     },
     "token_number": 62,
     "token_type": 24
@@ -1796,7 +1796,7 @@
       "end_column": 13,
       "start": 1573,
       "end": 1581,
-      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
     },
     "token_number": 118,
     "token_type": 64
@@ -1818,7 +1818,7 @@
                   "end_column": 24,
                   "start": 1491,
                   "end": 1501,
-                  "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                 },
                 "token_number": 97,
                 "token_type": 64
@@ -1827,7 +1827,7 @@
             }
           ],
           "span": {
-            "source": 1610787096272471993,
+            "source": 7235249937028297655,
             "start": 1491,
             "end": 1501
           }
@@ -1848,7 +1848,7 @@
                         "end_column": 34,
                         "start": 1502,
                         "end": 1511,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 99,
                       "token_type": 64
@@ -1857,7 +1857,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1502,
                   "end": 1511
                 }
@@ -1874,20 +1874,20 @@
                       "end_column": 38,
                       "start": 1514,
                       "end": 1515,
-                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                     },
                     "token_number": 101,
                     "token_type": 67
                   },
                   "span": {
-                    "source": 1610787096272471993,
+                    "source": 7235249937028297655,
                     "start": 1514,
                     "end": 1515
                   }
                 }
               },
               "span": {
-                "source": 1610787096272471993,
+                "source": 7235249937028297655,
                 "start": 1502,
                 "end": 1515
               }
@@ -1908,7 +1908,7 @@
                         "end_column": 48,
                         "start": 1517,
                         "end": 1525,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 103,
                       "token_type": 64
@@ -1917,7 +1917,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1517,
                   "end": 1525
                 }
@@ -1934,20 +1934,20 @@
                       "end_column": 52,
                       "start": 1528,
                       "end": 1529,
-                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                     },
                     "token_number": 105,
                     "token_type": 67
                   },
                   "span": {
-                    "source": 1610787096272471993,
+                    "source": 7235249937028297655,
                     "start": 1528,
                     "end": 1529
                   }
                 }
               },
               "span": {
-                "source": 1610787096272471993,
+                "source": 7235249937028297655,
                 "start": 1517,
                 "end": 1529
               }
@@ -1968,7 +1968,7 @@
                         "end_column": 62,
                         "start": 1531,
                         "end": 1539,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 107,
                       "token_type": 64
@@ -1977,7 +1977,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1531,
                   "end": 1539
                 }
@@ -1994,20 +1994,20 @@
                       "end_column": 70,
                       "start": 1542,
                       "end": 1547,
-                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                     },
                     "token_number": 109,
                     "token_type": 68
                   },
                   "span": {
-                    "source": 1610787096272471993,
+                    "source": 7235249937028297655,
                     "start": 1542,
                     "end": 1547
                   }
                 }
               },
               "span": {
-                "source": 1610787096272471993,
+                "source": 7235249937028297655,
                 "start": 1531,
                 "end": 1547
               }
@@ -2028,7 +2028,7 @@
                         "end_column": 81,
                         "start": 1549,
                         "end": 1558,
-                        "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                       },
                       "token_number": 111,
                       "token_type": 64
@@ -2037,7 +2037,7 @@
                   }
                 ],
                 "span": {
-                  "source": 1610787096272471993,
+                  "source": 7235249937028297655,
                   "start": 1549,
                   "end": 1558
                 }
@@ -2054,20 +2054,20 @@
                       "end_column": 88,
                       "start": 1561,
                       "end": 1565,
-                      "file_name": "/home/dougdew/dev/rumoca/hrw/specimens/TwoLoops.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
                     },
                     "token_number": 113,
                     "token_type": 71
                   },
                   "span": {
-                    "source": 1610787096272471993,
+                    "source": 7235249937028297655,
                     "start": 1561,
                     "end": 1565
                   }
                 }
               },
               "span": {
-                "source": 1610787096272471993,
+                "source": 7235249937028297655,
                 "start": 1549,
                 "end": 1565
               }
@@ -2093,7 +2093,7 @@
           false
         ],
         "span": {
-          "source": 1610787096272471993,
+          "source": 7235249937028297655,
           "start": 1491,
           "end": 1565
         }

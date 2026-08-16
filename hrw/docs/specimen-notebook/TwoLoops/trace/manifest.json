@@ -2,7 +2,7 @@
   "model": "TwoLoops",
   "specimen": "specimens/TwoLoops.mo",
   "specimen_fnv1a": "5955efec1865143e",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -24,6 +24,10 @@
     "flatten": {
       "has_ir": true,
       "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "0 state(s), 4 algebraic(s), 4 continuous equation(s)"
     },
     "structural": {
       "has_ir": true,

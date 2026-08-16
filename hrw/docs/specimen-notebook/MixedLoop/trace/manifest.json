@@ -2,7 +2,7 @@
   "model": "MixedLoop",
   "specimen": "specimens/MixedLoop.mo",
   "specimen_fnv1a": "5886eb96c8161101",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -24,6 +24,10 @@
     "flatten": {
       "has_ir": true,
       "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "0 state(s), 5 algebraic(s), 5 continuous equation(s)"
     },
     "structural": {
       "has_ir": true,

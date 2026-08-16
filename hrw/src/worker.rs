@@ -625,6 +625,32 @@ impl StageKind {
         StageKind::SolveLowering,
     ];
 
+    /// The key this stage carries in the specimen notebook — the trace file's stem
+    /// (`index_reduction.json`) and its entry in `manifest.json`'s `stages` map.
+    ///
+    /// **Derived from [`slug`] rather than hand-listed, which is the whole point.**
+    /// `examples/gen_trace.rs` used to carry its own `const STAGES: [&str; 11]`, a
+    /// second roster nothing held to the first. When `Dae` was added to the pipeline
+    /// that list was not updated, so the notebook silently described an eleven-stage
+    /// compiler for weeks — found 2026-08-15, with **7 of 21** manifests listing `dae`
+    /// and the rest not. A snake_case transform of the canonical slug cannot fall
+    /// behind the enum.
+    ///
+    /// Returns an owned `String` because the transform is computed; the allocation is
+    /// paid once per stage per specimen, in a generator and a test.
+    #[must_use]
+    pub fn notebook_key(self) -> String {
+        let slug = self.slug();
+        let mut out = String::with_capacity(slug.len() + 2);
+        for (i, c) in slug.char_indices() {
+            if c.is_ascii_uppercase() && i > 0 {
+                out.push('_');
+            }
+            out.push(c.to_ascii_lowercase());
+        }
+        out
+    }
+
     /// Human-readable name for this stage, matching the tab labels in the UI.
     pub fn name(self) -> &'static str {
         match self {
@@ -9259,6 +9285,234 @@ mod tests {
             pair_names, file_names,
             "StageBundle::as_stage_pairs() names diverged from STAGE_FILE_NAMES"
         );
+    }
+
+    /// **Every committed manifest lists exactly the stages the pipeline has.**
+    ///
+    /// # The rot this exists to catch
+    ///
+    /// `gen_trace` carried its own `const STAGES: [&str; 11]`, so when `Dae` joined the
+    /// pipeline the notebook simply stopped mentioning it. **7 of 21 manifests had a
+    /// `dae` entry and 14 did not**, for seventeen days, and nothing in the toolchain
+    /// could say so — while `hrw/CLAUDE.md` instructs that *"any number about a specimen
+    /// is read from here"*. A reader of the committed notebook saw a compiler HRW no
+    /// longer had.
+    ///
+    /// `architecture.md` had the same disease and was cured by generating it **and**
+    /// adding a currency test. The notebook got the first half seventeen days earlier
+    /// and never got the second; this is the second half.
+    ///
+    /// # Why this one is fast and the content check is not
+    ///
+    /// Reading 21 small JSON files costs milliseconds, so this runs between edits and
+    /// fails the moment a stage is added to the compiler and not to the notebook.
+    /// `the_committed_notebook_matches_what_the_pipeline_produces_now` checks the far
+    /// harder property — that the *contents* are current — and needs 21 compiles to do
+    /// it, so it is slow-gated. **This one catches the structural half of the rot for
+    /// free**, which is the half that actually happened.
+    #[test]
+    fn manifest_stage_rosters_match_the_pipeline() {
+        let notebook =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+        let expected: Vec<String> = StageKind::COMPILATION
+            .iter()
+            .map(|k| k.notebook_key())
+            .collect();
+
+        let mut checked = 0usize;
+        for entry in std::fs::read_dir(&notebook)
+            .expect("the notebook directory exists")
+            .flatten()
+        {
+            let manifest = entry.path().join("trace/manifest.json");
+            let Ok(text) = std::fs::read_to_string(&manifest) else {
+                continue;
+            };
+            let value: serde_json::Value =
+                serde_json::from_str(&text).expect("a manifest is valid JSON");
+            let listed: Vec<String> = value["stages"]
+                .as_object()
+                .unwrap_or_else(|| panic!("{} has no `stages` map", manifest.display()))
+                .keys()
+                .cloned()
+                .collect();
+            // Compared as sets: `serde_json`'s map preserves insertion order, but the
+            // claim being made is about *coverage*, and ordering is `gen_trace`'s.
+            let mut listed_sorted = listed.clone();
+            let mut expected_sorted = expected.clone();
+            listed_sorted.sort();
+            expected_sorted.sort();
+            assert_eq!(
+                listed_sorted,
+                expected_sorted,
+                "{} lists a different set of stages than the pipeline has \u{2014} \
+                 regenerate with `cargo run -p hrw --example gen_trace -- --all`",
+                manifest.display(),
+            );
+            checked += 1;
+        }
+
+        assert!(
+            checked >= 20,
+            "only {checked} manifests were checked; the notebook has 21 specimens, so \
+             this is not exercising what it claims",
+        );
+    }
+
+    /// **The committed notebook is what the pipeline produces today**, stage for stage,
+    /// specimen for specimen.
+    ///
+    /// # The rot this exists to catch, and why the fast test is not enough
+    ///
+    /// `parse.json` had not been regenerated since **2026-07-21** and the other
+    /// pre-Flatten stages since **2026-07-29** — found 2026-08-15, twenty-five days
+    /// later, by accident. `manifest_stage_rosters_match_the_pipeline` catches a stage
+    /// appearing or disappearing; it cannot see a stage whose *contents* have drifted,
+    /// which is what actually happened and what every count in the nine tours rests on.
+    ///
+    /// # Why it has its own feature gate, which is the interesting part
+    ///
+    /// The first version used `compile_specimen_shared`, so the MSL loaded once and the
+    /// whole check cost 49 s. **It passed alone and failed in the full suite** — nine
+    /// files across `GearWithBrake` and `MissingComponentClass`. That is not a flake: it
+    /// is `tech-debt.md`'s open item *"a stage's emitted JSON depends on what else the
+    /// session holds"*, arriving as a consequence nobody had drawn from it.
+    ///
+    /// **The consequence is about the notebook, not the test.** A committed trace is one
+    /// sample of a function that takes the session as a hidden argument. `gen_trace` runs
+    /// **one process per specimen**, so the committed value is the virgin-session value —
+    /// and any check compiling in company is comparing against a different input.
+    ///
+    /// So this calls [`compile_specimen`], which builds a fresh `WorkerState` per
+    /// specimen exactly as `gen_trace` does. That is faithful and order-independent, and
+    /// it reloads the MSL 21 times, which is why it is not on the `slow-tests` gate: it
+    /// would add minutes to a run Doug already reports as friction.
+    ///
+    /// # What it deliberately does not check
+    ///
+    /// **Simulation.** `simulation.json` and the manifest's `simulation` block need an
+    /// actual solver run per specimen, which is the genuinely expensive part and is
+    /// already exercised by `all_healthy_specimens_simulate`. So a drift confined to
+    /// simulation output would pass here. Stated rather than left implicit, per the
+    /// standing rule that a bounded check says what it dropped.
+    #[cfg_attr(
+        not(feature = "notebook-check"),
+        ignore = "reloads the MSL per specimen; run with --features notebook-check"
+    )]
+    #[test]
+    fn the_committed_notebook_matches_what_the_pipeline_produces_now() {
+        let notebook =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+        let mut stale: Vec<String> = Vec::new();
+        let mut compared = 0usize;
+        let mut specimens = 0usize;
+
+        for entry in std::fs::read_dir(&notebook)
+            .expect("the notebook directory exists")
+            .flatten()
+        {
+            let trace_dir = entry.path().join("trace");
+            let Ok(manifest_text) = std::fs::read_to_string(trace_dir.join("manifest.json")) else {
+                continue;
+            };
+            let manifest: serde_json::Value =
+                serde_json::from_str(&manifest_text).expect("a manifest is valid JSON");
+            // The specimen name comes from the manifest, not the directory: the
+            // directory is named by *model*, and only the manifest records which
+            // source file produced it.
+            let specimen = manifest["specimen"]
+                .as_str()
+                .expect("a manifest records its specimen")
+                .trim_start_matches("specimens/")
+                .trim_end_matches(".mo")
+                .to_owned();
+
+            // **A fresh `WorkerState`, exactly as `gen_trace` gets.** Not
+            // `compile_specimen_shared`: see the doc comment — the shared session
+            // carries whatever earlier tests compiled, and two specimens emit
+            // different JSON because of it.
+            //
+            // **Built by `format!`, not `join`, and that is load-bearing.** The path
+            // string is handed to `parse_to_ast` and stamped into every `Location`
+            // (`worker.rs`, the Parse stage), so its *spelling* is part of the output.
+            // `join` produces `hrw\specimens\X.mo` while `gen_trace` produces
+            // `hrw/specimens/X.mo`, and that one separator made **109 of 109** files
+            // compare unequal on the first run of this test — a difference with no
+            // meaning that looked exactly like total drift.
+            let path = std::path::PathBuf::from(format!(
+                "{}/specimens/{specimen}.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            let Ok(FromWorker::Compiled { stages, .. }) =
+                compile_specimen(&path, test_msl::msl_roots())
+            else {
+                stale.push(format!("{specimen}: no longer compiles at all"));
+                continue;
+            };
+            specimens += 1;
+
+            for kind in StageKind::COMPILATION {
+                let key = kind.notebook_key();
+                let path = trace_dir.join(format!("{key}.json"));
+                let committed = std::fs::read_to_string(&path)
+                    .ok()
+                    .map(|t| serde_json::from_str::<serde_json::Value>(&t).expect("valid JSON"));
+                let produced = stages.get(*kind).value.clone();
+
+                match (&committed, &produced) {
+                    (None, None) => {}
+                    (Some(_), None) => stale.push(format!(
+                        "{specimen}/{key}.json is committed but the pipeline no longer \
+                         produces that stage"
+                    )),
+                    (None, Some(_)) => stale.push(format!(
+                        "{specimen}/{key}.json is missing but the pipeline produces it now"
+                    )),
+                    (Some(c), Some(p)) => {
+                        compared += 1;
+                        if c != p {
+                            stale.push(format!(
+                                "{specimen}/{key}.json differs from what the pipeline \
+                                 produces now"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        assert!(
+            specimens >= 20 && compared >= 100,
+            "only {specimens} specimens and {compared} stage files were compared; the \
+             notebook has 21 specimens, so this is not exercising what it claims",
+        );
+        assert!(
+            stale.is_empty(),
+            "{} committed trace files no longer match the pipeline \u{2014} regenerate \
+             with `cargo run -p hrw --example gen_trace -- --all`:\n  {}",
+            stale.len(),
+            stale.join("\n  "),
+        );
+    }
+
+    /// `notebook_key` must be the snake_case of the canonical slug, for every stage.
+    ///
+    /// Pinned separately from the roster test because the transform is where a new
+    /// stage would break: `SolveLowering` -> `solve_lowering` is the shape that matters,
+    /// and a single-word stage must not gain a leading underscore.
+    #[test]
+    fn notebook_keys_are_the_snake_case_of_the_slug() {
+        assert_eq!(StageKind::Parse.notebook_key(), "parse");
+        assert_eq!(StageKind::Dae.notebook_key(), "dae");
+        assert_eq!(StageKind::IndexReduction.notebook_key(), "index_reduction");
+        assert_eq!(StageKind::SolveLowering.notebook_key(), "solve_lowering");
+        for kind in StageKind::ALL {
+            let key = kind.notebook_key();
+            assert!(
+                !key.starts_with('_') && !key.is_empty(),
+                "{kind:?} produced a malformed notebook key {key:?}",
+            );
+        }
     }
 }
 

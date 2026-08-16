@@ -2,7 +2,7 @@
   "model": "BouncingBall",
   "specimen": "specimens/BouncingBall.mo",
   "specimen_fnv1a": "b5af7f4daae91f1b",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -24,6 +24,10 @@
     "flatten": {
       "has_ir": true,
       "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "2 state(s), 0 algebraic(s), 2 continuous equation(s)"
     },
     "structural": {
       "has_ir": true,

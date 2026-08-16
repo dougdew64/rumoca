@@ -46,6 +46,20 @@ too_many_arguments = "allow"
 # for the fix that actually shortens them.
 [features]
 slow-tests = []
+# The notebook content-currency check, on its own gate.
+#
+# It cannot join `slow-tests`, for two reasons measured 2026-08-15. It must give
+# every specimen a **fresh** `WorkerState` to be faithful to `gen_trace` (which
+# runs one process per specimen), so it reloads the MSL 21 times; and against the
+# shared worker it is **order-dependent** — `GearWithBrake` and
+# `MissingComponentClass` emit different JSON depending on what else the session
+# has already compiled, the open `tech-debt.md` item "a stage's emitted JSON
+# depends on what else the session holds". A gate that passes alone and fails in
+# company is worse than no gate.
+#
+# Triggers are named in `docs/tech-debt.md`: after touching a `*_to_json` writer,
+# and after rebasing on upstream Rumoca.
+notebook-check = []
 
 [dependencies]
 libc = "0.2"

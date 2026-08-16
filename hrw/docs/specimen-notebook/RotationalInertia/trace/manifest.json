@@ -2,7 +2,7 @@
   "model": "RotationalInertia",
   "specimen": "specimens/RotationalInertia.mo",
   "specimen_fnv1a": "9c66d89dd6c12dbd",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -25,6 +25,10 @@
       "has_ir": true,
       "note": null
     },
+    "dae": {
+      "has_ir": true,
+      "note": "2 state(s), 9 algebraic(s), 12 continuous equation(s)"
+    },
     "structural": {
       "has_ir": true,
       "note": null
@@ -34,7 +38,7 @@
       "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
     },
     "initialization": {
-      "has_ir": false,
+      "has_ir": true,
       "note": "IC planning failed: structurally singular system: 8 matched out of 10 equations and 10 unknowns; unmatched equations: equation from inertia, unconnected flow: inertia.flange_b.tau = 0; unmatched unknowns: inertia.flange_b.phi, torque.flange.phi"
     },
     "events": {

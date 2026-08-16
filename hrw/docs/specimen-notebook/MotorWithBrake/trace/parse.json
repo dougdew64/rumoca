@@ -12,7 +12,7 @@
           "end_column": 21,
           "start": 6,
           "end": 20,
-          "file_name": "MotorWithBrake.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
         },
         "token_number": 1,
         "token_type": 64
@@ -27,7 +27,7 @@
           "end_column": 6,
           "start": 0,
           "end": 5,
-          "file_name": "MotorWithBrake.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
         },
         "token_number": 0,
         "token_type": 41
@@ -49,7 +49,7 @@
             "end_column": 56,
             "start": 21,
             "end": 55,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "token_number": 2,
           "token_type": 66
@@ -62,7 +62,7 @@
         "end_column": 19,
         "start": 6,
         "end": 3114,
-        "file_name": "MotorWithBrake.mo"
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
       },
       "extends": [],
       "imports": [],
@@ -82,7 +82,7 @@
               "end_column": 57,
               "start": 1984,
               "end": 1987,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 39,
             "token_type": 64
@@ -98,7 +98,7 @@
                   "end_column": 11,
                   "start": 1933,
                   "end": 1941,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 30,
                 "token_type": 64
@@ -112,7 +112,7 @@
                   "end_column": 22,
                   "start": 1942,
                   "end": 1952,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 32,
                 "token_type": 64
@@ -126,7 +126,7 @@
                   "end_column": 29,
                   "start": 1953,
                   "end": 1959,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 34,
                 "token_type": 64
@@ -140,7 +140,7 @@
                   "end_column": 37,
                   "start": 1960,
                   "end": 1967,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 36,
                 "token_type": 64
@@ -154,7 +154,7 @@
                   "end_column": 53,
                   "start": 1968,
                   "end": 1983,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 38,
                 "token_type": 64
@@ -168,7 +168,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 1933,
                 "end": 1987
               }
@@ -198,7 +198,7 @@
                           "end_column": 59,
                           "start": 1988,
                           "end": 1989,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 41,
                         "token_type": 64
@@ -207,7 +207,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 1988,
                     "end": 1989
                   }
@@ -224,20 +224,20 @@
                         "end_column": 64,
                         "start": 1992,
                         "end": 1994,
-                        "file_name": "MotorWithBrake.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                       },
                       "token_number": 43,
                       "token_type": 67
                     },
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 1992,
                       "end": 1994
                     }
                   }
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 1988,
                   "end": 1994
                 }
@@ -266,13 +266,13 @@
                     "end_column": 64,
                     "start": 1992,
                     "end": 1994,
-                    "file_name": "MotorWithBrake.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                   },
                   "token_number": 43,
                   "token_type": 67
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 1992,
                   "end": 1994
                 }
@@ -286,7 +286,7 @@
             "end_column": 57,
             "start": 1933,
             "end": 1987,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -314,7 +314,7 @@
               "end_column": 46,
               "start": 2041,
               "end": 2042,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 55,
             "token_type": 64
@@ -330,7 +330,7 @@
                   "end_column": 11,
                   "start": 1999,
                   "end": 2007,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 46,
                 "token_type": 64
@@ -344,7 +344,7 @@
                   "end_column": 22,
                   "start": 2008,
                   "end": 2018,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 48,
                 "token_type": 64
@@ -358,7 +358,7 @@
                   "end_column": 29,
                   "start": 2019,
                   "end": 2025,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 50,
                 "token_type": 64
@@ -372,7 +372,7 @@
                   "end_column": 35,
                   "start": 2026,
                   "end": 2031,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 52,
                 "token_type": 64
@@ -386,7 +386,7 @@
                   "end_column": 44,
                   "start": 2032,
                   "end": 2040,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 54,
                 "token_type": 64
@@ -400,7 +400,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 1999,
                 "end": 2042
               }
@@ -430,7 +430,7 @@
                           "end_column": 48,
                           "start": 2043,
                           "end": 2044,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 57,
                         "token_type": 64
@@ -439,7 +439,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2043,
                     "end": 2044
                   }
@@ -456,20 +456,20 @@
                         "end_column": 54,
                         "start": 2047,
                         "end": 2050,
-                        "file_name": "MotorWithBrake.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                       },
                       "token_number": 59,
                       "token_type": 68
                     },
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 2047,
                       "end": 2050
                     }
                   }
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2043,
                   "end": 2050
                 }
@@ -498,13 +498,13 @@
                     "end_column": 54,
                     "start": 2047,
                     "end": 2050,
-                    "file_name": "MotorWithBrake.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                   },
                   "token_number": 59,
                   "token_type": 68
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2047,
                   "end": 2050
                 }
@@ -518,7 +518,7 @@
             "end_column": 46,
             "start": 1999,
             "end": 2042,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -546,7 +546,7 @@
               "end_column": 46,
               "start": 2097,
               "end": 2098,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 71,
             "token_type": 64
@@ -562,7 +562,7 @@
                   "end_column": 11,
                   "start": 2055,
                   "end": 2063,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 62,
                 "token_type": 64
@@ -576,7 +576,7 @@
                   "end_column": 22,
                   "start": 2064,
                   "end": 2074,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 64,
                 "token_type": 64
@@ -590,7 +590,7 @@
                   "end_column": 29,
                   "start": 2075,
                   "end": 2081,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 66,
                 "token_type": 64
@@ -604,7 +604,7 @@
                   "end_column": 35,
                   "start": 2082,
                   "end": 2087,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 68,
                 "token_type": 64
@@ -618,7 +618,7 @@
                   "end_column": 44,
                   "start": 2088,
                   "end": 2096,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 70,
                 "token_type": 64
@@ -638,7 +638,7 @@
                 "end_column": 113,
                 "start": 2123,
                 "end": 2165,
-                "file_name": "MotorWithBrake.mo"
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
               },
               "token_number": 84,
               "token_type": 66
@@ -647,7 +647,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2055,
                 "end": 2098
               }
@@ -677,7 +677,7 @@
                           "end_column": 48,
                           "start": 2099,
                           "end": 2100,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 73,
                         "token_type": 64
@@ -686,7 +686,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2099,
                     "end": 2100
                   }
@@ -703,20 +703,20 @@
                         "end_column": 55,
                         "start": 2103,
                         "end": 2107,
-                        "file_name": "MotorWithBrake.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                       },
                       "token_number": 75,
                       "token_type": 71
                     },
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 2103,
                       "end": 2107
                     }
                   }
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2099,
                   "end": 2107
                 }
@@ -737,7 +737,7 @@
                           "end_column": 58,
                           "start": 2109,
                           "end": 2110,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 77,
                         "token_type": 64
@@ -746,7 +746,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2109,
                     "end": 2110
                   }
@@ -767,7 +767,7 @@
                                 "end_column": 64,
                                 "start": 2111,
                                 "end": 2116,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 79,
                               "token_type": 64
@@ -776,7 +776,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2111,
                           "end": 2116
                         }
@@ -793,20 +793,20 @@
                               "end_column": 68,
                               "start": 2119,
                               "end": 2120,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 81,
                             "token_type": 67
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2119,
                             "end": 2120
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2111,
                         "end": 2120
                       }
@@ -823,7 +823,7 @@
                   false
                 ],
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2109,
                   "end": 2120
                 }
@@ -855,13 +855,13 @@
                     "end_column": 55,
                     "start": 2103,
                     "end": 2107,
-                    "file_name": "MotorWithBrake.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                   },
                   "token_number": 75,
                   "token_type": 71
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2103,
                   "end": 2107
                 }
@@ -882,7 +882,7 @@
                           "end_column": 58,
                           "start": 2109,
                           "end": 2110,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 77,
                         "token_type": 64
@@ -891,7 +891,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2109,
                     "end": 2110
                   }
@@ -912,7 +912,7 @@
                                 "end_column": 64,
                                 "start": 2111,
                                 "end": 2116,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 79,
                               "token_type": 64
@@ -921,7 +921,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2111,
                           "end": 2116
                         }
@@ -938,20 +938,20 @@
                               "end_column": 68,
                               "start": 2119,
                               "end": 2120,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 81,
                             "token_type": 67
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2119,
                             "end": 2120
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2111,
                         "end": 2120
                       }
@@ -968,7 +968,7 @@
                   false
                 ],
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2109,
                   "end": 2120
                 }
@@ -982,7 +982,7 @@
             "end_column": 46,
             "start": 2055,
             "end": 2098,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -1010,7 +1010,7 @@
               "end_column": 53,
               "start": 2216,
               "end": 2219,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 95,
             "token_type": 64
@@ -1026,7 +1026,7 @@
                   "end_column": 11,
                   "start": 2169,
                   "end": 2177,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 86,
                 "token_type": 64
@@ -1040,7 +1040,7 @@
                   "end_column": 22,
                   "start": 2178,
                   "end": 2188,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 88,
                 "token_type": 64
@@ -1054,7 +1054,7 @@
                   "end_column": 29,
                   "start": 2189,
                   "end": 2195,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 90,
                 "token_type": 64
@@ -1068,7 +1068,7 @@
                   "end_column": 35,
                   "start": 2196,
                   "end": 2201,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 92,
                 "token_type": 64
@@ -1082,7 +1082,7 @@
                   "end_column": 49,
                   "start": 2202,
                   "end": 2215,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 94,
                 "token_type": 64
@@ -1096,7 +1096,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2169,
                 "end": 2219
               }
@@ -1126,7 +1126,7 @@
                           "end_column": 55,
                           "start": 2220,
                           "end": 2221,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 97,
                         "token_type": 64
@@ -1135,7 +1135,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2220,
                     "end": 2221
                   }
@@ -1152,20 +1152,20 @@
                         "end_column": 61,
                         "start": 2224,
                         "end": 2227,
-                        "file_name": "MotorWithBrake.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                       },
                       "token_number": 99,
                       "token_type": 68
                     },
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 2224,
                       "end": 2227
                     }
                   }
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2220,
                   "end": 2227
                 }
@@ -1194,13 +1194,13 @@
                     "end_column": 61,
                     "start": 2224,
                     "end": 2227,
-                    "file_name": "MotorWithBrake.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                   },
                   "token_number": 99,
                   "token_type": 68
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2224,
                   "end": 2227
                 }
@@ -1214,7 +1214,7 @@
             "end_column": 53,
             "start": 2169,
             "end": 2219,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -1242,7 +1242,7 @@
               "end_column": 46,
               "start": 2272,
               "end": 2275,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 111,
             "token_type": 64
@@ -1258,7 +1258,7 @@
                   "end_column": 11,
                   "start": 2232,
                   "end": 2240,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 102,
                 "token_type": 64
@@ -1272,7 +1272,7 @@
                   "end_column": 22,
                   "start": 2241,
                   "end": 2251,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 104,
                 "token_type": 64
@@ -1286,7 +1286,7 @@
                   "end_column": 29,
                   "start": 2252,
                   "end": 2258,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 106,
                 "token_type": 64
@@ -1300,7 +1300,7 @@
                   "end_column": 35,
                   "start": 2259,
                   "end": 2264,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 108,
                 "token_type": 64
@@ -1314,7 +1314,7 @@
                   "end_column": 42,
                   "start": 2265,
                   "end": 2271,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 110,
                 "token_type": 64
@@ -1328,7 +1328,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2232,
                 "end": 2275
               }
@@ -1354,7 +1354,7 @@
             "end_column": 46,
             "start": 2232,
             "end": 2275,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -1382,7 +1382,7 @@
               "end_column": 56,
               "start": 2360,
               "end": 2364,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 123,
             "token_type": 64
@@ -1398,7 +1398,7 @@
                   "end_column": 11,
                   "start": 2311,
                   "end": 2319,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 114,
                 "token_type": 64
@@ -1412,7 +1412,7 @@
                   "end_column": 21,
                   "start": 2320,
                   "end": 2329,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 116,
                 "token_type": 64
@@ -1426,7 +1426,7 @@
                   "end_column": 32,
                   "start": 2330,
                   "end": 2340,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 118,
                 "token_type": 64
@@ -1440,7 +1440,7 @@
                   "end_column": 43,
                   "start": 2341,
                   "end": 2351,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 120,
                 "token_type": 64
@@ -1454,7 +1454,7 @@
                   "end_column": 51,
                   "start": 2352,
                   "end": 2359,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 122,
                 "token_type": 64
@@ -1468,7 +1468,7 @@
           "start": {
             "Empty": {
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2311,
                 "end": 2364
               }
@@ -1498,7 +1498,7 @@
                           "end_column": 58,
                           "start": 2365,
                           "end": 2366,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 125,
                         "token_type": 64
@@ -1507,7 +1507,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2365,
                     "end": 2366
                   }
@@ -1524,20 +1524,20 @@
                         "end_column": 65,
                         "start": 2369,
                         "end": 2373,
-                        "file_name": "MotorWithBrake.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                       },
                       "token_number": 127,
                       "token_type": 68
                     },
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 2369,
                       "end": 2373
                     }
                   }
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2365,
                   "end": 2373
                 }
@@ -1558,7 +1558,7 @@
                           "end_column": 70,
                           "start": 2375,
                           "end": 2378,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 129,
                         "token_type": 64
@@ -1567,7 +1567,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2375,
                     "end": 2378
                   }
@@ -1588,7 +1588,7 @@
                                 "end_column": 76,
                                 "start": 2379,
                                 "end": 2384,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 131,
                               "token_type": 64
@@ -1597,7 +1597,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2379,
                           "end": 2384
                         }
@@ -1614,20 +1614,20 @@
                               "end_column": 80,
                               "start": 2387,
                               "end": 2388,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 133,
                             "token_type": 67
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2387,
                             "end": 2388
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2379,
                         "end": 2388
                       }
@@ -1644,7 +1644,7 @@
                   false
                 ],
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2375,
                   "end": 2388
                 }
@@ -1665,7 +1665,7 @@
                           "end_column": 84,
                           "start": 2391,
                           "end": 2392,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 136,
                         "token_type": 64
@@ -1674,7 +1674,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2391,
                     "end": 2392
                   }
@@ -1695,7 +1695,7 @@
                                 "end_column": 90,
                                 "start": 2393,
                                 "end": 2398,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 138,
                               "token_type": 64
@@ -1704,7 +1704,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2393,
                           "end": 2398
                         }
@@ -1721,20 +1721,20 @@
                               "end_column": 94,
                               "start": 2401,
                               "end": 2402,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 140,
                             "token_type": 67
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2401,
                             "end": 2402
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2393,
                         "end": 2402
                       }
@@ -1751,7 +1751,7 @@
                   false
                 ],
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2391,
                   "end": 2402
                 }
@@ -1786,13 +1786,13 @@
                     "end_column": 65,
                     "start": 2369,
                     "end": 2373,
-                    "file_name": "MotorWithBrake.mo"
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                   },
                   "token_number": 127,
                   "token_type": 68
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2369,
                   "end": 2373
                 }
@@ -1813,7 +1813,7 @@
                           "end_column": 70,
                           "start": 2375,
                           "end": 2378,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 129,
                         "token_type": 64
@@ -1822,7 +1822,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2375,
                     "end": 2378
                   }
@@ -1843,7 +1843,7 @@
                                 "end_column": 76,
                                 "start": 2379,
                                 "end": 2384,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 131,
                               "token_type": 64
@@ -1852,7 +1852,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2379,
                           "end": 2384
                         }
@@ -1869,20 +1869,20 @@
                               "end_column": 80,
                               "start": 2387,
                               "end": 2388,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 133,
                             "token_type": 67
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2387,
                             "end": 2388
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2379,
                         "end": 2388
                       }
@@ -1899,7 +1899,7 @@
                   false
                 ],
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2375,
                   "end": 2388
                 }
@@ -1920,7 +1920,7 @@
                           "end_column": 84,
                           "start": 2391,
                           "end": 2392,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 136,
                         "token_type": 64
@@ -1929,7 +1929,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2391,
                     "end": 2392
                   }
@@ -1950,7 +1950,7 @@
                                 "end_column": 90,
                                 "start": 2393,
                                 "end": 2398,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 138,
                               "token_type": 64
@@ -1959,7 +1959,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2393,
                           "end": 2398
                         }
@@ -1976,20 +1976,20 @@
                               "end_column": 94,
                               "start": 2401,
                               "end": 2402,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 140,
                             "token_type": 67
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2401,
                             "end": 2402
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2393,
                         "end": 2402
                       }
@@ -2006,7 +2006,7 @@
                   false
                 ],
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2391,
                   "end": 2402
                 }
@@ -2020,7 +2020,7 @@
             "end_column": 56,
             "start": 2311,
             "end": 2364,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -2048,7 +2048,7 @@
               "end_column": 26,
               "start": 2461,
               "end": 2469,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 147,
             "token_type": 64
@@ -2064,7 +2064,7 @@
                   "end_column": 17,
                   "start": 2456,
                   "end": 2460,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 146,
                 "token_type": 64
@@ -2081,7 +2081,7 @@
                 "end_column": 12,
                 "start": 2446,
                 "end": 2455,
-                "file_name": "MotorWithBrake.mo"
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
               },
               "token_number": 145,
               "token_type": 48
@@ -2099,7 +2099,7 @@
                 "end_column": 59,
                 "start": 2477,
                 "end": 2502,
-                "file_name": "MotorWithBrake.mo"
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
               },
               "token_number": 150,
               "token_type": 66
@@ -2123,7 +2123,7 @@
                 "token_type": 0
               },
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2456,
                 "end": 2469
               }
@@ -2144,13 +2144,13 @@
                   "end_column": 33,
                   "start": 2472,
                   "end": 2476,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 149,
                 "token_type": 68
               },
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2472,
                 "end": 2476
               }
@@ -2172,7 +2172,7 @@
             "end_column": 26,
             "start": 2456,
             "end": 2469,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -2200,7 +2200,7 @@
               "end_column": 20,
               "start": 2514,
               "end": 2523,
-              "file_name": "MotorWithBrake.mo"
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
             },
             "token_number": 153,
             "token_type": 64
@@ -2216,7 +2216,7 @@
                   "end_column": 10,
                   "start": 2506,
                   "end": 2513,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 152,
                 "token_type": 64
@@ -2236,7 +2236,7 @@
                 "end_column": 70,
                 "start": 2539,
                 "end": 2573,
-                "file_name": "MotorWithBrake.mo"
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
               },
               "token_number": 159,
               "token_type": 66
@@ -2254,13 +2254,13 @@
                   "end_column": 34,
                   "start": 2532,
                   "end": 2537,
-                  "file_name": "MotorWithBrake.mo"
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                 },
                 "token_number": 157,
                 "token_type": 28
               },
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2532,
                 "end": 2537
               }
@@ -2290,7 +2290,7 @@
                           "end_column": 26,
                           "start": 2524,
                           "end": 2529,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 155,
                         "token_type": 64
@@ -2299,7 +2299,7 @@
                     }
                   ],
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2524,
                     "end": 2529
                   }
@@ -2316,20 +2316,20 @@
                         "end_column": 34,
                         "start": 2532,
                         "end": 2537,
-                        "file_name": "MotorWithBrake.mo"
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                       },
                       "token_number": 157,
                       "token_type": 28
                     },
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 2532,
                       "end": 2537
                     }
                   }
                 },
                 "span": {
-                  "source": 12300118831759616901,
+                  "source": 1796920493271501408,
                   "start": 2524,
                   "end": 2537
                 }
@@ -2353,7 +2353,7 @@
             "end_column": 20,
             "start": 2506,
             "end": 2523,
-            "file_name": "MotorWithBrake.mo"
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
           },
           "condition": null,
           "inner": false,
@@ -2384,7 +2384,7 @@
                       "end_column": 14,
                       "start": 2655,
                       "end": 2658,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 165,
                     "token_type": 64
@@ -2401,7 +2401,7 @@
                       "end_column": 16,
                       "start": 2659,
                       "end": 2660,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 167,
                     "token_type": 64
@@ -2410,7 +2410,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2655,
                 "end": 2660
               }
@@ -2428,7 +2428,7 @@
                       "end_column": 19,
                       "start": 2662,
                       "end": 2663,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 169,
                     "token_type": 64
@@ -2445,7 +2445,7 @@
                       "end_column": 21,
                       "start": 2664,
                       "end": 2665,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 171,
                     "token_type": 64
@@ -2454,7 +2454,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2662,
                 "end": 2665
               }
@@ -2476,7 +2476,7 @@
                       "end_column": 12,
                       "start": 2678,
                       "end": 2679,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 176,
                     "token_type": 64
@@ -2493,7 +2493,7 @@
                       "end_column": 14,
                       "start": 2680,
                       "end": 2681,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 178,
                     "token_type": 64
@@ -2502,7 +2502,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2678,
                 "end": 2681
               }
@@ -2520,7 +2520,7 @@
                       "end_column": 17,
                       "start": 2683,
                       "end": 2684,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 180,
                     "token_type": 64
@@ -2537,7 +2537,7 @@
                       "end_column": 19,
                       "start": 2685,
                       "end": 2686,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 182,
                     "token_type": 64
@@ -2546,7 +2546,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2683,
                 "end": 2686
               }
@@ -2568,7 +2568,7 @@
                       "end_column": 12,
                       "start": 2699,
                       "end": 2700,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 187,
                     "token_type": 64
@@ -2585,7 +2585,7 @@
                       "end_column": 14,
                       "start": 2701,
                       "end": 2702,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 189,
                     "token_type": 64
@@ -2594,7 +2594,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2699,
                 "end": 2702
               }
@@ -2612,7 +2612,7 @@
                       "end_column": 19,
                       "start": 2704,
                       "end": 2707,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 191,
                     "token_type": 64
@@ -2629,7 +2629,7 @@
                       "end_column": 21,
                       "start": 2708,
                       "end": 2709,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 193,
                     "token_type": 64
@@ -2638,7 +2638,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2704,
                 "end": 2709
               }
@@ -2660,7 +2660,7 @@
                       "end_column": 14,
                       "start": 2722,
                       "end": 2725,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 198,
                     "token_type": 64
@@ -2677,7 +2677,7 @@
                       "end_column": 16,
                       "start": 2726,
                       "end": 2727,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 200,
                     "token_type": 64
@@ -2686,7 +2686,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2722,
                 "end": 2727
               }
@@ -2704,7 +2704,7 @@
                       "end_column": 21,
                       "start": 2729,
                       "end": 2732,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 202,
                     "token_type": 64
@@ -2721,7 +2721,7 @@
                       "end_column": 23,
                       "start": 2733,
                       "end": 2734,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 204,
                     "token_type": 64
@@ -2730,7 +2730,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2729,
                 "end": 2734
               }
@@ -2752,7 +2752,7 @@
                       "end_column": 14,
                       "start": 2747,
                       "end": 2750,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 209,
                     "token_type": 64
@@ -2769,7 +2769,7 @@
                       "end_column": 16,
                       "start": 2751,
                       "end": 2752,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 211,
                     "token_type": 64
@@ -2778,7 +2778,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2747,
                 "end": 2752
               }
@@ -2796,7 +2796,7 @@
                       "end_column": 21,
                       "start": 2754,
                       "end": 2757,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 213,
                     "token_type": 64
@@ -2813,7 +2813,7 @@
                       "end_column": 23,
                       "start": 2758,
                       "end": 2759,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 215,
                     "token_type": 64
@@ -2822,7 +2822,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2754,
                 "end": 2759
               }
@@ -2844,7 +2844,7 @@
                       "end_column": 14,
                       "start": 2799,
                       "end": 2802,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 221,
                     "token_type": 64
@@ -2861,7 +2861,7 @@
                       "end_column": 21,
                       "start": 2803,
                       "end": 2809,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 223,
                     "token_type": 64
@@ -2870,7 +2870,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2799,
                 "end": 2809
               }
@@ -2888,7 +2888,7 @@
                       "end_column": 27,
                       "start": 2811,
                       "end": 2815,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 225,
                     "token_type": 64
@@ -2905,7 +2905,7 @@
                       "end_column": 36,
                       "start": 2816,
                       "end": 2824,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 227,
                     "token_type": 64
@@ -2914,7 +2914,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 2811,
                 "end": 2824
               }
@@ -2941,7 +2941,7 @@
                               "end_column": 12,
                               "start": 2881,
                               "end": 2885,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 232,
                             "token_type": 64
@@ -2958,7 +2958,7 @@
                               "end_column": 14,
                               "start": 2886,
                               "end": 2887,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 234,
                             "token_type": 64
@@ -2967,7 +2967,7 @@
                         }
                       ],
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2881,
                         "end": 2887
                       }
@@ -2987,7 +2987,7 @@
                               "end_column": 25,
                               "start": 2890,
                               "end": 2898,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 236,
                             "token_type": 64
@@ -2996,14 +2996,14 @@
                         }
                       ],
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2890,
                         "end": 2898
                       }
                     }
                   },
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2881,
                     "end": 2898
                   }
@@ -3026,7 +3026,7 @@
                                 "end_column": 14,
                                 "start": 2908,
                                 "end": 2917,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 238,
                               "token_type": 64
@@ -3035,7 +3035,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2908,
                           "end": 2917
                         }
@@ -3053,13 +3053,13 @@
                             "end_column": 21,
                             "start": 2920,
                             "end": 2924,
-                            "file_name": "MotorWithBrake.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                           },
                           "token_number": 240,
                           "token_type": 59
                         },
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2920,
                           "end": 2924
                         }
@@ -3087,7 +3087,7 @@
                               "end_column": 16,
                               "start": 2937,
                               "end": 2941,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 243,
                             "token_type": 64
@@ -3104,7 +3104,7 @@
                               "end_column": 18,
                               "start": 2942,
                               "end": 2943,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 245,
                             "token_type": 64
@@ -3113,7 +3113,7 @@
                         }
                       ],
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2937,
                         "end": 2943
                       }
@@ -3136,7 +3136,7 @@
                                   "end_column": 29,
                                   "start": 2946,
                                   "end": 2954,
-                                  "file_name": "MotorWithBrake.mo"
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                                 },
                                 "token_number": 247,
                                 "token_type": 64
@@ -3145,7 +3145,7 @@
                             }
                           ],
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2946,
                             "end": 2954
                           }
@@ -3163,27 +3163,27 @@
                               "end_column": 35,
                               "start": 2957,
                               "end": 2960,
-                              "file_name": "MotorWithBrake.mo"
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                             },
                             "token_number": 249,
                             "token_type": 68
                           },
                           "span": {
-                            "source": 12300118831759616901,
+                            "source": 1796920493271501408,
                             "start": 2957,
                             "end": 2960
                           }
                         }
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 2946,
                         "end": 2960
                       }
                     }
                   },
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 2937,
                     "end": 2960
                   }
@@ -3206,7 +3206,7 @@
                                 "end_column": 14,
                                 "start": 2970,
                                 "end": 2979,
-                                "file_name": "MotorWithBrake.mo"
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                               },
                               "token_number": 251,
                               "token_type": 64
@@ -3215,7 +3215,7 @@
                           }
                         ],
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2970,
                           "end": 2979
                         }
@@ -3233,13 +3233,13 @@
                             "end_column": 22,
                             "start": 2982,
                             "end": 2987,
-                            "file_name": "MotorWithBrake.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                           },
                           "token_number": 253,
                           "token_type": 28
                         },
                         "span": {
-                          "source": 12300118831759616901,
+                          "source": 1796920493271501408,
                           "start": 2982,
                           "end": 2987
                         }
@@ -3264,7 +3264,7 @@
           "end_column": 9,
           "start": 2576,
           "end": 2584,
-          "file_name": "MotorWithBrake.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
         },
         "token_number": 161,
         "token_type": 24
@@ -3281,7 +3281,7 @@
           "end_column": 19,
           "start": 3100,
           "end": 3114,
-          "file_name": "MotorWithBrake.mo"
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
         },
         "token_number": 281,
         "token_type": 64
@@ -3303,7 +3303,7 @@
                       "end_column": 24,
                       "start": 3015,
                       "end": 3025,
-                      "file_name": "MotorWithBrake.mo"
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                     },
                     "token_number": 260,
                     "token_type": 64
@@ -3312,7 +3312,7 @@
                 }
               ],
               "span": {
-                "source": 12300118831759616901,
+                "source": 1796920493271501408,
                 "start": 3015,
                 "end": 3025
               }
@@ -3333,7 +3333,7 @@
                             "end_column": 34,
                             "start": 3026,
                             "end": 3035,
-                            "file_name": "MotorWithBrake.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                           },
                           "token_number": 262,
                           "token_type": 64
@@ -3342,7 +3342,7 @@
                       }
                     ],
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 3026,
                       "end": 3035
                     }
@@ -3359,20 +3359,20 @@
                           "end_column": 38,
                           "start": 3038,
                           "end": 3039,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 264,
                         "token_type": 67
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 3038,
                         "end": 3039
                       }
                     }
                   },
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 3026,
                     "end": 3039
                   }
@@ -3393,7 +3393,7 @@
                             "end_column": 48,
                             "start": 3041,
                             "end": 3049,
-                            "file_name": "MotorWithBrake.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                           },
                           "token_number": 266,
                           "token_type": 64
@@ -3402,7 +3402,7 @@
                       }
                     ],
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 3041,
                       "end": 3049
                     }
@@ -3419,20 +3419,20 @@
                           "end_column": 54,
                           "start": 3052,
                           "end": 3055,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 268,
                         "token_type": 68
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 3052,
                         "end": 3055
                       }
                     }
                   },
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 3041,
                     "end": 3055
                   }
@@ -3453,7 +3453,7 @@
                             "end_column": 64,
                             "start": 3057,
                             "end": 3065,
-                            "file_name": "MotorWithBrake.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                           },
                           "token_number": 270,
                           "token_type": 64
@@ -3462,7 +3462,7 @@
                       }
                     ],
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 3057,
                       "end": 3065
                     }
@@ -3479,20 +3479,20 @@
                           "end_column": 73,
                           "start": 3068,
                           "end": 3074,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 272,
                         "token_type": 68
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 3068,
                         "end": 3074
                       }
                     }
                   },
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 3057,
                     "end": 3074
                   }
@@ -3513,7 +3513,7 @@
                             "end_column": 84,
                             "start": 3076,
                             "end": 3085,
-                            "file_name": "MotorWithBrake.mo"
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                           },
                           "token_number": 274,
                           "token_type": 64
@@ -3522,7 +3522,7 @@
                       }
                     ],
                     "span": {
-                      "source": 12300118831759616901,
+                      "source": 1796920493271501408,
                       "start": 3076,
                       "end": 3085
                     }
@@ -3539,20 +3539,20 @@
                           "end_column": 91,
                           "start": 3088,
                           "end": 3092,
-                          "file_name": "MotorWithBrake.mo"
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/MotorWithBrake.mo"
                         },
                         "token_number": 276,
                         "token_type": 71
                       },
                       "span": {
-                        "source": 12300118831759616901,
+                        "source": 1796920493271501408,
                         "start": 3088,
                         "end": 3092
                       }
                     }
                   },
                   "span": {
-                    "source": 12300118831759616901,
+                    "source": 1796920493271501408,
                     "start": 3076,
                     "end": 3092
                   }
@@ -3578,7 +3578,7 @@
               false
             ],
             "span": {
-              "source": 12300118831759616901,
+              "source": 1796920493271501408,
               "start": 3015,
               "end": 3092
             }

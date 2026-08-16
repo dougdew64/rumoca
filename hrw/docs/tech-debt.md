@@ -538,40 +538,76 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   **Note a hook cannot be complete**: a debugger stop, a panic or a kill runs no destructor, so
   the extension side is the only place a guarantee could live.
 
-## The committed notebook traces are stale, and regenerating them writes machine paths
+## The committed notebook was stale for 25 days, and nothing in the toolchain could notice
 
-**Found 2026-08-15, while regenerating traces for the equation-id sweep.** Not fixed, because
-the fix is a change to how a generated artefact is written and it is separable from the sweep
-that surfaced it. **Two problems, and the second is why the first has not simply been paid.**
+**Found 2026-08-15, while regenerating traces for the equation-id sweep. Paid the same day.**
 
-**1. The traces predate the pipeline.** `parse.json`, `resolve.json`, `instantiate.json`,
-`typecheck.json` and `flatten.json` have not changed since the subtree import (`57c646a6`).
-Only **7 of 21** manifests list the `dae` stage at all, so a reader of the committed notebook
-sees a pipeline HRW no longer has. Every count *about a specimen* is read from here
-(`hrw/CLAUDE.md`), which makes staleness a correctness question, not tidiness.
+`parse.json` had not been regenerated since the subtree import on **2026-07-21**; the rest of
+the pre-Flatten stages since **2026-07-29**. Only **7 of 21** manifests listed the `dae` stage,
+so a reader of the committed notebook saw a pipeline HRW no longer had. `hrw/CLAUDE.md` says the
+trace is *"generated and therefore correct by construction — any number about a specimen is read
+from here"*, which makes this a correctness problem: that sentence is a standing instruction to
+trust the notebook, and every count in the nine tours was read from it.
 
-**2. Regenerating writes 6,604 absolute paths from whoever ran it.** Rumoca's `Location` gained
-the document URI (the 2026-08-02 change `CLAUDE.md` records), so `file_name` went from
-`RcCircuit.mo` to `C:\Users\dougd\source\repos\rumoca\hrw/specimens/RcCircuit.mo` across 92
-files. That is **faithful** — it is what Rumoca now produces — but it is not committable: it
-leaks a home directory into a public repository and re-churns on every machine and clone path.
+**`architecture.md` had exactly this disease and was cured on 2026-08-12 by generating it *and*
+adding a currency test.** The notebook got the first half seventeen days earlier and never got
+the second. It was the largest generated artefact in the repository with no drift detection.
 
-**The tension is the interesting part.** Normalising the path to `hrw/specimens/RcCircuit.mo`
-before writing is *editing what the compiler said*, which the accuracy rule exists to forbid.
-It is defensible here only because a repo-relative path names the same file — but it must be
-**labelled at the writer**, not done quietly, or the next reader has no way to know the trace is
-not verbatim. Passing a relative path to the compiler instead is worse: it makes the recorded
-string depend on the working directory, and a stale working directory has produced three
-confidently wrong results in this project already (`DECISIONS.md`, 2026-08-12).
+### The detour that nearly became the fix, recorded because the reasoning was wrong
 
-**Scoped around for now**: the equation-id fix regenerated only `structural.json` and
-`index_reduction.json`, which carry no paths, and the other 85 files were restored. So the
-notebook is now *internally inconsistent* as well as stale — two stages fresh, the rest at the
-import — which is a worse state than either, and the reason this is written down rather than
-left as a working-tree observation.
+Regenerating writes ~6,600 absolute paths (`C:\Users\dougd\...\specimens\RcCircuit.mo`), and the
+first response was to propose normalising them to repo-relative before writing — described in
+this file as a tension with the accuracy rule, since it would mean *"editing what the compiler
+said"*.
 
-*Files:* `examples/gen_trace.rs` (the writer), `docs/specimen-notebook/*/trace/`.
-**Do this before the next tour conversion that quotes a pre-Flatten stage.**
+**That was wrong on the facts.** `Location::file_name` is not something Rumoca discovers; it is
+the argument HRW passes to `parse_to_ast`, and `worker.rs` passes the **full URI deliberately** —
+a basename made HRW's AST differ from the compiler's own on 400 of 400 MSL documents, and made
+`bridge::slice_source` unable to resolve a file. There was no accuracy tension to weigh, because
+nothing was being edited.
+
+**Doug: *"you designed a workable absolute-path-based system a while back. Why are you
+considering changing that? It seems that we should keep what works."*** He was right, and
+checking settled it: `slice_source` requires `is_absolute() && is_file()` and **falls back to the
+specimen path** when either fails, so a trace carrying another machine's path degrades to the
+safe branch. The cost was cosmetic — one large diff — and his two clones are at the same path,
+so it is not even that.
+
+**The transferable failure: a blocker on the way to the problem became the topic.** The problem
+was 25-day staleness; the paths were an obstacle to fixing it, and half a discussion went to
+redesigning a working subsystem instead. Second occurrence in one day.
+
+### What closing it turned up: the notebook takes the session as a hidden argument
+
+The content check was first written against `compile_specimen_shared` — 49 s, cheap enough for
+the `slow-tests` gate. **It passed alone and failed in the full suite**, nine files across
+`GearWithBrake` and `MissingComponentClass`. That is not a flake; it is the open item below
+(*"a stage's emitted JSON depends on what else the session holds"*) arriving as a consequence
+nobody had drawn from it.
+
+**The consequence is about the notebook, not the test.** A committed trace is one sample of a
+function whose hidden argument is the session. `gen_trace` runs **one process per specimen**, so
+the committed value is the *virgin-session* value — and any check that compiles in company is
+comparing against a different input. So the check builds a fresh `WorkerState` per specimen, is
+therefore order-independent, and reloads the MSL 21 times: **157 s**, which is why it has its own
+feature rather than joining a gate already reported as friction.
+
+**And the path spelling is part of the output.** The first faithful run reported **109 of 109**
+files drifted. Nothing had drifted: the test built the specimen path with `Path::join`
+(`hrw\specimens\X.mo`) while `gen_trace` uses `format!` (`hrw/specimens/X.mo`), and that string is
+stamped into every `Location` by `parse_to_ast`. One separator, total apparent drift. **A check
+that reproduces a generator must reproduce how it spells things, not merely what it means.**
+
+*Closed by:* `manifest_stage_rosters_match_the_pipeline` (fast, in the ordinary gate) and
+`the_committed_notebook_matches_what_the_pipeline_produces_now` (`--features notebook-check`).
+
+**Run the content check after touching a `*_to_json` writer, and after rebasing on upstream
+Rumoca** — the same two triggers the large fidelity sweep carries, for the same reason.
+
+```text
+cargo test -p hrw --lib --features notebook-check -- --test-threads=1 the_committed_notebook
+cargo run -p hrw --example gen_trace -- --all      # 3m45s, when it fails
+```
 
 ## The Context Bar reported less than it emitted, and only Doug noticed
 

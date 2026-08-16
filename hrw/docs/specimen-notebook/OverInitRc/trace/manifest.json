@@ -2,7 +2,7 @@
   "model": "OverInitRc",
   "specimen": "specimens/OverInitRc.mo",
   "specimen_fnv1a": "08e4ea0deefc0375",
-  "rumoca_rev": "bbe947fe",
+  "rumoca_rev": "4c2d3039",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -24,6 +24,10 @@
     "flatten": {
       "has_ir": true,
       "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "1 state(s), 22 algebraic(s), 23 continuous equation(s)"
     },
     "structural": {
       "has_ir": true,
