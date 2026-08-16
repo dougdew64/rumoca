@@ -8644,12 +8644,39 @@ fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[Str
 }
 
 /// Check registered hooks for a click and return the first triggered action.
+/// **"Drain" is the whole contract: a fired hook is consumed, not merely read.**
+///
+/// Doug, 2026-08-16: *"There are two Act 2 links which don't cause any action when
+/// clicked."*
+///
+/// `egui_commonmark` sets a hook to `true` on click and **never clears it**;
+/// `get_link_hook` is a read, and `register_hrw_hooks` only initialises hooks it has
+/// not seen. So this function used to *look* at the first fired hook and leave it
+/// fired — permanently.
+///
+/// The consequence is worse than the two dead links that exposed it. The loop returns
+/// the first `true` hook in **document order**, so after the first click anywhere in a
+/// tour, that link is re-dispatched on every frame forever and **every link below it
+/// becomes unreachable**: its own hook goes `true`, and the stuck one above it is
+/// always found first.
+///
+/// It read as "nothing happens" rather than as chaos because dispatching a link that
+/// navigates where the app already is has no visible effect — the app was busy
+/// re-arriving at Act 1's destination while Doug clicked Act 2. And it hid for as long
+/// as it did because **restarting HRW clears the cache**, so the next link clicked
+/// after any rebuild worked, and this project rebuilds constantly.
+///
+/// `add_link_hook` inserts `false` unconditionally, which is the documented way to
+/// reset one.
 fn drain_hrw_hooks(
     cache: &mut egui_commonmark::CommonMarkCache,
     links: &[String],
 ) -> Option<HrwLink> {
     for link in links {
         if cache.get_link_hook(link) == Some(true) {
+            // Consume it before returning, so the next frame starts clean whether or
+            // not the link parses.
+            cache.add_link_hook(link);
             return parse_hrw_link(link);
         }
     }
@@ -11200,6 +11227,134 @@ mod tests {
         let md = "[a](hrw://load/X) and [b](hrw://load/X) again.";
         let links = extract_hrw_links(md);
         assert_eq!(links.len(), 1);
+    }
+
+    /// **Every `hrw://` link in every committed tour survives extraction AND parsing.**
+    ///
+    /// Doug, 2026-08-16: *"There are two Act 2 links which don't cause any action when
+    /// clicked."* `fixture_tour_links_all_resolve` was green, because it parses URLs it
+    /// is handed. Nothing checked the step *before* that — that `extract_hrw_links`,
+    /// which decides where a URL **ends**, hands over the same string the author wrote.
+    ///
+    /// A hook is registered under the extracted string and fired by the exact URL in
+    /// the document, so an extractor that stops one character early registers a hook
+    /// that can never fire: the link renders, the cursor changes over it, the click
+    /// lands, and nothing happens. **A link checker that starts from the parser cannot
+    /// see this**, which is why it went unnoticed while a test claimed the links
+    /// resolved.
+    #[test]
+    fn every_tour_link_survives_extraction_and_parsing() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let mut checked = 0usize;
+        let mut broken: Vec<String> = Vec::new();
+
+        for entry in std::fs::read_dir(&dir)
+            .expect("fixture-tours exists")
+            .flatten()
+        {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("readable tour");
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+            let extracted = extract_hrw_links(&text);
+
+            // Every URL as it appears in a markdown target, taken independently of
+            // the extractor so the two cannot agree on a shared mistake.
+            for (i, line) in text.lines().enumerate() {
+                let mut rest = line;
+                while let Some(at) = rest.find("](hrw://") {
+                    let after = &rest[at + 2..];
+                    let Some(close) = after.find(')') else { break };
+                    let url = &after[..close];
+                    rest = &after[close..];
+
+                    checked += 1;
+                    if !extracted.iter().any(|e| e == url) {
+                        broken.push(format!(
+                            "{name}:{}: `{url}` is written in the document but \
+                             `extract_hrw_links` produced something else, so the hook \
+                             registered for it can never fire",
+                            i + 1
+                        ));
+                    } else if parse_hrw_link(url).is_none() {
+                        broken.push(format!("{name}:{}: `{url}` does not parse", i + 1));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            checked >= 40,
+            "only {checked} markdown links were inspected across the tours; the \
+             extraction is broken, not the tours",
+        );
+        assert!(
+            broken.is_empty(),
+            "{} tour link(s) are clickable but inert:\n  {}",
+            broken.len(),
+            broken.join("\n  "),
+        );
+    }
+
+    /// **A fired hook is consumed, so a link below it is still reachable.**
+    ///
+    /// The regression behind Doug's report that two Act 2 links "don't cause any
+    /// action when clicked". `egui_commonmark` never clears a hook it sets, and
+    /// `drain_hrw_hooks` only *read* it — so the first link clicked anywhere in a tour
+    /// was re-dispatched every frame forever, and being first in document order it
+    /// masked every link below it.
+    ///
+    /// Two assertions, and the second is the one that was broken:
+    ///
+    /// 1. the fired link is returned;
+    /// 2. it does not fire again, and a *later* link fires normally afterwards.
+    #[test]
+    fn a_fired_link_hook_is_consumed_and_does_not_mask_later_links() {
+        let mut cache = egui_commonmark::CommonMarkCache::default();
+        let links = vec![
+            "hrw://load/RcCircuit".to_owned(),
+            "hrw://stage/Flatten/Connections/frame/7".to_owned(),
+        ];
+        register_hrw_hooks(&mut cache, &links);
+
+        // Simulate a click on the FIRST link, the way the renderer does.
+        cache.link_hooks_mut().insert(links[0].clone(), true);
+        assert!(
+            matches!(
+                drain_hrw_hooks(&mut cache, &links),
+                Some(HrwLink::LoadSpecimen(_))
+            ),
+            "the clicked link must dispatch",
+        );
+        assert!(
+            drain_hrw_hooks(&mut cache, &links).is_none(),
+            "a hook that stays fired re-dispatches on every frame and masks every \
+             link below it \u{2014} this is the bug",
+        );
+
+        // Now the SECOND link, which was unreachable before the fix.
+        cache.link_hooks_mut().insert(links[1].clone(), true);
+        assert!(
+            matches!(
+                drain_hrw_hooks(&mut cache, &links),
+                Some(HrwLink::SeekFrame(StageKind::Flatten, _, 6)),
+            ),
+            "a link later in the document must dispatch once the one above it is \
+             consumed",
+        );
+        assert!(
+            drain_hrw_hooks(&mut cache, &links).is_none(),
+            "and it must be consumed too",
+        );
+
+        // Re-registering must not resurrect a consumed hook.
+        register_hrw_hooks(&mut cache, &links);
+        assert!(
+            drain_hrw_hooks(&mut cache, &links).is_none(),
+            "registration runs every frame; it must not re-fire what was consumed",
+        );
     }
 
     #[test]
