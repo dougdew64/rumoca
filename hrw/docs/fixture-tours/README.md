@@ -79,6 +79,39 @@ in HRW. A curriculum tour is spending it on the concept instead. The rule it doe
 one that matters for both: **claims stay austere and trace-sourced, however long the prose
 gets.** Length is bought with explanation, never with hedging.
 
+#### A tour's job is to make the reader able to ask the next question, not to answer it
+
+**Doug, 2026-08-16, having re-walked `connect-expansion.md` and then asked three detailed
+questions from the panes:**
+
+> *"You created a first draft of the connections tour, with the assumption that I knew nothing
+> about connections. Then, I began walking the tour and iterating with you to improve that tour.
+> And during those iterations, I gained the basic understanding… Now, I'm going back through the
+> tour, am using HRW's panes to think of more detailed (not-so-basic) questions."*
+
+**Three phases, and the third is what makes short tours correct:**
+
+| phase | what happens | where the learning is |
+|---|---|---|
+| 1 | Claude drafts, assuming no knowledge | nowhere yet — a draft is a hypothesis |
+| 2 | Doug walks it and iterates with Claude | **here** — the repair loop is the teaching (`vision.md`) |
+| 3 | Doug re-walks, reads the panes, asks detailed questions | **here** — and the tour deliberately does not answer these |
+
+**The test for "not too little, not too much" is therefore operational, not aesthetic:** *could
+this question have been asked before the tour?* One of the three that morning — *why must an
+unconnected flow variable get an equation when an unconnected potential need not?* — is only
+**askable** by someone already holding the *n*−1 versus exactly-1 rule, because the asymmetry it
+asks about **is** that rule. A tour that pre-emptively answered it would have spent his attention
+before he had a reason to want it.
+
+So **write to the point where the reader can generate the question, and stop.** The answer belongs
+in the conversation, where it can be shaped by what he actually noticed —
+charter Decision 8's split, arriving from the other direction: *the noun is assembled by mouse,
+the verb is an unbounded utterance.*
+
+The full account, including what made each of the three questions click, is in
+[`question-ledger.md`](../question-ledger.md), 2026-08-16.
+
 #### Two passes over every subject: the idea, then the code
 
 **Agreed with Doug 2026-08-15**, generalising a split that had already happened by accident

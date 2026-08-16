@@ -369,3 +369,65 @@ reader. Per this file's standing rule, the tour says it was reworded and why.
 **What this says about the tours' grading criterion:** the question is evidence the tour is *being
 read closely* — it came from the lead paragraph, which a skimmer skips entirely. That is a better
 signal than agreement would have been.
+
+---
+
+## 2026-08-16 — three questions from a *re-walk*, and a fifth question shape
+
+**Doug, verbatim, in one morning:**
+
+1. *"There's no hint provided in the HRW UI as to why this is a state instead of an algebraic."*
+2. *"When creating connection equations, why is a zero-flow equation attempted?"*
+3. *"Why is it ok for no equation to be created for an unconnected potential variable, yet an
+   equation must be created for an unconnected flow variable?"*
+
+**Traces back to:** none of them to a stop. All three came from **panes**, during a second pass
+through `connect-expansion.md` — the variable grid, the connections replay's `frame[14]`, and the
+asymmetry between two frame kinds.
+
+### The new shape, and why it needed its own entry
+
+The four shapes recorded above are all ways a tour can be **deficient** — imprecise wording, a
+missing definition, a concept with no counterpart on screen, a hidden feature. These three are
+none of those. **They are questions the tour deliberately does not answer, asked by someone the
+tour has already succeeded on.**
+
+Question 3 is the clearest case. It is only *askable* by someone who already holds the *n*−1
+versus exactly-1 rule, because the asymmetry it asks about **is** that rule. The tour taught the
+premise; the question is the reader operating on it.
+
+**So the grading criterion gains a positive signal it did not have.** `CLAUDE.md` records that
+*"no questions at all is ambiguous and must not be read as success"*. The converse was never
+specified. It now is: **detailed questions arriving from the panes after a completed walk are the
+success signal**, and they are distinguishable from the deficiency shapes by a test — *could this
+question have been asked before the tour?* If no, the tour worked.
+
+### What made each click
+
+1. **The state question:** naming the *mechanism* rather than the category — a variable is a state
+   exactly when some equation differentiates it — and then citing `f_x[14]` so he could go read it.
+   The physical gloss did the rest: energy storage is what puts a derivative in an equation.
+2. **Zero-flow:** the counting argument. A connector costs two unknowns; connection equations pay
+   for them; an unconnected one still costs and must be paid another way.
+3. **The asymmetry:** two answers, and the second was the one that landed. First, that the
+   potential *already has* an equation — from the component's own physics — verified by showing the
+   matching, `inertia.flange_b.phi ← f_x[1] (equation from inertia)`. Second, that the rule is not
+   special at all: **(n−1) + 1 evaluated at n = 1 gives 0 potential equations and 1 flow equation.**
+   The thing he was asking about was the rule he already knew, at its smallest case.
+
+### Doug's own account of the loop, which is the reason this entry exists
+
+> *"You created a first draft of the connections tour, with the assumption that I knew nothing
+> about connections. Then, I began walking the tour and iterating with you to improve that tour.
+> And during those iterations, I gained the basic understanding of connections which was the goal
+> of the tour. Now, I'm going back through the tour, am using HRW's panes to think of more detailed
+> (not-so-basic) questions, and am asking those questions here."*
+
+**Three phases, and the third had not been described before.** The repair loop as teaching was
+recorded 2026-08-15 (`vision.md`); this adds what comes *after* a tour is finished, and it is the
+phase that justifies the tours being short. A tour that answered question 3 pre-emptively would
+have spent his attention before he had a reason to want it.
+
+**The transferable rule for tour authoring:** *a tour's job is to make the reader able to ask the
+next question, not to answer it.* That is the operational meaning of "not too little, not too
+much", and it gives the boundary a test rather than a feeling.
