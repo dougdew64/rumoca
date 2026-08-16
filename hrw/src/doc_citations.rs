@@ -2039,6 +2039,210 @@ Some prose.
         println!("equation strings checked against the traces: {checked}");
     }
 
+    /// **An equation id a tour cites must name the equation the prose claims.**
+    ///
+    /// # The gap this closes, found by falling into it
+    ///
+    /// `equation_text_quoted_in_tours_matches_the_traces` above verifies quoted
+    /// *text*. Nothing verified a quoted **id**. On 2026-08-16 a new act of
+    /// `connect-expansion.md` was written claiming `C.v` reads `der in f_x[19]` —
+    /// a real, existing equation, and the wrong one: `f_x[19]` is the connection
+    /// equation `src.p.v = R.p.v`, while the capacitor's rate law is `f_x[14]`.
+    /// The number was written from memory of one seen an hour earlier.
+    ///
+    /// **Every existing checker would have passed it.** The id is well-formed, the
+    /// equation exists, the link resolves, and no quoted text was wrong. Doug would
+    /// have walked to that stop, seen `der in f_x[14]` on screen, and had to work out
+    /// which of the two of us was mistaken — the precise failure this repository
+    /// exists to prevent, since he cannot tell which parts are false.
+    ///
+    /// # What it checks
+    ///
+    /// The Why column renders `der in f_x[N]`, so a tour quoting that string is
+    /// quoting a **pane cell**, and the cell is checkable against the committed
+    /// trace without a compile:
+    ///
+    /// 1. **Equation N exists** in the specimen the surrounding section targets.
+    /// 2. **Equation N contains a derivative.** `f_x[19]` fails here.
+    /// 3. **If the same line names a variable in backticks** and some equation of
+    ///    that specimen differentiates it, equation N must be *that* equation. This
+    ///    is the check that catches citing the right kind of equation about the
+    ///    wrong variable — a two-state model where the ids are swapped.
+    ///
+    /// The specimen comes from the nearest preceding `hrw://load/<Specimen>/` link,
+    /// which the tour template guarantees: every expectation follows a **▶ Look**
+    /// link. A citation with no preceding link is counted and skipped rather than
+    /// guessed at.
+    ///
+    /// Fast by construction — `structural.json` carries every `id` and
+    /// `equation_text`, so nothing here compiles anything.
+    ///
+    /// # What the current corpus does NOT exercise, stated rather than left silent
+    ///
+    /// **Check 3 is vacuous today.** The only tour citing a Why cell is
+    /// `connect-expansion.md`, on `RcCircuit`, which has exactly **one** derivative
+    /// equation — so a wrong id there always fails check 2 first, and the
+    /// wrong-variable branch never runs. That is the same shape as the coupled-block
+    /// hole found on 2026-08-15: an assertion that reads as coverage while never
+    /// executing.
+    ///
+    /// It was verified by hand instead, and the probe is recorded so it can be
+    /// repeated: point the section at `BouncingBall` (which differentiates `h` in
+    /// `f_x[0]` and `v` in `f_x[1]`) and cite `h` with `f_x[1]`. It fails with
+    /// *"says `h` reads `der in f_x[1]`, but BouncingBall differentiates it in
+    /// f_x[0], not f_x[1]"*. **The first tour to quote a Why cell on a multi-state
+    /// specimen makes this real**, and until then check 3 is a guard nothing proves
+    /// still works.
+    #[test]
+    fn an_equation_id_a_tour_cites_names_the_equation_the_prose_claims() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        // specimen -> (id -> equation_text), straight from the committed traces.
+        let mut by_specimen: std::collections::BTreeMap<
+            String,
+            std::collections::BTreeMap<String, String>,
+        > = std::collections::BTreeMap::new();
+        let notebook = hrw.join("docs/specimen-notebook");
+        for entry in std::fs::read_dir(&notebook).expect("notebook").flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let Ok(text) = std::fs::read_to_string(entry.path().join("trace/structural.json"))
+            else {
+                continue;
+            };
+            let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else {
+                continue;
+            };
+            let mut map = std::collections::BTreeMap::new();
+            if let Some(rows) = v["incidence"]["rows"].as_array() {
+                for row in rows {
+                    if let (Some(id), Some(t)) = (row["id"].as_str(), row["equation_text"].as_str())
+                    {
+                        map.insert(id.to_owned(), t.to_owned());
+                    }
+                }
+            }
+            if !map.is_empty() {
+                by_specimen.insert(name, map);
+            }
+        }
+        assert!(
+            by_specimen.len() >= 10,
+            "only {} specimens yielded equations; the trace shape changed and this \
+             check is inspecting nothing",
+            by_specimen.len(),
+        );
+
+        let mut checked = 0usize;
+        let mut unattributed = 0usize;
+        let mut bad: Vec<String> = Vec::new();
+
+        let mut tour_files: Vec<PathBuf> = Vec::new();
+        collect_markdown(&hrw.join("docs/fixture-tours"), &mut tour_files);
+
+        for path in tour_files {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let tour = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+            let mut specimen: Option<String> = None;
+
+            for (i, line) in text.lines().enumerate() {
+                // The template puts a ▶ Look link before every expectation, so the
+                // nearest preceding one names the specimen on screen.
+                if let Some(at) = line.find("hrw://load/") {
+                    let rest = &line[at + "hrw://load/".len()..];
+                    let spec: String = rest
+                        .chars()
+                        .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                        .collect();
+                    if !spec.is_empty() {
+                        specimen = Some(spec);
+                    }
+                }
+
+                let cites: Vec<String> = backticked(line)
+                    .into_iter()
+                    .filter(|q| q.starts_with("der in f_x["))
+                    .collect();
+                if cites.is_empty() {
+                    continue;
+                }
+                let Some(spec) = specimen.as_deref() else {
+                    unattributed += 1;
+                    continue;
+                };
+                let Some(equations) = by_specimen.get(spec) else {
+                    bad.push(format!(
+                        "{tour}:{}: cites an equation of `{spec}`, which has no committed \
+                         trace",
+                        i + 1
+                    ));
+                    continue;
+                };
+
+                // Variables named on the same line, and the equation (if any) that
+                // differentiates each — used for check 3.
+                let named: Vec<String> = backticked(line)
+                    .into_iter()
+                    .filter(|q| !q.starts_with("der in") && !q.starts_with("f_x["))
+                    .collect();
+
+                for cite in cites {
+                    checked += 1;
+                    let id = cite.trim_start_matches("der in ").trim();
+                    let Some(eq_text) = equations.get(id) else {
+                        bad.push(format!(
+                            "{tour}:{}: cites `{id}`, which names no equation in {spec}",
+                            i + 1
+                        ));
+                        continue;
+                    };
+                    if !eq_text.contains("der(") {
+                        bad.push(format!(
+                            "{tour}:{}: claims `{id}` differentiates something, but that \
+                             equation has no derivative in it: {eq_text}",
+                            i + 1
+                        ));
+                        continue;
+                    }
+                    for var in &named {
+                        let needle = format!("der({var})");
+                        let real = equations
+                            .iter()
+                            .find(|(_, t)| t.contains(&needle))
+                            .map(|(k, _)| k.clone());
+                        if let Some(real_id) = real
+                            && real_id != id
+                        {
+                            bad.push(format!(
+                                "{tour}:{}: says `{var}` reads `{cite}`, but {spec} \
+                                 differentiates it in {real_id}, not {id}",
+                                i + 1
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        assert!(
+            checked >= 1,
+            "no `der in f_x[N]` citations were found in any tour; the extraction is \
+             broken, or the Why column stopped being quoted (in which case delete \
+             this test rather than let it pass on nothing)",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} tour citation(s) name the wrong equation:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+        println!(
+            "equation-id citations checked: {checked} ({unattributed} skipped, no \
+             preceding hrw://load link)"
+        );
+    }
+
     /// Recursively harvest `equation` labels and `equation_text` residuals.
     fn collect_equation_strings(
         v: &serde_json::Value,
