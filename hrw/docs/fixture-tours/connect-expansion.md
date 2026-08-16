@@ -278,8 +278,27 @@ Ohm's law here is not `v = R·i`. It is `v = R_actual·i`, against a resistance 
 **temperature**, with a heat port and dissipated power alongside. Nobody asked for thermal
 modelling; MSL's `Resistor` has it, so the model has it.
 
-**Below the equations the pane lists every variable** — 30 of them, with kind, start value and unit:
-**1 state, 22 algebraic, 7 parameters**. One interesting quantity, twenty-nine bookkeeping ones.
+**Below the equations the pane lists every variable** — 30 of them, with kind, **why**, start value
+and unit: **1 state, 22 algebraic, 7 parameters**. One interesting quantity, twenty-nine bookkeeping
+ones.
+
+> **Predict.** Of those 30 variables, how many will the **Why** column say anything about?
+
+**Expected:** exactly **one** — `C.v`, reading `der in f_x[14]`. Every other row is blank.
+
+**Falsified if:** two or more rows carry a `der in …`, or the one that does names a variable other
+than `C.v`.
+
+*What just happened.* The Why column is not decoration; it is the definition. **A variable is a
+state exactly when some equation differentiates it**, so the column shows the equation that did it
+and the blanks are the rest of the model saying *nothing differentiates me*. Hover the cell for the
+equation itself.
+
+That single row is why this circuit is interesting at all. A resistor's law is instantaneous —
+`v = R·i`, no memory. A capacitor's is a rate law — `i = C·dv/dt` — so `C.v` is the one quantity
+that carries the past into the present. **Energy storage is what puts a derivative in an equation**,
+and the state count is the number of independent things the system has to remember. Count the
+energy-storing components and you have usually counted the states before the compiler has.
 
 **Flattening is mostly copying.** Sixteen of twenty-three equations are each component's own,
 instantiated with a prefix. Only seven are new. But those seven are the ones that could not have

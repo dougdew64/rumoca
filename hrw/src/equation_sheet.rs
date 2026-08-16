@@ -100,6 +100,21 @@ impl EquationSheet {
                 serde_json::json!({
                     "id": v.name,
                     "kind": v.kind,
+                    // **The evidence, not a restatement of it.** The Why column and
+                    // its tooltip are both derived from this field, so publishing the
+                    // field is publishing the column — and Claude can answer "why is
+                    // this a state" from the bridge instead of asking Doug to read a
+                    // tooltip aloud.
+                    //
+                    // Added 2026-08-16, the same hour the column shipped: without it
+                    // this function's own promise — that the renderer has no source
+                    // the bridge lacks — had quietly become false.
+                    "derivative_evidence": v.derivative_evidence.as_ref().map(|e| {
+                        serde_json::json!({
+                            "equation_id": e.equation_id,
+                            "equation_text": e.equation_text,
+                        })
+                    }),
                     "start": v.start,
                     "unit": v.unit,
                 })
@@ -1367,6 +1382,64 @@ mod tests {
             orphan.why_short().contains("not found"),
             "a state HRW cannot justify must be visible as such: {:?}",
             orphan.why_short()
+        );
+    }
+
+    /// **Whatever the pane draws, the bridge publishes.**
+    ///
+    /// `to_bridge_json`'s doc comment promises that a field the renderer draws cannot
+    /// be missing here, *"because the renderer has no other source"*. Adding the Why
+    /// column made that promise false for one hour: the column is drawn from
+    /// `derivative_evidence`, which the bridge did not carry, so `view.json` described
+    /// a pane that no longer existed — and Claude, asked about the Why column, would
+    /// have had to invent one.
+    ///
+    /// **A promise in a doc comment is not a mechanism**, which is why this is a test
+    /// rather than a firmer sentence.
+    #[test]
+    fn the_published_variables_carry_the_evidence_the_pane_draws() {
+        let sheet = EquationSheet {
+            variables: vec![
+                ClassifiedVariable {
+                    name: "h".to_owned(),
+                    kind: "state",
+                    unit: Some("m".to_owned()),
+                    description: None,
+                    start: Some("1.0".to_owned()),
+                    derivative_evidence: Some(DerivativeEvidence {
+                        equation_id: "f_x[3]".to_owned(),
+                        equation_text: "0 = der(h) - v".to_owned(),
+                    }),
+                },
+                ClassifiedVariable {
+                    name: "g".to_owned(),
+                    kind: "parameter",
+                    unit: None,
+                    description: None,
+                    start: None,
+                    derivative_evidence: None,
+                },
+            ],
+            ..EquationSheet::default()
+        };
+
+        let json = sheet.to_bridge_json();
+        let rows = json["variables"].as_array().expect("variables");
+
+        assert_eq!(rows[0]["id"], "h");
+        assert_eq!(
+            rows[0]["derivative_evidence"]["equation_id"], "f_x[3]",
+            "a state's evidence must reach the bridge, or the Why column is invisible \
+             to anything reading view.json",
+        );
+        assert_eq!(
+            rows[0]["derivative_evidence"]["equation_text"],
+            "0 = der(h) - v"
+        );
+        assert!(
+            rows[1]["derivative_evidence"].is_null(),
+            "a parameter has no equation-shaped reason and must publish null rather \
+             than an empty object that reads as one",
         );
     }
 
