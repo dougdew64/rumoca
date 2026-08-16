@@ -2987,3 +2987,52 @@ that regenerating writes **6,604 machine-specific absolute paths**. Only `struct
 normalising the path brushes the accuracy rule, in `docs/tech-debt.md`.
 
 Suite 660 passed, 0 failed (full gate). Clippy exit 0, fmt clean. `architecture.md` regenerated.
+
+---
+
+## 2026-08-15 — `git diff` cannot see an untracked file, and two checks built on it read as complete
+
+Doug, reading the VS Code git view after the notebook commit: *"you did not modify files for all
+21 specimens… it appeared that you did not modify files for the IncompatibleConnect or the
+UndefinedRef specimens."*
+
+Correct, and the reason was a defect. **Those two specimens had never had a notebook trace at
+all** — only `purpose.md` — so their first traces were *added* in the preceding commit rather
+than *modified* in the notebook one.
+
+### How they landed in the wrong commit
+
+The equation-id work regenerated the whole notebook to prove the fix, then deliberately restored
+everything except `structural.json` and `index_reduction.json` to keep the commit scoped. The
+restore was built on:
+
+```bash
+git diff --name-only -- 'hrw/docs/specimen-notebook/*/trace/*.json'
+```
+
+**`git diff` lists modified tracked files. It does not list untracked ones.** Every file of those
+two traces was new, so the restore never saw them — and the verification immediately afterwards,
+`git diff -- … | grep -c dougd` returning **0**, was blind for exactly the same reason. Two
+checks, one blind spot, and the zero read as proof.
+
+This is the shape the whole day kept producing: **a check that covers one of two categories and
+gives no sign that a category is missing.** Same as the equation ids, where each equation is named
+in three arrays and one had been fixed. `git status --short` would have shown both categories —
+untracked files appear as `??` — and it was in fact run, but piped through `head`.
+
+### The consequence that mattered more than the misfiled commit
+
+**Two of 21 specimens had no notebook trace, and nothing in the repository could say so.** The
+misplacement is cosmetic; this is not. The notebook is where *"any number about a specimen is
+read from"*, and for those two there was nothing to read.
+
+**And the currency test written that same hour had the same hole.** It walks the *notebook* and
+skips a directory with no manifest — so a specimen with no trace is not a failure there, it is an
+absence, and absences are what that loop is structurally unable to report. Fixed by driving the
+coverage half from `specimens/` instead, comparing on the manifest's own `specimen` field (the
+notebook directory is named by *model*, which need not equal the file stem). Verified must-fire by
+removing a manifest and watching it name the specimen.
+
+**The transferable rule: when a check walks the artefact, it can only find things that are wrong
+in the artefact — never things missing from it.** Coverage has to be driven from the source of
+truth, in the opposite direction from correctness.

@@ -9320,6 +9320,10 @@ mod tests {
             .collect();
 
         let mut checked = 0usize;
+        // Every specimen the notebook covers, as its manifest names it. Collected
+        // while walking, and checked against `specimens/` below.
+        let mut covered: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+
         for entry in std::fs::read_dir(&notebook)
             .expect("the notebook directory exists")
             .flatten()
@@ -9330,6 +9334,12 @@ mod tests {
             };
             let value: serde_json::Value =
                 serde_json::from_str(&text).expect("a manifest is valid JSON");
+            covered.insert(
+                value["specimen"]
+                    .as_str()
+                    .unwrap_or_else(|| panic!("{} does not name its specimen", manifest.display()))
+                    .to_owned(),
+            );
             let listed: Vec<String> = value["stages"]
                 .as_object()
                 .unwrap_or_else(|| panic!("{} has no `stages` map", manifest.display()))
@@ -9352,10 +9362,51 @@ mod tests {
             checked += 1;
         }
 
+        // **Every specimen must HAVE a notebook entry**, which the loop above cannot
+        // say — it walks the notebook, so a specimen with no trace is not a failure
+        // there but an absence, and the loop skips it in silence.
+        //
+        // That is not hypothetical. `IncompatibleConnect` and `UndefinedRef` carried
+        // **only `purpose.md`** and no trace at all until 2026-08-15, and nothing
+        // noticed for as long as they had existed. Doug found it by reading the git
+        // view and asking why two specimens were untouched by a regeneration.
+        //
+        // Driven from `specimens/`, and compared on the manifest's own `specimen`
+        // field rather than the directory name: the notebook directory is named by
+        // **model**, which need not equal the file stem.
+        let specimens_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("specimens");
+        let mut missing: Vec<String> = Vec::new();
+        let mut total = 0usize;
+        for entry in std::fs::read_dir(&specimens_dir)
+            .expect("the specimens directory exists")
+            .flatten()
+        {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("mo") {
+                continue;
+            }
+            total += 1;
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .expect("a specimen file name");
+            let key = format!("specimens/{name}");
+            if !covered.contains(&key) {
+                missing.push(key);
+            }
+        }
         assert!(
-            checked >= 20,
-            "only {checked} manifests were checked; the notebook has 21 specimens, so \
-             this is not exercising what it claims",
+            missing.is_empty(),
+            "{} of {total} specimens have no notebook trace, so nothing about them can \
+             be read from the notebook \u{2014} generate with \
+             `cargo run -p hrw --example gen_trace -- --all`: {missing:?}",
+            missing.len(),
+        );
+
+        assert!(
+            checked >= 20 && total >= 20,
+            "only {checked} manifests and {total} specimens were seen; there are 21 of \
+             each, so this is not exercising what it claims",
         );
     }
 
