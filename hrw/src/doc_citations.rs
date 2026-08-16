@@ -2133,7 +2133,7 @@ Some prose.
         );
 
         let mut checked = 0usize;
-        let mut unattributed = 0usize;
+        let mut ledger = SkipLedger::default();
         let mut bad: Vec<String> = Vec::new();
 
         let mut tour_files: Vec<PathBuf> = Vec::new();
@@ -2168,9 +2168,13 @@ Some prose.
                     continue;
                 }
                 let Some(spec) = specimen.as_deref() else {
-                    unattributed += 1;
+                    ledger.skip(
+                        &format!("{tour}:{}", i + 1),
+                        "no preceding hrw://load link names the specimen",
+                    );
                     continue;
                 };
+                ledger.inspected();
                 let Some(equations) = by_specimen.get(spec) else {
                     bad.push(format!(
                         "{tour}:{}: cites an equation of `{spec}`, which has no committed \
@@ -2237,10 +2241,11 @@ Some prose.
             bad.len(),
             bad.join("\n  "),
         );
-        println!(
-            "equation-id citations checked: {checked} ({unattributed} skipped, no \
-             preceding hrw://load link)"
-        );
+        // **Budget zero.** Every citation in a committed tour follows a ▶ Look link,
+        // because the template requires one. A skip here means a tour stopped saying
+        // which specimen it is talking about — a tour defect, not a reason for this
+        // check to quietly cover less.
+        ledger.assert_coverage("tour equation-id citations", 1, 0);
     }
 
     /// **Every test target runs in the gate the documentation names.**
@@ -2324,6 +2329,358 @@ Some prose.
             missing.is_empty(),
             "these integration test targets exist but the documented gate does not run \
              them, so they pass or fail unobserved: {missing:?}\n  gate: {gate}",
+        );
+    }
+
+    /// **Every structural feature a checker depends on is exhibited by some specimen,
+    /// and this names which.**
+    ///
+    /// # The failure this exists to stop, which happened three times
+    ///
+    /// A check can only exercise what its specimen contains. When the corpus lacks a
+    /// feature, an assertion about that feature **runs zero times and reports
+    /// success** — indistinguishable from coverage in every report anyone reads.
+    ///
+    /// Measured 2026-08-16, and the shape was stark: the ten specimens with
+    /// derivative equations had **zero** coupled blocks, and the four with coupled
+    /// blocks had **zero** derivative equations. No model had both. So a check needing
+    /// both found one absent whichever specimen it chose. It cost:
+    ///
+    /// - the coupled-block branch of `an_equation_id_names_the_same_equation_in_every_pane`,
+    ///   asserted on `RcCircuit` (0 coupled blocks) and never executed;
+    /// - check 3 of `an_equation_id_a_tour_cites_names_the_equation_the_prose_claims`,
+    ///   vacuous because `RcCircuit` has one derivative equation;
+    /// - the 2026-08-02 corpus sweep, whose F-checks "found nothing because there was
+    ///   nothing there".
+    ///
+    /// `LoopWithInertia` was authored to close it — a servo loop closed around a real
+    /// inertia, so one model carries a torn coupled block *and* a state.
+    ///
+    /// # What this checks, and what it deliberately does not
+    ///
+    /// For each feature: at least one specimen exhibits it, **and the specimen is
+    /// named in the failure message**, so the next person writing a check knows where
+    /// to point rather than discovering the gap by writing a test that passes.
+    ///
+    /// It does **not** assert exact counts. Counts are the notebook's job and change
+    /// whenever a specimen is edited; this asserts only that the *capability* exists,
+    /// which is the property a check author needs.
+    ///
+    /// Fast — reads committed traces, compiles nothing.
+    #[test]
+    fn the_corpus_covers_every_feature_the_checkers_need() {
+        let notebook = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+
+        struct Seen {
+            der_equations: Vec<String>,
+            multi_der: Vec<String>,
+            coupled: Vec<String>,
+            tearing: Vec<String>,
+            both: Vec<String>,
+            failures: Vec<String>,
+        }
+        let mut seen = Seen {
+            der_equations: Vec::new(),
+            multi_der: Vec::new(),
+            coupled: Vec::new(),
+            tearing: Vec::new(),
+            both: Vec::new(),
+            failures: Vec::new(),
+        };
+        let mut specimens = 0usize;
+
+        for entry in std::fs::read_dir(&notebook)
+            .expect("the notebook exists")
+            .flatten()
+        {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let dir = entry.path();
+
+            // A specimen that fails to compile is a feature too — `#46` is built on
+            // them, and F10's absence clause has nothing to act on without one.
+            if let Ok(m) = std::fs::read_to_string(dir.join("trace/manifest.json"))
+                && let Ok(v) = serde_json::from_str::<serde_json::Value>(&m)
+                && v["stages"]
+                    .as_object()
+                    .is_some_and(|s| s.values().any(|st| st["has_ir"] == false))
+            {
+                seen.failures.push(name.clone());
+            }
+
+            let Ok(text) = std::fs::read_to_string(dir.join("trace/structural.json")) else {
+                continue;
+            };
+            let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else {
+                continue;
+            };
+            specimens += 1;
+
+            let ders = v["incidence"]["rows"].as_array().map_or(0, |rows| {
+                rows.iter()
+                    .filter(|r| {
+                        r["equation_text"]
+                            .as_str()
+                            .is_some_and(|t| t.contains("der("))
+                    })
+                    .count()
+            });
+            let blocks = v["blocks"].as_array();
+            let coupled = blocks.map_or(0, |b| b.iter().filter(|x| x["kind"] == "coupled").count());
+            let torn = blocks.map_or(0, |b| b.iter().filter(|x| x["tearing"].is_object()).count());
+
+            if ders > 0 {
+                seen.der_equations.push(name.clone());
+            }
+            if ders > 1 {
+                seen.multi_der.push(name.clone());
+            }
+            if coupled > 0 {
+                seen.coupled.push(name.clone());
+            }
+            if torn > 0 {
+                seen.tearing.push(name.clone());
+            }
+            if ders > 0 && coupled > 0 {
+                seen.both.push(name.clone());
+            }
+        }
+
+        assert!(
+            specimens >= 15,
+            "only {specimens} specimens had a structural trace; the notebook shrank or \
+             the trace shape changed, and this check is inspecting almost nothing",
+        );
+
+        // (feature, specimens exhibiting it, why a checker needs it)
+        let required: [(&str, &Vec<String>, &str); 5] = [
+            (
+                "a derivative equation",
+                &seen.der_equations,
+                "anything about states, integration, or the Why column",
+            ),
+            (
+                "TWO OR MORE derivative equations",
+                &seen.multi_der,
+                "distinguishing which variable an equation differentiates \u{2014} with \
+                 one der equation a wrong citation is caught by luck, not by the check",
+            ),
+            (
+                "a coupled BLT block",
+                &seen.coupled,
+                "simultaneous-solve rendering, and every `blocks[].ids` assertion",
+            ),
+            (
+                "a tearing report",
+                &seen.tearing,
+                "`residual_equations` and `causal_sequence`, which had no identity at \
+                 all until 2026-08-15",
+            ),
+            (
+                "a coupled block AND a derivative in ONE model",
+                &seen.both,
+                "any check that needs to see tearing and integration interact; its \
+                 absence silently disabled three separate assertions",
+            ),
+        ];
+
+        let mut missing: Vec<String> = Vec::new();
+        for (feature, specimens, why) in required {
+            if specimens.is_empty() {
+                missing.push(format!("{feature} \u{2014} needed for: {why}"));
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "the corpus no longer exhibits {} structural feature(s), so any check \
+             relying on them now passes without running:\n  {}",
+            missing.len(),
+            missing.join("\n  "),
+        );
+
+        // Printed, not asserted: the map is for whoever writes the next check.
+        println!("corpus feature map ({specimens} specimens with a structural trace):");
+        for (feature, specimens, _) in required {
+            println!("  {feature}: {}", specimens.join(", "));
+        }
+        println!("  a failing stage: {}", seen.failures.join(", "));
+    }
+
+    /// What a check declined to inspect, and why.
+    ///
+    /// # Absence is where everything hides
+    ///
+    /// Every checker in this file walks subjects — specimens, tours, stage files —
+    /// and every one of them has `continue` arms for subjects it cannot read. Those
+    /// arms are invisible: the check reports what it *found*, never what it *passed
+    /// over*, so a deleted trace or a renamed tour quietly shrinks coverage while the
+    /// suite stays green.
+    ///
+    /// That is the same failure as `--lib` silently skipping `tests/`, and as
+    /// `git diff` being blind to untracked files: **a filter is silent about what it
+    /// removed.** Both cost real coverage in the same week.
+    ///
+    /// So a skip is *recorded* rather than merely taken, and the count is asserted
+    /// against what the corpus should produce. A skip that is expected (a failure
+    /// specimen has no structural report) stays legal; a skip that is *new* trips the
+    /// bound and names itself.
+    #[derive(Default)]
+    struct SkipLedger {
+        inspected: usize,
+        skipped: Vec<String>,
+    }
+
+    impl SkipLedger {
+        fn inspected(&mut self) {
+            self.inspected += 1;
+        }
+
+        fn skip(&mut self, subject: &str, why: &str) {
+            self.skipped.push(format!("{subject} ({why})"));
+        }
+
+        /// Assert the check saw enough, and skipped no more than expected.
+        ///
+        /// `max_skipped` is a **budget, not a target**: it exists so that an increase
+        /// fails loudly. Raising it is a deliberate act that belongs in the same
+        /// commit as the reason.
+        fn assert_coverage(&self, what: &str, min_inspected: usize, max_skipped: usize) {
+            assert!(
+                self.inspected >= min_inspected,
+                "{what}: only {} subject(s) inspected, expected at least \
+                 {min_inspected} \u{2014} the walk is broken, not the corpus",
+                self.inspected,
+            );
+            assert!(
+                self.skipped.len() <= max_skipped,
+                "{what}: skipped {} subject(s), budget is {max_skipped}. A skip is lost \
+                 coverage that reports as success, so either restore them or raise the \
+                 budget in the same commit as the reason:\n  {}",
+                self.skipped.len(),
+                self.skipped.join("\n  "),
+            );
+            println!(
+                "{what}: {} inspected, {} skipped{}",
+                self.inspected,
+                self.skipped.len(),
+                if self.skipped.is_empty() {
+                    String::new()
+                } else {
+                    format!(" ({})", self.skipped.join("; "))
+                },
+            );
+        }
+    }
+
+    /// **Every field of a published struct reaches the JSON that claims to serialize it.**
+    ///
+    /// # The defect this would have caught, hours before Doug did
+    ///
+    /// `EquationSheet::to_bridge_json` promises in its own doc comment that a field
+    /// the renderer draws cannot be missing from `view.json`, *"because the renderer
+    /// has no other source"*. Adding `ClassifiedVariable::derivative_evidence` on
+    /// 2026-08-16 made that false within the hour: the Why column was drawn from it,
+    /// and the bridge published `kind`, `start` and `unit` only. `view.json` described
+    /// a pane that no longer existed.
+    ///
+    /// It was found because Doug asked whether the tours needed updating — that is,
+    /// **by a question, not by the toolchain.** `tech-debt.md`'s backward sweep trigger
+    /// fires on exactly that.
+    ///
+    /// # Why a source-text check, and why that is uncomfortable
+    ///
+    /// Rust has no reflection, so "did every field get serialized" cannot be asked of
+    /// the type. The alternative — a hand-maintained list — is the second roster that
+    /// `gen_trace`'s `const STAGES` already proved rots.
+    ///
+    /// **Source-text checks are the ones that keep matching their own prose**: three
+    /// separate near-misses in two days, including one that searched for a symbol its
+    /// own comment mentioned. So this one is deliberately narrow: it reads the field
+    /// names out of a `struct` block and asks whether each appears as a **JSON key**
+    /// (`"name":`) inside the function body, which is a shape prose does not have.
+    ///
+    /// # What it cannot see
+    ///
+    /// A field published under a *different* key, and a key whose value is wrong. It
+    /// answers "was this field considered", not "was it serialized correctly" —
+    /// `the_published_variables_carry_the_evidence_the_pane_draws` owns the latter for
+    /// the field that matters. Stated because a check that looks broader than it is
+    /// will be trusted for the wider claim.
+    #[test]
+    fn every_published_struct_field_appears_in_its_bridge_json() {
+        let src = std::fs::read_to_string(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/equation_sheet.rs"),
+        )
+        .expect("equation_sheet.rs");
+
+        // Fields of `pub struct ClassifiedVariable { … }`, taken from the source.
+        let start = src
+            .find("pub struct ClassifiedVariable {")
+            .expect("ClassifiedVariable is still declared here");
+        let body = &src[start..];
+        let end = body.find("\n}").expect("struct closes");
+        let fields: Vec<String> = body[..end]
+            .lines()
+            .filter_map(|l| {
+                let t = l.trim();
+                // `pub name: String,` — declarations only, never doc comments.
+                let rest = t.strip_prefix("pub ")?;
+                let (name, _) = rest.split_once(':')?;
+                let name = name.trim();
+                name.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '_')
+                    .then(|| name.to_owned())
+            })
+            .collect();
+
+        assert!(
+            fields.len() >= 5,
+            "only {} fields were extracted from ClassifiedVariable; the struct was \
+             reshaped and this check is now inspecting almost nothing: {fields:?}",
+            fields.len(),
+        );
+
+        // The body of `to_bridge_json`, where the variable rows are built.
+        let f_start = src
+            .find("pub fn to_bridge_json")
+            .expect("to_bridge_json is still here");
+        let json_body = &src[f_start..];
+        let f_end = json_body.find("\n    }\n").expect("to_bridge_json closes");
+        let json_body = &json_body[..f_end];
+
+        // `name` is published as `id`, deliberately: every bridge row spells its
+        // identity `id` so that "this variable" resolves across panes the same way
+        // `f_x[N]` does for equations. Named here rather than special-cased silently.
+        const PUBLISHED_AS: [(&str, &str); 1] = [("name", "id")];
+        // Fields with no place in a published view. Each needs a reason, and the
+        // reason is what a future reader will check rather than re-derive.
+        const NOT_PUBLISHED: [(&str, &str); 1] = [(
+            "description",
+            "shown in the pane's tooltip only; never a row field",
+        )];
+
+        let mut missing: Vec<String> = Vec::new();
+        for field in &fields {
+            if let Some((_, why)) = NOT_PUBLISHED.iter().find(|(f, _)| f == field) {
+                let _ = why;
+                continue;
+            }
+            let key = PUBLISHED_AS
+                .iter()
+                .find(|(f, _)| f == field)
+                .map_or(field.as_str(), |(_, k)| k);
+            if !json_body.contains(&format!("\"{key}\":")) {
+                missing.push(format!("`{field}` (expected JSON key `{key}`)"));
+            }
+        }
+
+        assert!(
+            missing.is_empty(),
+            "{} field(s) of ClassifiedVariable never reach `to_bridge_json`, so \
+             `view.json` describes a pane that is not the pane on screen: {}\n\
+             If a field genuinely should not be published, add it to NOT_PUBLISHED \
+             with the reason.",
+            missing.len(),
+            missing.join(", "),
         );
     }
 

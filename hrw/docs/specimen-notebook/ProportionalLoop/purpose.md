@@ -16,6 +16,12 @@ Authored as the **algebraic loop** specimen: with no state to break the feedback
 on itself and structural analysis produces one coupled block that must be torn. It is the
 notebook's canonical 3x3 loop.
 
+**Its companion is [`LoopWithInertia`](../LoopWithInertia/purpose.md)** (added 2026-08-16), which
+is this model with the idealization removed: the inertia is restored, so the same cycle runs
+*alongside* a state. This specimen isolates the loop; that one shows tearing and integration
+happening to the same system. Until it existed, no specimen in the notebook had both, and checks
+needing both silently ran half their assertions.
+
 ## Where it has been used
 
 *No recorded question yet.* When one is answered using this specimen, add a line here linking to

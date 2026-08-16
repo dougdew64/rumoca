@@ -1,0 +1,2031 @@
+{
+  "classes": {
+    "LoopWithInertia": {
+      "def_id": null,
+      "scope_id": null,
+      "name": {
+        "text": "LoopWithInertia",
+        "location": {
+          "start_line": 1,
+          "start_column": 7,
+          "end_line": 1,
+          "end_column": 22,
+          "start": 6,
+          "end": 21,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+        },
+        "token_number": 1,
+        "token_type": 64
+      },
+      "class_type": "Model",
+      "class_type_token": {
+        "text": "model",
+        "location": {
+          "start_line": 1,
+          "start_column": 1,
+          "end_line": 1,
+          "end_column": 6,
+          "start": 0,
+          "end": 5,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+        },
+        "token_number": 0,
+        "token_type": 41
+      },
+      "encapsulated": false,
+      "partial": false,
+      "expandable": false,
+      "operator_record": false,
+      "pure": true,
+      "purity_declared": false,
+      "causality": "Empty",
+      "description": [
+        {
+          "text": "Proportional servo loop closed around a real inertia — an algebraic loop inside a dynamic system",
+          "location": {
+            "start_line": 1,
+            "start_column": 23,
+            "end_line": 1,
+            "end_column": 121,
+            "start": 22,
+            "end": 122,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "token_number": 2,
+          "token_type": 66
+        }
+      ],
+      "location": {
+        "start_line": 1,
+        "start_column": 7,
+        "end_line": 36,
+        "end_column": 20,
+        "start": 6,
+        "end": 2230,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+      },
+      "extends": [],
+      "imports": [],
+      "classes": {},
+      "components": {
+        "reference": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "reference",
+          "name_token": {
+            "text": "reference",
+            "location": {
+              "start_line": 22,
+              "start_column": 18,
+              "end_line": 22,
+              "end_column": 27,
+              "start": 1521,
+              "end": 1530,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 25,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 22,
+                  "start_column": 13,
+                  "end_line": 22,
+                  "end_column": 17,
+                  "start": 1516,
+                  "end": 1520,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 24,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": {
+            "Parameter": {
+              "text": "parameter",
+              "location": {
+                "start_line": 22,
+                "start_column": 3,
+                "end_line": 22,
+                "end_column": 12,
+                "start": 1506,
+                "end": 1515,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 23,
+              "token_type": 48
+            }
+          },
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "commanded angular velocity",
+              "location": {
+                "start_line": 22,
+                "start_column": 34,
+                "end_line": 22,
+                "end_column": 62,
+                "start": 1537,
+                "end": 1565,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 28,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1516,
+                "end": 1530
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": true,
+          "binding": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "1.0",
+                "location": {
+                  "start_line": 22,
+                  "start_column": 30,
+                  "end_line": 22,
+                  "end_column": 33,
+                  "start": 1533,
+                  "end": 1536,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 27,
+                "token_type": 68
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1533,
+                "end": 1536
+              }
+            }
+          },
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 22,
+            "start_column": 13,
+            "end_line": 22,
+            "end_column": 27,
+            "start": 1516,
+            "end": 1530,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "controllerGain": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "controllerGain",
+          "name_token": {
+            "text": "controllerGain",
+            "location": {
+              "start_line": 23,
+              "start_column": 18,
+              "end_line": 23,
+              "end_column": 32,
+              "start": 1584,
+              "end": 1598,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 32,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 23,
+                  "start_column": 13,
+                  "end_line": 23,
+                  "end_column": 17,
+                  "start": 1579,
+                  "end": 1583,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 31,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": {
+            "Parameter": {
+              "text": "parameter",
+              "location": {
+                "start_line": 23,
+                "start_column": 3,
+                "end_line": 23,
+                "end_column": 12,
+                "start": 1569,
+                "end": 1578,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 30,
+              "token_type": 48
+            }
+          },
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "proportional gain Kp",
+              "location": {
+                "start_line": 23,
+                "start_column": 40,
+                "end_line": 23,
+                "end_column": 62,
+                "start": 1606,
+                "end": 1628,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 35,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1579,
+                "end": 1598
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": true,
+          "binding": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "10.0",
+                "location": {
+                  "start_line": 23,
+                  "start_column": 35,
+                  "end_line": 23,
+                  "end_column": 39,
+                  "start": 1601,
+                  "end": 1605,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 34,
+                "token_type": 68
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1601,
+                "end": 1605
+              }
+            }
+          },
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 23,
+            "start_column": 13,
+            "end_line": 23,
+            "end_column": 32,
+            "start": 1579,
+            "end": 1598,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "inertia": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "inertia",
+          "name_token": {
+            "text": "inertia",
+            "location": {
+              "start_line": 24,
+              "start_column": 18,
+              "end_line": 24,
+              "end_column": 25,
+              "start": 1647,
+              "end": 1654,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 39,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 24,
+                  "start_column": 13,
+                  "end_line": 24,
+                  "end_column": 17,
+                  "start": 1642,
+                  "end": 1646,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 38,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": {
+            "Parameter": {
+              "text": "parameter",
+              "location": {
+                "start_line": 24,
+                "start_column": 3,
+                "end_line": 24,
+                "end_column": 12,
+                "start": 1632,
+                "end": 1641,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 37,
+              "token_type": 48
+            }
+          },
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "rotational inertia J",
+              "location": {
+                "start_line": 24,
+                "start_column": 32,
+                "end_line": 24,
+                "end_column": 54,
+                "start": 1661,
+                "end": 1683,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 42,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1642,
+                "end": 1654
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": true,
+          "binding": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.5",
+                "location": {
+                  "start_line": 24,
+                  "start_column": 28,
+                  "end_line": 24,
+                  "end_column": 31,
+                  "start": 1657,
+                  "end": 1660,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 41,
+                "token_type": 68
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1657,
+                "end": 1660
+              }
+            }
+          },
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 24,
+            "start_column": 13,
+            "end_line": 24,
+            "end_column": 25,
+            "start": 1642,
+            "end": 1654,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "sensorFeedthrough": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "sensorFeedthrough",
+          "name_token": {
+            "text": "sensorFeedthrough",
+            "location": {
+              "start_line": 25,
+              "start_column": 18,
+              "end_line": 25,
+              "end_column": 35,
+              "start": 1702,
+              "end": 1719,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 46,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 25,
+                  "start_column": 13,
+                  "end_line": 25,
+                  "end_column": 17,
+                  "start": 1697,
+                  "end": 1701,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 45,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": {
+            "Parameter": {
+              "text": "parameter",
+              "location": {
+                "start_line": 25,
+                "start_column": 3,
+                "end_line": 25,
+                "end_column": 12,
+                "start": 1687,
+                "end": 1696,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 44,
+              "token_type": 48
+            }
+          },
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "how much of the drive torque the sensor sees",
+              "location": {
+                "start_line": 25,
+                "start_column": 42,
+                "end_line": 25,
+                "end_column": 88,
+                "start": 1726,
+                "end": 1772,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 49,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1697,
+                "end": 1719
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": true,
+          "binding": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.1",
+                "location": {
+                  "start_line": 25,
+                  "start_column": 38,
+                  "end_line": 25,
+                  "end_column": 41,
+                  "start": 1722,
+                  "end": 1725,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 48,
+                "token_type": 68
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1722,
+                "end": 1725
+              }
+            }
+          },
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 25,
+            "start_column": 13,
+            "end_line": 25,
+            "end_column": 35,
+            "start": 1697,
+            "end": 1719,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "w": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "w",
+          "name_token": {
+            "text": "w",
+            "location": {
+              "start_line": 26,
+              "start_column": 8,
+              "end_line": 26,
+              "end_column": 9,
+              "start": 1781,
+              "end": 1782,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 52,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 26,
+                  "start_column": 3,
+                  "end_line": 26,
+                  "end_column": 7,
+                  "start": 1776,
+                  "end": 1780,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 51,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": "Empty",
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "angular velocity — the state",
+              "location": {
+                "start_line": 26,
+                "start_column": 23,
+                "end_line": 26,
+                "end_column": 53,
+                "start": 1796,
+                "end": 1828,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 58,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 26,
+                  "start_column": 18,
+                  "end_line": 26,
+                  "end_column": 21,
+                  "start": 1791,
+                  "end": 1794,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 56,
+                "token_type": 68
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1791,
+                "end": 1794
+              }
+            }
+          },
+          "start_is_modification": true,
+          "start_has_each": false,
+          "has_explicit_binding": false,
+          "binding": null,
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [
+            {
+              "Modification": {
+                "target": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "start",
+                        "location": {
+                          "start_line": 26,
+                          "start_column": 10,
+                          "end_line": 26,
+                          "end_column": 15,
+                          "start": 1783,
+                          "end": 1788,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                        },
+                        "token_number": 54,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 17791697518480040432,
+                    "start": 1783,
+                    "end": 1788
+                  }
+                },
+                "value": {
+                  "Terminal": {
+                    "terminal_type": "UnsignedReal",
+                    "token": {
+                      "text": "0.0",
+                      "location": {
+                        "start_line": 26,
+                        "start_column": 18,
+                        "end_line": 26,
+                        "end_column": 21,
+                        "start": 1791,
+                        "end": 1794,
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                      },
+                      "token_number": 56,
+                      "token_type": 68
+                    },
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 1791,
+                      "end": 1794
+                    }
+                  }
+                },
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 1783,
+                  "end": 1794
+                }
+              }
+            }
+          ],
+          "source_modification_each_flags": [
+            false
+          ],
+          "source_modification_final_flags": [
+            false
+          ],
+          "source_modification_redeclare_flags": [
+            false
+          ],
+          "modifications": {},
+          "location": {
+            "start_line": 26,
+            "start_column": 3,
+            "end_line": 26,
+            "end_column": 9,
+            "start": 1776,
+            "end": 1782,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "error": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "error",
+          "name_token": {
+            "text": "error",
+            "location": {
+              "start_line": 27,
+              "start_column": 8,
+              "end_line": 27,
+              "end_column": 13,
+              "start": 1837,
+              "end": 1842,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 61,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 27,
+                  "start_column": 3,
+                  "end_line": 27,
+                  "end_column": 7,
+                  "start": 1832,
+                  "end": 1836,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 60,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": "Empty",
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "reference − measurement",
+              "location": {
+                "start_line": 27,
+                "start_column": 14,
+                "end_line": 27,
+                "end_column": 39,
+                "start": 1843,
+                "end": 1870,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 62,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1832,
+                "end": 1842
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": false,
+          "binding": null,
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 27,
+            "start_column": 3,
+            "end_line": 27,
+            "end_column": 13,
+            "start": 1832,
+            "end": 1842,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "command": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "command",
+          "name_token": {
+            "text": "command",
+            "location": {
+              "start_line": 28,
+              "start_column": 8,
+              "end_line": 28,
+              "end_column": 15,
+              "start": 1879,
+              "end": 1886,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 65,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 28,
+                  "start_column": 3,
+                  "end_line": 28,
+                  "end_column": 7,
+                  "start": 1874,
+                  "end": 1878,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 64,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": "Empty",
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "controller output torque",
+              "location": {
+                "start_line": 28,
+                "start_column": 16,
+                "end_line": 28,
+                "end_column": 42,
+                "start": 1887,
+                "end": 1913,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 66,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1874,
+                "end": 1886
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": false,
+          "binding": null,
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 28,
+            "start_column": 3,
+            "end_line": 28,
+            "end_column": 15,
+            "start": 1874,
+            "end": 1886,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        },
+        "measurement": {
+          "def_id": null,
+          "type_id": null,
+          "type_def_id": null,
+          "name": "measurement",
+          "name_token": {
+            "text": "measurement",
+            "location": {
+              "start_line": 29,
+              "start_column": 8,
+              "end_line": 29,
+              "end_column": 19,
+              "start": 1922,
+              "end": 1933,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+            },
+            "token_number": 69,
+            "token_type": 64
+          },
+          "type_name": {
+            "name": [
+              {
+                "text": "Real",
+                "location": {
+                  "start_line": 29,
+                  "start_column": 3,
+                  "end_line": 29,
+                  "end_column": 7,
+                  "start": 1917,
+                  "end": 1921,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                },
+                "token_number": 68,
+                "token_type": 64
+              }
+            ]
+          },
+          "variability": "Empty",
+          "causality": "Empty",
+          "connection": "Empty",
+          "description": [
+            {
+              "text": "what the sensor reports",
+              "location": {
+                "start_line": 29,
+                "start_column": 20,
+                "end_line": 29,
+                "end_column": 45,
+                "start": 1934,
+                "end": 1959,
+                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+              },
+              "token_number": 70,
+              "token_type": 66
+            }
+          ],
+          "start": {
+            "Terminal": {
+              "terminal_type": "UnsignedReal",
+              "token": {
+                "text": "0.0",
+                "location": {
+                  "start_line": 0,
+                  "start_column": 0,
+                  "end_line": 0,
+                  "end_column": 0,
+                  "start": 0,
+                  "end": 0,
+                  "file_name": ""
+                },
+                "token_number": 0,
+                "token_type": 0
+              },
+              "span": {
+                "source": 17791697518480040432,
+                "start": 1917,
+                "end": 1933
+              }
+            }
+          },
+          "start_is_modification": false,
+          "start_has_each": false,
+          "has_explicit_binding": false,
+          "binding": null,
+          "shape": [],
+          "shape_expr": [],
+          "shape_is_modification": false,
+          "annotation": [],
+          "source_modifications": [],
+          "source_modification_each_flags": [],
+          "source_modification_final_flags": [],
+          "source_modification_redeclare_flags": [],
+          "modifications": {},
+          "location": {
+            "start_line": 29,
+            "start_column": 3,
+            "end_line": 29,
+            "end_column": 19,
+            "start": 1917,
+            "end": 1933,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+          },
+          "condition": null,
+          "inner": false,
+          "outer": false,
+          "final_attributes": [],
+          "each_modifications": [],
+          "is_protected": false,
+          "is_final": false,
+          "is_replaceable": false,
+          "is_redeclare": false,
+          "constrainedby": null,
+          "is_structural": false
+        }
+      },
+      "equations": [
+        {
+          "Simple": {
+            "lhs": {
+              "Binary": {
+                "op": "Mul",
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "inertia",
+                          "location": {
+                            "start_line": 31,
+                            "start_column": 3,
+                            "end_line": 31,
+                            "end_column": 10,
+                            "start": 1972,
+                            "end": 1979,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 73,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 1972,
+                      "end": 1979
+                    }
+                  }
+                },
+                "rhs": {
+                  "FunctionCall": {
+                    "comp": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "der",
+                            "location": {
+                              "start_line": 31,
+                              "start_column": 13,
+                              "end_line": 31,
+                              "end_column": 16,
+                              "start": 1982,
+                              "end": 1985,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                            },
+                            "token_number": 75,
+                            "token_type": 15
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 17791697518480040432,
+                        "start": 1982,
+                        "end": 1985
+                      }
+                    },
+                    "args": [
+                      {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "w",
+                                "location": {
+                                  "start_line": 31,
+                                  "start_column": 17,
+                                  "end_line": 31,
+                                  "end_column": 18,
+                                  "start": 1986,
+                                  "end": 1987,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                                },
+                                "token_number": 77,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 17791697518480040432,
+                            "start": 1986,
+                            "end": 1987
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 1982,
+                      "end": 1987
+                    }
+                  }
+                },
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 1972,
+                  "end": 1987
+                }
+              }
+            },
+            "rhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "command",
+                      "location": {
+                        "start_line": 31,
+                        "start_column": 22,
+                        "end_line": 31,
+                        "end_column": 29,
+                        "start": 1991,
+                        "end": 1998,
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                      },
+                      "token_number": 80,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 1991,
+                  "end": 1998
+                }
+              }
+            }
+          }
+        },
+        {
+          "Simple": {
+            "lhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "measurement",
+                      "location": {
+                        "start_line": 32,
+                        "start_column": 3,
+                        "end_line": 32,
+                        "end_column": 14,
+                        "start": 2002,
+                        "end": 2013,
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                      },
+                      "token_number": 82,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 2002,
+                  "end": 2013
+                }
+              }
+            },
+            "rhs": {
+              "Binary": {
+                "op": "Add",
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "w",
+                          "location": {
+                            "start_line": 32,
+                            "start_column": 17,
+                            "end_line": 32,
+                            "end_column": 18,
+                            "start": 2016,
+                            "end": 2017,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 84,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2016,
+                      "end": 2017
+                    }
+                  }
+                },
+                "rhs": {
+                  "Binary": {
+                    "op": "Mul",
+                    "lhs": {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "sensorFeedthrough",
+                              "location": {
+                                "start_line": 32,
+                                "start_column": 21,
+                                "end_line": 32,
+                                "end_column": 38,
+                                "start": 2020,
+                                "end": 2037,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                              },
+                              "token_number": 86,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 17791697518480040432,
+                          "start": 2020,
+                          "end": 2037
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "command",
+                              "location": {
+                                "start_line": 32,
+                                "start_column": 41,
+                                "end_line": 32,
+                                "end_column": 48,
+                                "start": 2040,
+                                "end": 2047,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                              },
+                              "token_number": 88,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 17791697518480040432,
+                          "start": 2040,
+                          "end": 2047
+                        }
+                      }
+                    },
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2020,
+                      "end": 2047
+                    }
+                  }
+                },
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 2016,
+                  "end": 2047
+                }
+              }
+            }
+          }
+        },
+        {
+          "Simple": {
+            "lhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "error",
+                      "location": {
+                        "start_line": 33,
+                        "start_column": 3,
+                        "end_line": 33,
+                        "end_column": 8,
+                        "start": 2051,
+                        "end": 2056,
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                      },
+                      "token_number": 90,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 2051,
+                  "end": 2056
+                }
+              }
+            },
+            "rhs": {
+              "Binary": {
+                "op": "Sub",
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "reference",
+                          "location": {
+                            "start_line": 33,
+                            "start_column": 11,
+                            "end_line": 33,
+                            "end_column": 20,
+                            "start": 2059,
+                            "end": 2068,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 92,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2059,
+                      "end": 2068
+                    }
+                  }
+                },
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "measurement",
+                          "location": {
+                            "start_line": 33,
+                            "start_column": 23,
+                            "end_line": 33,
+                            "end_column": 34,
+                            "start": 2071,
+                            "end": 2082,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 94,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2071,
+                      "end": 2082
+                    }
+                  }
+                },
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 2059,
+                  "end": 2082
+                }
+              }
+            }
+          }
+        },
+        {
+          "Simple": {
+            "lhs": {
+              "ComponentReference": {
+                "local": false,
+                "parts": [
+                  {
+                    "ident": {
+                      "text": "command",
+                      "location": {
+                        "start_line": 34,
+                        "start_column": 3,
+                        "end_line": 34,
+                        "end_column": 10,
+                        "start": 2086,
+                        "end": 2093,
+                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                      },
+                      "token_number": 96,
+                      "token_type": 64
+                    },
+                    "subs": null
+                  }
+                ],
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 2086,
+                  "end": 2093
+                }
+              }
+            },
+            "rhs": {
+              "Binary": {
+                "op": "Mul",
+                "lhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "controllerGain",
+                          "location": {
+                            "start_line": 34,
+                            "start_column": 13,
+                            "end_line": 34,
+                            "end_column": 27,
+                            "start": 2096,
+                            "end": 2110,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 98,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2096,
+                      "end": 2110
+                    }
+                  }
+                },
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "error",
+                          "location": {
+                            "start_line": 34,
+                            "start_column": 30,
+                            "end_line": 34,
+                            "end_column": 35,
+                            "start": 2113,
+                            "end": 2118,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 100,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2113,
+                      "end": 2118
+                    }
+                  }
+                },
+                "span": {
+                  "source": 17791697518480040432,
+                  "start": 2096,
+                  "end": 2118
+                }
+              }
+            }
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "equation_keyword": {
+        "text": "equation",
+        "location": {
+          "start_line": 30,
+          "start_column": 1,
+          "end_line": 30,
+          "end_column": 9,
+          "start": 1961,
+          "end": 1969,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+        },
+        "token_number": 72,
+        "token_type": 24
+      },
+      "initial_equation_keyword": null,
+      "algorithm_keyword": null,
+      "initial_algorithm_keyword": null,
+      "end_name_token": {
+        "text": "LoopWithInertia",
+        "location": {
+          "start_line": 36,
+          "start_column": 5,
+          "end_line": 36,
+          "end_column": 20,
+          "start": 2215,
+          "end": 2230,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+        },
+        "token_number": 125,
+        "token_type": 64
+      },
+      "enum_literals": [],
+      "annotation": [
+        {
+          "ClassModification": {
+            "target": {
+              "local": false,
+              "parts": [
+                {
+                  "ident": {
+                    "text": "experiment",
+                    "location": {
+                      "start_line": 35,
+                      "start_column": 14,
+                      "end_line": 35,
+                      "end_column": 24,
+                      "start": 2133,
+                      "end": 2143,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                    },
+                    "token_number": 104,
+                    "token_type": 64
+                  },
+                  "subs": null
+                }
+              ],
+              "span": {
+                "source": 17791697518480040432,
+                "start": 2133,
+                "end": 2143
+              }
+            },
+            "modifications": [
+              {
+                "Modification": {
+                  "target": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "StartTime",
+                          "location": {
+                            "start_line": 35,
+                            "start_column": 25,
+                            "end_line": 35,
+                            "end_column": 34,
+                            "start": 2144,
+                            "end": 2153,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 106,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2144,
+                      "end": 2153
+                    }
+                  },
+                  "value": {
+                    "Terminal": {
+                      "terminal_type": "UnsignedInteger",
+                      "token": {
+                        "text": "0",
+                        "location": {
+                          "start_line": 35,
+                          "start_column": 37,
+                          "end_line": 35,
+                          "end_column": 38,
+                          "start": 2156,
+                          "end": 2157,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                        },
+                        "token_number": 108,
+                        "token_type": 67
+                      },
+                      "span": {
+                        "source": 17791697518480040432,
+                        "start": 2156,
+                        "end": 2157
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17791697518480040432,
+                    "start": 2144,
+                    "end": 2157
+                  }
+                }
+              },
+              {
+                "Modification": {
+                  "target": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "StopTime",
+                          "location": {
+                            "start_line": 35,
+                            "start_column": 40,
+                            "end_line": 35,
+                            "end_column": 48,
+                            "start": 2159,
+                            "end": 2167,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 110,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2159,
+                      "end": 2167
+                    }
+                  },
+                  "value": {
+                    "Terminal": {
+                      "terminal_type": "UnsignedInteger",
+                      "token": {
+                        "text": "1",
+                        "location": {
+                          "start_line": 35,
+                          "start_column": 51,
+                          "end_line": 35,
+                          "end_column": 52,
+                          "start": 2170,
+                          "end": 2171,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                        },
+                        "token_number": 112,
+                        "token_type": 67
+                      },
+                      "span": {
+                        "source": 17791697518480040432,
+                        "start": 2170,
+                        "end": 2171
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17791697518480040432,
+                    "start": 2159,
+                    "end": 2171
+                  }
+                }
+              },
+              {
+                "Modification": {
+                  "target": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "Interval",
+                          "location": {
+                            "start_line": 35,
+                            "start_column": 54,
+                            "end_line": 35,
+                            "end_column": 62,
+                            "start": 2173,
+                            "end": 2181,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 114,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2173,
+                      "end": 2181
+                    }
+                  },
+                  "value": {
+                    "Terminal": {
+                      "terminal_type": "UnsignedReal",
+                      "token": {
+                        "text": "0.001",
+                        "location": {
+                          "start_line": 35,
+                          "start_column": 65,
+                          "end_line": 35,
+                          "end_column": 70,
+                          "start": 2184,
+                          "end": 2189,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                        },
+                        "token_number": 116,
+                        "token_type": 68
+                      },
+                      "span": {
+                        "source": 17791697518480040432,
+                        "start": 2184,
+                        "end": 2189
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17791697518480040432,
+                    "start": 2173,
+                    "end": 2189
+                  }
+                }
+              },
+              {
+                "Modification": {
+                  "target": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "Tolerance",
+                          "location": {
+                            "start_line": 35,
+                            "start_column": 72,
+                            "end_line": 35,
+                            "end_column": 81,
+                            "start": 2191,
+                            "end": 2200,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                          },
+                          "token_number": 118,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17791697518480040432,
+                      "start": 2191,
+                      "end": 2200
+                    }
+                  },
+                  "value": {
+                    "Terminal": {
+                      "terminal_type": "UnsignedReal",
+                      "token": {
+                        "text": "1e-6",
+                        "location": {
+                          "start_line": 35,
+                          "start_column": 84,
+                          "end_line": 35,
+                          "end_column": 88,
+                          "start": 2203,
+                          "end": 2207,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/LoopWithInertia.mo"
+                        },
+                        "token_number": 120,
+                        "token_type": 71
+                      },
+                      "span": {
+                        "source": 17791697518480040432,
+                        "start": 2203,
+                        "end": 2207
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17791697518480040432,
+                    "start": 2191,
+                    "end": 2207
+                  }
+                }
+              }
+            ],
+            "each_flags": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "final_flags": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "redeclare_flags": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "span": {
+              "source": 17791697518480040432,
+              "start": 2133,
+              "end": 2207
+            }
+          }
+        }
+      ],
+      "is_protected": false,
+      "is_final": false,
+      "is_inner": false,
+      "is_outer": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "array_subscripts": [],
+      "external": null
+    }
+  },
+  "within": null
+}
