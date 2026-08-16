@@ -2243,6 +2243,90 @@ Some prose.
         );
     }
 
+    /// **Every test target runs in the gate the documentation names.**
+    ///
+    /// # The gap this closes
+    ///
+    /// Doug, 2026-08-16: *"Do all of the checkers which you have implemented run when
+    /// you execute the full gate testing prior to commits?"* The answer was **no**, and
+    /// one of the two reasons was an accident: the gate command said `--lib`, which is
+    /// a **filter**, and `tests/msl_resolve.rs` had therefore not run in any pre-commit
+    /// gate since at least 2026-08-05. Its two tests prove the MSL dependency-loading
+    /// path resolves `Modelica.*` references end to end. They passed when finally run,
+    /// and cost 6.3 s.
+    ///
+    /// **Nothing was broken, and nothing would have said so either** — which is the
+    /// whole problem. A filter is silent about what it removes, so an unrun test is
+    /// indistinguishable from a passing one in every report anyone looks at.
+    ///
+    /// # Why this is a documentation check rather than a build check
+    ///
+    /// Cargo cannot be asked "is this target in someone's habitual command line". The
+    /// gate lives in `CLAUDE.md` as text, so the text is what has to be checked: every
+    /// file in `tests/` must be named by the gate command, or the command must select
+    /// all targets. Adding `tests/foo.rs` and not updating the gate now fails here
+    /// rather than in six weeks.
+    ///
+    /// It deliberately does **not** check the reverse — that everything named still
+    /// exists — because `fixture_tour_links_all_resolve` and the citation checks
+    /// already fail loudly on a path that has moved.
+    #[test]
+    fn every_test_target_runs_in_the_documented_gate() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        let mut targets: Vec<String> = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(hrw.join("tests")) {
+            for e in entries.flatten() {
+                let p = e.path();
+                if p.extension().and_then(|x| x.to_str()) == Some("rs")
+                    && let Some(stem) = p.file_stem().and_then(|s| s.to_str())
+                {
+                    targets.push(stem.to_owned());
+                }
+            }
+        }
+
+        let claude_md = std::fs::read_to_string(hrw.join("CLAUDE.md")).expect("CLAUDE.md");
+        // The gate line, as the file spells it. Located rather than assumed, so a
+        // reworded section fails here instead of silently matching nothing.
+        // **Not merely "contains slow-tests"** — the ITERATE line does too, and the
+        // first draft of this test found *that* one and reported a failure about the
+        // wrong command. The gate is the unfiltered invocation, so the placeholder is
+        // what distinguishes them.
+        let gate = claude_md
+            .lines()
+            .find(|l| {
+                l.starts_with("cargo test -p hrw")
+                    && l.contains("--features slow-tests")
+                    && !l.contains("<name-filter>")
+            })
+            .unwrap_or_else(|| {
+                panic!(
+                    "CLAUDE.md no longer contains an unfiltered `cargo test -p hrw … \
+                     --features slow-tests` line, so the gate this test checks against \
+                     cannot be found"
+                )
+            });
+
+        assert!(
+            !targets.is_empty(),
+            "no integration test targets were found; if `tests/` was deleted this test \
+             should go with it, and if it was moved this check is now inspecting nothing",
+        );
+
+        let selects_everything = !gate.contains("--lib");
+        let missing: Vec<&String> = targets
+            .iter()
+            .filter(|t| !selects_everything && !gate.contains(&format!("--test {t}")))
+            .collect();
+
+        assert!(
+            missing.is_empty(),
+            "these integration test targets exist but the documented gate does not run \
+             them, so they pass or fail unobserved: {missing:?}\n  gate: {gate}",
+        );
+    }
+
     /// Recursively harvest `equation` labels and `equation_text` residuals.
     fn collect_equation_strings(
         v: &serde_json::Value,

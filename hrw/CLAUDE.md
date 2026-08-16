@@ -707,12 +707,31 @@ than a drift.
 cargo test -p hrw --lib --features slow-tests -- --test-threads=1 <name-filter>
 
 # GATE — ONCE, immediately before the commit. ~225s.
-cargo test -p hrw --lib --features slow-tests -- --test-threads=1
+cargo test -p hrw --lib --test msl_resolve --features slow-tests -- --test-threads=1
 cargo clippy -p hrw --all-targets                  # covers the BIN; check the exit code
 
 # The fast suite, when nothing slow-gated is in play. ~15s.
 cargo test -p hrw --lib -- --test-threads=1
 ```
+
+**`--lib` ALONE SILENTLY SKIPS `tests/`, AND IT DID SO FOR AT LEAST ELEVEN DAYS**
+*(found 2026-08-16, when Doug asked whether every checker runs in the gate)*.
+`tests/msl_resolve.rs` — two tests proving the MSL dependency-loading path resolves
+`Modelica.*` references end to end — had not run in any pre-commit gate since at least
+2026-08-05. It passes, and costs **6.3 s**. Nothing was broken; nothing would have said so
+either.
+
+**Every target the gate names must be spelled out, because `--lib` is a filter and a filter
+is silent about what it removed.** `doc_citations::every_test_target_runs_in_the_documented_gate`
+now fails if a file appears in `tests/` that this command does not name.
+
+**Deliberately still outside the gate**, and these are choices rather than oversights:
+
+| what | why |
+|---|---|
+| `--features notebook-check` | reloads the MSL 21 times (157 s) and is order-dependent; see the third-gate note above |
+| `examples/fidelity_msl`, `examples/survey_msl` | hours-long corpus sweeps with their own runbook and watchdog |
+| doc-tests | `cargo test -p hrw --doc` runs **0** tests; there is nothing there to lose |
 
 **The filtered line was missing from this file until 2026-08-15, and its absence is the whole
 story.** The gate table below answers *"which gate before I commit?"* and returns **FULL** for
