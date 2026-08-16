@@ -194,6 +194,25 @@ looking for eight days. A wrong *negative* is the error nobody catches, because 
 it means **not looking** — the same asymmetry the claims-of-absence rule below is built
 on.
 
+**AND THE SECOND SCROLL-AREA BUG, 2026-08-16: NEVER NEST A VERTICAL SCROLL AREA INSIDE
+ONE.** Doug: *"the connection sets lists are not using all available vertical space…
+showing only three connection sets per list."* `connection_anim_ui` wraps the view in a
+vertical scroll area; the view then created **three more** inside it, each with a magic
+height — 240pt for the lanes, 200pt for the frame's lists. A connection set costs a header
+plus a line per variable plus a line per equation, so 240pt is about three sets: content
+overflowed a small box while the pane around it stayed empty, and the wheel scrolled the
+box instead of the page.
+
+**The nesting is the defect; the height cap only set how obvious it was.** The rule:
+**the parent owns the scrolling and the height, and a child view just renders.** A tall
+model then makes a tall pane, which is the honest result.
+`connection_anim::tests_layout` fails if that file constructs a scroll area or sets a
+fixed height at all.
+
+**Both scroll-area bugs were reported by Doug, not by a test**, and neither is visible to
+`egui_kittest` — a clipped child is still in the accessibility tree. Layout remains the
+surface where his report *is* the verification.
+
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment
 and its attributes sit *above* the item, so anything placed between them is adopted by the
 wrong one — the new test gets two `#[test]`s and **the old function silently stops being a

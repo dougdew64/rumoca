@@ -365,14 +365,10 @@ impl ConnectionAnimation {
             && !variables.is_empty()
         {
             ui.add_space(4.0);
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, true])
-                .max_height(200.0)
-                .show(ui, |ui| {
-                    for v in variables {
-                        ui.label(egui::RichText::new(v).monospace());
-                    }
-                });
+            // No nested scroll: the pane already scrolls. See `lanes_ui`.
+            for v in variables {
+                ui.label(egui::RichText::new(v).monospace());
+            }
         }
 
         // **The equations themselves, not just how many.** Doug, 2026-08-15, after
@@ -388,18 +384,14 @@ impl ConnectionAnimation {
             && !equations.is_empty()
         {
             ui.add_space(4.0);
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, true])
-                .max_height(200.0)
-                .show(ui, |ui| {
-                    for e in equations {
-                        ui.label(
-                            egui::RichText::new(e)
-                                .monospace()
-                                .color(crate::colors::MATCHED_MARKER),
-                        );
-                    }
-                });
+            // No nested scroll: the pane already scrolls. See `lanes_ui`.
+            for e in equations {
+                ui.label(
+                    egui::RichText::new(e)
+                        .monospace()
+                        .color(crate::colors::MATCHED_MARKER),
+                );
+            }
         }
     }
 
@@ -464,11 +456,25 @@ impl ConnectionAnimation {
                     .strong()
                     .color(kind_color(&lane.kind)),
                 );
-                egui::ScrollArea::vertical()
-                    .id_salt(format!("lane-{}", lane.kind))
-                    .auto_shrink([false, true])
-                    .max_height(240.0)
-                    .show(col, |col| {
+                // **No inner ScrollArea, and no height cap.** `connection_anim_ui`
+                // already wraps this whole view in a vertical `ScrollArea`, so a
+                // second one nested inside it did two harmful things and no useful
+                // one: it capped each lane at 240pt — about three sets, since a set
+                // costs a header plus a line per variable plus a line per equation —
+                // and it captured the mouse wheel, so scrolling over a lane moved the
+                // lane instead of the pane.
+                //
+                // Doug, 2026-08-16: *"the connection sets lists are not using all
+                // available vertical space… showing only three connection sets per
+                // list."* `RcCircuit` has exactly three sets per lane, so nothing was
+                // hidden — the content simply overflowed a small box while the pane
+                // around it stayed empty.
+                //
+                // The parent scrolls; the lane just renders. A tall model makes a tall
+                // pane, which is the honest result.
+                {
+                    let col = &mut *col;
+                    {
                         for (i, set) in lane.sets.iter().enumerate() {
                             col.add_space(4.0);
                             col.label(
@@ -501,7 +507,8 @@ impl ConnectionAnimation {
                                 }
                             }
                         }
-                    });
+                    }
+                }
             }
         });
     }
@@ -1056,6 +1063,55 @@ mod live_session_tests {
             anim.live_state(false),
             crate::LiveState::Finished,
             "the worker signals completion; the view must notice",
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_layout {
+    /// **This view must not create a scroll area of its own.**
+    ///
+    /// Doug, 2026-08-16: *"the connection sets lists are not using all available
+    /// vertical space… showing only three connection sets per list."*
+    ///
+    /// `app::connection_anim_ui` already wraps the whole view in a vertical
+    /// `ScrollArea`. Three more were nested inside it, each capped with a magic
+    /// height — 240pt for the lanes, 200pt for the current frame's lists. A set
+    /// costs a header plus one line per variable plus one line per equation, so
+    /// 240pt is about three sets: the content overflowed a small box while the pane
+    /// around it stayed empty, and the wheel scrolled the box instead of the pane.
+    ///
+    /// **A vertical scroll area inside a vertical scroll area is the defect**, and
+    /// the height cap only decided how obvious it was. This is the second
+    /// scroll-area bug in the project; the first (a vertical scroll area reporting
+    /// its content width to its parent) hid for eight days and froze the divider.
+    ///
+    /// # What this checks, and what only Doug can
+    ///
+    /// It reads the source for a scroll-area construction or a fixed height. It
+    /// **cannot** tell whether the pane now looks right — `CLAUDE.md`: Claude
+    /// verifies content, never pixels. That half is his report.
+    ///
+    /// **This doc comment must not spell the type followed by a path separator**,
+    /// because the check reads this very file and the first draft matched its own
+    /// explanation — four lines below a paragraph warning about exactly that. Fourth
+    /// instance in one day of a source check finding its own prose.
+    #[test]
+    fn the_connections_view_does_not_nest_its_own_scroll_area() {
+        let src = include_str!("connection_anim.rs");
+        // Assembled so this file does not contain the strings being searched for.
+        let scroll = format!("{}::", "ScrollArea");
+        let cap = format!("{}(", "max_height");
+
+        assert!(
+            !src.contains(scroll.as_str()),
+            "this view constructs a scroll area; the parent already scrolls, so a \
+             nested one caps the lanes and eats the mouse wheel",
+        );
+        assert!(
+            !src.contains(cap.as_str()),
+            "this view sets a fixed height; the pane's height is the parent's to \
+             decide, and a magic cap is what limited each lane to three sets",
         );
     }
 }
