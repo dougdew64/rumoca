@@ -3208,6 +3208,16 @@ mod tests {
     /// startup `if (fs.existsSync(requestPath))` path.
     struct DisarmAnchor;
 
+    /// How many times [`DisarmAnchor`] has released the anchor.
+    ///
+    /// **The tests below count instead of reading the bridge directory, and that
+    /// is not squeamishness — it is the only race-free option.** The extension
+    /// *consumes* a request: it reads the file, acts, and unlinks it. So
+    /// "assert the removal request is still on disk" is a bet that the test wins
+    /// a race against a filesystem watcher. It was written that way first and
+    /// **passed**, which is precisely how a flaky test enters a suite.
+    static DISARMS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
     impl Drop for DisarmAnchor {
         fn drop(&mut self) {
             // Deliberately no `remove_file` afterwards — see the type's docs.
@@ -3215,6 +3225,7 @@ mod tests {
             // The ack is ours or the extension's reply to a request that is now
             // moot either way; leaving it would be read as a pending handshake.
             let _ = fs::remove_file(BREAKPOINT_ACK_FILE);
+            DISARMS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         }
     }
 
@@ -3280,65 +3291,136 @@ mod tests {
         // Deleting the file was the bug this test used to cause.
     }
 
-    /// **A test that arms the anchor must leave a removal request behind, not an
-    /// empty bridge directory.**
+    /// **The guard releases the anchor even when the body panics** — the case
+    /// that matters, because a failing assertion between arm and remove is
+    /// exactly when a breakpoint would otherwise be stranded in Doug's editor.
     ///
-    /// The must-fire half of the fix above. Nothing observable inside HRW breaks
-    /// when the guard is removed — the state that goes wrong lives in **VS Code**,
-    /// as a breakpoint on `live_trace.rs` that nobody set. So the only thing a
-    /// test can check is that the last word HRW leaves in the bridge is
-    /// `"remove"`, which is precisely what the extension needs to find.
+    /// # Why nothing here reads the bridge directory
+    ///
+    /// **`.hrw-bridge/` is shared with a live VS Code extension, and the
+    /// extension *consumes* a request** — `extension.ts` reads it, acts, unlinks
+    /// it, and writes an ack. So any assertion of the form "the removal request
+    /// is on disk" is a race against a filesystem watcher.
+    ///
+    /// That is not a theoretical concern. This test's first draft asserted the
+    /// file was present after the guard ran; it **passed**, and an inspection of
+    /// the bridge directory three seconds later showed the extension had already
+    /// deleted it and replied. A test that wins a race is not a passing test, it
+    /// is a flake that has not surfaced yet.
+    ///
+    /// So the guard counts its own releases, and the two claims are split:
+    /// this owns *"the release runs, including while unwinding"*, and
+    /// [`live_trace_breakpoint_arm_remove_and_ack`] above owns *"a release writes
+    /// `action: "remove"` naming the anchor"*. Neither needs to observe the other
+    /// process.
+    ///
+    /// # What no test here can check
+    ///
+    /// The symptom itself. The state that goes wrong lives in **VS Code**, as a
+    /// breakpoint on `live_trace.rs` that nobody set, and `#75` records that VS
+    /// Code exposes no `verified` field to extensions. Doug saw it; HRW cannot.
     #[test]
-    fn arming_in_a_test_leaves_the_anchor_disarmed() {
+    fn the_disarm_guard_releases_the_anchor_even_on_panic() {
+        use std::sync::atomic::Ordering;
+
+        // --- The ordinary path: leaving the scope. ---
+        let before = DISARMS.load(Ordering::SeqCst);
         {
             let _disarm = DisarmAnchor;
             arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
-        } // guard drops here
-
-        let text = fs::read_to_string(BREAKPOINT_REQUEST_FILE)
-            .expect("the guard must leave a request file, not delete it");
-        let req: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
+        }
         assert_eq!(
-            req["action"], "remove",
-            "the last request left in the bridge must be a removal, or the \
-             extension keeps the breakpoint it was asked to add: {text}"
+            DISARMS.load(Ordering::SeqCst),
+            before + 1,
+            "leaving the scope must release the anchor",
         );
-        assert!(
-            req["breakpoints"][0]["path"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("live_trace"),
-            "the removal must name the anchor it is releasing: {text}"
-        );
-        // **No assertion about the ack file, deliberately.** The guard clears it,
-        // but `.hrw-bridge/` is shared with a *live* VS Code extension that
-        // replies to the removal request asynchronously — measured at ~3 s here.
-        // Asserting the absence of a file another process may create at any
-        // moment is a flake waiting for a slow machine, and it is not the
-        // property under test. A stale ack is harmless anyway:
-        // `arm_live_trace_breakpoint` deletes it before every real arm.
-    }
 
-    /// The guard must fire when an assertion **panics**, which is the case that
-    /// matters: a test failing between arm and remove is exactly when a stranded
-    /// breakpoint would otherwise be left behind.
-    #[test]
-    fn the_disarm_guard_survives_a_panic() {
-        let _ = fs::remove_file(BREAKPOINT_REQUEST_FILE);
-
+        // --- The path that matters: unwinding out of the middle. ---
+        let before = DISARMS.load(Ordering::SeqCst);
         let result = std::panic::catch_unwind(|| {
             let _disarm = DisarmAnchor;
             arm_live_trace_breakpoint(Some("TestModel")).expect("arm");
             panic!("simulating a failed assertion between arm and remove");
         });
         assert!(result.is_err(), "the inner panic must have happened");
-
-        let text = fs::read_to_string(BREAKPOINT_REQUEST_FILE)
-            .expect("unwinding must still leave a removal request");
-        let req: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
         assert_eq!(
-            req["action"], "remove",
-            "a panicking test must not strand an armed breakpoint: {text}"
+            DISARMS.load(Ordering::SeqCst),
+            before + 1,
+            "a panicking test must not strand an armed breakpoint in the editor",
+        );
+    }
+
+    /// **Every test that arms the anchor declares the guard.**
+    ///
+    /// The guard above is only as good as its use, and *forgetting* it is the
+    /// regression that actually happens — the mistake is invisible, since the
+    /// test still passes and the damage lands in an editor nobody is watching
+    /// during a test run.
+    ///
+    /// Nothing dynamic can catch that: a test that never constructs
+    /// `DisarmAnchor` simply does not release, and there is no observable HRW
+    /// state to assert on. So this reads the source, which is the same
+    /// instrument `doc_citations::no_function_has_two_test_attributes` uses
+    /// against a defect the compiler cannot see either.
+    ///
+    /// Splitting on `#[test]` gives one chunk per test function, which is enough:
+    /// the guard must be *named* in the same test that arms. It does not verify
+    /// the guard is declared **before** the arm, and that ordering matters —
+    /// stated here rather than left as a silent gap, because a guard constructed
+    /// after a panicking arm would never run.
+    ///
+    /// **This took three attempts to make fire, and each failure was the same
+    /// mistake in a new place: matching prose instead of code.**
+    ///
+    /// 1. Splitting `#[test]`-to-`#[test]` runs past the end of a function and
+    ///    into the *following* item's `///` lines — which discuss `DisarmAnchor`
+    ///    at length. Every chunk inherited the word it was searching for. Fixed by
+    ///    truncating each chunk at the next doc comment.
+    /// 2. The body still passed, because a **comment inside it** says
+    ///    "`DisarmAnchor` runs on the way out". Fixed by searching for the
+    ///    *construction* `= DisarmAnchor` rather than the bare name.
+    ///
+    /// Both were found by deleting the guard and watching this test stay green.
+    /// **A check verified only by passing on correct code has not been verified**,
+    /// and a source-text check is unusually good at looking right while matching
+    /// something that was never the point.
+    #[test]
+    fn a_test_that_arms_the_anchor_also_declares_the_guard() {
+        let source = include_str!("bridge.rs");
+        let mut arming = 0usize;
+        let mut unguarded: Vec<String> = Vec::new();
+
+        for chunk in source.split("#[test]").skip(1) {
+            // Stop at the next item's doc comment; everything after it belongs to
+            // a different test.
+            let body = chunk.split("\n    ///").next().unwrap_or(chunk);
+            if !body.contains("arm_live_trace_breakpoint(") {
+                continue;
+            }
+            arming += 1;
+            // The **construction**, not the name: prose about the guard is not
+            // the guard. See the third paragraph of this test's docs.
+            if !body.contains("= DisarmAnchor") {
+                let name = body
+                    .lines()
+                    .find(|l| l.trim_start().starts_with("fn "))
+                    .unwrap_or("<unnamed>")
+                    .trim()
+                    .to_owned();
+                unguarded.push(name);
+            }
+        }
+
+        assert!(
+            arming >= 2,
+            "only {arming} arming tests were found; the split must have stopped \
+             matching, so this checks nothing",
+        );
+        assert!(
+            unguarded.is_empty(),
+            "these tests arm the live-trace anchor without declaring \
+             `DisarmAnchor`, so a breakpoint is left in the editor after the run: \
+             {unguarded:?}",
         );
     }
 

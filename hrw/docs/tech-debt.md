@@ -443,6 +443,27 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   fails *and* hangs** — and a hang reads as a broken build rather than a test-isolation problem.
   *Files:* `bridge.rs`, `worker.rs` — test modules.
 
+  3. **A third cause, and `--test-threads=1` does nothing for it** *(found 2026-08-15)*: the other
+     process is **VS Code**. `live_trace_breakpoint_arm_remove_and_ack` writes
+     `breakpoint-request.json` and reads it back on the next line, while `extension.ts` is
+     watching that exact file and *consumes* it — read, act, `unlinkSync`, write ack. The read-back
+     is a race with a filesystem watcher on a path the test does not own.
+
+     **Not observed failing**, because the test's read is microseconds after its write and the
+     watcher's latency is far longer. Logged rather than fixed to keep an unrelated commit
+     scoped, and because the odds are genuinely long — but it is a real flake with a fuse, and
+     the fuse is lit only on a machine where the extension is installed, which is Doug's.
+
+     **The fix is small and named:** have `arm_live_trace_breakpoint` and
+     `remove_live_trace_breakpoint` *return* the JSON they wrote, and assert on that instead of
+     re-reading the file. Both current call sites ignore the value (`let _ =`, `.is_ok()`), so it
+     is additive. This is the same move as `Plot::problems()` — push the checkable data out of
+     the I/O path rather than testing through it.
+
+     `DisarmAnchor` (the guard added the same day) is deliberately **not** exposed to this: it
+     asserts on a counter, never on the bridge directory. Its first draft did read the file, and
+     passed while the extension had already deleted it three seconds earlier.
+
 - [ ] **A stage's emitted JSON depends on what else the session holds.**
   *(Found 2026-08-01 while building the memoisation guard for #48.)* Compiling `Drivetrain`
   early in the test run and again late produces **different Resolve JSON**, against the same
