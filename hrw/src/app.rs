@@ -4728,6 +4728,12 @@ impl App {
                 if report_ready {
                     self.report_sub_view_row_ui(ui);
                 }
+                // **Unconditional, and that is the fix.** This used to live inside the
+                // row above, so it ran only for Structural and Index Reduction — see
+                // `apply_pending_view_and_seek`. Every Flatten, Events and
+                // Initialization link naming a non-default sub-view, and every frame
+                // seek into them, was discarded in silence.
+                self.apply_pending_view_and_seek();
 
                 // Whether the Index Reduction tab shows a Before/After split for
                 // comparative views. True when index reduction was actually needed
@@ -6256,10 +6262,72 @@ impl App {
     /// `&mut self` is right here for the same reason as the tab row: it reads
     /// `stage`, `stages` and the viewport, and writes the viewport — application
     /// state, not pane-local state.
-    fn report_sub_view_row_ui(&mut self, ui: &mut egui::Ui) {
+    /// Apply a sub-view and a frame seek requested by an `hrw://` link.
+    ///
+    /// # Why this is its own method, called for EVERY stage
+    ///
+    /// Doug, 2026-08-16: *"Clicking on the frame 7 and frame 13 links is still not
+    /// causing navigation."*
+    ///
+    /// This logic used to live inside [`Self::report_sub_view_row_ui`], which its own
+    /// doc comment describes as *"only ever reached when `report_ready` — the stage is
+    /// a report stage **and** it produced a value"*. Report stages are **Structural**
+    /// and **Index Reduction**, and nothing else.
+    ///
+    /// So for **Flatten, Events and Initialization**, `pending_sub_view` was set by the
+    /// link and then never taken, and `apply_pending_seek` never ran at all. Every link
+    /// naming a non-default sub-view of those stages, and every frame seek into them,
+    /// silently did nothing — the seek budget expired over five paints and gave up
+    /// without a notice, because expiry is the *expected* end of a seek whose animation
+    /// is still building.
+    ///
+    /// **It looked like it worked, because the default is the common case.**
+    /// `Flatten/EquationSheet` is where Flatten already opens, so a link to it appears
+    /// to navigate. `Flatten/Connections` does not, and neither does any frame in it.
+    ///
+    /// # Ordering is the reason it is a separate call rather than moved earlier
+    ///
+    /// It must run **after** the report row's default-sub-view reset, which forces
+    /// Summary when a report stage is entered singular — a link saying "show the
+    /// matching animation" has to win over that. So the caller runs the report row
+    /// first when there is one, then this, for all stages alike.
+    fn apply_pending_view_and_seek(&mut self) {
         // Set when a link names a sub-view this model has no tab for. Collected
         // here and posted after the borrows end, as `FrameIntent` does.
         let mut bad_sub_view: Option<String> = None;
+
+        if let Some(sub) = self.pending_sub_view.take() {
+            // Refuse a sub-view this model does not have a tab for, rather than
+            // selecting it and rendering something misleading — the same rule as
+            // aiming at an equation that is not there. The link named a real
+            // slug; whether it is *available* depends on what the compile
+            // produced, which only this point knows.
+            let available = match sub {
+                SubView::Structural(v) => self.structural_view_available(v),
+                _ => true,
+            };
+            if available {
+                self.apply_sub_view(Some(sub));
+            } else {
+                bad_sub_view = Some(format!(
+                    "{} has no {} view for this model \u{2014} the link names one \
+                     that is not here",
+                    self.stage.name(),
+                    sub.slug(),
+                ));
+            }
+        }
+        // Only now is the sub-view settled, so only now does looking up "the
+        // on-screen animation" mean the one the link named. Applying this
+        // before the block above would seek whichever animation happened to be
+        // showing beforehand.
+        self.apply_pending_seek();
+        if let Some(msg) = bad_sub_view.take() {
+            self.notify(msg);
+        }
+    }
+
+    fn report_sub_view_row_ui(&mut self, ui: &mut egui::Ui) {
         // Invalidate caches when switching between Structural
         // and IndexReduction — each has different report data.
         if self.stage_views.reset_for(self.stage) {
@@ -6281,42 +6349,11 @@ impl App {
             }
             // `reset_for` already recorded the new key.
         }
-        // A sub-view requested by an hrw:// link is applied *here*, after
-        // the default-sub-view logic above, precisely because that logic
-        // would otherwise overwrite it: it forces Summary whenever a
-        // report stage is entered singular. A link saying "show me the
-        // matching animation" has to win over the default saying "show
-        // the summary first".
-        if let Some(sub) = self.pending_sub_view.take() {
-            // Refuse a sub-view this model does not have a tab for, rather than
-            // selecting it and rendering something misleading — the same rule as
-            // aiming at an equation that is not there. The link named a real
-            // slug; whether it is *available* depends on what the compile
-            // produced, which only this point knows.
-            let available = match sub {
-                SubView::Structural(v) => self.structural_view_available(v),
-                _ => true,
-            };
-            if available {
-                self.apply_sub_view(Some(sub));
-            } else {
-                let msg = format!(
-                    "{} has no {} view for this model \u{2014} the link names one \
-                         that is not here",
-                    self.stage.name(),
-                    sub.slug(),
-                );
-                bad_sub_view = Some(msg);
-            }
-        }
-        // Only now is the sub-view settled, so only now does looking up "the
-        // on-screen animation" mean the one the link named. Applying this
-        // before the block above would seek whichever animation happened to be
-        // showing beforehand.
-        self.apply_pending_seek();
-        if let Some(msg) = bad_sub_view.take() {
-            self.notify(msg);
-        }
+        // The pending sub-view is applied by `apply_pending_view_and_seek`, which the
+        // caller invokes immediately after this row — *after* the default-sub-view
+        // logic above, precisely because that logic would otherwise overwrite it: it
+        // forces Summary whenever a report stage is entered singular, and a link
+        // saying "show me the matching animation" has to win over it.
         let is_index_reduction = self.stage == StageKind::IndexReduction;
         let note = self.stages.get(self.stage).note.as_deref().unwrap_or("");
         let is_singular = note.contains("singular");
@@ -12676,6 +12713,140 @@ mod tests {
             frame_link("Structural", "MatchingAnim", 0),
             "hrw://stage/Structural/MatchingAnim/frame/1"
         );
+    }
+
+    /// **A link into a NON-report stage actually changes the sub-view.**
+    ///
+    /// Doug, 2026-08-16, after a first fix that addressed a different bug: *"Clicking
+    /// on the frame 7 and frame 13 links is still not causing navigation."*
+    ///
+    /// `pending_sub_view` was applied inside `report_sub_view_row_ui`, which runs only
+    /// when the stage is **Structural or Index Reduction** and its report exists. For
+    /// Flatten, Events and Initialization the pending sub-view was set by the link and
+    /// **never taken**, and `apply_pending_seek` never ran — so the link was discarded
+    /// in silence, the seek budget expired over five paints, and nothing said why.
+    ///
+    /// The whole class hid behind the default: `Flatten/EquationSheet` is where Flatten
+    /// already opens, so links to it appeared to work. `Flatten/Connections` never did.
+    ///
+    /// **This test alone is NOT sufficient, and saying so is the point.** It drives
+    /// `apply_pending_view_and_seek` directly, so it proves the method works — not
+    /// that anything calls it for a non-report stage, which is precisely what was
+    /// broken. Verified: re-gating the call site behind `report_ready` leaves this
+    /// test **green**.
+    ///
+    /// `ui_tests::a_frame_link_into_flatten_connections_navigates` covers the call
+    /// site by painting. Both are kept because they fail for different reasons: this
+    /// one localises a regression in the method, that one catches the method being
+    /// bypassed.
+    #[test]
+    fn a_link_into_a_non_report_stage_applies_its_sub_view() {
+        for (stage, sub, expected) in [
+            (
+                StageKind::Flatten,
+                SubView::Flatten(FlattenView::Connections),
+                FlattenView::Connections,
+            ),
+            (
+                StageKind::Flatten,
+                SubView::Flatten(FlattenView::SourceMap),
+                FlattenView::SourceMap,
+            ),
+        ] {
+            let (mut app, _tx) = App::test_with_sender();
+            app.stage = stage;
+            app.viewport.flatten = FlattenView::Equations;
+            app.pending_sub_view = Some(sub);
+
+            app.apply_pending_view_and_seek();
+
+            assert_eq!(
+                app.viewport.flatten, expected,
+                "a link naming {:?} left the viewport on {:?} \u{2014} Flatten is not a \
+                 report stage, so this used to be dropped in silence",
+                sub, app.viewport.flatten,
+            );
+            assert!(
+                app.pending_sub_view.is_none(),
+                "the request must be consumed, or it re-applies every frame",
+            );
+        }
+    }
+
+    /// **A frame link into Flatten actually navigates, through a real paint.**
+    ///
+    /// Doug, 2026-08-16, on a fix that addressed a different bug: *"Clicking on the frame
+    /// 7 and frame 13 links is still not causing navigation."*
+    ///
+    /// `pending_sub_view` was consumed inside `report_sub_view_row_ui`, which runs only
+    /// for **Structural** and **Index Reduction**. For Flatten, Events and Initialization
+    /// the request was set and never taken, and the frame seek never ran — silently, since
+    /// an expired seek budget is the normal end of a seek whose animation is still
+    /// building.
+    ///
+    /// # Why this has to paint
+    ///
+    /// The unit test beside `apply_pending_view_and_seek` drives that method directly and
+    /// **stays green when the call site is re-gated behind `report_ready`** — measured, not
+    /// assumed. The defect was never in the method; it was in which code path reaches it.
+    /// A test that cannot see the call site cannot see this bug, which is the same
+    /// wrong-level mistake `CLAUDE.md` records for the first scroll-area defect.
+    ///
+    /// So this drives `frame_ui` and asserts the viewport moved.
+    #[test]
+    fn a_frame_link_into_flatten_connections_navigates() {
+        use crate::ui_tests::harness;
+
+        let mut app = App::test_default();
+        // A specimen must be selected or the link is refused by design — the "no specimen
+        // loaded" guard Doug saw when he clicked the link first.
+        app.selected = Some(std::path::PathBuf::from("specimens/RcCircuit.mo"));
+        app.stage = StageKind::Flatten;
+        app.viewport.flatten = FlattenView::Equations;
+
+        app.dispatch_hrw_link(HrwLink::SeekFrame(
+            StageKind::Flatten,
+            SubView::Flatten(FlattenView::Connections),
+            6,
+        ));
+        assert_eq!(
+            app.pending_sub_view,
+            Some(SubView::Flatten(FlattenView::Connections)),
+            "precondition: the link records the request",
+        );
+
+        let mut h = harness(app);
+        h.run_steps(2);
+
+        assert_eq!(
+            h.state().viewport.flatten,
+            FlattenView::Connections,
+            "painting must apply the sub-view a link asked for; Flatten is not a report \
+             stage, and this used to be dropped without a notice",
+        );
+        assert!(
+            h.state().pending_sub_view.is_none(),
+            "the request must be consumed, or it re-applies on every frame",
+        );
+    }
+
+    /// The same defect for **Events** and **Initialization**, the other two stages
+    /// whose sub-views were unreachable by link.
+    #[test]
+    fn links_into_events_and_initialization_apply_their_sub_views() {
+        let (mut app, _tx) = App::test_with_sender();
+        app.stage = StageKind::Events;
+        app.viewport.events = EventsView::Tree;
+        app.pending_sub_view = Some(SubView::Events(EventsView::PreLowering));
+        app.apply_pending_view_and_seek();
+        assert_eq!(app.viewport.events, EventsView::PreLowering);
+
+        let (mut app, _tx) = App::test_with_sender();
+        app.stage = StageKind::Initialization;
+        app.viewport.init = InitView::Tree;
+        app.pending_sub_view = Some(SubView::Init(InitView::IcPlan));
+        app.apply_pending_view_and_seek();
+        assert_eq!(app.viewport.init, InitView::IcPlan);
         assert!(parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/0").is_none());
     }
 

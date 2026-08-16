@@ -94,7 +94,7 @@ use crate::app::App;
 /// `frame_ui` rather than [`eframe::App::ui`] because the trait method takes an
 /// `eframe::Frame`, which cannot be constructed outside eframe — that one unused
 /// parameter was the only thing standing between this UI and an automated test.
-fn harness(app: App) -> Harness<'static, App> {
+pub(crate) fn harness(app: App) -> Harness<'static, App> {
     // **1600x1200, not the 800x600 default.** HRW is a multi-panel observatory:
     // menu bar, status bar, specimen list, help panel, and a central panel with a
     // tab row. At 800x600 the central panel's content is pushed out of the

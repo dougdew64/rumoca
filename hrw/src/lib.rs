@@ -84,7 +84,7 @@ pub mod worker;
 /// Headless UI tests (`docs/verification-plan.md` item 2). Test-only: the
 /// harness is a dev-dependency and nothing here ships in the binary.
 #[cfg(test)]
-mod ui_tests;
+pub(crate) mod ui_tests;
 
 /// Minimum zoom level at which matrix axis labels (equation/unknown names)
 /// are drawn. Below this threshold the labels would overlap and become
