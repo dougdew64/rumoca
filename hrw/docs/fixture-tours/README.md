@@ -110,6 +110,26 @@ divider that misremembered its width.
 *next* tour's phase 3 is that it finds far fewer — and if it does not, the finding is that phase 3
 exercises something the tests still cannot reach, which is worth more than the individual bugs.
 
+#### Phase 2 cost nothing the second time — first evidence that the template transfers
+
+**`dae-construction.md`, walked 2026-08-17.** Doug: *"It works correctly. And, it is effective. It
+seems to follow the tour template very well. Just enough instruction and no more."* **Zero
+corrections.**
+
+That is a different result from `connect-expansion.md`, whose phase 2 took most of a day of
+iteration — and the difference is not the subject matter. It is the first tour *written* under the
+template, by an author who had already been through phase 2 once and knew what the reader would
+know. Which is the claim the template was making, now with one instance behind it.
+
+**But do not read the absence of questions as success**, which `question-ledger.md` states as a
+standing rule: *"No questions at all is ambiguous and must not be read as success."* What counts
+here is his **explicit** report that it was effective — an assessment, not a silence. The
+detailed questions belong to phase 3, which has not happened for this tour yet, and phase 3 is
+also where the panes get stressed rather than merely followed.
+
+**So the honest status is: phase 2 clean, phase 3 outstanding.** One tour has completed all three
+(`connect-expansion.md`); this one has completed one.
+
 **The test for "not too little, not too much" is therefore operational, not aesthetic:** *could
 this question have been asked before the tour?* One of the three that morning — *why must an
 unconnected flow variable get an equation when an unconnected potential need not?* — is only
