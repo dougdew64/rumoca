@@ -794,8 +794,29 @@ gate ever fails on their output, they belong here too.
 
 **And the gate can fail while HRW is running** — `error: failed to remove file … hrw.exe,
 Access is denied`. Doug builds from the tree and keeps the app open, so this is the normal case,
-not an anomaly. It is transient: it happens when a preceding `clippy --all-targets` invalidates
-the binary's fingerprint. Re-run, or close HRW for the one gate run.
+not an anomaly, and it is **not** always transient: once a preceding `clippy --all-targets` has
+invalidated the binary's fingerprint, the combined form retries forever.
+
+**Split it, and both halves run with the app open** *(measured 2026-08-16)*:
+
+```text
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1
+cargo test -p hrw --test msl_resolve --features slow-tests -- --test-threads=1
+```
+
+Selecting one target at a time does not pull in the bin; selecting two does. Prefer the combined
+line, fall back to these two rather than asking Doug to close the app he is testing in.
+
+**`.hrw-bridge/tour.md` IS LIVE STATE, AND TESTS THAT PAINT MUST HOLD IT** *(2026-08-16, three
+defects in one hour)*. It is Claude's answer to Doug's last question, and `tour::poll`
+**auto-selects it** when nothing else is chosen — which resets the stage side. So its mere
+presence changes what a painted frame does, and the suite had never run while one existed.
+
+All three failure modes appeared the first time one did: a test that *asserted* the file was
+absent (failing whenever the feature had been used), a test that wrote its own and **deleted**
+Doug's afterwards, and a test that painted against whatever was on disk. Use
+`ui_tests::AdHocTour::absent()` or `::with(text)`; both restore what was there, including on a
+panic.
 
 **A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
 2026-08-15)*. The committed specimen traces had been stale for **25 days** and nothing could

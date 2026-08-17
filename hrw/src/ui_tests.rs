@@ -89,6 +89,66 @@ use egui_kittest::kittest::Queryable;
 
 use crate::app::App;
 
+/// Hold `.hrw-bridge/tour.md` at a chosen state for the duration of a test, and put
+/// back whatever was there on the way out — including on a panic.
+///
+/// # Why every test that paints needs this
+///
+/// **The ad hoc tour is live state, not scratch space.** It is Claude's answer to
+/// Doug's last question, and HRW *auto-selects it* when nothing else is chosen
+/// (`tour::poll`), which resets the stage side. So its mere presence changes what a
+/// painted frame does.
+///
+/// Three tests were written without accounting for that, and all three were wrong in a
+/// different direction — found on 2026-08-16, the first day an ad hoc tour existed
+/// while the suite ran:
+///
+/// 1. `the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour` **asserted** the file
+///    was absent, so it failed whenever the feature had been used. A precondition of
+///    "the user has not used the product recently" measures the environment.
+/// 2. `the_ad_hoc_tour_is_a_button_and_not_a_picker_entry` wrote its own fixture and
+///    **deleted** it afterwards, destroying a real answer without a word.
+/// 3. `a_frame_link_into_flatten_connections_navigates` painted with whatever happened
+///    to be on disk, and started failing when an ad hoc tour appeared and the
+///    auto-selection reset the viewport it was asserting on.
+///
+/// One helper, three uses: `absent()` for tests that need none, `with(text)` for tests
+/// that need one. Both restore.
+pub(crate) struct AdHocTour(Option<String>);
+
+impl AdHocTour {
+    /// No ad hoc tour exists for the duration.
+    pub(crate) fn absent() -> Self {
+        let saved = std::fs::read_to_string(crate::bridge::TOUR_FILE).ok();
+        let _ = std::fs::remove_file(crate::bridge::TOUR_FILE);
+        Self(saved)
+    }
+
+    /// An ad hoc tour with `text` exists for the duration.
+    pub(crate) fn with(text: &str) -> Self {
+        let path = std::path::Path::new(crate::bridge::TOUR_FILE);
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir).expect("bridge dir");
+        }
+        let saved = std::fs::read_to_string(path).ok();
+        std::fs::write(path, text).expect("write the ad hoc tour");
+        Self(saved)
+    }
+}
+
+impl Drop for AdHocTour {
+    fn drop(&mut self) {
+        match self.0.take() {
+            Some(text) => {
+                let _ = std::fs::write(crate::bridge::TOUR_FILE, text);
+            }
+            None => {
+                let _ = std::fs::remove_file(crate::bridge::TOUR_FILE);
+            }
+        }
+    }
+}
+
 /// Drive HRW's whole frame in a headless harness.
 ///
 /// `frame_ui` rather than [`eframe::App::ui`] because the trait method takes an
@@ -2090,13 +2150,19 @@ fn the_log_button_returns_without_changing_the_stage() {
 /// this does not have.
 #[test]
 fn the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour() {
-    // The bridge file is gitignored and absent in a clean checkout, which is exactly
-    // the state Doug hit. Asserting it rather than assuming it: if some other test
-    // leaves one behind, this would pass for the wrong reason.
-    assert!(
-        !std::path::Path::new(crate::bridge::TOUR_FILE).exists(),
-        "precondition: no ad hoc tour is written, which is the state under test",
-    );
+    // **The state under test is ESTABLISHED, not asserted.**
+    //
+    // This used to assert the bridge file was absent, on the reasoning that it is
+    // gitignored and absent in a clean checkout. That made the test fail whenever the
+    // *feature worked*: Claude writes `.hrw-bridge/tour.md` to answer a question, and
+    // from that moment the suite went red until someone deleted it. Found 2026-08-16,
+    // the first time an ad hoc tour was written since the test existed.
+    //
+    // A test whose precondition is "the user has not used the product recently" is
+    // measuring the environment. It now moves any real tour aside and restores it on
+    // the way out, so a live answer survives the run and the run does not depend on
+    // there being none.
+    let _tour_state = AdHocTour::absent();
 
     // Tour is `UiMode`'s `#[default]`, so no mode switch is needed.
     let mut h = harness(App::test_default());
@@ -2138,22 +2204,17 @@ fn the_ad_hoc_tour_is_a_button_and_not_a_picker_entry() {
     // end: a failing assertion between the two would leave it behind and break
     // `the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour`, which asserts its
     // absence as a precondition.
-    struct AdHocTourFile;
-    impl Drop for AdHocTourFile {
-        fn drop(&mut self) {
-            let _ = std::fs::remove_file(crate::bridge::TOUR_FILE);
-        }
-    }
-    let path = std::path::Path::new(crate::bridge::TOUR_FILE);
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).expect("bridge dir");
-    }
-    std::fs::write(
-        path,
-        "# Claude's answer\n\nA fixture for the picker test.\n",
-    )
-    .expect("write the ad hoc tour");
-    let _cleanup = AdHocTourFile;
+    // **The guard RESTORES what was there; it does not delete.** The first version
+    // removed the file on the way out — and `.hrw-bridge/tour.md` is not scratch space,
+    // it is Claude's live answer to Doug's last question. Running the suite while one
+    // existed **destroyed it**, silently, which is worse than a failing test. Found
+    // minutes after this test shipped, the first time an ad hoc tour was written.
+    let _tour_state = AdHocTour::with(
+        "# Claude's answer
+
+A fixture for the picker test.
+",
+    );
 
     let mut h = harness(App::test_default());
 

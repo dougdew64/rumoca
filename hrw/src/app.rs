@@ -12853,7 +12853,14 @@ mod tests {
     /// So this drives `frame_ui` and asserts the viewport moved.
     #[test]
     fn a_frame_link_into_flatten_connections_navigates() {
-        use crate::ui_tests::harness;
+        use crate::ui_tests::{AdHocTour, harness};
+
+        // **No ad hoc tour for the duration.** HRW auto-selects one when nothing else
+        // is chosen, and selecting a tour resets the stage side — so this test passed
+        // or failed depending on whether Claude had answered a question recently. It
+        // started failing the first time one existed, which is the environment
+        // changing rather than the code.
+        let _tour_state = AdHocTour::absent();
 
         let mut app = App::test_default();
         // A specimen must be selected or the link is refused by design — the "no specimen
