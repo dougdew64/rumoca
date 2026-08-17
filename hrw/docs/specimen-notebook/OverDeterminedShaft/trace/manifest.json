@@ -1,0 +1,57 @@
+{
+  "model": "OverDeterminedShaft",
+  "specimen": "specimens/OverDeterminedShaft.mo",
+  "specimen_fnv1a": "f40929dfbcfb85d8",
+  "rumoca_rev": "86fc2b08",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": "unbalanced model: 3 equations, 2 unknowns (balance = 1)"
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "unbalanced model: 3 equations, 2 unknowns (balance = 1)"
+    },
+    "structural": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "index_reduction": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "initialization": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "events": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    },
+    "solve_lowering": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
+    }
+  },
+  "simulation": {
+    "simulated": false,
+    "error": "compilation did not reach solve lowering"
+  }
+}

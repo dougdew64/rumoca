@@ -65,7 +65,7 @@ This tour counts. `RcCircuit` has four `connect` statements and twenty-three equ
 
 A curriculum tour. It teaches a step of the chain
 
-- **Specimens:** `SingleInertia`, `UnbalancedShaft`
+- **Specimens:** `SingleInertia`, `UnbalancedShaft`, `OverDeterminedShaft`
 - **Stages:** `Dae`, `Flatten`, `Structural`
 - **Stops:**
   - `fixture-tour-dae-construction-the-count-that-decides-everything` — Fixture tour — DAE construction: the count that decides everything
@@ -75,7 +75,8 @@ A curriculum tour. It teaches a step of the chain
   - `act-3-what-is-the-solver-actually-solving-for` — Act 3 — What is the solver actually solving for?
   - `act-4-the-claim` — Act 4 — The claim
   - `act-5-what-the-compiler-says-when-the-claim-fails` — Act 5 — What the compiler says when the claim fails
-  - `act-6-where-it-fails-and-why-that-is-the-right-place` — Act 6 — Where it fails, and why that is the right place
+  - `act-6-the-other-sign` — Act 6 — The other sign
+  - `act-7-where-it-fails-and-why-that-is-the-right-place` — Act 7 — Where it fails, and why that is the right place
   - `two-excursions-if-you-want-them` — Two excursions, if you want them
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain

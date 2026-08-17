@@ -1828,19 +1828,25 @@ upstream issues.
 > that zero into coverage**, and it is small-scale work that lands in the ~90-second pre-commit
 > suite rather than needing the watchdog at all.
 >
-> ### The first missing one has a name and a caller — an OVER-determined model
+> ### ✅ The first one is done — `OverDeterminedShaft`, 2026-08-17
 >
-> **Found 2026-08-17 while converting `dae-construction.md`.** Every unbalanced specimen in the
-> corpus reports `balance = -1`; **not one reports a positive balance.** So the tour reads the
-> sign as informative — negative means too few equations, positive means over-constrained — and
-> only half of that is testable. The tour now says so in its *"cannot check"* section rather than
-> asserting both halves.
+> **Found while converting `dae-construction.md`:** every unbalanced specimen in the corpus
+> reported `balance = -1`, so the tour read the sign as informative while only the negative half
+> was testable.
 >
-> **It is the cheapest specimen on this list:** `SingleInertia` plus one redundant equation, e.g.
-> restating `der(phi) = w`. Two states, three equations, `balance = +1`, and it fails at DAE
-> construction like `UnbalancedShaft` does — so it needs no new tour, only an act in an existing
-> one. No specimen exists yet.
-> <!-- unbuilt: specimens/OverDeterminedShaft.mo -->
+> **Built the same day.** `SingleInertia` plus `w = der(phi)` — nine lines, and it reports
+> `unbalanced model: 3 equations, 2 unknowns (balance = 1)` with the reading *"more equations than
+> unknowns — something is determined twice"*. It needed no new tour, only Act 6 of
+> `dae-construction.md`.
+>
+> **The surplus equation is deliberately consistent**, which is the design rather than an
+> accident: it says exactly what an earlier equation said, so there is nothing to contradict — and
+> the model is rejected anyway, because the balance check is arithmetic on counts and never asks
+> whether the surplus agrees. A contradictory equation would blur *"one too many"* with *"these
+> disagree"*, which are different diagnoses needing different fixes.
+>
+> **What this establishes for the rest of #46:** a failure specimen can be nine lines and can
+> retire a whole class of untestable prose. The remaining phases are worth the same treatment.
 >
 > Recorded in [`fidelity-plan.md`](fidelity-plan.md) ("F10's first corpus run") and in the run
 > policy in [`../CLAUDE.md`](../CLAUDE.md).

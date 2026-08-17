@@ -5,8 +5,9 @@
 subject. It is **still a test**: every **Expected** line is violable, and a lesson built on a
 wrong number teaches the wrong thing.
 
-Every count below was read from `docs/specimen-notebook/{SingleInertia,UnbalancedShaft}/trace/`,
-never remembered. **Notices appear in the status bar**, along the bottom of the window.
+Every count below was read from
+`docs/specimen-notebook/{SingleInertia,UnbalancedShaft,OverDeterminedShaft}/trace/`, never
+remembered. **Notices appear in the status bar**, along the bottom of the window.
 
 ---
 
@@ -25,8 +26,9 @@ So something has to sort every variable into a role — carried forward through 
 whole run, or solved for afresh at each instant — and then make one claim about the result:
 **this system is square.** Everything downstream is entitled to assume that claim.
 
-**DAE construction is that phase.** Five acts: the sorting, why it sorts that way, what the solver
-is really solving for, the claim, and what happens when the claim fails.
+**DAE construction is that phase.** Seven acts: the sorting, why it sorts that way, what the solver
+is really solving for, the claim, what happens when the claim fails in each direction, and why it is
+checked here rather than later.
 
 ---
 
@@ -190,7 +192,52 @@ which is this model. Positive would mean *too many* — over-constrained, a diff
 
 ---
 
-## Act 6 — Where it fails, and why that is the right place
+## Act 6 — The other sign
+
+`OverDeterminedShaft` is `SingleInertia` with one extra line:
+
+```modelica
+  w = der(phi);
+```
+
+Which says exactly what `der(phi) = w` already said, two lines above. **Nothing contradicts
+anything** — the model is merely repetitive.
+
+> **Predict.** Act 5's model was short one equation and reported `balance = -1`. This one is long
+> one equation and says nothing new. Will the compiler accept it?
+
+[▶ Look — OverDeterminedShaft → DAE](hrw://load/OverDeterminedShaft/Dae)
+
+**Expected:** rejected, with the sign flipped:
+
+```
+unbalanced model: 3 equations, 2 unknowns (balance = 1)
+```
+
+and the reading *"more equations than unknowns — something is determined twice"*.
+
+**Falsified if:** the model compiles, or `balance` is negative.
+
+*What just happened.* **The check is arithmetic, and it does not care that the surplus equation is
+harmless.** A redundant equation and a contradictory one are counted identically, because counting
+is all this phase does — deciding whether three equations agree would mean solving them, which is
+not this phase's job and might not even be decidable symbolically.
+
+So the sign is now a diagnosis you can act on:
+
+| balance | meaning | what to look for |
+|---|---|---|
+| **−1** or lower | too few equations | a declared variable with nothing determining it |
+| **+1** or higher | too many | something determined twice — a duplicated equation, or a component that already constrains what you constrained |
+
+**And the positive case is the one that catches a subtler mistake.** Forgetting an equation is
+usually obvious once named. Adding one that a *component already provides* — fixing a flange that
+the mount already fixes, setting a voltage a source already sets — looks like extra care and reads
+as a surplus.
+
+---
+
+## Act 7 — Where it fails, and why that is the right place
 
 > **Predict.** Structural analysis is the phase that finds singular systems. Will it report this
 > one?
@@ -240,15 +287,10 @@ prose here and demonstrated nowhere in this tour. *(It is demonstrated in
 [`matching.md`](matching.md) Act 3, which walks that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
 
-**And `balance = +1` has no specimen at all.** Act 5 reads the sign as informative — negative means
-too few equations, positive means over-constrained — and **only the negative case exists in the
-corpus.** Every unbalanced specimen reports the same `balance = -1`.
-
-So half of that act's lesson is an assertion you cannot test, which is precisely what this tour is
-built to avoid. Writing the missing specimen is small: `SingleInertia` plus one redundant equation.
-It is logged as part of `docs/ideas.md` #46 — a failure specimen per compiler phase — and until it
-exists, treat the positive half of the sign convention as prose rather than as something the pane
-has shown you.
+**Whether Act 6 needed its own specimen or could have been prose.** It could not: until
+`OverDeterminedShaft` was written on 2026-08-17, every unbalanced specimen in the corpus reported
+`-1`, and the positive half of the sign convention was an assertion. Whether a whole model is the
+right price for one stop is a fair question — the answer here is that the model is nine lines.
 
 ---
 

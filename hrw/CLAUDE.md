@@ -843,6 +843,18 @@ future code that reproduces a trace must reproduce that condition — including 
 path is *spelled*, since `parse_to_ast` stamps it into every `Location` and a `\` for a `/` made
 109 of 109 files look like total drift.
 
+**AND THE DRIVE LETTER'S CASE IS PART OF THAT SPELLING** *(2026-08-17)*. `CARGO_MANIFEST_DIR` is
+not stable in it: the committed traces carry `C:\Users\…`, and the same command in the same
+directory later produced `c:\Users\…` — from both git-bash and PowerShell, so it is cargo's
+resolution and not the shell's. A newly added specimen's four AST stages therefore differed from a
+fresh compile and failed the notebook gate, on a difference that carries no information.
+
+`gen_trace` now uppercases the drive letter before handing the path in
+(`uppercase_drive_letter`). **That is canonicalisation, not editing what the compiler said** —
+`c:\` and `C:\` name the same file, and choosing the spelling we hand in is the same deliberate act
+as `worker.rs` handing in the full document URI. Rewriting the path to be *repo-relative* is a
+different thing, changes which file the string names, and was rejected on 2026-08-16.
+
 **MATCH THE GATE TO THE CHANGE — and let the diff decide, not judgement** *(measured
 2026-08-15, after Doug reported test latency as genuine friction)*. Most commits in a walking
 session touch only documents, and a docs-only change **cannot regress compile-heavy behaviour**,

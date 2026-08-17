@@ -1,0 +1,939 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10912887837454972205,
+          "start": 1296,
+          "end": 1302
+        },
+        "parts": [
+          {
+            "ident": "J",
+            "span": {
+              "source": 10912887837454972205,
+              "start": 1296,
+              "end": 1302
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "J",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 20,
+        "start_column": 13,
+        "end_line": 20,
+        "end_column": 19,
+        "start": 1296,
+        "end": 1302,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "OverDeterminedShaft",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 20,
+            "start_column": 3,
+            "end_line": 20,
+            "end_column": 12,
+            "start": 1286,
+            "end": 1295,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+          },
+          "token_number": 21,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 20,
+              "start_column": 22,
+              "end_line": 20,
+              "end_column": 25,
+              "start": 1305,
+              "end": 1308,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+            },
+            "token_number": 25,
+            "token_type": 68
+          },
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1305,
+            "end": 1308
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "moment of inertia",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 20,
+              "start_column": 22,
+              "end_line": 20,
+              "end_column": 25,
+              "start": 1305,
+              "end": 1308,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+            },
+            "token_number": 25,
+            "token_type": 68
+          },
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1305,
+            "end": 1308
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10912887837454972205,
+          "start": 1342,
+          "end": 1350
+        },
+        "parts": [
+          {
+            "ident": "tau",
+            "span": {
+              "source": 10912887837454972205,
+              "start": 1342,
+              "end": 1350
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "tau",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 21,
+        "start_column": 13,
+        "end_line": 21,
+        "end_column": 21,
+        "start": 1342,
+        "end": 1350,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "OverDeterminedShaft",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 21,
+            "start_column": 3,
+            "end_line": 21,
+            "end_column": 12,
+            "start": 1332,
+            "end": 1341,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+          },
+          "token_number": 28,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 21,
+              "start_column": 24,
+              "end_line": 21,
+              "end_column": 27,
+              "start": 1353,
+              "end": 1356,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+            },
+            "token_number": 32,
+            "token_type": 68
+          },
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1353,
+            "end": 1356
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "applied torque",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 21,
+              "start_column": 24,
+              "end_line": 21,
+              "end_column": 27,
+              "start": 1353,
+              "end": 1356,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+            },
+            "token_number": 32,
+            "token_type": 68
+          },
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1353,
+            "end": 1356
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10912887837454972205,
+          "start": 1377,
+          "end": 1385
+        },
+        "parts": [
+          {
+            "ident": "phi",
+            "span": {
+              "source": 10912887837454972205,
+              "start": 1377,
+              "end": 1385
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "phi",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 22,
+        "start_column": 3,
+        "end_line": 22,
+        "end_column": 11,
+        "start": 1377,
+        "end": 1385,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "OverDeterminedShaft",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 22,
+              "start_column": 20,
+              "end_line": 22,
+              "end_column": 23,
+              "start": 1394,
+              "end": 1397,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+            },
+            "token_number": 40,
+            "token_type": 68
+          },
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1394,
+            "end": 1397
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "angle",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10912887837454972205,
+          "start": 1410,
+          "end": 1416
+        },
+        "parts": [
+          {
+            "ident": "w",
+            "span": {
+              "source": 10912887837454972205,
+              "start": 1410,
+              "end": 1416
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 92
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "w",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 23,
+        "start_column": 3,
+        "end_line": 23,
+        "end_column": 9,
+        "start": 1410,
+        "end": 1416,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "OverDeterminedShaft",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 23,
+              "start_column": 18,
+              "end_line": 23,
+              "end_column": 21,
+              "start": 1425,
+              "end": 1428,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+            },
+            "token_number": 49,
+            "token_type": 68
+          },
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1425,
+            "end": 1428
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "angular velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "OverDeterminedShaft",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 25,
+                            "start_column": 3,
+                            "end_line": 25,
+                            "end_column": 6,
+                            "start": 1461,
+                            "end": 1464,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                          },
+                          "token_number": 54,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 10912887837454972205,
+                      "start": 1461,
+                      "end": 1464
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "phi",
+                              "location": {
+                                "start_line": 25,
+                                "start_column": 7,
+                                "end_line": 25,
+                                "end_column": 10,
+                                "start": 1465,
+                                "end": 1468,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                              },
+                              "token_number": 56,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 10912887837454972205,
+                          "start": 1465,
+                          "end": 1468
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 10912887837454972205,
+                    "start": 1461,
+                    "end": 1468
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "w",
+                        "location": {
+                          "start_line": 25,
+                          "start_column": 14,
+                          "end_line": 25,
+                          "end_column": 15,
+                          "start": 1472,
+                          "end": 1473,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                        },
+                        "token_number": 59,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 10912887837454972205,
+                    "start": 1472,
+                    "end": 1473
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "OverDeterminedShaft",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1461,
+            "end": 1464
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "J",
+                            "location": {
+                              "start_line": 26,
+                              "start_column": 3,
+                              "end_line": 26,
+                              "end_column": 4,
+                              "start": 1477,
+                              "end": 1478,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                            },
+                            "token_number": 61,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 10912887837454972205,
+                        "start": 1477,
+                        "end": 1478
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "FunctionCall": {
+                      "comp": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "der",
+                              "location": {
+                                "start_line": 26,
+                                "start_column": 7,
+                                "end_line": 26,
+                                "end_column": 10,
+                                "start": 1481,
+                                "end": 1484,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                              },
+                              "token_number": 63,
+                              "token_type": 15
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 10912887837454972205,
+                          "start": 1481,
+                          "end": 1484
+                        }
+                      },
+                      "args": [
+                        {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "w",
+                                  "location": {
+                                    "start_line": 26,
+                                    "start_column": 11,
+                                    "end_line": 26,
+                                    "end_column": 12,
+                                    "start": 1485,
+                                    "end": 1486,
+                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                                  },
+                                  "token_number": 65,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 10912887837454972205,
+                              "start": 1485,
+                              "end": 1486
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 10912887837454972205,
+                        "start": 1481,
+                        "end": 1486
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 10912887837454972205,
+                    "start": 1477,
+                    "end": 1486
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "tau",
+                        "location": {
+                          "start_line": 26,
+                          "start_column": 16,
+                          "end_line": 26,
+                          "end_column": 19,
+                          "start": 1490,
+                          "end": 1493,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                        },
+                        "token_number": 68,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 10912887837454972205,
+                    "start": 1490,
+                    "end": 1493
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "OverDeterminedShaft",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1477,
+            "end": 1478
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "w",
+                        "location": {
+                          "start_line": 27,
+                          "start_column": 3,
+                          "end_line": 27,
+                          "end_column": 4,
+                          "start": 1497,
+                          "end": 1498,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                        },
+                        "token_number": 70,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 10912887837454972205,
+                    "start": 1497,
+                    "end": 1498
+                  }
+                }
+              },
+              "rhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 27,
+                            "start_column": 7,
+                            "end_line": 27,
+                            "end_column": 10,
+                            "start": 1501,
+                            "end": 1504,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                          },
+                          "token_number": 72,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 10912887837454972205,
+                      "start": 1501,
+                      "end": 1504
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "phi",
+                              "location": {
+                                "start_line": 27,
+                                "start_column": 11,
+                                "end_line": 27,
+                                "end_column": 14,
+                                "start": 1505,
+                                "end": 1508,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/OverDeterminedShaft.mo"
+                              },
+                              "token_number": 74,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 10912887837454972205,
+                          "start": 1505,
+                          "end": 1508
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 10912887837454972205,
+                    "start": 1501,
+                    "end": 1508
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "OverDeterminedShaft",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 10912887837454972205,
+            "start": 1497,
+            "end": 1498
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "A shaft with one equation too many — DELIBERATELY BROKEN",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 5
+}

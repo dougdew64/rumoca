@@ -37,6 +37,21 @@ use hrw::worker::{FromWorker, Stage, StageKind, compile_specimen, simulate_speci
 /// Default simulation stop time.
 const SIM_T_END: f64 = 2.0;
 
+/// Uppercase a leading Windows drive letter, leaving everything else alone.
+///
+/// `c:\Users\…` becomes `C:\Users\…`; a path with no drive letter is returned
+/// unchanged, so this is a no-op on every other platform. See the call site for why
+/// the committed traces need it.
+fn uppercase_drive_letter(path: &str) -> String {
+    let mut chars = path.chars();
+    match (chars.next(), chars.next()) {
+        (Some(drive), Some(':')) if drive.is_ascii_alphabetic() => {
+            format!("{}:{}", drive.to_ascii_uppercase(), &path[2..])
+        }
+        _ => path.to_owned(),
+    }
+}
+
 fn msl_roots() -> Vec<PathBuf> {
     let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
     vec![
@@ -96,6 +111,24 @@ fn main() {
 
 fn generate_trace(name: &str) -> Result<(), String> {
     let root = env!("CARGO_MANIFEST_DIR");
+    // **Canonicalize the drive-letter case, or the committed trace depends on which
+    // shell generated it.**
+    //
+    // `parse_to_ast` stamps whatever path it is handed into every `Location`, so this
+    // string ends up in `parse.json`, `resolve.json`, `instantiate.json` and
+    // `typecheck.json` — thousands of times. And `CARGO_MANIFEST_DIR` is not stable in
+    // its drive letter: the committed traces carry `C:\Users\…` from one run, and on
+    // 2026-08-17 the same command in the same directory produced `c:\Users\…`, which
+    // made a newly added specimen's four AST stages differ from a fresh compile and
+    // failed the notebook currency gate.
+    //
+    // **This is canonicalisation, not editing what the compiler said.** `c:\` and `C:\`
+    // name the same file on Windows; the case is an artifact of how cargo was invoked,
+    // carries no information, and choosing the spelling we hand in is the same
+    // deliberate act as `worker.rs` handing in the full document URI. Rewriting the
+    // path to be *repo-relative* would be different — that changes which file the
+    // string names, and it is why that idea was rejected on 2026-08-16.
+    let root = uppercase_drive_letter(root);
     let specimen = PathBuf::from(format!("{root}/specimens/{name}.mo"));
     let source = std::fs::read_to_string(&specimen)
         .map_err(|e| format!("read {}: {e}", specimen.display()))?;
